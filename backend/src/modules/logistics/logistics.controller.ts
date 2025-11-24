@@ -1,0 +1,1347 @@
+import { Request, Response } from 'express';
+import pool from '../../config/database';
+
+// ============================================================================
+// 1. FLEET & VEHICLES
+// ============================================================================
+
+/**
+ * GET /api/logistics/vehicles
+ * Get all vehicles with filtering
+ */
+export const getVehicles = async (req: Request, res: Response) => {
+  try {
+    const { 
+      page = '1', 
+      limit = '50', 
+      status, 
+      vehicle_type, 
+      search 
+    } = req.query;
+
+    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+
+    let query = `
+      SELECT v.*
+      FROM logistics.vehicles v
+      WHERE v.status = 'ACTIVE'
+    `;
+    const values: any[] = [];
+    let paramCount = 1;
+
+    if (status) {
+      query += ` AND v.status = $${paramCount}`;
+      values.push(status);
+      paramCount++;
+    }
+
+    if (vehicle_type) {
+      query += ` AND v.vehicle_type = $${paramCount}`;
+      values.push(vehicle_type);
+      paramCount++;
+    }
+
+    if (search) {
+      query += ` AND (v.vehicle_registration ILIKE $${paramCount} OR v.vehicle_registration ILIKE $${paramCount} OR v.make ILIKE $${paramCount})`;
+      values.push(`%${search}%`);
+      paramCount++;
+    }
+
+    // Count total
+    const countQuery = query.replace(/SELECT.*FROM/, 'SELECT COUNT(*) FROM').replace(/LEFT JOIN.*driver_phone/, '');
+    const countResult = await pool.query(countQuery, values);
+    const total = parseInt(countResult.rows[0].count);
+
+    // Get paginated results
+    query += ` ORDER BY v.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    values.push(parseInt(limit as string), offset);
+
+    const result = await pool.query(query, values);
+
+    res.json({
+      vehicles: result.rows,
+      total,
+      page: parseInt(page as string),
+      totalPages: Math.ceil(total / parseInt(limit as string))
+    });
+  } catch (error) {
+    console.error('Error fetching vehicles:', error);
+    res.status(500).json({ error: 'Failed to fetch vehicles' });
+  }
+};
+
+/**
+ * GET /api/logistics/vehicles/:id
+ * Get single vehicle by ID
+ */
+export const getVehicleById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `SELECT v.*
+      FROM logistics.vehicles v
+      WHERE v.vehicle_id = $1 AND v.status = 'ACTIVE'`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+
+    res.json({ vehicle: result.rows[0] });
+  } catch (error) {
+    console.error('Error fetching vehicle:', error);
+    res.status(500).json({ error: 'Failed to fetch vehicle' });
+  }
+};
+
+/**
+ * POST /api/logistics/vehicles
+ * Create new vehicle
+ */
+export const createVehicle = async (req: Request, res: Response) => {
+  const client = await pool.connect();
+  try {
+    const {
+      vehicle_registration,
+      vin_number,
+      make,
+      model,
+      vehicle_type,
+      year_of_manufacture,
+      payload_capacity_kg,
+      volume_capacity_m3,
+      fuel_type,
+      fuel_tank_capacity_litres,
+      ownership_type = 'OWNED',
+      purchase_date,
+      purchase_cost,
+      asset_id,
+      service_interval_km = 10000,
+      service_interval_days = 90,
+      gps_device_id,
+      gps_provider,
+      created_by
+    } = req.body;
+
+    await client.query('BEGIN');
+
+    const result = await client.query(
+      `INSERT INTO logistics.vehicles (
+        tenant_id, vehicle_registration, vehicle_registration, vin_number, make, model,
+        vehicle_type, year_of_manufacture, payload_capacity_kg, volume_capacity_m3,
+        fuel_type, fuel_tank_capacity_litres, ownership_type, purchase_date, purchase_cost,
+        asset_id, service_interval_km, service_interval_days, gps_device_id, gps_provider,
+        status, created_by
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 'ACTIVE', $21
+      ) RETURNING *`,
+      [
+        req.user?.tenantId || '00000000-0000-0000-0000-000000000000',
+        vehicle_registration, vehicle_registration, vin_number, make, model, vehicle_type,
+        year_of_manufacture, payload_capacity_kg, volume_capacity_m3, fuel_type,
+        fuel_tank_capacity_litres, ownership_type, purchase_date, purchase_cost,
+        asset_id, service_interval_km, service_interval_days, gps_device_id, gps_provider,
+        created_by || req.user?.id || '00000000-0000-0000-0000-000000000000'
+      ]
+    );
+
+    await client.query('COMMIT');
+    res.status(201).json({ vehicle: result.rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error creating vehicle:', error);
+    res.status(500).json({ error: 'Failed to create vehicle' });
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * PUT /api/logistics/vehicles/:id
+ * Update vehicle
+ */
+export const updateVehicle = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const fields = req.body;
+    
+    const allowedFields = [
+      'vehicle_registration', 'make', 'model', 'status', 'current_location',
+      'driver_id', 'last_service_date', 'last_service_odometer',
+      'next_service_date', 'next_service_odometer', 'gps_device_id', 'gps_provider'
+    ];
+
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramCount = 1;
+
+    Object.keys(fields).forEach(key => {
+      if (allowedFields.includes(key)) {
+        updates.push(`${key} = $${paramCount}`);
+        values.push(fields[key]);
+        paramCount++;
+      }
+    });
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    values.push(id);
+    const query = `UPDATE logistics.vehicles SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE vehicle_id = $${paramCount} RETURNING *`;
+
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+
+    res.json({ vehicle: result.rows[0] });
+  } catch (error) {
+    console.error('Error updating vehicle:', error);
+    res.status(500).json({ error: 'Failed to update vehicle' });
+  }
+};
+
+/**
+ * DELETE /api/logistics/vehicles/:id
+ * Delete vehicle (soft delete)
+ */
+export const deleteVehicle = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      'UPDATE logistics.vehicles SET status = \'INACTIVE\' WHERE vehicle_id = $1 RETURNING vehicle_id',
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Vehicle not found' });
+    }
+
+    res.json({ message: 'Vehicle deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting vehicle:', error);
+    res.status(500).json({ error: 'Failed to delete vehicle' });
+  }
+};
+
+// ============================================================================
+// 2. DRIVERS
+// ============================================================================
+
+/**
+ * GET /api/logistics/drivers
+ * Get all drivers
+ */
+export const getDrivers = async (req: Request, res: Response) => {
+  try {
+    const { page = '1', limit = '50', status, search } = req.query;
+    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+
+    let query = `
+      SELECT d.*
+      FROM logistics.drivers d
+      WHERE d.employment_status = 'ACTIVE'
+    `;
+    const values: any[] = [];
+    let paramCount = 1;
+
+    if (status) {
+      query += ` AND d.employment_status = $${paramCount}`;
+      values.push(status);
+      paramCount++;
+    }
+
+    if (search) {
+      query += ` AND (d.first_name ILIKE $${paramCount} OR d.last_name ILIKE $${paramCount} OR d.id_number ILIKE $${paramCount})`;
+      values.push(`%${search}%`);
+      paramCount++;
+    }
+
+    const countQuery = query.replace(/SELECT.*FROM/, 'SELECT COUNT(*) FROM');
+    const countResult = await pool.query(countQuery, values);
+    const total = parseInt(countResult.rows[0].count);
+
+    query += ` ORDER BY d.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    values.push(parseInt(limit as string), offset);
+
+    const result = await pool.query(query, values);
+
+    res.json({
+      drivers: result.rows,
+      total,
+      page: parseInt(page as string),
+      totalPages: Math.ceil(total / parseInt(limit as string))
+    });
+  } catch (error) {
+    console.error('Error fetching drivers:', error);
+    res.status(500).json({ error: 'Failed to fetch drivers' });
+  }
+};
+
+/**
+ * GET /api/logistics/drivers/:id
+ * Get single driver
+ */
+export const getDriverById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `SELECT d.*
+      FROM logistics.drivers d
+      WHERE d.driver_id = $1 AND d.employment_status = 'ACTIVE'`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Driver not found' });
+    }
+
+    res.json({ driver: result.rows[0] });
+  } catch (error) {
+    console.error('Error fetching driver:', error);
+    res.status(500).json({ error: 'Failed to fetch driver' });
+  }
+};
+
+/**
+ * POST /api/logistics/drivers
+ * Create new driver
+ */
+export const createDriver = async (req: Request, res: Response) => {
+  const client = await pool.connect();
+  try {
+    const {
+      employee_id,
+      first_name,
+      last_name,
+      id_number,
+      date_of_birth,
+      phone,
+      email,
+      physical_address,
+      employment_type = 'PERMANENT',
+      date_hired,
+      license_number,
+      license_type,
+      license_issue_date,
+      license_expiry_date,
+      prdp_number,
+      prdp_expiry_date,
+      mobile_app_enabled = true,
+      mobile_phone_number,
+      created_by
+    } = req.body;
+
+    await client.query('BEGIN');
+
+    const result = await client.query(
+      `INSERT INTO logistics.drivers (
+        tenant_id, employee_id, first_name, last_name, id_number, date_of_birth,
+        phone, email, physical_address, employment_type, date_hired,
+        license_number, license_type, license_issue_date, license_expiry_date,
+        prdp_number, prdp_expiry_date, mobile_app_enabled, mobile_phone_number,
+        status, created_by
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, 'ACTIVE', $20
+      ) RETURNING *`,
+      [
+        req.user?.tenantId || '00000000-0000-0000-0000-000000000000',
+        employee_id, first_name, last_name, id_number, date_of_birth,
+        phone, email, physical_address, employment_type, date_hired,
+        license_number, license_type, license_issue_date, license_expiry_date,
+        prdp_number, prdp_expiry_date, mobile_app_enabled, mobile_phone_number,
+        created_by || req.user?.id || '00000000-0000-0000-0000-000000000000'
+      ]
+    );
+
+    await client.query('COMMIT');
+    res.status(201).json({ driver: result.rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error creating driver:', error);
+    res.status(500).json({ error: 'Failed to create driver' });
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * PUT /api/logistics/drivers/:id
+ * Update driver
+ */
+export const updateDriver = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const fields = req.body;
+    
+    const allowedFields = [
+      'phone', 'email', 'physical_address', 'status',
+      'current_vehicle_id', 'license_expiry_date', 'prdp_expiry_date',
+      'mobile_app_enabled', 'mobile_phone_number'
+    ];
+
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramCount = 1;
+
+    Object.keys(fields).forEach(key => {
+      if (allowedFields.includes(key)) {
+        updates.push(`${key} = $${paramCount}`);
+        values.push(fields[key]);
+        paramCount++;
+      }
+    });
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    values.push(id);
+    const query = `UPDATE logistics.drivers SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE driver_id = $${paramCount} RETURNING *`;
+
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Driver not found' });
+    }
+
+    res.json({ driver: result.rows[0] });
+  } catch (error) {
+    console.error('Error updating driver:', error);
+    res.status(500).json({ error: 'Failed to update driver' });
+  }
+};
+
+/**
+ * DELETE /api/logistics/drivers/:id
+ * Delete driver (soft delete)
+ */
+export const deleteDriver = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const result = await pool.query(
+      'UPDATE logistics.drivers SET employment_status = $1 WHERE driver_id = $2 RETURNING driver_id',
+      ['TERMINATED', id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Driver not found' });
+    }
+
+    res.json({ message: 'Driver deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting driver:', error);
+    res.status(500).json({ error: 'Failed to delete driver' });
+  }
+};
+
+// ============================================================================
+// 3. TRIPS
+// ============================================================================
+
+/**
+ * GET /api/logistics/trips
+ * Get all trips with filtering
+ */
+export const getTrips = async (req: Request, res: Response) => {
+  try {
+    const { 
+      page = '1', 
+      limit = '50', 
+      status, 
+      vehicle_id, 
+      driver_id,
+      date_from,
+      date_to,
+      search 
+    } = req.query;
+
+    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+
+    let query = `
+      SELECT t.*,
+        v.vehicle_registration, v.vehicle_registration,
+        d.first_name || ' ' || d.last_name as driver_name,
+        d.phone as driver_phone
+      FROM logistics.trips t
+      LEFT JOIN logistics.vehicles v ON t.vehicle_id = v.vehicle_id
+      LEFT JOIN logistics.drivers d ON t.driver_id = d.driver_id
+      WHERE 1=1
+    `;
+    const values: any[] = [];
+    let paramCount = 1;
+
+    if (status) {
+      query += ` AND t.status = $${paramCount}`;
+      values.push(status);
+      paramCount++;
+    }
+
+    if (vehicle_id) {
+      query += ` AND t.vehicle_id = $${paramCount}`;
+      values.push(vehicle_id);
+      paramCount++;
+    }
+
+    if (driver_id) {
+      query += ` AND t.driver_id = $${paramCount}`;
+      values.push(driver_id);
+      paramCount++;
+    }
+
+    if (date_from) {
+      query += ` AND t.trip_date >= $${paramCount}`;
+      values.push(date_from);
+      paramCount++;
+    }
+
+    if (date_to) {
+      query += ` AND t.trip_date <= $${paramCount}`;
+      values.push(date_to);
+      paramCount++;
+    }
+
+    if (search) {
+      query += ` AND (t.trip_number ILIKE $${paramCount} OR t.pickup_location ILIKE $${paramCount} OR t.delivery_location ILIKE $${paramCount})`;
+      values.push(`%${search}%`);
+      paramCount++;
+    }
+
+    const countQuery = query.replace(/SELECT.*FROM/, 'SELECT COUNT(*) FROM').replace(/LEFT JOIN.*driver_phone/, '');
+    const countResult = await pool.query(countQuery, values);
+    const total = parseInt(countResult.rows[0].count);
+
+    query += ` ORDER BY t.trip_date DESC, t.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    values.push(parseInt(limit as string), offset);
+
+    const result = await pool.query(query, values);
+
+    res.json({
+      trips: result.rows,
+      total,
+      page: parseInt(page as string),
+      totalPages: Math.ceil(total / parseInt(limit as string))
+    });
+  } catch (error) {
+    console.error('Error fetching trips:', error);
+    res.status(500).json({ error: 'Failed to fetch trips' });
+  }
+};
+
+/**
+ * GET /api/logistics/trips/:id
+ * Get single trip with stops
+ */
+export const getTripById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Get trip details
+    const tripResult = await pool.query(
+      `SELECT t.*,
+        v.vehicle_registration, v.vehicle_registration, v.make, v.model,
+        d.first_name || ' ' || d.last_name as driver_name,
+        d.phone as driver_phone, d.license_number
+      FROM logistics.trips t
+      LEFT JOIN logistics.vehicles v ON t.vehicle_id = v.vehicle_id
+      LEFT JOIN logistics.drivers d ON t.driver_id = d.driver_id
+      WHERE t.trip_id = $1`,
+      [id]
+    );
+
+    if (tripResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Trip not found' });
+    }
+
+    // Get trip stops
+    const stopsResult = await pool.query(
+      `SELECT * FROM logistics_trip_stops 
+       WHERE trip_id = $1 ORDER BY stop_sequence ASC`,
+      [id]
+    );
+
+    res.json({ 
+      trip: {
+        ...tripResult.rows[0],
+        stops: stopsResult.rows
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching trip:', error);
+    res.status(500).json({ error: 'Failed to fetch trip' });
+  }
+};
+
+/**
+ * POST /api/logistics/trips
+ * Create new trip
+ */
+export const createTrip = async (req: Request, res: Response) => {
+  const client = await pool.connect();
+  try {
+    const {
+      sales_order_id,
+      customer_id,
+      vehicle_id,
+      driver_id,
+      route_id,
+      trip_date,
+      planned_start_time,
+      planned_end_time,
+      pickup_location,
+      pickup_contact_name,
+      pickup_contact_phone,
+      delivery_location,
+      delivery_contact_name,
+      delivery_contact_phone,
+      cargo_description,
+      cargo_weight_kg,
+      cargo_volume_m3,
+      number_of_items,
+      planned_distance_km,
+      trip_revenue = 0,
+      stops = [],
+      created_by
+    } = req.body;
+
+    await client.query('BEGIN');
+
+    // Generate trip number: TRIP-202511-0001
+    const yearMonth = new Date().toISOString().slice(0, 7).replace('-', '');
+    const countResult = await client.query(
+      `SELECT COUNT(*) FROM logistics.trips WHERE trip_number LIKE $1`,
+      [`TRIP-${yearMonth}-%`]
+    );
+    const nextNum = parseInt(countResult.rows[0].count) + 1;
+    const trip_number = `TRIP-${yearMonth}-${String(nextNum).padStart(6, '0')}`;
+
+    // Create trip
+    const tripResult = await client.query(
+      `INSERT INTO logistics.trips (
+        tenant_id, trip_number, sales_order_id, customer_id, vehicle_id, driver_id,
+        route_id, trip_date, planned_start_time, planned_end_time,
+        pickup_location, pickup_contact_name, pickup_contact_phone,
+        delivery_location, delivery_contact_name, delivery_contact_phone,
+        cargo_description, cargo_weight_kg, cargo_volume_m3, number_of_items,
+        planned_distance_km, trip_revenue, status, created_by
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, 'PLANNED', $23
+      ) RETURNING *`,
+      [
+        req.user?.tenantId || '00000000-0000-0000-0000-000000000000',
+        trip_number, sales_order_id, customer_id, vehicle_id, driver_id, route_id,
+        trip_date, planned_start_time, planned_end_time,
+        pickup_location, pickup_contact_name, pickup_contact_phone,
+        delivery_location, delivery_contact_name, delivery_contact_phone,
+        cargo_description, cargo_weight_kg, cargo_volume_m3, number_of_items,
+        planned_distance_km, trip_revenue,
+        created_by || req.user?.id || '00000000-0000-0000-0000-000000000000'
+      ]
+    );
+
+    const trip_id = tripResult.rows[0].trip_id;
+
+    // Create stops if provided
+    if (stops && stops.length > 0) {
+      for (let i = 0; i < stops.length; i++) {
+        const stop = stops[i];
+        await client.query(
+          `INSERT INTO logistics_trip_stops (
+            trip_id, stop_sequence, stop_type, location_name, location_address,
+            contact_name, contact_phone, planned_arrival_time, items_description,
+            items_weight_kg, items_count, status
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'PENDING')`,
+          [
+            trip_id, i + 1, stop.stop_type, stop.location_name, stop.location_address,
+            stop.contact_name, stop.contact_phone, stop.planned_arrival_time,
+            stop.items_description, stop.items_weight_kg, stop.items_count
+          ]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+    res.status(201).json({ trip: tripResult.rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error creating trip:', error);
+    res.status(500).json({ error: 'Failed to create trip' });
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * PUT /api/logistics/trips/:id
+ * Update trip
+ */
+export const updateTrip = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const fields = req.body;
+    
+    const allowedFields = [
+      'status', 'actual_start_time', 'actual_end_time', 'actual_distance_km',
+      'trip_cost', 'pod_received', 'pod_signature_path', 'pod_photo_path',
+      'pod_notes', 'pod_timestamp'
+    ];
+
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramCount = 1;
+
+    Object.keys(fields).forEach(key => {
+      if (allowedFields.includes(key)) {
+        updates.push(`${key} = $${paramCount}`);
+        values.push(fields[key]);
+        paramCount++;
+      }
+    });
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update' });
+    }
+
+    values.push(id);
+    const query = `UPDATE logistics.trips SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE trip_id = $${paramCount} RETURNING *`;
+
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Trip not found' });
+    }
+
+    res.json({ trip: result.rows[0] });
+  } catch (error) {
+    console.error('Error updating trip:', error);
+    res.status(500).json({ error: 'Failed to update trip' });
+  }
+};
+
+/**
+ * POST /api/logistics/trips/:id/start
+ * Start trip (driver action)
+ */
+export const startTrip = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { odometer_reading } = req.body;
+
+    const result = await pool.query(
+      `UPDATE logistics.trips 
+       SET status = 'IN_TRANSIT', 
+           actual_start_time = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE trip_id = $1 AND status IN ('PLANNED', 'ASSIGNED')
+       RETURNING *`,
+      [id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Trip not found or cannot be started' });
+    }
+
+    res.json({ trip: result.rows[0], message: 'Trip started successfully' });
+  } catch (error) {
+    console.error('Error starting trip:', error);
+    res.status(500).json({ error: 'Failed to start trip' });
+  }
+};
+
+/**
+ * POST /api/logistics/trips/:id/complete
+ * Complete trip with POD
+ */
+export const completeTrip = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const {
+      actual_distance_km,
+      pod_signature_path,
+      pod_photo_path,
+      pod_notes
+    } = req.body;
+
+    const result = await pool.query(
+      `UPDATE logistics.trips 
+       SET status = 'DELIVERED',
+           actual_end_time = CURRENT_TIMESTAMP,
+           actual_distance_km = $1,
+           pod_received = true,
+           pod_signature_path = $2,
+           pod_photo_path = $3,
+           pod_notes = $4,
+           pod_timestamp = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE trip_id = $5 AND status = 'IN_TRANSIT'
+       RETURNING *`,
+      [actual_distance_km, pod_signature_path, pod_photo_path, pod_notes, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Trip not found or not in transit' });
+    }
+
+    res.json({ trip: result.rows[0], message: 'Trip completed successfully' });
+  } catch (error) {
+    console.error('Error completing trip:', error);
+    res.status(500).json({ error: 'Failed to complete trip' });
+  }
+};
+
+// ============================================================================
+// 4. FUEL MANAGEMENT
+// ============================================================================
+
+/**
+ * GET /api/logistics/fuel
+ * Get fuel transactions
+ */
+export const getFuelTransactions = async (req: Request, res: Response) => {
+  try {
+    const { 
+      page = '1', 
+      limit = '50', 
+      vehicle_id,
+      driver_id,
+      date_from,
+      date_to,
+      reconciled
+    } = req.query;
+
+    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+
+    let query = `
+      SELECT f.*,
+        v.vehicle_registration, v.vehicle_registration,
+        d.first_name || ' ' || d.last_name as driver_name
+      FROM logistics.fuel_transactions f
+      LEFT JOIN logistics.vehicles v ON f.vehicle_id = v.vehicle_id
+      LEFT JOIN logistics.drivers d ON f.driver_id = d.driver_id
+      WHERE 1=1
+    `;
+    const values: any[] = [];
+    let paramCount = 1;
+
+    if (vehicle_id) {
+      query += ` AND f.vehicle_id = $${paramCount}`;
+      values.push(vehicle_id);
+      paramCount++;
+    }
+
+    if (driver_id) {
+      query += ` AND f.driver_id = $${paramCount}`;
+      values.push(driver_id);
+      paramCount++;
+    }
+
+    if (date_from) {
+      query += ` AND f.transaction_date >= $${paramCount}`;
+      values.push(date_from);
+      paramCount++;
+    }
+
+    if (date_to) {
+      query += ` AND f.transaction_date <= $${paramCount}`;
+      values.push(date_to);
+      paramCount++;
+    }
+
+    if (reconciled !== undefined) {
+      query += ` AND f.reconciled = $${paramCount}`;
+      values.push(reconciled === 'true');
+      paramCount++;
+    }
+
+    const countQuery = query.replace(/SELECT.*FROM/, 'SELECT COUNT(*) FROM').replace(/LEFT JOIN.*driver_name/, '');
+    const countResult = await pool.query(countQuery, values);
+    const total = parseInt(countResult.rows[0].count);
+
+    query += ` ORDER BY f.transaction_date DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    values.push(parseInt(limit as string), offset);
+
+    const result = await pool.query(query, values);
+
+    res.json({
+      fuel_transactions: result.rows,
+      total,
+      page: parseInt(page as string),
+      totalPages: Math.ceil(total / parseInt(limit as string))
+    });
+  } catch (error) {
+    console.error('Error fetching fuel transactions:', error);
+    res.status(500).json({ error: 'Failed to fetch fuel transactions' });
+  }
+};
+
+/**
+ * POST /api/logistics/fuel
+ * Create fuel transaction
+ */
+export const createFuelTransaction = async (req: Request, res: Response) => {
+  try {
+    const {
+      vehicle_id,
+      driver_id,
+      trip_id,
+      transaction_date = new Date(),
+      transaction_number,
+      fuel_station,
+      location,
+      fuel_type,
+      litres,
+      price_per_litre,
+      odometer_reading,
+      payment_method,
+      fuel_card_number,
+      created_by
+    } = req.body;
+
+    const total_amount = litres * price_per_litre;
+
+    const result = await pool.query(
+      `INSERT INTO logistics.fuel_transactions (
+        tenant_id, vehicle_id, driver_id, trip_id, transaction_date,
+        transaction_number, fuel_station, location, fuel_type, litres,
+        price_per_litre, total_amount, odometer_reading, payment_method,
+        fuel_card_number, created_by
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+      ) RETURNING *`,
+      [
+        req.user?.tenantId || '00000000-0000-0000-0000-000000000000',
+        vehicle_id, driver_id, trip_id, transaction_date, transaction_number,
+        fuel_station, location, fuel_type, litres, price_per_litre, total_amount,
+        odometer_reading, payment_method, fuel_card_number,
+        created_by || req.user?.id || '00000000-0000-0000-0000-000000000000'
+      ]
+    );
+
+    res.status(201).json({ fuel_transaction: result.rows[0] });
+  } catch (error) {
+    console.error('Error creating fuel transaction:', error);
+    res.status(500).json({ error: 'Failed to create fuel transaction' });
+  }
+};
+
+/**
+ * POST /api/logistics/fuel/:id/reconcile
+ * Reconcile fuel transaction
+ */
+export const reconcileFuelTransaction = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { variance_litres = 0, variance_amount = 0 } = req.body;
+
+    const result = await pool.query(
+      `UPDATE logistics_fuel_transactions
+       SET reconciled = true,
+           variance_litres = $1,
+           variance_amount = $2
+       WHERE transaction_id = $3
+       RETURNING *`,
+      [variance_litres, variance_amount, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Fuel transaction not found' });
+    }
+
+    res.json({ fuel_transaction: result.rows[0], message: 'Transaction reconciled' });
+  } catch (error) {
+    console.error('Error reconciling fuel transaction:', error);
+    res.status(500).json({ error: 'Failed to reconcile transaction' });
+  }
+};
+
+// ============================================================================
+// 5. LOAD PLANNING
+// ============================================================================
+
+/**
+ * GET /api/logistics/loads
+ * Get all loads
+ */
+export const getLoads = async (req: Request, res: Response) => {
+  try {
+    const { page = '1', limit = '50', status, date_from, date_to } = req.query;
+    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+
+    let query = `
+      SELECT l.*,
+        v.vehicle_registration, v.vehicle_registration,
+        d.first_name || ' ' || d.last_name as driver_name
+      FROM logistics.loads l
+      LEFT JOIN logistics.vehicles v ON l.vehicle_id = v.vehicle_id
+      LEFT JOIN logistics.drivers d ON l.driver_id = d.driver_id
+      WHERE 1=1
+    `;
+    const values: any[] = [];
+    let paramCount = 1;
+
+    if (status) {
+      query += ` AND l.status = $${paramCount}`;
+      values.push(status);
+      paramCount++;
+    }
+
+    if (date_from) {
+      query += ` AND l.load_date >= $${paramCount}`;
+      values.push(date_from);
+      paramCount++;
+    }
+
+    if (date_to) {
+      query += ` AND l.load_date <= $${paramCount}`;
+      values.push(date_to);
+      paramCount++;
+    }
+
+    const countQuery = query.replace(/SELECT.*FROM/, 'SELECT COUNT(*) FROM').replace(/LEFT JOIN.*driver_name/, '');
+    const countResult = await pool.query(countQuery, values);
+    const total = parseInt(countResult.rows[0].count);
+
+    query += ` ORDER BY l.load_date DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    values.push(parseInt(limit as string), offset);
+
+    const result = await pool.query(query, values);
+
+    res.json({
+      loads: result.rows,
+      total,
+      page: parseInt(page as string),
+      totalPages: Math.ceil(total / parseInt(limit as string))
+    });
+  } catch (error) {
+    console.error('Error fetching loads:', error);
+    res.status(500).json({ error: 'Failed to fetch loads' });
+  }
+};
+
+/**
+ * GET /api/logistics/loads/:id
+ * Get single load with items
+ */
+export const getLoadById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const loadResult = await pool.query(
+      `SELECT l.*,
+        v.vehicle_registration, v.vehicle_registration,
+        d.first_name || ' ' || d.last_name as driver_name
+      FROM logistics.loads l
+      LEFT JOIN logistics.vehicles v ON l.vehicle_id = v.vehicle_id
+      LEFT JOIN logistics.drivers d ON l.driver_id = d.driver_id
+      WHERE l.load_id = $1`,
+      [id]
+    );
+
+    if (loadResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Load not found' });
+    }
+
+    const itemsResult = await pool.query(
+      `SELECT * FROM logistics_load_items 
+       WHERE load_id = $1 ORDER BY delivery_sequence ASC`,
+      [id]
+    );
+
+    res.json({
+      load: {
+        ...loadResult.rows[0],
+        items: itemsResult.rows
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching load:', error);
+    res.status(500).json({ error: 'Failed to fetch load' });
+  }
+};
+
+/**
+ * POST /api/logistics/loads
+ * Create new load
+ */
+export const createLoad = async (req: Request, res: Response) => {
+  const client = await pool.connect();
+  try {
+    const {
+      load_date,
+      vehicle_id,
+      driver_id,
+      items = [],
+      created_by
+    } = req.body;
+
+    await client.query('BEGIN');
+
+    // Generate load number
+    const yearMonth = new Date().toISOString().slice(0, 7).replace('-', '');
+    const countResult = await client.query(
+      `SELECT COUNT(*) FROM logistics.loads WHERE load_number LIKE $1`,
+      [`LOAD-${yearMonth}-%`]
+    );
+    const nextNum = parseInt(countResult.rows[0].count) + 1;
+    const load_number = `LOAD-${yearMonth}-${String(nextNum).padStart(4, '0')}`;
+
+    // Calculate totals
+    let total_weight_kg = 0;
+    let total_volume_m3 = 0;
+    items.forEach((item: any) => {
+      total_weight_kg += parseFloat(item.weight_kg || 0);
+      total_volume_m3 += parseFloat(item.volume_m3 || 0);
+    });
+
+    const loadResult = await client.query(
+      `INSERT INTO logistics.loads (
+        tenant_id, load_number, load_date, vehicle_id, driver_id,
+        total_weight_kg, total_volume_m3, number_of_orders,
+        status, created_by
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, 'DRAFT', $9
+      ) RETURNING *`,
+      [
+        req.user?.tenantId || '00000000-0000-0000-0000-000000000000',
+        load_number, load_date, vehicle_id, driver_id,
+        total_weight_kg, total_volume_m3, items.length,
+        created_by || req.user?.id || '00000000-0000-0000-0000-000000000000'
+      ]
+    );
+
+    const load_id = loadResult.rows[0].load_id;
+
+    // Create load items
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      await client.query(
+        `INSERT INTO logistics_load_items (
+          load_id, sales_order_id, customer_id, delivery_address,
+          delivery_contact, delivery_phone, item_description,
+          weight_kg, volume_m3, quantity, delivery_sequence, status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'PENDING')`,
+        [
+          load_id, item.sales_order_id, item.customer_id, item.delivery_address,
+          item.delivery_contact, item.delivery_phone, item.item_description,
+          item.weight_kg, item.volume_m3, item.quantity, i + 1
+        ]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.status(201).json({ load: loadResult.rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error creating load:', error);
+    res.status(500).json({ error: 'Failed to create load' });
+  } finally {
+    client.release();
+  }
+};
+
+/**
+ * PUT /api/logistics/loads/:id/status
+ * Update load status
+ */
+export const updateLoadStatus = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const result = await pool.query(
+      `UPDATE logistics.loads
+       SET status = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE load_id = $2
+       RETURNING *`,
+      [status, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Load not found' });
+    }
+
+    res.json({ load: result.rows[0] });
+  } catch (error) {
+    console.error('Error updating load status:', error);
+    res.status(500).json({ error: 'Failed to update load status' });
+  }
+};
+
+// ============================================================================
+// 6. MAINTENANCE
+// ============================================================================
+
+/**
+ * GET /api/logistics/maintenance
+ * Get maintenance records
+ */
+export const getMaintenanceRecords = async (req: Request, res: Response) => {
+  try {
+    const { vehicle_id, date_from, date_to } = req.query;
+
+    let query = `
+      SELECT m.*,
+        v.vehicle_registration, v.vehicle_registration
+      FROM logistics_vehicle_maintenance m
+      LEFT JOIN logistics.vehicles v ON m.vehicle_id = v.vehicle_id
+      WHERE 1=1
+    `;
+    const values: any[] = [];
+    let paramCount = 1;
+
+    if (vehicle_id) {
+      query += ` AND m.vehicle_id = $${paramCount}`;
+      values.push(vehicle_id);
+      paramCount++;
+    }
+
+    if (date_from) {
+      query += ` AND m.maintenance_date >= $${paramCount}`;
+      values.push(date_from);
+      paramCount++;
+    }
+
+    if (date_to) {
+      query += ` AND m.maintenance_date <= $${paramCount}`;
+      values.push(date_to);
+      paramCount++;
+    }
+
+    query += ` ORDER BY m.maintenance_date DESC`;
+
+    const result = await pool.query(query, values);
+
+    res.json({ maintenance_records: result.rows });
+  } catch (error) {
+    console.error('Error fetching maintenance records:', error);
+    res.status(500).json({ error: 'Failed to fetch maintenance records' });
+  }
+};
+
+/**
+ * POST /api/logistics/maintenance
+ * Create maintenance record
+ */
+export const createMaintenanceRecord = async (req: Request, res: Response) => {
+  try {
+    const {
+      vehicle_id,
+      maintenance_type,
+      maintenance_date,
+      odometer_reading,
+      service_provider,
+      invoice_number,
+      cost,
+      description,
+      parts_replaced,
+      labor_hours,
+      next_service_due_date,
+      next_service_due_km,
+      created_by
+    } = req.body;
+
+    const result = await pool.query(
+      `INSERT INTO logistics_vehicle_maintenance (
+        tenant_id, vehicle_id, maintenance_type, maintenance_date,
+        odometer_reading, service_provider, invoice_number, cost,
+        description, parts_replaced, labor_hours, next_service_due_date,
+        next_service_due_km, status, created_by
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'COMPLETED', $14
+      ) RETURNING *`,
+      [
+        req.user?.tenantId || '00000000-0000-0000-0000-000000000000',
+        vehicle_id, maintenance_type, maintenance_date, odometer_reading,
+        service_provider, invoice_number, cost, description, parts_replaced,
+        labor_hours, next_service_due_date, next_service_due_km,
+        created_by || req.user?.id || '00000000-0000-0000-0000-000000000000'
+      ]
+    );
+
+    // Update vehicle's last service info
+    await pool.query(
+      `UPDATE logistics.vehicles
+       SET last_service_date = $1,
+           last_service_odometer = $2,
+           next_service_date = $3,
+           next_service_odometer = $4
+       WHERE vehicle_id = $5`,
+      [maintenance_date, odometer_reading, next_service_due_date, next_service_due_km, vehicle_id]
+    );
+
+    res.status(201).json({ maintenance_record: result.rows[0] });
+  } catch (error) {
+    console.error('Error creating maintenance record:', error);
+    res.status(500).json({ error: 'Failed to create maintenance record' });
+  }
+};
+
+// ============================================================================
+// 7. DASHBOARD & ANALYTICS
+// ============================================================================
+
+/**
+ * GET /api/logistics/dashboard
+ * Get logistics dashboard stats
+ */
+export const getDashboardStats = async (req: Request, res: Response) => {
+  try {
+    // Active vehicles
+    const vehiclesResult = await pool.query(
+      `SELECT status, COUNT(*) as count
+       FROM logistics.vehicles
+       WHERE status = 'ACTIVE'
+       GROUP BY status`
+    );
+
+    // Active drivers
+    const driversResult = await pool.query(
+      `SELECT COUNT(*) as total, status
+       FROM logistics.drivers
+       WHERE status = 'ACTIVE'
+       GROUP BY status`
+    );
+
+    // Today's trips
+    const tripsResult = await pool.query(
+      `SELECT status, COUNT(*) as count
+       FROM logistics.trips
+       WHERE trip_date = CURRENT_DATE
+       GROUP BY status`
+    );
+
+    // This month fuel costs
+    const fuelResult = await pool.query(
+      `SELECT SUM(total_amount) as total_fuel_cost,
+              SUM(litres) as total_litres
+       FROM logistics.fuel_transactions
+       WHERE EXTRACT(MONTH FROM transaction_date) = EXTRACT(MONTH FROM CURRENT_DATE)
+         AND EXTRACT(YEAR FROM transaction_date) = EXTRACT(YEAR FROM CURRENT_DATE)`
+    );
+
+    // Pending loads
+    const loadsResult = await pool.query(
+      `SELECT COUNT(*) as pending_loads
+       FROM logistics.loads
+       WHERE status IN ('DRAFT', 'PLANNED')`
+    );
+
+    res.json({
+      vehicles: vehiclesResult.rows,
+      drivers: driversResult.rows,
+      trips_today: tripsResult.rows,
+      fuel_this_month: fuelResult.rows[0] || { total_fuel_cost: 0, total_litres: 0 },
+      pending_loads: loadsResult.rows[0]?.pending_loads || 0
+    });
+  } catch (error) {
+    console.error('Error fetching dashboard stats:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+  }
+};
