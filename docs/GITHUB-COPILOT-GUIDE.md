@@ -75,7 +75,7 @@ Check your subscription at: https://github.com/settings/copilot
    - "GitHub Copilot Chat" - for chat interface
 3. Sign in with your GitHub account
 4. Clone the repository and open it
-5. Access Chat via the Activity Bar or `Ctrl+Shift+I`
+5. Access Chat via the Activity Bar or `Ctrl+Alt+I` (or `Cmd+Option+I` on Mac)
 
 ### Option 3: VS Code for Web (vscode.dev)
 
