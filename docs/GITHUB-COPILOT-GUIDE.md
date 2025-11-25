@@ -22,7 +22,7 @@ When viewing a repository on GitHub.com:
 
 Once in the web editor:
 
-1. **Use Keyboard Shortcut**: Press `Ctrl+Shift+I` (Windows/Linux) or `Cmd+Shift+I` (Mac)
+1. **Use Keyboard Shortcut**: Press `Ctrl+Alt+I` (Windows/Linux) or `Cmd+Option+I` (Mac)
 2. **Use Command Palette**:
    - Press `F1` or `Ctrl+Shift+P` / `Cmd+Shift+P`
    - Type "GitHub Copilot Chat"
@@ -65,7 +65,7 @@ Check your subscription at: https://github.com/settings/copilot
 1. Navigate to the repository on GitHub.com
 2. Press `.` to open in github.dev
 3. Look for Copilot Chat icon in the left Activity Bar
-4. If not visible, use `Ctrl+Shift+I` to open Chat
+4. If not visible, use `Ctrl+Alt+I` (or `Cmd+Option+I` on Mac) to open Chat
 
 ### Option 2: VS Code Desktop (Recommended for Full Features)
 
@@ -138,7 +138,7 @@ Check your subscription at: https://github.com/settings/copilot
 **Solution**:
 1. Right-click on the Activity Bar
 2. Ensure "GitHub Copilot Chat" is checked
-3. Or use `Ctrl+Shift+I` keyboard shortcut
+3. Or use `Ctrl+Alt+I` (or `Cmd+Option+I` on Mac) keyboard shortcut
 
 ### Issue: "Copilot is not available for this repository"
 
@@ -151,7 +151,7 @@ Check your subscription at: https://github.com/settings/copilot
 
 ## Alternative: Copilot in GitHub.com (Copilot Chat in Browser)
 
-If you have GitHub Copilot Enterprise or certain Business plans:
+If you have GitHub Copilot Enterprise (this feature requires Enterprise subscription):
 
 1. Go to https://github.com/copilot
 2. Use Copilot Chat directly on GitHub.com
@@ -204,4 +204,4 @@ Once you have Copilot Chat working, try these commands:
 
 ---
 
-**Last Updated**: November 2024
+**Last Updated**: 2024

@@ -281,7 +281,7 @@ GitHub Copilot can help you develop and understand this ERP system faster.
 
 ### Quick Start with Web Editor
 1. Press `.` on this repository page to open in github.dev
-2. Press `Ctrl+Shift+I` to open Copilot Chat
+2. Press `Ctrl+Alt+I` (or `Cmd+Option+I` on Mac) to open Copilot Chat
 3. Ask questions like `@workspace How is this ERP structured?`
 
 ### Can't See Copilot Chat?
