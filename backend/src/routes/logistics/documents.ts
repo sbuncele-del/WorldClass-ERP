@@ -4,10 +4,20 @@ import { TextractClient, DetectDocumentTextCommand } from '@aws-sdk/client-textr
 
 const router = express.Router();
 
-// Initialize AWS Textract client
-const textractClient = new TextractClient({ 
-  region: process.env.AWS_REGION || 'eu-north-1'
-});
+// Initialize AWS Textract client with better error handling
+let textractClient: TextractClient;
+try {
+  textractClient = new TextractClient({ 
+    region: process.env.AWS_REGION || 'eu-north-1',
+    credentials: process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY ? {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+    } : undefined
+  });
+  console.log('✅ AWS Textract client initialized successfully');
+} catch (error) {
+  console.error('❌ Failed to initialize AWS Textract client:', error);
+}
 
 // Configure multer for file uploads
 const storage = multer.memoryStorage();
@@ -33,19 +43,45 @@ router.post('/extract', upload.single('file'), async (req, res) => {
     const file = req.file;
     
     if (!file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      return res.status(400).json({ 
+        success: false,
+        error: 'No file uploaded' 
+      });
     }
 
-    console.log(`Processing document: ${file.originalname} (${file.size} bytes)`);
+    console.log(`📄 Processing document: ${file.originalname} (${file.size} bytes, ${file.mimetype})`);
+
+    // Check if Textract client is initialized
+    if (!textractClient) {
+      console.error('❌ Textract client not initialized. Check AWS credentials.');
+      return res.status(500).json({
+        success: false,
+        error: 'Document processing service not available',
+        details: 'AWS Textract client not initialized. Check server configuration.'
+      });
+    }
 
     // Use AWS Textract to extract text
+    console.log('🔍 Calling AWS Textract...');
     const command = new DetectDocumentTextCommand({
       Document: {
         Bytes: file.buffer
       }
     });
 
-    const textractResponse = await textractClient.send(command);
+    let textractResponse;
+    try {
+      textractResponse = await textractClient.send(command);
+      console.log(`✅ Textract successful. Blocks found: ${textractResponse.Blocks?.length || 0}`);
+    } catch (textractError: any) {
+      console.error('❌ Textract API error:', textractError);
+      return res.status(500).json({
+        success: false,
+        error: 'AWS Textract processing failed',
+        details: textractError.message || 'Unknown Textract error',
+        hint: 'Check AWS credentials and permissions'
+      });
+    }
     
     // Extract all text from Textract response
     const extractedText = textractResponse.Blocks
@@ -53,10 +89,21 @@ router.post('/extract', upload.single('file'), async (req, res) => {
       .map(block => block.Text)
       .join('\n') || '';
 
-    console.log('Extracted text:', extractedText);
+    console.log(`📝 Extracted text length: ${extractedText.length} characters`);
+    
+    if (extractedText.length === 0) {
+      console.warn('⚠️ No text extracted from document');
+      return res.status(400).json({
+        success: false,
+        error: 'No text found in document',
+        details: 'The document appears to be empty or text could not be detected. Please ensure the image is clear and contains readable text.'
+      });
+    }
 
     // Parse the extracted text into structured data
+    console.log('🔄 Parsing extracted text...');
     const parsedData = parseLoadConfirmation(extractedText);
+    console.log(`✅ Parsed data confidence: ${parsedData.confidence_score}%`);
 
     res.json({
       success: true,
@@ -68,11 +115,12 @@ router.post('/extract', upload.single('file'), async (req, res) => {
       processedAt: new Date().toISOString()
     });
 
-  } catch (error) {
-    console.error('Document processing error:', error);
+  } catch (error: any) {
+    console.error('❌ Document processing error:', error);
     res.status(500).json({ 
+      success: false,
       error: 'Failed to process document',
-      details: error instanceof Error ? error.message : 'Unknown error'
+      details: error.message || 'Unknown error'
     });
   }
 });

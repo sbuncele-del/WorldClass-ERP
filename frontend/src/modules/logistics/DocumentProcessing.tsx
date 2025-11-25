@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle, Eye, Send, Download, User, Building, Package, DollarSign, Calendar, MapPin, Truck } from 'lucide-react';
 import SARSInvoice from './SARSInvoice';
+import { documentsAPI } from '../../services/logistics.api';
 import '../../styles/erp-ui.css';
 
 interface ExtractedData {
@@ -108,7 +109,7 @@ const DocumentProcessing: React.FC = () => {
     
     const steps: ProcessingStep[] = [
       { id: '1', label: 'Uploading document...', status: 'processing' },
-      { id: '2', label: 'OCR text extraction...', status: 'pending' },
+      { id: '2', label: 'OCR text extraction with AWS Textract...', status: 'pending' },
       { id: '3', label: 'Identifying document type...', status: 'pending' },
       { id: '4', label: 'Extracting customer details...', status: 'pending' },
       { id: '5', label: 'Extracting load information...', status: 'pending' },
@@ -120,34 +121,54 @@ const DocumentProcessing: React.FC = () => {
     setProcessingSteps(steps);
 
     try {
-      // Step 1: Upload complete
+      // Step 1: Upload document and extract text with AWS Textract
+      await new Promise(resolve => setTimeout(resolve, 300));
       await updateStep(0, 'complete');
       await updateStep(1, 'processing');
 
-      // Step 2: Use backend API for OCR (AWS Textract)
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('http://51.20.92.38/api/logistics/documents/extract', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to extract document data');
+      // Step 2: Call backend API for OCR (AWS Textract)
+      let result;
+      try {
+        result = await documentsAPI.extractDocument(file);
+        console.log('Document extraction result:', result);
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Document extraction failed');
+        }
+      } catch (error: any) {
+        console.error('Document extraction error:', error);
+        await updateStep(1, 'error', error.message || 'Failed to extract text from document');
+        setProcessing(false);
+        alert(
+          '❌ Failed to process document.\n\n' +
+          'Possible reasons:\n' +
+          '• Backend API is not running\n' +
+          '• AWS Textract credentials not configured\n' +
+          '• Image quality is too poor\n' +
+          '• File format not supported\n\n' +
+          `Error: ${error.message}`
+        );
+        return;
       }
 
-      const result = await response.json();
       const extractedText = result.extractedText || '';
+      const backendParsedData = result.parsedData || null;
 
-      console.log('Extracted text:', extractedText);
+      console.log('Extracted text length:', extractedText.length);
+      console.log('Backend parsed data:', backendParsedData);
+
+      if (!extractedText || extractedText.trim().length === 0) {
+        throw new Error('No text could be extracted from the document. Please ensure the image is clear and readable.');
+      }
+
       await updateStep(1, 'complete');
       await updateStep(2, 'processing');
       
-      // Step 3: Parse extracted text
+      // Step 3: Parse extracted text (use backend data if available, otherwise parse locally)
       await new Promise(resolve => setTimeout(resolve, 500));
-      const parsedData = parseDocumentText(extractedText);
+      const parsedData = backendParsedData || parseDocumentText(extractedText);
+      parsedData.raw_text = extractedText;
+      
       await updateStep(2, 'complete');
       await updateStep(3, 'processing');
 
@@ -200,22 +221,27 @@ const DocumentProcessing: React.FC = () => {
       setExtractedData(parsedData);
       setProcessing(false);
 
-    } catch (error) {
-      console.error('OCR processing error:', error);
-      setProcessingSteps(prev => prev.map(step => 
-        step.status === 'processing' ? { ...step, status: 'error', message: 'Failed to extract text' } : step
-      ));
-      alert('❌ Failed to process document. The image may be too blurry or text not readable. Please try a clearer image.');
+    } catch (error: any) {
+      console.error('Document processing error:', error);
+      const currentStepIndex = processingSteps.findIndex(s => s.status === 'processing');
+      if (currentStepIndex >= 0) {
+        await updateStep(currentStepIndex, 'error', error.message || 'Processing failed');
+      }
       setProcessing(false);
     }
   };
 
   // Helper function to update processing steps
-  const updateStep = async (index: number, status: 'complete' | 'processing' | 'error') => {
+  const updateStep = async (
+    index: number, 
+    status: 'complete' | 'processing' | 'error',
+    message?: string
+  ) => {
     setProcessingSteps(prev => prev.map((step, idx) => {
-      if (idx === index) return { ...step, status };
+      if (idx === index) return { ...step, status, message };
       return step;
     }));
+    await new Promise(resolve => setTimeout(resolve, 300));
   };
 
   // Helper function to parse OCR text into structured data

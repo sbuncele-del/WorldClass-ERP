@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect } from 'react';
+import { ConfigProvider } from 'antd';
+import { antdTheme } from './theme/antd.theme';
 import './App.css';
 
 // Multi-Tenant Context Providers
@@ -96,10 +98,11 @@ function App() {
   }, []);
 
   return (
-    <UserProvider>
-      <ClientProvider>
-        <CurrencyProvider>
-          <Router>
+    <ConfigProvider theme={antdTheme}>
+      <UserProvider>
+        <ClientProvider>
+          <CurrencyProvider>
+            <Router>
             <Routes>
               {/* Public Routes - No Layout */}
               <Route path="/login" element={<Login />} />
@@ -151,11 +154,10 @@ function App() {
                 </ProtectedRoute>
               } />
             </Routes>
-          </Router>
-        </CurrencyProvider>
-      </ClientProvider>
-    </UserProvider>
+            </Router>
+          </CurrencyProvider>
+        </ClientProvider>
+      </UserProvider>
+    </ConfigProvider>
   );
-}
-
-export default App;
+}export default App;
