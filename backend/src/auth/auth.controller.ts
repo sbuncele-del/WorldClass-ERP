@@ -3,6 +3,35 @@ import { TenantRequest } from '../types';
 import AuthService from './auth.service';
 import WelcomeEmailService from '../services/welcome-email.service';
 import fs from 'fs';
+import jwt from 'jsonwebtoken';
+
+// Demo user for testing without database
+const DEMO_USERS = [
+  {
+    email: 'admin@demo.com',
+    password: 'admin123',
+    id: 'demo-user-001',
+    firstName: 'Demo',
+    lastName: 'Admin',
+    role: 'admin',
+    tenantId: 'demo-tenant-001',
+    tenantName: 'Demo Company',
+    tenantSlug: 'demo'
+  },
+  {
+    email: 'user@demo.com',
+    password: 'user123',
+    id: 'demo-user-002',
+    firstName: 'Demo',
+    lastName: 'User',
+    role: 'user',
+    tenantId: 'demo-tenant-001',
+    tenantName: 'Demo Company',
+    tenantSlug: 'demo'
+  }
+];
+
+const JWT_SECRET = process.env.JWT_SECRET || 'worldclass-erp-demo-secret-key';
 
 export class AuthController {
   /**
@@ -116,6 +145,63 @@ Error stack: ${error?.stack}
         return;
       }
 
+      // DEMO MODE: Check if using demo credentials (works without database)
+      const demoUser = DEMO_USERS.find(u => u.email === email && u.password === password);
+      if (demoUser) {
+        console.log('✅ Demo login successful for:', email);
+        
+        // Generate JWT tokens for demo user
+        const accessToken = jwt.sign(
+          {
+            userId: demoUser.id,
+            tenantId: demoUser.tenantId,
+            email: demoUser.email,
+            role: demoUser.role,
+            type: 'access'
+          },
+          JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+
+        const refreshToken = jwt.sign(
+          {
+            userId: demoUser.id,
+            tenantId: demoUser.tenantId,
+            type: 'refresh'
+          },
+          JWT_SECRET,
+          { expiresIn: '7d' }
+        );
+
+        res.status(200).json({
+          success: true,
+          message: 'Login successful (Demo Mode)',
+          data: {
+            tokens: {
+              accessToken,
+              refreshToken,
+              expiresIn: 86400 // 24 hours
+            },
+            tenant: {
+              id: demoUser.tenantId,
+              slug: demoUser.tenantSlug,
+              name: demoUser.tenantName,
+              status: 'active',
+              trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            },
+            user: {
+              id: demoUser.id,
+              email: demoUser.email,
+              firstName: demoUser.firstName,
+              lastName: demoUser.lastName,
+              role: demoUser.role
+            }
+          }
+        });
+        return;
+      }
+
+      // Regular login with database
       // Get device info from request
       const deviceInfo = {
         ip_address: req.ip || req.headers['x-forwarded-for'] || 'unknown',
@@ -272,6 +358,39 @@ Error stack: ${error?.stack}
    */
   static async me(req: TenantRequest, res: Response): Promise<void> {
     try {
+      // Check for demo user from JWT
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET) as any;
+          
+          // Check if it's a demo user
+          const demoUser = DEMO_USERS.find(u => u.id === decoded.userId);
+          if (demoUser) {
+            res.status(200).json({
+              success: true,
+              data: {
+                id: demoUser.id,
+                email: demoUser.email,
+                first_name: demoUser.firstName,
+                last_name: demoUser.lastName,
+                role: demoUser.role,
+                status: 'active',
+                tenant_id: demoUser.tenantId,
+                tenant_name: demoUser.tenantName,
+                tenant_slug: demoUser.tenantSlug,
+                subscription_plan: 'enterprise',
+                trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+              }
+            });
+            return;
+          }
+        } catch (e) {
+          // Token verification failed, continue to regular flow
+        }
+      }
+
       // User and tenant are already attached by tenantMiddleware
       if (!req.user || !req.tenant) {
         res.status(401).json({ error: 'Not authenticated' });

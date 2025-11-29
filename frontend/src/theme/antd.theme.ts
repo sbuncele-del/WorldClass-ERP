@@ -161,4 +161,6 @@ export const customColors = {
   },
 };
 
+// Export as both names for compatibility
+export const antdTheme = erpTheme;
 export default erpTheme;

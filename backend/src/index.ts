@@ -83,7 +83,31 @@ app.set('trust proxy', 1);
 // Helmet disabled - CSP was blocking frontend API requests
 // Security headers are handled by securityHeaders middleware instead
 // app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors());
+
+// CORS configuration for Codespaces and local development
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    // Allow all GitHub Codespaces URLs
+    if (origin.includes('.app.github.dev')) return callback(null, true);
+    
+    // Allow localhost for local development
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return callback(null, true);
+    
+    // Allow all origins in development
+    if (process.env.NODE_ENV !== 'production') return callback(null, true);
+    
+    callback(null, true); // Allow all for now
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400 // 24 hours
+};
+app.use(cors(corsOptions));
 app.use(compression());
 app.use(morgan('dev'));
 

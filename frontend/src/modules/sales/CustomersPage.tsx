@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { workspaceApi } from '../../services/api.service';
-import EnhancedDataTable, { TableColumn, TableAction } from '../../components/data/EnhancedDataTable';
+import EnhancedDataTable from '../../components/data/EnhancedDataTable';
+import type { TableColumn, TableAction } from '../../components/data/EnhancedDataTable';
 import { Eye, Edit, Mail, Phone, AlertCircle } from 'lucide-react';
 import '../../styles/erp-ui.css';
 
