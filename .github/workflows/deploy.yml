@@ -1,0 +1,187 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      deploy_backend:
+        description: 'Deploy Backend'
+        required: false
+        default: 'true'
+        type: boolean
+      deploy_frontend:
+        description: 'Deploy Frontend'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  AWS_REGION: eu-north-1
+  EC2_HOST: 51.20.92.38
+  NODE_VERSION: '20'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Backend
+        working-directory: ./backend
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        env:
+          VITE_API_URL: http://${{ env.EC2_HOST }}
+        run: |
+          npm ci
+          npm run build
+
+      - name: Upload Backend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist
+          path: backend/dist
+          retention-days: 1
+
+      - name: Upload Frontend Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          retention-days: 1
+
+  deploy-backend:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.inputs.deploy_backend == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Backend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-dist
+          path: backend/dist
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy Backend to EC2
+        env:
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          echo "$EC2_SSH_KEY" > ssh_key.pem
+          chmod 600 ssh_key.pem
+          
+          # Create deployment package
+          cd backend
+          tar -czf ../backend-deploy.tar.gz dist package.json package-lock.json
+          cd ..
+          
+          # Copy to EC2
+          scp -o StrictHostKeyChecking=no -i ssh_key.pem backend-deploy.tar.gz ec2-user@${{ env.EC2_HOST }}:/tmp/
+          
+          # Deploy on EC2
+          ssh -o StrictHostKeyChecking=no -i ssh_key.pem ec2-user@${{ env.EC2_HOST }} << 'EOF'
+            cd /var/www/backend || cd ~/backend
+            
+            # Backup current deployment
+            if [ -d "dist" ]; then
+              mv dist dist.backup.$(date +%Y%m%d_%H%M%S)
+            fi
+            
+            # Extract new deployment
+            tar -xzf /tmp/backend-deploy.tar.gz
+            
+            # Install production dependencies
+            npm ci --production
+            
+            # Restart application
+            pm2 restart worldclass-erp || pm2 start dist/index.js --name worldclass-erp
+            
+            # Health check
+            sleep 5
+            curl -f http://localhost:3000/health || exit 1
+            
+            echo "Backend deployment successful!"
+          EOF
+          
+          rm -f ssh_key.pem
+
+  deploy-frontend:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.inputs.deploy_frontend == 'true'
+    steps:
+      - name: Download Frontend Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy Frontend to S3
+        run: |
+          # Sync all files with caching
+          aws s3 sync frontend/dist/ s3://${{ secrets.S3_BUCKET_NAME }} \
+            --delete \
+            --cache-control "max-age=31536000,public" \
+            --exclude "index.html"
+          
+          # Upload index.html with no-cache for instant updates
+          aws s3 cp frontend/dist/index.html s3://${{ secrets.S3_BUCKET_NAME }}/index.html \
+            --cache-control "max-age=0,no-cache,no-store,must-revalidate" \
+            --content-type "text/html"
+          
+          echo "Frontend deployment successful!"
+
+      - name: Invalidate CloudFront (optional)
+        if: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID != '' }}
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+  notify:
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Results" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend: ${{ needs.deploy-backend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend: ${{ needs.deploy-frontend.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Endpoints" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend API: http://${{ env.EC2_HOST }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend: See S3 bucket URL or CloudFront distribution" >> $GITHUB_STEP_SUMMARY

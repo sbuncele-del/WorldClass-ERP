@@ -17,6 +17,24 @@ router.get('/workspace', logisticsWorkspaceController.getLogisticsWorkspace);
 router.use('/documents', documentsRouter);
 
 // ============================================================================
+// VEHICLES / FLEET
+// ============================================================================
+router.get('/vehicles', logisticsController.getVehicles);
+router.get('/vehicles/:id', logisticsController.getVehicleById);
+router.post('/vehicles', logisticsController.createVehicle);
+router.put('/vehicles/:id', logisticsController.updateVehicle);
+router.delete('/vehicles/:id', logisticsController.deleteVehicle);
+
+// ============================================================================
+// DRIVERS
+// ============================================================================
+router.get('/drivers', logisticsController.getDrivers);
+router.get('/drivers/:id', logisticsController.getDriverById);
+router.post('/drivers', logisticsController.createDriver);
+router.put('/drivers/:id', logisticsController.updateDriver);
+router.delete('/drivers/:id', logisticsController.deleteDriver);
+
+// ============================================================================
 // TRIPS API (Database-driven)
 // ============================================================================
 router.use('/trips', tripsRouter);
