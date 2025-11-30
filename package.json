@@ -15,10 +15,18 @@
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces"
   },
-  "keywords": ["erp", "enterprise", "management"],
+  "keywords": [
+    "erp",
+    "enterprise",
+    "management"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "pg": "^8.16.3"
   }
 }
