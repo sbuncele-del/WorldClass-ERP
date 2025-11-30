@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, FileText, CheckCircle, AlertCircle, Eye, Send, Download, User, Building, Package, DollarSign, Calendar, MapPin, Truck } from 'lucide-react';
 import SARSInvoice from './SARSInvoice';
+import { API_BASE_URL } from '../../services/api.service';
 import '../../styles/erp-ui.css';
 
 interface ExtractedData {
@@ -128,10 +129,13 @@ const DocumentProcessing: React.FC = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://51.20.92.38/api/logistics/documents/extract', {
+      const response = await fetch(`${API_BASE_URL}/api/logistics/documents/extract`, {
         method: 'POST',
         body: formData,
-        credentials: 'include'
+        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        }
       });
 
       if (!response.ok) {

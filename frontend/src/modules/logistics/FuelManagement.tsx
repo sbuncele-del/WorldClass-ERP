@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
+import { API_BASE_URL } from '../../services/api.service';
 import '../../styles/erp-ui.css';
 
 interface FuelTransaction {
@@ -107,9 +108,12 @@ const FuelManagement: React.FC = () => {
 
     try {
       // Create fuel transaction with journal entry
-      const response = await fetch('/api/logistics/fuel/transactions', {
+      const response = await fetch(`${API_BASE_URL}/api/logistics/fuel/transactions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+        },
         body: JSON.stringify({
           ...formData,
           // This will trigger automatic journal entry creation in backend:
