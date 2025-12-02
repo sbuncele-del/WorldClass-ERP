@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import {
   Table,
   Card,
@@ -16,7 +15,11 @@ import {
   Alert,
   Empty,
   Spin,
-  Badge
+  Form,
+  Select,
+  DatePicker,
+  message,
+  Modal
 } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -74,9 +77,13 @@ const DriverManagementEnterprise: React.FC = () => {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [filteredDrivers, setFilteredDrivers] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [licenseFilter, setLicenseFilter] = useState<string>('ALL');
+  const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm();
   const [stats, setStats] = useState<DriverStats>({
     total: 0,
     active: 0,
@@ -111,12 +118,14 @@ const DriverManagementEnterprise: React.FC = () => {
 
   const fetchDrivers = async () => {
     setLoading(true);
+    setError(null);
     try {
       const response = await driversAPI.getDrivers();
       setDrivers(response.drivers);
       calculateStats(response.drivers);
     } catch (error) {
       console.error('Error fetching drivers:', error);
+      setError('Unable to load driver data. Please try again.');
       setDrivers([]);
     } finally {
       setLoading(false);
@@ -158,13 +167,14 @@ const DriverManagementEnterprise: React.FC = () => {
 
     // Search filter
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
         d =>
-          d.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          d.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          d.id_number.includes(searchTerm) ||
-          d.phone?.includes(searchTerm) ||
-          d.email?.toLowerCase().includes(searchTerm.toLowerCase())
+          (d.name || '').toLowerCase().includes(term) ||
+          (d.employee_id || '').toLowerCase().includes(term) ||
+          (d.id_number || '').includes(searchTerm) ||
+          (d.phone || '').includes(searchTerm) ||
+          (d.email || '').toLowerCase().includes(term)
       );
     }
 
@@ -181,7 +191,8 @@ const DriverManagementEnterprise: React.FC = () => {
     setFilteredDrivers(filtered);
   };
 
-  const getExpiryDays = (expiryDate: string): number => {
+  const getExpiryDays = (expiryDate?: string): number => {
+    if (!expiryDate) return 999;
     return Math.ceil((new Date(expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
   };
 
@@ -473,22 +484,23 @@ const DriverManagementEnterprise: React.FC = () => {
 
   return (
     <EnterpriseLayout moduleTitle="Driver Management" tabs={tabs} breadcrumbs={breadcrumbs}>
-      <div style={{ padding: '24px' }}>
+      <div className="logistics-page-content">
         {/* Alert for expiring documents */}
         {stats.expiryAlerts > 0 && (
-          <Alert
-            message="Driver Document Expiry Warnings"
-            description={`${stats.expiryAlerts} driver(s) have licenses, PrDPs, or medical certificates expiring within 30 days. Please review and renew immediately.`}
-            type="error"
-            showIcon
-            icon={<WarningOutlined />}
-            closable
-            style={{ marginBottom: '24px' }}
-          />
+          <div className="logistics-section">
+            <Alert
+              message="Driver Document Expiry Warnings"
+              description={`${stats.expiryAlerts} driver(s) have licenses, PrDPs, or medical certificates expiring within 30 days. Please review and renew immediately.`}
+              type="error"
+              showIcon
+              icon={<WarningOutlined />}
+              closable
+            />
+          </div>
         )}
 
         {/* KPI Cards */}
-        <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+        <Row gutter={[16, 16]} className="logistics-section">
           <Col xs={24} sm={12} lg={6}>
             <Card className="kpi-card">
               <Statistic
@@ -540,7 +552,7 @@ const DriverManagementEnterprise: React.FC = () => {
         </Row>
 
         {/* Filters and Actions */}
-        <Card style={{ marginBottom: '16px' }}>
+        <Card className="logistics-card logistics-section logistics-filters-card">
           <Row gutter={[16, 16]} align="middle">
             <Col flex="auto">
               <Input
@@ -553,12 +565,40 @@ const DriverManagementEnterprise: React.FC = () => {
               />
             </Col>
             <Col>
-              <Space>
+              <Space wrap>
+                <Select
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  size="large"
+                  style={{ width: 160 }}
+                  options={[
+                    { value: 'ALL', label: 'All Statuses' },
+                    { value: 'ACTIVE', label: 'Active' },
+                    { value: 'ON_TRIP', label: 'On Trip' },
+                    { value: 'ON_LEAVE', label: 'On Leave' },
+                    { value: 'INACTIVE', label: 'Inactive' }
+                  ]}
+                />
+                <Select
+                  value={licenseFilter}
+                  onChange={setLicenseFilter}
+                  size="large"
+                  style={{ width: 160 }}
+                  options={[
+                    { value: 'ALL', label: 'All Licenses' },
+                    { value: 'CODE_08', label: 'Code 08' },
+                    { value: 'CODE_10', label: 'Code 10' },
+                    { value: 'CODE_14', label: 'Code 14' }
+                  ]}
+                />
                 <Button
                   type="primary"
                   icon={<PlusOutlined />}
                   size="large"
-                  onClick={() => console.log('Add driver')}
+                  onClick={() => {
+                    form.resetFields();
+                    setIsModalOpen(true);
+                  }}
                 >
                   Add Driver
                 </Button>
@@ -580,7 +620,15 @@ const DriverManagementEnterprise: React.FC = () => {
         </Card>
 
         {/* Drivers Table */}
-        <Card>
+        <Card className="logistics-card logistics-table-card">
+          {error && (
+            <Alert
+              type="error"
+              showIcon
+              message={error}
+              style={{ marginBottom: 16 }}
+            />
+          )}
           {loading ? (
             <div style={{ textAlign: 'center', padding: '60px' }}>
               <Spin size="large" />
@@ -620,6 +668,123 @@ const DriverManagementEnterprise: React.FC = () => {
           )}
         </Card>
       </div>
+
+      <Modal
+        title="Add Driver"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        confirmLoading={submitting}
+        onOk={async () => {
+          try {
+            const values = await form.validateFields();
+            setSubmitting(true);
+            await driversAPI.createDriver({
+              ...values,
+              license_expiry: values.license_expiry?.format('YYYY-MM-DD'),
+              prdp_expiry: values.prdp_expiry?.format('YYYY-MM-DD'),
+              medical_expiry: values.medical_expiry?.format('YYYY-MM-DD')
+            });
+            message.success('Driver added successfully');
+            setIsModalOpen(false);
+            fetchDrivers();
+          } catch (err: any) {
+            if (err?.errorFields) return;
+            message.error(err?.message || 'Failed to add driver');
+          } finally {
+            setSubmitting(false);
+          }
+        }}
+        width={720}
+      >
+        <Form layout="vertical" form={form}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="name"
+                label="Driver Name"
+                rules={[{ required: true, message: 'Driver name is required' }]}
+              >
+                <Input placeholder="Full name" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="employee_id"
+                label="Employee ID"
+                rules={[{ required: true }]}
+              >
+                <Input placeholder="e.g. DRV-001" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="id_number" label="ID Number" rules={[{ required: true }]}> 
+                <Input placeholder="National ID" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="phone" label="Phone" rules={[{ required: true }]}> 
+                <Input placeholder="Contact number" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="email" label="Email" rules={[{ type: 'email' }]}> 
+                <Input placeholder="name@company.com" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="status" label="Status" initialValue="ACTIVE">
+                <Select
+                  options={[
+                    { value: 'ACTIVE', label: 'Active' },
+                    { value: 'ON_TRIP', label: 'On Trip' },
+                    { value: 'ON_LEAVE', label: 'On Leave' },
+                    { value: 'INACTIVE', label: 'Inactive' }
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="license_type" label="License Type" rules={[{ required: true }]}> 
+                <Select
+                  options={[
+                    { value: 'CODE_08', label: 'Code 08' },
+                    { value: 'CODE_10', label: 'Code 10' },
+                    { value: 'CODE_14', label: 'Code 14' }
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="license_number" label="License Number" rules={[{ required: true }]}> 
+                <Input placeholder="DL123456" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="license_expiry" label="License Expiry" rules={[{ required: true }]}> 
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="prdp_expiry" label="PrDP Expiry">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="medical_expiry" label="Medical Expiry">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </EnterpriseLayout>
   );
 };

@@ -378,3 +378,60 @@
 .ant-card-head-gradient .ant-card-head-title {
   color: white;
 }
+
+/* Page Layout */
+.logistics-page-content {
+  padding: 24px;
+  background: #f8fafc;
+  min-height: calc(100vh - 120px);
+}
+
+@media (max-width: 768px) {
+  .logistics-page-content {
+    padding: 16px;
+  }
+}
+
+.logistics-section {
+  margin-bottom: 24px;
+}
+
+.logistics-card {
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  border: none;
+}
+
+.logistics-card + .logistics-card {
+  margin-top: 16px;
+}
+
+.logistics-filters-card .ant-input,
+.logistics-filters-card .ant-select,
+.logistics-filters-card .ant-btn {
+  border-radius: 10px;
+}
+
+.logistics-filters-card .ant-btn-link,
+.logistics-filters-card .ant-btn-text {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.logistics-table-card .ant-table-container {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.logistics-card-header {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logistics-card-header svg {
+  color: #667eea;
+}

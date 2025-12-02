@@ -358,173 +358,176 @@ const LogisticsCommandCenterEnterprise: React.FC = () => {
         onClick: () => fetchDashboardData(true)
       }]}
     >
-      {/* Navigation Tabs */}
-      <div style={{ marginBottom: 24 }}>
-        <Space size="middle" wrap>
-          <Link to="/logistics/dashboard">
-            <Button type="primary">🎯 Command Center</Button>
-          </Link>
-          <Link to="/logistics/planner">
-            <Button>📋 Load Planner</Button>
-          </Link>
-          <Link to="/logistics/trips">
-            <Button>🚚 Trip Management</Button>
-          </Link>
-          <Link to="/logistics/fleet">
-            <Button>🚛 Fleet</Button>
-          </Link>
-          <Link to="/logistics/drivers">
-            <Button>👨‍✈️ Drivers</Button>
-          </Link>
-          <Link to="/logistics/fuel">
-            <Button>⛽ Fuel</Button>
-          </Link>
-          <Link to="/logistics/documents">
-            <Button>📄 Documents</Button>
-          </Link>
-          <Link to="/logistics/reports">
-            <Button>📊 Analytics</Button>
-          </Link>
-        </Space>
-      </div>
+      <div className="logistics-page-content">
+        {/* Navigation Tabs */}
+        <div className="logistics-section">
+          <Space size="middle" wrap>
+            <Link to="/logistics/dashboard">
+              <Button type="primary">🎯 Command Center</Button>
+            </Link>
+            <Link to="/logistics/planner">
+              <Button>📋 Load Planner</Button>
+            </Link>
+            <Link to="/logistics/trips">
+              <Button>🚚 Trip Management</Button>
+            </Link>
+            <Link to="/logistics/fleet">
+              <Button>🚛 Fleet</Button>
+            </Link>
+            <Link to="/logistics/drivers">
+              <Button>👨‍✈️ Drivers</Button>
+            </Link>
+            <Link to="/logistics/fuel">
+              <Button>⛽ Fuel</Button>
+            </Link>
+            <Link to="/logistics/documents">
+              <Button>📄 Documents</Button>
+            </Link>
+            <Link to="/logistics/reports">
+              <Button>📊 Analytics</Button>
+            </Link>
+          </Space>
+        </div>
 
-      {/* KPI Cards */}
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="kpi-card">
-            <Statistic
-              title="Fleet Status"
-              value={stats.fleet.inTransit}
-              suffix={`/ ${stats.fleet.total}`}
-              prefix={<TruckOutlined />}
-              valueStyle={{ color: customColors.status.active }}
-            />
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {stats.fleet.idle} idle · {stats.fleet.maintenance} maintenance
-            </Text>
+        {/* KPI Cards */}
+        <Row gutter={[16, 16]} className="logistics-section">
+          <Col xs={24} sm={12} lg={6}>
+            <Card className="kpi-card">
+              <Statistic
+                title="Fleet Status"
+                value={stats.fleet.inTransit}
+                suffix={`/ ${stats.fleet.total}`}
+                prefix={<TruckOutlined />}
+                valueStyle={{ color: customColors.status.active }}
+              />
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {stats.fleet.idle} idle · {stats.fleet.maintenance} maintenance
+              </Text>
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={12} lg={6}>
+            <Card className="kpi-card">
+              <Statistic
+                title="Active Trips"
+                value={stats.trips.active}
+                prefix={<DashboardOutlined />}
+                valueStyle={{ color: '#667eea' }}
+              />
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {stats.trips.planned} planned · {stats.trips.completed} completed today
+              </Text>
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={12} lg={6}>
+            <Card className="kpi-card">
+              <Statistic
+                title="On-Time Performance"
+                value={stats.trips.onTimePerformance}
+                suffix="%"
+                prefix={<CheckCircleOutlined />}
+                valueStyle={{
+                  color:
+                    stats.trips.onTimePerformance >= 90
+                      ? customColors.status.active
+                      : stats.trips.onTimePerformance >= 75
+                      ? customColors.status.warning
+                      : customColors.status.danger,
+                }}
+              />
+              <Progress
+                percent={stats.trips.onTimePerformance}
+                showInfo={false}
+                strokeColor={customColors.gradient.primary}
+              />
+            </Card>
+          </Col>
+
+          <Col xs={24} sm={12} lg={6}>
+            <Card className="kpi-card">
+              <Statistic
+                title="Active Alerts"
+                value={stats.alerts.critical + stats.alerts.warning}
+                prefix={<WarningOutlined />}
+                valueStyle={{
+                  color: stats.alerts.critical > 0 ? customColors.status.danger : customColors.status.warning,
+                }}
+              />
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                {stats.alerts.critical} critical · {stats.alerts.warning} warnings
+              </Text>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Alerts Section */}
+        {alerts.length > 0 && (
+          <Card
+            className="logistics-card logistics-section"
+            title={
+              <Space className="logistics-card-header">
+                <WarningOutlined style={{ color: '#F59E0B' }} />
+                Active Alerts
+              </Space>
+            }
+          >
+            <Space direction="vertical" style={{ width: '100%' }} size="middle">
+              {alerts.slice(0, 5).map((alert) => (
+                <Alert
+                  key={alert.id}
+                  message={alert.title}
+                  description={`${alert.message} · ${alert.timestamp}`}
+                  type={alert.type}
+                  showIcon
+                  action={
+                    alert.actionable && (
+                      <Button size="small" type="link">
+                        View Details
+                      </Button>
+                    )
+                  }
+                />
+              ))}
+            </Space>
           </Card>
-        </Col>
+        )}
 
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="kpi-card">
-            <Statistic
-              title="Active Trips"
-              value={stats.trips.active}
-              prefix={<DashboardOutlined />}
-              valueStyle={{ color: '#667eea' }}
-            />
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {stats.trips.planned} planned · {stats.trips.completed} completed today
-            </Text>
-          </Card>
-        </Col>
-
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="kpi-card">
-            <Statistic
-              title="On-Time Performance"
-              value={stats.trips.onTimePerformance}
-              suffix="%"
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{
-                color:
-                  stats.trips.onTimePerformance >= 90
-                    ? customColors.status.active
-                    : stats.trips.onTimePerformance >= 75
-                    ? customColors.status.warning
-                    : customColors.status.danger,
-              }}
-            />
-            <Progress
-              percent={stats.trips.onTimePerformance}
-              showInfo={false}
-              strokeColor={customColors.gradient.primary}
-            />
-          </Card>
-        </Col>
-
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="kpi-card">
-            <Statistic
-              title="Active Alerts"
-              value={stats.alerts.critical + stats.alerts.warning}
-              prefix={<WarningOutlined />}
-              valueStyle={{
-                color: stats.alerts.critical > 0 ? customColors.status.danger : customColors.status.warning,
-              }}
-            />
-            <Text type="secondary" style={{ fontSize: 12 }}>
-              {stats.alerts.critical} critical · {stats.alerts.warning} warnings
-            </Text>
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Alerts Section */}
-      {alerts.length > 0 && (
+        {/* Vehicle Tracking Map */}
         <Card
+          className="logistics-card logistics-section"
           title={
-            <Space>
-              <WarningOutlined style={{ color: '#F59E0B' }} />
-              Active Alerts
+            <Space className="logistics-card-header">
+              <EnvironmentOutlined />
+              Live Fleet Map
+              <Badge count={liveVehicles.length} style={{ backgroundColor: '#10B981' }} />
             </Space>
           }
-          style={{ marginBottom: 24 }}
         >
-          <Space direction="vertical" style={{ width: '100%' }} size="middle">
-            {alerts.slice(0, 5).map((alert) => (
-              <Alert
-                key={alert.id}
-                message={alert.title}
-                description={`${alert.message} · ${alert.timestamp}`}
-                type={alert.type}
-                showIcon
-                action={
-                  alert.actionable && (
-                    <Button size="small" type="link">
-                      View Details
-                    </Button>
-                  )
-                }
-              />
-            ))}
-          </Space>
+          <VehicleTrackingMap height="500px" showStats={false} />
         </Card>
-      )}
 
-      {/* Vehicle Tracking Map */}
-      <Card
-        title={
-          <Space>
-            <EnvironmentOutlined style={{ color: '#667eea' }} />
-            Live Fleet Map
-            <Badge count={liveVehicles.length} style={{ backgroundColor: '#10B981' }} />
-          </Space>
-        }
-        style={{ marginBottom: 24 }}
-      >
-        <VehicleTrackingMap height="500px" showStats={false} />
-      </Card>
-
-      {/* Live Vehicles Table */}
-      <Card
-        title={
-          <Space>
-            <EnvironmentOutlined style={{ color: '#667eea' }} />
-            Live Vehicle Tracking
-            <Badge count={liveVehicles.length} style={{ backgroundColor: '#10B981' }} />
-          </Space>
-        }
-      >
-        <Table
-          columns={liveVehicleColumns}
-          dataSource={liveVehicles}
-          rowKey="id"
-          pagination={{ pageSize: 10 }}
-          size="middle"
-          scroll={{ x: 1000 }}
-        />
-      </Card>
+        {/* Live Vehicles Table */}
+        <Card
+          className="logistics-card logistics-table-card"
+          title={
+            <Space className="logistics-card-header">
+              <EnvironmentOutlined />
+              Live Vehicle Tracking
+              <Badge count={liveVehicles.length} style={{ backgroundColor: '#10B981' }} />
+            </Space>
+          }
+        >
+          <Table
+            columns={liveVehicleColumns}
+            dataSource={liveVehicles}
+            rowKey="id"
+            pagination={{ pageSize: 10 }}
+            size="middle"
+            scroll={{ x: 1000 }}
+          />
+        </Card>
+      </div>
     </EnterpriseLayout>
   );
 };

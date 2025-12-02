@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import {
   Table,
   Card,
@@ -15,7 +14,12 @@ import {
   Dropdown,
   Alert,
   Empty,
-  Spin
+  Spin,
+  Form,
+  Select,
+  DatePicker,
+  message,
+  Modal
 } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -68,9 +72,13 @@ const FleetManagementEnhanced: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [filteredVehicles, setFilteredVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
+  const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form] = Form.useForm();
   const [stats, setStats] = useState<FleetStats>({
     total: 0,
     active: 0,
@@ -105,13 +113,14 @@ const FleetManagementEnhanced: React.FC = () => {
 
   const fetchVehicles = async () => {
     setLoading(true);
+    setError(null);
     try {
       const response = await vehiclesAPI.getVehicles();
       setVehicles(response.vehicles);
       calculateStats(response.vehicles);
     } catch (error) {
       console.error('Error fetching vehicles:', error);
-      // Fallback to empty array or show error
+      setError('Unable to load fleet data. Please try again.');
       setVehicles([]);
     } finally {
       setLoading(false);
@@ -125,15 +134,9 @@ const FleetManagementEnhanced: React.FC = () => {
     
     // Calculate alerts (expiring documents within 30 days)
     const alerts = vehicleList.filter(v => {
-      const licenseDays = Math.ceil(
-        (new Date(v.license_expiry).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-      );
-      const roadworthyDays = Math.ceil(
-        (new Date(v.roadworthy_expiry).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-      );
-      const insuranceDays = Math.ceil(
-        (new Date(v.insurance_expiry).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-      );
+      const licenseDays = getExpiryDays(v.license_expiry);
+      const roadworthyDays = getExpiryDays(v.roadworthy_expiry);
+      const insuranceDays = getExpiryDays(v.insurance_expiry);
       return licenseDays <= 30 || roadworthyDays <= 30 || insuranceDays <= 30;
     }).length;
 
@@ -157,13 +160,14 @@ const FleetManagementEnhanced: React.FC = () => {
 
     // Search filter
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       filtered = filtered.filter(
         v =>
-          v.vehicle_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          v.registration_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          v.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          v.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          v.current_driver.toLowerCase().includes(searchTerm.toLowerCase())
+          (v.vehicle_number || '').toLowerCase().includes(term) ||
+          (v.registration_number || '').toLowerCase().includes(term) ||
+          (v.make || '').toLowerCase().includes(term) ||
+          (v.model || '').toLowerCase().includes(term) ||
+          (v.current_driver || '').toLowerCase().includes(term)
       );
     }
 
@@ -190,7 +194,8 @@ const FleetManagementEnhanced: React.FC = () => {
     return colors[status] || '#94a3b8';
   };
 
-  const getExpiryDays = (expiryDate: string): number => {
+  const getExpiryDays = (expiryDate?: string): number => {
+    if (!expiryDate) return 999;
     return Math.ceil((new Date(expiryDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
   };
 
@@ -403,22 +408,23 @@ const FleetManagementEnhanced: React.FC = () => {
 
   return (
     <EnterpriseLayout moduleTitle="Fleet Management" tabs={tabs} breadcrumbs={breadcrumbs}>
-      <div style={{ padding: '24px' }}>
+      <div className="logistics-page-content">
         {/* Alert for expiring documents */}
         {stats.alerts > 0 && (
-          <Alert
-            message="Document Expiry Warnings"
-            description={`${stats.alerts} vehicle(s) have documents expiring within 30 days. Please review and renew.`}
-            type="warning"
-            showIcon
-            icon={<WarningOutlined />}
-            closable
-            style={{ marginBottom: '24px' }}
-          />
+          <div className="logistics-section">
+            <Alert
+              message="Document Expiry Warnings"
+              description={`${stats.alerts} vehicle(s) have documents expiring within 30 days. Please review and renew.`}
+              type="warning"
+              showIcon
+              icon={<WarningOutlined />}
+              closable
+            />
+          </div>
         )}
 
         {/* KPI Cards */}
-        <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
+        <Row gutter={[16, 16]} className="logistics-section">
           <Col xs={24} sm={12} lg={6}>
             <Card className="kpi-card">
               <Statistic
@@ -469,7 +475,7 @@ const FleetManagementEnhanced: React.FC = () => {
         </Row>
 
         {/* Filters and Actions */}
-        <Card style={{ marginBottom: '16px' }}>
+        <Card className="logistics-card logistics-section logistics-filters-card">
           <Row gutter={[16, 16]} align="middle">
             <Col flex="auto">
               <Input
@@ -482,12 +488,41 @@ const FleetManagementEnhanced: React.FC = () => {
               />
             </Col>
             <Col>
-              <Space>
+                <Space wrap>
+                  <Select
+                    value={statusFilter}
+                    onChange={setStatusFilter}
+                    size="large"
+                    style={{ width: 160 }}
+                    options={[
+                      { value: 'ALL', label: 'All Statuses' },
+                      { value: 'ACTIVE', label: 'Active' },
+                      { value: 'MAINTENANCE', label: 'Maintenance' },
+                      { value: 'INACTIVE', label: 'Inactive' },
+                      { value: 'BREAKDOWN', label: 'Breakdown' }
+                    ]}
+                  />
+                  <Select
+                    value={typeFilter}
+                    onChange={setTypeFilter}
+                    size="large"
+                    style={{ width: 160 }}
+                    options={[
+                      { value: 'ALL', label: 'All Types' },
+                      { value: 'TRUCK', label: 'Truck' },
+                      { value: 'VAN', label: 'Van' },
+                      { value: 'FLATBED', label: 'Flatbed' },
+                      { value: 'REFRIGERATED', label: 'Refrigerated' }
+                    ]}
+                  />
                 <Button
                   type="primary"
                   icon={<PlusOutlined />}
                   size="large"
-                  onClick={() => console.log('Add vehicle')}
+                    onClick={() => {
+                      form.resetFields();
+                      setIsModalOpen(true);
+                    }}
                 >
                   Add Vehicle
                 </Button>
@@ -509,7 +544,15 @@ const FleetManagementEnhanced: React.FC = () => {
         </Card>
 
         {/* Fleet Table */}
-        <Card>
+        <Card className="logistics-card logistics-table-card">
+          {error && (
+            <Alert
+              type="error"
+              showIcon
+              message={error}
+              style={{ marginBottom: 16 }}
+            />
+          )}
           {loading ? (
             <div style={{ textAlign: 'center', padding: '60px' }}>
               <Spin size="large" />
@@ -549,6 +592,157 @@ const FleetManagementEnhanced: React.FC = () => {
           )}
         </Card>
       </div>
+
+      <Modal
+        title="Add Vehicle"
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        confirmLoading={submitting}
+        onOk={async () => {
+          try {
+            const values = await form.validateFields();
+            setSubmitting(true);
+            await vehiclesAPI.createVehicle({
+              ...values,
+              year_of_manufacture: Number(values.year_of_manufacture),
+              next_service_km: Number(values.next_service_km),
+              current_odometer: Number(values.current_odometer),
+              last_service_date: values.last_service_date?.format('YYYY-MM-DD'),
+              next_service_date: values.next_service_date?.format('YYYY-MM-DD'),
+              license_expiry: values.license_expiry?.format('YYYY-MM-DD'),
+              roadworthy_expiry: values.roadworthy_expiry?.format('YYYY-MM-DD'),
+              insurance_expiry: values.insurance_expiry?.format('YYYY-MM-DD')
+            });
+            message.success('Vehicle added successfully');
+            setIsModalOpen(false);
+            fetchVehicles();
+          } catch (err: any) {
+            if (err?.errorFields) return;
+            message.error(err?.message || 'Failed to add vehicle');
+          } finally {
+            setSubmitting(false);
+          }
+        }}
+        width={720}
+      >
+        <Form layout="vertical" form={form}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="vehicle_number"
+                label="Vehicle Number"
+                rules={[{ required: true, message: 'Vehicle number is required' }]}
+              >
+                <Input placeholder="Fleet identifier" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="registration_number"
+                label="Registration"
+                rules={[{ required: true, message: 'Registration is required' }]}
+              >
+                <Input placeholder="e.g. ABC123GP" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="make" label="Make" rules={[{ required: true }]}> 
+                <Input placeholder="e.g. Volvo" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="model" label="Model" rules={[{ required: true }]}> 
+                <Input placeholder="e.g. FH16" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="vehicle_type" label="Vehicle Type" rules={[{ required: true }]}> 
+                <Select
+                  options={[
+                    { value: 'TRUCK', label: 'Truck' },
+                    { value: 'VAN', label: 'Van' },
+                    { value: 'FLATBED', label: 'Flatbed' },
+                    { value: 'REFRIGERATED', label: 'Refrigerated' }
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="year_of_manufacture"
+                label="Year"
+                rules={[{ required: true }]}
+              >
+                <Input type="number" min={1990} max={new Date().getFullYear()} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="status" label="Status" initialValue="ACTIVE">
+                <Select
+                  options={[
+                    { value: 'ACTIVE', label: 'Active' },
+                    { value: 'MAINTENANCE', label: 'Maintenance' },
+                    { value: 'INACTIVE', label: 'Inactive' },
+                    { value: 'BREAKDOWN', label: 'Breakdown' }
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="current_driver" label="Current Driver">
+                <Input placeholder="Driver name" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="current_odometer" label="Odometer" rules={[{ required: true }]}> 
+                <Input type="number" min={0} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="next_service_km" label="Next Service (km)" rules={[{ required: true }]}> 
+                <Input type="number" min={0} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="last_service_date" label="Last Service Date">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="next_service_date" label="Next Service Date">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="license_expiry" label="License Expiry">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="roadworthy_expiry" label="Roadworthy Expiry">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="insurance_expiry" label="Insurance Expiry">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </EnterpriseLayout>
   );
 };
