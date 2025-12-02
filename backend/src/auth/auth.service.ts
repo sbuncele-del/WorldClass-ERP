@@ -1,4 +1,3 @@
-import { Pool } from 'pg';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -15,24 +14,7 @@ import {
 } from '../types';
 import TenantService from '../services/tenant.service';
 import ProvisioningService from '../services/provisioning.service';
-
-let pool: Pool | null = null;
-
-function getPool(): Pool {
-  if (!pool) {
-    console.log('=== CREATING POOL ===');
-    console.log('NODE_ENV:', process.env.NODE_ENV);
-    console.log('DATABASE_URL:', process.env.DATABASE_URL);
-    const sslConfig = process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined;
-    console.log('SSL Config:', sslConfig);
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: sslConfig
-    });
-    console.log('=== POOL CREATED ===');
-  }
-  return pool;
-}
+import { pool as sharedPool } from '../config/database';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '1h';
@@ -43,7 +25,7 @@ export class AuthService {
    * Company Signup (creates tenant + admin user)
    */
   static async signup(data: SignupData): Promise<AuthResponse> {
-    const client = await getPool().connect();
+    const client = await sharedPool.connect();
 
     try {
       await client.query('BEGIN');
@@ -212,7 +194,7 @@ export class AuthService {
       params.push(tenantSlug);
     }
 
-    const result = await getPool().query(query, params);
+    const result = await sharedPool.query(query, params);
 
     if (result.rows.length === 0) {
       throw new UnauthorizedError('Invalid email or password');
@@ -244,7 +226,7 @@ export class AuthService {
 
     if (!isValidPassword) {
       // Increment failed login attempts
-      await getPool().query(
+      await sharedPool.query(
         `UPDATE users 
          SET failed_login_attempts = failed_login_attempts + 1,
              locked_until = CASE 
@@ -268,7 +250,7 @@ export class AuthService {
     }
 
     // Reset failed login attempts and update last login
-    await getPool().query(
+    await sharedPool.query(
       `UPDATE users 
        SET failed_login_attempts = 0, 
            locked_until = NULL,
@@ -283,7 +265,7 @@ export class AuthService {
 
     // Store refresh token
     await this.storeRefreshToken(
-      pool,
+      sharedPool,
       user.id,
       user.tenant_id,
       tokens.refreshToken,
@@ -291,7 +273,7 @@ export class AuthService {
     );
 
     // Log login
-    await getPool().query(
+    await sharedPool.query(
       `INSERT INTO audit_log (tenant_id, user_id, action, ip_address)
        VALUES ($1, $2, 'user_login', $3)`,
       [user.tenant_id, user.id, deviceInfo?.ip_address || null]
@@ -329,7 +311,7 @@ export class AuthService {
       }
 
       // Check if refresh token exists and not revoked
-      const tokenCheck = await getPool().query(
+      const tokenCheck = await sharedPool.query(
         `SELECT user_id, tenant_id, revoked 
          FROM refresh_tokens 
          WHERE token = $1 AND expires_at > NOW()`,
@@ -343,7 +325,7 @@ export class AuthService {
       const { user_id, tenant_id } = tokenCheck.rows[0];
 
       // Get user info
-      const userResult = await getPool().query(
+      const userResult = await sharedPool.query(
         'SELECT email, role FROM users WHERE id = $1 AND deleted_at IS NULL',
         [user_id]
       );
@@ -384,7 +366,7 @@ export class AuthService {
    * Logout (revoke refresh token)
    */
   static async logout(refreshToken: string): Promise<void> {
-    await getPool().query(
+    await sharedPool.query(
       `UPDATE refresh_tokens 
        SET revoked = true, revoked_at = NOW() 
        WHERE token = $1`,
@@ -396,7 +378,7 @@ export class AuthService {
    * Forgot Password (generate reset token)
    */
   static async forgotPassword(email: string): Promise<{ resetToken: string }> {
-    const userResult = await getPool().query(
+    const userResult = await sharedPool.query(
       'SELECT id, tenant_id FROM users WHERE email = $1 AND deleted_at IS NULL',
       [email]
     );
@@ -412,7 +394,7 @@ export class AuthService {
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    await getPool().query(
+    await sharedPool.query(
       `UPDATE users 
        SET reset_token = $1, reset_token_expires_at = $2 
        WHERE id = $3`,
@@ -429,7 +411,7 @@ export class AuthService {
    * Reset Password
    */
   static async resetPassword(resetToken: string, newPassword: string): Promise<void> {
-    const userResult = await getPool().query(
+    const userResult = await sharedPool.query(
       `SELECT id FROM users 
        WHERE reset_token = $1 
          AND reset_token_expires_at > NOW() 
@@ -447,7 +429,7 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
     // Update password and clear reset token
-    await getPool().query(
+    await sharedPool.query(
       `UPDATE users 
        SET password_hash = $1,
            reset_token = NULL,
@@ -462,7 +444,7 @@ export class AuthService {
    * Get Current User Info
    */
   static async me(userId: string, tenantId: string): Promise<any> {
-    const result = await getPool().query(
+    const result = await sharedPool.query(
       `SELECT u.id, u.email, u.first_name, u.last_name, u.role, u.status,
               u.phone, u.avatar_url, u.preferences, u.last_login_at,
               t.id as tenant_id, t.name as tenant_name, t.slug as tenant_slug,
