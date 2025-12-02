@@ -1,9 +1,12 @@
+// MUST load dotenv FIRST before any other imports that use environment variables
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
-import dotenv from 'dotenv';
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './auth/auth.routes';
 import onboardingRoutes from './routes/onboarding.routes';
@@ -58,9 +61,6 @@ import financialReportsRoutes2 from './modules/financial-reports/routes';
 import salesInvoiceRoutes from './modules/sales/routes';
 import purchaseInvoiceRoutes from './modules/purchases/routes';
 import assetManagementRoutes from './modules/assets/routes';
-
-// Load environment variables with explicit path
-dotenv.config({ path: __dirname + '/../.env' });
 
 // Disable TLS certificate validation for AWS RDS (self-signed cert issue)
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
