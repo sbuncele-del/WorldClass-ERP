@@ -1,22 +1,9 @@
-import { Pool } from 'pg';
+import { pool as sharedPool } from '../config/database';
 import { Tenant, SignupData, ConflictError, NotFoundError, ValidationError } from '../types';
 
-// Lazy-loaded pool to ensure environment variables are loaded first
-let pool: Pool | null = null;
-
-function getPool(): Pool {
-  if (!pool) {
-    console.log('=== CREATING TENANT SERVICE POOL ===');
-    console.log('DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 50) + '...');
-    const sslConfig = process.env.NODE_ENV === 'production' ? 
-      { rejectUnauthorized: false } : undefined;
-    
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: sslConfig
-    });
-  }
-  return pool;
+// Use shared pool from config/database.ts - single pool for entire application
+function getPool() {
+  return sharedPool;
 }
 
 export class TenantService {
@@ -323,8 +310,8 @@ export class TenantService {
     }
 
     const [tenantsResult, countResult] = await Promise.all([
-      pool.query(query, values),
-      pool.query('SELECT COUNT(*) FROM tenants WHERE deleted_at IS NULL')
+      getPool().query(query, values),
+      getPool().query('SELECT COUNT(*) FROM tenants WHERE deleted_at IS NULL')
     ]);
 
     return {
@@ -338,9 +325,9 @@ export class TenantService {
    */
   static async getStats(tenantId: string): Promise<any> {
     const [userCount, invoiceCount, customerCount, storageUsed] = await Promise.all([
-      pool.query('SELECT COUNT(*) FROM users WHERE tenant_id = $1 AND deleted_at IS NULL', [tenantId]),
-      pool.query('SELECT COUNT(*) FROM invoices WHERE tenant_id = $1', [tenantId]),
-      pool.query('SELECT COUNT(*) FROM customers WHERE tenant_id = $1', [tenantId]),
+      getPool().query('SELECT COUNT(*) FROM users WHERE tenant_id = $1 AND deleted_at IS NULL', [tenantId]),
+      getPool().query('SELECT COUNT(*) FROM invoices WHERE tenant_id = $1', [tenantId]),
+      getPool().query('SELECT COUNT(*) FROM customers WHERE tenant_id = $1', [tenantId]),
       // Placeholder for storage calculation
       Promise.resolve({ rows: [{ sum: 0 }] })
     ]);
@@ -426,11 +413,11 @@ export class TenantService {
       totalUsers,
       todaySignups
     ] = await Promise.all([
-      pool.query('SELECT COUNT(*) FROM tenants WHERE deleted_at IS NULL'),
-      pool.query('SELECT COUNT(*) FROM tenants WHERE status = $1 AND deleted_at IS NULL', ['active']),
-      pool.query('SELECT COUNT(*) FROM tenants WHERE status = $1 AND deleted_at IS NULL', ['trial']),
-      pool.query('SELECT COUNT(*) FROM users WHERE deleted_at IS NULL'),
-      pool.query('SELECT COUNT(*) FROM tenants WHERE DATE(created_at) = CURRENT_DATE')
+      getPool().query('SELECT COUNT(*) FROM tenants WHERE deleted_at IS NULL'),
+      getPool().query('SELECT COUNT(*) FROM tenants WHERE status = $1 AND deleted_at IS NULL', ['active']),
+      getPool().query('SELECT COUNT(*) FROM tenants WHERE status = $1 AND deleted_at IS NULL', ['trial']),
+      getPool().query('SELECT COUNT(*) FROM users WHERE deleted_at IS NULL'),
+      getPool().query('SELECT COUNT(*) FROM tenants WHERE DATE(created_at) = CURRENT_DATE')
     ]);
 
     return {

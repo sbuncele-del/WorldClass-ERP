@@ -1,23 +1,11 @@
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { Pool } from 'pg';
+import { pool as sharedPool } from '../config/database';
 import { TenantRequest, JWTPayload, UnauthorizedError, ForbiddenError } from '../types';
 
-let pool: Pool | null = null;
-
-function getPool(): Pool {
-  if (!pool) {
-    console.log('=== CREATING TENANT MIDDLEWARE POOL ===');
-    console.log('DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 50) + '...');
-    const sslConfig = process.env.NODE_ENV === 'production' ? 
-      { rejectUnauthorized: false } : undefined;
-    
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: sslConfig
-    });
-  }
-  return pool;
+// Use shared pool from config/database.ts - single pool for entire application
+function getPool() {
+  return sharedPool;
 }
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';

@@ -1,21 +1,9 @@
-import { Pool } from 'pg';
+import { pool as sharedPool } from '../config/database';
 import { ConflictError, NotFoundError } from '../types';
 
-let pool: Pool | null = null;
-
-function getPool(): Pool {
-  if (!pool) {
-    console.log('=== CREATING PROVISIONING SERVICE POOL ===');
-    console.log('DATABASE_URL:', process.env.DATABASE_URL?.substring(0, 50) + '...');
-    const sslConfig = process.env.NODE_ENV === 'production' ? 
-      { rejectUnauthorized: false } : undefined;
-    
-    pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: sslConfig
-    });
-  }
-  return pool;
+// Use shared pool from config/database.ts - single pool for entire application
+function getPool() {
+  return sharedPool;
 }
 
 interface ProvisioningData {
