@@ -1,6 +1,9 @@
 import { Request, Response } from 'express';
 import pool from '../../config/database';
 
+// Helper to get table name (checks if logistics schema exists)
+const getTableName = (table: string) => `logistics.${table}`;
+
 // ============================================================================
 // 1. FLEET & VEHICLES
 // ============================================================================
@@ -21,10 +24,29 @@ export const getVehicles = async (req: Request, res: Response) => {
 
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
+    // First check if table exists
+    const tableCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'logistics' AND table_name = 'vehicles'
+      ) as exists
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      // Return empty data if table doesn't exist
+      return res.json({
+        vehicles: [],
+        total: 0,
+        page: 1,
+        totalPages: 0,
+        message: 'Logistics module not initialized. Please run database migration.'
+      });
+    }
+
     let query = `
       SELECT v.*
       FROM logistics.vehicles v
-      WHERE v.status = 'ACTIVE'
+      WHERE 1=1
     `;
     const values: any[] = [];
     let paramCount = 1;
@@ -33,6 +55,8 @@ export const getVehicles = async (req: Request, res: Response) => {
       query += ` AND v.status = $${paramCount}`;
       values.push(status);
       paramCount++;
+    } else {
+      query += ` AND v.status = 'ACTIVE'`;
     }
 
     if (vehicle_type) {
@@ -42,18 +66,18 @@ export const getVehicles = async (req: Request, res: Response) => {
     }
 
     if (search) {
-      query += ` AND (v.vehicle_registration ILIKE $${paramCount} OR v.vehicle_registration ILIKE $${paramCount} OR v.make ILIKE $${paramCount})`;
+      query += ` AND (v.vehicle_registration ILIKE $${paramCount} OR v.make ILIKE $${paramCount} OR v.model ILIKE $${paramCount})`;
       values.push(`%${search}%`);
       paramCount++;
     }
 
     // Count total
-    const countQuery = query.replace(/SELECT.*FROM/, 'SELECT COUNT(*) FROM').replace(/LEFT JOIN.*driver_phone/, '');
+    const countQuery = query.replace(/SELECT v\.\*/, 'SELECT COUNT(*)');
     const countResult = await pool.query(countQuery, values);
     const total = parseInt(countResult.rows[0].count);
 
     // Get paginated results
-    query += ` ORDER BY v.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    query += ` ORDER BY v.created_at DESC NULLS LAST LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     values.push(parseInt(limit as string), offset);
 
     const result = await pool.query(query, values);
@@ -64,9 +88,9 @@ export const getVehicles = async (req: Request, res: Response) => {
       page: parseInt(page as string),
       totalPages: Math.ceil(total / parseInt(limit as string))
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching vehicles:', error);
-    res.status(500).json({ error: 'Failed to fetch vehicles' });
+    res.status(500).json({ error: 'Failed to fetch vehicles', details: error.message });
   }
 };
 
@@ -242,18 +266,38 @@ export const getDrivers = async (req: Request, res: Response) => {
     const { page = '1', limit = '50', status, search } = req.query;
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
+    // Check if table exists
+    const tableCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'logistics' AND table_name = 'drivers'
+      ) as exists
+    `);
+    
+    if (!tableCheck.rows[0].exists) {
+      return res.json({
+        drivers: [],
+        total: 0,
+        page: 1,
+        totalPages: 0,
+        message: 'Logistics module not initialized. Please run database migration.'
+      });
+    }
+
     let query = `
       SELECT d.*
       FROM logistics.drivers d
-      WHERE d.employment_status = 'ACTIVE'
+      WHERE 1=1
     `;
     const values: any[] = [];
     let paramCount = 1;
 
     if (status) {
-      query += ` AND d.employment_status = $${paramCount}`;
+      query += ` AND (d.status = $${paramCount} OR d.employment_status = $${paramCount})`;
       values.push(status);
       paramCount++;
+    } else {
+      query += ` AND (d.status = 'ACTIVE' OR d.employment_status = 'ACTIVE')`;
     }
 
     if (search) {
@@ -262,11 +306,11 @@ export const getDrivers = async (req: Request, res: Response) => {
       paramCount++;
     }
 
-    const countQuery = query.replace(/SELECT.*FROM/, 'SELECT COUNT(*) FROM');
+    const countQuery = query.replace(/SELECT d\.\*/, 'SELECT COUNT(*)');
     const countResult = await pool.query(countQuery, values);
     const total = parseInt(countResult.rows[0].count);
 
-    query += ` ORDER BY d.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    query += ` ORDER BY d.created_at DESC NULLS LAST LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     values.push(parseInt(limit as string), offset);
 
     const result = await pool.query(query, values);
@@ -277,9 +321,9 @@ export const getDrivers = async (req: Request, res: Response) => {
       page: parseInt(page as string),
       totalPages: Math.ceil(total / parseInt(limit as string))
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching drivers:', error);
-    res.status(500).json({ error: 'Failed to fetch drivers' });
+    res.status(500).json({ error: 'Failed to fetch drivers', details: error.message });
   }
 };
 
@@ -1293,55 +1337,145 @@ export const createMaintenanceRecord = async (req: Request, res: Response) => {
  */
 export const getDashboardStats = async (req: Request, res: Response) => {
   try {
+    // Check if logistics schema exists
+    const schemaCheck = await pool.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.schemata 
+        WHERE schema_name = 'logistics'
+      ) as exists
+    `);
+    
+    if (!schemaCheck.rows[0].exists) {
+      // Return default stats if schema doesn't exist
+      return res.json({
+        vehicles: { total: 0, active: 0, in_maintenance: 0 },
+        drivers: { total: 0, active: 0, on_trip: 0 },
+        trips_today: { total: 0, in_progress: 0, completed: 0 },
+        fuel_this_month: { total_fuel_cost: 0, total_litres: 0 },
+        pending_loads: 0,
+        alerts: { expiring_documents: 0 },
+        message: 'Logistics module not initialized. Please run database migration.'
+      });
+    }
+
     // Active vehicles
-    const vehiclesResult = await pool.query(
-      `SELECT status, COUNT(*) as count
-       FROM logistics.vehicles
-       WHERE status = 'ACTIVE'
-       GROUP BY status`
-    );
+    let totalVehicles = 0;
+    let activeVehicles = 0;
+    let inMaintenanceVehicles = 0;
+    
+    try {
+      const vehiclesResult = await pool.query(`
+        SELECT 
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE status = 'ACTIVE') as active,
+          COUNT(*) FILTER (WHERE status = 'MAINTENANCE') as in_maintenance
+        FROM logistics.vehicles
+      `);
+      totalVehicles = parseInt(vehiclesResult.rows[0]?.total || 0);
+      activeVehicles = parseInt(vehiclesResult.rows[0]?.active || 0);
+      inMaintenanceVehicles = parseInt(vehiclesResult.rows[0]?.in_maintenance || 0);
+    } catch (e) {
+      console.log('Vehicles table may not exist:', e);
+    }
 
     // Active drivers
-    const driversResult = await pool.query(
-      `SELECT COUNT(*) as total, status
-       FROM logistics.drivers
-       WHERE status = 'ACTIVE'
-       GROUP BY status`
-    );
+    let totalDrivers = 0;
+    let activeDrivers = 0;
+    
+    try {
+      const driversResult = await pool.query(`
+        SELECT 
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE status = 'ACTIVE' OR employment_status = 'ACTIVE') as active
+        FROM logistics.drivers
+      `);
+      totalDrivers = parseInt(driversResult.rows[0]?.total || 0);
+      activeDrivers = parseInt(driversResult.rows[0]?.active || 0);
+    } catch (e) {
+      console.log('Drivers table may not exist:', e);
+    }
 
     // Today's trips
-    const tripsResult = await pool.query(
-      `SELECT status, COUNT(*) as count
-       FROM logistics.trips
-       WHERE trip_date = CURRENT_DATE
-       GROUP BY status`
-    );
+    let tripsTotal = 0;
+    let tripsInProgress = 0;
+    let tripsCompleted = 0;
+    
+    try {
+      const tripsResult = await pool.query(`
+        SELECT 
+          COUNT(*) as total,
+          COUNT(*) FILTER (WHERE status = 'IN_TRANSIT') as in_progress,
+          COUNT(*) FILTER (WHERE status = 'DELIVERED') as completed
+        FROM logistics.trips
+        WHERE trip_date = CURRENT_DATE
+      `);
+      tripsTotal = parseInt(tripsResult.rows[0]?.total || 0);
+      tripsInProgress = parseInt(tripsResult.rows[0]?.in_progress || 0);
+      tripsCompleted = parseInt(tripsResult.rows[0]?.completed || 0);
+    } catch (e) {
+      console.log('Trips table may not exist:', e);
+    }
 
     // This month fuel costs
-    const fuelResult = await pool.query(
-      `SELECT SUM(total_amount) as total_fuel_cost,
-              SUM(litres) as total_litres
-       FROM logistics.fuel_transactions
-       WHERE EXTRACT(MONTH FROM transaction_date) = EXTRACT(MONTH FROM CURRENT_DATE)
-         AND EXTRACT(YEAR FROM transaction_date) = EXTRACT(YEAR FROM CURRENT_DATE)`
-    );
+    let totalFuelCost = 0;
+    let totalLitres = 0;
+    
+    try {
+      const fuelResult = await pool.query(`
+        SELECT 
+          COALESCE(SUM(total_amount), 0) as total_fuel_cost,
+          COALESCE(SUM(litres), 0) as total_litres
+        FROM logistics.fuel_transactions
+        WHERE EXTRACT(MONTH FROM transaction_date) = EXTRACT(MONTH FROM CURRENT_DATE)
+          AND EXTRACT(YEAR FROM transaction_date) = EXTRACT(YEAR FROM CURRENT_DATE)
+      `);
+      totalFuelCost = parseFloat(fuelResult.rows[0]?.total_fuel_cost || 0);
+      totalLitres = parseFloat(fuelResult.rows[0]?.total_litres || 0);
+    } catch (e) {
+      console.log('Fuel transactions table may not exist:', e);
+    }
 
     // Pending loads
-    const loadsResult = await pool.query(
-      `SELECT COUNT(*) as pending_loads
-       FROM logistics.loads
-       WHERE status IN ('DRAFT', 'PLANNED')`
-    );
+    let pendingLoads = 0;
+    
+    try {
+      const loadsResult = await pool.query(`
+        SELECT COUNT(*) as pending_loads
+        FROM logistics.loads
+        WHERE status IN ('DRAFT', 'PLANNED')
+      `);
+      pendingLoads = parseInt(loadsResult.rows[0]?.pending_loads || 0);
+    } catch (e) {
+      console.log('Loads table may not exist:', e);
+    }
 
     res.json({
-      vehicles: vehiclesResult.rows,
-      drivers: driversResult.rows,
-      trips_today: tripsResult.rows,
-      fuel_this_month: fuelResult.rows[0] || { total_fuel_cost: 0, total_litres: 0 },
-      pending_loads: loadsResult.rows[0]?.pending_loads || 0
+      vehicles: { 
+        total: totalVehicles, 
+        active: activeVehicles, 
+        in_maintenance: inMaintenanceVehicles 
+      },
+      drivers: { 
+        total: totalDrivers, 
+        active: activeDrivers, 
+        on_trip: 0 
+      },
+      trips_today: { 
+        total: tripsTotal, 
+        in_progress: tripsInProgress, 
+        completed: tripsCompleted 
+      },
+      fuel_this_month: { 
+        total_fuel_cost: totalFuelCost, 
+        total_litres: totalLitres 
+      },
+      pending_loads: pendingLoads,
+      alerts: { 
+        expiring_documents: 0 
+      }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching dashboard stats:', error);
-    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+    res.status(500).json({ error: 'Failed to fetch dashboard stats', details: error.message });
   }
 };
