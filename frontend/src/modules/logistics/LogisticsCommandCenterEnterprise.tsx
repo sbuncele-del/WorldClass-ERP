@@ -214,11 +214,17 @@ const LogisticsCommandCenterEnterprise: React.FC = () => {
   ];
 
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard', path: '/logistics/dashboard' },
-    { id: 'fleet', label: 'Fleet', path: '/logistics/fleet' },
-    { id: 'drivers', label: 'Drivers', path: '/logistics/drivers' },
-    { id: 'trips', label: 'Trips', path: '/logistics/trips' },
-    { id: 'planner', label: 'Load Planner', path: '/logistics/planner' },
+    { id: 'dashboard', label: '🎯 Dashboard', path: '/logistics/dashboard' },
+    { id: 'enterprise', label: '🚀 Enterprise AI', path: '/logistics/enterprise' },
+    { id: 'fleet', label: '🚛 Fleet', path: '/logistics/fleet' },
+    { id: 'drivers', label: '👨‍✈️ Drivers', path: '/logistics/drivers' },
+    { id: 'trips', label: '🚚 Trips', path: '/logistics/trips' },
+    { id: 'planner', label: '📋 Load Planner', path: '/logistics/planner' },
+    { id: 'routes', label: '🗺️ Routes', path: '/logistics/routes' },
+    { id: 'incidents', label: '⚠️ Incidents', path: '/logistics/incidents' },
+    { id: 'geofences', label: '📍 Geofences', path: '/logistics/geofences' },
+    { id: 'fuel', label: '⛽ Fuel', path: '/logistics/fuel' },
+    { id: 'reports', label: '📊 Reports', path: '/logistics/reports' },
   ];
 
   const liveVehicleColumns = [
@@ -359,36 +365,6 @@ const LogisticsCommandCenterEnterprise: React.FC = () => {
       }]}
     >
       <div className="logistics-page-content">
-        {/* Navigation Tabs */}
-        <div className="logistics-section">
-          <Space size="middle" wrap>
-            <Link to="/logistics/dashboard">
-              <Button type="primary">🎯 Command Center</Button>
-            </Link>
-            <Link to="/logistics/planner">
-              <Button>📋 Load Planner</Button>
-            </Link>
-            <Link to="/logistics/trips">
-              <Button>🚚 Trip Management</Button>
-            </Link>
-            <Link to="/logistics/fleet">
-              <Button>🚛 Fleet</Button>
-            </Link>
-            <Link to="/logistics/drivers">
-              <Button>👨‍✈️ Drivers</Button>
-            </Link>
-            <Link to="/logistics/fuel">
-              <Button>⛽ Fuel</Button>
-            </Link>
-            <Link to="/logistics/documents">
-              <Button>📄 Documents</Button>
-            </Link>
-            <Link to="/logistics/reports">
-              <Button>📊 Analytics</Button>
-            </Link>
-          </Space>
-        </div>
-
         {/* KPI Cards */}
         <Row gutter={[16, 16]} className="logistics-section">
           <Col xs={24} sm={12} lg={6}>

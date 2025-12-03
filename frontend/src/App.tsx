@@ -8,6 +8,7 @@ import './App.css';
 import { ClientProvider } from './contexts/ClientContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { UserProvider } from './contexts/UserContext';
+import { FeatureFlagProvider } from './contexts/FeatureFlagContext';
 
 // Authentication Pages
 import Login from './pages/Login';
@@ -100,8 +101,9 @@ function App() {
   return (
     <ConfigProvider theme={antdTheme}>
       <UserProvider>
-        <ClientProvider>
-          <CurrencyProvider>
+        <FeatureFlagProvider>
+          <ClientProvider>
+            <CurrencyProvider>
             <Router>
             <Routes>
               {/* Public Routes - No Layout */}
@@ -157,7 +159,10 @@ function App() {
             </Router>
           </CurrencyProvider>
         </ClientProvider>
-      </UserProvider>
+      </FeatureFlagProvider>
+    </UserProvider>
     </ConfigProvider>
   );
-}export default App;
+}
+
+export default App;

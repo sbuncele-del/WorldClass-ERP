@@ -102,8 +102,11 @@ const LoadPlannerEnterprise: React.FC = () => {
     { id: 'trips', label: '🚚 Trip Management', path: '/logistics/trips' },
     { id: 'fleet', label: '🚛 Fleet', path: '/logistics/fleet' },
     { id: 'drivers', label: '👨‍✈️ Drivers', path: '/logistics/drivers' },
+    { id: 'routes', label: '🗺️ Routes', path: '/logistics/routes' },
+    { id: 'incidents', label: '⚠️ Incidents', path: '/logistics/incidents' },
+    { id: 'geofences', label: '📍 Geofences', path: '/logistics/geofences' },
     { id: 'fuel', label: '⛽ Fuel', path: '/logistics/fuel' },
-    { id: 'reports', label: '📊 Analytics', path: '/logistics/reports' }
+    { id: 'reports', label: '📊 Reports', path: '/logistics/reports' },
   ];
 
   const breadcrumbs = [

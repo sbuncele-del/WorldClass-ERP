@@ -1023,8 +1023,8 @@ export const getLoads = async (req: Request, res: Response) => {
         v.vehicle_registration, v.vehicle_registration,
         d.first_name || ' ' || d.last_name as driver_name
       FROM logistics.loads l
-      LEFT JOIN logistics.vehicles v ON l.vehicle_id = v.vehicle_id
-      LEFT JOIN logistics.drivers d ON l.driver_id = d.driver_id
+      LEFT JOIN logistics.vehicles v ON l.vehicle_id::text = v.vehicle_id::text
+      LEFT JOIN logistics.drivers d ON l.driver_id::text = d.driver_id::text
       WHERE 1=1
     `;
     const values: any[] = [];
@@ -1082,8 +1082,8 @@ export const getLoadById = async (req: Request, res: Response) => {
         v.vehicle_registration, v.vehicle_registration,
         d.first_name || ' ' || d.last_name as driver_name
       FROM logistics.loads l
-      LEFT JOIN logistics.vehicles v ON l.vehicle_id = v.vehicle_id
-      LEFT JOIN logistics.drivers d ON l.driver_id = d.driver_id
+      LEFT JOIN logistics.vehicles v ON l.vehicle_id::text = v.vehicle_id::text
+      LEFT JOIN logistics.drivers d ON l.driver_id::text = d.driver_id::text
       WHERE l.load_id = $1`,
       [id]
     );

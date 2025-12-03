@@ -41,6 +41,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
 import { driversAPI } from '../../services/logistics.api';
+import { exportToCSV, formatDate } from '../../utils/export';
 import './logistics-enterprise.css';
 
 interface Driver {
@@ -83,7 +84,23 @@ const DriverManagementEnterprise: React.FC = () => {
   const [licenseFilter, setLicenseFilter] = useState<string>('ALL');
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [form] = Form.useForm();
+
+  const handleExport = () => {
+    exportToCSV(filteredDrivers, [
+      { key: 'first_name', header: 'First Name' },
+      { key: 'last_name', header: 'Last Name' },
+      { key: 'id_number', header: 'ID Number' },
+      { key: 'license_number', header: 'License Number' },
+      { key: 'license_type', header: 'License Type' },
+      { key: 'license_expiry', header: 'License Expiry', formatter: formatDate },
+      { key: 'prdp_expiry', header: 'PrDP Expiry', formatter: formatDate },
+      { key: 'status', header: 'Status' },
+      { key: 'performance_score', header: 'Performance Score' },
+    ], 'drivers');
+    message.success('Driver data exported to CSV');
+  };
   const [stats, setStats] = useState<DriverStats>({
     total: 0,
     active: 0,
@@ -99,8 +116,11 @@ const DriverManagementEnterprise: React.FC = () => {
     { id: 'trips', label: '🚚 Trip Management', path: '/logistics/trips' },
     { id: 'fleet', label: '🚛 Fleet', path: '/logistics/fleet' },
     { id: 'drivers', label: '👨‍✈️ Drivers', path: '/logistics/drivers' },
+    { id: 'routes', label: '🗺️ Routes', path: '/logistics/routes' },
+    { id: 'incidents', label: '⚠️ Incidents', path: '/logistics/incidents' },
+    { id: 'geofences', label: '📍 Geofences', path: '/logistics/geofences' },
     { id: 'fuel', label: '⛽ Fuel', path: '/logistics/fuel' },
-    { id: 'reports', label: '📊 Analytics', path: '/logistics/reports' }
+    { id: 'reports', label: '📊 Reports', path: '/logistics/reports' },
   ];
 
   const breadcrumbs = [
@@ -605,12 +625,14 @@ const DriverManagementEnterprise: React.FC = () => {
                 <Button
                   icon={<FilterOutlined />}
                   size="large"
+                  onClick={() => setFilterModalOpen(true)}
                 >
                   Advanced Filters
                 </Button>
                 <Button
                   icon={<ExportOutlined />}
                   size="large"
+                  onClick={handleExport}
                 >
                   Export
                 </Button>

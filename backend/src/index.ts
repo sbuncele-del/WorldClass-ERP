@@ -55,6 +55,10 @@ import DemoResetService from './services/demo-reset.service';
 import { securityHeaders, securityLogger } from './middleware/security';
 import { apiLimiter, authLimiter, adminLimiter, webhookLimiter, demoLimiter } from './middleware/rateLimiter';
 import logisticsRoutes from './modules/logistics/logistics.routes';
+import { authenticateToken } from './middleware/auth';
+import { auditMiddleware } from './middleware/audit.middleware';
+import { tenantMiddleware } from './middleware/tenant';
+import auditLogRoutes from './routes/audit-log.routes';
 // import gpsRoutes from './modules/logistics/gps.routes'; // May have issues
 import chartOfAccountsRoutes from './modules/chart-of-accounts/routes';
 import financialReportsRoutes2 from './modules/financial-reports/routes';
@@ -193,7 +197,15 @@ app.use('/api/financial/forecasting', financialForecastingRoutes);
 app.use('/api/financial/custom-reports', customReportsRoutes);
 app.use('/api/practice', practiceRoutes);
 app.use('/api/assets', assetsRoutes); // Legacy Asset Management routes (workspace, old controllers)
-app.use('/api/logistics', logisticsRoutes); // Logistics routes
+app.use(
+  '/api/logistics',
+  authenticateToken,
+  tenantMiddleware,
+  apiLimiter,
+  auditMiddleware({ entityType: 'logistics' }),
+  logisticsRoutes
+); // Logistics routes (RBAC protected + Audit)
+app.use('/api/audit-log', apiLimiter, auditLogRoutes); // Audit Log API (SOX compliance)
 app.use('/api/compliance', apiLimiter, complianceRoutes); // Compliance & Governance
 app.use('/api/audit', apiLimiter, auditReadyRoutes); // Audit-Ready Suite
 app.use('/api/reports', apiLimiter, reportsRoutes); // Reports & Analytics

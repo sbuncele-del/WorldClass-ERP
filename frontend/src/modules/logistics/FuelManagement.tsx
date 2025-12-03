@@ -1,43 +1,59 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  Card,
+  Row,
+  Col,
+  Statistic,
+  Button,
+  Space,
+  Table,
+  Tag,
+  Modal,
+  Form,
+  DatePicker,
+  Select,
+  InputNumber,
+  Input,
+  message
+} from 'antd';
+import {
+  PlusOutlined,
+  SearchOutlined,
+  ExportOutlined,
+  DollarOutlined,
+  ThunderboltOutlined,
+  FileTextOutlined,
+  FireOutlined
+} from '@ant-design/icons';
+import type { ColumnsType } from 'antd/es/table';
+import dayjs from 'dayjs';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
-import '../../styles/erp-ui.css';
+import { driversAPI, fuelAPI, vehiclesAPI } from '../../services/logistics.api';
+import type { FuelTransaction as FuelTransactionDto } from '../../services/logistics.api';
+import { exportToCSV, formatDate, formatCurrency } from '../../utils/export';
+import './logistics-enterprise.css';
 
-interface FuelTransaction {
-  id?: string;
-  date: string;
-  vehicle: string;
-  driver: string;
-  litres: number;
-  pricePerLitre: number;
-  cost: number;
-  odometer: number;
-  supplier: string;
-  invoiceNumber: string;
-  km?: number;
-  journalEntry?: string;
+interface VehicleOption {
+  value: string;
+  label: string;
+  registration: string;
+  driverName?: string;
+}
+
+interface DriverOption {
+  value: string;
+  label: string;
 }
 
 const FuelManagement: React.FC = () => {
-  const [showModal, setShowModal] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [transactions, setTransactions] = useState<FuelTransaction[]>([
-    { id: 'FT-001', date: '2025-11-10', vehicle: 'TRK-001 (ABC 123 GP)', driver: 'John Mthembu', litres: 285, pricePerLitre: 24.00, cost: 6840, odometer: 145820, supplier: 'Engen Midrand', invoiceNumber: 'ENG-20251110-001', km: 3.2, journalEntry: 'JE-2025-1523' },
-    { id: 'FT-002', date: '2025-11-10', vehicle: 'TRK-002 (DEF 456 GP)', driver: 'Sarah Ndlovu', litres: 310, pricePerLitre: 24.00, cost: 7440, odometer: 98420, supplier: 'Shell Gateway', invoiceNumber: 'SHL-20251110-045', km: 3.5, journalEntry: 'JE-2025-1524' },
-    { id: 'FT-003', date: '2025-11-09', vehicle: 'TRK-003 (GHI 789 GP)', driver: 'Thabo Dlamini', litres: 295, pricePerLitre: 24.00, cost: 7080, odometer: 203450, supplier: 'BP Fourways', invoiceNumber: 'BP-20251109-128', km: 3.1, journalEntry: 'JE-2025-1502' },
-    { id: 'FT-004', date: '2025-11-09', vehicle: 'VAN-001 (JKL 012 GP)', driver: 'Peter Mokoena', litres: 65, pricePerLitre: 24.00, cost: 1560, odometer: 67230, supplier: 'Engen Sandton', invoiceNumber: 'ENG-20251109-089', km: 11.2, journalEntry: 'JE-2025-1503' },
-  ]);
-
-  const [formData, setFormData] = useState<FuelTransaction>({
-    date: new Date().toISOString().split('T')[0],
-    vehicle: '',
-    driver: '',
-    litres: 0,
-    pricePerLitre: 24.00,
-    cost: 0,
-    odometer: 0,
-    supplier: '',
-    invoiceNumber: ''
-  });
+  const [transactions, setTransactions] = useState<FuelTransactionDto[]>([]);
+  const [vehicles, setVehicles] = useState<VehicleOption[]>([]);
+  const [drivers, setDrivers] = useState<DriverOption[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [form] = Form.useForm();
 
   const tabs = [
     { id: 'command', label: '🎯 Command Center', path: '/logistics/dashboard' },
@@ -45,8 +61,11 @@ const FuelManagement: React.FC = () => {
     { id: 'trips', label: '🚚 Trip Management', path: '/logistics/trips' },
     { id: 'fleet', label: '🚛 Fleet', path: '/logistics/fleet' },
     { id: 'drivers', label: '👨‍✈️ Drivers', path: '/logistics/drivers' },
+    { id: 'routes', label: '🗺️ Routes', path: '/logistics/routes' },
+    { id: 'incidents', label: '⚠️ Incidents', path: '/logistics/incidents' },
+    { id: 'geofences', label: '📍 Geofences', path: '/logistics/geofences' },
     { id: 'fuel', label: '⛽ Fuel', path: '/logistics/fuel' },
-    { id: 'reports', label: '📊 Analytics', path: '/logistics/reports' }
+    { id: 'reports', label: '📊 Reports', path: '/logistics/reports' },
   ];
 
   const breadcrumbs = [
@@ -54,111 +73,178 @@ const FuelManagement: React.FC = () => {
     { label: 'Fuel Management' }
   ];
 
-  const vehicles = [
-    { id: 'TRK-001', registration: 'ABC 123 GP', driver: 'John Mthembu' },
-    { id: 'TRK-002', registration: 'DEF 456 GP', driver: 'Sarah Ndlovu' },
-    { id: 'TRK-003', registration: 'GHI 789 GP', driver: 'Thabo Dlamini' },
-    { id: 'VAN-001', registration: 'JKL 012 GP', driver: 'Peter Mokoena' },
-    { id: 'TRK-007', registration: 'MNO 345 GP', driver: 'Lindiwe Khumalo' },
-  ];
+  useEffect(() => {
+    const loadInitialData = async () => {
+      try {
+        setLoading(true);
+        const [fuelResponse, vehiclesResponse, driversResponse] = await Promise.all([
+          fuelAPI.getFuelTransactions({ limit: '200' }),
+          vehiclesAPI.getVehicles({ status: 'ACTIVE' }),
+          driversAPI.getDrivers({ status: 'ACTIVE' })
+        ]);
 
-  const fuelSuppliers = [
-    'Engen Midrand',
-    'Shell Gateway',
-    'BP Fourways',
-    'Engen Sandton',
-    'Shell Rivonia',
-    'Sasol Sandton',
-    'Total Midrand'
-  ];
+        setTransactions(fuelResponse.fuel_transactions || []);
 
-  const handleInputChange = (field: keyof FuelTransaction, value: any) => {
-    const updated = { ...formData, [field]: value };
-    
-    // Auto-calculate cost when litres or price changes
-    if (field === 'litres' || field === 'pricePerLitre') {
-      updated.cost = parseFloat((updated.litres * updated.pricePerLitre).toFixed(2));
-    }
+        setVehicles(
+          (vehiclesResponse.vehicles || []).map((vehicle: any) => ({
+            value: String(vehicle.vehicle_id),
+            label: `${vehicle.vehicle_registration}`,
+            registration: vehicle.vehicle_registration,
+            driverName: vehicle.current_driver
+          }))
+        );
 
-    // Auto-fill driver when vehicle is selected
-    if (field === 'vehicle') {
-      const selectedVehicle = vehicles.find(v => `${v.id} (${v.registration})` === value);
-      if (selectedVehicle) {
-        updated.driver = selectedVehicle.driver;
+        setDrivers(
+          (driversResponse.drivers || []).map((driver: any) => ({
+            value: String(driver.driver_id),
+            label: `${driver.first_name} ${driver.last_name}`.trim()
+          }))
+        );
+      } catch (error) {
+        console.error('Error loading fuel data:', error);
+        message.error('Could not load fuel transactions');
+      } finally {
+        setLoading(false);
       }
-    }
+    };
 
-    setFormData(updated);
+    loadInitialData();
+  }, []);
+
+  const filteredTransactions = useMemo(() => {
+    if (!searchTerm) return transactions;
+    const term = searchTerm.toLowerCase();
+    return transactions.filter((tx) =>
+      [
+        tx.transaction_number,
+        tx.vehicle_registration,
+        tx.driver_name,
+        tx.fuel_station
+      ]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(term))
+    );
+  }, [transactions, searchTerm]);
+
+  const summary = useMemo(() => {
+    const totalLitres = filteredTransactions.reduce((sum, tx) => sum + Number(tx.litres || 0), 0);
+    const totalSpend = filteredTransactions.reduce((sum, tx) => sum + Number(tx.total_amount || 0), 0);
+    const avgPrice = totalLitres ? totalSpend / totalLitres : 0;
+    const reconciled = filteredTransactions.filter((tx) => tx.reconciled).length;
+
+    return {
+      totalLitres,
+      totalSpend,
+      avgPrice,
+      reconciled,
+    };
+  }, [filteredTransactions]);
+
+  const columns: ColumnsType<FuelTransactionDto> = [
+    {
+      title: 'Txn #',
+      dataIndex: 'transaction_number',
+      key: 'transaction_number',
+      render: (value: string, record) => (
+        <Space direction="vertical" size={0}>
+          <span style={{ fontWeight: 600 }}>{value || record.transaction_id}</span>
+          <span style={{ fontSize: 12, color: '#64748b' }}>
+            {dayjs(record.transaction_date).format('DD MMM YYYY HH:mm')}
+          </span>
+        </Space>
+      )
+    },
+    {
+      title: 'Vehicle',
+      dataIndex: 'vehicle_registration',
+      key: 'vehicle_registration',
+      render: (value: string, record) => (
+        <Space direction="vertical" size={0}>
+          <span style={{ fontWeight: 600 }}>{value || 'Unassigned'}</span>
+          <span style={{ fontSize: 12, color: '#64748b' }}>Odometer {record.odometer_reading?.toLocaleString?.() || '—'} km</span>
+        </Space>
+      )
+    },
+    {
+      title: 'Driver',
+      dataIndex: 'driver_name',
+      key: 'driver_name',
+      render: (value: string) => value || 'Unassigned'
+    },
+    {
+      title: 'Supplier',
+      dataIndex: 'fuel_station',
+      key: 'fuel_station',
+    },
+    {
+      title: 'Litres',
+      dataIndex: 'litres',
+      key: 'litres',
+      align: 'right',
+      render: (value: number) => `${Number(value || 0).toFixed(2)} L`
+    },
+    {
+      title: 'Price/L',
+      dataIndex: 'price_per_litre',
+      key: 'price_per_litre',
+      align: 'right',
+      render: (value: number) => `R ${Number(value || 0).toFixed(2)}`
+    },
+    {
+      title: 'Total Cost',
+      dataIndex: 'total_amount',
+      key: 'total_amount',
+      align: 'right',
+      render: (value: number) => (
+        <span style={{ fontWeight: 600 }}>R {Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+      )
+    },
+    {
+      title: 'Status',
+      dataIndex: 'reconciled',
+      key: 'reconciled',
+      render: (value: boolean) => (
+        <Tag color={value ? 'green' : 'gold'}>{value ? 'Reconciled' : 'Pending'}</Tag>
+      )
+    }
+  ];
+
+  const openModal = () => {
+    form.resetFields();
+    setModalVisible(true);
   };
 
-  const handleSubmit = async () => {
-    // Validation
-    if (!formData.vehicle || !formData.driver || !formData.supplier || !formData.invoiceNumber) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
-    if (formData.litres <= 0 || formData.odometer <= 0) {
-      alert('Litres and odometer reading must be greater than 0');
-      return;
-    }
-
-    setIsSubmitting(true);
-
+  const handleCreateTransaction = async () => {
     try {
-      // Create fuel transaction with journal entry
-      const response = await fetch('/api/logistics/fuel/transactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          // This will trigger automatic journal entry creation in backend:
-          // Debit: Fuel Expense (Account 5-20-001)
-          // Credit: Accounts Payable - [Supplier Name] (Account 2-10-XXX)
-        })
-      });
+      const values = await form.validateFields();
+      setSubmitting(true);
 
-      if (!response.ok) throw new Error('Failed to create fuel transaction');
-
-      const result = await response.json();
-      
-      // Add to local state with generated IDs
-      const newTransaction: FuelTransaction = {
-        ...formData,
-        id: result.transaction_id,
-        journalEntry: result.journal_entry_id,
-        km: 3.2 // This would be calculated from previous odometer reading
+      const payload = {
+        vehicle_id: values.vehicle_id,
+        driver_id: values.driver_id,
+        transaction_date: values.transaction_date.toISOString(),
+        transaction_number: values.transaction_number,
+        fuel_station: values.fuel_station,
+        location: values.location,
+        litres: values.litres,
+        price_per_litre: values.price_per_litre,
+        odometer_reading: values.odometer_reading,
+        payment_method: values.payment_method,
+        fuel_type: values.fuel_type || 'Diesel'
       };
 
-      setTransactions([newTransaction, ...transactions]);
-
-      // Success notification
-      alert(`✅ Fuel transaction logged successfully!\n\n` +
-            `Transaction ID: ${result.transaction_id}\n` +
-            `Journal Entry: ${result.journal_entry_id}\n\n` +
-            `Accounting Entry Created:\n` +
-            `• Debit: Fuel Expense R ${formData.cost.toFixed(2)}\n` +
-            `• Credit: Accounts Payable - ${formData.supplier} R ${formData.cost.toFixed(2)}`);
-
-      // Reset form and close modal
-      setFormData({
-        date: new Date().toISOString().split('T')[0],
-        vehicle: '',
-        driver: '',
-        litres: 0,
-        pricePerLitre: 24.00,
-        cost: 0,
-        odometer: 0,
-        supplier: '',
-        invoiceNumber: ''
-      });
-      setShowModal(false);
-
+      const response = await fuelAPI.createFuelTransaction(payload);
+      setTransactions((prev) => [response.fuel_transaction, ...prev]);
+      message.success('Fuel transaction logged');
+      setModalVisible(false);
     } catch (error) {
+      if ((error as any).errorFields) {
+        return;
+      }
       console.error('Error creating fuel transaction:', error);
-      alert('❌ Error: Could not create fuel transaction. Please try again.');
+      message.error('Could not create fuel transaction');
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
@@ -170,513 +256,211 @@ const FuelManagement: React.FC = () => {
       tabs={tabs}
       actionButtons={[
         {
-          label: '+ Log Fuel Transaction',
-          icon: <span>⛽</span>,
+          label: 'Log Fuel Transaction',
+          icon: <PlusOutlined />,
           variant: 'primary' as const,
-          onClick: () => setShowModal(true)
+          onClick: openModal
         }
       ]}
     >
-      <div className="metrics-grid">
-        <div className="metric-card" style={{ borderLeftColor: '#667eea' }}>
-          <div className="metric-header">
-            <span className="metric-label">💰 Total Fuel Spend (Nov)</span>
-            <span className="metric-icon" style={{ fontSize: '2rem' }}>💰</span>
-          </div>
-          <div className="metric-value">R {transactions.reduce((sum, t) => sum + t.cost, 0).toLocaleString()}</div>
-          <div className="metric-footer">
-            <span className="metric-change">{transactions.reduce((sum, t) => sum + t.litres, 0)} litres consumed</span>
-          </div>
-        </div>
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="Total Fuel Spend"
+              value={summary.totalSpend}
+              prefix={<DollarOutlined />}
+              formatter={(value) => `R ${(Number(value) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="Total Litres"
+              value={summary.totalLitres}
+              prefix={<FireOutlined />}
+              formatter={(value) => `${(Number(value) || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })} L`}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="Avg Price / L"
+              value={summary.avgPrice}
+              prefix={<ThunderboltOutlined />}
+              formatter={(value) => `R ${(Number(value) || 0).toFixed(2)}`}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title="Reconciled"
+              value={summary.reconciled}
+              prefix={<FileTextOutlined />}
+            />
+          </Card>
+        </Col>
+      </Row>
 
-        <div className="metric-card" style={{ borderLeftColor: '#10b981' }}>
-          <div className="metric-header">
-            <span className="metric-label">📊 Avg Efficiency</span>
-            <span className="metric-icon" style={{ fontSize: '2rem' }}>📊</span>
-          </div>
-          <div className="metric-value">3.8 km/L</div>
-          <div className="metric-footer">
-            <span className="metric-change success">+0.2 vs last month</span>
-          </div>
-        </div>
+      <Card
+        title="Fuel Transactions"
+        style={{ marginTop: 24 }}
+        extra={
+          <Space>
+            <Input
+              allowClear
+              prefix={<SearchOutlined />}
+              placeholder="Search vehicle, driver or supplier"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{ width: 280 }}
+            />
+            <Button icon={<ExportOutlined />} onClick={() => {
+              exportToCSV(filteredTransactions, [
+                { key: 'transaction_number', header: 'Transaction #' },
+                { key: 'transaction_date', header: 'Date', formatter: formatDate },
+                { key: 'vehicle_registration', header: 'Vehicle' },
+                { key: 'driver_name', header: 'Driver' },
+                { key: 'fuel_station', header: 'Supplier' },
+                { key: 'litres', header: 'Litres' },
+                { key: 'price_per_litre', header: 'Price/L' },
+                { key: 'total_amount', header: 'Total', formatter: (v) => formatCurrency(v) },
+                { key: 'odometer_reading', header: 'Odometer' },
+              ], 'fuel_transactions');
+              message.success('Fuel transactions exported to CSV');
+            }}>Export</Button>
+          </Space>
+        }
+      >
+        <Table
+          dataSource={filteredTransactions}
+          columns={columns}
+          loading={loading}
+          rowKey={(record, index) => record.transaction_id || record.transaction_number || String(index)}
+          pagination={{ pageSize: 10 }}
+        />
+      </Card>
 
-        <div className="metric-card" style={{ borderLeftColor: '#f59e0b' }}>
-          <div className="metric-header">
-            <span className="metric-label">⛽ Cost per km</span>
-            <span className="metric-icon" style={{ fontSize: '2rem' }}>⛽</span>
-          </div>
-          <div className="metric-value">R 6.32</div>
-          <div className="metric-footer">
-            <span className="metric-change">Fleet average</span>
-          </div>
-        </div>
-
-        <div className="metric-card" style={{ borderLeftColor: '#3b82f6' }}>
-          <div className="metric-header">
-            <span className="metric-label">🧾 Transactions</span>
-            <span className="metric-icon" style={{ fontSize: '2rem' }}>🧾</span>
-          </div>
-          <div className="metric-value">{transactions.length}</div>
-          <div className="metric-footer">
-            <span className="metric-change">This month</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="content-card" style={{ marginTop: '1.5rem' }}>
-        <div className="card-header">
-          <h2 className="card-title">
-            <span style={{ marginRight: '0.5rem' }}>📋</span>
-            Recent Fuel Transactions
-          </h2>
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <select className="filter-select" style={{ padding: '0.5rem 1rem' }}>
-              <option>All Vehicles</option>
-              <option>TRK-001</option>
-              <option>TRK-002</option>
-              <option>TRK-003</option>
-              <option>VAN-001</option>
-            </select>
-            <button className="action-button">
-              📊 Export Report
-            </button>
-          </div>
-        </div>
-        <div className="card-content">
-          <div className="data-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Transaction ID</th>
-                  <th>Date</th>
-                  <th>Vehicle</th>
-                  <th>Driver</th>
-                  <th>Supplier</th>
-                  <th>Invoice #</th>
-                  <th>Litres</th>
-                  <th>Price/L</th>
-                  <th>Total Cost</th>
-                  <th>Efficiency</th>
-                  <th>Journal Entry</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((tx) => (
-                  <tr key={tx.id}>
-                    <td>
-                      <strong style={{ color: '#3b82f6' }}>{tx.id}</strong>
-                    </td>
-                    <td style={{ fontWeight: 500 }}>{new Date(tx.date).toLocaleDateString('en-ZA')}</td>
-                    <td>
-                      <strong style={{ fontSize: '0.875rem' }}>{tx.vehicle}</strong>
-                    </td>
-                    <td>{tx.driver}</td>
-                    <td style={{ fontSize: '0.875rem' }}>{tx.supplier}</td>
-                    <td style={{ fontSize: '0.8125rem', color: '#64748b' }}>{tx.invoiceNumber}</td>
-                    <td style={{ fontWeight: 600 }}>{tx.litres}L</td>
-                    <td style={{ fontSize: '0.875rem' }}>R {tx.pricePerLitre.toFixed(2)}</td>
-                    <td style={{ fontWeight: 700, color: '#667eea' }}>R {tx.cost.toLocaleString()}</td>
-                    <td>
-                      {tx.km && (
-                        <span style={{
-                          padding: '0.375rem 0.75rem',
-                          borderRadius: '0.5rem',
-                          background: tx.km >= 3.5 ? '#dcfce7' : tx.km >= 3.0 ? '#fef3c7' : '#fee2e2',
-                          color: tx.km >= 3.5 ? '#166534' : tx.km >= 3.0 ? '#92400e' : '#991b1b',
-                          fontWeight: 700,
-                          fontSize: '0.8125rem'
-                        }}>
-                          {tx.km} km/L
-                        </span>
-                      )}
-                    </td>
-                    <td>
-                      {tx.journalEntry && (
-                        <a 
-                          href={`/finance/journal-entries/${tx.journalEntry}`}
-                          style={{ 
-                            color: '#10b981', 
-                            fontWeight: 600,
-                            fontSize: '0.875rem',
-                            textDecoration: 'none'
-                          }}
-                        >
-                          {tx.journalEntry} →
-                        </a>
-                      )}
-                    </td>
-                    <td>
-                      <button className="action-button" style={{ padding: '0.5rem 0.75rem', fontSize: '0.8125rem' }}>
-                        📄 Details
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <div className="content-card" style={{ marginTop: '1.5rem' }}>
-        <div className="card-header">
-          <h2 className="card-title">
-            <span style={{ marginRight: '0.5rem' }}>📊</span>
-            Fuel Efficiency by Vehicle
-          </h2>
-        </div>
-        <div className="card-content">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-            {[
-              { vehicle: 'TRK-001', registration: 'ABC 123 GP', efficiency: 3.2, status: 'good' },
-              { vehicle: 'TRK-002', registration: 'DEF 456 GP', efficiency: 3.5, status: 'excellent' },
-              { vehicle: 'TRK-003', registration: 'GHI 789 GP', efficiency: 3.1, status: 'good' },
-              { vehicle: 'VAN-001', registration: 'JKL 012 GP', efficiency: 11.2, status: 'excellent' },
-            ].map((item, index) => (
-              <div
-                key={index}
-                style={{
-                  padding: '1.25rem',
-                  border: '2px solid #e2e8f0',
-                  borderRadius: '0.75rem',
-                  background: 'white',
-                  textAlign: 'center'
-                }}
+      <Modal
+        title="Log Fuel Transaction"
+        open={modalVisible}
+        onCancel={() => setModalVisible(false)}
+        confirmLoading={submitting}
+        onOk={handleCreateTransaction}
+        okText="Log Transaction"
+        width={720}
+      >
+        <Form
+          layout="vertical"
+          form={form}
+          initialValues={{
+            transaction_date: dayjs(),
+            litres: 0,
+            price_per_litre: 0,
+            payment_method: 'Fuel Card',
+            fuel_type: 'Diesel'
+          }}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="transaction_date"
+                label="Transaction Date"
+                rules={[{ required: true, message: 'Select transaction date' }]}
               >
-                <div style={{ fontSize: '1.125rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.25rem' }}>
-                  {item.vehicle}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '0.75rem' }}>
-                  {item.registration}
-                </div>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color: '#667eea', marginBottom: '0.25rem' }}>
-                  {item.efficiency}
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#64748b' }}>km/L</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Log Fuel Transaction Modal */}
-      {showModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '1rem',
-            maxWidth: '800px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)'
-          }}>
-            {/* Modal Header */}
-            <div style={{
-              padding: '1.5rem 2rem',
-              borderBottom: '2px solid #e2e8f0',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between'
-            }}>
-              <div>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', marginBottom: '0.25rem' }}>
-                  ⛽ Log Fuel Transaction
-                </h2>
-                <p style={{ fontSize: '0.875rem', color: '#64748b', margin: 0 }}>
-                  Creates fuel expense entry in financial records
-                </p>
-              </div>
-              <button
-                onClick={() => setShowModal(false)}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  fontSize: '1.5rem',
-                  cursor: 'pointer',
-                  color: '#64748b',
-                  padding: '0.5rem'
-                }}
+                <DatePicker showTime style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="transaction_number" label="Transaction Reference">
+                <Input placeholder="Optional reference number" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="vehicle_id"
+                label="Vehicle"
+                rules={[{ required: true, message: 'Select vehicle' }]}
               >
-                ✕
-              </button>
-            </div>
-
-            {/* Modal Body */}
-            <div style={{ padding: '2rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                {/* Date */}
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#334155' }}>
-                    Transaction Date *
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => handleInputChange('date', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.9375rem'
-                    }}
-                  />
-                </div>
-
-                {/* Vehicle */}
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#334155' }}>
-                    Vehicle *
-                  </label>
-                  <select
-                    value={formData.vehicle}
-                    onChange={(e) => handleInputChange('vehicle', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.9375rem'
-                    }}
-                  >
-                    <option value="">Select Vehicle</option>
-                    {vehicles.map((v) => (
-                      <option key={v.id} value={`${v.id} (${v.registration})`}>
-                        {v.id} - {v.registration}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Driver */}
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#334155' }}>
-                    Driver *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.driver}
-                    onChange={(e) => handleInputChange('driver', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.9375rem',
-                      background: '#f8fafc'
-                    }}
-                    readOnly
-                    placeholder="Auto-filled from vehicle"
-                  />
-                </div>
-
-                {/* Fuel Supplier */}
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#334155' }}>
-                    Fuel Supplier *
-                  </label>
-                  <select
-                    value={formData.supplier}
-                    onChange={(e) => handleInputChange('supplier', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.9375rem'
-                    }}
-                  >
-                    <option value="">Select Supplier</option>
-                    {fuelSuppliers.map((supplier) => (
-                      <option key={supplier} value={supplier}>
-                        {supplier}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Invoice Number */}
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#334155' }}>
-                    Invoice Number *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.invoiceNumber}
-                    onChange={(e) => handleInputChange('invoiceNumber', e.target.value)}
-                    placeholder="e.g., ENG-20251111-001"
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.9375rem'
-                    }}
-                  />
-                </div>
-
-                {/* Odometer Reading */}
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#334155' }}>
-                    Odometer Reading (km) *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.odometer || ''}
-                    onChange={(e) => handleInputChange('odometer', parseFloat(e.target.value) || 0)}
-                    placeholder="e.g., 145820"
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.9375rem'
-                    }}
-                  />
-                </div>
-
-                {/* Litres */}
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#334155' }}>
-                    Litres *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.litres || ''}
-                    onChange={(e) => handleInputChange('litres', parseFloat(e.target.value) || 0)}
-                    placeholder="e.g., 285.50"
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.9375rem'
-                    }}
-                  />
-                </div>
-
-                {/* Price per Litre */}
-                <div>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#334155' }}>
-                    Price per Litre (R) *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.pricePerLitre || ''}
-                    onChange={(e) => handleInputChange('pricePerLitre', parseFloat(e.target.value) || 0)}
-                    placeholder="e.g., 24.00"
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '0.5rem',
-                      fontSize: '0.9375rem'
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Total Cost (Auto-calculated) */}
-              <div style={{ 
-                marginTop: '1.5rem', 
-                padding: '1.25rem', 
-                background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-                borderRadius: '0.75rem',
-                border: '2px solid #3b82f6'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ fontSize: '0.875rem', color: '#1e40af', fontWeight: 600, marginBottom: '0.25rem' }}>
-                      Total Cost (Auto-calculated)
-                    </div>
-                    <div style={{ fontSize: '0.8125rem', color: '#64748b' }}>
-                      {formData.litres} L × R {formData.pricePerLitre.toFixed(2)}/L
-                    </div>
-                  </div>
-                  <div style={{ fontSize: '2rem', fontWeight: 800, color: '#1e40af' }}>
-                    R {formData.cost.toFixed(2)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Accounting Info */}
-              <div style={{ 
-                marginTop: '1rem', 
-                padding: '1rem', 
-                background: '#f8fafc',
-                borderRadius: '0.5rem',
-                border: '1px solid #e2e8f0'
-              }}>
-                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: '#334155', marginBottom: '0.5rem' }}>
-                  📒 Automatic Accounting Entry:
-                </div>
-                <div style={{ fontSize: '0.8125rem', color: '#64748b', lineHeight: '1.6' }}>
-                  • <strong>Debit:</strong> Fuel Expense (5-20-001) - R {formData.cost.toFixed(2)}<br />
-                  • <strong>Credit:</strong> Accounts Payable - {formData.supplier || '[Supplier]'} (2-10-XXX) - R {formData.cost.toFixed(2)}
-                </div>
-              </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div style={{
-              padding: '1.5rem 2rem',
-              borderTop: '2px solid #e2e8f0',
-              display: 'flex',
-              gap: '1rem',
-              justifyContent: 'flex-end'
-            }}>
-              <button
-                onClick={() => setShowModal(false)}
-                disabled={isSubmitting}
-                style={{
-                  padding: '0.75rem 1.5rem',
-                  border: '2px solid #e2e8f0',
-                  background: 'white',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.9375rem',
-                  fontWeight: 600,
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer',
-                  color: '#64748b'
-                }}
+                <Select placeholder="Select vehicle" options={vehicles} showSearch />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="driver_id"
+                label="Driver"
+                rules={[{ required: true, message: 'Select driver' }]}
               >
-                Cancel
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
-                style={{
-                  padding: '0.75rem 2rem',
-                  border: 'none',
-                  background: isSubmitting ? '#94a3b8' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: 'white',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.9375rem',
-                  fontWeight: 700,
-                  cursor: isSubmitting ? 'not-allowed' : 'pointer'
-                }}
+                <Select placeholder="Select driver" options={drivers} showSearch />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="fuel_station"
+                label="Fuel Supplier"
+                rules={[{ required: true, message: 'Enter supplier name' }]}
               >
-                {isSubmitting ? '⏳ Creating Transaction...' : '✓ Log Fuel & Create Journal Entry'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                <Input placeholder="e.g. Engen Midrand" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="location" label="Location">
+                <Input placeholder="e.g. Midrand, Gauteng" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="litres"
+                label="Litres"
+                rules={[{ required: true, message: 'Enter litres pumped' }]}
+              >
+                <InputNumber style={{ width: '100%' }} min={0} step={0.01} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="price_per_litre"
+                label="Price per Litre (R)"
+                rules={[{ required: true, message: 'Enter price per litre' }]}
+              >
+                <InputNumber style={{ width: '100%' }} min={0} step={0.01} prefix="R" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                name="odometer_reading"
+                label="Odometer (km)"
+                rules={[{ required: true, message: 'Enter odometer reading' }]}
+              >
+                <InputNumber style={{ width: '100%' }} min={0} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="payment_method" label="Payment Method">
+                <Select
+                  options={[
+                    { label: 'Fuel Card', value: 'Fuel Card' },
+                    { label: 'Cash', value: 'Cash' },
+                    { label: 'Corporate Card', value: 'Corporate Card' }
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </EnterpriseLayout>
   );
 };

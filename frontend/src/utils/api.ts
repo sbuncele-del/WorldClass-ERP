@@ -19,13 +19,15 @@ export const getApiUrl = (endpoint: string): string => {
 };
 
 /**
- * Fetch with error handling
+ * Fetch with error handling and authentication
  */
 export const apiFetch = async (
   endpoint: string,
   options: RequestInit = {}
 ): Promise<any> => {
   const url = getApiUrl(endpoint);
+  // Check both token keys for compatibility
+  const token = localStorage.getItem('token') || localStorage.getItem('authToken');
   
   try {
     const response = await fetch(url, {
@@ -33,6 +35,7 @@ export const apiFetch = async (
       credentials: 'include',
       headers: {
         ...options.headers,
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
     });
 
@@ -59,6 +62,8 @@ export const uploadFile = async (
   onProgress?: (progress: number) => void
 ): Promise<any> => {
   const url = getApiUrl(endpoint);
+  // Check both token keys for compatibility
+  const token = localStorage.getItem('token') || localStorage.getItem('authToken');
   const formData = new FormData();
   formData.append('file', file);
 
@@ -106,6 +111,9 @@ export const uploadFile = async (
 
     xhr.open('POST', url);
     xhr.withCredentials = true;
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
     xhr.send(formData);
   });
 };

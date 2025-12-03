@@ -41,6 +41,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
 import { tripsAPI } from '../../services/logistics.api';
+import { exportToCSV, formatDate } from '../../utils/export';
 import './logistics-enterprise.css';
 
 interface Trip {
@@ -80,6 +81,21 @@ const TripRosterEnterprise: React.FC = () => {
   const [podFilter, setPodFilter] = useState<string>('ALL');
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [timelineVisible, setTimelineVisible] = useState(false);
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+
+  const handleExport = () => {
+    exportToCSV(filteredTrips, [
+      { key: 'trip_number', header: 'Trip #' },
+      { key: 'customer', header: 'Customer' },
+      { key: 'origin', header: 'Origin' },
+      { key: 'destination', header: 'Destination' },
+      { key: 'driver', header: 'Driver' },
+      { key: 'vehicle_reg', header: 'Vehicle' },
+      { key: 'status', header: 'Status' },
+      { key: 'pod_status', header: 'POD Status' },
+      { key: 'eta', header: 'ETA', formatter: formatDate },
+    ], 'trips');
+  };
   const [stats, setStats] = useState<TripStats>({
     total: 0,
     planned: 0,
@@ -96,8 +112,11 @@ const TripRosterEnterprise: React.FC = () => {
     { id: 'trips', label: '🚚 Trip Management', path: '/logistics/trips' },
     { id: 'fleet', label: '🚛 Fleet', path: '/logistics/fleet' },
     { id: 'drivers', label: '👨‍✈️ Drivers', path: '/logistics/drivers' },
+    { id: 'routes', label: '🗺️ Routes', path: '/logistics/routes' },
+    { id: 'incidents', label: '⚠️ Incidents', path: '/logistics/incidents' },
+    { id: 'geofences', label: '📍 Geofences', path: '/logistics/geofences' },
     { id: 'fuel', label: '⛽ Fuel', path: '/logistics/fuel' },
-    { id: 'reports', label: '📊 Analytics', path: '/logistics/reports' }
+    { id: 'reports', label: '📊 Reports', path: '/logistics/reports' },
   ];
 
   const breadcrumbs = [
@@ -583,12 +602,14 @@ const TripRosterEnterprise: React.FC = () => {
                 <Button
                   icon={<FilterOutlined />}
                   size="large"
+                  onClick={() => setFilterModalOpen(true)}
                 >
                   Advanced Filters
                 </Button>
                 <Button
                   icon={<ExportOutlined />}
                   size="large"
+                  onClick={handleExport}
                 >
                   Export
                 </Button>

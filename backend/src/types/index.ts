@@ -35,6 +35,22 @@ export interface TenantFeatures {
   advanced_reporting: boolean;
   api_access: boolean;
   custom_branding: boolean;
+  // Logistics enterprise extensions (all optional + feature-flagged)
+  logistics_atms?: boolean;
+  logistics_yard_management?: boolean;
+  logistics_dock_scheduling?: boolean;
+  logistics_freight_audit?: boolean;
+  logistics_carrier_contracts?: boolean;
+  logistics_delivery_revenue?: boolean;
+  logistics_freight_billing?: boolean;
+  logistics_route_profitability?: boolean;
+  logistics_carrier_scoring?: boolean;
+  logistics_power_bi?: boolean;
+  logistics_ai_route_optimization?: boolean;
+  logistics_predictive_maintenance?: boolean;
+  logistics_iot_ingestion?: boolean;
+  logistics_process_genome?: boolean;
+  [key: string]: boolean | undefined;
 }
 
 export interface TenantSettings {

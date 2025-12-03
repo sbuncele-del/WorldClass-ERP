@@ -1,22 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Form, Input, Select, DatePicker, InputNumber, Button, Card, Row, Col, message, Spin } from 'antd';
+import { SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
+import { tripsAPI, vehiclesAPI, driversAPI } from '../../services/logistics.api';
 import '../../styles/erp-ui.css';
+
+const { TextArea } = Input;
+const { Option } = Select;
 
 const CreateTrip: React.FC = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    customer: '',
-    origin: '',
-    destination: '',
-    driver_id: '',
-    vehicle_id: '',
-    pickup_date: '',
-    delivery_date: '',
-    cargo_description: '',
-    cargo_weight: '',
-    special_instructions: ''
-  });
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
+  const [drivers, setDrivers] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+
+  useEffect(() => {
+    loadFormData();
+  }, []);
+
+  const loadFormData = async () => {
+    try {
+      const [driversRes, vehiclesRes] = await Promise.all([
+        driversAPI.getDrivers({ status: 'ACTIVE' }),
+        vehiclesAPI.getVehicles({ status: 'ACTIVE' })
+      ]);
+      setDrivers(driversRes.drivers || []);
+      setVehicles(vehiclesRes.vehicles || []);
+    } catch (error) {
+      console.error('Error loading form data:', error);
+      message.warning('Could not load drivers/vehicles. Using demo data.');
+    } finally {
+      setLoadingData(false);
+    }
+  };
 
   const tabs = [
     { id: 'command', label: '🎯 Command Center', path: '/logistics/dashboard' },
@@ -34,32 +53,37 @@ const CreateTrip: React.FC = () => {
     { label: 'Create New Trip' }
   ];
 
-  const mockDrivers = [
-    { id: 'D001', name: 'John Mthembu', vehicle: 'TRK-001 (ABC 123 GP)' },
-    { id: 'D002', name: 'Sarah Ndlovu', vehicle: 'TRK-002 (DEF 456 GP)' },
-    { id: 'D003', name: 'Thabo Dlamini', vehicle: 'TRK-003 (GHI 789 GP)' },
-    { id: 'D004', name: 'Peter Mokoena', vehicle: 'VAN-001 (JKL 012 GP)' },
-    { id: 'D005', name: 'Bongani Zulu', vehicle: 'BKK-001 (MNO 345 GP)' },
+  const handleSubmit = async (values: any) => {
+    setLoading(true);
+    try {
+      const tripData = {
+        customer: values.customer,
+        origin: values.origin,
+        destination: values.destination,
+        driver: values.driver,
+        vehicle_reg: values.vehicle_reg,
+        eta: values.delivery_date?.toISOString(),
+        cargo_description: values.cargo_description,
+        cargo_weight_kg: values.cargo_weight,
+        notes: values.special_instructions,
+        status: 'Planned',
+        pod_status: 'Pending'
+      };
+
+      await tripsAPI.createTrip(tripData);
+      message.success('Trip created successfully!');
+      navigate('/logistics/trips');
+    } catch (error: any) {
+      console.error('Error creating trip:', error);
+      message.error(error.message || 'Failed to create trip');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const customerOptions = [
+    'Massmart', 'Shoprite', 'Pick n Pay', 'Unilever', 'SPAR', 'Sasol', 'Woolworths', 'Game', 'Makro'
   ];
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Simulate trip creation
-    const tripId = `TRP-2025-${String(Math.floor(Math.random() * 90000) + 10000).padStart(5, '0')}`;
-    
-    alert(`✅ Trip Created Successfully!\n\nTrip ID: ${tripId}\nCustomer: ${formData.customer}\nRoute: ${formData.origin} → ${formData.destination}\nDriver: ${mockDrivers.find(d => d.id === formData.driver_id)?.name}\n\nThe trip has been assigned and the driver has been notified.`);
-    
-    // Navigate back to trips list
-    navigate('/logistics/trips');
-  };
 
   return (
     <EnterpriseLayout
@@ -68,271 +92,169 @@ const CreateTrip: React.FC = () => {
       breadcrumbs={breadcrumbs}
       tabs={tabs}
     >
-      <form onSubmit={handleSubmit}>
-        <div className="content-card">
-          <div className="card-header">
-            <h2 className="card-title">Trip Details</h2>
-          </div>
-          <div className="card-content">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-              {/* Customer */}
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: '#1e293b' }}>
-                  Customer <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <select
+      <Spin spinning={loadingData} tip="Loading...">
+        <Card>
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleSubmit}
+            requiredMark="optional"
+          >
+            <Row gutter={24}>
+              <Col xs={24} md={12}>
+                <Form.Item
                   name="customer"
-                  value={formData.customer}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.9375rem',
-                    outline: 'none'
-                  }}
+                  label="Customer"
+                  rules={[{ required: true, message: 'Please select a customer' }]}
                 >
-                  <option value="">Select customer...</option>
-                  <option value="Massmart">Massmart</option>
-                  <option value="Shoprite">Shoprite</option>
-                  <option value="Pick n Pay">Pick n Pay</option>
-                  <option value="Unilever">Unilever</option>
-                  <option value="SPAR">SPAR</option>
-                  <option value="Sasol">Sasol</option>
-                </select>
-              </div>
+                  <Select placeholder="Select customer" size="large" showSearch>
+                    {customerOptions.map(c => (
+                      <Option key={c} value={c}>{c}</Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
 
-              {/* Origin */}
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: '#1e293b' }}>
-                  Origin <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <input
-                  type="text"
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="driver"
+                  label="Assign Driver"
+                  rules={[{ required: true, message: 'Please select a driver' }]}
+                >
+                  <Select placeholder="Select driver" size="large" showSearch>
+                    {drivers.length > 0 ? drivers.map(d => (
+                      <Option key={d.driver_id} value={`${d.first_name} ${d.last_name}`}>
+                        {d.first_name} {d.last_name}
+                      </Option>
+                    )) : (
+                      <>
+                        <Option value="John Mthembu">John Mthembu</Option>
+                        <Option value="Peter Nkosi">Peter Nkosi</Option>
+                        <Option value="David Molefe">David Molefe</Option>
+                      </>
+                    )}
+                  </Select>
+                </Form.Item>
+              </Col>
+
+              <Col xs={24} md={12}>
+                <Form.Item
                   name="origin"
-                  value={formData.origin}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g., JHB Distribution Center"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.9375rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-
-              {/* Destination */}
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: '#1e293b' }}>
-                  Destination <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  name="destination"
-                  value={formData.destination}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g., Cape Town DC"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.9375rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
-
-              {/* Driver/Vehicle */}
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: '#1e293b' }}>
-                  Assign Driver & Vehicle <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <select
-                  name="driver_id"
-                  value={formData.driver_id}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.9375rem',
-                    outline: 'none'
-                  }}
+                  label="Origin"
+                  rules={[{ required: true, message: 'Please enter origin' }]}
                 >
-                  <option value="">Select driver...</option>
-                  {mockDrivers.map(driver => (
-                    <option key={driver.id} value={driver.id}>
-                      {driver.name} - {driver.vehicle}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <Input placeholder="e.g., JHB Distribution Center" size="large" />
+                </Form.Item>
+              </Col>
 
-              {/* Pickup Date */}
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: '#1e293b' }}>
-                  Pickup Date & Time <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <input
-                  type="datetime-local"
-                  name="pickup_date"
-                  value={formData.pickup_date}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.9375rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="destination"
+                  label="Destination"
+                  rules={[{ required: true, message: 'Please enter destination' }]}
+                >
+                  <Input placeholder="e.g., Cape Town DC" size="large" />
+                </Form.Item>
+              </Col>
 
-              {/* Delivery Date */}
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: '#1e293b' }}>
-                  Expected Delivery <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <input
-                  type="datetime-local"
+              <Col xs={24} md={12}>
+                <Form.Item
+                  name="vehicle_reg"
+                  label="Vehicle"
+                  rules={[{ required: true, message: 'Please select a vehicle' }]}
+                >
+                  <Select placeholder="Select vehicle" size="large" showSearch>
+                    {vehicles.length > 0 ? vehicles.map(v => (
+                      <Option key={v.vehicle_id} value={v.vehicle_registration}>
+                        {v.vehicle_registration} - {v.make} {v.model}
+                      </Option>
+                    )) : (
+                      <>
+                        <Option value="ABC 123 GP">ABC 123 GP - Toyota Hilux</Option>
+                        <Option value="DEF 456 GP">DEF 456 GP - Isuzu NPR</Option>
+                        <Option value="GHI 789 GP">GHI 789 GP - Mercedes Actros</Option>
+                      </>
+                    )}
+                  </Select>
+                </Form.Item>
+              </Col>
+
+              <Col xs={24} md={12}>
+                <Form.Item
                   name="delivery_date"
-                  value={formData.delivery_date}
-                  onChange={handleChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.9375rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
+                  label="Expected Delivery"
+                  rules={[{ required: true, message: 'Please select delivery date' }]}
+                >
+                  <DatePicker
+                    showTime
+                    format="YYYY-MM-DD HH:mm"
+                    style={{ width: '100%' }}
+                    size="large"
+                    placeholder="Select date and time"
+                  />
+                </Form.Item>
+              </Col>
 
-              {/* Cargo Weight */}
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: '#1e293b' }}>
-                  Cargo Weight (kg) <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <input
-                  type="number"
+              <Col xs={24} md={12}>
+                <Form.Item
                   name="cargo_weight"
-                  value={formData.cargo_weight}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g., 12000"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.9375rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
+                  label="Cargo Weight (kg)"
+                  rules={[{ required: true, message: 'Please enter cargo weight' }]}
+                >
+                  <InputNumber
+                    placeholder="e.g., 12000"
+                    style={{ width: '100%' }}
+                    size="large"
+                    min={0}
+                    max={50000}
+                  />
+                </Form.Item>
+              </Col>
 
-              {/* Cargo Description */}
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: '#1e293b' }}>
-                  Cargo Description <span style={{ color: '#ef4444' }}>*</span>
-                </label>
-                <input
-                  type="text"
+              <Col xs={24}>
+                <Form.Item
                   name="cargo_description"
-                  value={formData.cargo_description}
-                  onChange={handleChange}
-                  required
-                  placeholder="e.g., Palletized groceries - ambient goods"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.9375rem',
-                    outline: 'none'
-                  }}
-                />
-              </div>
+                  label="Cargo Description"
+                  rules={[{ required: true, message: 'Please enter cargo description' }]}
+                >
+                  <Input placeholder="e.g., Palletized groceries - ambient goods" size="large" />
+                </Form.Item>
+              </Col>
 
-              {/* Special Instructions */}
-              <div style={{ gridColumn: '1 / -1' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem', color: '#1e293b' }}>
-                  Special Instructions
-                </label>
-                <textarea
+              <Col xs={24}>
+                <Form.Item
                   name="special_instructions"
-                  value={formData.special_instructions}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="e.g., Requires refrigeration, fragile items, gate code: 1234"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '2px solid #e2e8f0',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.9375rem',
-                    outline: 'none',
-                    resize: 'vertical',
-                    fontFamily: 'inherit'
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+                  label="Special Instructions"
+                >
+                  <TextArea
+                    rows={3}
+                    placeholder="e.g., Requires refrigeration, fragile items, gate code: 1234"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
 
-        {/* Form Actions */}
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-          <button
-            type="button"
-            onClick={() => navigate('/logistics/trips')}
-            style={{
-              padding: '0.875rem 2rem',
-              border: '2px solid #e2e8f0',
-              borderRadius: '0.75rem',
-              background: 'white',
-              color: '#64748b',
-              fontSize: '0.9375rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            style={{
-              padding: '0.875rem 2rem',
-              border: 'none',
-              borderRadius: '0.75rem',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: 'white',
-              fontSize: '0.9375rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
-              transition: 'all 0.2s'
-            }}
-          >
-            📋 Create Trip
-          </button>
-        </div>
-      </form>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
+              <Button
+                size="large"
+                icon={<CloseOutlined />}
+                onClick={() => navigate('/logistics/trips')}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                size="large"
+                icon={<SaveOutlined />}
+                htmlType="submit"
+                loading={loading}
+              >
+                Create Trip
+              </Button>
+            </div>
+          </Form>
+        </Card>
+      </Spin>
     </EnterpriseLayout>
   );
 };

@@ -39,15 +39,32 @@ export interface Vehicle {
 }
 
 export interface FuelTransaction {
-  id: number;
-  vehicle_reg: string;
-  driver: string;
-  liters: number;
-  cost: number;
-  odometer: number;
-  station: string;
-  date: string;
-  status: 'pending' | 'reconciled';
+  transaction_id: string;
+  transaction_number?: string;
+  vehicle_id?: string;
+  driver_id?: string;
+  trip_id?: string;
+  transaction_date: string;
+  fuel_station?: string;
+  location?: string;
+  fuel_type?: string;
+  litres: number;
+  price_per_litre: number;
+  total_amount: number;
+  odometer_reading?: number;
+  payment_method?: string;
+  fuel_card_number?: string;
+  created_by?: string;
+  vehicle_registration?: string;
+  driver_name?: string;
+  reconciled?: boolean;
+}
+
+export interface FuelTransactionResponse {
+  fuel_transactions: FuelTransaction[];
+  total: number;
+  page: number;
+  totalPages: number;
 }
 
 export interface DocumentExtraction {
@@ -155,15 +172,18 @@ export const fuelAPI = {
    * Get all fuel transactions
    */
   async getFuelTransactions(filters?: {
-    vehicle_reg?: string;
-    driver?: string;
-    from_date?: string;
-    to_date?: string;
-  }): Promise<FuelTransaction[]> {
+    vehicle_id?: string;
+    driver_id?: string;
+    date_from?: string;
+    date_to?: string;
+    reconciled?: boolean | string;
+    limit?: string;
+    page?: string;
+  }): Promise<FuelTransactionResponse> {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
+        if (value !== undefined && value !== null) params.append(key, String(value));
       });
     }
 
@@ -174,7 +194,7 @@ export const fuelAPI = {
   /**
    * Create fuel transaction
    */
-  async createFuelTransaction(data: Partial<FuelTransaction>): Promise<FuelTransaction> {
+  async createFuelTransaction(data: Partial<FuelTransaction>): Promise<{ fuel_transaction: FuelTransaction }> {
     return apiFetch('/api/logistics/fuel', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -185,7 +205,7 @@ export const fuelAPI = {
   /**
    * Reconcile fuel transaction
    */
-  async reconcileFuelTransaction(id: number): Promise<void> {
+  async reconcileFuelTransaction(id: number | string): Promise<void> {
     return apiFetch(`/api/logistics/fuel/${id}/reconcile`, {
       method: 'POST',
     });
@@ -419,6 +439,258 @@ export const workspaceAPI = {
   },
 };
 
+/**
+ * Routes API
+ */
+export interface Route {
+  route_id: number;
+  route_name: string;
+  route_code?: string;
+  description?: string;
+  origin_address: string;
+  origin_lat?: number;
+  origin_lng?: number;
+  destination_address: string;
+  destination_lat?: number;
+  destination_lng?: number;
+  distance_km?: number;
+  estimated_duration_minutes?: number;
+  toll_cost?: number;
+  fuel_estimate_liters?: number;
+  route_type: string;
+  is_active: boolean;
+  waypoints?: any[];
+  restrictions?: any;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const routesAPI = {
+  async getRoutes(filters?: {
+    is_active?: boolean;
+    route_type?: string;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ routes: Route[]; total: number; page: number; totalPages: number }> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) params.append(key, String(value));
+      });
+    }
+    return apiFetch(`/api/logistics/routes${params.toString() ? `?${params}` : ''}`);
+  },
+
+  async getRouteById(routeId: number): Promise<Route> {
+    return apiFetch(`/api/logistics/routes/${routeId}`);
+  },
+
+  async createRoute(data: Partial<Route>): Promise<Route> {
+    return apiFetch('/api/logistics/routes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateRoute(routeId: number, data: Partial<Route>): Promise<Route> {
+    return apiFetch(`/api/logistics/routes/${routeId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteRoute(routeId: number): Promise<void> {
+    return apiFetch(`/api/logistics/routes/${routeId}`, { method: 'DELETE' });
+  },
+};
+
+/**
+ * Incidents API
+ */
+export interface Incident {
+  incident_id: number;
+  incident_number?: string;
+  incident_type: string;
+  severity: string;
+  status: string;
+  trip_id?: number;
+  vehicle_id?: number;
+  driver_id?: number;
+  location_address?: string;
+  location_lat?: number;
+  location_lng?: number;
+  incident_date: string;
+  description: string;
+  cause?: string;
+  injuries_count?: number;
+  fatalities_count?: number;
+  property_damage?: boolean;
+  damage_estimate?: number;
+  insurance_claim_number?: string;
+  insurance_status?: string;
+  police_report_filed?: boolean;
+  police_report_number?: string;
+  resolution_notes?: string;
+  corrective_actions?: string;
+  photos?: string[];
+  documents?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export const incidentsAPI = {
+  async getIncidents(filters?: {
+    status?: string;
+    severity?: string;
+    incident_type?: string;
+    vehicle_id?: number;
+    driver_id?: number;
+    start_date?: string;
+    end_date?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ incidents: Incident[]; total: number; page: number; totalPages: number }> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) params.append(key, String(value));
+      });
+    }
+    return apiFetch(`/api/logistics/incidents${params.toString() ? `?${params}` : ''}`);
+  },
+
+  async getIncidentById(incidentId: number): Promise<Incident> {
+    return apiFetch(`/api/logistics/incidents/${incidentId}`);
+  },
+
+  async createIncident(data: Partial<Incident>): Promise<Incident> {
+    return apiFetch('/api/logistics/incidents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateIncident(incidentId: number, data: Partial<Incident>): Promise<Incident> {
+    return apiFetch(`/api/logistics/incidents/${incidentId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteIncident(incidentId: number): Promise<void> {
+    return apiFetch(`/api/logistics/incidents/${incidentId}`, { method: 'DELETE' });
+  },
+};
+
+/**
+ * Geofences API
+ */
+export interface Geofence {
+  geofence_id: number;
+  geofence_name: string;
+  geofence_code?: string;
+  geofence_type: string;
+  geometry_type: string;
+  center_lat?: number;
+  center_lng?: number;
+  radius_meters?: number;
+  polygon_coordinates?: any[];
+  is_active: boolean;
+  alert_on_enter: boolean;
+  alert_on_exit: boolean;
+  alert_on_dwell: boolean;
+  dwell_time_minutes?: number;
+  speed_limit_kmh?: number;
+  schedule?: any;
+  alert_emails?: string[];
+  alert_phone_numbers?: string[];
+  customer_id?: number;
+  address?: string;
+  color?: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GeofenceEvent {
+  event_id: number;
+  geofence_id: number;
+  vehicle_id?: number;
+  driver_id?: number;
+  event_type: string;
+  event_time: string;
+  lat?: number;
+  lng?: number;
+  speed_kmh?: number;
+  alert_sent: boolean;
+}
+
+export const geofencesAPI = {
+  async getGeofences(filters?: {
+    is_active?: boolean;
+    geofence_type?: string;
+    customer_id?: number;
+    page?: number;
+    limit?: number;
+  }): Promise<{ geofences: Geofence[]; total: number; page: number; totalPages: number }> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) params.append(key, String(value));
+      });
+    }
+    return apiFetch(`/api/logistics/geofences${params.toString() ? `?${params}` : ''}`);
+  },
+
+  async getGeofenceById(geofenceId: number): Promise<Geofence> {
+    return apiFetch(`/api/logistics/geofences/${geofenceId}`);
+  },
+
+  async createGeofence(data: Partial<Geofence>): Promise<Geofence> {
+    return apiFetch('/api/logistics/geofences', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateGeofence(geofenceId: number, data: Partial<Geofence>): Promise<Geofence> {
+    return apiFetch(`/api/logistics/geofences/${geofenceId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteGeofence(geofenceId: number): Promise<void> {
+    return apiFetch(`/api/logistics/geofences/${geofenceId}`, { method: 'DELETE' });
+  },
+
+  async getGeofenceEvents(filters?: {
+    geofence_id?: number;
+    vehicle_id?: number;
+    event_type?: string;
+    start_date?: string;
+    end_date?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<{ events: GeofenceEvent[]; page: number }> {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) params.append(key, String(value));
+      });
+    }
+    return apiFetch(`/api/logistics/geofence-events${params.toString() ? `?${params}` : ''}`);
+  },
+};
+
 export default {
   trips: tripsAPI,
   fuel: fuelAPI,
@@ -429,4 +701,7 @@ export default {
   vehicles: vehiclesAPI,
   drivers: driversAPI,
   workspace: workspaceAPI,
+  routes: routesAPI,
+  incidents: incidentsAPI,
+  geofences: geofencesAPI,
 };

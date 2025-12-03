@@ -1,4 +1,5 @@
-# 🔑 AWS Credentials Setup Guide
+cd /home/ssm-user/WorldClass-ERP/backend
+cat backend.log | tail -50# 🔑 AWS Credentials Setup Guide
 
 ## Step 1: Get Your AWS Credentials (5 minutes)
 

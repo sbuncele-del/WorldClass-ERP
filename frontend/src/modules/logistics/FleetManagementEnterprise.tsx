@@ -38,6 +38,7 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
 import { vehiclesAPI } from '../../services/logistics.api';
+import { exportToCSV, formatDate } from '../../utils/export';
 import './logistics-enterprise.css';
 
 interface Vehicle {
@@ -78,7 +79,23 @@ const FleetManagementEnhanced: React.FC = () => {
   const [typeFilter, setTypeFilter] = useState<string>('ALL');
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [form] = Form.useForm();
+
+  const handleExport = () => {
+    exportToCSV(filteredVehicles, [
+      { key: 'vehicle_registration', header: 'Registration' },
+      { key: 'make', header: 'Make' },
+      { key: 'model', header: 'Model' },
+      { key: 'vehicle_type', header: 'Type' },
+      { key: 'year_of_manufacture', header: 'Year' },
+      { key: 'status', header: 'Status' },
+      { key: 'current_odometer', header: 'Odometer (km)' },
+      { key: 'next_service_date', header: 'Next Service', formatter: formatDate },
+      { key: 'license_expiry', header: 'License Expiry', formatter: formatDate },
+    ], 'fleet_vehicles');
+    message.success('Fleet data exported to CSV');
+  };
   const [stats, setStats] = useState<FleetStats>({
     total: 0,
     active: 0,
@@ -94,8 +111,11 @@ const FleetManagementEnhanced: React.FC = () => {
     { id: 'trips', label: '🚚 Trip Management', path: '/logistics/trips' },
     { id: 'fleet', label: '🚛 Fleet', path: '/logistics/fleet' },
     { id: 'drivers', label: '👨‍✈️ Drivers', path: '/logistics/drivers' },
+    { id: 'routes', label: '🗺️ Routes', path: '/logistics/routes' },
+    { id: 'incidents', label: '⚠️ Incidents', path: '/logistics/incidents' },
+    { id: 'geofences', label: '📍 Geofences', path: '/logistics/geofences' },
     { id: 'fuel', label: '⛽ Fuel', path: '/logistics/fuel' },
-    { id: 'reports', label: '📊 Analytics', path: '/logistics/reports' }
+    { id: 'reports', label: '📊 Reports', path: '/logistics/reports' },
   ];
 
   const breadcrumbs = [
@@ -325,31 +345,31 @@ const FleetManagementEnhanced: React.FC = () => {
       width: 120,
       render: (km: number) => (
         <div style={{ fontWeight: 600 }}>
-          {km.toLocaleString()} km
+          {(km || 0).toLocaleString()} km
         </div>
       ),
-      sorter: (a, b) => a.current_odometer - b.current_odometer
+      sorter: (a, b) => (a.current_odometer || 0) - (b.current_odometer || 0)
     },
     {
       title: 'Next Service',
       key: 'next_service',
       width: 180,
       render: (_, record) => {
-        const kmToService = record.next_service_km - record.current_odometer;
-        const daysToService = Math.ceil(
-          (new Date(record.next_service_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-        );
+        const nextKm = record.next_service_km || 0;
+        const currentKm = record.current_odometer || 0;
+        const kmToService = nextKm - currentKm;
+        const nextServiceDate = record.next_service_date ? new Date(record.next_service_date) : new Date();
         
         return (
           <div>
             <div style={{ fontSize: '13px', marginBottom: '4px' }}>
-              {new Date(record.next_service_date).toLocaleDateString('en-ZA')}
+              {nextServiceDate.toLocaleDateString('en-ZA')}
             </div>
             <Progress
-              percent={Math.min(100, ((record.next_service_km - record.current_odometer) / 10000) * 100)}
+              percent={Math.min(100, Math.max(0, (kmToService / 10000) * 100))}
               size="small"
               status={kmToService < 1000 ? 'exception' : 'normal'}
-              format={() => `${kmToService.toLocaleString()} km`}
+              format={() => `${(kmToService || 0).toLocaleString()} km`}
             />
           </div>
         );
@@ -529,12 +549,14 @@ const FleetManagementEnhanced: React.FC = () => {
                 <Button
                   icon={<FilterOutlined />}
                   size="large"
+                  onClick={() => setFilterModalOpen(true)}
                 >
                   Advanced Filters
                 </Button>
                 <Button
                   icon={<ExportOutlined />}
                   size="large"
+                  onClick={handleExport}
                 >
                   Export
                 </Button>
