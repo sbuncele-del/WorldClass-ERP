@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'crypto';
 
 export interface CustomError extends Error {
   statusCode?: number;
@@ -6,7 +7,7 @@ export interface CustomError extends Error {
 
 export class AppError extends Error {
   statusCode: number;
-  
+
   constructor(message: string, statusCode: number = 500) {
     super(message);
     this.statusCode = statusCode;
@@ -16,18 +17,31 @@ export class AppError extends Error {
 
 export const errorHandler = (
   err: CustomError,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ) => {
   const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
+  const requestId = (req as any).requestId || randomUUID();
+  const isServerError = statusCode >= 500;
 
-  console.error(`Error: ${message}`);
-  
+  // Never leak internal errors to clients; log with requestId for traceability
+  const clientMessage = isServerError ? 'Internal server error' : err.message || 'Bad request';
+
+  console.error(
+    JSON.stringify({
+      level: 'error',
+      requestId,
+      path: req.originalUrl,
+      method: req.method,
+      statusCode,
+      message: err.message,
+      stack: err.stack
+    })
+  );
+
   res.status(statusCode).json({
-    success: false,
-    error: message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    error: clientMessage,
+    requestId
   });
 };

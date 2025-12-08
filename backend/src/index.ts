@@ -3,10 +3,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express, { Application } from 'express';
+import { randomUUID } from 'crypto';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
+import swaggerJSDoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 import { errorHandler } from './middleware/errorHandler';
 import authRoutes from './auth/auth.routes';
 import onboardingRoutes from './routes/onboarding.routes';
@@ -81,8 +84,35 @@ console.log('========================');
 const app: Application = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.3',
+    info: {
+      title: 'WorldClass ERP - Logistics API',
+      version: '1.0.0',
+      description: 'Logistics module endpoints for WorldClass ERP'
+    },
+    servers: [
+      {
+        url: process.env.API_BASE_URL || `http://localhost:${PORT}`
+      }
+    ]
+  },
+  apis: ['src/modules/logistics/**/*.ts', 'dist/modules/logistics/**/*.js']
+};
+
+const swaggerSpec = swaggerJSDoc(swaggerOptions);
+
 // Trust proxy - required for rate limiting behind nginx
 app.set('trust proxy', 1);
+
+// Attach a request ID for traceability across logs and responses
+app.use((req, res, next) => {
+  const requestId = (req.headers['x-request-id'] as string) || randomUUID();
+  (req as any).requestId = requestId;
+  res.setHeader('X-Request-Id', requestId);
+  next();
+});
 
 // Middleware
 // Helmet disabled - CSP was blocking frontend API requests
@@ -145,6 +175,16 @@ app.get('/health/db', async (_req, res) => {
     return res.status(503).json({ status: 'UNAVAILABLE', message: 'Database health check failed', error: (error as Error).message });
   }
 });
+
+// Intentional error route for local testing of the error handler (disabled in production)
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/api/test-error', () => {
+    throw new Error('Intentional test error');
+  });
+}
+
+// Swagger/OpenAPI docs for Logistics module
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // API Routes
 // Authentication (public routes with strict rate limiting)

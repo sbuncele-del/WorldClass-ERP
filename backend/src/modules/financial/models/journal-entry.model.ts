@@ -17,6 +17,10 @@ export enum JournalSource {
   ADJUSTMENT = 'ADJUSTMENT',
   OPENING_BALANCE = 'OPENING_BALANCE',
   CLOSING = 'CLOSING',
+  // Logistics integration sources
+  LOGISTICS_TRIP = 'LOGISTICS_TRIP',
+  LOGISTICS_FUEL = 'LOGISTICS_FUEL',
+  LOGISTICS_DRIVER_PAY = 'LOGISTICS_DRIVER_PAY',
 }
 
 export enum JournalStatus {
