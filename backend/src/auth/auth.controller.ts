@@ -14,7 +14,7 @@ const DEMO_USERS = [
     firstName: 'Demo',
     lastName: 'Admin',
     role: 'admin',
-    tenantId: 'demo-tenant-001',
+    tenantId: '00000000-0000-0000-0000-000000000001',
     tenantName: 'Demo Company',
     tenantSlug: 'demo'
   },
@@ -25,7 +25,7 @@ const DEMO_USERS = [
     firstName: 'Demo',
     lastName: 'User',
     role: 'user',
-    tenantId: 'demo-tenant-001',
+    tenantId: '00000000-0000-0000-0000-000000000001',
     tenantName: 'Demo Company',
     tenantSlug: 'demo'
   }
