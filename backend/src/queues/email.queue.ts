@@ -1,5 +1,5 @@
 import Bull, { Queue, Job, JobOptions } from 'bull';
-import { redisConfig } from '../config/redis.config';
+import { createRedisClient } from '../config/redis-connection';
 import { sendEmail as sendEmailDirect } from '../services/email.service';
 
 /**
@@ -28,8 +28,14 @@ export interface EmailJobData {
 }
 
 // Create email queue
+const EMAIL_QUEUE_CONCURRENCY = parseInt(process.env.EMAIL_QUEUE_CONCURRENCY || '10', 10);
+
 export const emailQueue: Queue<EmailJobData> = new Bull('email', {
-  redis: redisConfig,
+  createClient: (type) => {
+    if (type === 'client') return createRedisClient('client');
+    if (type === 'subscriber') return createRedisClient('subscriber');
+    return createRedisClient('bclient');
+  },
   defaultJobOptions: {
     attempts: 5, // Retry up to 5 times
     backoff: {
@@ -51,7 +57,7 @@ export const emailQueue: Queue<EmailJobData> = new Bull('email', {
  * 
  * Concurrency: Process up to 10 emails simultaneously
  */
-emailQueue.process(10, async (job: Job<EmailJobData>) => {
+emailQueue.process(EMAIL_QUEUE_CONCURRENCY, async (job: Job<EmailJobData>) => {
   const { to, subject, template, variables, from, userId, tenantId, category } = job.data;
 
   try {

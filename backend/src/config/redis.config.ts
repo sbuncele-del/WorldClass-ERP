@@ -1,5 +1,10 @@
 import Redis from 'ioredis';
 
+// Allow test environments to swap in an in-memory Redis mock
+const useMock = process.env.USE_REDIS_MOCK === 'true';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const RedisCtor: typeof Redis = useMock ? require('ioredis-mock') : Redis;
+
 /**
  * Redis Configuration
  * 
@@ -40,7 +45,7 @@ export const redisConfig = {
 };
 
 // Create Redis client instance
-export const redisClient = new Redis(redisConfig);
+export const redisClient = new RedisCtor(redisConfig as any);
 
 // Connection event handlers
 redisClient.on('connect', () => {

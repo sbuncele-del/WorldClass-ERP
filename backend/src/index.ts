@@ -68,6 +68,8 @@ import { auditMiddleware } from './middleware/audit.middleware';
 import { tenantMiddleware } from './middleware/tenant';
 import auditLogRoutes from './routes/audit-log.routes';
 import { healthCheck as dbHealthCheck } from './config/database';
+import { redisHealthCheck } from './services/redis.service';
+import { createCacheMiddleware } from './middleware/cache.middleware';
 // import gpsRoutes from './modules/logistics/gps.routes'; // May have issues
 import chartOfAccountsRoutes from './modules/chart-of-accounts/routes';
 import financialReportsRoutes2 from './modules/financial-reports/routes';
@@ -191,6 +193,17 @@ app.get('/health/db', async (_req, res) => {
   }
 });
 
+app.get('/health/redis', async (_req, res) => {
+  try {
+    const { status, latencyMs } = await redisHealthCheck();
+    const code = status === 'up' ? 200 : 503;
+    return res.status(code).json({ status: status.toUpperCase(), latencyMs });
+  } catch (error) {
+    console.error('Redis health check failed:', error);
+    return res.status(503).json({ status: 'UNAVAILABLE', message: 'Redis health check failed', error: (error as Error).message });
+  }
+});
+
 // Intentional error route for local testing of the error handler (disabled in production)
 if (process.env.NODE_ENV !== 'production') {
   app.get('/api/test-error', () => {
@@ -251,7 +264,11 @@ v1Router.use('/purchase', apiLimiter, purchaseRoutes);
 v1Router.use('/financial', apiLimiter, financialRoutes);
 v1Router.use('/financial/dimensions', dimensionsRoutes);
 v1Router.use('/financial/periods', periodRoutes);
-v1Router.use('/financial/dashboard', dashboardRoutes);
+v1Router.use(
+  '/financial/dashboard',
+  createCacheMiddleware({ prefix: 'financial:dashboard', ttlSeconds: 60 }),
+  dashboardRoutes
+);
 v1Router.use('/financial/approvals', approvalRoutes);
 v1Router.use('/hr', hrRoutes);
 v1Router.use('/manufacturing', manufacturingRoutes);

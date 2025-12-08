@@ -10,8 +10,10 @@
  */
 
 import { Server as SocketServer } from 'socket.io';
+import { createAdapter } from '@socket.io/redis-adapter';
 import { Server as HTTPServer } from 'http';
 import jwt from 'jsonwebtoken';
+import { buildPubSubClients } from '../services/redis.service';
 
 interface VehiclePosition {
   vehicleId: string;
@@ -63,8 +65,19 @@ export class LogisticsGateway {
       path: '/logistics-ws'
     });
 
+    void this.configureRedisAdapter();
     this.setupMiddleware();
     this.setupEventHandlers();
+  }
+
+  private async configureRedisAdapter() {
+    try {
+      const { pubClient, subClient } = buildPubSubClients();
+      this.io.adapter(createAdapter(pubClient as any, subClient as any));
+      console.log('🔁 Socket.IO Redis adapter enabled');
+    } catch (error) {
+      console.warn('⚠️  Socket.IO Redis adapter not enabled:', error);
+    }
   }
 
   /**

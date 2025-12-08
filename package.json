@@ -23,10 +23,17 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "ioredis-mock": "^8.13.1"
   },
   "dependencies": {
+    "@socket.io/redis-adapter": "^8.3.0",
+    "@types/bull": "^4.10.4",
+    "@types/ioredis": "^5.0.0",
     "bcryptjs": "^3.0.3",
-    "pg": "^8.16.3"
+    "bull": "^4.16.5",
+    "ioredis": "^5.8.2",
+    "pg": "^8.16.3",
+    "rate-limit-redis": "^4.3.1"
   }
 }
