@@ -16,10 +16,12 @@
     "db:periods": "ts-node src/config/period-migration.ts && ts-node src/config/period-seed.ts",
     "db:full-setup": "npm run db:migrate && npm run db:seed && npm run db:dimensions && npm run db:periods",
     "db:multi-tenant": "ts-node src/config/run-multi-tenant-migration.ts",
-    "seed:demo": "psql \"$DATABASE_URL\" -f database/demo-tenant-fix.sql"
+    "seed:demo": "psql \"$DATABASE_URL\" -f database/demo-tenant-fix.sql",
+    "test:email": "ts-node scripts/test-email.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
+    "@aws-sdk/client-ses": "^3.946.0",
     "@aws-sdk/client-textract": "^3.931.0",
     "@sentry/node": "^10.29.0",
     "@sentry/profiling-node": "^10.29.0",
