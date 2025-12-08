@@ -1,14 +1,8 @@
 -- ============================================================================
 -- LOGISTICS MODULE DATABASE SCHEMA
 -- Run this migration to create all logistics tables
--- ============================================================================
-
--- Create logistics schema
 CREATE SCHEMA IF NOT EXISTS logistics;
 
--- ============================================================================
--- VEHICLES TABLE
--- ============================================================================
 CREATE TABLE IF NOT EXISTS logistics.vehicles (
     vehicle_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     tenant_id UUID NOT NULL,
@@ -16,18 +10,56 @@ CREATE TABLE IF NOT EXISTS logistics.vehicles (
     vehicle_registration VARCHAR(20) NOT NULL,
     vin_number VARCHAR(50),
     make VARCHAR(50),
+CREATE INDEX IF NOT EXISTS idx_logistics_trip_stops_trip_seq ON logistics_trip_stops(trip_id, stop_sequence);
+CREATE INDEX IF NOT EXISTS idx_logistics_load_items_load_seq ON logistics_load_items(load_id, delivery_sequence);
     model VARCHAR(50),
-    vehicle_type VARCHAR(50) DEFAULT 'TRUCK',
-    year_of_manufacture INTEGER,
-    payload_capacity_kg DECIMAL(10,2),
     volume_capacity_m3 DECIMAL(10,2),
     fuel_type VARCHAR(20) DEFAULT 'DIESEL',
     fuel_tank_capacity_litres DECIMAL(10,2),
     ownership_type VARCHAR(20) DEFAULT 'OWNED',
     purchase_date DATE,
-    purchase_cost DECIMAL(15,2),
-    asset_id UUID,
-    current_odometer DECIMAL(12,2) DEFAULT 0,
+-- =========================================================================
+-- TRIP STOPS TABLE (MISSING BEFORE)
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS logistics_trip_stops (
+     stop_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     trip_id UUID NOT NULL REFERENCES logistics.trips(trip_id) ON DELETE CASCADE,
+     stop_sequence INTEGER NOT NULL,
+     stop_type VARCHAR(20) DEFAULT 'PICKUP',
+     location_name VARCHAR(255),
+     location_address TEXT,
+     contact_name VARCHAR(100),
+     contact_phone VARCHAR(20),
+     planned_arrival_time TIMESTAMP,
+     items_description TEXT,
+     items_weight_kg DECIMAL(10,2),
+     items_count INTEGER,
+     status VARCHAR(20) DEFAULT 'PENDING',
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- =========================================================================
+-- LOAD ITEMS TABLE (MISSING BEFORE)
+-- =========================================================================
+CREATE TABLE IF NOT EXISTS logistics_load_items (
+     load_item_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+     load_id UUID NOT NULL REFERENCES logistics.loads(load_id) ON DELETE CASCADE,
+     sales_order_id UUID,
+     customer_id UUID,
+     delivery_address TEXT,
+     delivery_contact VARCHAR(100),
+     delivery_phone VARCHAR(20),
+     item_description TEXT,
+     weight_kg DECIMAL(10,2),
+     volume_m3 DECIMAL(10,2),
+     quantity INTEGER,
+     delivery_sequence INTEGER,
+     status VARCHAR(20) DEFAULT 'PENDING',
+     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
     current_location VARCHAR(255),
     driver_id UUID,
     service_interval_km INTEGER DEFAULT 10000,
@@ -38,9 +70,6 @@ CREATE TABLE IF NOT EXISTS logistics.vehicles (
     next_service_odometer DECIMAL(12,2),
     gps_device_id VARCHAR(100),
     gps_provider VARCHAR(50),
-    insurance_policy_number VARCHAR(100),
-    insurance_expiry_date DATE,
-    license_disk_expiry_date DATE,
     status VARCHAR(20) DEFAULT 'ACTIVE',
     created_by UUID,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

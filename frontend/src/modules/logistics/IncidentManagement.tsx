@@ -13,7 +13,8 @@ import {
 import type { ColumnsType } from 'antd/es/table';
 import dayjs from 'dayjs';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
-import { incidentsAPI, Incident } from '../../services/logistics.api';
+import { incidentsAPI } from '../../services/logistics.api';
+import type { Incident } from '../../services/logistics.api';
 import { exportToCSV, formatDate } from '../../utils/export';
 import './logistics-enterprise.css';
 

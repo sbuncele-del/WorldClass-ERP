@@ -20,6 +20,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
     "@aws-sdk/client-textract": "^3.931.0",
+    "axios": "^1.6.0",
     "@types/bcrypt": "^6.0.0",
     "@types/bull": "^3.15.9",
     "@types/ioredis": "^4.28.10",

@@ -596,7 +596,7 @@ export const getTripById = async (req: Request, res: Response) => {
       FROM logistics.trips t
       LEFT JOIN logistics.vehicles v ON t.vehicle_id = v.vehicle_id
       LEFT JOIN logistics.drivers d ON t.driver_id = d.driver_id
-      WHERE t.trip_id = $1`,
+      WHERE t.trip_id = $1::uuid`,
       [id]
     );
 
@@ -607,7 +607,7 @@ export const getTripById = async (req: Request, res: Response) => {
     // Get trip stops
     const stopsResult = await pool.query(
       `SELECT * FROM logistics_trip_stops 
-       WHERE trip_id = $1 ORDER BY stop_sequence ASC`,
+       WHERE trip_id = $1::uuid ORDER BY stop_sequence ASC`,
       [id]
     );
 
@@ -754,7 +754,7 @@ export const updateTrip = async (req: Request, res: Response) => {
     }
 
     values.push(id);
-    const query = `UPDATE logistics.trips SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE trip_id = $${paramCount} RETURNING *`;
+    const query = `UPDATE logistics.trips SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE trip_id = $${paramCount}::uuid RETURNING *`;
 
     const result = await pool.query(query, values);
 
@@ -783,7 +783,7 @@ export const startTrip = async (req: Request, res: Response) => {
        SET status = 'IN_TRANSIT', 
            actual_start_time = CURRENT_TIMESTAMP,
            updated_at = CURRENT_TIMESTAMP
-       WHERE trip_id = $1 AND status IN ('PLANNED', 'ASSIGNED')
+       WHERE trip_id = $1::uuid AND status IN ('PLANNED', 'ASSIGNED')
        RETURNING *`,
       [id]
     );
@@ -824,7 +824,7 @@ export const completeTrip = async (req: Request, res: Response) => {
            pod_notes = $4,
            pod_timestamp = CURRENT_TIMESTAMP,
            updated_at = CURRENT_TIMESTAMP
-       WHERE trip_id = $5 AND status = 'IN_TRANSIT'
+      WHERE trip_id = $5::uuid AND status = 'IN_TRANSIT'
        RETURNING *`,
       [actual_distance_km, pod_signature_path, pod_photo_path, pod_notes, id]
     );
@@ -862,56 +862,64 @@ export const getFuelTransactions = async (req: Request, res: Response) => {
 
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-    let query = `
-      SELECT f.*,
-        v.vehicle_registration, v.vehicle_registration,
-        d.first_name || ' ' || d.last_name as driver_name
-      FROM logistics.fuel_transactions f
-      LEFT JOIN logistics.vehicles v ON f.vehicle_id = v.vehicle_id
-      LEFT JOIN logistics.drivers d ON f.driver_id = d.driver_id
-      WHERE 1=1
-    `;
     const values: any[] = [];
     let paramCount = 1;
+    const filters: string[] = ['1=1'];
 
     if (vehicle_id) {
-      query += ` AND f.vehicle_id = $${paramCount}`;
-      values.push(vehicle_id);
+      filters.push(`f.vehicle_id = $${paramCount}::uuid`);
+      values.push(String(vehicle_id));
       paramCount++;
     }
 
     if (driver_id) {
-      query += ` AND f.driver_id = $${paramCount}`;
-      values.push(driver_id);
+      filters.push(`f.driver_id = $${paramCount}::uuid`);
+      values.push(String(driver_id));
       paramCount++;
     }
 
     if (date_from) {
-      query += ` AND f.transaction_date >= $${paramCount}`;
+      filters.push(`f.transaction_date >= $${paramCount}`);
       values.push(date_from);
       paramCount++;
     }
 
     if (date_to) {
-      query += ` AND f.transaction_date <= $${paramCount}`;
+      filters.push(`f.transaction_date <= $${paramCount}`);
       values.push(date_to);
       paramCount++;
     }
 
     if (reconciled !== undefined) {
-      query += ` AND f.reconciled = $${paramCount}`;
+      filters.push(`f.reconciled = $${paramCount}`);
       values.push(reconciled === 'true');
       paramCount++;
     }
 
-    const countQuery = query.replace(/SELECT.*FROM/, 'SELECT COUNT(*) FROM').replace(/LEFT JOIN.*driver_name/, '');
+    const whereClause = filters.join(' AND ');
+
+    const countQuery = `
+      SELECT COUNT(*)
+      FROM logistics.fuel_transactions f
+      LEFT JOIN logistics.vehicles v ON f.vehicle_id = v.vehicle_id
+      LEFT JOIN logistics.drivers d ON f.driver_id = d.driver_id
+      WHERE ${whereClause}
+    `;
     const countResult = await pool.query(countQuery, values);
-    const total = parseInt(countResult.rows[0].count);
+    const total = parseInt(countResult?.rows?.[0]?.count ?? '0', 10);
 
-    query += ` ORDER BY f.transaction_date DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    values.push(parseInt(limit as string), offset);
+    const dataQuery = `
+      SELECT f.*, v.vehicle_registration, d.first_name || ' ' || d.last_name as driver_name
+      FROM logistics.fuel_transactions f
+      LEFT JOIN logistics.vehicles v ON f.vehicle_id = v.vehicle_id
+      LEFT JOIN logistics.drivers d ON f.driver_id = d.driver_id
+      WHERE ${whereClause}
+      ORDER BY f.transaction_date DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    `;
 
-    const result = await pool.query(query, values);
+    const dataValues = [...values, parseInt(limit as string, 10), offset];
+    const result = await pool.query(dataQuery, dataValues);
 
     res.json({
       fuel_transactions: result.rows,
@@ -985,7 +993,7 @@ export const reconcileFuelTransaction = async (req: Request, res: Response) => {
     const { variance_litres = 0, variance_amount = 0 } = req.body;
 
     const result = await pool.query(
-      `UPDATE logistics_fuel_transactions
+        `UPDATE logistics.fuel_transactions
        SET reconciled = true,
            variance_litres = $1,
            variance_amount = $2
@@ -1018,44 +1026,52 @@ export const getLoads = async (req: Request, res: Response) => {
     const { page = '1', limit = '50', status, date_from, date_to } = req.query;
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-    let query = `
-      SELECT l.*,
-        v.vehicle_registration, v.vehicle_registration,
-        d.first_name || ' ' || d.last_name as driver_name
-      FROM logistics.loads l
-      LEFT JOIN logistics.vehicles v ON l.vehicle_id::text = v.vehicle_id::text
-      LEFT JOIN logistics.drivers d ON l.driver_id::text = d.driver_id::text
-      WHERE 1=1
-    `;
     const values: any[] = [];
     let paramCount = 1;
+    const filters: string[] = ['1=1'];
 
     if (status) {
-      query += ` AND l.status = $${paramCount}`;
+      filters.push(`l.status = $${paramCount}`);
       values.push(status);
       paramCount++;
     }
 
     if (date_from) {
-      query += ` AND l.load_date >= $${paramCount}`;
+      filters.push(`l.load_date >= $${paramCount}`);
       values.push(date_from);
       paramCount++;
     }
 
     if (date_to) {
-      query += ` AND l.load_date <= $${paramCount}`;
+      filters.push(`l.load_date <= $${paramCount}`);
       values.push(date_to);
       paramCount++;
     }
 
-    const countQuery = query.replace(/SELECT.*FROM/, 'SELECT COUNT(*) FROM').replace(/LEFT JOIN.*driver_name/, '');
+    const whereClause = filters.join(' AND ');
+
+    const countQuery = `
+      SELECT COUNT(*)
+      FROM logistics.loads l
+      LEFT JOIN logistics.vehicles v ON l.vehicle_id = v.vehicle_id
+      LEFT JOIN logistics.drivers d ON l.driver_id = d.driver_id
+      WHERE ${whereClause}
+    `;
     const countResult = await pool.query(countQuery, values);
-    const total = parseInt(countResult.rows[0].count);
+    const total = parseInt(countResult?.rows?.[0]?.count ?? '0', 10);
 
-    query += ` ORDER BY l.load_date DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
-    values.push(parseInt(limit as string), offset);
+    const dataQuery = `
+      SELECT l.*, v.vehicle_registration, d.first_name || ' ' || d.last_name as driver_name
+      FROM logistics.loads l
+      LEFT JOIN logistics.vehicles v ON l.vehicle_id = v.vehicle_id
+      LEFT JOIN logistics.drivers d ON l.driver_id = d.driver_id
+      WHERE ${whereClause}
+      ORDER BY l.load_date DESC
+      LIMIT $${paramCount} OFFSET $${paramCount + 1}
+    `;
 
-    const result = await pool.query(query, values);
+    const dataValues = [...values, parseInt(limit as string, 10), offset];
+    const result = await pool.query(dataQuery, dataValues);
 
     res.json({
       loads: result.rows,
@@ -1082,9 +1098,9 @@ export const getLoadById = async (req: Request, res: Response) => {
         v.vehicle_registration, v.vehicle_registration,
         d.first_name || ' ' || d.last_name as driver_name
       FROM logistics.loads l
-      LEFT JOIN logistics.vehicles v ON l.vehicle_id::text = v.vehicle_id::text
-      LEFT JOIN logistics.drivers d ON l.driver_id::text = d.driver_id::text
-      WHERE l.load_id = $1`,
+      LEFT JOIN logistics.vehicles v ON l.vehicle_id = v.vehicle_id
+      LEFT JOIN logistics.drivers d ON l.driver_id = d.driver_id
+      WHERE l.load_id = $1::uuid`,
       [id]
     );
 
@@ -1094,7 +1110,7 @@ export const getLoadById = async (req: Request, res: Response) => {
 
     const itemsResult = await pool.query(
       `SELECT * FROM logistics_load_items 
-       WHERE load_id = $1 ORDER BY delivery_sequence ASC`,
+       WHERE load_id = $1::uuid ORDER BY delivery_sequence ASC`,
       [id]
     );
 
@@ -1202,7 +1218,7 @@ export const updateLoadStatus = async (req: Request, res: Response) => {
     const result = await pool.query(
       `UPDATE logistics.loads
        SET status = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE load_id = $2
+       WHERE load_id = $2::uuid
        RETURNING *`,
       [status, id]
     );

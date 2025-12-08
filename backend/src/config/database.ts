@@ -1,4 +1,4 @@
-import { Pool, PoolConfig } from 'pg';
+import { Pool, PoolConfig, DatabaseError } from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -35,24 +35,60 @@ pool.on('error', (err) => {
   process.exit(-1);
 });
 
+const RETRY_DELAYS_MS = [1000, 2000, 4000];
+
+const transientCodes = new Set([
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'EPIPE',
+  '57P01', // admin_shutdown
+  '57P02', // crash_shutdown
+  '57P03', // cannot_connect_now
+]);
+
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+const shouldRetry = (err: unknown): boolean => {
+  const code = (err as DatabaseError)?.code || (err as NodeJS.ErrnoException)?.code;
+  return Boolean(code && transientCodes.has(code));
+};
+
 /**
- * Execute a query with automatic error handling
+ * Execute a query with exponential backoff retries for transient errors
  */
 export async function query(text: string, params?: any[]) {
   const start = Date.now();
-  try {
-    const result = await pool.query(text, params);
-    const duration = Date.now() - start;
-    
-    if (process.env.LOG_QUERIES === 'true') {
-      console.log('📊 Query executed', { text, duration, rows: result.rowCount });
+  let attempt = 0;
+  let lastError: unknown;
+
+  while (attempt <= RETRY_DELAYS_MS.length) {
+    try {
+      const result = await pool.query(text, params);
+      const duration = Date.now() - start;
+
+      if (process.env.LOG_QUERIES === 'true') {
+        console.log('📊 Query executed', { text, duration, rows: result.rowCount });
+      }
+
+      return result;
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === RETRY_DELAYS_MS.length || !shouldRetry(error)) {
+        console.error('❌ Database query error (no more retries):', error);
+        throw error;
+      }
+
+      const backoff = RETRY_DELAYS_MS[attempt];
+      console.warn(`⚠️ Query failed (attempt ${attempt + 1}). Retrying in ${backoff}ms...`, error);
+      attempt++;
+      await delay(backoff);
     }
-    
-    return result;
-  } catch (error) {
-    console.error('❌ Database query error:', error);
-    throw error;
   }
+
+  // Should never reach here, but throw last error defensively
+  throw lastError;
 }
 
 /**

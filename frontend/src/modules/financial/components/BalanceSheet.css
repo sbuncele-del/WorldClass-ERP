@@ -226,21 +226,31 @@
 
 /* Footer */
 .bs-footer {
+  margin-top: 24px;
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+}
 
-.control-group {
+.bs-footer .control-group {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.control-group label {
+.bs-footer .control-group label {
   font-weight: 600;
   color: #475569;
   font-size: 14px;
 }
 
-.period-select,
-.date-input {
+.bs-footer .period-select,
+.bs-footer .date-input {
   padding: 8px 12px;
   border: 2px solid #e2e8f0;
   border-radius: 8px;
@@ -251,25 +261,25 @@
   min-width: 140px;
 }
 
-.period-select:focus,
-.date-input:focus {
+.bs-footer .period-select:focus,
+.bs-footer .date-input:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.custom-date-range {
+.bs-footer .custom-date-range {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.custom-date-range span {
+.bs-footer .custom-date-range span {
   color: #64748b;
   font-weight: 500;
 }
 
-.btn-apply {
+.bs-footer .btn-apply {
   padding: 8px 16px;
   background: #3b82f6;
   color: white;
@@ -281,12 +291,12 @@
   transition: all 0.2s;
 }
 
-.btn-apply:hover {
+.bs-footer .btn-apply:hover {
   background: #2563eb;
   transform: translateY(-1px);
 }
 
-.checkbox-label {
+.bs-footer .checkbox-label {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -295,13 +305,13 @@
   color: #475569;
 }
 
-.checkbox-label input[type="checkbox"] {
+.bs-footer .checkbox-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
   cursor: pointer;
 }
 
-.btn-refresh {
+.bs-footer .btn-refresh {
   margin-left: auto;
   padding: 8px 12px;
   background: #f1f5f9;
@@ -312,7 +322,7 @@
   transition: all 0.2s;
 }
 
-.btn-refresh:hover {
+.bs-footer .btn-refresh:hover {
   background: #e2e8f0;
   transform: rotate(90deg);
 }

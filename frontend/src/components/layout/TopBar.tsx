@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './TopBar.css';
 import ThemeSwitcher from './ThemeSwitcher';
@@ -6,6 +6,7 @@ import NotificationDropdown from './NotificationDropdown';
 import MessagesDropdown from './MessagesDropdown';
 import SettingsDropdown from './SettingsDropdown';
 import ProfileDropdown from './ProfileDropdown';
+import { useUser } from '../../contexts/UserContext';
 
 const TopBar: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +16,14 @@ const TopBar: React.FC = () => {
   const [showMessages, setShowMessages] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
+  const { currentUser } = useUser();
+
+  const userInitials = useMemo(() => {
+    if (!currentUser) return '??';
+    const first = currentUser.firstName?.[0] || '';
+    const last = currentUser.lastName?.[0] || '';
+    return `${first}${last}` || (currentUser.fullName?.slice(0, 2) ?? '??');
+  }, [currentUser]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,8 +144,8 @@ const TopBar: React.FC = () => {
             className={`topbar-profile-btn ${showProfile ? 'active' : ''}`}
             onClick={() => toggleDropdown('profile')}
           >
-            <div className="profile-avatar">SM</div>
-            <span className="profile-name">Sibusiso</span>
+            <div className="profile-avatar">{userInitials}</div>
+            <span className="profile-name">{currentUser?.fullName || 'User'}</span>
             <span className="profile-arrow">▼</span>
           </button>
         </div>

@@ -12,7 +12,8 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
-import { routesAPI, Route } from '../../services/logistics.api';
+import { routesAPI } from '../../services/logistics.api';
+import type { Route } from '../../services/logistics.api';
 import { exportToCSV } from '../../utils/export';
 import './logistics-enterprise.css';
 

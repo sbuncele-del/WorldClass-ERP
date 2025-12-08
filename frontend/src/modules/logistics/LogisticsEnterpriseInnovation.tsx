@@ -24,11 +24,11 @@ interface YardOverviewResponse {
 }
 
 interface BenchmarkSnapshot {
-  throughputPerDispatcher: { ours: number; sap: number; oracle: number; dynamics: number };
-  planningLatencyMinutes: { ours: number; sap: number; oracle: number; dynamics: number };
-  revenueRecognitionLagMinutes: { ours: number; sap: number; oracle: number; dynamics: number };
-  aiRouteAccuracy: { ours: number; sap: number; oracle: number; dynamics: number };
-  carbonOptimizationPercent: { ours: number; sap: number; oracle: number; dynamics: number };
+  throughputPerDispatcher: { ours: number; industry: number };
+  planningLatencyMinutes: { ours: number; industry: number };
+  revenueRecognitionLagMinutes: { ours: number; industry: number };
+  aiRouteAccuracy: { ours: number; industry: number };
+  carbonOptimizationPercent: { ours: number; industry: number };
   lastValidatedAt: string;
 }
 
@@ -65,37 +65,32 @@ const LogisticsEnterpriseInnovation: React.FC = () => {
       {
         name: 'Advanced Transportation Management',
         key: 'logistics_atms',
-        sap: 'Premium Add-on (TM)',
-        oracle: 'Oracle OTM Cloud',
-        dynamics: 'ISV Extension',
+        benefit: 'AI-powered load optimization reduces empty miles by 15%',
+        businessValue: '$50K-200K annual savings',
       },
       {
         name: 'Yard + Dock Digital Twin',
         key: 'logistics_yard_management',
-        sap: 'Yard Logistics (extra license)',
-        oracle: 'Not native',
-        dynamics: 'Manual spreadsheets',
+        benefit: 'Real-time slot visibility eliminates yard congestion',
+        businessValue: '20% faster turnaround',
       },
       {
         name: 'Freight Audit & Carrier Scorecards',
         key: 'logistics_freight_audit',
-        sap: 'Consulting project',
-        oracle: 'Limited rules',
-        dynamics: '3rd-party vendor',
+        benefit: 'Auto-audit catches billing errors before payment',
+        businessValue: '3-5% freight cost recovery',
       },
       {
         name: 'Revenue Recognition on Delivery',
         key: 'logistics_delivery_revenue',
-        sap: 'Finance integration',
-        oracle: 'Manual GL job',
-        dynamics: 'Not available',
+        benefit: 'Automatic invoicing on POD confirmation',
+        businessValue: 'DSO reduced by 5-10 days',
       },
       {
         name: 'AI Route Optimization',
         key: 'logistics_ai_route_optimization',
-        sap: 'Rule engine only',
-        oracle: 'External optimization',
-        dynamics: 'Not provided',
+        benefit: 'Machine learning finds optimal routes in seconds',
+        businessValue: '10-25% fuel savings',
       },
     ],
     []
@@ -148,7 +143,7 @@ const LogisticsEnterpriseInnovation: React.FC = () => {
 
   const parityColumns = [
     {
-      title: 'Innovation Area',
+      title: 'Enterprise Feature',
       dataIndex: 'name',
       key: 'name',
       render: (text: string, record: { key: string }) => (
@@ -158,15 +153,16 @@ const LogisticsEnterpriseInnovation: React.FC = () => {
         </Space>
       ),
     },
-    { title: 'SAP S/4HANA', dataIndex: 'sap', key: 'sap' },
-    { title: 'Oracle NetSuite/OTM', dataIndex: 'oracle', key: 'oracle' },
-    { title: 'Microsoft Dynamics 365', dataIndex: 'dynamics', key: 'dynamics' },
+    { title: 'Business Benefit', dataIndex: 'benefit', key: 'benefit' },
+    { title: 'Expected Value', dataIndex: 'businessValue', key: 'businessValue', 
+      render: (text: string) => <Tag color="green">{text}</Tag>
+    },
     {
-      title: 'WorldClass ERP',
+      title: 'Status',
       key: 'ours',
       render: (_: unknown, record: { key: string }) => (
         <Text type={featureFlags.isEnabled(record.key) ? 'success' : 'secondary'}>
-          {featureFlags.isEnabled(record.key) ? 'Activated' : 'Flagged'}
+          {featureFlags.isEnabled(record.key) ? '✅ Active' : '🔒 Available'}
         </Text>
       ),
     },
@@ -181,12 +177,12 @@ const LogisticsEnterpriseInnovation: React.FC = () => {
   return (
     <EnterpriseLayout
       moduleTitle="Enterprise Logistics"
-      moduleSubtitle="SAP/Oracle/Dynamics parity with AI-native differentiators"
+      moduleSubtitle="AI-powered fleet management with real business value"
       tabs={tabs}
       breadcrumbs={breadcrumbs}
       actionButtons={[
         {
-          label: 'Re-run Benchmarks',
+          label: 'Refresh Data',
           icon: <ThunderboltOutlined />,
           variant: 'secondary',
           onClick: () => {
@@ -231,7 +227,7 @@ const LogisticsEnterpriseInnovation: React.FC = () => {
           </Col>
         </Row>
 
-        <Card className="logistics-section" title="ERP Parity Matrix">
+        <Card className="logistics-section" title="Enterprise Features">
           {loading ? (
             <Skeleton active />
           ) : (
@@ -295,28 +291,28 @@ const LogisticsEnterpriseInnovation: React.FC = () => {
         )}
 
         {benchmarks && (
-          <Card className="logistics-section" title="Performance Benchmarks vs SAP S/4HANA">
+          <Card className="logistics-section" title="Your Performance Metrics">
             <Row gutter={[16, 16]}>
               <Col xs={24} md={12} lg={6}>
                 <Statistic
                   title="Trips / Dispatcher"
                   value={benchmarks.throughputPerDispatcher.ours}
-                  suffix={(benchmarks.throughputPerDispatcher.ours - benchmarks.throughputPerDispatcher.sap).toFixed(0) + ' vs SAP'}
+                  suffix={`(${((benchmarks.throughputPerDispatcher.ours / benchmarks.throughputPerDispatcher.industry - 1) * 100).toFixed(0)}% above industry avg)`}
                   prefix={<FundOutlined />}
                 />
               </Col>
               <Col xs={24} md={12} lg={6}>
                 <Statistic
-                  title="Planning Latency"
+                  title="Planning Time"
                   value={benchmarks.planningLatencyMinutes.ours}
-                  suffix={`min (< SAP ${benchmarks.planningLatencyMinutes.sap})`}
+                  suffix={`min (Industry: ${benchmarks.planningLatencyMinutes.industry})`}
                 />
               </Col>
               <Col xs={24} md={12} lg={6}>
                 <Statistic
-                  title="Revenue Recognition Lag"
+                  title="Invoice Speed"
                   value={benchmarks.revenueRecognitionLagMinutes.ours}
-                  suffix={`min vs SAP ${benchmarks.revenueRecognitionLagMinutes.sap}`}
+                  suffix="min after delivery"
                 />
               </Col>
               <Col xs={24} md={12} lg={6}>
@@ -327,7 +323,7 @@ const LogisticsEnterpriseInnovation: React.FC = () => {
                 />
               </Col>
             </Row>
-            <Text type="secondary">Validated: {new Date(benchmarks.lastValidatedAt).toLocaleString()}</Text>
+            <Text type="secondary">Last updated: {new Date(benchmarks.lastValidatedAt).toLocaleString()}</Text>
           </Card>
         )}
 
@@ -349,9 +345,9 @@ const LogisticsEnterpriseInnovation: React.FC = () => {
           <Alert
             type="info"
             showIcon
-            message="Process Genome Locked"
-            description="Enable the Process Genome feature to activate AI-native orchestration that none of SAP/Oracle/Dynamics provide natively."
-            action={<Button type="primary">Talk to Sales</Button>}
+            message="Process Automation Available"
+            description="Enable the Process Genome feature to activate AI-native orchestration that automates complex multi-step logistics workflows."
+            action={<Button type="primary">Contact Us</Button>}
           />
         )}
       </div>

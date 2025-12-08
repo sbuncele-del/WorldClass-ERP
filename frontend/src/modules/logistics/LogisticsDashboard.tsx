@@ -52,6 +52,7 @@ const LogisticsDashboard: React.FC = () => {
   const [stats, setStats] = useState<LogisticsStats | null>(null);
   const [activeVehicles, setActiveVehicles] = useState<VehicleStatus[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -67,80 +68,15 @@ const LogisticsDashboard: React.FC = () => {
         setStats(data.data.stats);
         setActiveVehicles(data.data.activeVehicles || []);
       } else {
+          setError(null);
         throw new Error('Failed to fetch dashboard data');
-      }
+          throw new Error('Failed to fetch dashboard data');
     } catch (error) {
       console.error('Error fetching logistics dashboard:', error);
       // Fallback to mock data on error
-      setStats({
-        fleet: {
-          total_vehicles: 45,
-          active_vehicles: 42,
-          in_maintenance: 3,
-          vehicles_on_road: 28
-        },
-        drivers: {
-          total_drivers: 52,
-          active_drivers: 48,
-          drivers_on_trip: 28,
-          available_drivers: 20
-        },
-        trips: {
-          today_trips: 35,
-          in_transit: 18,
-          completed_today: 12,
-          pending_pods: 5
-        },
-        performance: {
-          on_time_delivery_rate: 92.5,
-          fuel_efficiency: 3.8,
-          average_trip_duration: 4.2,
-          vehicle_utilization: 78.5
-        },
-        alerts: {
-          overdue_maintenance: 2,
-          expiring_licenses: 4,
-          fuel_anomalies: 1,
-          delayed_trips: 3
-        }
-      });
-
-      setActiveVehicles([
-        {
-          vehicle_id: 1,
-          vehicle_number: 'TRK-001',
-          registration_number: 'ABC 123 GP',
-          status: 'IN_TRANSIT',
-          current_location: 'N1 North, near Johannesburg',
-          driver_name: 'John Mthembu',
-          trip_number: 'TRIP-2025-001',
-          destination: 'Polokwane',
-          eta: '14:30'
-        },
-        {
-          vehicle_id: 2,
-          vehicle_number: 'TRK-002',
-          registration_number: 'DEF 456 GP',
-          status: 'LOADING',
-          current_location: 'Warehouse A - Johannesburg',
-          driver_name: 'Sarah Ndlovu',
-          trip_number: 'TRIP-2025-002',
-          destination: 'Durban',
-          eta: '16:00'
-        },
-        {
-          vehicle_id: 3,
-          vehicle_number: 'TRK-003',
-          registration_number: 'GHI 789 GP',
-          status: 'IN_TRANSIT',
-          current_location: 'N3, approaching Harrismith',
-          driver_name: 'Thabo Dlamini',
-          trip_number: 'TRIP-2025-003',
-          destination: 'Cape Town',
-          eta: 'Tomorrow 08:00'
-        }
-      ]);
-    } catch (error) {
+        setError('Failed to load logistics dashboard');
+        setStats(null);
+        setActiveVehicles([]);
       console.error('Error fetching logistics dashboard data:', error);
     } finally {
       setLoading(false);
@@ -174,6 +110,11 @@ const LogisticsDashboard: React.FC = () => {
 
   return (
     <div className="dashboard-container">
+      {error && (
+        <div style={{ marginBottom: '1rem', padding: '0.75rem', border: '1px solid #fecaca', background: '#fef2f2', borderRadius: '0.5rem', color: '#991b1b' }}>
+          {error}
+        </div>
+      )}
       {/* Header */}
       <div className="dashboard-header">
         <div>

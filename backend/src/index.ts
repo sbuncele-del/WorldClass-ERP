@@ -59,6 +59,7 @@ import { authenticateToken } from './middleware/auth';
 import { auditMiddleware } from './middleware/audit.middleware';
 import { tenantMiddleware } from './middleware/tenant';
 import auditLogRoutes from './routes/audit-log.routes';
+import { healthCheck as dbHealthCheck } from './config/database';
 // import gpsRoutes from './modules/logistics/gps.routes'; // May have issues
 import chartOfAccountsRoutes from './modules/chart-of-accounts/routes';
 import financialReportsRoutes2 from './modules/financial-reports/routes';
@@ -130,6 +131,19 @@ app.use(express.urlencoded({ extended: true }));
 // Health check
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running' });
+});
+
+app.get('/health/db', async (_req, res) => {
+  try {
+    const healthy = await dbHealthCheck();
+    if (healthy) {
+      return res.status(200).json({ status: 'OK', message: 'Database reachable' });
+    }
+    return res.status(503).json({ status: 'UNAVAILABLE', message: 'Database unreachable' });
+  } catch (error) {
+    console.error('Database health check failed:', error);
+    return res.status(503).json({ status: 'UNAVAILABLE', message: 'Database health check failed', error: (error as Error).message });
+  }
 });
 
 // API Routes
