@@ -31,7 +31,11 @@ const DEMO_USERS = [
   }
 ];
 
-const JWT_SECRET = process.env.JWT_SECRET || 'worldclass-erp-demo-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined');
+}
 
 export class AuthController {
   /**

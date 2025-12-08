@@ -2,6 +2,8 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import express, { Application } from 'express';
 import { randomUUID } from 'crypto';
 import cors from 'cors';
@@ -11,6 +13,7 @@ import compression from 'compression';
 import swaggerJSDoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import { errorHandler } from './middleware/errorHandler';
+import { validateEnv } from './config/env.validation';
 import authRoutes from './auth/auth.routes';
 import onboardingRoutes from './routes/onboarding.routes';
 import emailPreferencesRoutes from './routes/email-preferences.routes';
@@ -70,15 +73,24 @@ import salesInvoiceRoutes from './modules/sales/routes';
 import purchaseInvoiceRoutes from './modules/purchases/routes';
 import assetManagementRoutes from './modules/assets/routes';
 
-// Disable TLS certificate validation for AWS RDS (self-signed cert issue)
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+// Validate environment variables
+validateEnv();
+
+// Initialize Sentry
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  integrations: [
+    nodeProfilingIntegration(),
+  ],
+  tracesSampleRate: 1.0,
+  profilesSampleRate: 1.0,
+});
 
 // DEBUG: Log database connection info
 console.log('=== ENVIRONMENT DEBUG ===');
 console.log('DATABASE_URL:', process.env.DATABASE_URL);
-console.log('JWT_SECRET:', process.env.JWT_SECRET ? `${process.env.JWT_SECRET.substring(0, 20)}...` : 'NOT SET');
+console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'SET' : 'NOT SET');
 console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('NODE_TLS_REJECT_UNAUTHORIZED:', process.env.NODE_TLS_REJECT_UNAUTHORIZED);
 console.log('========================');
 
 const app: Application = express();
@@ -186,93 +198,101 @@ if (process.env.NODE_ENV !== 'production') {
 // Swagger/OpenAPI docs for Logistics module
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
+// API Versioning (GAP-014)
+const v1Router = express.Router();
+
 // API Routes
 // Authentication (public routes with strict rate limiting)
-app.use('/api/auth', authLimiter, authRoutes);
+v1Router.use('/auth', authLimiter, authRoutes);
 
 // Onboarding routes (protected with API rate limiting)
-app.use('/api/onboarding', apiLimiter, onboardingRoutes);
+v1Router.use('/onboarding', apiLimiter, onboardingRoutes);
 
 // Module discovery routes (backend-driven UI)
-app.use('/api/modules', apiLimiter, modulesRoutes);
+v1Router.use('/modules', apiLimiter, modulesRoutes);
 
 // Email preferences routes (mixed public/protected with API rate limiting)
-app.use('/api/email-preferences', apiLimiter, emailPreferencesRoutes);
+v1Router.use('/email-preferences', apiLimiter, emailPreferencesRoutes);
 
 // Email queue admin routes (protected with admin rate limiting) - DISABLED - uses Bull/Redis
-// app.use('/api/admin/email-queue', adminLimiter, emailQueueRoutes);
+// v1Router.use('/admin/email-queue', adminLimiter, emailQueueRoutes);
 
 // Tenant settings routes (protected with API rate limiting)
-app.use('/api/tenant', apiLimiter, tenantSettingsRoutes);
+v1Router.use('/tenant', apiLimiter, tenantSettingsRoutes);
 
 // Payment routes (public and protected with API rate limiting)
 // TEMPORARILY DISABLED - Missing Stripe API keys
-// app.use('/api/payment', apiLimiter, paymentRoutes);
+// v1Router.use('/payment', apiLimiter, paymentRoutes);
 
 // Subscription routes (protected with API rate limiting)
 // TEMPORARILY DISABLED - Depends on payment routes
-// app.use('/api/subscription', apiLimiter, subscriptionRoutes);
+// v1Router.use('/subscription', apiLimiter, subscriptionRoutes);
 
 // Webhook routes (public, no auth - for payment gateway callbacks with webhook rate limiting)
 // TEMPORARILY DISABLED - Depends on payment services
-// app.use('/api/webhooks', webhookLimiter, webhookRoutes);
+// v1Router.use('/webhooks', webhookLimiter, webhookRoutes);
 
 // Super Admin routes (protected by super admin auth with admin rate limiting)
-app.use('/api/admin', adminLimiter, superAdminRoutes);
+v1Router.use('/admin', adminLimiter, superAdminRoutes);
 
 // Admin routes (user management, roles, permissions, settings)
-app.use('/api/admin', adminLimiter, adminRoutes);
+v1Router.use('/admin', adminLimiter, adminRoutes);
 
 // Demo routes (with demo rate limiting) - DISABLED - causes Bull/Redis initialization
-// app.use('/api/demo', demoLimiter, demoResetRoutes);
+// v1Router.use('/demo', demoLimiter, demoResetRoutes);
 
 // Protected module routes (with API rate limiting)
-app.use('/api/inventory', apiLimiter, inventoryRoutes);
-app.use('/api/sales', apiLimiter, salesRoutes);
-app.use('/api/purchase', apiLimiter, purchaseRoutes);
-app.use('/api/financial', apiLimiter, financialRoutes);
-app.use('/api/financial/dimensions', dimensionsRoutes);
-app.use('/api/financial/periods', periodRoutes);
-app.use('/api/financial/dashboard', dashboardRoutes);
-app.use('/api/financial/approvals', approvalRoutes);
-app.use('/api/hr', hrRoutes);
-app.use('/api/manufacturing', manufacturingRoutes);
-app.use('/api/warehouse', warehouseRoutes);
-app.use('/api/sars-sentinel', sarsSentinelRoutes);
-app.use('/api/cash-management', cashManagementRoutes);
+v1Router.use('/inventory', apiLimiter, inventoryRoutes);
+v1Router.use('/sales', apiLimiter, salesRoutes);
+v1Router.use('/purchase', apiLimiter, purchaseRoutes);
+v1Router.use('/financial', apiLimiter, financialRoutes);
+v1Router.use('/financial/dimensions', dimensionsRoutes);
+v1Router.use('/financial/periods', periodRoutes);
+v1Router.use('/financial/dashboard', dashboardRoutes);
+v1Router.use('/financial/approvals', approvalRoutes);
+v1Router.use('/hr', hrRoutes);
+v1Router.use('/manufacturing', manufacturingRoutes);
+v1Router.use('/warehouse', warehouseRoutes);
+v1Router.use('/sars-sentinel', sarsSentinelRoutes);
+v1Router.use('/cash-management', cashManagementRoutes);
 // Old financial reports routes - replaced by new module routes below
-// app.use('/api/financial/reports', financialReportsRoutes);
-app.use('/api/financial/recurring-entries', recurringEntriesRoutes);
-app.use('/api/financial/import-entries', importEntriesRoutes);
-app.use('/api/financial/gl-explorer', glExplorerRoutes);
-app.use('/api/financial/audit-trail', auditTrailRoutes);
-app.use('/api/financial/tax-settings', taxSettingsRoutes);
-app.use('/api/financial/forecasting', financialForecastingRoutes);
-app.use('/api/financial/custom-reports', customReportsRoutes);
-app.use('/api/practice', practiceRoutes);
-app.use('/api/assets', assetsRoutes); // Legacy Asset Management routes (workspace, old controllers)
-app.use(
-  '/api/logistics',
+// v1Router.use('/financial/reports', financialReportsRoutes);
+v1Router.use('/financial/recurring-entries', recurringEntriesRoutes);
+v1Router.use('/financial/import-entries', importEntriesRoutes);
+v1Router.use('/financial/gl-explorer', glExplorerRoutes);
+v1Router.use('/financial/audit-trail', auditTrailRoutes);
+v1Router.use('/financial/tax-settings', taxSettingsRoutes);
+v1Router.use('/financial/forecasting', financialForecastingRoutes);
+v1Router.use('/financial/custom-reports', customReportsRoutes);
+v1Router.use('/practice', practiceRoutes);
+v1Router.use('/assets', assetsRoutes); // Legacy Asset Management routes (workspace, old controllers)
+v1Router.use(
+  '/logistics',
   authenticateToken,
   tenantMiddleware,
   apiLimiter,
   auditMiddleware({ entityType: 'logistics' }),
   logisticsRoutes
 ); // Logistics routes (RBAC protected + Audit)
-app.use('/api/audit-log', apiLimiter, auditLogRoutes); // Audit Log API (SOX compliance)
-app.use('/api/compliance', apiLimiter, complianceRoutes); // Compliance & Governance
-app.use('/api/audit', apiLimiter, auditReadyRoutes); // Audit-Ready Suite
-app.use('/api/reports', apiLimiter, reportsRoutes); // Reports & Analytics
-app.use('/api/ai', apiLimiter, aiAssistantRoutes); // AI Agents & Assistants
-app.use('/api/entities', apiLimiter, multiEntityRoutes); // Multi-Entity Management
-app.use('/api/healthcare', apiLimiter, healthcareRoutes); // Healthcare Operations Intelligence
-app.use('/api/super-admin', apiLimiter, superadminRoutes); // Super Admin & Multi-Tenant Support Portal
-app.use('/api/chart-of-accounts', apiLimiter, chartOfAccountsRoutes); // Chart of Accounts
+v1Router.use('/audit-log', apiLimiter, auditLogRoutes); // Audit Log API (SOX compliance)
+v1Router.use('/compliance', apiLimiter, complianceRoutes); // Compliance & Governance
+v1Router.use('/audit', apiLimiter, auditReadyRoutes); // Audit-Ready Suite
+v1Router.use('/reports', apiLimiter, reportsRoutes); // Reports & Analytics
+v1Router.use('/ai', apiLimiter, aiAssistantRoutes); // AI Agents & Assistants
+v1Router.use('/entities', apiLimiter, multiEntityRoutes); // Multi-Entity Management
+v1Router.use('/healthcare', apiLimiter, healthcareRoutes); // Healthcare Operations Intelligence
+v1Router.use('/super-admin', apiLimiter, superadminRoutes); // Super Admin & Multi-Tenant Support Portal
+v1Router.use('/chart-of-accounts', apiLimiter, chartOfAccountsRoutes); // Chart of Accounts
 // New Financial Reports Module - Trial Balance, P&L, Balance Sheet
-app.use('/api/financial', apiLimiter, financialReportsRoutes2); // Financial Reporting API
-app.use('/api/invoices/sales', apiLimiter, salesInvoiceRoutes); // Sales Invoice API
-app.use('/api/purchases', apiLimiter, purchaseInvoiceRoutes); // Purchase Invoice API
-app.use('/api/asset-management', apiLimiter, assetManagementRoutes); // Asset Management API
+v1Router.use('/financial', apiLimiter, financialReportsRoutes2); // Financial Reporting API
+v1Router.use('/invoices/sales', apiLimiter, salesInvoiceRoutes); // Sales Invoice API
+v1Router.use('/purchases', apiLimiter, purchaseInvoiceRoutes); // Purchase Invoice API
+v1Router.use('/asset-management', apiLimiter, assetManagementRoutes); // Asset Management API
+
+// Mount v1 router
+app.use('/api/v1', v1Router);
+// Backward compatibility
+app.use('/api', v1Router);
 
 // Error handling middleware
 // Error handling middleware
