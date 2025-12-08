@@ -5,6 +5,7 @@ dotenv.config();
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import express, { Application } from 'express';
+import http from 'http';
 import { randomUUID } from 'crypto';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -58,6 +59,7 @@ import healthcareRoutes from './routes/healthcare.routes';
 import superadminRoutes from './routes/superadmin.routes';
 import modulesRoutes from './routes/modules.routes';
 import DemoResetService from './services/demo-reset.service';
+import { initializeLogisticsGateway } from './websocket/logistics.gateway';
 import { securityHeaders, securityLogger } from './middleware/security';
 import { apiLimiter, authLimiter, adminLimiter, webhookLimiter, demoLimiter } from './middleware/rateLimiter';
 import logisticsRoutes from './modules/logistics/logistics.routes';
@@ -95,6 +97,7 @@ console.log('========================');
 
 const app: Application = express();
 const PORT = parseInt(process.env.PORT || '3000', 10);
+const httpServer = http.createServer(app);
 
 const swaggerOptions = {
   definition: {
@@ -298,11 +301,15 @@ app.use('/api', v1Router);
 // Error handling middleware
 app.use(errorHandler);
 
+// Initialize WebSocket gateway (GAP-010)
+initializeLogisticsGateway(httpServer);
+
 // Listen on all interfaces (0.0.0.0) to accept external connections
-app.listen(PORT, '0.0.0.0', () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌐 Accepting connections on all interfaces (0.0.0.0:${PORT})`);
   console.log(`📊 ERP System initialized`);
+  console.log(`🔌 Socket.IO gateway active at /logistics-ws`);
   
   // Initialize demo tenant auto-reset cron job (DISABLED - Redis not configured)
   // DemoResetService.initializeCronJob();

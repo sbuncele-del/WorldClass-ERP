@@ -161,18 +161,22 @@ export class LogisticsGateway {
   public broadcastVehiclePosition(position: VehiclePosition) {
     // Broadcast to fleet room
     this.io.to('fleet').emit('vehicle:position', position);
+    this.io.to('fleet').emit('vehicle.location.update', position);
 
     // Broadcast to specific vehicle room
     this.io.to(`vehicle:${position.vehicleId}`).emit('vehicle:position', position);
+    this.io.to(`vehicle:${position.vehicleId}`).emit('vehicle.location.update', position);
 
     // If vehicle is on a trip, broadcast to trip room
     if (position.tripId) {
       this.io.to(`trip:${position.tripId}`).emit('vehicle:position', position);
+      this.io.to(`trip:${position.tripId}`).emit('vehicle.location.update', position);
     }
 
     // If vehicle has a driver, broadcast to driver room
     if (position.driver) {
       this.io.to(`driver:${position.driver}`).emit('vehicle:position', position);
+      this.io.to(`driver:${position.driver}`).emit('vehicle.location.update', position);
     }
   }
 
@@ -182,9 +186,11 @@ export class LogisticsGateway {
   public broadcastTripUpdate(update: TripUpdate) {
     // Broadcast to fleet room
     this.io.to('fleet').emit('trip:update', update);
+    this.io.to('fleet').emit('trip.status.change', update);
 
     // Broadcast to specific trip room
     this.io.to(`trip:${update.tripId}`).emit('trip:update', update);
+    this.io.to(`trip:${update.tripId}`).emit('trip.status.change', update);
   }
 
   /**
@@ -219,7 +225,21 @@ export class LogisticsGateway {
       timestamp: new Date()
     });
 
+    this.io.to('fleet').emit('driver.status.update', {
+      driverId,
+      status,
+      location,
+      timestamp: new Date()
+    });
+
     this.io.to(`driver:${driverId}`).emit('driver:status', {
+      driverId,
+      status,
+      location,
+      timestamp: new Date()
+    });
+
+    this.io.to(`driver:${driverId}`).emit('driver.status.update', {
       driverId,
       status,
       location,
@@ -238,7 +258,21 @@ export class LogisticsGateway {
       timestamp: new Date()
     });
 
+    this.io.to('fleet').emit('new.load.assigned', {
+      loadId,
+      tripId,
+      status,
+      timestamp: new Date()
+    });
+
     this.io.to(`trip:${tripId}`).emit('load:assigned', {
+      loadId,
+      tripId,
+      status,
+      timestamp: new Date()
+    });
+
+    this.io.to(`trip:${tripId}`).emit('new.load.assigned', {
       loadId,
       tripId,
       status,
