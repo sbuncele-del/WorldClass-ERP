@@ -19,6 +19,22 @@ import ProtectedRoute from './components/ProtectedRoute';
 import TopBar from './components/layout/TopBar';
 import Sidebar from './components/layout/Sidebar';
 
+// Landing Page (lazy loaded for performance)
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+
+// Footer Pages (lazy loaded)
+const About = lazy(() => import('./pages/About'));
+const Careers = lazy(() => import('./pages/Careers'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const Security = lazy(() => import('./pages/Security'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Documentation = lazy(() => import('./pages/Documentation'));
+const Support = lazy(() => import('./pages/Support'));
+const Partners = lazy(() => import('./pages/Partners'));
+const Blog = lazy(() => import('./pages/Blog'));
+const CaseStudies = lazy(() => import('./pages/CaseStudies'));
+
 // Lazy-loaded Authentication Pages
 const Signup = lazy(() => import('./pages/Signup'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
@@ -28,6 +44,7 @@ const ResendVerification = lazy(() => import('./pages/ResendVerification'));
 
 // Lazy-loaded Main Pages
 const EnterpriseDashboard = lazy(() => import('./pages/EnterpriseDashboard'));
+const DriverDashboard = lazy(() => import('./pages/DriverDashboard'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const Billing = lazy(() => import('./pages/Billing'));
 const ProfileSettings = lazy(() => import('./pages/ProfileSettings'));
@@ -130,6 +147,22 @@ function App() {
                 <Router>
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
+                      {/* Landing Page - Public Homepage */}
+                      <Route path="/" element={<LandingPage />} />
+                      
+                      {/* Public Footer Pages - No Layout */}
+                      <Route path="/about" element={<About />} />
+                      <Route path="/careers" element={<Careers />} />
+                      <Route path="/privacy" element={<PrivacyPolicy />} />
+                      <Route path="/terms" element={<TermsOfService />} />
+                      <Route path="/security" element={<Security />} />
+                      <Route path="/contact" element={<Contact />} />
+                      <Route path="/documentation" element={<Documentation />} />
+                      <Route path="/support" element={<Support />} />
+                      <Route path="/partners" element={<Partners />} />
+                      <Route path="/blog" element={<Blog />} />
+                      <Route path="/case-studies" element={<CaseStudies />} />
+                      
                       {/* Public Routes - No Layout */}
                       <Route path="/login" element={<Login />} />
                       <Route path="/signup" element={<Signup />} />
@@ -137,9 +170,19 @@ function App() {
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/verify-email" element={<VerifyEmail />} />
                       <Route path="/resend-verification" element={<ResendVerification />} />
+
+                      {/* Driver-first experience (no sidebar/topbar) */}
+                      <Route
+                        path="/driver"
+                        element={
+                          <ProtectedRoute>
+                            <DriverDashboard />
+                          </ProtectedRoute>
+                        }
+                      />
                       
                       {/* Protected Routes - With Layout */}
-                      <Route path="/*" element={
+                      <Route path="/app/*" element={
                         <ProtectedRoute>
                           <div className="app">
                             <TopBar />

@@ -5,7 +5,7 @@
  */
 
 import { Router } from 'express';
-import * as assetsController from '../controllers/assets.controller';
+import assetsController from '../controllers/assets.controller';
 import * as assetsWorkspaceController from '../modules/assets/controllers/assets.workspace.controller';
 
 const router = Router();

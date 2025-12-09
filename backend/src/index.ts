@@ -54,10 +54,13 @@ import auditReadyRoutes from './routes/audit-ready.routes';
 import reportsRoutes from './routes/reports.routes';
 import treasuryRoutes from './routes/treasury.routes';
 import aiAssistantRoutes from './routes/ai-assistant.routes';
+import agentRoutes from './routes/agent.routes';
 import multiEntityRoutes from './routes/multi-entity.routes';
 import healthcareRoutes from './routes/healthcare.routes';
 import superadminRoutes from './routes/superadmin.routes';
 import modulesRoutes from './routes/modules.routes';
+import messagesRoutes from './routes/messages.routes';
+import deliveryRoutes from './routes/delivery.routes';
 import DemoResetService from './services/demo-reset.service';
 import { initializeLogisticsGateway } from './websocket/logistics.gateway';
 import { securityHeaders, securityLogger } from './middleware/security';
@@ -299,6 +302,7 @@ v1Router.use('/compliance', apiLimiter, complianceRoutes); // Compliance & Gover
 v1Router.use('/audit', apiLimiter, auditReadyRoutes); // Audit-Ready Suite
 v1Router.use('/reports', apiLimiter, reportsRoutes); // Reports & Analytics
 v1Router.use('/ai', apiLimiter, aiAssistantRoutes); // AI Agents & Assistants
+v1Router.use('/agent', agentRoutes); // Actionable AI Agent (can create invoices, etc.)
 v1Router.use('/entities', apiLimiter, multiEntityRoutes); // Multi-Entity Management
 v1Router.use('/healthcare', apiLimiter, healthcareRoutes); // Healthcare Operations Intelligence
 v1Router.use('/super-admin', apiLimiter, superadminRoutes); // Super Admin & Multi-Tenant Support Portal
@@ -308,6 +312,8 @@ v1Router.use('/financial', apiLimiter, financialReportsRoutes2); // Financial Re
 v1Router.use('/invoices/sales', apiLimiter, salesInvoiceRoutes); // Sales Invoice API
 v1Router.use('/purchases', apiLimiter, purchaseInvoiceRoutes); // Purchase Invoice API
 v1Router.use('/asset-management', apiLimiter, assetManagementRoutes); // Asset Management API
+v1Router.use('/messages', apiLimiter, messagesRoutes); // Driver-Dispatch Messaging
+v1Router.use('/delivery', apiLimiter, deliveryRoutes); // Delivery Verification & POD
 
 // Mount v1 router
 app.use('/api/v1', v1Router);

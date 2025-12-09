@@ -111,18 +111,20 @@ const EnterpriseDashboard: React.FC = () => {
 
       if (tasksRes.ok) {
         const response = await tasksRes.json();
-        tasksData = response.data || response;
+        const data = response.data || response;
+        tasksData = Array.isArray(data) ? data : [];
       }
 
       if (alertsRes.ok) {
         const response = await alertsRes.json();
-        alertsData = response.data || response;
+        const data = response.data || response;
+        alertsData = Array.isArray(data) ? data : [];
       }
 
       // Update cards with real data
       setWorkspaceCards(getWorkspaceCards(metricsData));
-      setTasks(tasksData);
-      setAlerts(alertsData);
+      setTasks(tasksData || []);
+      setAlerts(alertsData || []);
     } catch (error) {
       console.error('CRITICAL ERROR loading dashboard:', error);
       // NO FALLBACK - Show error to user
@@ -440,11 +442,11 @@ const EnterpriseDashboard: React.FC = () => {
             </div>
             <div className="hero-stat">
               <Target size={20} />
-              <span>{tasks.filter(t => t.status === 'pending').length} pending tasks</span>
+              <span>{(tasks || []).filter(t => t.status === 'pending').length} pending tasks</span>
             </div>
             <div className="hero-stat">
               <Bell size={20} />
-              <span>{alerts.length} notifications</span>
+              <span>{(alerts || []).length} notifications</span>
             </div>
           </div>
         </div>
@@ -507,11 +509,11 @@ const EnterpriseDashboard: React.FC = () => {
         <div className="dashboard-column">
           <div className="section-header-inline">
             <h2 className="section-title">My Tasks</h2>
-            <span className="section-badge">{tasks.filter(t => t.status !== 'completed').length} Active</span>
+            <span className="section-badge">{(tasks || []).filter(t => t.status !== 'completed').length} Active</span>
           </div>
           
           <div className="tasks-list">
-            {tasks.map(task => (
+            {(tasks || []).map(task => (
               <div key={task.id} className={`task-item ${task.status}`}>
                 <div className={`task-priority ${getPriorityColor(task.priority)}`} />
                 <div className="task-content">
@@ -543,11 +545,11 @@ const EnterpriseDashboard: React.FC = () => {
         <div className="dashboard-column">
           <div className="section-header-inline">
             <h2 className="section-title">Notifications</h2>
-            <span className="section-badge">{alerts.length}</span>
+            <span className="section-badge">{(alerts || []).length}</span>
           </div>
           
           <div className="alerts-list">
-            {alerts.map(alert => (
+            {(alerts || []).map(alert => (
               <div key={alert.id} className={`alert-item ${alert.type}`}>
                 <div className="alert-icon">
                   {getAlertIcon(alert.type)}
