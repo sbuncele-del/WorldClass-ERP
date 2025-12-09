@@ -32,7 +32,7 @@ import periodRoutes from './routes/period.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import approvalRoutes from './routes/approval.routes';
 import hrRoutes from './routes/hr.routes';
-import manufacturingRoutes from './routes/manufacturing.routes';
+import manufacturingRoutes from './modules/manufacturing/routes/manufacturing.routes';
 import warehouseRoutes from './routes/warehouse.routes';
 import sarsSentinelRoutes from './routes/sars-sentinel.routes';
 import cashManagementRoutes from './routes/cash-management.routes';

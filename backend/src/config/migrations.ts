@@ -13,6 +13,7 @@ import { runHRMigration } from './hr-migration';
 import { runPracticeIntegrationMigration } from './practice-integration-migration';
 import { runClientPortalMigration } from './client-portal-migration';
 import { createAssetManagementTables } from './asset-management-migration';
+import { runManufacturingMigration } from './manufacturing-migration';
 
 /**
  * Database Migration Script
@@ -326,6 +327,11 @@ async function runMigrations() {
     console.log('🔨 Running Asset Management migration...');
     await createAssetManagementTables(pool);
     console.log('✅ Asset Management migration completed\n');
+
+    // 19. Run Manufacturing Module Migration
+    console.log('🏭 Running Manufacturing Module migration...');
+    await runManufacturingMigration(pool);
+    console.log('✅ Manufacturing Module migration completed\n');
 
     console.log('🎉 All migrations completed successfully!\n');
     
