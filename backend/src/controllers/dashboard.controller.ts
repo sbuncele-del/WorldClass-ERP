@@ -594,6 +594,253 @@ export class DashboardController {
       res.status(500).json({ error: 'Failed to get dashboard alerts' });
     }
   }
+
+  /**
+   * GET /api/dashboard/executive
+   * Get executive dashboard data with KPIs, charts, AI insights
+   */
+  static async getExecutiveDashboard(req: any, res: Response): Promise<void> {
+    try {
+      const tenantId = req.user?.tenantId || req.tenant?.id;
+      const period = req.query.period || '30d';
+
+      if (!tenantId) {
+        res.status(401).json({ error: 'Not authenticated' });
+        return;
+      }
+
+      // Calculate date range based on period
+      const now = new Date();
+      let startDate: Date;
+      let previousStartDate: Date;
+
+      switch (period) {
+        case '7d':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          previousStartDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+          break;
+        case '90d':
+          startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          previousStartDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+          break;
+        case '1y':
+          startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+          previousStartDate = new Date(now.getTime() - 730 * 24 * 60 * 60 * 1000);
+          break;
+        default: // 30d
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          previousStartDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+      }
+
+      // Get revenue metrics
+      const revenueQuery = await pool.query(
+        `SELECT 
+          COALESCE(SUM(CASE WHEN created_at >= $2 THEN total_amount ELSE 0 END), 0) as current_revenue,
+          COALESCE(SUM(CASE WHEN created_at >= $3 AND created_at < $2 THEN total_amount ELSE 0 END), 0) as previous_revenue
+         FROM invoices 
+         WHERE tenant_id = $1 AND status IN ('paid', 'partial')`,
+        [tenantId, startDate, previousStartDate]
+      );
+
+      // Get expenses metrics
+      const expensesQuery = await pool.query(
+        `SELECT 
+          COALESCE(SUM(CASE WHEN created_at >= $2 THEN amount ELSE 0 END), 0) as current_expenses,
+          COALESCE(SUM(CASE WHEN created_at >= $3 AND created_at < $2 THEN amount ELSE 0 END), 0) as previous_expenses
+         FROM expenses 
+         WHERE tenant_id = $1`,
+        [tenantId, startDate, previousStartDate]
+      );
+
+      // Get cash flow metrics
+      const cashFlowQuery = await pool.query(
+        `SELECT 
+          COALESCE(SUM(CASE WHEN transaction_date >= $2 THEN 
+            CASE WHEN transaction_type = 'INFLOW' THEN amount ELSE -amount END 
+          ELSE 0 END), 0) as current_cashflow,
+          COALESCE(SUM(CASE WHEN transaction_date >= $3 AND transaction_date < $2 THEN 
+            CASE WHEN transaction_type = 'INFLOW' THEN amount ELSE -amount END 
+          ELSE 0 END), 0) as previous_cashflow
+         FROM cash_transactions 
+         WHERE tenant_id = $1`,
+        [tenantId, startDate, previousStartDate]
+      );
+
+      const revenue = revenueQuery.rows[0];
+      const expenses = expensesQuery.rows[0];
+      const cashFlow = cashFlowQuery.rows[0];
+
+      const currentRevenue = parseFloat(revenue.current_revenue) || 0;
+      const previousRevenue = parseFloat(revenue.previous_revenue) || 0;
+      const revenueChange = previousRevenue > 0 ? ((currentRevenue - previousRevenue) / previousRevenue) * 100 : 0;
+
+      const currentExpenses = parseFloat(expenses.current_expenses) || 0;
+      const previousExpenses = parseFloat(expenses.previous_expenses) || 0;
+      const expensesChange = previousExpenses > 0 ? ((currentExpenses - previousExpenses) / previousExpenses) * 100 : 0;
+
+      const currentProfit = currentRevenue - currentExpenses;
+      const previousProfit = previousRevenue - previousExpenses;
+      const profitChange = previousProfit !== 0 ? ((currentProfit - previousProfit) / Math.abs(previousProfit)) * 100 : 0;
+
+      const currentCashFlow = parseFloat(cashFlow.current_cashflow) || 0;
+      const previousCashFlow = parseFloat(cashFlow.previous_cashflow) || 0;
+      const cashFlowChange = previousCashFlow !== 0 ? ((currentCashFlow - previousCashFlow) / Math.abs(previousCashFlow)) * 100 : 0;
+
+      // Generate sparkline data (last 7 data points)
+      const generateSparkline = (current: number, previous: number) => {
+        const diff = current - previous;
+        const step = diff / 6;
+        return Array.from({ length: 7 }, (_, i) => previous + step * i);
+      };
+
+      // Get revenue chart data (last 6 months)
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+      const chartQuery = await pool.query(
+        `SELECT 
+          TO_CHAR(DATE_TRUNC('month', created_at), 'Mon') as month,
+          COALESCE(SUM(total_amount), 0) as revenue
+         FROM invoices 
+         WHERE tenant_id = $1 AND created_at >= $2 AND status IN ('paid', 'partial')
+         GROUP BY DATE_TRUNC('month', created_at)
+         ORDER BY DATE_TRUNC('month', created_at)`,
+        [tenantId, sixMonthsAgo]
+      );
+
+      const expensesChartQuery = await pool.query(
+        `SELECT 
+          TO_CHAR(DATE_TRUNC('month', created_at), 'Mon') as month,
+          COALESCE(SUM(amount), 0) as expenses
+         FROM expenses 
+         WHERE tenant_id = $1 AND created_at >= $2
+         GROUP BY DATE_TRUNC('month', created_at)
+         ORDER BY DATE_TRUNC('month', created_at)`,
+        [tenantId, sixMonthsAgo]
+      );
+
+      const revenueChart = chartQuery.rows.map((row, i) => ({
+        month: row.month,
+        revenue: parseFloat(row.revenue),
+        expenses: parseFloat(expensesChartQuery.rows[i]?.expenses || 0),
+        profit: parseFloat(row.revenue) - parseFloat(expensesChartQuery.rows[i]?.expenses || 0),
+      }));
+
+      // Generate AI insights
+      const aiInsights = [];
+      
+      if (revenueChange > 10) {
+        aiInsights.push({
+          id: '1',
+          type: 'success',
+          message: `Your revenue increased ${revenueChange.toFixed(1)}% this period - strong performance!`,
+          priority: 1,
+        });
+      } else if (revenueChange < -10) {
+        aiInsights.push({
+          id: '1',
+          type: 'warning',
+          message: `Revenue declined ${Math.abs(revenueChange).toFixed(1)}% - review sales strategy`,
+          priority: 1,
+        });
+      }
+
+      if (expensesChange < -5) {
+        aiInsights.push({
+          id: '2',
+          type: 'success',
+          message: `Operating expenses down ${Math.abs(expensesChange).toFixed(1)}% - cost optimization working`,
+          priority: 2,
+        });
+      }
+
+      // Get alerts
+      const alertsQuery = await pool.query(
+        `SELECT 'Inventory' as type, 'Low stock on ' || COUNT(*) || ' products' as message, 'medium' as severity
+         FROM products p
+         LEFT JOIN inventory i ON p.id = i.product_id
+         WHERE p.tenant_id = $1 AND COALESCE(i.quantity, 0) <= COALESCE(p.min_stock_level, 0)
+         HAVING COUNT(*) > 0
+         UNION ALL
+         SELECT 'Receivables' as type, 'R' || COALESCE(SUM(total_amount), 0) || ' overdue invoices' as message, 'high' as severity
+         FROM invoices
+         WHERE tenant_id = $1 AND status = 'overdue' AND COALESCE(total_amount, 0) > 0
+         LIMIT 5`,
+        [tenantId]
+      );
+
+      const alerts = alertsQuery.rows.map((row, i) => ({
+        id: `alert-${i}`,
+        type: row.type,
+        message: row.message,
+        severity: row.severity,
+        timestamp: new Date().toISOString(),
+      }));
+
+      // Get recent activity
+      const activityQuery = await pool.query(
+        `(SELECT 'invoice' as type, 'Invoice ' || invoice_number || ' created' as title, total_amount as amount, created_at as date, status 
+          FROM invoices WHERE tenant_id = $1)
+         UNION ALL
+         (SELECT 'payment' as type, 'Payment received' as title, amount, created_at as date, 'completed' as status 
+          FROM payments WHERE tenant_id = $1)
+         ORDER BY date DESC LIMIT 10`,
+        [tenantId]
+      );
+
+      const recentActivity = activityQuery.rows.map(row => ({
+        id: `activity-${row.type}-${Math.random()}`,
+        type: row.type,
+        title: row.title,
+        amount: parseFloat(row.amount) || 0,
+        date: row.date,
+        status: row.status,
+      }));
+
+      // Module health (mock for now)
+      const moduleHealth = [
+        { module: 'Sales', status: 'healthy', uptime: 99.9 },
+        { module: 'Inventory', status: 'healthy', uptime: 99.5 },
+        { module: 'Financial', status: 'healthy', uptime: 100 },
+        { module: 'HR & Payroll', status: 'healthy', uptime: 99.2 },
+      ];
+
+      res.json({
+        metrics: {
+          revenue: {
+            current: currentRevenue,
+            previous: previousRevenue,
+            change: revenueChange,
+            sparkline: generateSparkline(currentRevenue, previousRevenue),
+          },
+          expenses: {
+            current: currentExpenses,
+            previous: previousExpenses,
+            change: expensesChange,
+            sparkline: generateSparkline(currentExpenses, previousExpenses),
+          },
+          profit: {
+            current: currentProfit,
+            previous: previousProfit,
+            change: profitChange,
+            sparkline: generateSparkline(currentProfit, previousProfit),
+          },
+          cashFlow: {
+            current: currentCashFlow,
+            previous: previousCashFlow,
+            change: cashFlowChange,
+            sparkline: generateSparkline(currentCashFlow, previousCashFlow),
+          },
+        },
+        revenueChart,
+        aiInsights,
+        alerts,
+        recentActivity,
+        moduleHealth,
+      });
+    } catch (error) {
+      console.error('Get executive dashboard error:', error);
+      res.status(500).json({ error: 'Failed to fetch executive dashboard data' });
+    }
+  }
 }
 
 export default DashboardController;

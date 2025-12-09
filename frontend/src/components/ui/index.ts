@@ -18,6 +18,9 @@ export { PageHeader, SectionHeader } from './PageHeader';
 // Data Display
 export { EnhancedTable, DataTable } from './EnhancedTable';
 export { AnimatedNumber, StatCard, StatsGrid, MiniStat, ComparisonStat } from './StatsCard';
+export { MetricsGrid } from './MetricsGrid';
+export { StatusBadge } from './StatusBadge';
+export { ActionMenu, EditDeleteMenu, ViewEditDeleteMenu } from './ActionMenu';
 
 // Forms
 export { AutoSaveForm, InlineEdit, CharCountInput, DirtyForm, FormUtils } from './FormEnhancements';

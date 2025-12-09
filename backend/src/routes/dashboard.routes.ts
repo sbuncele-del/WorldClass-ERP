@@ -22,6 +22,7 @@ const router = express.Router();
 router.get('/metrics', tenantMiddleware, DashboardController.getMetrics);
 router.get('/tasks', tenantMiddleware, DashboardController.getTasks);
 router.get('/alerts', tenantMiddleware, DashboardController.getAlerts);
+router.get('/executive', tenantMiddleware, DashboardController.getExecutiveDashboard);
 
 // Legacy Dashboard Endpoints
 router.get('/stats', getDashboardStats);
