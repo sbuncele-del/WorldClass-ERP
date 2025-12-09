@@ -1,0 +1,71 @@
+{
+  "name": "worldclass-driver-app",
+  "version": "1.0.0",
+  "description": "WorldClass ERP Driver Mobile App",
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "eject": "expo eject",
+    "test": "jest",
+    "lint": "eslint . --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "expo": "~50.0.0",
+    "expo-status-bar": "~1.11.1",
+    "react": "18.2.0",
+    "react-native": "0.73.2",
+    "@react-navigation/native": "^6.1.9",
+    "@react-navigation/stack": "^6.3.20",
+    "@react-navigation/bottom-tabs": "^6.5.11",
+    "@reduxjs/toolkit": "^2.0.1",
+    "react-redux": "^9.0.4",
+    "redux-persist": "^6.0.0",
+    "socket.io-client": "^4.7.2",
+    "axios": "^1.6.2",
+    "expo-camera": "~14.0.5",
+    "expo-location": "~16.5.1",
+    "expo-file-system": "~16.0.6",
+    "expo-local-authentication": "~13.8.0",
+    "expo-secure-store": "~12.8.1",
+    "expo-barcode-scanner": "~12.9.0",
+    "expo-notifications": "~0.27.6",
+    "expo-task-manager": "~11.7.2",
+    "expo-sqlite": "~13.4.0",
+    "react-native-maps": "1.10.0",
+    "react-native-signature-canvas": "^4.7.0",
+    "react-native-voice": "^3.2.4",
+    "react-native-gesture-handler": "~2.14.0",
+    "react-native-reanimated": "~3.6.1",
+    "react-native-safe-area-context": "4.8.2",
+    "react-native-screens": "~3.29.0",
+    "@react-native-async-storage/async-storage": "1.21.0",
+    "@sentry/react-native": "^5.15.2",
+    "expo-crypto": "~12.8.1",
+    "date-fns": "^3.0.6",
+    "react-native-paper": "^5.11.6",
+    "react-native-vector-icons": "^10.0.3"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.20.0",
+    "@types/react": "~18.2.45",
+    "@types/react-native": "~0.73.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-native": "^4.1.0",
+    "jest": "^29.7.0",
+    "@testing-library/react-native": "^12.4.2",
+    "typescript": "^5.3.3"
+  },
+  "private": true,
+  "jest": {
+    "preset": "jest-expo",
+    "transformIgnorePatterns": [
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@unimodules/.*|unimodules|sentry-expo|native-base|react-native-svg)"
+    ]
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "expo": {
+    "name": "WorldClass Driver",
+    "slug": "worldclass-driver-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.worldclass.driverapp",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app needs access to your camera to capture proof of delivery photos.",
+        "NSLocationWhenInUseUsageDescription": "This app needs access to your location to track trip progress and provide accurate delivery information.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to your location in the background to track trip progress even when the app is not in use.",
+        "NSMicrophoneUsageDescription": "This app needs access to your microphone for voice-to-text note entry.",
+        "UIBackgroundModes": ["location", "fetch", "remote-notification"]
+      },
+      "config": {
+        "googleMapsApiKey": "YOUR_IOS_GOOGLE_MAPS_API_KEY"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.worldclass.driverapp",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "RECORD_AUDIO",
+        "VIBRATE",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_ANDROID_GOOGLE_MAPS_API_KEY"
+        }
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera for proof of delivery photos."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location for trip tracking.",
+          "locationAlwaysPermission": "Allow $(PRODUCT_NAME) to use your location in the background for continuous trip tracking.",
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location for trip tracking."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to use Face ID for secure login."
+        }
+      ],
+      "@sentry/react-native/expo"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/your-project-id"
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    }
+  }
+}
