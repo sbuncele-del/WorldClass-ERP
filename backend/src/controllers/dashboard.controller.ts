@@ -594,7 +594,6 @@ export class DashboardController {
       res.status(500).json({ error: 'Failed to get dashboard alerts' });
     }
   }
-}
 
   /**
    * GET /api/dashboard/executive
