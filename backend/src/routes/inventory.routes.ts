@@ -59,6 +59,19 @@ router.post('/stock-adjustments', inventoryController.createStockAdjustment);
 router.post('/stock-adjustments/:id/post', inventoryController.postStockAdjustment);
 
 // ============================================================================
+// STOCK TAKES
+// ============================================================================
+router.get('/stock-takes', inventoryController.getStockTakes);
+router.post('/stock-takes', inventoryController.createStockTake);
+router.post('/stock-takes/:id/post', inventoryController.postStockTake);
+
+// ============================================================================
+// BATCHES / SERIALS
+// ============================================================================
+router.get('/batches', inventoryController.getStockBatches);
+router.get('/serials', inventoryController.getSerialNumbers);
+
+// ============================================================================
 // REORDER SUGGESTIONS
 // ============================================================================
 router.get('/reorder-suggestions', inventoryController.getReorderSuggestions);

@@ -492,32 +492,51 @@ export const updateItem = async (req: Request, res: Response) => {
 export const getStockLevels = async (req: Request, res: Response) => {
   try {
     const { item_id, warehouse_id } = req.query;
-    
-    const result = await pool.query(
-      `SELECT 
-        i.item_id,
+
+    const params: any[] = [];
+    let query = `
+      SELECT 
+        sl.stock_level_id,
+        sl.item_id,
         i.item_code,
         i.item_name,
-        i.unit_of_measure,
-        COALESCE(SUM(CASE WHEN m.movement_type = 'IN' THEN m.quantity ELSE 0 END), 0) as total_in,
-        COALESCE(SUM(CASE WHEN m.movement_type = 'OUT' THEN m.quantity ELSE 0 END), 0) as total_out,
-        COALESCE(SUM(CASE WHEN m.movement_type = 'IN' THEN m.quantity ELSE -m.quantity END), 0) as quantity_on_hand,
+        i.valuation_method,
+        sl.warehouse_id,
+        w.warehouse_code,
+        w.warehouse_name,
+        sl.on_hand_quantity,
+        sl.allocated_quantity,
+        sl.available_quantity,
+        sl.on_order_quantity,
+        sl.average_cost,
+        sl.total_value,
         i.reorder_level,
         i.reorder_quantity,
-        i.is_active,
         CASE 
-          WHEN COALESCE(SUM(CASE WHEN m.movement_type = 'IN' THEN m.quantity ELSE -m.quantity END), 0) <= i.reorder_level THEN 'LOW_STOCK'
-          WHEN COALESCE(SUM(CASE WHEN m.movement_type = 'IN' THEN m.quantity ELSE -m.quantity END), 0) = 0 THEN 'OUT_OF_STOCK'
+          WHEN sl.available_quantity <= 0 THEN 'OUT_OF_STOCK'
+          WHEN sl.available_quantity <= i.reorder_level THEN 'LOW_STOCK'
           ELSE 'IN_STOCK'
-        END as stock_status
-      FROM inventory_items i
-      LEFT JOIN inventory_movements m ON i.item_id = m.item_id
-      WHERE ($1::INTEGER IS NULL OR i.item_id = $1)
-      GROUP BY i.item_id, i.item_code, i.item_name, i.unit_of_measure, i.reorder_level, i.reorder_quantity, i.is_active
-      ORDER BY i.item_code`,
-      [item_id || null]
-    );
-    
+        END AS stock_status
+      FROM stock_levels sl
+      JOIN items i ON sl.item_id = i.item_id
+      JOIN warehouses w ON sl.warehouse_id = w.warehouse_id
+      WHERE 1=1
+    `;
+
+    if (item_id) {
+      params.push(item_id);
+      query += ` AND sl.item_id = $${params.length}`;
+    }
+
+    if (warehouse_id) {
+      params.push(warehouse_id);
+      query += ` AND sl.warehouse_id = $${params.length}`;
+    }
+
+    query += ' ORDER BY i.item_code, w.warehouse_code';
+
+    const result = await pool.query(query, params);
+
     res.json({
       success: true,
       data: result.rows
@@ -535,25 +554,32 @@ export const getStockLevels = async (req: Request, res: Response) => {
 export const getStockByItem = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     const result = await pool.query(
       `SELECT 
-        i.item_id,
+        sl.stock_level_id,
+        sl.item_id,
         i.item_code,
         i.item_name,
-        i.unit_of_measure,
-        COALESCE(SUM(CASE WHEN m.movement_type = 'IN' THEN m.quantity ELSE 0 END), 0) as total_in,
-        COALESCE(SUM(CASE WHEN m.movement_type = 'OUT' THEN m.quantity ELSE 0 END), 0) as total_out,
-        COALESCE(SUM(CASE WHEN m.movement_type = 'IN' THEN m.quantity ELSE -m.quantity END), 0) as quantity_on_hand,
+        i.valuation_method,
+        sl.warehouse_id,
+        w.warehouse_code,
+        w.warehouse_name,
+        sl.on_hand_quantity,
+        sl.available_quantity,
+        sl.allocated_quantity,
+        sl.average_cost,
+        sl.total_value,
         i.reorder_level,
-        i.is_active
-      FROM inventory_items i
-      LEFT JOIN inventory_movements m ON i.item_id = m.item_id
-      WHERE i.item_id = $1
-      GROUP BY i.item_id, i.item_code, i.item_name, i.unit_of_measure, i.reorder_level, i.is_active`,
+        i.reorder_quantity
+      FROM stock_levels sl
+      JOIN items i ON sl.item_id = i.item_id
+      JOIN warehouses w ON sl.warehouse_id = w.warehouse_id
+      WHERE sl.item_id = $1
+      ORDER BY w.warehouse_code`,
       [id]
     );
-    
+
     res.json({
       success: true,
       data: result.rows
@@ -575,39 +601,53 @@ export const getStockByItem = async (req: Request, res: Response) => {
 export const getStockMovements = async (req: Request, res: Response) => {
   try {
     const { item_id, warehouse_id, movement_type, start_date, end_date } = req.query;
-    
-    let query = `SELECT * FROM inventory.v_stock_movement_history WHERE 1=1`;
+
     const params: any[] = [];
-    
+    let query = `
+      SELECT 
+        sm.*, 
+        i.item_code,
+        i.item_name,
+        fw.warehouse_code AS from_warehouse_code,
+        fw.warehouse_name AS from_warehouse_name,
+        tw.warehouse_code AS to_warehouse_code,
+        tw.warehouse_name AS to_warehouse_name
+      FROM stock_movements sm
+      LEFT JOIN items i ON sm.item_id = i.item_id
+      LEFT JOIN warehouses fw ON sm.from_warehouse_id = fw.warehouse_id
+      LEFT JOIN warehouses tw ON sm.to_warehouse_id = tw.warehouse_id
+      WHERE 1=1
+    `;
+
     if (item_id) {
       params.push(item_id);
-      query += ` AND item_id = $${params.length}`;
+      query += ` AND sm.item_id = $${params.length}`;
     }
-    
+
     if (warehouse_id) {
       params.push(warehouse_id);
-      query += ` AND warehouse_id = $${params.length}`;
+      query += ` AND (sm.from_warehouse_id = $${params.length} OR sm.to_warehouse_id = $${params.length})`;
     }
-    
+
     if (movement_type) {
       params.push(movement_type);
-      query += ` AND movement_type = $${params.length}`;
+      query += ` AND sm.movement_type = $${params.length}`;
     }
-    
+
     if (start_date) {
       params.push(start_date);
-      query += ` AND movement_date >= $${params.length}`;
+      query += ` AND sm.movement_date >= $${params.length}`;
     }
-    
+
     if (end_date) {
       params.push(end_date);
-      query += ` AND movement_date <= $${params.length}`;
+      query += ` AND sm.movement_date <= $${params.length}`;
     }
-    
-    query += ` ORDER BY movement_date DESC LIMIT 1000`;
-    
+
+    query += ' ORDER BY sm.movement_date DESC, sm.movement_id DESC LIMIT 1000';
+
     const result = await pool.query(query, params);
-    
+
     res.json({
       success: true,
       data: result.rows
@@ -624,51 +664,68 @@ export const getStockMovements = async (req: Request, res: Response) => {
 
 export const createStockMovement = async (req: Request, res: Response) => {
   const client = await pool.connect();
-  
+
   try {
     await client.query('BEGIN');
-    
+
     const {
       movement_type,
       item_id,
-      warehouse_id,
+      from_warehouse_id,
+      to_warehouse_id,
       quantity,
       uom_id,
       unit_cost = 0,
       reference_type,
       reference_id,
       reference_number,
+      batch_number,
+      serial_number,
+      expiry_date,
       reason,
       notes
     } = req.body;
-    
-    // Generate movement number
-    const movementNumberResult = await client.query(
-      `SELECT COALESCE(MAX(CAST(SUBSTRING(movement_number FROM 5) AS INTEGER)), 0) + 1 as next_number
-      FROM inventory.stock_movements 
-      WHERE movement_number LIKE 'SM-%'`
-    );
-    const nextNumber = movementNumberResult.rows[0].next_number;
-    const movement_number = `SM-${String(nextNumber).padStart(6, '0')}`;
-    
-    const total_value = quantity * unit_cost;
-    
-    // Create stock movement
+
+    const normalizedType = movement_type as string;
+
+    if (normalizedType === 'Transfer' && (!from_warehouse_id || !to_warehouse_id)) {
+      throw new Error('Transfer requires both from_warehouse_id and to_warehouse_id');
+    }
+
+    if (normalizedType === 'Receipt' && !to_warehouse_id) {
+      throw new Error('Receipt requires to_warehouse_id');
+    }
+
+    if (normalizedType === 'Issue' && !from_warehouse_id) {
+      throw new Error('Issue requires from_warehouse_id');
+    }
+
+    const movement_number = await generateNumber(client, 'stock_movements', 'movement_number', 'SM-');
+    const movementDate = new Date();
+
+    const fromWarehouse = normalizedType === 'Issue' || normalizedType === 'Transfer' ? from_warehouse_id : null;
+    const toWarehouse = normalizedType === 'Receipt' || normalizedType === 'Transfer' ? to_warehouse_id : null;
+
     const movementResult = await client.query(
       `INSERT INTO stock_movements (
-        movement_number, movement_date, movement_type, item_id, warehouse_id,
-        quantity, uom_id, unit_cost, total_value,
-        reference_type, reference_id, reference_number,
-        reason, notes, status, created_by
-      ) VALUES ($1, CURRENT_TIMESTAMP, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'Draft', $14)
-      RETURNING *`,
-      [movement_number, movement_type, item_id, warehouse_id, quantity, uom_id,
-       unit_cost, total_value, reference_type, reference_id, reference_number,
-       reason, notes, req.user?.id || 1]
+        movement_number, movement_date, movement_type, item_id,
+        from_warehouse_id, to_warehouse_id, quantity, uom_id,
+        unit_cost, total_value, reference_type, reference_id, reference_number,
+        batch_number, serial_number, expiry_date, reason, notes, status, created_by
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8,
+        $9, $10, $11, $12, $13,
+        $14, $15, $16, $17, $18, 'Draft', $19
+      ) RETURNING *`,
+      [movement_number, movementDate, normalizedType, item_id,
+       fromWarehouse, toWarehouse,
+       quantity, uom_id, unit_cost, quantity * unit_cost,
+       reference_type, reference_id, reference_number,
+       batch_number, serial_number, expiry_date, reason, notes, req.user?.id || 1]
     );
-    
+
     await client.query('COMMIT');
-    
+
     res.status(201).json({
       success: true,
       data: movementResult.rows[0],
@@ -689,53 +746,70 @@ export const createStockMovement = async (req: Request, res: Response) => {
 
 export const postStockMovement = async (req: Request, res: Response) => {
   const client = await pool.connect();
-  
+
   try {
     await client.query('BEGIN');
-    
     const { id } = req.params;
-    
-    // Get movement details
+
     const movementResult = await client.query(
-      `SELECT * FROM inventory.stock_movements WHERE movement_id = $1 AND status = 'Draft'`,
+      `SELECT sm.*, i.valuation_method, i.standard_cost, i.average_cost
+       FROM stock_movements sm
+       JOIN items i ON sm.item_id = i.item_id
+       WHERE sm.movement_id = $1 AND sm.status = 'Draft'`,
       [id]
     );
-    
+
     if (movementResult.rows.length === 0) {
       await client.query('ROLLBACK');
-      return res.status(404).json({
-        success: false,
-        message: 'Stock movement not found or already posted'
-      });
+      return res.status(404).json({ success: false, message: 'Stock movement not found or already posted' });
     }
-    
+
     const movement = movementResult.rows[0];
-    
-    // Update stock level
-    await updateStockLevel(client, movement.item_id, movement.warehouse_id, movement.quantity, movement.unit_cost);
-    
-    // Update movement status
+    const quantity = parseFloat(movement.quantity);
+
+    let appliedUnitCost = movement.unit_cost || 0;
+    let appliedTotal = movement.total_value || 0;
+
+    if (movement.movement_type === 'Issue' || movement.movement_type === 'Transfer') {
+      const cost = await calculateIssueCost(client, movement.item_id, movement.from_warehouse_id, Math.abs(quantity), movement.valuation_method, movement.standard_cost, movement.average_cost);
+      appliedUnitCost = cost.unitCost;
+      appliedTotal = cost.totalCost;
+    }
+
+    if (movement.movement_type === 'Receipt') {
+      await applyReceipt(client, movement, quantity, appliedUnitCost);
+    } else if (movement.movement_type === 'Issue') {
+      await applyIssue(client, movement, -Math.abs(quantity), appliedUnitCost);
+    } else if (movement.movement_type === 'Transfer') {
+      await applyIssue(client, movement, -Math.abs(quantity), appliedUnitCost);
+      await applyReceipt(client, { ...movement, to_warehouse_id: movement.to_warehouse_id, from_warehouse_id: movement.from_warehouse_id }, Math.abs(quantity), appliedUnitCost);
+    } else if (movement.movement_type === 'Adjustment') {
+      if (quantity >= 0) {
+        await applyReceipt(client, movement, quantity, appliedUnitCost);
+      } else {
+        const cost = appliedUnitCost || movement.average_cost || movement.standard_cost || 0;
+        await applyIssue(client, movement, quantity, cost);
+      }
+    }
+
+    if (!appliedTotal) {
+      appliedTotal = Math.abs(quantity) * appliedUnitCost;
+    }
+
     await client.query(
-      `UPDATE stock_movements 
-      SET status = 'Posted', posting_date = CURRENT_DATE, updated_at = CURRENT_TIMESTAMP
-      WHERE movement_id = $1`,
-      [id]
+      `UPDATE stock_movements
+       SET status = 'Posted', posting_date = CURRENT_DATE, unit_cost = $1, total_value = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE movement_id = $3`,
+      [appliedUnitCost, appliedTotal || quantity * appliedUnitCost, id]
     );
-    
+
     await client.query('COMMIT');
-    
-    res.json({
-      success: true,
-      message: 'Stock movement posted successfully'
-    });
+
+    res.json({ success: true, message: 'Stock movement posted successfully' });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error posting stock movement:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to post stock movement',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    res.status(500).json({ success: false, message: 'Failed to post stock movement', error: error instanceof Error ? error.message : 'Unknown error' });
   } finally {
     client.release();
   }
@@ -748,126 +822,80 @@ export const postStockMovement = async (req: Request, res: Response) => {
 export const getStockAdjustments = async (req: Request, res: Response) => {
   try {
     const { warehouse_id, status } = req.query;
-    
+
+    const params: any[] = [];
     let query = `
-      SELECT 
-        sa.*,
-        w.warehouse_code,
-        w.warehouse_name,
-        (SELECT COUNT(*) FROM inventory.stock_adjustment_lines WHERE adjustment_id = sa.adjustment_id) as line_count
-      FROM inventory.stock_adjustments sa
-      JOIN inventory.warehouses w ON sa.warehouse_id = w.warehouse_id
+      SELECT sa.*, w.warehouse_code, w.warehouse_name,
+        (SELECT COUNT(*) FROM stock_adjustment_lines WHERE adjustment_id = sa.adjustment_id) AS line_count
+      FROM stock_adjustments sa
+      JOIN warehouses w ON sa.warehouse_id = w.warehouse_id
       WHERE 1=1
     `;
-    
-    const params: any[] = [];
-    
+
     if (warehouse_id) {
       params.push(warehouse_id);
       query += ` AND sa.warehouse_id = $${params.length}`;
     }
-    
+
     if (status) {
       params.push(status);
       query += ` AND sa.status = $${params.length}`;
     }
-    
-    query += ` ORDER BY sa.adjustment_date DESC, sa.adjustment_number DESC`;
-    
+
+    query += ' ORDER BY sa.adjustment_date DESC, sa.adjustment_number DESC';
+
     const result = await pool.query(query, params);
-    
-    res.json({
-      success: true,
-      data: result.rows
-    });
+
+    res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Error fetching stock adjustments:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch stock adjustments',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    res.status(500).json({ success: false, message: 'Failed to fetch stock adjustments', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 };
 
 export const getStockAdjustmentById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    
+
     const headerResult = await pool.query(
-      `SELECT 
-        sa.*,
-        w.warehouse_code,
-        w.warehouse_name
-      FROM inventory.stock_adjustments sa
-      JOIN inventory.warehouses w ON sa.warehouse_id = w.warehouse_id
-      WHERE sa.adjustment_id = $1`,
+      `SELECT sa.*, w.warehouse_code, w.warehouse_name
+       FROM stock_adjustments sa
+       JOIN warehouses w ON sa.warehouse_id = w.warehouse_id
+       WHERE sa.adjustment_id = $1`,
       [id]
     );
-    
+
     if (headerResult.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Stock adjustment not found'
-      });
+      return res.status(404).json({ success: false, message: 'Stock adjustment not found' });
     }
-    
+
     const linesResult = await pool.query(
-      `SELECT 
-        sal.*,
-        i.item_code,
-        i.item_name,
-        u.uom_code
-      FROM inventory.stock_adjustment_lines sal
-      JOIN inventory.items i ON sal.item_id = i.item_id
-      LEFT JOIN units_of_measure u ON sal.uom_id = u.uom_id
-      WHERE sal.adjustment_id = $1
-      ORDER BY sal.line_number`,
+      `SELECT sal.*, i.item_code, i.item_name, u.uom_code
+       FROM stock_adjustment_lines sal
+       JOIN items i ON sal.item_id = i.item_id
+       LEFT JOIN units_of_measure u ON sal.uom_id = u.uom_id
+       WHERE sal.adjustment_id = $1
+       ORDER BY sal.line_number`,
       [id]
     );
-    
-    res.json({
-      success: true,
-      data: {
-        header: headerResult.rows[0],
-        lines: linesResult.rows
-      }
-    });
+
+    res.json({ success: true, data: { header: headerResult.rows[0], lines: linesResult.rows } });
   } catch (error) {
     console.error('Error fetching stock adjustment:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch stock adjustment',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    res.status(500).json({ success: false, message: 'Failed to fetch stock adjustment', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 };
 
 export const createStockAdjustment = async (req: Request, res: Response) => {
   const client = await pool.connect();
-  
+
   try {
     await client.query('BEGIN');
-    
-    const {
-      adjustment_date,
-      adjustment_type,
-      warehouse_id,
-      reason,
-      notes,
-      lines
-    } = req.body;
-    
-    // Generate adjustment number
-    const adjNumberResult = await client.query(
-      `SELECT COALESCE(MAX(CAST(SUBSTRING(adjustment_number FROM 5) AS INTEGER)), 0) + 1 as next_number
-      FROM inventory.stock_adjustments 
-      WHERE adjustment_number LIKE 'ADJ-%'`
-    );
-    const nextNumber = adjNumberResult.rows[0].next_number;
-    const adjustment_number = `ADJ-${String(nextNumber).padStart(6, '0')}`;
-    
-    // Create adjustment header
+
+    const { adjustment_date, adjustment_type, warehouse_id, reason, notes, lines } = req.body;
+
+    const adjustment_number = await generateNumber(client, 'stock_adjustments', 'adjustment_number', 'ADJ-');
+
     const headerResult = await client.query(
       `INSERT INTO stock_adjustments (
         adjustment_number, adjustment_date, adjustment_type, warehouse_id,
@@ -876,48 +904,38 @@ export const createStockAdjustment = async (req: Request, res: Response) => {
       RETURNING *`,
       [adjustment_number, adjustment_date, adjustment_type, warehouse_id, reason, notes, req.user?.id || 1]
     );
-    
+
     const adjustment = headerResult.rows[0];
     let total_adjustment_value = 0;
-    
-    // Create adjustment lines
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const adjustment_value = line.adjustment_quantity * line.unit_cost;
       total_adjustment_value += adjustment_value;
-      
+
       await client.query(
         `INSERT INTO stock_adjustment_lines (
           adjustment_id, line_number, item_id, system_quantity, counted_quantity,
-          adjustment_quantity, uom_id, unit_cost, adjustment_value, reason, notes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+          adjustment_quantity, uom_id, unit_cost, adjustment_value, reason, notes, batch_number, serial_number
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
         [adjustment.adjustment_id, i + 1, line.item_id, line.system_quantity,
          line.counted_quantity, line.adjustment_quantity, line.uom_id,
-         line.unit_cost, adjustment_value, line.reason, line.notes]
+         line.unit_cost, adjustment_value, line.reason, line.notes, line.batch_number, line.serial_number]
       );
     }
-    
-    // Update total
+
     await client.query(
       `UPDATE stock_adjustments SET total_adjustment_value = $1 WHERE adjustment_id = $2`,
       [total_adjustment_value, adjustment.adjustment_id]
     );
-    
+
     await client.query('COMMIT');
-    
-    res.status(201).json({
-      success: true,
-      data: adjustment,
-      message: 'Stock adjustment created successfully'
-    });
+
+    res.status(201).json({ success: true, data: adjustment, message: 'Stock adjustment created successfully' });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error creating stock adjustment:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create stock adjustment',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    res.status(500).json({ success: false, message: 'Failed to create stock adjustment', error: error instanceof Error ? error.message : 'Unknown error' });
   } finally {
     client.release();
   }
@@ -925,83 +943,67 @@ export const createStockAdjustment = async (req: Request, res: Response) => {
 
 export const postStockAdjustment = async (req: Request, res: Response) => {
   const client = await pool.connect();
-  
+
   try {
     await client.query('BEGIN');
-    
     const { id } = req.params;
-    
-    // Get adjustment header
+
     const headerResult = await client.query(
-      `SELECT * FROM inventory.stock_adjustments WHERE adjustment_id = $1 AND status = 'Draft'`,
+      `SELECT * FROM stock_adjustments WHERE adjustment_id = $1 AND status = 'Draft'`,
       [id]
     );
-    
+
     if (headerResult.rows.length === 0) {
       await client.query('ROLLBACK');
-      return res.status(404).json({
-        success: false,
-        message: 'Stock adjustment not found or already posted'
-      });
+      return res.status(404).json({ success: false, message: 'Stock adjustment not found or already posted' });
     }
-    
+
     const adjustment = headerResult.rows[0];
-    
-    // Get adjustment lines
     const linesResult = await client.query(
-      `SELECT * FROM inventory.stock_adjustment_lines WHERE adjustment_id = $1 ORDER BY line_number`,
+      `SELECT * FROM stock_adjustment_lines WHERE adjustment_id = $1 ORDER BY line_number`,
       [id]
     );
-    
-    // Post each line to stock movements and update stock levels
+
     for (const line of linesResult.rows) {
-      // Create stock movement
-      const movementNumberResult = await client.query(
-        `SELECT COALESCE(MAX(CAST(SUBSTRING(movement_number FROM 5) AS INTEGER)), 0) + 1 as next_number
-        FROM inventory.stock_movements 
-        WHERE movement_number LIKE 'SM-%'`
-      );
-      const nextNumber = movementNumberResult.rows[0].next_number;
-      const movement_number = `SM-${String(nextNumber).padStart(6, '0')}`;
-      
+      const movement_number = await generateNumber(client, 'stock_movements', 'movement_number', 'SM-');
+      const quantity = parseFloat(line.adjustment_quantity);
+
       await client.query(
         `INSERT INTO stock_movements (
-          movement_number, movement_date, movement_type, item_id, warehouse_id,
-          quantity, uom_id, unit_cost, total_value, reference_type, reference_id,
-          reference_number, reason, status, posting_date, created_by
-        ) VALUES ($1, $2, 'Adjustment', $3, $4, $5, $6, $7, $8, 'Adjustment', $9, $10, $11, 'Posted', CURRENT_DATE, $12)`,
+          movement_number, movement_date, movement_type, item_id, from_warehouse_id, to_warehouse_id,
+          quantity, uom_id, unit_cost, total_value, reference_type, reference_id, reference_number,
+          batch_number, serial_number, status, posting_date, created_by
+        ) VALUES (
+          $1, $2, 'Adjustment', $3, $4, $4,
+          $5, $6, $7, $8, 'Adjustment', $9, $10,
+          $11, $12, 'Posted', CURRENT_DATE, $13
+        )`,
         [movement_number, adjustment.adjustment_date, line.item_id, adjustment.warehouse_id,
-         line.adjustment_quantity, line.uom_id, line.unit_cost, line.adjustment_value,
-         adjustment.adjustment_id, adjustment.adjustment_number, line.reason, req.user?.id || 1]
+         quantity, line.uom_id, line.unit_cost, quantity * line.unit_cost,
+         adjustment.adjustment_id, adjustment.adjustment_number, line.batch_number, line.serial_number, req.user?.id || 1]
       );
-      
-      // Update stock level
-      await updateStockLevel(client, line.item_id, adjustment.warehouse_id, line.adjustment_quantity, line.unit_cost);
+
+      if (quantity >= 0) {
+        await applyReceipt(client, { ...adjustment, to_warehouse_id: adjustment.warehouse_id, item_id: line.item_id, batch_number: line.batch_number, serial_number: line.serial_number }, quantity, line.unit_cost);
+      } else {
+        await applyIssue(client, { ...adjustment, from_warehouse_id: adjustment.warehouse_id, item_id: line.item_id, batch_number: line.batch_number, serial_number: line.serial_number }, quantity, line.unit_cost);
+      }
     }
-    
-    // Update adjustment status
+
     await client.query(
       `UPDATE stock_adjustments 
-      SET status = 'Posted', posting_date = CURRENT_DATE, 
-          approved_by = $1, approved_at = CURRENT_TIMESTAMP
-      WHERE adjustment_id = $2`,
+       SET status = 'Posted', posting_date = CURRENT_DATE, approved_by = $1, approved_at = CURRENT_TIMESTAMP
+       WHERE adjustment_id = $2`,
       [req.user?.id || 1, id]
     );
-    
+
     await client.query('COMMIT');
-    
-    res.json({
-      success: true,
-      message: 'Stock adjustment posted successfully'
-    });
+
+    res.json({ success: true, message: 'Stock adjustment posted successfully' });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error posting stock adjustment:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to post stock adjustment',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    res.status(500).json({ success: false, message: 'Failed to post stock adjustment', error: error instanceof Error ? error.message : 'Unknown error' });
   } finally {
     client.release();
   }
@@ -1013,78 +1015,306 @@ export const postStockAdjustment = async (req: Request, res: Response) => {
 
 export const getReorderSuggestions = async (req: Request, res: Response) => {
   try {
-    const { priority, status } = req.query;
-    
-    let query = `SELECT * FROM inventory.v_reorder_required WHERE 1=1`;
+    const { status } = req.query;
     const params: any[] = [];
-    
-    if (priority) {
-      params.push(priority);
-      query += ` AND priority = $${params.length}`;
+    let query = `
+      SELECT rs.*, i.item_code, i.item_name, w.warehouse_code, w.warehouse_name
+      FROM reorder_suggestions rs
+      JOIN items i ON rs.item_id = i.item_id
+      JOIN warehouses w ON rs.warehouse_id = w.warehouse_id
+      WHERE 1=1
+    `;
+
+    if (status) {
+      params.push(status);
+      query += ` AND rs.status = $${params.length}`;
     }
-    
-    query += ` ORDER BY priority DESC, shortage_quantity DESC`;
-    
+
+    query += ' ORDER BY rs.generated_at DESC';
+
     const result = await pool.query(query, params);
-    
-    res.json({
-      success: true,
-      data: result.rows
-    });
+    res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Error fetching reorder suggestions:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch reorder suggestions',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    res.status(500).json({ success: false, message: 'Failed to fetch reorder suggestions', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 };
 
 export const generateReorderSuggestions = async (req: Request, res: Response) => {
   const client = await pool.connect();
-  
+
   try {
     await client.query('BEGIN');
-    
-    // Clear old pending suggestions
-    await client.query(
-      `DELETE FROM reorder_suggestions WHERE status = 'Pending'`
-    );
-    
-    // Generate new suggestions from reorder view
-    const result = await client.query(
+    const { autoCreateRequisition = false } = req.body || {};
+
+    await client.query(`DELETE FROM reorder_suggestions WHERE status = 'Pending'`);
+
+    const suggestions = await client.query(
       `INSERT INTO reorder_suggestions (
-        item_id, warehouse_id, current_stock, reorder_level, suggested_quantity, priority
+        item_id, warehouse_id, current_available, reorder_level, suggested_quantity, priority
       )
       SELECT 
-        item_id, warehouse_id, available_quantity, reorder_level,
+        sl.item_id,
+        sl.warehouse_id,
+        sl.available_quantity,
+        i.reorder_level,
+        CASE WHEN sl.available_quantity <= 0 THEN COALESCE(NULLIF(i.reorder_quantity, 0), 1) * 2 ELSE COALESCE(NULLIF(i.reorder_quantity, 0), 1) END AS suggested_quantity,
         CASE 
-          WHEN available_quantity <= 0 THEN reorder_quantity * 2
-          ELSE reorder_quantity
-        END as suggested_quantity,
-        priority::VARCHAR
-      FROM inventory.v_reorder_required
+          WHEN sl.available_quantity <= 0 THEN 'High'
+          WHEN sl.available_quantity <= i.reorder_level THEN 'Medium'
+          ELSE 'Low'
+        END AS priority
+      FROM stock_levels sl
+      JOIN items i ON sl.item_id = i.item_id
+      JOIN warehouses w ON sl.warehouse_id = w.warehouse_id
+      WHERE sl.available_quantity <= i.reorder_level
       RETURNING *`
     );
-    
+
+    let requisitionNumber: string | null = null;
+    let requisitionId: number | null = null;
+
+    if (autoCreateRequisition && suggestions.rows.length > 0) {
+      requisitionNumber = await generateNumber(client, 'purchase_requisitions', 'requisition_number', 'REQ-');
+      const requisition = await client.query(
+        `INSERT INTO purchase_requisitions (
+          requisition_number, requested_by, department, request_date, required_date, priority, status, notes
+        ) VALUES ($1, $2, $3, CURRENT_DATE, CURRENT_DATE + INTERVAL '7 days', 'High', 'SUBMITTED', $4) RETURNING *`,
+        [requisitionNumber, req.user?.email || 'system', 'Inventory', 'Auto-generated from reorder suggestions']
+      );
+
+      requisitionId = requisition.rows[0].id;
+
+      for (let i = 0; i < suggestions.rows.length; i++) {
+        const s = suggestions.rows[i];
+        const item = await client.query('SELECT item_name, item_code, standard_cost, average_cost FROM items WHERE item_id = $1', [s.item_id]);
+        const unitPrice = item.rows[0]?.standard_cost ?? item.rows[0]?.average_cost ?? 0;
+        await client.query(
+          `INSERT INTO purchase_requisition_lines (
+            requisition_id, line_number, item_description, quantity, unit_of_measure, estimated_unit_price, estimated_total, justification
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [requisitionId, i + 1, `${item.rows[0]?.item_code || ''} - ${item.rows[0]?.item_name || 'Item'}`.trim(), s.suggested_quantity, 'EA', unitPrice, unitPrice * s.suggested_quantity, 'Auto reorder']
+        );
+      }
+
+      await client.query(
+        `UPDATE reorder_suggestions SET purchase_requisition_id = $1, status = 'Converted' WHERE status = 'Pending'`,
+        [requisitionId]
+      );
+    }
+
     await client.query('COMMIT');
-    
+
     res.json({
       success: true,
-      data: result.rows,
-      message: `Generated ${result.rows.length} reorder suggestions`
+      data: suggestions.rows,
+      requisitionNumber,
+      requisitionId,
+      message: `Generated ${suggestions.rows.length} reorder suggestions${requisitionNumber ? ' and requisition ' + requisitionNumber : ''}`
     });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error generating reorder suggestions:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to generate reorder suggestions',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    res.status(500).json({ success: false, message: 'Failed to generate reorder suggestions', error: error instanceof Error ? error.message : 'Unknown error' });
   } finally {
     client.release();
+  }
+};
+
+// ============================================================================
+// STOCK TAKES & RECONCILIATION
+// ============================================================================
+
+export const getStockTakes = async (_req: Request, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT st.*, w.warehouse_code, w.warehouse_name, COUNT(stl.stock_take_line_id) AS line_count
+       FROM stock_takes st
+       JOIN warehouses w ON st.warehouse_id = w.warehouse_id
+       LEFT JOIN stock_take_lines stl ON st.stock_take_id = stl.stock_take_id
+       GROUP BY st.stock_take_id, w.warehouse_code, w.warehouse_name
+       ORDER BY st.created_at DESC`
+    );
+
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error fetching stock takes:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch stock takes', error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+};
+
+export const createStockTake = async (req: Request, res: Response) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    const { warehouse_id, scheduled_date, notes, lines = [] } = req.body;
+
+    const take_number = await generateNumber(client, 'stock_takes', 'take_number', 'STK-');
+
+    const header = await client.query(
+      `INSERT INTO stock_takes (take_number, warehouse_id, scheduled_date, status, notes, created_by)
+       VALUES ($1, $2, $3, 'Draft', $4, $5) RETURNING *`,
+      [take_number, warehouse_id, scheduled_date, notes, req.user?.id || 1]
+    );
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const systemQuantityResult = await client.query(
+        `SELECT on_hand_quantity, average_cost FROM stock_levels WHERE item_id = $1 AND warehouse_id = $2`,
+        [line.item_id, warehouse_id]
+      );
+      const systemQty = systemQuantityResult.rows[0]?.on_hand_quantity || 0;
+      const avgCost = systemQuantityResult.rows[0]?.average_cost || 0;
+      const variance = parseFloat(line.counted_quantity) - parseFloat(systemQty);
+      await client.query(
+        `INSERT INTO stock_take_lines (
+          stock_take_id, line_number, item_id, batch_number, serial_number,
+          system_quantity, counted_quantity, variance_quantity, unit_cost, variance_value, status
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'Draft')`,
+        [header.rows[0].stock_take_id, i + 1, line.item_id, line.batch_number, line.serial_number,
+         systemQty, line.counted_quantity, variance, avgCost, variance * avgCost]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    res.status(201).json({ success: true, data: header.rows[0], message: 'Stock take created' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error creating stock take:', error);
+    res.status(500).json({ success: false, message: 'Failed to create stock take', error: error instanceof Error ? error.message : 'Unknown error' });
+  } finally {
+    client.release();
+  }
+};
+
+export const postStockTake = async (req: Request, res: Response) => {
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');
+    const { id } = req.params;
+
+    const header = await client.query('SELECT * FROM stock_takes WHERE stock_take_id = $1', [id]);
+    if (header.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, message: 'Stock take not found' });
+    }
+
+    const lines = await client.query('SELECT * FROM stock_take_lines WHERE stock_take_id = $1 ORDER BY line_number', [id]);
+
+    for (const line of lines.rows) {
+      if (parseFloat(line.variance_quantity) === 0) continue;
+      const movement_number = await generateNumber(client, 'stock_movements', 'movement_number', 'SM-');
+      const qty = parseFloat(line.variance_quantity);
+      const unitCost = line.unit_cost || 0;
+
+      await client.query(
+        `INSERT INTO stock_movements (
+          movement_number, movement_date, movement_type, item_id, from_warehouse_id, to_warehouse_id,
+          quantity, uom_id, unit_cost, total_value, reference_type, reference_id, reference_number,
+          batch_number, serial_number, status, posting_date, created_by
+        ) VALUES (
+          $1, CURRENT_TIMESTAMP, 'Adjustment', $2, $3, $3,
+          $4, NULL, $5, $6, 'Stock Take', $7, $8,
+          $9, $10, 'Posted', CURRENT_DATE, $11
+        )`,
+        [movement_number, line.item_id, header.rows[0].warehouse_id, qty, unitCost, qty * unitCost, header.rows[0].stock_take_id, header.rows[0].take_number, line.batch_number, line.serial_number, req.user?.id || 1]
+      );
+
+      if (qty >= 0) {
+        await applyReceipt(client, { ...header.rows[0], to_warehouse_id: header.rows[0].warehouse_id, item_id: line.item_id, batch_number: line.batch_number, serial_number: line.serial_number }, qty, unitCost);
+      } else {
+        await applyIssue(client, { ...header.rows[0], from_warehouse_id: header.rows[0].warehouse_id, item_id: line.item_id, batch_number: line.batch_number, serial_number: line.serial_number }, qty, unitCost);
+      }
+    }
+
+    await client.query("UPDATE stock_takes SET status = 'Posted', posted_at = CURRENT_TIMESTAMP WHERE stock_take_id = $1", [id]);
+
+    await client.query('COMMIT');
+
+    res.json({ success: true, message: 'Stock take variances posted' });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error posting stock take:', error);
+    res.status(500).json({ success: false, message: 'Failed to post stock take', error: error instanceof Error ? error.message : 'Unknown error' });
+  } finally {
+    client.release();
+  }
+};
+
+// ============================================================================
+// BATCHES & SERIALS
+// ============================================================================
+
+export const getStockBatches = async (req: Request, res: Response) => {
+  try {
+    const { item_id, warehouse_id, expiring_within_days } = req.query;
+    const params: any[] = [];
+    let query = `SELECT sb.*, i.item_code, i.item_name, w.warehouse_code, w.warehouse_name
+                 FROM stock_batches sb
+                 JOIN items i ON sb.item_id = i.item_id
+                 JOIN warehouses w ON sb.warehouse_id = w.warehouse_id
+                 WHERE 1=1`;
+
+    if (item_id) {
+      params.push(item_id);
+      query += ` AND sb.item_id = $${params.length}`;
+    }
+
+    if (warehouse_id) {
+      params.push(warehouse_id);
+      query += ` AND sb.warehouse_id = $${params.length}`;
+    }
+
+    if (expiring_within_days) {
+      params.push(expiring_within_days);
+      query += ` AND sb.expiry_date IS NOT NULL AND sb.expiry_date <= CURRENT_DATE + ($${params.length}::INT * INTERVAL '1 day')`;
+    }
+
+    query += ' ORDER BY sb.expiry_date NULLS LAST, sb.batch_number';
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error fetching stock batches:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch stock batches', error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+};
+
+export const getSerialNumbers = async (req: Request, res: Response) => {
+  try {
+    const { item_id, warehouse_id, status } = req.query;
+    const params: any[] = [];
+    let query = `SELECT ssn.*, i.item_code, i.item_name, w.warehouse_code, w.warehouse_name
+                 FROM stock_serial_numbers ssn
+                 JOIN items i ON ssn.item_id = i.item_id
+                 JOIN warehouses w ON ssn.warehouse_id = w.warehouse_id
+                 WHERE 1=1`;
+
+    if (item_id) {
+      params.push(item_id);
+      query += ` AND ssn.item_id = $${params.length}`;
+    }
+
+    if (warehouse_id) {
+      params.push(warehouse_id);
+      query += ` AND ssn.warehouse_id = $${params.length}`;
+    }
+
+    if (status) {
+      params.push(status);
+      query += ` AND ssn.status = $${params.length}`;
+    }
+
+    query += ' ORDER BY ssn.created_at DESC';
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error fetching serial numbers:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch serial numbers', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 };
 
@@ -1092,9 +1322,8 @@ export const generateReorderSuggestions = async (req: Request, res: Response) =>
 // DASHBOARD & REPORTS
 // ============================================================================
 
-export const getInventoryDashboard = async (req: Request, res: Response) => {
+export const getInventoryDashboard = async (_req: Request, res: Response) => {
   try {
-    // Summary stats
     const summaryResult = await pool.query(`
       SELECT 
         COUNT(DISTINCT i.item_id) as total_items,
@@ -1102,50 +1331,46 @@ export const getInventoryDashboard = async (req: Request, res: Response) => {
         SUM(sl.on_hand_quantity) as total_on_hand,
         SUM(sl.total_value) as total_inventory_value,
         COUNT(DISTINCT CASE WHEN sl.available_quantity <= 0 THEN i.item_id END) as out_of_stock_items
-      FROM inventory.items i
-      LEFT JOIN inventory.stock_levels sl ON i.item_id = sl.item_id
+      FROM items i
+      LEFT JOIN stock_levels sl ON i.item_id = sl.item_id
     `);
-    
-    // Reorder required
-    const reorderResult = await pool.query(`
-      SELECT COUNT(*) as reorder_count FROM inventory.v_reorder_required
-    `);
-    
-    // Stock by category
+
+    const reorderResult = await pool.query(`SELECT COUNT(*) as reorder_count FROM reorder_suggestions WHERE status = 'Pending'`);
+
     const categoryResult = await pool.query(`
       SELECT 
         ic.category_name,
         COUNT(DISTINCT i.item_id) as item_count,
         SUM(sl.total_value) as category_value
-      FROM inventory.items i
-      LEFT JOIN inventory.item_categories ic ON i.category_id = ic.category_id
-      LEFT JOIN inventory.stock_levels sl ON i.item_id = sl.item_id
+      FROM items i
+      LEFT JOIN item_categories ic ON i.category_id = ic.category_id
+      LEFT JOIN stock_levels sl ON i.item_id = sl.item_id
       WHERE i.is_active = true
       GROUP BY ic.category_id, ic.category_name
       ORDER BY category_value DESC
     `);
-    
-    // Stock by warehouse
+
     const warehouseResult = await pool.query(`
       SELECT 
         w.warehouse_code,
         w.warehouse_name,
         COUNT(DISTINCT sl.item_id) as item_count,
         SUM(sl.total_value) as warehouse_value
-      FROM inventory.warehouses w
-      LEFT JOIN inventory.stock_levels sl ON w.warehouse_id = sl.warehouse_id
+      FROM warehouses w
+      LEFT JOIN stock_levels sl ON w.warehouse_id = sl.warehouse_id
       WHERE w.is_active = true
       GROUP BY w.warehouse_id, w.warehouse_code, w.warehouse_name
       ORDER BY warehouse_value DESC
     `);
-    
-    // Recent movements
+
     const movementsResult = await pool.query(`
-      SELECT * FROM inventory.v_stock_movement_history
-      ORDER BY movement_date DESC
+      SELECT sm.*, i.item_code, i.item_name
+      FROM stock_movements sm
+      LEFT JOIN items i ON sm.item_id = i.item_id
+      ORDER BY sm.movement_date DESC
       LIMIT 10
     `);
-    
+
     res.json({
       success: true,
       data: {
@@ -1158,11 +1383,7 @@ export const getInventoryDashboard = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.error('Error fetching inventory dashboard:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to fetch inventory dashboard',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    });
+    res.status(500).json({ success: false, message: 'Failed to fetch inventory dashboard', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 };
 
@@ -1170,50 +1391,190 @@ export const getInventoryDashboard = async (req: Request, res: Response) => {
 // HELPER FUNCTIONS
 // ============================================================================
 
+async function generateNumber(client: PoolClient, table: string, column: string, prefix: string): Promise<string> {
+  const result = await client.query(
+    `SELECT COALESCE(MAX(CAST(SUBSTRING(${column} FROM '[0-9]+') AS INTEGER)), 0) + 1 as next_number
+     FROM ${table} WHERE ${column} LIKE $1`,
+    [`${prefix}%`]
+  );
+
+  return `${prefix}${String(result.rows[0].next_number).padStart(6, '0')}`;
+}
+
 async function updateStockLevel(
   client: PoolClient,
   itemId: number,
   warehouseId: number,
-  quantity: number,
+  quantityDelta: number,
   unitCost: number
 ) {
-  // Get current stock level
-  const stockResult = await client.query(
-    `SELECT * FROM inventory.stock_levels WHERE item_id = $1 AND warehouse_id = $2`,
+  await ensureStockLevel(client, itemId, warehouseId);
+
+  const current = await client.query(
+    'SELECT * FROM stock_levels WHERE item_id = $1 AND warehouse_id = $2',
     [itemId, warehouseId]
   );
-  
-  if (stockResult.rows.length === 0) {
-    // Create new stock level
+
+  const row = current.rows[0];
+  const onHand = parseFloat(row.on_hand_quantity) + quantityDelta;
+  const totalValue = parseFloat(row.total_value) + quantityDelta * unitCost;
+  const averageCost = onHand !== 0 ? totalValue / onHand : unitCost;
+  const available = onHand - parseFloat(row.allocated_quantity || 0);
+
+  await client.query(
+    `UPDATE stock_levels 
+     SET on_hand_quantity = $1,
+         available_quantity = $2,
+         total_value = $3,
+         average_cost = $4,
+         last_receipt_date = CASE WHEN $5 > 0 THEN CURRENT_TIMESTAMP ELSE last_receipt_date END,
+         last_issue_date = CASE WHEN $5 < 0 THEN CURRENT_TIMESTAMP ELSE last_issue_date END,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE stock_level_id = $6`,
+    [onHand, available, totalValue, averageCost, quantityDelta, row.stock_level_id]
+  );
+}
+
+async function ensureStockLevel(client: PoolClient, itemId: number, warehouseId: number) {
+  await client.query(
+    `INSERT INTO stock_levels (item_id, warehouse_id, on_hand_quantity, allocated_quantity, available_quantity, on_order_quantity, total_value, average_cost)
+     VALUES ($1, $2, 0, 0, 0, 0, 0, 0)
+     ON CONFLICT (item_id, warehouse_id) DO NOTHING`,
+    [itemId, warehouseId]
+  );
+}
+
+async function addCostLayer(client: PoolClient, movementId: number, itemId: number, warehouseId: number, quantity: number, unitCost: number) {
+  if (quantity <= 0) return;
+  await client.query(
+    `INSERT INTO inventory_valuation_layers (
+      item_id, warehouse_id, receipt_date, receipt_reference, quantity_received, quantity_remaining, unit_cost, movement_id
+    ) VALUES ($1, $2, CURRENT_TIMESTAMP, $3, $4, $5, $6, $7)`,
+    [itemId, warehouseId, `MV-${movementId}`, quantity, quantity, unitCost, movementId]
+  );
+}
+
+async function consumeCostLayers(
+  client: PoolClient,
+  itemId: number,
+  warehouseId: number,
+  quantity: number,
+  method: 'FIFO' | 'LIFO'
+): Promise<{ totalCost: number; unitCost: number; consumedQty: number }> {
+  const order = method === 'LIFO' ? 'DESC' : 'ASC';
+  let remaining = quantity;
+  let totalCost = 0;
+
+  const layers = await client.query(
+    `SELECT * FROM inventory_valuation_layers
+     WHERE item_id = $1 AND warehouse_id = $2 AND quantity_remaining > 0
+     ORDER BY receipt_date ${order}, layer_id ${order}`,
+    [itemId, warehouseId]
+  );
+
+  for (const layer of layers.rows) {
+    if (remaining <= 0) break;
+    const takeQty = Math.min(remaining, parseFloat(layer.quantity_remaining));
+    totalCost += takeQty * parseFloat(layer.unit_cost);
+    remaining -= takeQty;
+
     await client.query(
-      `INSERT INTO stock_levels (item_id, warehouse_id, on_hand_quantity, available_quantity, average_cost, total_value)
-      VALUES ($1, $2, $3, $3, $4, $5)`,
-      [itemId, warehouseId, quantity, unitCost, quantity * unitCost]
-    );
-  } else {
-    const currentStock = stockResult.rows[0];
-    const newOnHand = parseFloat(currentStock.on_hand_quantity) + quantity;
-    const newValue = parseFloat(currentStock.total_value) + (quantity * unitCost);
-    const newAvgCost = newOnHand !== 0 ? newValue / newOnHand : 0;
-    const newAvailable = newOnHand - parseFloat(currentStock.allocated_quantity);
-    
-    await client.query(
-      `UPDATE stock_levels 
-      SET on_hand_quantity = $1, available_quantity = $2, average_cost = $3, total_value = $4,
-          last_receipt_date = CASE WHEN $5 > 0 THEN CURRENT_TIMESTAMP ELSE last_receipt_date END,
-          last_issue_date = CASE WHEN $5 < 0 THEN CURRENT_TIMESTAMP ELSE last_issue_date END,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE item_id = $6 AND warehouse_id = $7`,
-      [newOnHand, newAvailable, newAvgCost, newValue, quantity, itemId, warehouseId]
+      `UPDATE inventory_valuation_layers SET quantity_remaining = quantity_remaining - $1, updated_at = CURRENT_TIMESTAMP WHERE layer_id = $2`,
+      [takeQty, layer.layer_id]
     );
   }
-  
-  // Update item average cost
-  await client.query(
-    `UPDATE items 
-    SET average_cost = (SELECT AVG(average_cost) FROM inventory.stock_levels WHERE item_id = $1),
-        updated_at = CURRENT_TIMESTAMP
-    WHERE item_id = $1`,
-    [itemId]
+
+  const effectiveQty = quantity - remaining;
+  const unitCost = effectiveQty > 0 ? totalCost / effectiveQty : 0;
+  return { totalCost, unitCost, consumedQty: effectiveQty };
+}
+
+async function calculateIssueCost(
+  client: PoolClient,
+  itemId: number,
+  warehouseId: number,
+  quantity: number,
+  valuationMethod: string,
+  standardCost?: number,
+  averageCost?: number
+): Promise<{ totalCost: number; unitCost: number }> {
+  const method = (valuationMethod as 'FIFO' | 'LIFO' | 'Weighted Average' | 'Standard Cost') || 'Weighted Average';
+
+  if (method === 'FIFO' || method === 'LIFO') {
+    const layerCost = await consumeCostLayers(client, itemId, warehouseId, quantity, method);
+    if (layerCost.consumedQty >= quantity) {
+      return { totalCost: layerCost.totalCost, unitCost: layerCost.unitCost };
+    }
+    const remainingQty = quantity - layerCost.consumedQty;
+    const fallbackLevel = await client.query(
+      'SELECT average_cost FROM stock_levels WHERE item_id = $1 AND warehouse_id = $2',
+      [itemId, warehouseId]
+    );
+    const fallbackCost = fallbackLevel.rows[0]?.average_cost || averageCost || standardCost || 0;
+    const totalCost = layerCost.totalCost + remainingQty * fallbackCost;
+    const unitCost = quantity > 0 ? totalCost / quantity : fallbackCost;
+    return { totalCost, unitCost };
+  }
+
+  if (method === 'Standard Cost') {
+    const cost = standardCost || 0;
+    return { totalCost: quantity * cost, unitCost: cost };
+  }
+
+  const level = await client.query(
+    'SELECT average_cost FROM stock_levels WHERE item_id = $1 AND warehouse_id = $2',
+    [itemId, warehouseId]
   );
+  const cost = level.rows[0]?.average_cost || averageCost || standardCost || 0;
+  return { totalCost: quantity * cost, unitCost: cost };
+}
+
+async function applyReceipt(client: PoolClient, movement: any, quantity: number, unitCost: number) {
+  await updateStockLevel(client, movement.item_id, movement.to_warehouse_id, quantity, unitCost);
+  await addCostLayer(client, movement.movement_id || movement.stock_take_id || movement.adjustment_id || 0, movement.item_id, movement.to_warehouse_id, quantity, unitCost);
+
+  if (movement.batch_number) {
+    await client.query(
+      `INSERT INTO stock_batches (item_id, warehouse_id, batch_number, quantity_on_hand, quantity_available, unit_cost, expiry_date, status)
+       VALUES ($1, $2, $3, $4, $4, $5, $6, 'active')
+       ON CONFLICT (item_id, warehouse_id, batch_number)
+       DO UPDATE SET quantity_on_hand = stock_batches.quantity_on_hand + EXCLUDED.quantity_on_hand,
+                     quantity_available = stock_batches.quantity_available + EXCLUDED.quantity_available,
+                     unit_cost = EXCLUDED.unit_cost,
+                     expiry_date = COALESCE(EXCLUDED.expiry_date, stock_batches.expiry_date),
+                     updated_at = CURRENT_TIMESTAMP`,
+      [movement.item_id, movement.to_warehouse_id, movement.batch_number, quantity, unitCost, movement.expiry_date]
+    );
+  }
+
+  if (movement.serial_number) {
+    await client.query(
+      `INSERT INTO stock_serial_numbers (serial_number, item_id, warehouse_id, batch_id, status, expiry_date)
+       VALUES ($1, $2, $3, (SELECT batch_id FROM stock_batches WHERE item_id = $2 AND warehouse_id = $3 AND batch_number = $4 LIMIT 1), 'in_stock', $5)
+       ON CONFLICT (serial_number) DO UPDATE SET warehouse_id = EXCLUDED.warehouse_id, status = 'in_stock', updated_at = CURRENT_TIMESTAMP`,
+      [movement.serial_number, movement.item_id, movement.to_warehouse_id, movement.batch_number || null, movement.expiry_date]
+    );
+  }
+}
+
+async function applyIssue(client: PoolClient, movement: any, quantity: number, unitCost: number) {
+  await updateStockLevel(client, movement.item_id, movement.from_warehouse_id, quantity, unitCost);
+
+  if (movement.batch_number) {
+    await client.query(
+      `UPDATE stock_batches
+       SET quantity_on_hand = quantity_on_hand + $1,
+           quantity_available = quantity_available + $1,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE item_id = $2 AND warehouse_id = $3 AND batch_number = $4`,
+      [quantity, movement.item_id, movement.from_warehouse_id, movement.batch_number]
+    );
+  }
+
+  if (movement.serial_number) {
+    await client.query(
+      `UPDATE stock_serial_numbers SET status = 'sold', updated_at = CURRENT_TIMESTAMP WHERE serial_number = $1`,
+      [movement.serial_number]
+    );
+  }
 }
