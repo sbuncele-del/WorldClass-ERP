@@ -200,6 +200,9 @@ class LocationService {
     destLng: number,
     averageSpeed: number // km/h
   ): Date {
+    const DEFAULT_AVERAGE_SPEED_KMH = 60;
+    const effectiveSpeed = averageSpeed || DEFAULT_AVERAGE_SPEED_KMH;
+    
     // Calculate distance using Haversine formula
     const R = 6371; // Earth's radius in km
     const dLat = this.toRad(destLat - currentLat);
@@ -216,7 +219,7 @@ class LocationService {
     const distance = R * c; // Distance in km
 
     // Calculate time in hours
-    const timeInHours = distance / (averageSpeed || 60); // Default to 60 km/h if speed is 0
+    const timeInHours = distance / effectiveSpeed;
     const timeInMilliseconds = timeInHours * 3600 * 1000;
 
     return new Date(Date.now() + timeInMilliseconds);

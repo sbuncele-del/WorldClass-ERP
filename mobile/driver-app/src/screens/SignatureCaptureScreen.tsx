@@ -36,7 +36,16 @@ export default function SignatureCaptureScreen() {
       return;
     }
 
-    // In a real implementation, this would export the signature as base64
+    // TODO: Production implementation should use react-native-signature-canvas
+    // Install: npm install react-native-signature-canvas
+    // This will provide real signature capture with:
+    // - Touch/stylus drawing
+    // - Export to base64 PNG
+    // - Configurable pen colors and thickness
+    // - Clear/redo functionality
+    // Example: https://github.com/YannicEl/react-native-signature-canvas
+    
+    // For MVP demo, using a mock signature
     const mockSignature = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
     
     onSave(mockSignature);

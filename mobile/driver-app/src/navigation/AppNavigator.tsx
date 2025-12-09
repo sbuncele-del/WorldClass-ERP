@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Text } from 'react-native';
 
 import { useAppDispatch, useAppSelector } from '../hooks/useRedux';
 import { loadStoredAuth } from '../store/slices/authSlice';
@@ -100,12 +100,12 @@ function MainTabs() {
   );
 }
 
-// Simple tab icon component
-function TabIcon({ icon, color }: { icon: string; color: string }) {
+// Simple tab icon component - using Text component for React Native
+function TabIcon({ icon }: { icon: string }) {
   return (
-    <View style={{ fontSize: 24 }}>
-      <span style={{ fontSize: 24 }}>{icon}</span>
-    </View>
+    <Text style={{ fontSize: 24 }}>
+      {icon}
+    </Text>
   );
 }
 

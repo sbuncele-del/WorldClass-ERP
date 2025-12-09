@@ -3,7 +3,7 @@
  * Redux state management for app settings
  */
 
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppSettings } from '../../types';
 
@@ -16,49 +16,87 @@ const initialState: AppSettings = {
   language: 'en',
 };
 
+// Async thunks for persistent settings
+export const setDarkModeAsync = createAsyncThunk(
+  'settings/setDarkMode',
+  async (value: boolean) => {
+    await AsyncStorage.setItem('darkMode', value.toString());
+    return value;
+  }
+);
+
+export const setGPSUpdateIntervalAsync = createAsyncThunk(
+  'settings/setGPSUpdateInterval',
+  async (value: number) => {
+    await AsyncStorage.setItem('gpsUpdateInterval', value.toString());
+    return value;
+  }
+);
+
+export const setOfflineSyncEnabledAsync = createAsyncThunk(
+  'settings/setOfflineSyncEnabled',
+  async (value: boolean) => {
+    await AsyncStorage.setItem('offlineSyncEnabled', value.toString());
+    return value;
+  }
+);
+
+export const setBiometricAuthEnabledAsync = createAsyncThunk(
+  'settings/setBiometricAuthEnabled',
+  async (value: boolean) => {
+    await AsyncStorage.setItem('biometricAuthEnabled', value.toString());
+    return value;
+  }
+);
+
+export const setVoiceInputEnabledAsync = createAsyncThunk(
+  'settings/setVoiceInputEnabled',
+  async (value: boolean) => {
+    await AsyncStorage.setItem('voiceInputEnabled', value.toString());
+    return value;
+  }
+);
+
+export const setLanguageAsync = createAsyncThunk(
+  'settings/setLanguage',
+  async (value: string) => {
+    await AsyncStorage.setItem('language', value);
+    return value;
+  }
+);
+
 const settingsSlice = createSlice({
   name: 'settings',
   initialState,
   reducers: {
-    setDarkMode: (state, action: PayloadAction<boolean>) => {
-      state.darkMode = action.payload;
-      AsyncStorage.setItem('darkMode', action.payload.toString());
-    },
-    setGPSUpdateInterval: (state, action: PayloadAction<number>) => {
-      state.gpsUpdateInterval = action.payload;
-      AsyncStorage.setItem('gpsUpdateInterval', action.payload.toString());
-    },
-    setOfflineSyncEnabled: (state, action: PayloadAction<boolean>) => {
-      state.offlineSyncEnabled = action.payload;
-      AsyncStorage.setItem('offlineSyncEnabled', action.payload.toString());
-    },
-    setBiometricAuthEnabled: (state, action: PayloadAction<boolean>) => {
-      state.biometricAuthEnabled = action.payload;
-      AsyncStorage.setItem('biometricAuthEnabled', action.payload.toString());
-    },
-    setVoiceInputEnabled: (state, action: PayloadAction<boolean>) => {
-      state.voiceInputEnabled = action.payload;
-      AsyncStorage.setItem('voiceInputEnabled', action.payload.toString());
-    },
-    setLanguage: (state, action: PayloadAction<string>) => {
-      state.language = action.payload;
-      AsyncStorage.setItem('language', action.payload);
-    },
+    // Synchronous action for loading settings from storage
     loadSettings: (state, action: PayloadAction<Partial<AppSettings>>) => {
       return { ...state, ...action.payload };
     },
   },
+  extraReducers: (builder) => {
+    builder.addCase(setDarkModeAsync.fulfilled, (state, action) => {
+      state.darkMode = action.payload;
+    });
+    builder.addCase(setGPSUpdateIntervalAsync.fulfilled, (state, action) => {
+      state.gpsUpdateInterval = action.payload;
+    });
+    builder.addCase(setOfflineSyncEnabledAsync.fulfilled, (state, action) => {
+      state.offlineSyncEnabled = action.payload;
+    });
+    builder.addCase(setBiometricAuthEnabledAsync.fulfilled, (state, action) => {
+      state.biometricAuthEnabled = action.payload;
+    });
+    builder.addCase(setVoiceInputEnabledAsync.fulfilled, (state, action) => {
+      state.voiceInputEnabled = action.payload;
+    });
+    builder.addCase(setLanguageAsync.fulfilled, (state, action) => {
+      state.language = action.payload;
+    });
+  },
 });
 
-export const {
-  setDarkMode,
-  setGPSUpdateInterval,
-  setOfflineSyncEnabled,
-  setBiometricAuthEnabled,
-  setVoiceInputEnabled,
-  setLanguage,
-  loadSettings,
-} = settingsSlice.actions;
+export const { loadSettings } = settingsSlice.actions;
 
 export default settingsSlice.reducer;
 

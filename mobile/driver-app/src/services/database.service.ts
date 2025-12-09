@@ -217,7 +217,7 @@ class DatabaseService {
   async addToOfflineQueue(item: Omit<OfflineQueueItem, 'id'>) {
     if (!this.db) throw new Error('Database not initialized');
 
-    const id = `${item.type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const id = `${item.type}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 
     await this.db.runAsync(
       `INSERT INTO offline_queue (id, type, data, timestamp, retry_count, status)
