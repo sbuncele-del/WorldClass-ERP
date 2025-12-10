@@ -44,7 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false }) => {
             <span className="sidebar-icon">📅</span>
             <span className="sidebar-label">Calendar & Reminders</span>
           </Link>
-          <Link to="/sales" className={`sidebar-item ${isActive('/sales') ? 'active' : ''}`}}>
+          <Link to="/sales" className={`sidebar-item ${isActive('/sales') ? 'active' : ''}`}>
             <span className="sidebar-icon">💰</span>
             <span className="sidebar-label">Sales & CRM</span>
           </Link>
