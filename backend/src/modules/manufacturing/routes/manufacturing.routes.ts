@@ -34,7 +34,8 @@ router.put('/orders/:id/status', manufacturingController.updateProductionOrderSt
 // ==================================================
 router.post('/mrp/run', async (req, res) => {
   try {
-    const result = await MrpEngineService.runMrp(req.body, req.user?.id || 1);
+    const userId = typeof req.user?.id === 'string' ? parseInt(req.user.id) : (req.user?.id || 1);
+    const result = await MrpEngineService.runMrp(req.body, userId);
     res.json(result);
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

@@ -1288,13 +1288,10 @@ async function getDepreciationSchedule(req: Request, res: Response): Promise<voi
     const asset = assetResult.rows[0];
     const schedule = DepreciationCalculator.generateFullSchedule(
       asset.depreciation_method as DepreciationMethod,
-      {
-        acquisition_cost: parseFloat(asset.purchase_cost),
-        residual_value: parseFloat(asset.residual_value || 0),
-        useful_life_years: asset.useful_life_years,
-        depreciation_rate: asset.depreciation_rate
-      },
-      parseInt(years as string)
+      parseFloat(asset.purchase_cost),
+      parseFloat(asset.residual_value || 0),
+      parseInt(years as string) || asset.useful_life_years,
+      asset.depreciation_rate
     );
 
     res.json({

@@ -251,6 +251,9 @@ const Navigation: React.FC<{ isDark: boolean; toggleTheme: () => void }> = ({ is
           <button className="theme-toggle" onClick={toggleTheme}>
             {isDark ? <Sun size={18} /> : <Moon size={18} />}
           </button>
+          <button className="btn-driver" onClick={() => navigate('/driver')} title="Driver Mobile App">
+            🚚 Driver App
+          </button>
           <button className="btn-secondary" onClick={() => navigate('/login')}>
             Sign In
           </button>
