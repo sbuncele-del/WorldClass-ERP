@@ -1,0 +1,334 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Card, Row, Col, Avatar, Badge, List, Input, Button, Space, 
+  Typography, Tabs, Tag, Tooltip, Dropdown, Statistic
+} from 'antd';
+import { 
+  MessageOutlined, VideoCameraOutlined, PhoneOutlined, TeamOutlined,
+  BellOutlined, SearchOutlined, PlusOutlined, SettingOutlined,
+  UserOutlined, PushpinOutlined, MoreOutlined
+} from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
+import './CommunicationHub.css';
+
+const { Title, Text } = Typography;
+const { TabPane } = Tabs;
+
+interface Channel {
+  id: string;
+  name: string;
+  type: 'public' | 'private' | 'project';
+  members: number;
+  unread: number;
+  lastMessage: string;
+  lastActivity: string;
+  pinned: boolean;
+}
+
+interface DirectMessage {
+  id: string;
+  user: { name: string; avatar?: string; status: 'online' | 'away' | 'offline' };
+  unread: number;
+  lastMessage: string;
+  lastActivity: string;
+}
+
+interface RecentCall {
+  id: string;
+  type: 'video' | 'audio';
+  participants: string[];
+  duration: string;
+  time: string;
+}
+
+// Sample data
+const sampleChannels: Channel[] = [
+  { id: '1', name: 'general', type: 'public', members: 45, unread: 3, lastMessage: 'Good morning everyone!', lastActivity: '5 min ago', pinned: true },
+  { id: '2', name: 'website-redesign', type: 'project', members: 8, unread: 12, lastMessage: 'The new mockups are ready for review', lastActivity: '15 min ago', pinned: true },
+  { id: '3', name: 'mobile-app', type: 'project', members: 6, unread: 0, lastMessage: 'Build 2.3.1 deployed to TestFlight', lastActivity: '1 hour ago', pinned: false },
+  { id: '4', name: 'engineering', type: 'private', members: 15, unread: 5, lastMessage: 'Sprint planning at 2pm today', lastActivity: '30 min ago', pinned: false },
+  { id: '5', name: 'sales-team', type: 'private', members: 12, unread: 0, lastMessage: 'Q1 targets exceeded by 15%!', lastActivity: '2 hours ago', pinned: false },
+  { id: '6', name: 'random', type: 'public', members: 45, unread: 0, lastMessage: 'Anyone up for lunch?', lastActivity: '45 min ago', pinned: false }
+];
+
+const sampleDMs: DirectMessage[] = [
+  { id: '1', user: { name: 'Sarah Johnson', status: 'online' }, unread: 2, lastMessage: 'Can you review the proposal?', lastActivity: '2 min ago' },
+  { id: '2', user: { name: 'Mike Wilson', status: 'online' }, unread: 0, lastMessage: 'Thanks for the help!', lastActivity: '20 min ago' },
+  { id: '3', user: { name: 'Emily Chen', status: 'away' }, unread: 1, lastMessage: 'The designs are attached', lastActivity: '1 hour ago' },
+  { id: '4', user: { name: 'David Lee', status: 'offline' }, unread: 0, lastMessage: 'Let me check and get back to you', lastActivity: '3 hours ago' },
+  { id: '5', user: { name: 'Alex Turner', status: 'online' }, unread: 0, lastMessage: 'Meeting confirmed for tomorrow', lastActivity: 'Yesterday' }
+];
+
+const sampleCalls: RecentCall[] = [
+  { id: '1', type: 'video', participants: ['Sarah Johnson', 'Mike Wilson', 'Emily Chen'], duration: '45 min', time: '10:30 AM' },
+  { id: '2', type: 'audio', participants: ['David Lee'], duration: '12 min', time: '9:15 AM' },
+  { id: '3', type: 'video', participants: ['Team Weekly'], duration: '1 hr 5 min', time: 'Yesterday' }
+];
+
+const statusColors = {
+  online: '#52c41a',
+  away: '#faad14',
+  offline: '#d9d9d9'
+};
+
+const CommunicationHub: React.FC = () => {
+  const navigate = useNavigate();
+  const [channels] = useState<Channel[]>(sampleChannels);
+  const [dms] = useState<DirectMessage[]>(sampleDMs);
+  const [calls] = useState<RecentCall[]>(sampleCalls);
+  const [searchText, setSearchText] = useState('');
+
+  // Stats
+  const totalUnread = channels.reduce((sum, c) => sum + c.unread, 0) + dms.reduce((sum, d) => sum + d.unread, 0);
+  const onlineUsers = dms.filter(d => d.user.status === 'online').length;
+
+  return (
+    <div className="communication-hub">
+      {/* Header */}
+      <div className="hub-header">
+        <div>
+          <Title level={2} style={{ margin: 0 }}>Communication Hub</Title>
+          <Text type="secondary">Stay connected with your team</Text>
+        </div>
+        <Space>
+          <Input
+            placeholder="Search messages, channels, people..."
+            prefix={<SearchOutlined />}
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 300 }}
+          />
+          <Tooltip title="Start Video Call">
+            <Button type="primary" icon={<VideoCameraOutlined />} onClick={() => navigate('/communication/video/new')}>
+              New Meeting
+            </Button>
+          </Tooltip>
+          <Tooltip title="Settings">
+            <Button icon={<SettingOutlined />} />
+          </Tooltip>
+        </Space>
+      </div>
+
+      {/* Stats Row */}
+      <Row gutter={[16, 16]} className="stats-row">
+        <Col xs={12} sm={6}>
+          <Card className="stat-card">
+            <Statistic
+              title="Unread Messages"
+              value={totalUnread}
+              prefix={<MessageOutlined />}
+              valueStyle={{ color: totalUnread > 0 ? '#1890ff' : undefined }}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card className="stat-card">
+            <Statistic
+              title="Online Now"
+              value={onlineUsers}
+              suffix={`/ ${dms.length}`}
+              prefix={<Badge status="success" />}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card className="stat-card">
+            <Statistic
+              title="Active Channels"
+              value={channels.length}
+              prefix={<TeamOutlined />}
+            />
+          </Card>
+        </Col>
+        <Col xs={12} sm={6}>
+          <Card className="stat-card">
+            <Statistic
+              title="Calls Today"
+              value={calls.length}
+              prefix={<PhoneOutlined />}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Main Content */}
+      <Row gutter={[16, 16]}>
+        {/* Channels & DMs */}
+        <Col xs={24} lg={16}>
+          <Card className="main-card">
+            <Tabs defaultActiveKey="channels">
+              <TabPane tab={<><TeamOutlined /> Channels ({channels.length})</>} key="channels">
+                {/* Pinned */}
+                {channels.filter(c => c.pinned).length > 0 && (
+                  <div className="pinned-section">
+                    <Text type="secondary" className="section-label">
+                      <PushpinOutlined /> Pinned
+                    </Text>
+                    <List
+                      dataSource={channels.filter(c => c.pinned)}
+                      renderItem={channel => (
+                        <List.Item
+                          className="channel-item"
+                          onClick={() => navigate(`/communication/channels/${channel.id}`)}
+                          actions={[
+                            channel.unread > 0 && <Badge count={channel.unread} />
+                          ].filter(Boolean)}
+                        >
+                          <List.Item.Meta
+                            avatar={
+                              <Avatar style={{ background: channel.type === 'project' ? '#722ed1' : '#1890ff' }}>
+                                {channel.type === 'private' ? '🔒' : '#'}
+                              </Avatar>
+                            }
+                            title={
+                              <Space>
+                                <span className="channel-name">{channel.name}</span>
+                                <Tag>{channel.type}</Tag>
+                              </Space>
+                            }
+                            description={
+                              <span className="last-message">{channel.lastMessage}</span>
+                            }
+                          />
+                          <span className="activity-time">{channel.lastActivity}</span>
+                        </List.Item>
+                      )}
+                    />
+                  </div>
+                )}
+
+                {/* All Channels */}
+                <div className="channels-section">
+                  <div className="section-header">
+                    <Text type="secondary" className="section-label">All Channels</Text>
+                    <Button type="link" size="small" icon={<PlusOutlined />}>
+                      Create Channel
+                    </Button>
+                  </div>
+                  <List
+                    dataSource={channels.filter(c => !c.pinned)}
+                    renderItem={channel => (
+                      <List.Item
+                        className="channel-item"
+                        onClick={() => navigate(`/communication/channels/${channel.id}`)}
+                        actions={[
+                          channel.unread > 0 && <Badge count={channel.unread} />
+                        ].filter(Boolean)}
+                      >
+                        <List.Item.Meta
+                          avatar={
+                            <Avatar style={{ background: channel.type === 'project' ? '#722ed1' : channel.type === 'private' ? '#fa541c' : '#1890ff' }}>
+                              {channel.type === 'private' ? '🔒' : '#'}
+                            </Avatar>
+                          }
+                          title={channel.name}
+                          description={
+                            <Space>
+                              <span className="members-count">{channel.members} members</span>
+                              <span className="last-message">{channel.lastMessage}</span>
+                            </Space>
+                          }
+                        />
+                        <span className="activity-time">{channel.lastActivity}</span>
+                      </List.Item>
+                    )}
+                  />
+                </div>
+              </TabPane>
+
+              <TabPane tab={<><UserOutlined /> Direct Messages ({dms.length})</>} key="messages">
+                <List
+                  dataSource={dms}
+                  renderItem={dm => (
+                    <List.Item
+                      className="dm-item"
+                      onClick={() => navigate(`/communication/messages/${dm.id}`)}
+                      actions={[
+                        dm.unread > 0 && <Badge count={dm.unread} />
+                      ].filter(Boolean)}
+                    >
+                      <List.Item.Meta
+                        avatar={
+                          <Badge dot color={statusColors[dm.user.status]} offset={[-4, 28]}>
+                            <Avatar size="large">{dm.user.name[0]}</Avatar>
+                          </Badge>
+                        }
+                        title={dm.user.name}
+                        description={dm.lastMessage}
+                      />
+                      <span className="activity-time">{dm.lastActivity}</span>
+                    </List.Item>
+                  )}
+                />
+              </TabPane>
+            </Tabs>
+          </Card>
+        </Col>
+
+        {/* Right Sidebar */}
+        <Col xs={24} lg={8}>
+          {/* Quick Actions */}
+          <Card title="Quick Actions" className="quick-actions-card" style={{ marginBottom: 16 }}>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button block icon={<VideoCameraOutlined />} onClick={() => navigate('/communication/video/new')}>
+                Start Video Meeting
+              </Button>
+              <Button block icon={<PhoneOutlined />}>
+                Start Audio Call
+              </Button>
+              <Button block icon={<MessageOutlined />}>
+                New Message
+              </Button>
+              <Button block icon={<TeamOutlined />}>
+                Create Channel
+              </Button>
+            </Space>
+          </Card>
+
+          {/* Recent Calls */}
+          <Card title="Recent Calls" extra={<Button type="link" size="small">View All</Button>}>
+            <List
+              dataSource={calls}
+              renderItem={call => (
+                <List.Item className="call-item">
+                  <List.Item.Meta
+                    avatar={
+                      <Avatar 
+                        icon={call.type === 'video' ? <VideoCameraOutlined /> : <PhoneOutlined />}
+                        style={{ background: call.type === 'video' ? '#722ed1' : '#1890ff' }}
+                      />
+                    }
+                    title={call.participants.length > 1 ? `${call.participants.length} participants` : call.participants[0]}
+                    description={`${call.duration} • ${call.time}`}
+                  />
+                </List.Item>
+              )}
+            />
+          </Card>
+
+          {/* Team Status */}
+          <Card title="Team Status" style={{ marginTop: 16 }}>
+            <List
+              size="small"
+              dataSource={dms.filter(d => d.user.status === 'online').slice(0, 5)}
+              renderItem={dm => (
+                <List.Item>
+                  <List.Item.Meta
+                    avatar={
+                      <Badge dot color={statusColors[dm.user.status]}>
+                        <Avatar size="small">{dm.user.name[0]}</Avatar>
+                      </Badge>
+                    }
+                    title={<span style={{ fontSize: 13 }}>{dm.user.name}</span>}
+                  />
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+      </Row>
+    </div>
+  );
+};
+
+export default CommunicationHub;

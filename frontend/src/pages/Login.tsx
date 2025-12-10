@@ -12,7 +12,7 @@ import './Login.css';
 const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const returnUrl = searchParams.get('returnUrl') || '/';
+  const returnUrl = searchParams.get('returnUrl') || '/app/dashboard';
   
   const [formData, setFormData] = useState({
     email: '',

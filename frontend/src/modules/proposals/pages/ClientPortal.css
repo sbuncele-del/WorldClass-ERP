@@ -1,0 +1,155 @@
+.client-portal {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.portal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px 24px;
+  background: white;
+  border-radius: 8px;
+}
+
+.portal-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Cards */
+.portal-card {
+  margin-bottom: 24px;
+  border-radius: 8px;
+}
+
+.proposal-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.status-info {
+  margin-top: 24px;
+}
+
+/* Validity Notice */
+.validity-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.validity-notice .anticon {
+  color: #fa8c16;
+  font-size: 20px;
+}
+
+/* Pricing Section */
+.pricing-section {
+  margin-bottom: 24px;
+}
+
+.pricing-summary {
+  max-width: 350px;
+  margin-left: auto;
+  margin-top: 24px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.summary-row.total {
+  margin-bottom: 0;
+}
+
+/* Terms */
+.terms-section {
+  margin-top: 24px;
+}
+
+.terms-list {
+  padding-left: 20px;
+}
+
+.terms-list li {
+  margin-bottom: 8px;
+}
+
+/* Action Card */
+.action-card {
+  margin-bottom: 16px;
+  border-radius: 8px;
+}
+
+/* Contact Card */
+.contact-card {
+  border-radius: 8px;
+}
+
+.contact-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.contact-title {
+  display: block;
+  font-size: 12px;
+}
+
+.contact-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Accept Modal */
+.accept-content {
+  padding: 16px 0;
+}
+
+.signature-section {
+  margin: 24px 0;
+}
+
+.signature-input {
+  margin-top: 8px;
+}
+
+.terms-checkbox {
+  margin-top: 24px;
+}
+
+/* Question Modal */
+.question-content {
+  padding: 8px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .client-portal {
+    padding: 16px;
+  }
+
+  .portal-header {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+}

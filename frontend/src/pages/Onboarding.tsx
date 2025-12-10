@@ -44,7 +44,7 @@ const Onboarding = () => {
         const status = await onboardingService.getOnboardingStatus();
         if (status.completed) {
           // Already completed, redirect to dashboard
-          navigate('/');
+          navigate('/app/dashboard');
           return;
         }
         if (status.data) {
@@ -101,7 +101,7 @@ const Onboarding = () => {
       setIsLoading(true);
       try {
         await onboardingService.skipOnboarding();
-        navigate('/');
+        navigate('/app/dashboard');
       } catch (err) {
         console.error('Error skipping onboarding:', err);
         setError('Failed to skip onboarding. Please try again.');
@@ -118,7 +118,7 @@ const Onboarding = () => {
     try {
       await onboardingService.completeOnboarding();
       // Navigate to dashboard
-      navigate('/');
+      navigate('/app/dashboard');
     } catch (err) {
       console.error('Error completing onboarding:', err);
       setError('Failed to complete onboarding. Please try again.');

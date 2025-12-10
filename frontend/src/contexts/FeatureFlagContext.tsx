@@ -18,7 +18,7 @@ const DEFAULT_STATE: FeatureFlagState = {
   flags: {},
   upgradePaths: {},
   featureCount: 0,
-  isLoading: true,
+  isLoading: false, // Start with false since we may not load at all
   refresh: async () => undefined,
   isEnabled: () => false,
 };
@@ -27,6 +27,19 @@ export const FeatureFlagProvider: React.FC<{ children: ReactNode }> = ({ childre
   const [state, setState] = useState<FeatureFlagState>(DEFAULT_STATE);
 
   const loadFlags = useCallback(async () => {
+    // Only load if user is authenticated (has a token)
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+    if (!token) {
+      // Not authenticated, skip loading feature flags
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        refresh: loadFlags,
+        isEnabled: () => false,
+      }));
+      return;
+    }
+
     setState((prev) => ({ ...prev, isLoading: true, error: undefined }));
     try {
       const response = await apiFetch('/api/logistics/enterprise/feature-gates');

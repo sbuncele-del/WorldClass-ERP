@@ -69,6 +69,10 @@ const WarehouseDashboard = lazy(() => import('./modules/warehouse/WarehouseDashb
 const ManufacturingDashboard = lazy(() => import('./modules/manufacturing/ManufacturingDashboard'));
 const LogisticsModule = lazy(() => import('./modules/logistics/LogisticsModule'));
 const SARSSentinel = lazy(() => import('./modules/sars-sentinel/SARSSentinel'));
+const ProjectsModule = lazy(() => import('./modules/projects/ProjectsModule'));
+const CommunicationModule = lazy(() => import('./modules/communication/CommunicationModule'));
+const CalendarModule = lazy(() => import('./modules/calendar/CalendarModule'));
+const ProposalsModule = lazy(() => import('./modules/proposals/ProposalsModule'));
 
 // Lazy-loaded Practice Module
 const PracticeDashboard = lazy(() => 
@@ -171,6 +175,16 @@ function App() {
                       <Route path="/verify-email" element={<VerifyEmail />} />
                       <Route path="/resend-verification" element={<ResendVerification />} />
 
+                      {/* Onboarding - Protected but no sidebar/topbar */}
+                      <Route
+                        path="/onboarding"
+                        element={
+                          <ProtectedRoute>
+                            <Onboarding />
+                          </ProtectedRoute>
+                        }
+                      />
+
                       {/* Driver-first experience (no sidebar/topbar) */}
                       <Route
                         path="/driver"
@@ -205,6 +219,10 @@ function App() {
                                   <Route path="/cash/*" element={<CashManagement />} />
                                   <Route path="/banking/*" element={<BankingDashboard />} />
                                   <Route path="/sars/*" element={<SARSSentinel />} />
+                                  <Route path="/projects/*" element={<ProjectsModule />} />
+                                  <Route path="/communication/*" element={<CommunicationModule />} />
+                                  <Route path="/calendar/*" element={<CalendarModule />} />
+                                  <Route path="/proposals/*" element={<ProposalsModule />} />
                                   <Route path="/workspace" element={<MyWorkspace />} />
                                   <Route path="/audit" element={<AuditReady />} />
                                   <Route path="/treasury" element={<TreasuryManagement />} />
