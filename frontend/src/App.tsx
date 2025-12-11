@@ -194,8 +194,599 @@ function App() {
                           </ProtectedRoute>
                         }
                       />
+
+                      {/* Root-level protected routes with layout - for sidebar navigation */}
+                      <Route path="/projects/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <ProjectsModule />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      <Route path="/communication/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <CommunicationModule />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      <Route path="/calendar/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <CalendarModule />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      <Route path="/proposals/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <ProposalsModule />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Sales & CRM */}
+                      <Route path="/sales/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <Sales />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Purchase Management */}
+                      <Route path="/purchase/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <Purchase />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Inventory Management */}
+                      <Route path="/inventory/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <InventoryDashboard />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* HR & Payroll */}
+                      <Route path="/hr/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <HRDashboard />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Asset Management */}
+                      <Route path="/assets/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <AssetDashboard />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Logistics & Transport */}
+                      <Route path="/logistics/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <LogisticsModule />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Practice Management */}
+                      <Route path="/practice/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <PracticeDashboard />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Healthcare */}
+                      <Route path="/healthcare/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <Healthcare />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Construction */}
+                      <Route path="/construction/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <Construction />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Agriculture */}
+                      <Route path="/agriculture/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <Agriculture />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Mining */}
+                      <Route path="/mining/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <Mining />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Wholesale & Retail */}
+                      <Route path="/wholesale/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <Wholesale />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Professional Services */}
+                      <Route path="/professional-services/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <ProfessionalServices />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Financial Accounting */}
+                      <Route path="/financial/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <FinancialManagement />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Cash Management */}
+                      <Route path="/cash-management/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <CashManagement />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Treasury Management */}
+                      <Route path="/treasury/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <TreasuryManagement />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* SARS Integration */}
+                      <Route path="/sars-sentinel/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <SARSSentinel />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Audit-Ready Suite */}
+                      <Route path="/audit-ready/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <AuditReady />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* My Workspace */}
+                      <Route path="/my-workspace" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <MyWorkspace />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Warehouse Management */}
+                      <Route path="/warehouse/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <WarehouseDashboard />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Manufacturing */}
+                      <Route path="/manufacturing/*" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <ManufacturingDashboard />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* User Management */}
+                      <Route path="/users" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <UserManagement />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* System Settings */}
+                      <Route path="/settings" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <SystemSettings />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Audit Logs */}
+                      <Route path="/audit-logs" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <AuditLogs />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Help Center */}
+                      <Route path="/help" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <HelpCenter />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Profile Settings */}
+                      <Route path="/profile" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <ProfileSettings />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Billing */}
+                      <Route path="/billing" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <Billing />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* Tenant Settings */}
+                      <Route path="/tenant-settings" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <TenantSettings />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
+
+                      {/* API Test Dashboard */}
+                      <Route path="/api-test" element={
+                        <ProtectedRoute>
+                          <div className="app">
+                            <TopBar />
+                            <Sidebar />
+                            <main className="main-content-v2">
+                              <Suspense fallback={<PageLoader />}>
+                                <APITestDashboard />
+                              </Suspense>
+                            </main>
+                            <Suspense fallback={null}>
+                              <CoPilotAssistant />
+                            </Suspense>
+                          </div>
+                        </ProtectedRoute>
+                      } />
                       
-                      {/* Protected Routes - With Layout */}
+                      {/* Protected Routes - With Layout (legacy /app prefix) */}
                       <Route path="/app/*" element={
                         <ProtectedRoute>
                           <div className="app">

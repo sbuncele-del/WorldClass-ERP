@@ -229,9 +229,16 @@ const Login = () => {
         </div>
 
         <div className="demo-link">
-          <Link to="/demo" className="btn btn-secondary btn-full">
-            Try Demo (No signup required)
-          </Link>
+          <button 
+            type="button"
+            className="btn btn-secondary btn-full"
+            onClick={() => {
+              authService.demoLogin();
+              navigate('/app/dashboard');
+            }}
+          >
+            🚀 Try Demo (No signup required)
+          </button>
         </div>
       </div>
     </div>

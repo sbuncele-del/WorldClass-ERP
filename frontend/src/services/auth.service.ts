@@ -192,6 +192,54 @@ class AuthService {
   getToken(): string | null {
     return localStorage.getItem('token');
   }
+
+  /**
+   * Demo login - bypasses API for testing/demo purposes
+   */
+  demoLogin(): AuthResponse {
+    const demoData: AuthResponse = {
+      success: true,
+      data: {
+        tokens: {
+          accessToken: 'demo-token-' + Date.now(),
+          refreshToken: 'demo-refresh-' + Date.now(),
+          expiresIn: 86400,
+        },
+        user: {
+          id: 'demo-user-001',
+          email: 'admin@demo.com',
+          firstName: 'Demo',
+          lastName: 'Admin',
+          role: 'admin',
+        },
+        tenant: {
+          id: 'demo-tenant-001',
+          slug: 'demo-company',
+          name: 'Demo Company',
+          status: 'active',
+          trialEndsAt: null,
+        },
+      },
+    };
+
+    // Store demo tokens
+    localStorage.setItem('token', demoData.data.tokens.accessToken);
+    localStorage.setItem('refreshToken', demoData.data.tokens.refreshToken);
+    localStorage.setItem('user', JSON.stringify(demoData.data.user));
+    localStorage.setItem('tenant', JSON.stringify(demoData.data.tenant));
+    localStorage.setItem('tenantId', demoData.data.tenant.id);
+    localStorage.setItem('workspaceId', demoData.data.tenant.id);
+    localStorage.setItem('demoMode', 'true');
+
+    return demoData;
+  }
+
+  /**
+   * Check if in demo mode
+   */
+  isDemoMode(): boolean {
+    return localStorage.getItem('demoMode') === 'true';
+  }
 }
 
 export default new AuthService();

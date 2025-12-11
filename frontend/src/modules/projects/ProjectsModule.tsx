@@ -5,7 +5,13 @@
 
 import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import PageLoader from '../../components/PageLoader';
+import { Spin } from 'antd';
+
+const PageLoader = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+    <Spin size="large" tip="Loading..." />
+  </div>
+);
 
 // Lazy load sub-pages for better performance
 const ProjectsDashboard = lazy(() => import('./pages/ProjectsDashboard'));
