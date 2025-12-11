@@ -32,9 +32,25 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false }) => {
         {/* Operations */}
         <div className="sidebar-section">
           <div className="sidebar-section-title">OPERATIONS</div>
+          <Link to="/projects" className={`sidebar-item ${isActive('/projects') ? 'active' : ''}`}>
+            <span className="sidebar-icon">📋</span>
+            <span className="sidebar-label">Project Management</span>
+          </Link>
+          <Link to="/communication" className={`sidebar-item ${isActive('/communication') ? 'active' : ''}`}>
+            <span className="sidebar-icon">💬</span>
+            <span className="sidebar-label">Communication</span>
+          </Link>
+          <Link to="/calendar" className={`sidebar-item ${isActive('/calendar') ? 'active' : ''}`}>
+            <span className="sidebar-icon">📅</span>
+            <span className="sidebar-label">Calendar & Reminders</span>
+          </Link>
           <Link to="/sales" className={`sidebar-item ${isActive('/sales') ? 'active' : ''}`}>
             <span className="sidebar-icon">💰</span>
             <span className="sidebar-label">Sales & CRM</span>
+          </Link>
+          <Link to="/proposals" className={`sidebar-item ${isActive('/proposals') ? 'active' : ''}`}>
+            <span className="sidebar-icon">📝</span>
+            <span className="sidebar-label">Proposal Builder</span>
           </Link>
           <Link to="/purchase" className={`sidebar-item ${isActive('/purchase') ? 'active' : ''}`}>
             <span className="sidebar-icon">🛒</span>

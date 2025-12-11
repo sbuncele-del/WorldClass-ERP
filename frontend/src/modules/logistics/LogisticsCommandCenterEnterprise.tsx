@@ -215,7 +215,6 @@ const LogisticsCommandCenterEnterprise: React.FC = () => {
 
   const tabs = [
     { id: 'dashboard', label: '🎯 Dashboard', path: '/logistics/dashboard' },
-    { id: 'enterprise', label: '🚀 Enterprise AI', path: '/logistics/enterprise' },
     { id: 'fleet', label: '🚛 Fleet', path: '/logistics/fleet' },
     { id: 'drivers', label: '👨‍✈️ Drivers', path: '/logistics/drivers' },
     { id: 'trips', label: '🚚 Trips', path: '/logistics/trips' },
