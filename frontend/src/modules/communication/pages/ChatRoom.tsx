@@ -6,8 +6,8 @@ import {
 import { 
   SendOutlined, SmileOutlined, PaperClipOutlined, PhoneOutlined,
   VideoCameraOutlined, MoreOutlined, PushpinOutlined, SearchOutlined,
-  UserOutlined, InfoCircleOutlined, ArrowLeftOutlined, AtOutlined,
-  FileImageOutlined, FileOutlined, GifOutlined
+  UserOutlined, InfoCircleOutlined, ArrowLeftOutlined, TagOutlined,
+  FileImageOutlined, FileOutlined, PictureOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import './ChatRoom.css';
@@ -276,10 +276,10 @@ const ChatRoom: React.FC = () => {
             <Button type="text" icon={<FileImageOutlined />} />
           </Tooltip>
           <Tooltip title="GIF">
-            <Button type="text" icon={<GifOutlined />} />
+            <Button type="text" icon={<PictureOutlined />} />
           </Tooltip>
           <Tooltip title="Mention">
-            <Button type="text" icon={<AtOutlined />} />
+            <Button type="text" icon={<TagOutlined />} />
           </Tooltip>
         </div>
         <TextArea

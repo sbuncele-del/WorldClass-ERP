@@ -5,7 +5,7 @@ import {
 } from 'antd';
 import { 
   PlusOutlined, BellOutlined, PushpinOutlined, CalendarOutlined,
-  TeamOutlined, MegaphoneOutlined
+  TeamOutlined, NotificationOutlined
 } from '@ant-design/icons';
 
 const { Title, Text, Paragraph } = Typography;
@@ -170,7 +170,7 @@ const Announcements: React.FC = () => {
         <Col xs={8}>
           <Card>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Avatar style={{ background: '#1890ff' }}><MegaphoneOutlined /></Avatar>
+              <Avatar style={{ background: '#1890ff' }}><NotificationOutlined /></Avatar>
               <div>
                 <Text type="secondary">Total</Text>
                 <div style={{ fontSize: 20, fontWeight: 600 }}>{announcements.length}</div>

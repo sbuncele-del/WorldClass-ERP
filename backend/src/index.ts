@@ -61,6 +61,7 @@ import superadminRoutes from './routes/superadmin.routes';
 import modulesRoutes from './routes/modules.routes';
 import messagesRoutes from './routes/messages.routes';
 import deliveryRoutes from './routes/delivery.routes';
+import meetingsRoutes from './routes/meetings.routes';
 import DemoResetService from './services/demo-reset.service';
 import { initializeLogisticsGateway } from './websocket/logistics.gateway';
 import { securityHeaders, securityLogger } from './middleware/security';
@@ -79,6 +80,15 @@ import financialReportsRoutes2 from './modules/financial-reports/routes';
 import salesInvoiceRoutes from './modules/sales/routes';
 import purchaseInvoiceRoutes from './modules/purchases/routes';
 import assetManagementRoutes from './modules/assets/routes';
+
+// NEW API ROUTES - December 2025
+import projectsRoutes from './routes/projects.routes';
+import proposalsRoutes from './routes/proposals.routes';
+import communicationsRoutes from './routes/communications.routes';
+import miningRoutes from './routes/mining.routes';
+import agricultureRoutes from './routes/agriculture.routes';
+import constructionRoutes from './routes/construction.routes';
+import propertyRoutes from './routes/property.routes';
 
 // Validate environment variables
 validateEnv();
@@ -314,6 +324,16 @@ v1Router.use('/purchases', apiLimiter, purchaseInvoiceRoutes); // Purchase Invoi
 v1Router.use('/asset-management', apiLimiter, assetManagementRoutes); // Asset Management API
 v1Router.use('/messages', apiLimiter, messagesRoutes); // Driver-Dispatch Messaging
 v1Router.use('/delivery', apiLimiter, deliveryRoutes); // Delivery Verification & POD
+v1Router.use('/meetings', apiLimiter, meetingsRoutes); // Video Conferencing (Daily.co)
+
+// NEW API ROUTES - December 2025
+v1Router.use('/projects', apiLimiter, projectsRoutes); // Project Management API
+v1Router.use('/proposals', apiLimiter, proposalsRoutes); // Proposals & Quotes API
+v1Router.use('/communications', apiLimiter, communicationsRoutes); // Communications Hub API
+v1Router.use('/mining', apiLimiter, miningRoutes); // Mining Industry API
+v1Router.use('/agriculture', apiLimiter, agricultureRoutes); // Agriculture Industry API
+v1Router.use('/construction', apiLimiter, constructionRoutes); // Construction Industry API
+v1Router.use('/property', apiLimiter, propertyRoutes); // Property Management API
 
 // Mount v1 router
 app.use('/api/v1', v1Router);

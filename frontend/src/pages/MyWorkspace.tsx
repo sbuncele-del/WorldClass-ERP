@@ -1,9 +1,9 @@
 import React from 'react';
-import DynamicWorkspace from '../components/DynamicWorkspace';
+import RoleBasedWorkspace from '../components/RoleBasedWorkspace';
 import './MyWorkspace.css';
 
 const MyWorkspace: React.FC = () => {
-  return <DynamicWorkspace />;
+  return <RoleBasedWorkspace />;
 };
 
 export default MyWorkspace;

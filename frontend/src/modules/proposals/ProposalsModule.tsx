@@ -10,6 +10,11 @@ const ProposalPreview = lazy(() => import('./pages/ProposalPreview'));
 const Templates = lazy(() => import('./pages/Templates'));
 const PricingLibrary = lazy(() => import('./pages/PricingLibrary'));
 const ClientPortal = lazy(() => import('./pages/ClientPortal'));
+const PortalAccess = lazy(() => import('./pages/PortalAccess'));
+const SendProposal = lazy(() => import('./pages/SendProposal'));
+const PitchBuilder = lazy(() => import('./pages/PitchBuilder'));
+const PitchPreview = lazy(() => import('./pages/PitchPreview'));
+const PitchTemplates = lazy(() => import('./pages/PitchTemplates'));
 
 const PageLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
@@ -26,9 +31,14 @@ const ProposalsModule: React.FC = () => {
         <Route path="/new" element={<ProposalEditor />} />
         <Route path="/edit/:id" element={<ProposalEditor />} />
         <Route path="/preview/:id" element={<ProposalPreview />} />
+        <Route path="/send/:id" element={<SendProposal />} />
         <Route path="/templates" element={<Templates />} />
         <Route path="/pricing" element={<PricingLibrary />} />
         <Route path="/portal/:id" element={<ClientPortal />} />
+        <Route path="/pitch/builder" element={<PitchBuilder />} />
+        <Route path="/pitch/preview" element={<PitchPreview />} />
+        <Route path="/pitch/preview/:id" element={<PitchPreview />} />
+        <Route path="/pitch/templates" element={<PitchTemplates />} />
       </Routes>
     </Suspense>
   );

@@ -137,6 +137,16 @@ const VehicleTrackingMap: React.FC<VehicleTrackingMapProps> = ({
   const [showRoutes, setShowRoutes] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
 
+  // Clean up the Leaflet instance when the component unmounts to prevent container re-init errors
+  useEffect(() => {
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []);
+
   const {
     connected,
     connecting,

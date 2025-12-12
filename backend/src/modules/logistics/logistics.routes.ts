@@ -5,12 +5,18 @@ import * as routesIncidentsGeofencesController from '../../controllers/routes-in
 import documentsRouter from '../../routes/logistics/documents';
 import tripsRouter from '../../routes/logistics/trips';
 import enterpriseRouter from '../../routes/logistics/enterprise';
+import trackingRouter from '../../routes/logistics/tracking';
 import { requirePermission, Permission } from '../../middleware/rbac.middleware';
 
 const router = Router();
 
 // Enterprise extensions (SAP/Oracle/Dynamics parity)
 router.use('/enterprise', enterpriseRouter);
+
+// ============================================================================
+// VEHICLE TRACKING (GPS/API Providers)
+// ============================================================================
+router.use('/tracking', trackingRouter);
 
 // ============================================================================
 // DASHBOARD (must be before /:id routes)

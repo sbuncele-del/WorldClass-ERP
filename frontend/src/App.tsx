@@ -19,6 +19,10 @@ import ProtectedRoute from './components/ProtectedRoute';
 import TopBar from './components/layout/TopBar';
 import Sidebar from './components/layout/Sidebar';
 
+// Premium Layout Components
+const PremiumSidebar = lazy(() => import('./components/layout/PremiumSidebar'));
+const PremiumTopBar = lazy(() => import('./components/layout/PremiumTopBar'));
+
 // Landing Page (lazy loaded for performance)
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 
@@ -73,11 +77,40 @@ const ProjectsModule = lazy(() => import('./modules/projects/ProjectsModule'));
 const CommunicationModule = lazy(() => import('./modules/communication/CommunicationModule'));
 const CalendarModule = lazy(() => import('./modules/calendar/CalendarModule'));
 const ProposalsModule = lazy(() => import('./modules/proposals/ProposalsModule'));
+const ClientPortal = lazy(() => import('./modules/proposals/pages/ClientPortal'));
+const PortalAccess = lazy(() => import('./modules/proposals/pages/PortalAccess'));
 
 // Lazy-loaded Practice Module
 const PracticeDashboard = lazy(() => 
   import('./modules/practice/PracticeDashboard').then(module => ({ default: module.PracticeDashboard }))
 );
+const ClientManagement = lazy(() => import('./modules/practice/pages/ClientManagement'));
+
+// Enterprise Hub Pages (Premium SaaS Design)
+const MultiEntityHub = lazy(() => import('./modules/multi-entity/MultiEntityHub'));
+const BankingHub = lazy(() => import('./modules/banking/BankingHub'));
+const PracticeHub = lazy(() => import('./modules/professional/PracticeHub'));
+const HRHub = lazy(() => import('./modules/hr/HRHub'));
+const FinancialHub = lazy(() => import('./modules/financial/FinancialHub'));
+const SalesHub = lazy(() => import('./modules/sales/SalesHub'));
+const InventoryHub = lazy(() => import('./modules/inventory/InventoryHub'));
+const PurchaseHub = lazy(() => import('./modules/purchase/PurchaseHub'));
+const AssetsHub = lazy(() => import('./modules/assets/AssetsHub'));
+const WarehouseHub = lazy(() => import('./modules/warehouse/WarehouseHub'));
+const ManufacturingHub = lazy(() => import('./modules/manufacturing/ManufacturingHub'));
+const LogisticsHub = lazy(() => import('./modules/logistics/LogisticsHub'));
+const MiningHub = lazy(() => import('./modules/mining/MiningHub'));
+const AgricultureHub = lazy(() => import('./modules/agriculture/AgricultureHub'));
+const ProjectsHub = lazy(() => import('./modules/projects/ProjectsHub'));
+const ProposalsHub = lazy(() => import('./modules/proposals/ProposalsHub'));
+const ConstructionHub = lazy(() => import('./modules/construction/ConstructionHub'));
+const HealthcareHub = lazy(() => import('./modules/healthcare/HealthcareHub'));
+const PropertyHub = lazy(() => import('./modules/property/PropertyHub'));
+const CommunicationsHub = lazy(() => import('./modules/communication/CommunicationsHub'));
+const AuditReadyHub = lazy(() => import('./modules/compliance/AuditReadyHub'));
+const RegulatoryHub = lazy(() => import('./modules/compliance/RegulatoryHub'));
+const AdminHub = lazy(() => import('./modules/admin/AdminHub'));
+const AuditorPortalPreview = lazy(() => import('./modules/compliance/AuditorPortalPreview'));
 
 // Lazy-loaded Industry Pages
 const Healthcare = lazy(() => import('./pages/Healthcare'));
@@ -92,6 +125,9 @@ const UserManagement = lazy(() => import('./pages/UserManagement'));
 const SystemSettings = lazy(() => import('./pages/SystemSettings'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const HelpCenter = lazy(() => import('./pages/HelpCenter'));
+
+// Component Preview (no login required)
+const ComponentPreview = lazy(() => import('./pages/ComponentPreview'));
 
 // Lazy-loaded UI Components
 const CoPilotAssistant = lazy(() => 
@@ -167,6 +203,38 @@ function App() {
                       <Route path="/blog" element={<Blog />} />
                       <Route path="/case-studies" element={<CaseStudies />} />
                       
+                      {/* Public Client Portal - Access with code (no login required) */}
+                      <Route path="/portal/:id" element={<PortalAccess />} />
+                      <Route path="/portal/:id/view" element={<ClientPortal />} />
+                      
+                      {/* Preview Routes - For approval before deployment */}
+                      <Route path="/preview/components" element={<ComponentPreview />} />
+                      <Route path="/preview/assets-hub" element={<AssetsHub />} />
+                      <Route path="/preview/financial-hub" element={<FinancialHub />} />
+                      <Route path="/preview/sales-hub" element={<SalesHub />} />
+                      <Route path="/preview/inventory-hub" element={<InventoryHub />} />
+                      <Route path="/preview/purchase-hub" element={<PurchaseHub />} />
+                      <Route path="/preview/warehouse-hub" element={<WarehouseHub />} />
+                      <Route path="/preview/manufacturing-hub" element={<ManufacturingHub />} />
+                      <Route path="/preview/logistics-hub" element={<LogisticsHub />} />
+                      <Route path="/preview/mining-hub" element={<MiningHub />} />
+                      <Route path="/preview/agriculture-hub" element={<AgricultureHub />} />
+                      <Route path="/preview/projects-hub" element={<ProjectsHub />} />
+                      <Route path="/preview/proposals-hub" element={<ProposalsHub />} />
+                      <Route path="/preview/construction-hub" element={<ConstructionHub />} />
+                      <Route path="/preview/healthcare-hub" element={<HealthcareHub />} />
+                      <Route path="/preview/property-hub" element={<PropertyHub />} />
+                      <Route path="/preview/communications-hub" element={<CommunicationsHub />} />
+                      <Route path="/preview/audit-ready-hub" element={<AuditReadyHub />} />
+                      <Route path="/preview/regulatory-hub" element={<RegulatoryHub />} />
+                      <Route path="/preview/admin-hub" element={<AdminHub />} />
+                      <Route path="/preview/auditor-portal" element={<AuditorPortalPreview />} />
+                      
+                      {/* Direct Hub Routes */}
+                      <Route path="/audit-ready" element={<AuditReadyHub />} />
+                      <Route path="/regulatory" element={<RegulatoryHub />} />
+                      <Route path="/admin" element={<AdminHub />} />
+                      
                       {/* Public Routes - No Layout */}
                       <Route path="/login" element={<Login />} />
                       <Route path="/signup" element={<Signup />} />
@@ -213,12 +281,36 @@ function App() {
                                   <Route path="/inventory/*" element={<InventoryDashboard />} />
                                   <Route path="/hr/*" element={<HRDashboard />} />
                                   <Route path="/practice/*" element={<PracticeDashboard />} />
+                                  <Route path="/practice/clients" element={<ClientManagement />} />
                                   <Route path="/assets/*" element={<AssetDashboard />} />
                                   <Route path="/warehouse/*" element={<WarehouseDashboard />} />
                                   <Route path="/manufacturing/*" element={<ManufacturingDashboard />} />
                                   <Route path="/cash/*" element={<CashManagement />} />
                                   <Route path="/banking/*" element={<BankingDashboard />} />
+                                  <Route path="/banking-hub" element={<BankingHub />} />
                                   <Route path="/sars/*" element={<SARSSentinel />} />
+                                  <Route path="/multi-entity" element={<MultiEntityHub />} />
+                                  <Route path="/practice-hub" element={<PracticeHub />} />
+                                  <Route path="/hr-hub" element={<HRHub />} />
+                                  <Route path="/financial-hub" element={<FinancialHub />} />
+                                  <Route path="/sales-hub" element={<SalesHub />} />
+                                  <Route path="/inventory-hub" element={<InventoryHub />} />
+                                  <Route path="/purchase-hub" element={<PurchaseHub />} />
+                                  <Route path="/assets-hub" element={<AssetsHub />} />
+                                  <Route path="/warehouse-hub" element={<WarehouseHub />} />
+                                  <Route path="/manufacturing-hub" element={<ManufacturingHub />} />
+                                  <Route path="/logistics-hub" element={<LogisticsHub />} />
+                                  <Route path="/mining-hub" element={<MiningHub />} />
+                                  <Route path="/agriculture-hub" element={<AgricultureHub />} />
+                                  <Route path="/projects-hub" element={<ProjectsHub />} />
+                                  <Route path="/proposals-hub" element={<ProposalsHub />} />
+                                  <Route path="/construction-hub" element={<ConstructionHub />} />
+                                  <Route path="/healthcare-hub" element={<HealthcareHub />} />
+                                  <Route path="/property-hub" element={<PropertyHub />} />
+                                  <Route path="/communications-hub" element={<CommunicationsHub />} />
+                                  <Route path="/audit-ready" element={<AuditReadyHub />} />
+                                  <Route path="/regulatory" element={<RegulatoryHub />} />
+                                  <Route path="/admin-hub" element={<AdminHub />} />
                                   <Route path="/projects/*" element={<ProjectsModule />} />
                                   <Route path="/communication/*" element={<CommunicationModule />} />
                                   <Route path="/calendar/*" element={<CalendarModule />} />

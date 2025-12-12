@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   Card, Tabs, Button, Progress, Tag, Avatar, Timeline, Table, Space,
   Descriptions, Row, Col, Statistic, Dropdown, Modal, Form, Input, Select,
-  DatePicker, message, Drawer, List, Comment, Upload
+  DatePicker, message, Drawer, List, Upload
 } from 'antd';
 import { 
   ArrowLeftOutlined, EditOutlined, MoreOutlined, TeamOutlined,

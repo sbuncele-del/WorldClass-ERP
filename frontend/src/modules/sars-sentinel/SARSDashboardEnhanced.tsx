@@ -115,38 +115,39 @@ const SARSDashboardEnhanced: React.FC = () => {
   }
 
   const sarsTabs = [
-    { id: 'dashboard', label: 'Dashboard', path: '/sars-sentinel/dashboard' },
-    { id: 'correspondence', label: 'Correspondence', path: '/sars-sentinel/correspondence' },
-    { id: 'submissions', label: 'Tax Submissions', path: '/sars-sentinel/submissions' },
-    { id: 'clients', label: 'Client Compliance', path: '/sars-sentinel/clients' },
-    { id: 'deadlines', label: 'Deadline Calendar', path: '/sars-sentinel/deadlines' },
-    { id: 'audit', label: 'Audit Shield', path: '/sars-sentinel/audit' },
+    { id: 'dashboard', label: 'Dashboard', path: '/sars/dashboard' },
+    { id: 'correspondence', label: 'Correspondence', path: '/sars/correspondence' },
+    { id: 'integration', label: '🔗 API Integration', path: '/sars/integration' },
+    { id: 'submissions', label: 'Tax Submissions', path: '/sars/submissions' },
+    { id: 'clients', label: 'Client Compliance', path: '/sars/clients' },
+    { id: 'deadlines', label: 'Deadline Calendar', path: '/sars/deadlines' },
+    { id: 'audit', label: 'Audit Shield', path: '/sars/audit' },
   ];
 
   const secondaryNav: SecondaryNavSection[] = [
     {
       title: 'Quick Actions',
       items: [
-        { id: 'new-correspondence', label: 'New Correspondence', path: '/sars-sentinel/correspondence/new', icon: <FileText size={16} /> },
-        { id: 'submit-returns', label: 'Submit Returns', path: '/sars-sentinel/submissions/new', icon: <Upload size={16} /> },
-        { id: 'download-forms', label: 'Download Forms', path: '/sars-sentinel/forms', icon: <Download size={16} /> }
+        { id: 'new-correspondence', label: 'New Correspondence', path: '/sars/correspondence/new', icon: <FileText size={16} /> },
+        { id: 'submit-returns', label: 'Submit Returns', path: '/sars/submissions/new', icon: <Upload size={16} /> },
+        { id: 'download-forms', label: 'Download Forms', path: '/sars/forms', icon: <Download size={16} /> }
       ]
     },
     {
       title: 'Tax Submissions',
       items: [
-        { id: 'emp201', label: 'EMP201 Monthly', path: '/sars-sentinel/submissions/emp201', icon: <Calendar size={16} /> },
-        { id: 'vat201', label: 'VAT201 Returns', path: '/sars-sentinel/submissions/vat201', icon: <Calendar size={16} /> },
-        { id: 'it14', label: 'IT14 Provisional', path: '/sars-sentinel/submissions/it14', icon: <Calendar size={16} /> },
-        { id: 'emp501', label: 'EMP501 Annual', path: '/sars-sentinel/submissions/emp501', icon: <Calendar size={16} /> }
+        { id: 'emp201', label: 'EMP201 Monthly', path: '/sars/submissions/emp201', icon: <Calendar size={16} /> },
+        { id: 'vat201', label: 'VAT201 Returns', path: '/sars/submissions/vat201', icon: <Calendar size={16} /> },
+        { id: 'it14', label: 'IT14 Provisional', path: '/sars/submissions/it14', icon: <Calendar size={16} /> },
+        { id: 'emp501', label: 'EMP501 Annual', path: '/sars/submissions/emp501', icon: <Calendar size={16} /> }
       ]
     },
     {
       title: 'Reports',
       items: [
-        { id: 'compliance-report', label: 'Compliance Report', path: '/sars-sentinel/reports/compliance', icon: <Shield size={16} /> },
-        { id: 'client-summary', label: 'Client Summary', path: '/sars-sentinel/reports/clients', icon: <Users size={16} /> },
-        { id: 'deadline-report', label: 'Deadline Report', path: '/sars-sentinel/reports/deadlines', icon: <AlertCircle size={16} /> }
+        { id: 'compliance-report', label: 'Compliance Report', path: '/sars/reports/compliance', icon: <Shield size={16} /> },
+        { id: 'client-summary', label: 'Client Summary', path: '/sars/reports/clients', icon: <Users size={16} /> },
+        { id: 'deadline-report', label: 'Deadline Report', path: '/sars/reports/deadlines', icon: <AlertCircle size={16} /> }
       ]
     }
   ];
@@ -157,7 +158,7 @@ const SARSDashboardEnhanced: React.FC = () => {
       moduleSubtitle="Compliance Command Center - Never miss a SARS deadline again"
       breadcrumbs={[
         { label: 'Dashboard', path: '/' },
-        { label: 'SARS Sentinel', path: '/sars-sentinel/dashboard' }
+        { label: 'SARS Sentinel', path: '/sars/dashboard' }
       ]}
       tabs={sarsTabs}
       secondaryNav={secondaryNav}
@@ -184,10 +185,10 @@ const SARSDashboardEnhanced: React.FC = () => {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
-          <Link to="/sars-sentinel/correspondence" className="action-button">
+          <Link to="/sars/correspondence" className="action-button">
             📥 New Correspondence
           </Link>
-          <Link to="/sars-sentinel/submissions" className="action-button primary">
+          <Link to="/sars/submissions" className="action-button primary">
             📤 Submit Returns
           </Link>
         </div>
@@ -383,7 +384,7 @@ const SARSDashboardEnhanced: React.FC = () => {
         </div>
         <div className="card-content">
           <div className="quick-actions-grid">
-            <Link to="/sars-sentinel/correspondence" className="quick-action-card">
+            <Link to="/sars/correspondence" className="quick-action-card">
               <div className="quick-action-icon">📥</div>
               <div className="quick-action-title">Manage Correspondence</div>
               <div className="quick-action-description">
@@ -391,7 +392,7 @@ const SARSDashboardEnhanced: React.FC = () => {
               </div>
             </Link>
 
-            <Link to="/sars-sentinel/submissions" className="quick-action-card">
+            <Link to="/sars/submissions" className="quick-action-card">
               <div className="quick-action-icon">📤</div>
               <div className="quick-action-title">Submit Tax Returns</div>
               <div className="quick-action-description">
@@ -399,7 +400,7 @@ const SARSDashboardEnhanced: React.FC = () => {
               </div>
             </Link>
 
-            <Link to="/sars-sentinel/clients" className="quick-action-card">
+            <Link to="/sars/clients" className="quick-action-card">
               <div className="quick-action-icon">👥</div>
               <div className="quick-action-title">Client Compliance</div>
               <div className="quick-action-description">
@@ -407,7 +408,7 @@ const SARSDashboardEnhanced: React.FC = () => {
               </div>
             </Link>
 
-            <Link to="/sars-sentinel/deadlines" className="quick-action-card">
+            <Link to="/sars/deadlines" className="quick-action-card">
               <div className="quick-action-icon">📅</div>
               <div className="quick-action-title">Deadline Calendar</div>
               <div className="quick-action-description">
@@ -415,7 +416,7 @@ const SARSDashboardEnhanced: React.FC = () => {
               </div>
             </Link>
 
-            <Link to="/sars-sentinel/audit" className="quick-action-card">
+            <Link to="/sars/audit" className="quick-action-card">
               <div className="quick-action-icon">🛡️</div>
               <div className="quick-action-title">Audit Shield</div>
               <div className="quick-action-description">
@@ -423,7 +424,7 @@ const SARSDashboardEnhanced: React.FC = () => {
               </div>
             </Link>
 
-            <Link to="/sars-sentinel/reports" className="quick-action-card">
+            <Link to="/sars/reports" className="quick-action-card">
               <div className="quick-action-icon">📊</div>
               <div className="quick-action-title">Compliance Reports</div>
               <div className="quick-action-description">

@@ -1,0 +1,622 @@
+/**
+ * RoleBasedWorkspace - Personalized Dashboard by User Role
+ * 
+ * Different views for:
+ * - Director: Strategic KPIs, Board Reports, Risk Overview
+ * - Executive: Financial Performance, Team Metrics, Approvals
+ * - Manager: Operations, Team Tasks, Project Progress
+ * - Accountant: GL, Reconciliations, Compliance
+ * - Staff: My Tasks, Time Tracking, Personal Metrics
+ */
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Card, Row, Col, Statistic, Progress, Table, Tag, Avatar, Space,
+  Typography, Button, Tabs, List, Timeline, Alert, Badge, Tooltip,
+  Select, DatePicker, Dropdown, Segmented
+} from 'antd';
+import type { MenuProps } from 'antd';
+import {
+  DollarOutlined, RiseOutlined, FallOutlined,
+  BankOutlined, TeamOutlined, ProjectOutlined, FileTextOutlined,
+  CheckCircleOutlined, ClockCircleOutlined, WarningOutlined,
+  CalendarOutlined, BellOutlined, RightOutlined, SettingOutlined,
+  PieChartOutlined, BarChartOutlined, LineChartOutlined,
+  SafetyCertificateOutlined, AuditOutlined, SyncOutlined,
+  ThunderboltOutlined, StarOutlined, EyeOutlined, PlusOutlined,
+  ArrowUpOutlined, ArrowDownOutlined, EditOutlined
+} from '@ant-design/icons';
+import { useUser } from '../contexts/UserContext';
+import './RoleBasedWorkspace.css';
+
+const { Title, Text, Paragraph } = Typography;
+
+type UserRole = 'director' | 'executive' | 'manager' | 'accountant' | 'staff';
+
+interface QuickAction {
+  icon: React.ReactNode;
+  label: string;
+  path: string;
+  color: string;
+}
+
+const RoleBasedWorkspace: React.FC = () => {
+  const navigate = useNavigate();
+  const { currentUser } = useUser();
+  
+  // Default to director for demo - in production, get from currentUser.role
+  const [userRole, setUserRole] = useState<UserRole>('director');
+  const [greeting, setGreeting] = useState('Good morning');
+
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('Good morning');
+    else if (hour < 17) setGreeting('Good afternoon');
+    else setGreeting('Good evening');
+  }, []);
+
+  // Quick actions based on role
+  const getQuickActions = (): QuickAction[] => {
+    const commonActions: QuickAction[] = [
+      { icon: <CalendarOutlined />, label: 'Calendar', path: '/app/calendar', color: '#8b5cf6' },
+    ];
+
+    const roleActions: Record<UserRole, QuickAction[]> = {
+      director: [
+        { icon: <PieChartOutlined />, label: 'Board Reports', path: '/app/financial-hub', color: '#667eea' },
+        { icon: <SafetyCertificateOutlined />, label: 'Risk Dashboard', path: '/app/audit-ready', color: '#ef4444' },
+        { icon: <TeamOutlined />, label: 'Executive Team', path: '/app/hr-hub', color: '#10b981' },
+        { icon: <BankOutlined />, label: 'Treasury', path: '/app/treasury', color: '#f59e0b' },
+        ...commonActions
+      ],
+      executive: [
+        { icon: <BarChartOutlined />, label: 'Performance', path: '/app/financial-hub', color: '#667eea' },
+        { icon: <CheckCircleOutlined />, label: 'Approvals', path: '/app/purchase-hub', color: '#10b981' },
+        { icon: <ProjectOutlined />, label: 'Projects', path: '/app/projects-hub', color: '#3b82f6' },
+        { icon: <FileTextOutlined />, label: 'Reports', path: '/app/financial-hub', color: '#8b5cf6' },
+        ...commonActions
+      ],
+      manager: [
+        { icon: <ProjectOutlined />, label: 'Projects', path: '/app/projects-hub', color: '#3b82f6' },
+        { icon: <TeamOutlined />, label: 'My Team', path: '/app/hr-hub', color: '#10b981' },
+        { icon: <FileTextOutlined />, label: 'Timesheets', path: '/app/hr-hub', color: '#f59e0b' },
+        { icon: <CheckCircleOutlined />, label: 'Tasks', path: '/app/workspace', color: '#667eea' },
+        ...commonActions
+      ],
+      accountant: [
+        { icon: <BankOutlined />, label: 'Reconciliation', path: '/app/banking-hub', color: '#3b82f6' },
+        { icon: <FileTextOutlined />, label: 'GL Entries', path: '/app/financial-hub', color: '#667eea' },
+        { icon: <AuditOutlined />, label: 'Audit Trail', path: '/app/audit-logs', color: '#10b981' },
+        { icon: <SafetyCertificateOutlined />, label: 'Tax Filing', path: '/app/sars', color: '#ef4444' },
+        ...commonActions
+      ],
+      staff: [
+        { icon: <CheckCircleOutlined />, label: 'My Tasks', path: '/app/workspace', color: '#3b82f6' },
+        { icon: <ClockCircleOutlined />, label: 'Time Entry', path: '/app/hr-hub', color: '#10b981' },
+        { icon: <FileTextOutlined />, label: 'My Requests', path: '/app/hr-hub', color: '#f59e0b' },
+        { icon: <TeamOutlined />, label: 'Directory', path: '/app/hr-hub', color: '#8b5cf6' },
+        ...commonActions
+      ]
+    };
+
+    return roleActions[userRole];
+  };
+
+  // Render Director Dashboard
+  const renderDirectorDashboard = () => (
+    <>
+      {/* Strategic KPIs */}
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-blue">
+            <div className="kpi-content">
+              <div className="kpi-icon"><DollarOutlined /></div>
+              <div className="kpi-data">
+                <Text className="kpi-label">Annual Revenue</Text>
+                <div className="kpi-value">R 47.8M</div>
+                <div className="kpi-change positive">
+                  <ArrowUpOutlined /> 12.5% YoY
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-green">
+            <div className="kpi-content">
+              <div className="kpi-icon"><RiseOutlined /></div>
+              <div className="kpi-data">
+                <Text className="kpi-label">Net Profit Margin</Text>
+                <div className="kpi-value">18.4%</div>
+                <div className="kpi-change positive">
+                  <ArrowUpOutlined /> 2.1% vs Budget
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-purple">
+            <div className="kpi-content">
+              <div className="kpi-icon"><BankOutlined /></div>
+              <div className="kpi-data">
+                <Text className="kpi-label">Cash Position</Text>
+                <div className="kpi-value">R 8.2M</div>
+                <div className="kpi-change neutral">
+                  <SyncOutlined /> 3.2 months runway
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-amber">
+            <div className="kpi-content">
+              <div className="kpi-icon"><TeamOutlined /></div>
+              <div className="kpi-data">
+                <Text className="kpi-label">Headcount</Text>
+                <div className="kpi-value">142</div>
+                <div className="kpi-change positive">
+                  <ArrowUpOutlined /> 8 new hires Q4
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Board-Level Information */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={16}>
+          <Card 
+            title={<><PieChartOutlined /> Strategic Performance</>}
+            extra={<Button type="link" onClick={() => navigate('/app/financial-hub')}>Full Report →</Button>}
+            className="workspace-card"
+          >
+            <Row gutter={16}>
+              <Col span={8}>
+                <div className="metric-block">
+                  <Text type="secondary">Revenue vs Target</Text>
+                  <Progress percent={94} strokeColor="#667eea" />
+                  <Text>R 47.8M / R 51M</Text>
+                </div>
+              </Col>
+              <Col span={8}>
+                <div className="metric-block">
+                  <Text type="secondary">EBITDA Margin</Text>
+                  <Progress percent={78} strokeColor="#10b981" />
+                  <Text>23.4% (Target: 30%)</Text>
+                </div>
+              </Col>
+              <Col span={8}>
+                <div className="metric-block">
+                  <Text type="secondary">Return on Equity</Text>
+                  <Progress percent={85} strokeColor="#8b5cf6" />
+                  <Text>17.2% (Industry: 14%)</Text>
+                </div>
+              </Col>
+            </Row>
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card 
+            title={<><WarningOutlined style={{ color: '#ef4444' }} /> Risk Alerts</>}
+            className="workspace-card"
+          >
+            <List
+              size="small"
+              dataSource={[
+                { level: 'high', text: 'VAT filing deadline in 5 days', module: 'Tax' },
+                { level: 'medium', text: 'Audit committee meeting pending', module: 'Compliance' },
+                { level: 'low', text: 'Annual review scheduled', module: 'HR' }
+              ]}
+              renderItem={(item) => (
+                <List.Item>
+                  <Badge 
+                    status={item.level === 'high' ? 'error' : item.level === 'medium' ? 'warning' : 'processing'} 
+                  />
+                  <Text>{item.text}</Text>
+                  <Tag>{item.module}</Tag>
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+      </Row>
+    </>
+  );
+
+  // Render Executive Dashboard
+  const renderExecutiveDashboard = () => (
+    <>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-blue">
+            <Statistic 
+              title="Monthly Revenue" 
+              value={4250000} 
+              prefix="R" 
+              valueStyle={{ color: '#667eea' }}
+            />
+            <div className="kpi-change positive"><ArrowUpOutlined /> 8.3% vs LM</div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-green">
+            <Statistic 
+              title="Outstanding Invoices" 
+              value={1850000} 
+              prefix="R" 
+              valueStyle={{ color: '#10b981' }}
+            />
+            <div className="kpi-change">42 invoices pending</div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-purple">
+            <Statistic 
+              title="Pending Approvals" 
+              value={12} 
+              valueStyle={{ color: '#8b5cf6' }}
+            />
+            <div className="kpi-change warning">3 urgent</div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-amber">
+            <Statistic 
+              title="Team Productivity" 
+              value={94} 
+              suffix="%" 
+              valueStyle={{ color: '#f59e0b' }}
+            />
+            <div className="kpi-change positive"><ArrowUpOutlined /> 2.1% WoW</div>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={12}>
+          <Card 
+            title={<><CheckCircleOutlined /> Pending Approvals</>}
+            extra={<Button type="primary" size="small">View All</Button>}
+            className="workspace-card"
+          >
+            <Table
+              size="small"
+              dataSource={[
+                { id: 1, type: 'Purchase Order', ref: 'PO-2025-0089', amount: 125000, requester: 'John M.' },
+                { id: 2, type: 'Leave Request', ref: 'LV-0234', amount: null, requester: 'Sarah K.' },
+                { id: 3, type: 'Expense Claim', ref: 'EXP-0156', amount: 8500, requester: 'Mike T.' },
+              ]}
+              columns={[
+                { title: 'Type', dataIndex: 'type', key: 'type', render: (t) => <Tag>{t}</Tag> },
+                { title: 'Reference', dataIndex: 'ref', key: 'ref' },
+                { title: 'Amount', dataIndex: 'amount', key: 'amount', render: (v) => v ? `R ${v.toLocaleString()}` : '-' },
+                { 
+                  title: 'Action', 
+                  key: 'action', 
+                  render: () => (
+                    <Space>
+                      <Button size="small" type="primary">Approve</Button>
+                      <Button size="small">Reject</Button>
+                    </Space>
+                  )
+                }
+              ]}
+              pagination={false}
+              rowKey="id"
+            />
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card 
+            title={<><TeamOutlined /> Department Performance</>}
+            className="workspace-card"
+          >
+            {['Sales', 'Operations', 'Finance', 'HR'].map((dept, idx) => (
+              <div key={dept} style={{ marginBottom: 16 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <Text>{dept}</Text>
+                  <Text type="secondary">{[92, 88, 95, 91][idx]}%</Text>
+                </div>
+                <Progress 
+                  percent={[92, 88, 95, 91][idx]} 
+                  strokeColor={['#667eea', '#10b981', '#3b82f6', '#f59e0b'][idx]}
+                  showInfo={false}
+                />
+              </div>
+            ))}
+          </Card>
+        </Col>
+      </Row>
+    </>
+  );
+
+  // Render Accountant Dashboard
+  const renderAccountantDashboard = () => (
+    <>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-blue">
+            <Statistic 
+              title="Bank Balance" 
+              value={2450000} 
+              prefix="R" 
+              valueStyle={{ color: '#667eea' }}
+            />
+            <div className="kpi-change">All accounts</div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-green">
+            <Statistic 
+              title="Reconciliation Rate" 
+              value={98.5} 
+              suffix="%" 
+              valueStyle={{ color: '#10b981' }}
+            />
+            <div className="kpi-change positive">15 items pending</div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-purple">
+            <Statistic 
+              title="Unposted Journals" 
+              value={8} 
+              valueStyle={{ color: '#8b5cf6' }}
+            />
+            <div className="kpi-change warning">Review required</div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-amber">
+            <Statistic 
+              title="Next Tax Deadline" 
+              value="5" 
+              suffix="days" 
+              valueStyle={{ color: '#f59e0b' }}
+            />
+            <div className="kpi-change">VAT201 December</div>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={12}>
+          <Card 
+            title={<><SyncOutlined /> Today's Reconciliations</>}
+            extra={<Button type="link" onClick={() => navigate('/app/banking-hub')}>Open Bank Hub →</Button>}
+            className="workspace-card"
+          >
+            <Table
+              size="small"
+              dataSource={[
+                { account: 'FNB Current', balance: 1250000, bookBalance: 1248500, variance: 1500, status: 'pending' },
+                { account: 'FNB Savings', balance: 850000, bookBalance: 850000, variance: 0, status: 'matched' },
+                { account: 'Nedbank', balance: 350000, bookBalance: 350000, variance: 0, status: 'matched' },
+              ]}
+              columns={[
+                { title: 'Account', dataIndex: 'account', key: 'account' },
+                { title: 'Statement', dataIndex: 'balance', key: 'balance', render: (v) => `R ${v.toLocaleString()}` },
+                { title: 'Book', dataIndex: 'bookBalance', key: 'book', render: (v) => `R ${v.toLocaleString()}` },
+                { 
+                  title: 'Status', 
+                  dataIndex: 'status', 
+                  key: 'status',
+                  render: (s) => (
+                    <Tag color={s === 'matched' ? 'green' : 'orange'}>
+                      {s === 'matched' ? 'Reconciled' : 'Pending'}
+                    </Tag>
+                  )
+                }
+              ]}
+              pagination={false}
+              rowKey="account"
+            />
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card 
+            title={<><AuditOutlined /> Compliance Calendar</>}
+            className="workspace-card"
+          >
+            <Timeline
+              items={[
+                { color: 'red', children: <><Text strong>VAT201</Text> - Due 25 Dec 2025</> },
+                { color: 'orange', children: <><Text strong>EMP201</Text> - Due 7 Jan 2026</> },
+                { color: 'blue', children: <><Text strong>Annual Returns</Text> - Due 31 Jan 2026</> },
+                { color: 'green', children: <><Text strong>Provisional Tax</Text> - Due 28 Feb 2026</> },
+              ]}
+            />
+          </Card>
+        </Col>
+      </Row>
+    </>
+  );
+
+  // Render Staff Dashboard
+  const renderStaffDashboard = () => (
+    <>
+      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-blue">
+            <Statistic 
+              title="My Tasks" 
+              value={7} 
+              valueStyle={{ color: '#667eea' }}
+            />
+            <div className="kpi-change">3 due today</div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-green">
+            <Statistic 
+              title="Completed This Week" 
+              value={12} 
+              valueStyle={{ color: '#10b981' }}
+            />
+            <div className="kpi-change positive"><ArrowUpOutlined /> Great progress!</div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-purple">
+            <Statistic 
+              title="Hours Logged" 
+              value={38.5} 
+              suffix="hrs" 
+              valueStyle={{ color: '#8b5cf6' }}
+            />
+            <div className="kpi-change">This week</div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="kpi-card gradient-amber">
+            <Statistic 
+              title="Leave Balance" 
+              value={15} 
+              suffix="days" 
+              valueStyle={{ color: '#f59e0b' }}
+            />
+            <div className="kpi-change">Annual leave</div>
+          </Card>
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={16}>
+          <Card 
+            title={<><CheckCircleOutlined /> My Tasks</>}
+            extra={<Button type="primary" size="small" icon={<PlusOutlined />}>Add Task</Button>}
+            className="workspace-card"
+          >
+            <List
+              dataSource={[
+                { id: 1, task: 'Complete monthly report', due: 'Today', priority: 'high', project: 'Finance' },
+                { id: 2, task: 'Review supplier invoices', due: 'Today', priority: 'medium', project: 'Purchase' },
+                { id: 3, task: 'Update client records', due: 'Tomorrow', priority: 'low', project: 'Sales' },
+                { id: 4, task: 'Prepare presentation', due: 'Dec 15', priority: 'medium', project: 'Marketing' },
+              ]}
+              renderItem={(item) => (
+                <List.Item
+                  actions={[
+                    <Button size="small" type="link">Complete</Button>,
+                    <Button size="small" type="link">Edit</Button>
+                  ]}
+                >
+                  <List.Item.Meta
+                    avatar={
+                      <Tag color={
+                        item.priority === 'high' ? 'red' : 
+                        item.priority === 'medium' ? 'orange' : 'blue'
+                      }>
+                        {item.priority}
+                      </Tag>
+                    }
+                    title={item.task}
+                    description={`Due: ${item.due} • ${item.project}`}
+                  />
+                </List.Item>
+              )}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} lg={8}>
+          <Card 
+            title={<><CalendarOutlined /> Today's Schedule</>}
+            className="workspace-card"
+          >
+            <Timeline
+              items={[
+                { color: 'blue', children: <><Text strong>9:00 AM</Text> - Team standup</> },
+                { color: 'green', children: <><Text strong>11:00 AM</Text> - Client call</> },
+                { color: 'purple', children: <><Text strong>2:00 PM</Text> - Training session</> },
+                { color: 'gray', children: <><Text strong>4:30 PM</Text> - End of day review</> },
+              ]}
+            />
+          </Card>
+        </Col>
+      </Row>
+    </>
+  );
+
+  // Role-specific dashboard renderer
+  const renderDashboard = () => {
+    switch (userRole) {
+      case 'director':
+        return renderDirectorDashboard();
+      case 'executive':
+        return renderExecutiveDashboard();
+      case 'accountant':
+        return renderAccountantDashboard();
+      case 'staff':
+        return renderStaffDashboard();
+      case 'manager':
+      default:
+        return renderExecutiveDashboard(); // Managers see similar to executives
+    }
+  };
+
+  const roleLabels: Record<UserRole, string> = {
+    director: 'Director',
+    executive: 'Executive',
+    manager: 'Manager',
+    accountant: 'Accountant',
+    staff: 'Team Member'
+  };
+
+  return (
+    <div className="role-workspace">
+      {/* Welcome Header */}
+      <div className="workspace-header">
+        <div className="welcome-section">
+          <Title level={3} style={{ margin: 0 }}>
+            {greeting}, {currentUser?.firstName || 'there'}! 👋
+          </Title>
+          <Text type="secondary">
+            Here's your personalized workspace for today, {new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}
+          </Text>
+        </div>
+        <div className="workspace-controls">
+          <Segmented
+            options={[
+              { value: 'director', label: 'Director' },
+              { value: 'executive', label: 'Executive' },
+              { value: 'manager', label: 'Manager' },
+              { value: 'accountant', label: 'Accountant' },
+              { value: 'staff', label: 'Staff' }
+            ]}
+            value={userRole}
+            onChange={(value) => setUserRole(value as UserRole)}
+          />
+          <Button icon={<SettingOutlined />} onClick={() => navigate('/app/profile')}>
+            Customize
+          </Button>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="quick-actions-bar">
+        {getQuickActions().map((action, idx) => (
+          <div 
+            key={idx}
+            className="quick-action-item"
+            onClick={() => navigate(action.path)}
+            style={{ '--action-color': action.color } as React.CSSProperties}
+          >
+            <div className="action-icon">{action.icon}</div>
+            <span className="action-label">{action.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Role-specific Dashboard */}
+      <div className="workspace-content">
+        {renderDashboard()}
+      </div>
+    </div>
+  );
+};
+
+export default RoleBasedWorkspace;

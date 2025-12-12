@@ -155,6 +155,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false }) => {
           </div>
           {adminExpanded && (
             <>
+              <Link to="/admin" className={`sidebar-item ${isActive('/admin') ? 'active' : ''}`}>
+                <span className="sidebar-icon">⚙️</span>
+                <span className="sidebar-label">Admin Hub</span>
+              </Link>
               <Link to="/tenant-settings" className={`sidebar-item ${isActive('/tenant-settings') ? 'active' : ''}`}>
                 <span className="sidebar-icon">🏢</span>
                 <span className="sidebar-label">Company Setup</span>

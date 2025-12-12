@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, Button, Space, Select, Tag, Avatar, Tooltip, DatePicker, Row, Col, Badge } from 'antd';
 import { 
   ZoomInOutlined, ZoomOutOutlined, FullscreenOutlined, FilterOutlined,
-  LeftOutlined, RightOutlined, TodayOutlined, DownloadOutlined
+  LeftOutlined, RightOutlined, CalendarOutlined, DownloadOutlined
 } from '@ant-design/icons';
 import './GanttView.css';
 
@@ -253,7 +253,7 @@ const GanttView: React.FC = () => {
         <Space>
           <Button.Group>
             <Button icon={<LeftOutlined />} onClick={() => navigateTimeline('prev')} />
-            <Button icon={<TodayOutlined />} onClick={goToToday}>Today</Button>
+            <Button icon={<CalendarOutlined />} onClick={goToToday}>Today</Button>
             <Button icon={<RightOutlined />} onClick={() => navigateTimeline('next')} />
           </Button.Group>
           <Select value={zoom} onChange={setZoom} style={{ width: 100 }}>
