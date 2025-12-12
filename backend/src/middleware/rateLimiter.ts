@@ -1,6 +1,4 @@
 import rateLimit from 'express-rate-limit';
-import RedisStore from 'rate-limit-redis';
-import { getRedisClient } from '../config/redis-connection';
 
 /**
  * Rate Limiting Middleware Configuration
@@ -8,16 +6,30 @@ import { getRedisClient } from '../config/redis-connection';
  * Protects against brute force attacks and API abuse
  * Different limits for different endpoint types
  * 
- * Uses Redis for distributed state management across instances/processes.
+ * Uses in-memory store by default, Redis can be enabled when available.
  */
 
-// Helper to create Redis Store
-const createStore = (prefix: string) => {
-  return new RedisStore({
-    sendCommand: (...args: string[]) => (getRedisClient() as any).call(...args),
-    prefix: `rl:${prefix}:`, // Unique prefix for each limiter
-  });
-};
+// Try to use Redis store if available, otherwise use default memory store
+let createStore: ((prefix: string) => any) | null = null;
+
+try {
+  // Dynamically require to avoid crashes when Redis is not available
+  const RedisStore = require('rate-limit-redis').default;
+  const { getRedisClient } = require('../config/redis-connection');
+  const redisClient = getRedisClient();
+  
+  if (redisClient) {
+    createStore = (prefix: string) => {
+      return new RedisStore({
+        sendCommand: (...args: string[]) => (redisClient as any).call(...args),
+        prefix: `rl:${prefix}:`,
+      });
+    };
+    console.log('📊 Rate limiter using Redis store');
+  }
+} catch (e) {
+  console.log('📊 Rate limiter using memory store (Redis not available)');
+}
 
 // General API rate limiter - 1000 requests per 15 minutes
 export const apiLimiter = rateLimit({
@@ -29,7 +41,7 @@ export const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  store: createStore('api'),
+  ...(createStore ? { store: createStore('api') } : {}),
 });
 
 // Strict rate limiter for authentication endpoints - 5 requests per 15 minutes
@@ -43,7 +55,7 @@ export const authLimiter = rateLimit({
   skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
-  store: createStore('auth'),
+  ...(createStore ? { store: createStore('auth') } : {}),
 });
 
 // Moderate rate limiter for password reset - 3 requests per hour
@@ -56,7 +68,7 @@ export const passwordResetLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  store: createStore('pwd_reset'),
+  ...(createStore ? { store: createStore('pwd_reset') } : {}),
 });
 
 // Demo access rate limiter - 10 demo accesses per hour per IP
@@ -69,7 +81,7 @@ export const demoLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  store: createStore('demo'),
+  ...(createStore ? { store: createStore('demo') } : {}),
 });
 
 // Payment webhook rate limiter - More generous for payment gateways
@@ -82,7 +94,7 @@ export const webhookLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  store: createStore('webhook'),
+  ...(createStore ? { store: createStore('webhook') } : {}),
 });
 
 // Super admin endpoints - More generous for administrative tasks
@@ -95,7 +107,7 @@ export const adminLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  store: createStore('admin'),
+  ...(createStore ? { store: createStore('admin') } : {}),
 });
 
 // File upload rate limiter - 20 uploads per hour
@@ -108,5 +120,5 @@ export const uploadLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  store: createStore('upload'),
+  ...(createStore ? { store: createStore('upload') } : {}),
 });
