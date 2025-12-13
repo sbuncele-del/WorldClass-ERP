@@ -1,8 +1,16 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { TenantRequest } from '../../../types';
 import { PartialReconciliationService, PartialMatchRequest } from '../services/partial-reconciliation.service';
 import pool from '../../../config/database';
 
 const partialReconciliationService = new PartialReconciliationService(pool);
+
+/**
+ * Helper to extract tenant ID with type safety
+ */
+function getTenantId(req: TenantRequest): string | null {
+  return req.tenant?.id ?? null;
+}
 
 /**
  * POST /api/cash-management/partial-matching/accept
@@ -10,11 +18,18 @@ const partialReconciliationService = new PartialReconciliationService(pool);
  * 
  * Body: PartialMatchRequest
  */
-export async function acceptPartialMatch(req: Request, res: Response) {
+export async function acceptPartialMatch(req: TenantRequest, res: Response) {
   try {
-    const tenantId = (req as any).tenantId;
-    const userId = (req as any).userId;
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
     const request: PartialMatchRequest = req.body;
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Tenant ID not found'
+      });
+    }
 
     if (!request.bankStatementLineId) {
       return res.status(400).json({
@@ -69,10 +84,17 @@ export async function acceptPartialMatch(req: Request, res: Response) {
  * GET /api/cash-management/partial-matching/:bankLineId/suggestions
  * Find potential partial matches for a bank line
  */
-export async function findPartialMatchSuggestions(req: Request, res: Response) {
+export async function findPartialMatchSuggestions(req: TenantRequest, res: Response) {
   try {
-    const tenantId = (req as any).tenantId;
+    const tenantId = getTenantId(req);
     const { bankLineId } = req.params;
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Tenant ID not found'
+      });
+    }
 
     if (!bankLineId) {
       return res.status(400).json({
@@ -110,10 +132,17 @@ export async function findPartialMatchSuggestions(req: Request, res: Response) {
  * 
  * Body: { amount1: number, amount2: number }
  */
-export async function checkTolerance(req: Request, res: Response) {
+export async function checkTolerance(req: TenantRequest, res: Response) {
   try {
-    const tenantId = (req as any).tenantId;
+    const tenantId = getTenantId(req);
     const { amount1, amount2 } = req.body;
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Tenant ID not found'
+      });
+    }
 
     if (amount1 === undefined || amount2 === undefined) {
       return res.status(400).json({
@@ -146,9 +175,16 @@ export async function checkTolerance(req: Request, res: Response) {
  * GET /api/cash-management/partial-matching/tolerance-settings
  * Get tolerance settings for tenant
  */
-export async function getToleranceSettings(req: Request, res: Response) {
+export async function getToleranceSettings(req: TenantRequest, res: Response) {
   try {
-    const tenantId = (req as any).tenantId;
+    const tenantId = getTenantId(req);
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Tenant ID not found'
+      });
+    }
 
     const settings = await partialReconciliationService.getToleranceSettings(tenantId);
 

@@ -215,6 +215,54 @@ export class AssetsController {
       });
     }
   }
+  
+  /**
+   * Get workspace summary - Demo data for dashboard
+   * GET /api/asset-management/workspace
+   */
+  async getWorkspaceSummary(_req: Request, res: Response): Promise<void> {
+    try {
+      res.json({
+        success: true,
+        data: {
+          summary: {
+            totalAssets: 847,
+            activeAssets: 792,
+            disposedAssets: 42,
+            underMaintenanceAssets: 13,
+            totalValue: 125000000,
+            totalDepreciation: 42500000,
+            netBookValue: 82500000,
+            assetsRequiringAttention: 8
+          },
+          assetsByCategory: [
+            { category: 'Property & Buildings', count: 45, value: 65000000 },
+            { category: 'Vehicles & Fleet', count: 156, value: 18500000 },
+            { category: 'IT Equipment', count: 342, value: 8750000 },
+            { category: 'Machinery & Equipment', count: 89, value: 22000000 },
+            { category: 'Office Furniture', count: 215, value: 10750000 }
+          ],
+          recentActivities: [
+            { date: '2025-12-11', action: 'Depreciation Run', description: 'Monthly depreciation calculated for Dec 2025' },
+            { date: '2025-12-10', action: 'Asset Acquisition', description: 'New delivery vehicle added - REG ABC 123 GP' },
+            { date: '2025-12-09', action: 'Revaluation', description: 'Property revaluation completed - Main Office Building' },
+            { date: '2025-12-08', action: 'Disposal', description: 'Old IT equipment disposed - batch #2025-12-001' }
+          ],
+          upcomingDepreciation: {
+            month: 'December 2025',
+            estimatedAmount: 3250000,
+            assetsAffected: 687
+          }
+        }
+      });
+    } catch (error: any) {
+      console.error('Error getting workspace summary:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to get workspace summary'
+      });
+    }
+  }
 }
 
 export default new AssetsController();

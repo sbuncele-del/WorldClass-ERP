@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 import * as emailQueueController from '../controllers/email-queue.controller';
 
 /**
@@ -10,8 +11,9 @@ import * as emailQueueController from '../controllers/email-queue.controller';
 
 const router = Router();
 
-// Apply authentication middleware to all routes
+// Apply authentication and tenant middleware to all routes
 router.use(authenticateToken);
+router.use(tenantMiddleware);
 
 // Queue statistics
 router.get('/stats', emailQueueController.getStats);

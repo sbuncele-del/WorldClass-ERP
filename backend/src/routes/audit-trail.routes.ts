@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import auditTrailController from '../controllers/audit-trail.controller';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
+
+// Apply tenant middleware to all audit trail routes
+router.use(tenantMiddleware);
 
 // Get audit logs with filters
 router.get('/', auditTrailController.getAuditLogs.bind(auditTrailController));

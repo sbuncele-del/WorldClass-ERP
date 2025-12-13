@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import glExplorerController from '../controllers/gl-explorer.controller';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
+
+// Apply tenant middleware to all GL explorer routes
+router.use(tenantMiddleware);
 
 // Advanced search
 router.get('/search', glExplorerController.search.bind(glExplorerController));

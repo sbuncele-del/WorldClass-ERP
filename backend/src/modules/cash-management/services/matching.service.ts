@@ -30,14 +30,25 @@ export class MatchingService {
   /**
    * Run auto-matching for a bank statement
    */
-  async runAutoMatching(statementId: number, userId?: number): Promise<{
+  async runAutoMatching(statementId: number, userId?: string, tenantId?: string): Promise<{
     matched: number;
     suggestions: SuggestedMatch[];
     autoCreated: number;
   }> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     const client = await pool.connect();
     
     try {
+      // Ensure statement belongs to tenant
+      const stmtCheck = await client.query(
+        'SELECT tenant_id FROM bank_statements WHERE id = $1',
+        [statementId]
+      );
+      const stmtTenant = stmtCheck.rows[0]?.tenant_id;
+      if (!stmtTenant || stmtTenant !== tenantId) {
+        throw new Error('Statement not found for tenant');
+      }
+      
       await client.query('BEGIN');
       
       // Get unmatched lines
@@ -87,7 +98,7 @@ export class MatchingService {
                 match_type: MatchType.AUTO,
                 rule_id: rule.id,
                 confidence_score: matches[0].confidence_score
-              }, userId, client);
+              }, userId, undefined, client);
               
               matchedCount++;
               matchedThisLine = true;
@@ -111,7 +122,7 @@ export class MatchingService {
                   match_type: MatchType.SYSTEM,
                   rule_id: rule.id,
                   confidence_score: rule.confidence_score
-                }, userId, client);
+                }, userId, undefined, client);
                 
                 matchedCount++;
                 autoCreatedCount++;
@@ -485,9 +496,11 @@ export class MatchingService {
    */
   async createMatch(
     dto: CreateMatchDto | any,
-    userId?: number,
+    userId?: string,
+    tenantId?: string,
     client?: any
   ): Promise<BankReconciliationMatch> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     
     // Normalize parameter names (frontend uses camelCase, DB uses snake_case)
     const normalizedDto = {
@@ -512,13 +525,19 @@ export class MatchingService {
       
       // Get amounts
       const lineResult = await client.query(
-        'SELECT debit_amount, credit_amount FROM bank_statement_lines WHERE id = $1',
+        `SELECT bsl.debit_amount, bsl.credit_amount, bs.tenant_id
+         FROM bank_statement_lines bsl
+         JOIN bank_statements bs ON bsl.bank_statement_id = bs.id
+         WHERE bsl.id = $1`,
         [normalizedDto.bank_statement_line_id]
       );
       
       const line = lineResult.rows[0];
       if (!line) {
         throw new Error(`Bank statement line with ID ${normalizedDto.bank_statement_line_id} not found`);
+      }
+      if (line.tenant_id !== tenantId) {
+        throw new Error('Bank statement line does not belong to tenant');
       }
       const statementAmount = line.debit_amount > 0 ? line.debit_amount : line.credit_amount;
       
@@ -543,8 +562,8 @@ export class MatchingService {
         INSERT INTO bank_reconciliation_matches (
           bank_statement_line_id, journal_entry_id, journal_entry_line_id,
           match_type, matched_by, rule_id, confidence_score,
-          statement_amount, journal_amount, status, notes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          statement_amount, journal_amount, status, notes, tenant_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `;
       
@@ -559,7 +578,8 @@ export class MatchingService {
         statementAmount,
         journalAmount,
         MatchStatus.ACTIVE,
-        normalizedDto.notes || null
+        normalizedDto.notes || null,
+        tenantId
       ];
       
       const matchResult = await client.query(matchQuery, matchValues);
@@ -703,7 +723,8 @@ export class MatchingService {
   /**
    * Unmatch a transaction
    */
-  async unmatch(dto: UnmatchDto, userId?: number): Promise<void> {
+  async unmatch(dto: UnmatchDto, userId?: string, tenantId?: string): Promise<void> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     const client = await pool.connect();
     
     try {
@@ -711,8 +732,8 @@ export class MatchingService {
       
       // Get match details
       const matchResult = await client.query(
-        'SELECT * FROM bank_reconciliation_matches WHERE id = $1',
-        [dto.match_id]
+        'SELECT * FROM bank_reconciliation_matches WHERE id = $1 AND tenant_id = $2',
+        [dto.match_id, tenantId]
       );
       
       const match = matchResult.rows[0];
@@ -728,8 +749,8 @@ export class MatchingService {
             unmatched_at = NOW(),
             unmatched_by = $2,
             unmatch_reason = $3
-        WHERE id = $4
-      `, [MatchStatus.UNMATCHED, userId, dto.unmatch_reason, dto.match_id]);
+        WHERE id = $4 AND tenant_id = $5
+      `, [MatchStatus.UNMATCHED, userId, dto.unmatch_reason, dto.match_id, tenantId]);
       
       // Update statement line
       await client.query(`
@@ -770,7 +791,7 @@ export class MatchingService {
     line: BankStatementLine,
     rule: BankReconciliationRule,
     client: any,
-    userId?: number
+    userId?: string
   ): Promise<any> {
     
     if (!rule.default_account_code) {
@@ -868,16 +889,20 @@ export class MatchingService {
   /**
    * Get reconciliation workspace data for a statement
    */
-  async getReconciliationWorkspace(statementId: number): Promise<ReconciliationWorkspaceData> {
+  async getReconciliationWorkspace(statementId: number, tenantId?: string): Promise<ReconciliationWorkspaceData> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     const client = await pool.connect();
     
     try {
       // Get statement
       const statementResult = await client.query(
-        'SELECT * FROM bank_statements WHERE id = $1',
-        [statementId]
+        'SELECT * FROM bank_statements WHERE id = $1 AND tenant_id = $2',
+        [statementId, tenantId]
       );
       const statement = statementResult.rows[0];
+      if (!statement) {
+        throw new Error('Statement not found for tenant');
+      }
       
       // Get all lines
       const linesResult = await client.query(
@@ -969,13 +994,14 @@ export class MatchingService {
   async checkDuplicates(
     bankStatementLineId: number,
     journalEntryLineId: number,
-    tenantId: number
+    tenantId?: string
   ): Promise<{
     isDuplicate: boolean;
     warnings: string[];
     duplicateType?: 'BANK_LINE_MATCHED' | 'JOURNAL_LINE_MATCHED' | 'SIMILAR_TRANSACTION';
     duplicateDetails?: any;
   }> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     const client = await pool.connect();
     
     try {
@@ -993,8 +1019,9 @@ export class MatchingService {
          FROM bank_reconciliation_matches brm
          LEFT JOIN users u ON brm.matched_by = u.id
          WHERE brm.bank_statement_line_id = $1 
-         AND brm.status = 'ACTIVE'`,
-        [bankStatementLineId]
+         AND brm.status = 'ACTIVE'
+         AND brm.tenant_id = $2`,
+        [bankStatementLineId, tenantId]
       );
 
       if (bankLineMatchResult.rows.length > 0) {
@@ -1021,8 +1048,9 @@ export class MatchingService {
          JOIN bank_statement_lines bsl ON brm.bank_statement_line_id = bsl.id
          LEFT JOIN users u ON brm.matched_by = u.id
          WHERE brm.journal_entry_line_id = $1 
-         AND brm.status = 'ACTIVE'`,
-        [journalEntryLineId]
+         AND brm.status = 'ACTIVE'
+         AND brm.tenant_id = $2`,
+        [journalEntryLineId, tenantId]
       );
 
       if (journalLineMatchResult.rows.length > 0) {
@@ -1124,13 +1152,14 @@ export class MatchingService {
    * Useful for cleanup and auditing
    */
   async findPotentialDuplicates(
-    tenantId: number,
+    tenantId?: string,
     options: {
       dateRange?: number; // Days, default 30
       amountTolerance?: number; // Default 0.01
       includeMatched?: boolean; // Default false
     } = {}
   ): Promise<any[]> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     const {
       dateRange = 30,
       amountTolerance = 0.01,

@@ -8,11 +8,13 @@
 import { Router, Request, Response } from 'express';
 import { dailyMeetingService } from '../services/daily-meeting.service';
 import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
 
-// All routes require authentication
+// All routes require authentication and tenant context
 router.use(authenticateToken);
+router.use(tenantMiddleware);
 
 /**
  * GET /api/meetings/status
@@ -21,6 +23,8 @@ router.use(authenticateToken);
 router.get('/status', async (req: Request, res: Response) => {
   try {
     const isConfigured = dailyMeetingService.isConfigured();
+    // Temp debug to confirm runtime env
+    console.log('[Meetings] status check - configured:', isConfigured, 'key length:', process.env.DAILY_API_KEY?.length || 0);
     
     if (isConfigured) {
       const accountInfo = await dailyMeetingService.getAccountInfo();
@@ -55,9 +59,11 @@ router.get('/status', async (req: Request, res: Response) => {
 router.post('/instant', async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
+    const tenant = (req as any).tenant;
     const hostName = user?.name || user?.email || 'Host';
+    const tenantContext = { tenantId: tenant?.id || 'default', userId: user?.id };
 
-    const meeting = await dailyMeetingService.createInstantMeeting(hostName);
+    const meeting = await dailyMeetingService.createInstantMeeting(tenantContext, hostName);
 
     res.json({
       success: true,
@@ -86,6 +92,7 @@ router.post('/instant', async (req: Request, res: Response) => {
 router.post('/schedule', async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
+    const tenant = (req as any).tenant;
     const {
       title,
       startTime,
@@ -102,8 +109,9 @@ router.post('/schedule', async (req: Request, res: Response) => {
     }
 
     const hostName = user?.name || user?.email || 'Host';
+    const tenantContext = { tenantId: tenant?.id || 'default', userId: user?.id };
 
-    const meeting = await dailyMeetingService.scheduleMeeting({
+    const meeting = await dailyMeetingService.scheduleMeeting(tenantContext, {
       title,
       startTime: new Date(startTime),
       durationMinutes,
@@ -141,6 +149,8 @@ router.post('/schedule', async (req: Request, res: Response) => {
  */
 router.post('/room', async (req: Request, res: Response) => {
   try {
+    const user = (req as any).user;
+    const tenant = (req as any).tenant;
     const {
       name,
       expiryMinutes = 120,
@@ -150,7 +160,8 @@ router.post('/room', async (req: Request, res: Response) => {
       isWebinar = false
     } = req.body;
 
-    const room = await dailyMeetingService.createRoom({
+    const tenantContext = { tenantId: tenant?.id || 'default', userId: user?.id };
+    const room = await dailyMeetingService.createRoom(tenantContext, {
       name,
       expiryMinutes,
       maxParticipants,
@@ -184,8 +195,11 @@ router.post('/room', async (req: Request, res: Response) => {
  */
 router.get('/rooms', async (req: Request, res: Response) => {
   try {
+    const user = (req as any).user;
+    const tenant = (req as any).tenant;
     const limit = parseInt(req.query.limit as string) || 50;
-    const rooms = await dailyMeetingService.listRooms(limit);
+    const tenantContext = { tenantId: tenant?.id || 'default', userId: user?.id };
+    const rooms = await dailyMeetingService.listRooms(tenantContext, limit);
 
     res.json({
       success: true,
@@ -212,8 +226,11 @@ router.get('/rooms', async (req: Request, res: Response) => {
  */
 router.get('/room/:name', async (req: Request, res: Response) => {
   try {
+    const user = (req as any).user;
+    const tenant = (req as any).tenant;
     const { name } = req.params;
-    const room = await dailyMeetingService.getRoom(name);
+    const tenantContext = { tenantId: tenant?.id || 'default', userId: user?.id };
+    const room = await dailyMeetingService.getRoom(tenantContext, name);
 
     if (!room) {
       return res.status(404).json({
@@ -247,8 +264,11 @@ router.get('/room/:name', async (req: Request, res: Response) => {
  */
 router.delete('/room/:name', async (req: Request, res: Response) => {
   try {
+    const user = (req as any).user;
+    const tenant = (req as any).tenant;
     const { name } = req.params;
-    const deleted = await dailyMeetingService.deleteRoom(name);
+    const tenantContext = { tenantId: tenant?.id || 'default', userId: user?.id };
+    const deleted = await dailyMeetingService.deleteRoom(tenantContext, name);
 
     res.json({
       success: deleted,
@@ -270,6 +290,7 @@ router.delete('/room/:name', async (req: Request, res: Response) => {
 router.post('/token', async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
+    const tenant = (req as any).tenant;
     const {
       roomName,
       userName,
@@ -285,17 +306,18 @@ router.post('/token', async (req: Request, res: Response) => {
     }
 
     const participantName = userName || user?.name || user?.email || 'Participant';
+    const tenantContext = { tenantId: tenant?.id || 'default', userId: user?.id };
 
-    const token = await dailyMeetingService.createMeetingToken({
+    const token = await dailyMeetingService.createMeetingToken(tenantContext, {
       roomName,
       userName: participantName,
       isOwner,
       expiryMinutes,
-      userId: user?.id
+      participantUserId: user?.id
     });
 
     // Get the room URL
-    const room = await dailyMeetingService.getRoom(roomName);
+    const room = await dailyMeetingService.getRoom(tenantContext, roomName);
 
     res.json({
       success: true,
@@ -317,6 +339,8 @@ router.post('/token', async (req: Request, res: Response) => {
  */
 router.post('/invite', async (req: Request, res: Response) => {
   try {
+    const user = (req as any).user;
+    const tenant = (req as any).tenant;
     const {
       roomName,
       guestName = 'Guest',
@@ -330,7 +354,9 @@ router.post('/invite', async (req: Request, res: Response) => {
       });
     }
 
+    const tenantContext = { tenantId: tenant?.id || 'default', userId: user?.id };
     const invite = await dailyMeetingService.createGuestInvite(
+      tenantContext,
       roomName,
       guestName,
       expiryMinutes
@@ -360,8 +386,11 @@ router.post('/invite', async (req: Request, res: Response) => {
  */
 router.get('/logs/:roomName', async (req: Request, res: Response) => {
   try {
+    const user = (req as any).user;
+    const tenant = (req as any).tenant;
     const { roomName } = req.params;
-    const logs = await dailyMeetingService.getMeetingLogs(roomName);
+    const tenantContext = { tenantId: tenant?.id || 'default', userId: user?.id };
+    const logs = await dailyMeetingService.getMeetingLogs(tenantContext, roomName);
 
     res.json({
       success: true,

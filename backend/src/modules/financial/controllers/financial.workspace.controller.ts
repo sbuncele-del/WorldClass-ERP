@@ -1,5 +1,11 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { query } from '../../../config/database';
+import { TenantRequest } from '../../../types';
+
+// Ensure we consistently enforce tenant context for workspace data
+function getTenantId(req: TenantRequest): string | null {
+  return req.tenant?.id ?? null;
+}
 
 /**
  * Financial Workspace Controller
@@ -10,9 +16,9 @@ import { query } from '../../../config/database';
  * GET /api/financial/workspace
  * Returns all data needed for the Financial Management workspace dashboard
  */
-export const getFinancialWorkspace = async (req: Request, res: Response) => {
+export const getFinancialWorkspace = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = (req as any).tenant?.id;
+    const tenantId = getTenantId(req);
 
     if (!tenantId) {
       return res.status(401).json({
@@ -76,7 +82,11 @@ async function getAccountBalances(tenantId: string) {
     [tenantId]
   );
 
-  return result.rows;
+  return result.rows.map((row) => ({
+    account_type: row.account_type,
+    account_count: Number(row.account_count) || 0,
+    total_balance: Number(row.total_balance) || 0,
+  }));
 }
 
 /**
@@ -104,7 +114,11 @@ async function getRecentTransactions(tenantId: string) {
     [tenantId]
   );
 
-  return result.rows;
+  return result.rows.map((row) => ({
+    ...row,
+    debit: Number(row.debit) || 0,
+    credit: Number(row.credit) || 0,
+  }));
 }
 
 /**
@@ -130,7 +144,11 @@ async function getCashFlowData(tenantId: string) {
     [tenantId]
   );
 
-  return result.rows;
+  return result.rows.map((row) => ({
+    month: row.month,
+    cash_inflow: Number(row.cash_inflow) || 0,
+    cash_outflow: Number(row.cash_outflow) || 0,
+  }));
 }
 
 /**
@@ -158,7 +176,11 @@ async function getPendingReconciliations(tenantId: string) {
     [tenantId]
   );
 
-  return result.rows[0] || { pending_count: 0, total_unreconciled: 0 };
+  const row = result.rows[0];
+  return {
+    pending_count: Number(row?.pending_count) || 0,
+    total_unreconciled: Number(row?.total_unreconciled) || 0,
+  };
 }
 
 /**
@@ -178,19 +200,20 @@ async function getFinancialSummary(tenantId: string) {
     `,
     [tenantId]
   );
+  const summary = result.rows[0] || {};
 
-  const summary = result.rows[0] || {
-    total_assets: 0,
-    total_liabilities: 0,
-    total_equity: 0,
-    total_revenue: 0,
-    total_expenses: 0,
+  const totals = {
+    total_assets: Number(summary.total_assets) || 0,
+    total_liabilities: Number(summary.total_liabilities) || 0,
+    total_equity: Number(summary.total_equity) || 0,
+    total_revenue: Number(summary.total_revenue) || 0,
+    total_expenses: Number(summary.total_expenses) || 0,
   };
 
-  // Calculate net profit
-  summary.net_profit = parseFloat(summary.total_revenue || 0) - parseFloat(summary.total_expenses || 0);
-
-  return summary;
+  return {
+    ...totals,
+    net_profit: totals.total_revenue - totals.total_expenses,
+  };
 }
 
 /**

@@ -1,8 +1,16 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { TenantRequest } from '../../../types';
 import { MultiLineMatchingService } from '../services/multi-line-matching.service';
 import pool from '../../../config/database';
 
 const multiLineMatchingService = new MultiLineMatchingService(pool);
+
+/**
+ * Helper to extract tenant ID with type safety
+ */
+function getTenantId(req: TenantRequest): string | null {
+  return req.tenant?.id ?? null;
+}
 
 /**
  * POST /api/cash-management/multi-line-matching/find
@@ -19,10 +27,17 @@ const multiLineMatchingService = new MultiLineMatchingService(pool);
  *   }
  * }
  */
-export async function findMultiLineMatches(req: Request, res: Response) {
+export async function findMultiLineMatches(req: TenantRequest, res: Response) {
   try {
-    const tenantId = (req as any).tenantId;
+    const tenantId = getTenantId(req);
     const { bankLineIds, options } = req.body;
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Tenant ID not found'
+      });
+    }
 
     if (!bankLineIds || !Array.isArray(bankLineIds) || bankLineIds.length === 0) {
       return res.status(400).json({
@@ -72,11 +87,18 @@ export async function findMultiLineMatches(req: Request, res: Response) {
  *   notes?: string
  * }
  */
-export async function createMultiLineMatch(req: Request, res: Response) {
+export async function createMultiLineMatch(req: TenantRequest, res: Response) {
   try {
-    const tenantId = (req as any).tenantId;
-    const userId = (req as any).userId;
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
     const { combination, notes } = req.body;
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Tenant ID not found'
+      });
+    }
 
     if (!combination) {
       return res.status(400).json({
@@ -130,11 +152,18 @@ export async function createMultiLineMatch(req: Request, res: Response) {
  * DELETE /api/cash-management/multi-line-matching/:groupId
  * Unmatch a multi-line group
  */
-export async function unmatchMultiLineGroup(req: Request, res: Response) {
+export async function unmatchMultiLineGroup(req: TenantRequest, res: Response) {
   try {
-    const tenantId = (req as any).tenantId;
-    const userId = (req as any).userId;
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
     const { groupId } = req.params;
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Tenant ID not found'
+      });
+    }
 
     if (!groupId) {
       return res.status(400).json({
@@ -167,10 +196,17 @@ export async function unmatchMultiLineGroup(req: Request, res: Response) {
  * GET /api/cash-management/multi-line-matching/groups
  * Get all multi-line match groups for tenant
  */
-export async function getMultiLineMatchGroups(req: Request, res: Response) {
+export async function getMultiLineMatchGroups(req: TenantRequest, res: Response) {
   try {
-    const tenantId = (req as any).tenantId;
+    const tenantId = getTenantId(req);
     const { status } = req.query;
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Tenant ID not found'
+      });
+    }
 
     let query = `
       SELECT 

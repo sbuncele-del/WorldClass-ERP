@@ -56,7 +56,8 @@ export interface PayslipData {
  */
 export async function getPayslipData(
   employeeId: number,
-  runId: number
+  runId: number,
+  tenantId: string
 ): Promise<PayslipData | null> {
   const client = await pool.connect();
 
@@ -75,8 +76,8 @@ export async function getPayslipData(
       FROM hr.employees e
       LEFT JOIN hr.departments d ON e.department_id = d.department_id
       LEFT JOIN hr.positions p ON e.position_id = p.position_id
-      WHERE e.employee_id = $1
-    `, [employeeId]);
+      WHERE e.tenant_id = $1 AND e.employee_id = $2
+    `, [tenantId, employeeId]);
 
     if (empResult.rows.length === 0) {
       return null;
@@ -93,8 +94,8 @@ export async function getPayslipData(
       FROM hr.payroll_run_details prd
       JOIN hr.payroll_runs pr ON prd.run_id = pr.run_id
       JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id
-      WHERE prd.run_id = $1 AND prd.employee_id = $2
-    `, [runId, employeeId]);
+      WHERE prd.tenant_id = $1 AND prd.run_id = $2 AND prd.employee_id = $3
+    `, [tenantId, runId, employeeId]);
 
     if (runResult.rows.length === 0) {
       return null;
@@ -108,10 +109,10 @@ export async function getPayslipData(
         COALESCE(pc.component_name, prl.description, 'Basic Salary') as description,
         prl.amount
       FROM hr.payroll_run_lines prl
-      LEFT JOIN hr.payroll_components pc ON prl.component_id = pc.component_id
-      WHERE prl.detail_id = $1 AND prl.line_type = 'Earning'
+      LEFT JOIN hr.payroll_components pc ON prl.component_id = pc.component_id AND pc.tenant_id = $1
+      WHERE prl.tenant_id = $1 AND prl.detail_id = $2 AND prl.line_type = 'Earning'
       ORDER BY prl.line_id
-    `, [runDetails.detail_id]);
+    `, [tenantId, runDetails.detail_id]);
 
     // Add basic salary as first earning
     const earnings = [
@@ -128,10 +129,10 @@ export async function getPayslipData(
         COALESCE(pc.component_name, prl.description, 'Deduction') as description,
         prl.amount
       FROM hr.payroll_run_lines prl
-      LEFT JOIN hr.payroll_components pc ON prl.component_id = pc.component_id
-      WHERE prl.detail_id = $1 AND prl.line_type = 'Deduction'
+      LEFT JOIN hr.payroll_components pc ON prl.component_id = pc.component_id AND pc.tenant_id = $1
+      WHERE prl.tenant_id = $1 AND prl.detail_id = $2 AND prl.line_type = 'Deduction'
       ORDER BY prl.line_id
-    `, [runDetails.detail_id]);
+    `, [tenantId, runDetails.detail_id]);
 
     const deductions = [
       { description: 'PAYE Income Tax', amount: parseFloat(runDetails.paye_tax) },
@@ -152,10 +153,10 @@ export async function getPayslipData(
       FROM hr.payroll_run_details prd
       JOIN hr.payroll_runs pr ON prd.run_id = pr.run_id
       JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id
-      WHERE prd.employee_id = $1
-        AND EXTRACT(YEAR FROM pp.period_end_date) = EXTRACT(YEAR FROM $2::DATE)
-        AND pp.period_end_date <= $2
-    `, [employeeId, runDetails.end_date]);
+      WHERE prd.tenant_id = $1 AND prd.employee_id = $2
+        AND EXTRACT(YEAR FROM pp.period_end_date) = EXTRACT(YEAR FROM $3::DATE)
+        AND pp.period_end_date <= $3
+    `, [tenantId, employeeId, runDetails.end_date]);
 
     // Get company details (from tenant settings)
     const company = {

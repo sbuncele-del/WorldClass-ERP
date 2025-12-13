@@ -17,7 +17,7 @@ import {
 
 export interface MultiLineMatchGroup {
   id?: number;
-  tenant_id: number;
+  tenant_id: string;
   group_reference: string;
   match_type: 'ONE_TO_MANY' | 'MANY_TO_ONE';
   bank_statement_line_ids: number[];
@@ -58,7 +58,7 @@ export class MultiLineMatchingService {
    */
   async findMatchingCombinations(
     bankLineIds: number[],
-    tenantId: number,
+    tenantId: string,
     options: FindCombinationsOptions = {}
   ): Promise<MatchCombination[]> {
     const {
@@ -275,8 +275,8 @@ export class MultiLineMatchingService {
    */
   async createMultiLineMatch(
     combination: MatchCombination,
-    tenantId: number,
-    userId: number,
+    tenantId: string,
+    userId?: string,
     notes?: string
   ): Promise<MultiLineMatchGroup> {
     const client = await this.pool.connect();
@@ -387,8 +387,8 @@ export class MultiLineMatchingService {
   private async createBankChargesJournal(
     combination: MatchCombination,
     groupReference: string,
-    tenantId: number,
-    userId: number,
+    tenantId: string,
+    userId: string | undefined,
     client: PoolClient
   ): Promise<void> {
     const difference = Math.abs(combination.difference);
@@ -458,8 +458,8 @@ export class MultiLineMatchingService {
    */
   async unmatchMultiLineGroup(
     groupId: number,
-    tenantId: number,
-    userId: number
+    tenantId: string,
+    userId?: string
   ): Promise<void> {
     const client = await this.pool.connect();
     try {

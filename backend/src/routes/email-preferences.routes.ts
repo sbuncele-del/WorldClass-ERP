@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import EmailPreferencesController from '../controllers/email-preferences.controller';
 import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
 
@@ -10,8 +11,9 @@ const router = Router();
  */
 router.get('/unsubscribe/:token', EmailPreferencesController.unsubscribeViaToken);
 
-// All other routes require authentication
+// All other routes require authentication and tenant context
 router.use(authenticateToken);
+router.use(tenantMiddleware);
 
 /**
  * GET /api/email-preferences

@@ -51,7 +51,8 @@ export class BankReconciliationService {
   /**
    * Get all bank accounts with bank details
    */
-  async getBankAccounts(includeInactive = false): Promise<BankAccount[]> {
+  async getBankAccounts(includeInactive = false, tenantId?: string): Promise<BankAccount[]> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     const query = `
       SELECT 
         ba.*,
@@ -60,18 +61,20 @@ export class BankReconciliationService {
         b.logo_url as bank_logo_url
       FROM cash_bank_accounts ba
       INNER JOIN cash_banks b ON ba.bank_id = b.bank_id
-      WHERE ba.is_active = true ${includeInactive ? 'OR ba.is_active = false' : ''}
+      WHERE ba.tenant_id = $1
+        AND (ba.is_active = true ${includeInactive ? 'OR ba.is_active = false' : ''})
       ORDER BY ba.is_primary DESC, ba.account_name ASC
     `;
     
-    const result = await pool.query(query);
+    const result = await pool.query(query, [tenantId]);
     return result.rows;
   }
   
   /**
    * Get single bank account by ID
    */
-  async getBankAccountById(id: number): Promise<BankAccount | null> {
+  async getBankAccountById(id: number, tenantId?: string): Promise<BankAccount | null> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     const query = `
       SELECT 
         ba.*,
@@ -79,17 +82,18 @@ export class BankReconciliationService {
         b.bank_code as bank_short_name
       FROM cash_bank_accounts ba
       INNER JOIN cash_banks b ON ba.bank_id = b.bank_id
-      WHERE ba.account_id = $1
+      WHERE ba.account_id = $1 AND ba.tenant_id = $2
     `;
     
-    const result = await pool.query(query, [id]);
+    const result = await pool.query(query, [id, tenantId]);
     return result.rows[0] || null;
   }
   
   /**
    * Create new bank account
    */
-  async createBankAccount(dto: CreateBankAccountDto, userId?: number): Promise<BankAccount> {
+  async createBankAccount(dto: CreateBankAccountDto, userId?: string, tenantId?: string): Promise<BankAccount> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     const client = await pool.connect();
     
     try {
@@ -97,15 +101,15 @@ export class BankReconciliationService {
       
       // If this is primary, unset other primary accounts
       if (dto.is_primary) {
-        await client.query('UPDATE cash_bank_accounts SET is_primary = false WHERE is_primary = true');
+        await client.query('UPDATE cash_bank_accounts SET is_primary = false WHERE tenant_id = $1 AND is_primary = true', [tenantId]);
       }
       
       const query = `
         INSERT INTO cash_bank_accounts (
           bank_id, account_number, account_name, account_type, currency,
           gl_account_code, opening_balance, current_balance,
-          is_active, is_primary, created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          is_active, is_primary, created_by, tenant_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `;
       
@@ -120,7 +124,8 @@ export class BankReconciliationService {
         dto.opening_balance || 0, // Current balance starts as opening balance
         dto.is_active !== false,
         dto.is_primary || false,
-        userId || null
+        userId || null,
+        tenantId
       ];
       
       const result = await client.query(query, values);
@@ -138,7 +143,8 @@ export class BankReconciliationService {
   /**
    * Update bank account
    */
-  async updateBankAccount(dto: UpdateBankAccountDto, userId?: number): Promise<BankAccount> {
+  async updateBankAccount(dto: UpdateBankAccountDto, userId?: string, tenantId?: string): Promise<BankAccount> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     const client = await pool.connect();
     
     try {
@@ -146,7 +152,7 @@ export class BankReconciliationService {
       
       // If setting as primary, unset others
       if (dto.is_primary) {
-        await client.query('UPDATE cash_bank_accounts SET is_primary = false WHERE account_id != $1', [dto.id]);
+        await client.query('UPDATE cash_bank_accounts SET is_primary = false WHERE tenant_id = $1 AND account_id != $2', [tenantId, dto.id]);
       }
       
       const updates: string[] = [];
@@ -179,11 +185,11 @@ export class BankReconciliationService {
       const query = `
         UPDATE cash_bank_accounts
         SET ${updates.join(', ')}
-        WHERE account_id = $${paramCount}
+        WHERE account_id = $${paramCount} AND tenant_id = $${paramCount + 1}
         RETURNING *
       `;
       
-      const result = await client.query(query, values);
+      const result = await client.query(query, [...values, tenantId]);
       await client.query('COMMIT');
       
       if (result.rows.length === 0) {
@@ -355,8 +361,10 @@ export class BankReconciliationService {
   async importStatement(
     dto: CreateBankStatementDto,
     lines: ParsedStatementLine[],
-    userId?: number
+    userId?: string,
+    tenantId?: string
   ): Promise<BankStatement> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     const client = await pool.connect();
     
     try {
@@ -379,8 +387,8 @@ export class BankReconciliationService {
         INSERT INTO cash_bank_statements (
           account_id, statement_number, statement_date, period_from, period_to,
           opening_balance, closing_balance, total_debits, total_credits,
-          import_source, status, total_lines, imported_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          import_source, status, total_lines, imported_by, tenant_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING *
       `;
       
@@ -397,7 +405,8 @@ export class BankReconciliationService {
         dto.import_source,
         'IMPORTED',
         lines.length,
-        userId || null
+        userId || null,
+        tenantId
       ];
       
       const statementResult = await client.query(statementQuery, statementValues);
@@ -409,8 +418,8 @@ export class BankReconciliationService {
           INSERT INTO cash_bank_statement_lines (
             statement_id, line_number, transaction_date, value_date,
             debit_amount, credit_amount, balance,
-            description, reference, is_matched
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            description, reference, is_matched, tenant_id
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `;
         
         const lineValues = [
@@ -423,7 +432,8 @@ export class BankReconciliationService {
           line.balance || null,
           line.description || '',
           line.reference_number || null,
-          false
+          false,
+          tenantId
         ];
         
         await client.query(lineQuery, lineValues);
@@ -447,7 +457,8 @@ export class BankReconciliationService {
   /**
    * Get statements with filters
    */
-  async getStatements(filter: BankStatementFilter = {}): Promise<BankStatement[]> {
+  async getStatements(filter: BankStatementFilter = {}, tenantId?: string): Promise<BankStatement[]> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     let query = `
       SELECT 
         s.*,
@@ -457,11 +468,11 @@ export class BankReconciliationService {
       FROM cash_bank_statements s
       INNER JOIN cash_bank_accounts ba ON s.account_id = ba.account_id
       INNER JOIN cash_banks b ON ba.bank_id = b.bank_id
-      WHERE 1=1
+      WHERE s.tenant_id = $1
     `;
     
-    const params: any[] = [];
-    let paramCount = 1;
+    const params: any[] = [tenantId];
+    let paramCount = 2;
     
     if (filter.bank_account_id) {
       query += ` AND s.bank_account_id = $${paramCount}`;
@@ -496,15 +507,17 @@ export class BankReconciliationService {
   /**
    * Get statement lines with filters
    */
-  async getStatementLines(filter: StatementLineFilter = {}): Promise<BankStatementLine[]> {
+  async getStatementLines(filter: StatementLineFilter = {}, tenantId?: string): Promise<BankStatementLine[]> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     let query = `
       SELECT l.*
       FROM cash_bank_statement_lines l
-      WHERE 1=1
+      INNER JOIN cash_bank_statements s ON l.statement_id = s.statement_id
+      WHERE s.tenant_id = $1
     `;
     
-    const params: any[] = [];
-    let paramCount = 1;
+    const params: any[] = [tenantId];
+    let paramCount = 2;
     
     if (filter.bank_statement_id) {
       query += ` AND l.bank_statement_id = $${paramCount}`;
@@ -555,27 +568,30 @@ export class BankReconciliationService {
   /**
    * Get all reconciliation rules
    */
-  async getReconciliationRules(activeOnly = true): Promise<BankReconciliationRule[]> {
+  async getReconciliationRules(activeOnly = true, tenantId?: string): Promise<BankReconciliationRule[]> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     const query = `
       SELECT r.*
       FROM cash_reconciliation_rules r
-      WHERE r.is_active = true ${activeOnly ? '' : 'OR r.is_active = false'}
+      WHERE r.tenant_id = $1
+        AND (r.is_active = true ${activeOnly ? 'OR r.is_active = false' : ''})
       ORDER BY r.priority DESC, r.rule_name ASC
     `;
     
-    const result = await pool.query(query);
+    const result = await pool.query(query, [tenantId]);
     return result.rows;
   }
   
   /**
    * Create reconciliation rule
    */
-  async createReconciliationRule(dto: CreateReconciliationRuleDto, userId?: number): Promise<BankReconciliationRule> {
+  async createReconciliationRule(dto: CreateReconciliationRuleDto, userId?: string, tenantId?: string): Promise<BankReconciliationRule> {
+    if (!tenantId) throw new Error('Tenant ID is required');
     const query = `
       INSERT INTO cash_reconciliation_rules (
         rule_name, rule_description, priority, conditions,
-        auto_category, auto_gl_account, create_transaction, auto_approve, is_active, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        auto_category, auto_gl_account, create_transaction, auto_approve, is_active, created_by, tenant_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *
     `;
     
@@ -599,7 +615,8 @@ export class BankReconciliationService {
       dto.auto_create_journal || false,
       false, // auto_approve
       dto.is_active !== false,
-      userId || null
+      userId || null,
+      tenantId
     ];
     
     const result = await pool.query(query, values);

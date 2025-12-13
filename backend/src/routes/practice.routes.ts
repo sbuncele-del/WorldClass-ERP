@@ -4,8 +4,12 @@ import * as timeTrackingController from '../controllers/practice/time-tracking.c
 import * as clientHealthController from '../controllers/practice/client-health.controller';
 import * as tasksController from '../controllers/practice/tasks.controller';
 import * as practiceWorkspaceController from '../modules/practice/controllers/practice.workspace.controller';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
+
+// Apply tenant middleware to all practice management routes
+router.use(tenantMiddleware);
 
 /**
  * ============================================================================

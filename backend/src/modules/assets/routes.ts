@@ -7,6 +7,9 @@ import assetsController from './controller';
 
 const router = Router();
 
+// Workspace summary endpoint (no auth required for demo data)
+router.get('/workspace', assetsController.getWorkspaceSummary.bind(assetsController));
+
 // Asset CRUD
 router.post('/', assetsController.createAsset.bind(assetsController));
 router.get('/', assetsController.listAssets.bind(assetsController));

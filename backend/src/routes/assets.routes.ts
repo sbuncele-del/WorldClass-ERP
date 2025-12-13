@@ -7,8 +7,12 @@
 import { Router } from 'express';
 import assetsController from '../controllers/assets.controller';
 import * as assetsWorkspaceController from '../modules/assets/controllers/assets.workspace.controller';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
+
+// Apply tenant middleware to all asset routes
+router.use(tenantMiddleware);
 
 // ==================================================
 // WORKSPACE

@@ -85,7 +85,7 @@ const EnterpriseDashboard: React.FC = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://51.21.219.35:3000';
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
       
       // Fetch real data from backend
       const [metricsRes, tasksRes, alertsRes] = await Promise.all([

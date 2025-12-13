@@ -28,8 +28,9 @@ export interface Vendor {
 
 export const purchaseService = {
   async getStats(): Promise<PurchaseStats> {
-    const { data } = await apiClient.get('/api/purchase/stats');
-    return data;
+    const { data } = await apiClient.get('/api/purchase/workspace');
+    // Extract summary from workspace response
+    return data.data?.summary || data.summary || data;
   },
 
   async getOrders(params?: { limit?: number; status?: string }): Promise<{ data: PurchaseOrder[]; total: number }> {

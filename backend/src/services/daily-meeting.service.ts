@@ -1,8 +1,13 @@
 /**
- * Daily.co Video Meeting Service
+ * Daily.co Video Meeting Service (Multi-Tenant)
  * 
  * Provides video conferencing capabilities for the Communications Hub.
  * Uses Daily.co's API for creating and managing video meeting rooms.
+ * 
+ * Multi-Tenancy:
+ * - All rooms are prefixed with tenant ID for isolation
+ * - Room operations require tenant context
+ * - Listing/searching is scoped to tenant
  * 
  * Free tier includes:
  * - 2,000 participant minutes/month
@@ -13,10 +18,17 @@
  * @see https://docs.daily.co/reference
  */
 
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
-const DAILY_API_URL = process.env.DAILY_API_URL || 'https://api.daily.co/v1';
-const DAILY_API_KEY = process.env.DAILY_API_KEY;
+// Access env at runtime (not module load time) to support late loading/injection
+const getDailyApiUrl = () => process.env.DAILY_API_URL || 'https://api.daily.co/v1';
+const getDailyApiKey = () => process.env.DAILY_API_KEY?.trim();
+
+// Tenant context for all operations
+interface TenantContext {
+  tenantId: string;
+  userId?: string;
+}
 
 interface DailyRoomConfig {
   name?: string;
@@ -68,35 +80,104 @@ interface MeetingRecording {
 }
 
 class DailyMeetingService {
-  private apiClient = axios.create({
-    baseURL: DAILY_API_URL,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${DAILY_API_KEY}`
+  private _apiClient: AxiosInstance | null = null;
+
+  // Lazy initialize API client to ensure env vars are loaded at runtime
+  private get apiClient(): AxiosInstance {
+    if (!this._apiClient) {
+      const apiKey = getDailyApiKey();
+      const apiUrl = getDailyApiUrl();
+      if (!apiKey) {
+        throw new Error('Daily.co API key not configured');
+      }
+      this._apiClient = axios.create({
+        baseURL: apiUrl,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        timeout: 10000
+      });
+
+      // Centralized error logging for API calls
+      this._apiClient.interceptors.response.use(
+        response => response,
+        error => {
+          if (error.response) {
+            console.error('[Daily] API error', {
+              status: error.response.status,
+              data: error.response.data,
+              url: error.config?.url
+            });
+          } else if (error.request) {
+            console.error('[Daily] Network error', error.message);
+          } else {
+            console.error('[Daily] Unexpected error', error.message);
+          }
+          return Promise.reject(error);
+        }
+      );
     }
-  });
+    return this._apiClient;
+  }
 
   /**
    * Check if Daily.co is configured
    */
   isConfigured(): boolean {
-    return !!DAILY_API_KEY;
+    const key = getDailyApiKey();
+    return Boolean(key && key.length > 0);
   }
 
   /**
-   * Create a new meeting room
+   * Generate tenant-scoped room name prefix
+   */
+  private getTenantRoomPrefix(tenantId: string): string {
+    // Use first 8 chars of tenant ID for room prefix
+    return `t${tenantId.substring(0, 8)}`;
+  }
+
+  /**
+   * Generate a tenant-scoped room name
+   */
+  private generateRoomName(tenantId: string, baseName?: string): string {
+    const prefix = this.getTenantRoomPrefix(tenantId);
+    const suffix = baseName || `${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    // Daily.co room names must be lowercase alphanumeric with hyphens
+    const sanitized = suffix.toLowerCase().replace(/[^a-z0-9-]/g, '-').substring(0, 30);
+    return `${prefix}-${sanitized}`;
+  }
+
+  /**
+   * Check if a room belongs to a tenant
+   */
+  private isRoomOwnedByTenant(roomName: string, tenantId: string): boolean {
+    const prefix = this.getTenantRoomPrefix(tenantId);
+    return roomName.startsWith(`${prefix}-`);
+  }
+
+  /**
+   * Create a new meeting room (tenant-scoped)
+   * @param tenant Tenant context
    * @param options Room configuration options
    */
-  async createRoom(options: {
-    name?: string;
-    expiryMinutes?: number;
-    maxParticipants?: number;
-    enableWaitingRoom?: boolean;
-    enableRecording?: boolean;
-    isWebinar?: boolean;
-  } = {}): Promise<DailyRoom> {
+  async createRoom(
+    tenant: TenantContext,
+    options: {
+      name?: string;
+      expiryMinutes?: number;
+      maxParticipants?: number;
+      enableWaitingRoom?: boolean;
+      enableRecording?: boolean;
+      isWebinar?: boolean;
+    } = {}
+  ): Promise<DailyRoom> {
     if (!this.isConfigured()) {
       throw new Error('Daily.co API key not configured');
+    }
+
+    if (!tenant?.tenantId) {
+      throw new Error('Tenant context required');
     }
 
     const {
@@ -108,8 +189,8 @@ class DailyMeetingService {
       isWebinar = false
     } = options;
 
-    // Generate room name if not provided
-    const roomName = name || `meeting-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Generate tenant-scoped room name
+    const roomName = this.generateRoomName(tenant.tenantId, name);
     
     // Calculate expiration (Unix timestamp)
     const exp = Math.floor(Date.now() / 1000) + (expiryMinutes * 60);
@@ -134,19 +215,30 @@ class DailyMeetingService {
 
     try {
       const response = await this.apiClient.post<DailyRoom>('/rooms', config);
+      console.log(`[Daily] Room created for tenant ${tenant.tenantId}: ${response.data.name}`);
       return response.data;
     } catch (error: any) {
-      console.error('Failed to create Daily.co room:', error.response?.data || error.message);
+      console.error(`[Daily] Failed to create room for tenant ${tenant.tenantId}:`, error.response?.data || error.message);
       throw new Error(`Failed to create meeting room: ${error.response?.data?.error || error.message}`);
     }
   }
 
   /**
-   * Get an existing room by name
+   * Get an existing room by name (tenant-scoped)
    */
-  async getRoom(roomName: string): Promise<DailyRoom | null> {
+  async getRoom(tenant: TenantContext, roomName: string): Promise<DailyRoom | null> {
     if (!this.isConfigured()) {
       throw new Error('Daily.co API key not configured');
+    }
+
+    if (!tenant?.tenantId) {
+      throw new Error('Tenant context required');
+    }
+
+    // Verify room belongs to tenant
+    if (!this.isRoomOwnedByTenant(roomName, tenant.tenantId)) {
+      console.warn(`[Daily] Tenant ${tenant.tenantId} attempted to access room ${roomName} owned by another tenant`);
+      return null;
     }
 
     try {
@@ -161,54 +253,82 @@ class DailyMeetingService {
   }
 
   /**
-   * List all rooms
+   * List all rooms for a tenant
    */
-  async listRooms(limit: number = 50): Promise<DailyRoom[]> {
+  async listRooms(tenant: TenantContext, limit: number = 50): Promise<DailyRoom[]> {
     if (!this.isConfigured()) {
       throw new Error('Daily.co API key not configured');
     }
 
+    if (!tenant?.tenantId) {
+      throw new Error('Tenant context required');
+    }
+
     try {
       const response = await this.apiClient.get<{ data: DailyRoom[] }>('/rooms', {
-        params: { limit }
+        params: { limit: Math.min(limit * 2, 100) } // Fetch extra to filter
       });
-      return response.data.data;
+      
+      // Filter to only return rooms belonging to this tenant
+      const tenantRooms = response.data.data.filter(room => 
+        this.isRoomOwnedByTenant(room.name, tenant.tenantId)
+      );
+      
+      return tenantRooms.slice(0, limit);
     } catch (error: any) {
-      console.error('Failed to list rooms:', error.response?.data || error.message);
+      console.error(`[Daily] Failed to list rooms for tenant ${tenant.tenantId}:`, error.response?.data || error.message);
       throw error;
     }
   }
 
   /**
-   * Delete a room
+   * Delete a room (tenant-scoped)
    */
-  async deleteRoom(roomName: string): Promise<boolean> {
+  async deleteRoom(tenant: TenantContext, roomName: string): Promise<boolean> {
     if (!this.isConfigured()) {
       throw new Error('Daily.co API key not configured');
     }
 
+    if (!tenant?.tenantId) {
+      throw new Error('Tenant context required');
+    }
+
+    // Verify room belongs to tenant
+    if (!this.isRoomOwnedByTenant(roomName, tenant.tenantId)) {
+      console.warn(`[Daily] Tenant ${tenant.tenantId} attempted to delete room ${roomName} owned by another tenant`);
+      return false;
+    }
+
     try {
       await this.apiClient.delete(`/rooms/${roomName}`);
+      console.log(`[Daily] Room deleted for tenant ${tenant.tenantId}: ${roomName}`);
       return true;
     } catch (error: any) {
-      console.error('Failed to delete room:', error.response?.data || error.message);
+      console.error(`[Daily] Failed to delete room for tenant ${tenant.tenantId}:`, error.response?.data || error.message);
       return false;
     }
   }
 
   /**
-   * Create a meeting token for a participant
+   * Create a meeting token for a participant (tenant-scoped)
    * Tokens can have restricted permissions (e.g., for guests vs hosts)
    */
-  async createMeetingToken(options: {
-    roomName: string;
-    userName: string;
-    isOwner?: boolean;
-    expiryMinutes?: number;
-    userId?: string;
-  }): Promise<string> {
+  async createMeetingToken(
+    tenant: TenantContext,
+    options: {
+      roomName: string;
+      userName: string;
+      isOwner?: boolean;
+      expiryMinutes?: number;
+      participantUserId?: string;
+    }
+  ): Promise<string> {
     if (!this.isConfigured()) {
       throw new Error('Daily.co API key not configured');
+    }
+
+    if (!tenant?.tenantId) {
+      throw new Error('Tenant context required');
     }
 
     const {
@@ -216,8 +336,13 @@ class DailyMeetingService {
       userName,
       isOwner = false,
       expiryMinutes = 60,
-      userId
+      participantUserId
     } = options;
+
+    // Verify room belongs to tenant
+    if (!this.isRoomOwnedByTenant(roomName, tenant.tenantId)) {
+      throw new Error('Room not found or access denied');
+    }
 
     const exp = Math.floor(Date.now() / 1000) + (expiryMinutes * 60);
 
@@ -226,7 +351,7 @@ class DailyMeetingService {
         properties: {
           room_name: roomName,
           user_name: userName,
-          user_id: userId,
+          user_id: participantUserId || tenant.userId,
           is_owner: isOwner,
           exp,
           enable_screenshare: true,
@@ -236,17 +361,26 @@ class DailyMeetingService {
       });
       return response.data.token;
     } catch (error: any) {
-      console.error('Failed to create meeting token:', error.response?.data || error.message);
+      console.error(`[Daily] Failed to create token for tenant ${tenant.tenantId}:`, error.response?.data || error.message);
       throw new Error(`Failed to create meeting token: ${error.response?.data?.error || error.message}`);
     }
   }
 
   /**
-   * Get meeting analytics/logs for a room
+   * Get meeting analytics/logs for a room (tenant-scoped)
    */
-  async getMeetingLogs(roomName: string): Promise<any> {
+  async getMeetingLogs(tenant: TenantContext, roomName: string): Promise<any> {
     if (!this.isConfigured()) {
       throw new Error('Daily.co API key not configured');
+    }
+
+    if (!tenant?.tenantId) {
+      throw new Error('Tenant context required');
+    }
+
+    // Verify room belongs to tenant
+    if (!this.isRoomOwnedByTenant(roomName, tenant.tenantId)) {
+      throw new Error('Room not found or access denied');
     }
 
     try {
@@ -258,13 +392,13 @@ class DailyMeetingService {
       });
       return response.data;
     } catch (error: any) {
-      console.error('Failed to get meeting logs:', error.response?.data || error.message);
+      console.error(`[Daily] Failed to get logs for tenant ${tenant.tenantId}:`, error.response?.data || error.message);
       throw error;
     }
   }
 
   /**
-   * Get domain/account information
+   * Get domain/account information (admin only - not tenant-scoped)
    */
   async getAccountInfo(): Promise<any> {
     if (!this.isConfigured()) {
@@ -275,27 +409,34 @@ class DailyMeetingService {
       const response = await this.apiClient.get('/');
       return response.data;
     } catch (error: any) {
-      console.error('Failed to get account info:', error.response?.data || error.message);
+      console.error('[Daily] Failed to get account info:', error.response?.data || error.message);
       throw error;
     }
   }
 
   /**
-   * Create an instant meeting (quick room with short expiry)
+   * Create an instant meeting (quick room with short expiry) - tenant-scoped
    */
-  async createInstantMeeting(hostName: string): Promise<{
+  async createInstantMeeting(
+    tenant: TenantContext,
+    hostName: string
+  ): Promise<{
     room: DailyRoom;
     hostToken: string;
     guestUrl: string;
   }> {
+    if (!tenant?.tenantId) {
+      throw new Error('Tenant context required');
+    }
+
     // Create room with 2-hour expiry
-    const room = await this.createRoom({
+    const room = await this.createRoom(tenant, {
       expiryMinutes: 120,
       maxParticipants: 10
     });
 
     // Create host token
-    const hostToken = await this.createMeetingToken({
+    const hostToken = await this.createMeetingToken(tenant, {
       roomName: room.name,
       userName: hostName,
       isOwner: true,
@@ -310,22 +451,29 @@ class DailyMeetingService {
   }
 
   /**
-   * Schedule a meeting (room with future start time)
+   * Schedule a meeting (room with future start time) - tenant-scoped
    */
-  async scheduleMeeting(options: {
-    title: string;
-    startTime: Date;
-    durationMinutes: number;
-    hostName: string;
-    maxParticipants?: number;
-    enableWaitingRoom?: boolean;
-  }): Promise<{
+  async scheduleMeeting(
+    tenant: TenantContext,
+    options: {
+      title: string;
+      startTime: Date;
+      durationMinutes: number;
+      hostName: string;
+      maxParticipants?: number;
+      enableWaitingRoom?: boolean;
+    }
+  ): Promise<{
     room: DailyRoom;
     hostToken: string;
     guestUrl: string;
     startTime: Date;
     endTime: Date;
   }> {
+    if (!tenant?.tenantId) {
+      throw new Error('Tenant context required');
+    }
+
     const { title, startTime, durationMinutes, hostName, maxParticipants, enableWaitingRoom } = options;
 
     // Calculate room expiry (30 min after scheduled end time)
@@ -337,17 +485,16 @@ class DailyMeetingService {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
-      .substring(0, 30);
-    const roomName = `${sanitizedTitle}-${Date.now()}`;
+      .substring(0, 20);
 
-    const room = await this.createRoom({
-      name: roomName,
+    const room = await this.createRoom(tenant, {
+      name: `${sanitizedTitle}-${Date.now()}`,
       expiryMinutes,
       maxParticipants,
       enableWaitingRoom
     });
 
-    const hostToken = await this.createMeetingToken({
+    const hostToken = await this.createMeetingToken(tenant, {
       roomName: room.name,
       userName: hostName,
       isOwner: true,
@@ -364,18 +511,27 @@ class DailyMeetingService {
   }
 
   /**
-   * Generate a guest invitation link
+   * Generate a guest invitation link - tenant-scoped
    */
-  async createGuestInvite(roomName: string, guestName: string, expiryMinutes: number = 120): Promise<{
+  async createGuestInvite(
+    tenant: TenantContext,
+    roomName: string,
+    guestName: string,
+    expiryMinutes: number = 120
+  ): Promise<{
     url: string;
     token: string;
   }> {
-    const room = await this.getRoom(roomName);
+    if (!tenant?.tenantId) {
+      throw new Error('Tenant context required');
+    }
+
+    const room = await this.getRoom(tenant, roomName);
     if (!room) {
       throw new Error('Room not found');
     }
 
-    const token = await this.createMeetingToken({
+    const token = await this.createMeetingToken(tenant, {
       roomName,
       userName: guestName,
       isOwner: false,
@@ -386,6 +542,31 @@ class DailyMeetingService {
     return {
       url: `${room.url}?t=${token}`,
       token
+    };
+  }
+
+  /**
+   * Get meeting usage statistics for a tenant
+   */
+  async getTenantUsageStats(tenant: TenantContext): Promise<{
+    activeRooms: number;
+    totalRooms: number;
+  }> {
+    if (!tenant?.tenantId) {
+      throw new Error('Tenant context required');
+    }
+
+    const rooms = await this.listRooms(tenant, 100);
+    const now = Math.floor(Date.now() / 1000);
+    
+    const activeRooms = rooms.filter(room => {
+      const exp = room.config?.exp;
+      return !exp || exp > now;
+    }).length;
+
+    return {
+      activeRooms,
+      totalRooms: rooms.length
     };
   }
 }

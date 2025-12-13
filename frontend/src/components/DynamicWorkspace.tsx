@@ -83,7 +83,7 @@ const DynamicWorkspace: React.FC = () => {
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://51.21.219.35:3000';
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
         const token = localStorage.getItem('token');
 
         if (!token) {

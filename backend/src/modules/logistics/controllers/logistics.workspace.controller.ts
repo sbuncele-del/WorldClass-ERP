@@ -1,5 +1,13 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { TenantRequest } from '../../../types';
 import { query } from '../../../config/database';
+
+/**
+ * Helper to extract tenant ID with type safety
+ */
+function getTenantId(req: TenantRequest): string | null {
+  return req.tenant?.id ?? null;
+}
 
 /**
  * Logistics Workspace Controller
@@ -10,9 +18,9 @@ import { query } from '../../../config/database';
  * GET /api/logistics/workspace
  * Returns all data needed for the Logistics & Transport workspace dashboard
  */
-export const getLogisticsWorkspace = async (req: Request, res: Response) => {
+export const getLogisticsWorkspace = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = (req as any).tenant?.id;
+    const tenantId = getTenantId(req);
 
     if (!tenantId) {
       return res.status(401).json({

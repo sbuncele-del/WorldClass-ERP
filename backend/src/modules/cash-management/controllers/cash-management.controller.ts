@@ -4,14 +4,19 @@
  * REST API controllers for bank reconciliation
  */
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { TenantRequest } from '../../../types';
 import bankReconciliationService from '../services/bank-reconciliation.service';
 import matchingService from '../services/matching.service';
+
+function getTenantId(req: TenantRequest): string | null {
+  return req.tenant?.id ?? null;
+}
 
 /**
  * Bank Controllers
  */
-export const getBanks = async (req: Request, res: Response) => {
+export const getBanks = async (req: TenantRequest, res: Response) => {
   try {
     const activeOnly = req.query.active_only !== 'false';
     const banks = await bankReconciliationService.getBanks(activeOnly);
@@ -30,7 +35,7 @@ export const getBanks = async (req: Request, res: Response) => {
   }
 };
 
-export const getCSVPreset = async (req: Request, res: Response) => {
+export const getCSVPreset = async (req: TenantRequest, res: Response) => {
   try {
     const { bankCode } = req.params;
     const preset = bankReconciliationService.getCSVPresetForBank(bankCode.toUpperCase());
@@ -58,10 +63,14 @@ export const getCSVPreset = async (req: Request, res: Response) => {
 /**
  * Bank Account Controllers
  */
-export const getBankAccounts = async (req: Request, res: Response) => {
+export const getBankAccounts = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
     const includeInactive = req.query.include_inactive === 'true';
-    const accounts = await bankReconciliationService.getBankAccounts(includeInactive);
+    const accounts = await bankReconciliationService.getBankAccounts(includeInactive, tenantId);
     
     res.json({
       success: true,
@@ -77,10 +86,14 @@ export const getBankAccounts = async (req: Request, res: Response) => {
   }
 };
 
-export const getBankAccountById = async (req: Request, res: Response) => {
+export const getBankAccountById = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
     const id = parseInt(req.params.id);
-    const account = await bankReconciliationService.getBankAccountById(id);
+    const account = await bankReconciliationService.getBankAccountById(id, tenantId);
     
     if (!account) {
       return res.status(404).json({
@@ -102,10 +115,14 @@ export const getBankAccountById = async (req: Request, res: Response) => {
   }
 };
 
-export const createBankAccount = async (req: Request, res: Response) => {
+export const createBankAccount = async (req: TenantRequest, res: Response) => {
   try {
-    const userId = (req as any).user?.id; // Assuming auth middleware sets req.user
-    const account = await bankReconciliationService.createBankAccount(req.body, userId);
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    const userId = req.user?.id;
+    const account = await bankReconciliationService.createBankAccount(req.body, userId, tenantId);
     
     res.status(201).json({
       success: true,
@@ -121,14 +138,19 @@ export const createBankAccount = async (req: Request, res: Response) => {
   }
 };
 
-export const updateBankAccount = async (req: Request, res: Response) => {
+export const updateBankAccount = async (req: TenantRequest, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    const userId = req.user?.id;
     const id = parseInt(req.params.id);
     
     const account = await bankReconciliationService.updateBankAccount(
       { ...req.body, id },
-      userId
+      userId,
+      tenantId
     );
     
     res.json({
@@ -148,8 +170,12 @@ export const updateBankAccount = async (req: Request, res: Response) => {
 /**
  * Statement Controllers
  */
-export const getStatements = async (req: Request, res: Response) => {
+export const getStatements = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
     const filter: any = {};
     
     if (req.query.bank_account_id) {
@@ -165,7 +191,7 @@ export const getStatements = async (req: Request, res: Response) => {
       filter.to_date = new Date(req.query.to_date as string);
     }
     
-    const statements = await bankReconciliationService.getStatements(filter);
+    const statements = await bankReconciliationService.getStatements(filter, tenantId);
     
     res.json({
       success: true,
@@ -181,9 +207,13 @@ export const getStatements = async (req: Request, res: Response) => {
   }
 };
 
-export const importStatement = async (req: Request, res: Response) => {
+export const importStatement = async (req: TenantRequest, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    const userId = req.user?.id;
     const { statement, csvData, columnMapping } = req.body;
     
     // Parse CSV
@@ -193,7 +223,8 @@ export const importStatement = async (req: Request, res: Response) => {
     const importedStatement = await bankReconciliationService.importStatement(
       statement,
       parsedLines,
-      userId
+      userId,
+      tenantId
     );
     
     res.status(201).json({
@@ -210,7 +241,7 @@ export const importStatement = async (req: Request, res: Response) => {
   }
 };
 
-export const parseCSVPreview = async (req: Request, res: Response) => {
+export const parseCSVPreview = async (req: TenantRequest, res: Response) => {
   try {
     const { csvData, columnMapping } = req.body;
     
@@ -239,8 +270,12 @@ export const parseCSVPreview = async (req: Request, res: Response) => {
 /**
  * Statement Line Controllers
  */
-export const getStatementLines = async (req: Request, res: Response) => {
+export const getStatementLines = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
     const filter: any = {};
     
     if (req.query.bank_statement_id) {
@@ -253,7 +288,7 @@ export const getStatementLines = async (req: Request, res: Response) => {
       filter.is_reconciled = req.query.is_reconciled === 'true';
     }
     
-    const lines = await bankReconciliationService.getStatementLines(filter);
+    const lines = await bankReconciliationService.getStatementLines(filter, tenantId);
     
     res.json({
       success: true,
@@ -272,10 +307,14 @@ export const getStatementLines = async (req: Request, res: Response) => {
 /**
  * Reconciliation Rule Controllers
  */
-export const getReconciliationRules = async (req: Request, res: Response) => {
+export const getReconciliationRules = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
     const activeOnly = req.query.active_only !== 'false';
-    const rules = await bankReconciliationService.getReconciliationRules(activeOnly);
+    const rules = await bankReconciliationService.getReconciliationRules(activeOnly, tenantId);
     
     res.json({
       success: true,
@@ -291,10 +330,14 @@ export const getReconciliationRules = async (req: Request, res: Response) => {
   }
 };
 
-export const createReconciliationRule = async (req: Request, res: Response) => {
+export const createReconciliationRule = async (req: TenantRequest, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
-    const rule = await bankReconciliationService.createReconciliationRule(req.body, userId);
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    const userId = req.user?.id;
+    const rule = await bankReconciliationService.createReconciliationRule(req.body, userId, tenantId);
     
     res.status(201).json({
       success: true,
@@ -313,12 +356,16 @@ export const createReconciliationRule = async (req: Request, res: Response) => {
 /**
  * Matching Controllers
  */
-export const runAutoMatching = async (req: Request, res: Response) => {
+export const runAutoMatching = async (req: TenantRequest, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    const userId = req.user?.id;
     const statementId = parseInt(req.params.statementId);
     
-    const result = await matchingService.runAutoMatching(statementId, userId);
+    const result = await matchingService.runAutoMatching(statementId, userId, tenantId);
     
     res.json({
       success: true,
@@ -334,10 +381,14 @@ export const runAutoMatching = async (req: Request, res: Response) => {
   }
 };
 
-export const createMatch = async (req: Request, res: Response) => {
+export const createMatch = async (req: TenantRequest, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
-    const match = await matchingService.createMatch(req.body, userId);
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    const userId = req.user?.id;
+    const match = await matchingService.createMatch(req.body, userId, tenantId);
     
     res.status(201).json({
       success: true,
@@ -353,10 +404,14 @@ export const createMatch = async (req: Request, res: Response) => {
   }
 };
 
-export const unmatch = async (req: Request, res: Response) => {
+export const unmatch = async (req: TenantRequest, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
-    await matchingService.unmatch(req.body, userId);
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    const userId = req.user?.id;
+    await matchingService.unmatch(req.body, userId, tenantId);
     
     res.json({
       success: true,
@@ -374,10 +429,14 @@ export const unmatch = async (req: Request, res: Response) => {
 /**
  * Reconciliation Workspace Controller
  */
-export const getReconciliationWorkspace = async (req: Request, res: Response) => {
+export const getReconciliationWorkspace = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
     const statementId = parseInt(req.params.statementId);
-    const workspace = await matchingService.getReconciliationWorkspace(statementId);
+    const workspace = await matchingService.getReconciliationWorkspace(statementId, tenantId);
     
     res.json({
       success: true,
@@ -395,11 +454,15 @@ export const getReconciliationWorkspace = async (req: Request, res: Response) =>
 /**
  * Dashboard/Summary Controllers
  */
-export const getCashManagementSummary = async (req: Request, res: Response) => {
+export const getCashManagementSummary = async (req: TenantRequest, res: Response) => {
   try {
-    const accounts = await bankReconciliationService.getBankAccounts(false);
-    const statements = await bankReconciliationService.getStatements({});
-    const rules = await bankReconciliationService.getReconciliationRules(true);
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    const accounts = await bankReconciliationService.getBankAccounts(false, tenantId);
+    const statements = await bankReconciliationService.getStatements({}, tenantId);
+    const rules = await bankReconciliationService.getReconciliationRules(true, tenantId);
     
     // Calculate totals
     const totalBalance = accounts.reduce((sum, acc) => sum + parseFloat(String(acc.current_balance)), 0);
@@ -435,9 +498,12 @@ export const getCashManagementSummary = async (req: Request, res: Response) => {
 /**
  * Duplicate Detection Controllers
  */
-export const checkDuplicates = async (req: Request, res: Response) => {
+export const checkDuplicates = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = (req as any).tenantId;
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
     const { bankStatementLineId, journalEntryLineId } = req.body;
 
     if (!bankStatementLineId || !journalEntryLineId) {
@@ -466,9 +532,12 @@ export const checkDuplicates = async (req: Request, res: Response) => {
   }
 };
 
-export const findPotentialDuplicates = async (req: Request, res: Response) => {
+export const findPotentialDuplicates = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = (req as any).tenantId;
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
     const options = {
       dateRange: req.query.dateRange ? parseInt(req.query.dateRange as string) : undefined,
       amountTolerance: req.query.amountTolerance ? parseFloat(req.query.amountTolerance as string) : undefined,

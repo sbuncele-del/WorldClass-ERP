@@ -12,8 +12,12 @@ import {
   getReportExecutions,
   toggleFavorite
 } from '../controllers/custom-reports.controller';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
+
+// Apply tenant middleware to all custom report routes
+router.use(tenantMiddleware);
 
 // Report template routes
 router.get('/templates', getReportTemplates);

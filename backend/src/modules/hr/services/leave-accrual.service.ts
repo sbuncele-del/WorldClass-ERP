@@ -225,7 +225,7 @@ export async function initializeEmployeeLeaveBalances(
 /**
  * Process monthly leave accruals for all active employees
  */
-export async function processMonthlyAccruals(): Promise<{
+export async function processMonthlyAccruals(tenantId: string): Promise<{
   processed: number;
   errors: string[];
 }> {
@@ -242,14 +242,14 @@ export async function processMonthlyAccruals(): Promise<{
     const employees = await client.query(`
       SELECT employee_id, hire_date 
       FROM hr.employees 
-      WHERE employment_status = 'Active'
-    `);
+      WHERE tenant_id = $1 AND employment_status = 'Active'
+    `, [tenantId]);
 
     // Get leave types with monthly accrual
     const leaveTypes = await client.query(`
       SELECT * FROM hr.leave_types 
-      WHERE accrual_method = 'MONTHLY' AND is_active = true
-    `);
+      WHERE tenant_id = $1 AND accrual_method = 'MONTHLY' AND is_active = true
+    `, [tenantId]);
 
     for (const employee of employees.rows) {
       for (const leaveType of leaveTypes.rows) {
@@ -257,11 +257,12 @@ export async function processMonthlyAccruals(): Promise<{
           // Check if already accrued this month
           const lastAccrual = await client.query(`
             SELECT * FROM hr.leave_accrual_log
-            WHERE employee_id = $1 
-              AND leave_type_id = $2 
-              AND accrual_year = $3 
-              AND accrual_month = $4
-          `, [employee.employee_id, leaveType.leave_type_id, currentYear, currentMonth]);
+            WHERE tenant_id = $1
+              AND employee_id = $2 
+              AND leave_type_id = $3 
+              AND accrual_year = $4 
+              AND accrual_month = $5
+          `, [tenantId, employee.employee_id, leaveType.leave_type_id, currentYear, currentMonth]);
 
           if (lastAccrual.rows.length > 0) {
             continue; // Already processed
@@ -270,17 +271,17 @@ export async function processMonthlyAccruals(): Promise<{
           // Get current balance
           const balance = await client.query(`
             SELECT * FROM hr.employee_leave_balances
-            WHERE employee_id = $1 AND leave_type_id = $2 AND year = $3
-          `, [employee.employee_id, leaveType.leave_type_id, currentYear]);
+            WHERE tenant_id = $1 AND employee_id = $2 AND leave_type_id = $3 AND year = $4
+          `, [tenantId, employee.employee_id, leaveType.leave_type_id, currentYear]);
 
           if (balance.rows.length === 0) {
             // Create balance record if missing
             await client.query(`
               INSERT INTO hr.employee_leave_balances (
-                employee_id, leave_type_id, year, opening_balance,
+                tenant_id, employee_id, leave_type_id, year, opening_balance,
                 accrued, taken, adjustment, pending, closing_balance, created_at
-              ) VALUES ($1, $2, $3, 0, 0, 0, 0, 0, 0, CURRENT_TIMESTAMP)
-            `, [employee.employee_id, leaveType.leave_type_id, currentYear]);
+              ) VALUES ($1, $2, $3, $4, 0, 0, 0, 0, 0, 0, CURRENT_TIMESTAMP)
+            `, [tenantId, employee.employee_id, leaveType.leave_type_id, currentYear]);
           }
 
           const currentBalance = balance.rows[0]?.closing_balance || 0;
@@ -300,16 +301,17 @@ export async function processMonthlyAccruals(): Promise<{
               accrued = accrued + $1,
               closing_balance = closing_balance + $1,
               updated_at = CURRENT_TIMESTAMP
-            WHERE employee_id = $2 AND leave_type_id = $3 AND year = $4
-          `, [actualAccrual, employee.employee_id, leaveType.leave_type_id, currentYear]);
+            WHERE tenant_id = $2 AND employee_id = $3 AND leave_type_id = $4 AND year = $5
+          `, [actualAccrual, tenantId, employee.employee_id, leaveType.leave_type_id, currentYear]);
 
           // Log the accrual
           await client.query(`
             INSERT INTO hr.leave_accrual_log (
-              employee_id, leave_type_id, accrual_year, accrual_month,
+              tenant_id, employee_id, leave_type_id, accrual_year, accrual_month,
               accrual_amount, previous_balance, new_balance, created_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
           `, [
+            tenantId,
             employee.employee_id,
             leaveType.leave_type_id,
             currentYear,
@@ -341,6 +343,7 @@ export async function processMonthlyAccruals(): Promise<{
  * Process year-end leave carryover
  */
 export async function processYearEndCarryover(
+  tenantId: string,
   fromYear: number,
   toYear: number
 ): Promise<{
@@ -364,9 +367,9 @@ export async function processYearEndCarryover(
         lt.max_carryover,
         lt.default_days
       FROM hr.employee_leave_balances b
-      JOIN hr.leave_types lt ON b.leave_type_id = lt.leave_type_id
-      WHERE b.year = $1
-    `, [fromYear]);
+      JOIN hr.leave_types lt ON b.leave_type_id = lt.leave_type_id AND lt.tenant_id = $1
+      WHERE b.tenant_id = $1 AND b.year = $2
+    `, [tenantId, fromYear]);
 
     for (const balance of balances.rows) {
       try {
@@ -381,18 +384,19 @@ export async function processYearEndCarryover(
         // Check if new year balance exists
         const newYearBalance = await client.query(`
           SELECT balance_id FROM hr.employee_leave_balances
-          WHERE employee_id = $1 AND leave_type_id = $2 AND year = $3
-        `, [balance.employee_id, balance.leave_type_id, toYear]);
+          WHERE tenant_id = $1 AND employee_id = $2 AND leave_type_id = $3 AND year = $4
+        `, [tenantId, balance.employee_id, balance.leave_type_id, toYear]);
 
         if (newYearBalance.rows.length === 0) {
           // Create new year balance
           await client.query(`
             INSERT INTO hr.employee_leave_balances (
-              employee_id, leave_type_id, year, opening_balance,
+              tenant_id, employee_id, leave_type_id, year, opening_balance,
               accrued, taken, adjustment, pending, closing_balance,
               carryover_from_previous, forfeited, created_at
-            ) VALUES ($1, $2, $3, $4, 0, 0, 0, 0, $4, $5, $6, CURRENT_TIMESTAMP)
+            ) VALUES ($1, $2, $3, $4, $5, 0, 0, 0, 0, $5, $6, $7, CURRENT_TIMESTAMP)
           `, [
+            tenantId,
             balance.employee_id,
             balance.leave_type_id,
             toYear,
@@ -410,11 +414,12 @@ export async function processYearEndCarryover(
               carryover_from_previous = $2,
               forfeited = $3,
               updated_at = CURRENT_TIMESTAMP
-            WHERE employee_id = $4 AND leave_type_id = $5 AND year = $6
+            WHERE tenant_id = $4 AND employee_id = $5 AND leave_type_id = $6 AND year = $7
           `, [
             carryover + balance.default_days,
             carryover,
             forfeited,
+            tenantId,
             balance.employee_id,
             balance.leave_type_id,
             toYear,
@@ -442,6 +447,7 @@ export async function processYearEndCarryover(
  * Get leave calendar for department
  */
 export async function getDepartmentLeaveCalendar(
+  tenantId: string,
   departmentId: number,
   startDate: Date,
   endDate: Date
@@ -459,14 +465,14 @@ export async function getDepartmentLeaveCalendar(
       e.employee_number,
       e.first_name || ' ' || e.last_name as employee_name
     FROM hr.leave_requests lr
-    JOIN hr.employees e ON lr.employee_id = e.employee_id
-    JOIN hr.leave_types lt ON lr.leave_type_id = lt.leave_type_id
-    WHERE e.department_id = $1
+    JOIN hr.employees e ON lr.employee_id = e.employee_id AND lr.tenant_id = $1 AND e.tenant_id = $1
+    JOIN hr.leave_types lt ON lr.leave_type_id = lt.leave_type_id AND lt.tenant_id = $1
+    WHERE e.department_id = $2
       AND lr.status IN ('Approved', 'Pending')
-      AND lr.start_date <= $3
-      AND lr.end_date >= $2
+      AND lr.start_date <= $4
+      AND lr.end_date >= $3
     ORDER BY lr.start_date, e.last_name
-  `, [departmentId, startDate, endDate]);
+  `, [tenantId, departmentId, startDate, endDate]);
 
   return result.rows;
 }

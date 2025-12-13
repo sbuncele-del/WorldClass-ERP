@@ -2,8 +2,12 @@ import express from 'express';
 import SARSSentinelController from '../controllers/sars-sentinel.controller';
 import * as sarsWorkspaceController from '../modules/sars/controllers/sars.workspace.controller';
 import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
+
+// Apply tenant middleware to all SARS routes
+router.use(tenantMiddleware);
 
 /**
  * SARS Sentinel Routes

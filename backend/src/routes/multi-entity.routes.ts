@@ -18,11 +18,13 @@ import {
     getConsolidatedData
 } from '../controllers/multi-entity.controller';
 import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
 
-// All routes require authentication
+// All routes require authentication and tenant context
 router.use(authenticateToken);
+router.use(tenantMiddleware);
 
 // ================================================
 // ENTITY MANAGEMENT

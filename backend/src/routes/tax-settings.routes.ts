@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import taxSettingsController from '../controllers/tax-settings.controller';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
+
+// Apply tenant middleware to all tax settings routes
+router.use(tenantMiddleware);
 
 // Get tax configuration
 router.get('/configuration', taxSettingsController.getTaxSettings.bind(taxSettingsController));

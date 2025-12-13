@@ -1,8 +1,12 @@
 import express from 'express';
 import ReportsController from '../controllers/reports.controller';
 import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
+
+// Apply tenant middleware to all report routes
+router.use(tenantMiddleware);
 
 /**
  * Reports & Analytics Routes

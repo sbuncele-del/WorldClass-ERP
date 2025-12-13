@@ -1,11 +1,13 @@
 import express, { RequestHandler } from 'express';
 import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 import * as TenantSettingsController from '../controllers/tenant-settings.controller';
 
 const router = express.Router();
 
-// All routes require authentication
+// All routes require authentication and tenant context
 router.use(authenticateToken);
+router.use(tenantMiddleware);
 
 // Tenant settings routes
 router.get('/settings', TenantSettingsController.getTenantSettings as unknown as RequestHandler);

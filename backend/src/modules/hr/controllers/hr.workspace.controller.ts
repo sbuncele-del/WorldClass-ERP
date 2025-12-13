@@ -1,5 +1,13 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { TenantRequest } from '../../../types';
 import { query } from '../../../config/database';
+
+/**
+ * Helper to extract tenant ID with type safety
+ */
+function getTenantId(req: TenantRequest): string | null {
+  return req.tenant?.id ?? null;
+}
 
 /**
  * HR Workspace Controller
@@ -10,9 +18,9 @@ import { query } from '../../../config/database';
  * GET /api/hr/workspace
  * Returns all data needed for the HR & Payroll workspace dashboard
  */
-export const getHRWorkspace = async (req: Request, res: Response) => {
+export const getHRWorkspace = async (req: TenantRequest, res: Response) => {
   try {
-    const tenantId = (req as any).tenant?.id;
+    const tenantId = getTenantId(req);
 
     if (!tenantId) {
       return res.status(401).json({
@@ -65,13 +73,14 @@ async function getEmployeeHeadcount(tenantId: string) {
   const result = await query(
     `
     SELECT 
-      department,
+      COALESCE(d.department_name, 'Unassigned') as department_name,
       COUNT(*) as employee_count,
-      COUNT(CASE WHEN employment_status = 'active' THEN 1 END) as active_count,
-      COUNT(CASE WHEN employment_status = 'on_leave' THEN 1 END) as on_leave_count
-    FROM employees
-    WHERE tenant_id = $1
-    GROUP BY department
+      COUNT(CASE WHEN e.employment_status = 'Active' THEN 1 END) as active_count,
+      COUNT(CASE WHEN e.employment_status = 'On Leave' THEN 1 END) as on_leave_count
+    FROM hr.employees e
+    LEFT JOIN hr.departments d ON e.department_id = d.department_id AND e.tenant_id = d.tenant_id
+    WHERE e.tenant_id = $1
+    GROUP BY COALESCE(d.department_name, 'Unassigned')
     ORDER BY employee_count DESC
     `,
     [tenantId]
@@ -87,18 +96,21 @@ async function getLeaveRequests(tenantId: string) {
   const result = await query(
     `
     SELECT 
-      lr.id,
-      lr.leave_type,
+      lr.request_id,
+      lr.leave_type_id,
       lr.start_date,
       lr.end_date,
       lr.status,
+      lt.leave_name,
       e.employee_number,
       e.first_name,
       e.last_name,
-      e.department
-    FROM leave_requests lr
-    JOIN employees e ON lr.employee_id = e.id
-    WHERE lr.tenant_id = $1 AND lr.status = 'pending'
+      d.department_name
+    FROM hr.leave_requests lr
+    JOIN hr.employees e ON lr.employee_id = e.employee_id AND lr.tenant_id = e.tenant_id
+    LEFT JOIN hr.departments d ON e.department_id = d.department_id
+    LEFT JOIN hr.leave_types lt ON lr.leave_type_id = lt.leave_type_id
+    WHERE lr.tenant_id = $1 AND lr.status = 'Pending'
     ORDER BY lr.start_date ASC
     LIMIT 10
     `,
@@ -115,20 +127,21 @@ async function getPayrollStatus(tenantId: string) {
   const result = await query(
     `
     SELECT 
-      pr.id,
-      pr.payroll_period,
+      pr.run_id,
+      pp.period_name,
       pr.status,
-      pr.total_gross_pay,
+      pr.total_gross,
       pr.total_deductions,
-      pr.total_net_pay,
-      pr.payment_date,
-      COUNT(pre.id) as employee_count
-    FROM payroll_runs pr
-    LEFT JOIN payroll_run_entries pre ON pr.id = pre.payroll_run_id
+      pr.total_net,
+      pp.payment_date,
+      COUNT(prd.detail_id) as employee_count
+    FROM hr.payroll_runs pr
+    JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id AND pr.tenant_id = pp.tenant_id
+    LEFT JOIN hr.payroll_run_details prd ON pr.run_id = prd.run_id AND prd.tenant_id = pr.tenant_id
     WHERE pr.tenant_id = $1 
-      AND pr.payroll_period >= DATE_TRUNC('month', CURRENT_DATE)
-    GROUP BY pr.id, pr.payroll_period, pr.status, pr.total_gross_pay, pr.total_deductions, pr.total_net_pay, pr.payment_date
-    ORDER BY pr.payroll_period DESC
+      AND pp.period_start_date >= DATE_TRUNC('month', CURRENT_DATE)
+    GROUP BY pr.run_id, pp.period_name, pr.status, pr.total_gross, pr.total_deductions, pr.total_net, pp.payment_date
+    ORDER BY pp.period_start_date DESC
     LIMIT 3
     `,
     [tenantId]
@@ -151,8 +164,8 @@ async function getRecruitmentPipeline(tenantId: string) {
       COUNT(ja.id) as applicant_count,
       COUNT(CASE WHEN ja.status = 'interview' THEN 1 END) as interview_count,
       COUNT(CASE WHEN ja.status = 'offer' THEN 1 END) as offer_count
-    FROM job_postings jp
-    LEFT JOIN job_applications ja ON jp.id = ja.job_posting_id
+    FROM hr.job_postings jp
+    LEFT JOIN hr.job_applications ja ON jp.id = ja.job_posting_id AND ja.tenant_id = $1
     WHERE jp.tenant_id = $1 AND jp.status = 'open'
     GROUP BY jp.id, jp.job_title, jp.department, jp.status
     ORDER BY applicant_count DESC
@@ -171,17 +184,19 @@ async function getRecentHires(tenantId: string) {
   const result = await query(
     `
     SELECT 
-      id,
-      employee_number,
-      first_name,
-      last_name,
-      department,
-      job_title,
-      hire_date
-    FROM employees
-    WHERE tenant_id = $1 
-      AND hire_date >= CURRENT_DATE - INTERVAL '30 days'
-    ORDER BY hire_date DESC
+      e.employee_id,
+      e.employee_number,
+      e.first_name,
+      e.last_name,
+      d.department_name,
+      p.position_title,
+      e.hire_date
+    FROM hr.employees e
+    LEFT JOIN hr.departments d ON e.department_id = d.department_id AND e.tenant_id = d.tenant_id
+    LEFT JOIN hr.positions p ON e.position_id = p.position_id AND e.tenant_id = p.tenant_id
+    WHERE e.tenant_id = $1 
+      AND e.hire_date >= CURRENT_DATE - INTERVAL '30 days'
+    ORDER BY e.hire_date DESC
     LIMIT 10
     `,
     [tenantId]
@@ -197,16 +212,16 @@ async function getHRSummary(tenantId: string) {
   const result = await query(
     `
     SELECT 
-      COUNT(DISTINCT e.id) as total_employees,
-      COUNT(CASE WHEN e.employment_status = 'active' THEN 1 END) as active_employees,
-      COUNT(CASE WHEN lr.status = 'pending' THEN 1 END) as pending_leave_requests,
+      COUNT(DISTINCT e.employee_id) as total_employees,
+      COUNT(CASE WHEN e.employment_status = 'Active' THEN 1 END) as active_employees,
+      COUNT(CASE WHEN lr.status = 'Pending' THEN 1 END) as pending_leave_requests,
       COUNT(CASE WHEN e.hire_date >= CURRENT_DATE - INTERVAL '30 days' THEN 1 END) as new_hires_30d,
       COUNT(DISTINCT jp.id) as open_positions,
       COUNT(DISTINCT ja.id) as total_applications
-    FROM employees e
-    LEFT JOIN leave_requests lr ON e.id = lr.employee_id AND lr.tenant_id = $1
-    LEFT JOIN job_postings jp ON jp.tenant_id = $1 AND jp.status = 'open'
-    LEFT JOIN job_applications ja ON jp.id = ja.job_posting_id
+    FROM hr.employees e
+    LEFT JOIN hr.leave_requests lr ON e.employee_id = lr.employee_id AND lr.tenant_id = $1 AND lr.status = 'Pending'
+    LEFT JOIN hr.job_postings jp ON jp.tenant_id = $1 AND jp.status = 'open'
+    LEFT JOIN hr.job_applications ja ON jp.id = ja.job_posting_id AND ja.tenant_id = $1
     WHERE e.tenant_id = $1
     `,
     [tenantId]

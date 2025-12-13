@@ -5,8 +5,12 @@
 
 import express from 'express';
 import * as periodController from '../modules/financial/controllers/period.controller';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
+
+// Apply tenant middleware to all period routes
+router.use(tenantMiddleware);
 
 // ===== FISCAL YEARS =====
 router.get('/fiscal-years', periodController.getAllFiscalYears);

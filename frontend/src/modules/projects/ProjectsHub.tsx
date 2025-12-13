@@ -12,7 +12,7 @@
  * - Financial Integration (GL posting)
  */
 
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import dayjs, { Dayjs } from 'dayjs';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
@@ -230,9 +230,40 @@ const ProjectsHub: React.FC = () => {
   const [timeEntries] = useState<TimeEntry[]>(sampleTimeEntries);
   const [ganttTasks, setGanttTasks] = useState<GanttTask[]>(sampleGanttTasks);
   const [form] = Form.useForm();
+  
+  // Fetch live API data
+  const [apiStats, setApiStats] = useState<any>(null);
+  const [apiLoading, setApiLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchWorkspaceData = async () => {
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const response = await fetch(`${API_URL}/api/v1/projects/workspace`);
+        const result = await response.json();
+        if (result.success && result.data?.summary) {
+          setApiStats(result.data.summary);
+        }
+      } catch (err) {
+        console.log('Using local mock data for projects');
+      } finally {
+        setApiLoading(false);
+      }
+    };
+    fetchWorkspaceData();
+  }, []);
 
-  // Calculate stats
-  const projectStats = {
+  // Calculate stats - use API data if available, otherwise fall back to mock data
+  const projectStats = apiStats ? {
+    total: apiStats.totalProjects || projects.length,
+    active: apiStats.activeProjects || projects.filter(p => p.status === 'active').length,
+    onTrack: projects.filter(p => p.progress >= 40).length,
+    atRisk: apiStats.onHoldProjects || projects.filter(p => p.priority === 'critical' && p.progress < 50).length,
+    totalBudget: apiStats.totalBudget || projects.reduce((sum, p) => sum + p.budget, 0),
+    totalSpent: apiStats.totalSpent || projects.reduce((sum, p) => sum + p.spent, 0),
+    totalTasks: apiStats.totalTasks || projects.reduce((sum, p) => sum + p.tasks.total, 0),
+    completedTasks: (apiStats.totalTasks - apiStats.openTasks) || projects.reduce((sum, p) => sum + p.tasks.completed, 0)
+  } : {
     total: projects.length,
     active: projects.filter(p => p.status === 'active').length,
     onTrack: projects.filter(p => p.progress >= 40).length,

@@ -8,8 +8,12 @@ import {
   getApprovalHistory,
   getApprovalStats
 } from '../controllers/approval.controller';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
+
+// Apply tenant middleware to all approval routes
+router.use(tenantMiddleware);
 
 /**
  * Approval Workflow Routes

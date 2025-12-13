@@ -2,8 +2,12 @@ import { Router } from 'express';
 import { IncomeStatementController } from '../controllers/income-statement.controller';
 import { BalanceSheetController } from '../controllers/balance-sheet.controller';
 import { CashFlowController } from '../controllers/cash-flow.controller';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
+
+// Apply tenant middleware to all financial report routes
+router.use(tenantMiddleware);
 
 // Income Statement Routes
 router.get('/income-statement', IncomeStatementController.generateIncomeStatement);

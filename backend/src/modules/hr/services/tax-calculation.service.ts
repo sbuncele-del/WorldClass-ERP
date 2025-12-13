@@ -227,7 +227,7 @@ export function calculateFullTax(input: TaxCalculationInput): TaxCalculationResu
 /**
  * Generate IRP5/IT3(a) data for an employee for the tax year
  */
-export async function generateIRP5Data(employeeId: number, taxYear: number) {
+export async function generateIRP5Data(employeeId: number, taxYear: number, tenantId: string) {
   const client = await pool.connect();
   
   try {
@@ -237,8 +237,8 @@ export async function generateIRP5Data(employeeId: number, taxYear: number) {
         e.*,
         EXTRACT(YEAR FROM AGE(e.date_of_birth)) as age
       FROM hr.employees e
-      WHERE e.employee_id = $1
-    `, [employeeId]);
+      WHERE e.tenant_id = $1 AND e.employee_id = $2
+    `, [tenantId, employeeId]);
 
     if (empResult.rows.length === 0) {
       throw new Error('Employee not found');
@@ -257,14 +257,14 @@ export async function generateIRP5Data(employeeId: number, taxYear: number) {
       FROM hr.payroll_run_details prd
       JOIN hr.payroll_runs pr ON prd.run_id = pr.run_id
       JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id
-      WHERE prd.employee_id = $1
+      WHERE prd.tenant_id = $1 AND prd.employee_id = $2
         AND pr.status = 'Posted'
         AND (
-          (EXTRACT(MONTH FROM pp.period_end_date) >= 3 AND EXTRACT(YEAR FROM pp.period_end_date) = $2)
+          (EXTRACT(MONTH FROM pp.period_end_date) >= 3 AND EXTRACT(YEAR FROM pp.period_end_date) = $3)
           OR
-          (EXTRACT(MONTH FROM pp.period_end_date) <= 2 AND EXTRACT(YEAR FROM pp.period_end_date) = $2 + 1)
+          (EXTRACT(MONTH FROM pp.period_end_date) <= 2 AND EXTRACT(YEAR FROM pp.period_end_date) = $3 + 1)
         )
-    `, [employeeId, taxYear]);
+    `, [tenantId, employeeId, taxYear]);
 
     const totals = payrollData.rows[0];
 
@@ -325,7 +325,7 @@ export async function generateIRP5Data(employeeId: number, taxYear: number) {
 /**
  * Generate EMP501 reconciliation data
  */
-export async function generateEMP501Data(taxYear: number) {
+export async function generateEMP501Data(taxYear: number, tenantId: string) {
   const client = await pool.connect();
   
   try {
@@ -344,15 +344,15 @@ export async function generateEMP501Data(taxYear: number) {
       JOIN hr.payroll_run_details prd ON e.employee_id = prd.employee_id
       JOIN hr.payroll_runs pr ON prd.run_id = pr.run_id
       JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id
-      WHERE pr.status = 'Posted'
+      WHERE pr.tenant_id = $1 AND e.tenant_id = $1 AND pr.status = 'Posted'
         AND (
-          (EXTRACT(MONTH FROM pp.period_end_date) >= 3 AND EXTRACT(YEAR FROM pp.period_end_date) = $1)
+          (EXTRACT(MONTH FROM pp.period_end_date) >= 3 AND EXTRACT(YEAR FROM pp.period_end_date) = $2)
           OR
-          (EXTRACT(MONTH FROM pp.period_end_date) <= 2 AND EXTRACT(YEAR FROM pp.period_end_date) = $1 + 1)
+          (EXTRACT(MONTH FROM pp.period_end_date) <= 2 AND EXTRACT(YEAR FROM pp.period_end_date) = $2 + 1)
         )
       GROUP BY e.employee_id, e.employee_number, e.id_number, e.first_name, e.last_name
       ORDER BY e.employee_number
-    `, [taxYear]);
+    `, [tenantId, taxYear]);
 
     // Calculate totals
     const totals = employeesData.rows.reduce((acc, emp) => ({

@@ -27,8 +27,9 @@ export interface Department {
 
 export const hrService = {
   async getStats(): Promise<HRStats> {
-    const { data } = await apiClient.get('/api/hr/stats');
-    return data;
+    const { data } = await apiClient.get('/api/hr/workspace');
+    // Extract summary from workspace response
+    return data.data?.summary || data.summary || data;
   },
 
   async getEmployees(params?: { limit?: number; department_id?: string }): Promise<{ data: Employee[]; total: number }> {

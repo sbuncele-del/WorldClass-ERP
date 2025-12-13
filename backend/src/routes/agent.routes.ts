@@ -7,8 +7,12 @@
 import express from 'express';
 import { actionableAIAgent, AgentMessage } from '../services/ai/ActionableAIAgent';
 import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
+
+// Apply tenant middleware to all agent routes
+router.use(tenantMiddleware);
 
 /**
  * POST /api/v1/agent/chat

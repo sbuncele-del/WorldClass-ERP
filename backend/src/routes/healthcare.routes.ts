@@ -1,11 +1,13 @@
 import express from 'express';
 import * as healthcareController from '../controllers/healthcare.controller';
 import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
 
-// Apply authentication to all routes
+// Apply authentication and tenant middleware to all routes
 router.use(authenticateToken);
+router.use(tenantMiddleware);
 
 /**
  * ================================================

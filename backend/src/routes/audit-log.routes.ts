@@ -10,11 +10,13 @@ import { Router, Request, Response } from 'express';
 import { queryAuditLogs, AuditAction } from '../middleware/audit.middleware';
 import { authenticateToken } from '../middleware/auth';
 import { requirePermission, Permission } from '../middleware/rbac.middleware';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
 
-// All audit routes require authentication
+// All audit routes require authentication and tenant context
 router.use(authenticateToken);
+router.use(tenantMiddleware);
 
 /**
  * GET /api/audit/logs

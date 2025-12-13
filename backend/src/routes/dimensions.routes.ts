@@ -5,8 +5,12 @@
 
 import { Router } from 'express';
 import * as dimensionsController from '../modules/financial/controllers/dimensions.controller';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
+
+// Apply tenant middleware to all dimension routes
+router.use(tenantMiddleware);
 
 // ===== COST CENTERS =====
 router.get('/cost-centers', dimensionsController.getAllCostCenters);

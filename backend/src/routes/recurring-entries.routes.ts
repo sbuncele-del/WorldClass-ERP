@@ -1,7 +1,11 @@
 import { Router } from 'express';
 import { RecurringEntriesController } from '../controllers/recurring-entries.controller';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
+
+// Apply tenant middleware to all recurring entry routes
+router.use(tenantMiddleware);
 
 // Get all recurring entries
 router.get('/', RecurringEntriesController.getRecurringEntries);

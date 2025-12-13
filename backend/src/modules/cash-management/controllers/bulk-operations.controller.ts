@@ -1,8 +1,16 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { TenantRequest } from '../../../types';
 import { BulkOperationsService } from '../services/bulk-operations.service';
 import pool from '../../../config/database';
 
 const bulkOperationsService = new BulkOperationsService(pool);
+
+/**
+ * Helper to extract tenant ID with type safety
+ */
+function getTenantId(req: TenantRequest): string | null {
+  return req.tenant?.id ?? null;
+}
 
 /**
  * POST /api/cash-management/bulk/auto-match
@@ -22,11 +30,18 @@ const bulkOperationsService = new BulkOperationsService(pool);
  *   batchSize?: number
  * }
  */
-export async function bulkAutoMatch(req: Request, res: Response) {
+export async function bulkAutoMatch(req: TenantRequest, res: Response) {
   try {
-    const tenantId = (req as any).tenantId;
-    const userId = (req as any).userId;
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
     const options = req.body;
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Tenant ID not found'
+      });
+    }
 
     if (!options.statementId) {
       return res.status(400).json({
@@ -66,11 +81,18 @@ export async function bulkAutoMatch(req: Request, res: Response) {
  *   batchSize?: number
  * }
  */
-export async function bulkAcceptSuggestions(req: Request, res: Response) {
+export async function bulkAcceptSuggestions(req: TenantRequest, res: Response) {
   try {
-    const tenantId = (req as any).tenantId;
-    const userId = (req as any).userId;
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
     const options = req.body;
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Tenant ID not found'
+      });
+    }
 
     if (!options.matchIds || !Array.isArray(options.matchIds)) {
       return res.status(400).json({
@@ -126,11 +148,18 @@ export async function bulkAcceptSuggestions(req: Request, res: Response) {
  *   batchSize?: number
  * }
  */
-export async function bulkUnmatch(req: Request, res: Response) {
+export async function bulkUnmatch(req: TenantRequest, res: Response) {
   try {
-    const tenantId = (req as any).tenantId;
-    const userId = (req as any).userId;
+    const tenantId = getTenantId(req);
+    const userId = req.user?.id;
     const options = req.body;
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Tenant ID not found'
+      });
+    }
 
     // At least one filter is required
     if (!options.bankStatementLineIds && !options.statementId && !options.dateFrom && !options.dateTo) {
@@ -165,10 +194,17 @@ export async function bulkUnmatch(req: Request, res: Response) {
  * GET /api/cash-management/bulk/stats/:statementId
  * Get bulk operation statistics for a statement
  */
-export async function getBulkStats(req: Request, res: Response) {
+export async function getBulkStats(req: TenantRequest, res: Response) {
   try {
-    const tenantId = (req as any).tenantId;
+    const tenantId = getTenantId(req);
     const { statementId } = req.params;
+
+    if (!tenantId) {
+      return res.status(401).json({
+        success: false,
+        error: 'Tenant ID not found'
+      });
+    }
 
     if (!statementId) {
       return res.status(400).json({

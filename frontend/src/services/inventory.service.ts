@@ -28,8 +28,9 @@ export interface StockMovement {
 
 export const inventoryService = {
   async getStats(): Promise<InventoryStats> {
-    const { data } = await apiClient.get('/api/inventory/stats');
-    return data;
+    const { data } = await apiClient.get('/api/inventory/workspace');
+    // Extract summary from workspace response
+    return data.data?.summary || data.summary || data;
   },
 
   async getProducts(params?: { limit?: number; low_stock?: boolean }): Promise<{ data: Product[]; total: number }> {

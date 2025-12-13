@@ -8,7 +8,7 @@
  */
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://51.21.219.35:3001';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 /**
  * Get authentication token from localStorage

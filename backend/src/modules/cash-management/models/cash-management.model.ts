@@ -95,6 +95,7 @@ export enum MatchStatus {
 // ============================================================
 
 export interface Bank {
+  tenant_id: string;
   id: number;
   bank_code: string;
   bank_name: string;
@@ -113,6 +114,7 @@ export interface Bank {
 }
 
 export interface BankAccount {
+  tenant_id: string;
   id: number;
   bank_id: number;
   account_number: string;
@@ -152,6 +154,7 @@ export interface BankAccount {
 }
 
 export interface BankStatement {
+  tenant_id: string;
   id: number;
   bank_account_id: number;
   
@@ -199,6 +202,7 @@ export interface BankStatement {
 }
 
 export interface BankStatementLine {
+  tenant_id: string;
   id: number;
   bank_statement_id: number;
   

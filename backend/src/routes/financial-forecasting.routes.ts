@@ -12,8 +12,12 @@ import {
   generateForecast,
   getBudgetDashboard
 } from '../controllers/financial-forecasting.controller';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
+
+// Apply tenant middleware to all financial forecasting routes
+router.use(tenantMiddleware);
 
 // Budget Scenarios
 router.get('/scenarios', getBudgetScenarios);

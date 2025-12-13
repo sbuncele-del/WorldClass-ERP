@@ -83,8 +83,8 @@ export class BulkOperationsService {
    */
   async bulkAutoMatch(
     options: BulkAutoMatchOptions,
-    tenantId: number,
-    userId: number
+    tenantId: string,
+    userId?: string
   ): Promise<BulkAutoMatchResult> {
     const startTime = Date.now();
     const { statementId, filters, batchSize = 100 } = options;
@@ -196,8 +196,8 @@ export class BulkOperationsService {
    */
   async bulkAcceptSuggestions(
     options: BulkAcceptSuggestionsOptions,
-    tenantId: number,
-    userId: number
+    tenantId: string,
+    userId?: string
   ): Promise<BulkAcceptSuggestionsResult> {
     const startTime = Date.now();
     const { matchIds, minConfidence = 0, batchSize = 50 } = options;
@@ -302,8 +302,8 @@ export class BulkOperationsService {
    */
   async bulkUnmatch(
     options: BulkUnmatchOptions,
-    tenantId: number,
-    userId: number
+    tenantId: string,
+    userId?: string
   ): Promise<BulkUnmatchResult> {
     const startTime = Date.now();
     const { bankStatementLineIds, statementId, dateFrom, dateTo, batchSize = 50 } = options;
@@ -418,7 +418,7 @@ export class BulkOperationsService {
    * Get bulk operation statistics
    * Useful for showing progress in UI
    */
-  async getBulkOperationStats(statementId: number, tenantId: number): Promise<{
+  async getBulkOperationStats(statementId: number, tenantId: string): Promise<{
     totalLines: number;
     matchedLines: number;
     unmatchedLines: number;

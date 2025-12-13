@@ -2,8 +2,12 @@ import express from 'express';
 import AuditReadyController from '../controllers/audit-ready.controller';
 import * as auditWorkspaceController from '../modules/audit/controllers/audit.workspace.controller';
 import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
+
+// Apply tenant middleware to all audit routes
+router.use(tenantMiddleware);
 
 // ============================================================================
 // WORKSPACE

@@ -5,7 +5,7 @@ import App from './App.tsx'
 
 // Initialize Sentry for error tracking
 Sentry.init({
-  dsn: 'https://038cbc5f1e389d85662fdb92288198b7@o4510500429824000.ingest.de.sentry.io/4510500436770896',
+  dsn: import.meta.env.VITE_SENTRY_DSN || 'https://038cbc5f1e389d85662fdb92288198b7@o4510500429824000.ingest.de.sentry.io/4510500436770896',
   integrations: [
     Sentry.browserTracingIntegration(),
     Sentry.replayIntegration({
@@ -16,7 +16,7 @@ Sentry.init({
   tracesSampleRate: 1.0,
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
-  environment: import.meta.env.MODE,
+  environment: import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE,
   release: 'aetheros-erp@1.0.0',
   enabled: import.meta.env.PROD,
   beforeSend(event) {

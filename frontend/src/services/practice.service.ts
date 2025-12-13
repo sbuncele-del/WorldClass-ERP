@@ -39,8 +39,9 @@ export interface TimeEntry {
 
 export const practiceService = {
   async getStats(): Promise<PracticeStats> {
-    const { data } = await apiClient.get('/api/practice/stats');
-    return data;
+    const { data } = await apiClient.get('/api/practice/workspace');
+    // Extract summary from workspace response
+    return data.data?.summary || data.summary || data;
   },
 
   async getClients(params?: { limit?: number }): Promise<{ data: Client[]; total: number }> {

@@ -5,6 +5,7 @@
  */
 
 import express from 'express';
+import { tenantMiddleware } from '../../middleware/tenant';
 
 import enterpriseRoutes from './enterprise';
 import tripsRoutes from './trips';
@@ -13,6 +14,9 @@ import documentsRoutes from './documents';
 import trackingRoutes from './tracking';
 
 const router = express.Router();
+
+// Apply tenant middleware to all logistics routes
+router.use(tenantMiddleware);
 
 // Mount route modules
 router.use('/enterprise', enterpriseRoutes);

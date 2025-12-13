@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   Card,
   Row,
@@ -192,6 +192,32 @@ const BankingHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  
+  // Fetch live API data for banking/cash management
+  const [apiData, setApiData] = useState<any>(null);
+  const [apiLoading, setApiLoading] = useState(true);
+  
+  useEffect(() => {
+    const fetchWorkspaceData = async () => {
+      try {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const token = localStorage.getItem('token');
+        const headers: Record<string, string> = {};
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        
+        const response = await fetch(`${API_URL}/api/v1/cash-management/workspace`, { headers });
+        const result = await response.json();
+        if (result.success && result.data) {
+          setApiData(result.data);
+        }
+      } catch (err) {
+        console.log('Using local mock data for banking');
+      } finally {
+        setApiLoading(false);
+      }
+    };
+    fetchWorkspaceData();
+  }, []);
 
   const handleSyncAll = async () => {
     setSyncing(true);

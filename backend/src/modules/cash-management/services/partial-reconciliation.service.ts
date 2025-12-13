@@ -71,8 +71,8 @@ export class PartialReconciliationService {
    */
   async acceptPartialMatch(
     request: PartialMatchRequest,
-    tenantId: number,
-    userId: number
+    tenantId: string,
+    userId?: string
   ): Promise<PartialMatchResult> {
     const client = await this.pool.connect();
     
@@ -212,8 +212,8 @@ export class PartialReconciliationService {
   private async createDifferenceJournal(
     bankLine: any,
     request: PartialMatchRequest,
-    tenantId: number,
-    userId: number,
+    tenantId: string,
+    userId: string | undefined,
     client: PoolClient
   ): Promise<number> {
     // Get difference account code
@@ -337,7 +337,7 @@ export class PartialReconciliationService {
   /**
    * Get tolerance settings for partial matching
    */
-  async getToleranceSettings(tenantId: number): Promise<{
+  async getToleranceSettings(tenantId: string): Promise<{
     amountTolerance: number;
     percentageTolerance: number;
     maxDifference: number;
@@ -375,7 +375,7 @@ export class PartialReconciliationService {
   async isWithinTolerance(
     amount1: number,
     amount2: number,
-    tenantId: number
+    tenantId: string
   ): Promise<{
     withinTolerance: boolean;
     difference: number;
@@ -414,7 +414,7 @@ export class PartialReconciliationService {
    */
   async findPotentialPartialMatches(
     bankStatementLineId: number,
-    tenantId: number
+    tenantId: string
   ): Promise<any[]> {
     const client = await this.pool.connect();
     

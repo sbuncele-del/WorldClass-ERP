@@ -1,8 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { Pool } from 'pg';
 import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
+
+// Apply tenant middleware to all message routes
+router.use(tenantMiddleware);
 
 // Get pool from app
 const getPool = (req: Request): Pool => {

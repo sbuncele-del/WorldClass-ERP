@@ -80,6 +80,7 @@ export const CONTRACT_TYPES = [
  * Create employee document record
  */
 export async function createDocument(
+  tenantId: string,
   employeeId: number,
   documentData: {
     document_type: string;
@@ -106,8 +107,8 @@ export async function createDocument(
 
     // Verify employee exists
     const empCheck = await client.query(
-      'SELECT employee_id FROM hr.employees WHERE employee_id = $1',
-      [employeeId]
+      'SELECT employee_id FROM hr.employees WHERE tenant_id = $1 AND employee_id = $2',
+      [tenantId, employeeId]
     );
 
     if (empCheck.rows.length === 0) {
@@ -116,6 +117,7 @@ export async function createDocument(
 
     const result = await client.query(`
       INSERT INTO hr.employee_documents (
+        tenant_id,
         employee_id,
         document_type,
         document_name,
@@ -128,9 +130,10 @@ export async function createDocument(
         is_confidential,
         uploaded_by,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP)
       RETURNING *
     `, [
+      tenantId,
       employeeId,
       documentData.document_type,
       documentData.document_name,
@@ -158,6 +161,7 @@ export async function createDocument(
  * Get all documents for an employee
  */
 export async function getEmployeeDocuments(
+  tenantId: string,
   employeeId: number,
   documentType?: string
 ): Promise<EmployeeDocument[]> {
@@ -167,10 +171,10 @@ export async function getEmployeeDocuments(
       u.first_name || ' ' || u.last_name as uploaded_by_name
     FROM hr.employee_documents d
     LEFT JOIN users u ON d.uploaded_by = u.id
-    WHERE d.employee_id = $1 AND d.is_deleted = false
+    WHERE d.tenant_id = $1 AND d.employee_id = $2 AND d.is_deleted = false
   `;
   
-  const params: any[] = [employeeId];
+  const params: any[] = [tenantId, employeeId];
 
   if (documentType) {
     params.push(documentType);
@@ -186,18 +190,18 @@ export async function getEmployeeDocuments(
 /**
  * Delete document (soft delete)
  */
-export async function deleteDocument(documentId: number): Promise<void> {
+export async function deleteDocument(tenantId: string, documentId: number): Promise<void> {
   await pool.query(`
     UPDATE hr.employee_documents
     SET is_deleted = true, deleted_at = CURRENT_TIMESTAMP
-    WHERE document_id = $1
-  `, [documentId]);
+    WHERE tenant_id = $1 AND document_id = $2
+  `, [tenantId, documentId]);
 }
 
 /**
  * Get documents expiring soon
  */
-export async function getExpiringDocuments(daysAhead: number = 30): Promise<any[]> {
+export async function getExpiringDocuments(tenantId: string, daysAhead: number = 30): Promise<any[]> {
   const result = await pool.query(`
     SELECT 
       d.*,
@@ -205,14 +209,15 @@ export async function getExpiringDocuments(daysAhead: number = 30): Promise<any[
       e.first_name || ' ' || e.last_name as employee_name,
       dept.department_name
     FROM hr.employee_documents d
-    JOIN hr.employees e ON d.employee_id = e.employee_id
+    JOIN hr.employees e ON d.employee_id = e.employee_id AND e.tenant_id = $2
     LEFT JOIN hr.departments dept ON e.department_id = dept.department_id
     WHERE d.expiry_date IS NOT NULL
       AND d.expiry_date <= CURRENT_DATE + INTERVAL '1 day' * $1
       AND d.expiry_date >= CURRENT_DATE
       AND d.is_deleted = false
+      AND d.tenant_id = $2
     ORDER BY d.expiry_date ASC
-  `, [daysAhead]);
+  `, [daysAhead, tenantId]);
 
   return result.rows;
 }
@@ -221,6 +226,7 @@ export async function getExpiringDocuments(daysAhead: number = 30): Promise<any[
  * Create employee contract
  */
 export async function createContract(
+  tenantId: string,
   employeeId: number,
   contractData: {
     contract_type: string;
@@ -252,8 +258,8 @@ export async function createContract(
 
     // Verify employee exists
     const empCheck = await client.query(
-      'SELECT employee_id FROM hr.employees WHERE employee_id = $1',
-      [employeeId]
+      'SELECT employee_id FROM hr.employees WHERE tenant_id = $1 AND employee_id = $2',
+      [tenantId, employeeId]
     );
 
     if (empCheck.rows.length === 0) {
@@ -267,11 +273,12 @@ export async function createContract(
     await client.query(`
       UPDATE hr.employee_contracts
       SET status = 'SUPERSEDED', updated_at = CURRENT_TIMESTAMP
-      WHERE employee_id = $1 AND status = 'ACTIVE'
-    `, [employeeId]);
+      WHERE tenant_id = $1 AND employee_id = $2 AND status = 'ACTIVE'
+    `, [tenantId, employeeId]);
 
     const result = await client.query(`
       INSERT INTO hr.employee_contracts (
+        tenant_id,
         employee_id,
         contract_type,
         contract_number,
@@ -291,9 +298,10 @@ export async function createContract(
         document_id,
         created_by,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'ACTIVE', $16, $17, CURRENT_TIMESTAMP)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'ACTIVE', $17, $18, CURRENT_TIMESTAMP)
       RETURNING *
     `, [
+      tenantId,
       employeeId,
       contractData.contract_type,
       contractNumber,
@@ -322,12 +330,13 @@ export async function createContract(
         department_id = $3,
         reports_to_employee_id = $4,
         updated_at = CURRENT_TIMESTAMP
-      WHERE employee_id = $5
+      WHERE tenant_id = $5 AND employee_id = $6
     `, [
       contractData.basic_salary,
       contractData.job_title,
       contractData.department_id,
       contractData.reporting_to,
+      tenantId,
       employeeId,
     ]);
 
@@ -345,6 +354,7 @@ export async function createContract(
  * Get all contracts for an employee
  */
 export async function getEmployeeContracts(
+  tenantId: string,
   employeeId: number,
   includeHistory: boolean = false
 ): Promise<EmployeeContract[]> {
@@ -354,9 +364,9 @@ export async function getEmployeeContracts(
       d.department_name,
       m.first_name || ' ' || m.last_name as reporting_to_name
     FROM hr.employee_contracts c
-    LEFT JOIN hr.departments d ON c.department_id = d.department_id
-    LEFT JOIN hr.employees m ON c.reporting_to = m.employee_id
-    WHERE c.employee_id = $1
+    LEFT JOIN hr.departments d ON c.department_id = d.department_id AND d.tenant_id = $1
+    LEFT JOIN hr.employees m ON c.reporting_to = m.employee_id AND m.tenant_id = $1
+    WHERE c.tenant_id = $1 AND c.employee_id = $2
   `;
 
   if (!includeHistory) {
@@ -365,7 +375,7 @@ export async function getEmployeeContracts(
 
   query += ' ORDER BY c.start_date DESC';
 
-  const result = await pool.query(query, [employeeId]);
+  const result = await pool.query(query, [tenantId, employeeId]);
   return result.rows;
 }
 
@@ -373,6 +383,7 @@ export async function getEmployeeContracts(
  * Terminate contract
  */
 export async function terminateContract(
+  tenantId: string,
   contractId: number,
   terminationDate: Date,
   terminationReason: string,
@@ -393,13 +404,13 @@ export async function terminateContract(
         terminated_by = $3,
         terminated_at = CURRENT_TIMESTAMP,
         updated_at = CURRENT_TIMESTAMP
-      WHERE contract_id = $4
-    `, [terminationDate, terminationReason, terminatedBy, contractId]);
+      WHERE tenant_id = $4 AND contract_id = $5
+    `, [terminationDate, terminationReason, terminatedBy, tenantId, contractId]);
 
     // Get employee ID
     const contractResult = await client.query(
-      'SELECT employee_id FROM hr.employee_contracts WHERE contract_id = $1',
-      [contractId]
+      'SELECT employee_id FROM hr.employee_contracts WHERE tenant_id = $1 AND contract_id = $2',
+      [tenantId, contractId]
     );
 
     if (contractResult.rows.length > 0) {
@@ -410,8 +421,8 @@ export async function terminateContract(
           employment_status = 'Terminated',
           termination_date = $1,
           updated_at = CURRENT_TIMESTAMP
-        WHERE employee_id = $2
-      `, [terminationDate, contractResult.rows[0].employee_id]);
+        WHERE tenant_id = $2 AND employee_id = $3
+      `, [terminationDate, tenantId, contractResult.rows[0].employee_id]);
     }
 
     await client.query('COMMIT');
@@ -426,7 +437,7 @@ export async function terminateContract(
 /**
  * Get contracts expiring soon
  */
-export async function getExpiringContracts(daysAhead: number = 60): Promise<any[]> {
+export async function getExpiringContracts(tenantId: string, daysAhead: number = 60): Promise<any[]> {
   const result = await pool.query(`
     SELECT 
       c.*,
@@ -440,8 +451,10 @@ export async function getExpiringContracts(daysAhead: number = 60): Promise<any[
       AND c.end_date <= CURRENT_DATE + INTERVAL '1 day' * $1
       AND c.end_date >= CURRENT_DATE
       AND c.status = 'ACTIVE'
+      AND c.tenant_id = $2
+      AND e.tenant_id = $2
     ORDER BY c.end_date ASC
-  `, [daysAhead]);
+  `, [daysAhead, tenantId]);
 
   return result.rows;
 }

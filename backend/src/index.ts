@@ -1,6 +1,8 @@
 // MUST load dotenv FIRST before any other imports that use environment variables
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+// Use explicit path to ensure .env is found regardless of cwd
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
 
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
@@ -51,6 +53,9 @@ import superAdminRoutes from './routes/super-admin.routes';
 import adminRoutes from './routes/admin.routes';
 import complianceRoutes from './routes/compliance.routes';
 import auditReadyRoutes from './routes/audit-ready.routes';
+
+// V2 Routes - Tenant-Hardened Controllers (multi-tenant secure)
+import v2Routes from './routes/v2.routes';
 import reportsRoutes from './routes/reports.routes';
 import treasuryRoutes from './routes/treasury.routes';
 import aiAssistantRoutes from './routes/ai-assistant.routes';
@@ -334,6 +339,10 @@ v1Router.use('/mining', apiLimiter, miningRoutes); // Mining Industry API
 v1Router.use('/agriculture', apiLimiter, agricultureRoutes); // Agriculture Industry API
 v1Router.use('/construction', apiLimiter, constructionRoutes); // Construction Industry API
 v1Router.use('/property', apiLimiter, propertyRoutes); // Property Management API
+
+// V2 Routes - Tenant-Hardened API (multi-tenant secure)
+// These routes use v2 controllers with proper tenant isolation
+v1Router.use('/v2', apiLimiter, v2Routes);
 
 // Mount v1 router
 app.use('/api/v1', v1Router);

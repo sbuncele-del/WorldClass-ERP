@@ -281,6 +281,292 @@ export const fileUploadValidation: ValidationChain[] = [
     .withMessage('Invalid module type'),
 ];
 
+// Financial v2 Validation
+export const financialCreateJournalEntryValidation: ValidationChain[] = [
+  body('posting_date')
+    .optional()
+    .isISO8601()
+    .withMessage('posting_date must be a valid ISO date'),
+  body('description')
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 500 })
+    .withMessage('Description is required (max 500 characters)'),
+  body('journal_type')
+    .optional()
+    .isIn(['general', 'sales', 'purchase', 'cash', 'adjustment', 'closing'])
+    .withMessage('journal_type must be a valid journal type'),
+  body('status')
+    .optional()
+    .isIn(['draft', 'pending_approval', 'posted'])
+    .withMessage('status must be draft, pending_approval, or posted'),
+  body('source_type')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 50 })
+    .withMessage('source_type must be 50 characters or less'),
+  body('source_id')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('source_id must be 100 characters or less'),
+  body('lines')
+    .isArray({ min: 1 })
+    .withMessage('At least one journal line is required'),
+  body('lines').custom((lines) => {
+    if (!Array.isArray(lines)) {
+      throw new Error('lines must be an array');
+    }
+
+    const hasValidAmounts = lines.every((line: any) => {
+      const debit = Number(line?.debit_amount) || 0;
+      const credit = Number(line?.credit_amount) || 0;
+      return debit >= 0 && credit >= 0 && (debit > 0 || credit > 0);
+    });
+
+    if (!hasValidAmounts) {
+      throw new Error('Each line must have a positive debit_amount or credit_amount');
+    }
+
+    return true;
+  }),
+  body('lines.*.account_id')
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('account_id is required for each line'),
+  body('lines.*.description')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ max: 255 })
+    .withMessage('Line description must be 255 characters or less'),
+  body('lines.*.cost_center_id')
+    .optional()
+    .isString()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('cost_center_id must be a string'),
+  body('lines.*.project_id')
+    .optional()
+    .isString()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('project_id must be a string'),
+];
+
+export const financialJournalEntryIdValidation: ValidationChain[] = [
+  param('id')
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Valid journal entry id is required'),
+];
+
+export const financialReverseJournalEntryValidation: ValidationChain[] = [
+  ...financialJournalEntryIdValidation,
+  body('reversal_date')
+    .optional()
+    .isISO8601()
+    .withMessage('reversal_date must be a valid ISO date'),
+];
+
+export const financialListJournalEntriesValidation: ValidationChain[] = [
+  query('status')
+    .optional()
+    .isIn(['draft', 'pending_approval', 'posted', 'reversed'])
+    .withMessage('status must be draft, pending_approval, posted, or reversed'),
+  query('from_date')
+    .optional()
+    .isISO8601()
+    .withMessage('from_date must be a valid ISO date'),
+  query('to_date')
+    .optional()
+    .isISO8601()
+    .withMessage('to_date must be a valid ISO date'),
+  query('page')
+    .optional()
+    .isInt({ min: 1, max: 500 })
+    .withMessage('page must be between 1 and 500'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 500 })
+    .withMessage('limit must be between 1 and 500'),
+];
+
+export const financialLedgerQueryValidation: ValidationChain[] = [
+  query('from_date')
+    .optional()
+    .isISO8601()
+    .withMessage('from_date must be a valid ISO date'),
+  query('to_date')
+    .optional()
+    .isISO8601()
+    .withMessage('to_date must be a valid ISO date'),
+  query('account_code')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('account_code must be 1-50 characters'),
+  query('limit')
+    .optional()
+    .isInt({ min: 1, max: 500 })
+    .withMessage('limit must be between 1 and 500'),
+  query('offset')
+    .optional()
+    .isInt({ min: 0, max: 5000 })
+    .withMessage('offset must be 0 or greater'),
+];
+
+export const financialAccountLedgerByAccountCodeValidation: ValidationChain[] = [
+  param('accountCode')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('accountCode is required'),
+  ...financialLedgerQueryValidation,
+];
+
+export const financialAccountLedgerByCodeValidation: ValidationChain[] = [
+  param('code')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('code is required'),
+  query('start_date')
+    .optional()
+    .isISO8601()
+    .withMessage('start_date must be a valid ISO date'),
+  query('end_date')
+    .optional()
+    .isISO8601()
+    .withMessage('end_date must be a valid ISO date'),
+];
+
+export const financialCashFlowValidation: ValidationChain[] = [
+  query('fromDate')
+    .isISO8601()
+    .withMessage('fromDate is required and must be an ISO date'),
+  query('toDate')
+    .isISO8601()
+    .withMessage('toDate is required and must be an ISO date'),
+];
+
+export const financialApplyTemplateValidation: ValidationChain[] = [
+  param('templateId')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .matches(/^[a-zA-Z0-9_-]+$/)
+    .withMessage('templateId must be alphanumeric with dashes/underscores'),
+];
+
+export const financialTaxSettingCreateValidation: ValidationChain[] = [
+  body('tax_code')
+    .trim()
+    .isLength({ min: 1, max: 20 })
+    .withMessage('tax_code is required'),
+  body('tax_name')
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('tax_name is required'),
+  body('tax_rate')
+    .isFloat({ min: 0, max: 100 })
+    .withMessage('tax_rate must be between 0 and 100'),
+  body('tax_type')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('tax_type is required'),
+  body('is_default')
+    .optional()
+    .isBoolean()
+    .withMessage('is_default must be boolean'),
+];
+
+export const financialTaxSettingUpdateValidation: ValidationChain[] = [
+  param('id')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Valid tax setting id is required'),
+  body('tax_rate')
+    .optional()
+    .isFloat({ min: 0, max: 100 })
+    .withMessage('tax_rate must be between 0 and 100'),
+  body('is_default')
+    .optional()
+    .isBoolean()
+    .withMessage('is_default must be boolean'),
+  body('is_active')
+    .optional()
+    .isBoolean()
+    .withMessage('is_active must be boolean'),
+];
+
+export const financialDimensionCreateValidation: ValidationChain[] = [
+  body('dimension_code')
+    .trim()
+    .isLength({ min: 1, max: 30 })
+    .withMessage('dimension_code is required'),
+  body('dimension_name')
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('dimension_name is required'),
+  body('dimension_type')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('dimension_type is required'),
+  body('parent_dimension_id')
+    .optional()
+    .isString()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('parent_dimension_id must be a string'),
+];
+
+export const financialDimensionUpdateValidation: ValidationChain[] = [
+  param('id')
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Valid dimension id is required'),
+  body('dimension_code')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 30 })
+    .withMessage('dimension_code must be 30 characters or less'),
+  body('dimension_name')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('dimension_name must be 100 characters or less'),
+  body('dimension_type')
+    .optional()
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('dimension_type must be 50 characters or less'),
+  body('parent_dimension_id')
+    .optional()
+    .isString()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('parent_dimension_id must be a string'),
+  body('is_active')
+    .optional()
+    .isBoolean()
+    .withMessage('is_active must be boolean'),
+];
+
+export const financialFiscalPeriodsValidation: ValidationChain[] = [
+  query('year')
+    .optional()
+    .isInt({ min: 1900, max: 2100 })
+    .withMessage('year must be a valid 4-digit year'),
+];
+
+export const financialTrialBalanceValidation: ValidationChain[] = [
+  query('as_of')
+    .optional()
+    .isISO8601()
+    .withMessage('as_of must be a valid ISO date'),
+];
+
 export default {
   signupValidation,
   loginValidation,
@@ -301,4 +587,19 @@ export default {
   invoiceValidation,
   dateRangeValidation,
   fileUploadValidation,
+  financialCreateJournalEntryValidation,
+  financialJournalEntryIdValidation,
+  financialReverseJournalEntryValidation,
+  financialListJournalEntriesValidation,
+  financialLedgerQueryValidation,
+  financialAccountLedgerByAccountCodeValidation,
+  financialAccountLedgerByCodeValidation,
+  financialCashFlowValidation,
+  financialApplyTemplateValidation,
+  financialTaxSettingCreateValidation,
+  financialTaxSettingUpdateValidation,
+  financialDimensionCreateValidation,
+  financialDimensionUpdateValidation,
+  financialFiscalPeriodsValidation,
+  financialTrialBalanceValidation,
 };

@@ -10,8 +10,12 @@ import * as cashManagementWorkspaceController from '../modules/cash-management/c
 import * as multiLineMatchingController from '../modules/cash-management/controllers/multi-line-matching.controller';
 import * as partialReconciliationController from '../modules/cash-management/controllers/partial-reconciliation.controller';
 import * as bulkOperationsController from '../modules/cash-management/controllers/bulk-operations.controller';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
+
+// Apply tenant middleware to all cash management routes
+router.use(tenantMiddleware);
 
 // ============================================================
 // WORKSPACE

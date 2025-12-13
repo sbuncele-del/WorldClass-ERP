@@ -1,605 +1,406 @@
 /**
  * PROJECTS MANAGEMENT ROUTES
  * 
- * Full project management API supporting:
- * - Projects CRUD
- * - Tasks & Kanban boards
- * - Milestones & Gantt charts
- * - Time tracking & timesheets
- * - Resource allocation
- * - Budget management
- * - CIDB compliance (South Africa)
+ * Tenant-aware project management API
+ * All data is scoped to the authenticated user's tenant
  */
 
 import express from 'express';
-import pool from '../config/database';
+import { query } from '../config/database';
+import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
 
+// All routes require authentication and tenant context
+router.use(authenticateToken);
+router.use(tenantMiddleware);
+
 // ============================================================================
-// WORKSPACE - Dashboard Summary
+// WORKSPACE - Dashboard Summary (Real database queries)
 // ============================================================================
-router.get('/workspace', async (req, res) => {
+router.get('/workspace', async (req: any, res) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] || 'default';
+    const tenantId = req.tenant?.id;
     
-    // Return workspace summary
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant context required' });
+    }
+
+    // Get project statistics from database
+    const statsResult = await query(`
+      SELECT 
+        COUNT(*) as total_projects,
+        COUNT(*) FILTER (WHERE status = 'active') as active_projects,
+        COUNT(*) FILTER (WHERE status = 'completed') as completed_projects,
+        COUNT(*) FILTER (WHERE status = 'on-hold') as on_hold_projects,
+        COALESCE(SUM(budget), 0) as total_budget,
+        COALESCE(SUM(spent), 0) as total_spent,
+        COALESCE(AVG(progress), 0) as avg_progress
+      FROM projects 
+      WHERE tenant_id = $1 AND is_active = true
+    `, [tenantId]);
+
+    // Get task statistics
+    const taskStatsResult = await query(`
+      SELECT 
+        COUNT(*) as total_tasks,
+        COUNT(*) FILTER (WHERE status != 'done') as open_tasks,
+        COUNT(*) FILTER (WHERE due_date < CURRENT_DATE AND status != 'done') as overdue_tasks
+      FROM project_tasks 
+      WHERE tenant_id = $1
+    `, [tenantId]);
+
+    // Get recent projects
+    const recentProjectsResult = await query(`
+      SELECT id, code, name, status, priority, progress, budget, spent, start_date, end_date
+      FROM projects 
+      WHERE tenant_id = $1 AND is_active = true
+      ORDER BY created_at DESC 
+      LIMIT 5
+    `, [tenantId]);
+
+    // Get my tasks (assigned to current user)
+    const userId = req.user?.id;
+    const myTasksResult = await query(`
+      SELECT t.id, t.title, t.status, t.priority, t.due_date, p.name as project_name
+      FROM project_tasks t
+      JOIN projects p ON t.project_id = p.id
+      WHERE t.tenant_id = $1 AND t.assignee_id = $2 AND t.status != 'done'
+      ORDER BY t.due_date ASC NULLS LAST
+      LIMIT 10
+    `, [tenantId, userId]);
+
+    const stats = statsResult.rows[0] || {};
+    const taskStats = taskStatsResult.rows[0] || {};
+
     res.json({
       success: true,
       data: {
         summary: {
-          totalProjects: 24,
-          activeProjects: 18,
-          completedProjects: 4,
-          onHoldProjects: 2,
-          totalTasks: 342,
-          openTasks: 187,
-          overdueTask: 12,
-          totalBudget: 45000000,
-          totalSpent: 28750000,
-          utilizationRate: 78
+          totalProjects: parseInt(stats.total_projects) || 0,
+          activeProjects: parseInt(stats.active_projects) || 0,
+          completedProjects: parseInt(stats.completed_projects) || 0,
+          onHoldProjects: parseInt(stats.on_hold_projects) || 0,
+          totalTasks: parseInt(taskStats.total_tasks) || 0,
+          openTasks: parseInt(taskStats.open_tasks) || 0,
+          overdueTasks: parseInt(taskStats.overdue_tasks) || 0,
+          totalBudget: parseFloat(stats.total_budget) || 0,
+          totalSpent: parseFloat(stats.total_spent) || 0,
+          utilizationRate: stats.total_budget > 0 
+            ? Math.round((stats.total_spent / stats.total_budget) * 100) 
+            : 0
         },
-        recentProjects: [],
-        upcomingMilestones: [],
-        myTasks: []
+        recentProjects: recentProjectsResult.rows,
+        myTasks: myTasksResult.rows
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Projects workspace error:', error);
-    res.status(500).json({ success: false, error: 'Failed to load workspace' });
+    res.status(500).json({ success: false, error: error.message || 'Failed to load workspace' });
   }
 });
 
 // ============================================================================
-// PROJECTS
+// PROJECTS CRUD
 // ============================================================================
-router.get('/', async (req, res) => {
+
+// GET all projects
+router.get('/', async (req: any, res) => {
   try {
-    const tenantId = req.headers['x-tenant-id'] || 'default';
+    const tenantId = req.tenant?.id;
     const { status, priority, search, page = 1, limit = 20 } = req.query;
     
-    // Return projects list
-    const projects = [
-      {
-        id: 'PRJ-001',
-        name: 'ERP Implementation Phase 2',
-        code: 'ERP-P2',
-        client: 'Internal',
-        status: 'active',
-        priority: 'high',
-        progress: 65,
-        startDate: '2025-01-15',
-        endDate: '2025-06-30',
-        budget: 2500000,
-        spent: 1625000,
-        manager: 'Sarah Chen',
-        team: 8,
-        tasks: { total: 45, completed: 29 },
-        milestones: { total: 6, completed: 3 },
-        type: 'internal'
-      },
-      {
-        id: 'PRJ-002',
-        name: 'Office Renovation',
-        code: 'CONST-001',
-        client: 'ABC Holdings',
-        status: 'active',
-        priority: 'medium',
-        progress: 40,
-        startDate: '2025-02-01',
-        endDate: '2025-08-31',
-        budget: 8500000,
-        spent: 3400000,
-        manager: 'John Davis',
-        team: 15,
-        tasks: { total: 78, completed: 31 },
-        milestones: { total: 10, completed: 4 },
-        cidbGrade: '7GB',
-        type: 'construction'
-      },
-      {
-        id: 'PRJ-003',
-        name: 'Website Redesign',
-        code: 'WEB-001',
-        client: 'XYZ Corp',
-        status: 'active',
-        priority: 'high',
-        progress: 80,
-        startDate: '2025-01-01',
-        endDate: '2025-03-31',
-        budget: 450000,
-        spent: 360000,
-        manager: 'Mike Wilson',
-        team: 4,
-        tasks: { total: 32, completed: 26 },
-        milestones: { total: 4, completed: 3 },
-        type: 'client'
-      }
-    ];
+    let whereClause = 'WHERE tenant_id = $1 AND is_active = true';
+    const params: any[] = [tenantId];
+    let paramIndex = 2;
+
+    if (status) {
+      whereClause += ` AND status = $${paramIndex}`;
+      params.push(status);
+      paramIndex++;
+    }
+
+    if (priority) {
+      whereClause += ` AND priority = $${paramIndex}`;
+      params.push(priority);
+      paramIndex++;
+    }
+
+    if (search) {
+      whereClause += ` AND (name ILIKE $${paramIndex} OR code ILIKE $${paramIndex})`;
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    const offset = (Number(page) - 1) * Number(limit);
     
+    const countResult = await query(`SELECT COUNT(*) FROM projects ${whereClause}`, params);
+    const total = parseInt(countResult.rows[0].count);
+
+    const result = await query(`
+      SELECT p.*, u.name as manager_name,
+        (SELECT COUNT(*) FROM project_tasks WHERE project_id = p.id) as task_count,
+        (SELECT COUNT(*) FROM project_tasks WHERE project_id = p.id AND status = 'done') as completed_tasks
+      FROM projects p
+      LEFT JOIN users u ON p.manager_id = u.id
+      ${whereClause}
+      ORDER BY p.created_at DESC
+      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
+    `, [...params, limit, offset]);
+
     res.json({
       success: true,
-      data: projects,
+      data: result.rows,
       pagination: {
         page: Number(page),
         limit: Number(limit),
-        total: projects.length
+        total,
+        totalPages: Math.ceil(total / Number(limit))
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get projects error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch projects' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-router.get('/:id', async (req, res) => {
+// GET single project
+router.get('/:id', async (req: any, res) => {
   try {
+    const tenantId = req.tenant?.id;
     const { id } = req.params;
-    
+
+    const result = await query(`
+      SELECT p.*, u.name as manager_name
+      FROM projects p
+      LEFT JOIN users u ON p.manager_id = u.id
+      WHERE p.id = $1 AND p.tenant_id = $2
+    `, [id, tenantId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Project not found' });
+    }
+
+    // Get tasks for this project
+    const tasksResult = await query(`
+      SELECT t.*, u.name as assignee_name
+      FROM project_tasks t
+      LEFT JOIN users u ON t.assignee_id = u.id
+      WHERE t.project_id = $1
+      ORDER BY t.created_at DESC
+    `, [id]);
+
     res.json({
       success: true,
       data: {
-        id,
-        name: 'ERP Implementation Phase 2',
-        code: 'ERP-P2',
-        description: 'Implementation of remaining ERP modules including HR, Payroll, and Asset Management',
-        client: 'Internal',
-        status: 'active',
-        priority: 'high',
-        progress: 65,
-        startDate: '2025-01-15',
-        endDate: '2025-06-30',
-        budget: 2500000,
-        spent: 1625000,
-        manager: { id: 'USR-001', name: 'Sarah Chen', email: 'sarah@company.com' },
-        team: [
-          { id: 'USR-002', name: 'John Davis', role: 'Developer' },
-          { id: 'USR-003', name: 'Mike Wilson', role: 'Designer' }
-        ],
-        tasks: { total: 45, completed: 29, inProgress: 10, todo: 6 },
-        milestones: { total: 6, completed: 3 },
-        type: 'internal',
-        glAccount: '5100-001',
-        costCenter: 'CC-IT-001'
+        ...result.rows[0],
+        tasks: tasksResult.rows
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get project error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch project' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-router.post('/', async (req, res) => {
+// CREATE project
+router.post('/', async (req: any, res) => {
   try {
-    const projectData = req.body;
-    const projectId = `PRJ-${Date.now()}`;
-    
+    const tenantId = req.tenant?.id;
+    const { code, name, description, client_name, status, priority, project_type, start_date, end_date, budget, manager_id } = req.body;
+
+    if (!code || !name) {
+      return res.status(400).json({ success: false, error: 'Code and name are required' });
+    }
+
+    const result = await query(`
+      INSERT INTO projects (tenant_id, code, name, description, client_name, status, priority, project_type, start_date, end_date, budget, manager_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *
+    `, [tenantId, code, name, description, client_name, status || 'planning', priority || 'medium', project_type || 'internal', start_date, end_date, budget || 0, manager_id]);
+
     res.status(201).json({
       success: true,
-      data: { id: projectId, ...projectData },
-      message: 'Project created successfully'
+      data: result.rows[0]
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Create project error:', error);
-    res.status(500).json({ success: false, error: 'Failed to create project' });
+    if (error.code === '23505') {
+      return res.status(400).json({ success: false, error: 'Project code already exists' });
+    }
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-router.put('/:id', async (req, res) => {
+// UPDATE project
+router.put('/:id', async (req: any, res) => {
   try {
+    const tenantId = req.tenant?.id;
     const { id } = req.params;
-    const projectData = req.body;
-    
-    res.json({
-      success: true,
-      data: { id, ...projectData },
-      message: 'Project updated successfully'
-    });
-  } catch (error) {
+    const { name, description, client_name, status, priority, project_type, start_date, end_date, budget, spent, progress, manager_id } = req.body;
+
+    const result = await query(`
+      UPDATE projects SET
+        name = COALESCE($3, name),
+        description = COALESCE($4, description),
+        client_name = COALESCE($5, client_name),
+        status = COALESCE($6, status),
+        priority = COALESCE($7, priority),
+        project_type = COALESCE($8, project_type),
+        start_date = COALESCE($9, start_date),
+        end_date = COALESCE($10, end_date),
+        budget = COALESCE($11, budget),
+        spent = COALESCE($12, spent),
+        progress = COALESCE($13, progress),
+        manager_id = COALESCE($14, manager_id),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1 AND tenant_id = $2
+      RETURNING *
+    `, [id, tenantId, name, description, client_name, status, priority, project_type, start_date, end_date, budget, spent, progress, manager_id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Project not found' });
+    }
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error: any) {
     console.error('Update project error:', error);
-    res.status(500).json({ success: false, error: 'Failed to update project' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-router.delete('/:id', async (req, res) => {
+// DELETE project (soft delete)
+router.delete('/:id', async (req: any, res) => {
   try {
+    const tenantId = req.tenant?.id;
     const { id } = req.params;
-    
-    res.json({
-      success: true,
-      message: 'Project deleted successfully'
-    });
-  } catch (error) {
+
+    const result = await query(`
+      UPDATE projects SET is_active = false, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1 AND tenant_id = $2
+      RETURNING id
+    `, [id, tenantId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Project not found' });
+    }
+
+    res.json({ success: true, message: 'Project deleted' });
+  } catch (error: any) {
     console.error('Delete project error:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete project' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
 // ============================================================================
 // TASKS
 // ============================================================================
-router.get('/:projectId/tasks', async (req, res) => {
+
+// GET tasks for a project
+router.get('/:projectId/tasks', async (req: any, res) => {
   try {
+    const tenantId = req.tenant?.id;
     const { projectId } = req.params;
-    const { status, assignee, priority } = req.query;
-    
-    const tasks = [
-      {
-        id: 'TSK-001',
-        title: 'Setup database schema',
-        project: projectId,
-        assignee: { id: 'USR-002', name: 'John Davis' },
-        status: 'done',
-        priority: 'high',
-        dueDate: '2025-01-20',
-        estimatedHours: 16,
-        actualHours: 14,
-        tags: ['backend', 'database']
-      },
-      {
-        id: 'TSK-002',
-        title: 'Design user interface mockups',
-        project: projectId,
-        assignee: { id: 'USR-003', name: 'Mike Wilson' },
-        status: 'in-progress',
-        priority: 'high',
-        dueDate: '2025-01-25',
-        estimatedHours: 24,
-        actualHours: 18,
-        tags: ['design', 'frontend']
-      },
-      {
-        id: 'TSK-003',
-        title: 'Implement authentication module',
-        project: projectId,
-        assignee: { id: 'USR-002', name: 'John Davis' },
-        status: 'todo',
-        priority: 'critical',
-        dueDate: '2025-02-01',
-        estimatedHours: 40,
-        actualHours: 0,
-        tags: ['backend', 'security']
-      }
-    ];
-    
-    res.json({ success: true, data: tasks });
-  } catch (error) {
+    const { status } = req.query;
+
+    let whereClause = 'WHERE t.project_id = $1 AND t.tenant_id = $2';
+    const params: any[] = [projectId, tenantId];
+
+    if (status) {
+      whereClause += ' AND t.status = $3';
+      params.push(status);
+    }
+
+    const result = await query(`
+      SELECT t.*, u.name as assignee_name
+      FROM project_tasks t
+      LEFT JOIN users u ON t.assignee_id = u.id
+      ${whereClause}
+      ORDER BY t.created_at DESC
+    `, params);
+
+    res.json({ success: true, data: result.rows });
+  } catch (error: any) {
     console.error('Get tasks error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch tasks' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-router.post('/:projectId/tasks', async (req, res) => {
+// CREATE task
+router.post('/:projectId/tasks', async (req: any, res) => {
   try {
+    const tenantId = req.tenant?.id;
     const { projectId } = req.params;
-    const taskData = req.body;
-    const taskId = `TSK-${Date.now()}`;
-    
-    res.status(201).json({
-      success: true,
-      data: { id: taskId, project: projectId, ...taskData },
-      message: 'Task created successfully'
-    });
-  } catch (error) {
+    const { title, description, status, priority, assignee_id, due_date, estimated_hours } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ success: false, error: 'Title is required' });
+    }
+
+    const result = await query(`
+      INSERT INTO project_tasks (tenant_id, project_id, title, description, status, priority, assignee_id, due_date, estimated_hours)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *
+    `, [tenantId, projectId, title, description, status || 'todo', priority || 'medium', assignee_id, due_date, estimated_hours || 0]);
+
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (error: any) {
     console.error('Create task error:', error);
-    res.status(500).json({ success: false, error: 'Failed to create task' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-router.put('/tasks/:taskId', async (req, res) => {
+// UPDATE task
+router.put('/tasks/:taskId', async (req: any, res) => {
   try {
+    const tenantId = req.tenant?.id;
     const { taskId } = req.params;
-    const taskData = req.body;
-    
-    res.json({
-      success: true,
-      data: { id: taskId, ...taskData },
-      message: 'Task updated successfully'
-    });
-  } catch (error) {
+    const { title, description, status, priority, assignee_id, due_date, estimated_hours, actual_hours } = req.body;
+
+    const result = await query(`
+      UPDATE project_tasks SET
+        title = COALESCE($3, title),
+        description = COALESCE($4, description),
+        status = COALESCE($5, status),
+        priority = COALESCE($6, priority),
+        assignee_id = COALESCE($7, assignee_id),
+        due_date = COALESCE($8, due_date),
+        estimated_hours = COALESCE($9, estimated_hours),
+        actual_hours = COALESCE($10, actual_hours)
+      WHERE id = $1 AND tenant_id = $2
+      RETURNING *
+    `, [taskId, tenantId, title, description, status, priority, assignee_id, due_date, estimated_hours, actual_hours]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Task not found' });
+    }
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error: any) {
     console.error('Update task error:', error);
-    res.status(500).json({ success: false, error: 'Failed to update task' });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
-router.put('/tasks/:taskId/status', async (req, res) => {
+// DELETE task
+router.delete('/tasks/:taskId', async (req: any, res) => {
   try {
+    const tenantId = req.tenant?.id;
     const { taskId } = req.params;
-    const { status } = req.body;
-    
-    res.json({
-      success: true,
-      data: { id: taskId, status },
-      message: 'Task status updated'
-    });
-  } catch (error) {
-    console.error('Update task status error:', error);
-    res.status(500).json({ success: false, error: 'Failed to update task status' });
-  }
-});
 
-// ============================================================================
-// MILESTONES
-// ============================================================================
-router.get('/:projectId/milestones', async (req, res) => {
-  try {
-    const { projectId } = req.params;
-    
-    const milestones = [
-      {
-        id: 'MS-001',
-        name: 'Project Kickoff',
-        project: projectId,
-        dueDate: '2025-01-15',
-        status: 'completed',
-        completedDate: '2025-01-15',
-        deliverables: ['Project charter', 'Team assignments', 'Communication plan']
-      },
-      {
-        id: 'MS-002',
-        name: 'Phase 1 Complete',
-        project: projectId,
-        dueDate: '2025-02-28',
-        status: 'in-progress',
-        progress: 75,
-        deliverables: ['Core modules', 'Database setup', 'Authentication']
-      },
-      {
-        id: 'MS-003',
-        name: 'UAT Sign-off',
-        project: projectId,
-        dueDate: '2025-05-31',
-        status: 'pending',
-        deliverables: ['Test results', 'Sign-off document', 'Training materials']
-      }
-    ];
-    
-    res.json({ success: true, data: milestones });
-  } catch (error) {
-    console.error('Get milestones error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch milestones' });
-  }
-});
+    const result = await query(`
+      DELETE FROM project_tasks WHERE id = $1 AND tenant_id = $2 RETURNING id
+    `, [taskId, tenantId]);
 
-router.post('/:projectId/milestones', async (req, res) => {
-  try {
-    const { projectId } = req.params;
-    const milestoneData = req.body;
-    const milestoneId = `MS-${Date.now()}`;
-    
-    res.status(201).json({
-      success: true,
-      data: { id: milestoneId, project: projectId, ...milestoneData },
-      message: 'Milestone created successfully'
-    });
-  } catch (error) {
-    console.error('Create milestone error:', error);
-    res.status(500).json({ success: false, error: 'Failed to create milestone' });
-  }
-});
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Task not found' });
+    }
 
-// ============================================================================
-// TIME ENTRIES
-// ============================================================================
-router.get('/time-entries', async (req, res) => {
-  try {
-    const { projectId, userId, startDate, endDate } = req.query;
-    
-    const timeEntries = [
-      {
-        id: 'TE-001',
-        project: 'PRJ-001',
-        task: 'TSK-001',
-        user: { id: 'USR-002', name: 'John Davis' },
-        date: '2025-01-18',
-        hours: 8,
-        description: 'Database schema design and implementation',
-        billable: true,
-        rate: 850
-      },
-      {
-        id: 'TE-002',
-        project: 'PRJ-001',
-        task: 'TSK-002',
-        user: { id: 'USR-003', name: 'Mike Wilson' },
-        date: '2025-01-18',
-        hours: 6,
-        description: 'UI wireframes for dashboard',
-        billable: true,
-        rate: 750
-      }
-    ];
-    
-    res.json({ success: true, data: timeEntries });
-  } catch (error) {
-    console.error('Get time entries error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch time entries' });
-  }
-});
-
-router.post('/time-entries', async (req, res) => {
-  try {
-    const timeEntryData = req.body;
-    const entryId = `TE-${Date.now()}`;
-    
-    res.status(201).json({
-      success: true,
-      data: { id: entryId, ...timeEntryData },
-      message: 'Time entry logged successfully'
-    });
-  } catch (error) {
-    console.error('Create time entry error:', error);
-    res.status(500).json({ success: false, error: 'Failed to log time entry' });
-  }
-});
-
-// ============================================================================
-// GANTT CHART DATA
-// ============================================================================
-router.get('/:projectId/gantt', async (req, res) => {
-  try {
-    const { projectId } = req.params;
-    
-    const ganttData = [
-      {
-        id: 'GT-001',
-        name: 'Planning Phase',
-        start: '2025-01-15',
-        end: '2025-01-31',
-        progress: 100,
-        status: 'done',
-        children: [
-          { id: 'GT-001-1', name: 'Requirements gathering', start: '2025-01-15', end: '2025-01-20', progress: 100 },
-          { id: 'GT-001-2', name: 'Technical design', start: '2025-01-21', end: '2025-01-31', progress: 100 }
-        ]
-      },
-      {
-        id: 'GT-002',
-        name: 'Development Phase',
-        start: '2025-02-01',
-        end: '2025-04-30',
-        progress: 45,
-        status: 'in-progress',
-        children: [
-          { id: 'GT-002-1', name: 'Backend development', start: '2025-02-01', end: '2025-03-31', progress: 60 },
-          { id: 'GT-002-2', name: 'Frontend development', start: '2025-02-15', end: '2025-04-30', progress: 35 }
-        ]
-      },
-      {
-        id: 'GT-003',
-        name: 'Testing Phase',
-        start: '2025-05-01',
-        end: '2025-05-31',
-        progress: 0,
-        status: 'not-started'
-      }
-    ];
-    
-    res.json({ success: true, data: ganttData });
-  } catch (error) {
-    console.error('Get gantt data error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch gantt data' });
-  }
-});
-
-// ============================================================================
-// RESOURCES
-// ============================================================================
-router.get('/:projectId/resources', async (req, res) => {
-  try {
-    const { projectId } = req.params;
-    
-    const resources = [
-      {
-        id: 'RES-001',
-        user: { id: 'USR-002', name: 'John Davis', role: 'Senior Developer' },
-        allocation: 100,
-        startDate: '2025-01-15',
-        endDate: '2025-06-30',
-        hourlyRate: 850,
-        totalHours: 160,
-        loggedHours: 120
-      },
-      {
-        id: 'RES-002',
-        user: { id: 'USR-003', name: 'Mike Wilson', role: 'UI/UX Designer' },
-        allocation: 50,
-        startDate: '2025-01-15',
-        endDate: '2025-03-31',
-        hourlyRate: 750,
-        totalHours: 80,
-        loggedHours: 55
-      }
-    ];
-    
-    res.json({ success: true, data: resources });
-  } catch (error) {
-    console.error('Get resources error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch resources' });
-  }
-});
-
-// ============================================================================
-// BUDGET & COSTS
-// ============================================================================
-router.get('/:projectId/budget', async (req, res) => {
-  try {
-    const { projectId } = req.params;
-    
-    const budget = {
-      totalBudget: 2500000,
-      spent: 1625000,
-      remaining: 875000,
-      forecast: 2450000,
-      variance: 50000,
-      breakdown: [
-        { category: 'Labor', budgeted: 1500000, actual: 980000, variance: 520000 },
-        { category: 'Software', budgeted: 500000, actual: 450000, variance: 50000 },
-        { category: 'Hardware', budgeted: 300000, actual: 150000, variance: 150000 },
-        { category: 'Training', budgeted: 200000, actual: 45000, variance: 155000 }
-      ],
-      monthlySpend: [
-        { month: 'Jan', budgeted: 400000, actual: 380000 },
-        { month: 'Feb', budgeted: 450000, actual: 520000 },
-        { month: 'Mar', budgeted: 500000, actual: 450000 },
-        { month: 'Apr', budgeted: 500000, actual: 275000 }
-      ]
-    };
-    
-    res.json({ success: true, data: budget });
-  } catch (error) {
-    console.error('Get budget error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch budget' });
-  }
-});
-
-// ============================================================================
-// CIDB COMPLIANCE (South Africa Construction)
-// ============================================================================
-router.get('/:projectId/cidb', async (req, res) => {
-  try {
-    const { projectId } = req.params;
-    
-    const cidbData = {
-      gradeRequired: '7GB',
-      currentGrade: '7GB',
-      compliant: true,
-      registration: 'CIDB-12345',
-      expiryDate: '2026-03-31',
-      categories: ['GB - General Building', 'CE - Civil Engineering'],
-      documents: [
-        { name: 'CIDB Registration Certificate', status: 'valid', expiryDate: '2026-03-31' },
-        { name: 'Tax Clearance Certificate', status: 'valid', expiryDate: '2025-12-31' },
-        { name: 'B-BBEE Certificate', status: 'valid', level: 2 }
-      ]
-    };
-    
-    res.json({ success: true, data: cidbData });
-  } catch (error) {
-    console.error('Get CIDB data error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch CIDB data' });
-  }
-});
-
-// ============================================================================
-// GL INTEGRATION
-// ============================================================================
-router.post('/:projectId/post-to-gl', async (req, res) => {
-  try {
-    const { projectId } = req.params;
-    const { entries } = req.body;
-    
-    res.json({
-      success: true,
-      data: {
-        journalId: `JE-${Date.now()}`,
-        entriesPosted: entries?.length || 0
-      },
-      message: 'Entries posted to General Ledger'
-    });
-  } catch (error) {
-    console.error('Post to GL error:', error);
-    res.status(500).json({ success: false, error: 'Failed to post to GL' });
+    res.json({ success: true, message: 'Task deleted' });
+  } catch (error: any) {
+    console.error('Delete task error:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

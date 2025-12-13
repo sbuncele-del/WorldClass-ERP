@@ -2,8 +2,12 @@ import express from 'express';
 import ComplianceController from '../controllers/compliance.controller';
 import * as complianceWorkspaceController from '../modules/compliance/controllers/compliance.workspace.controller';
 import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
+
+// Apply tenant middleware to all compliance routes
+router.use(tenantMiddleware);
 
 // ============================================================================
 // WORKSPACE

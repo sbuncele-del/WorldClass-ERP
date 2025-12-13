@@ -1,5 +1,5 @@
 /**
- * CONSTRUCTION INDUSTRY ROUTES
+ * CONSTRUCTION INDUSTRY ROUTES - TENANT-AWARE
  * 
  * Construction-specific operations API:
  * - Project sites
@@ -7,34 +7,63 @@
  * - Safety management (OHS Act)
  * - Progress tracking
  * - Materials & resources
- * - Subcontractor management
- * - Quality control
  */
 
-import express from 'express';
+import express, { Request, Response } from 'express';
+import pool from '../config/database';
+import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
 
+// All routes require authentication and tenant context
+router.use(authenticateToken);
+router.use(tenantMiddleware);
+
 // ============================================================================
-// WORKSPACE
+// WORKSPACE SUMMARY
 // ============================================================================
-router.get('/workspace', async (req, res) => {
+router.get('/workspace', async (req: Request, res: Response) => {
   try {
+    const tenantId = (req as any).tenantId;
+
+    const [projectsResult, safetyResult] = await Promise.all([
+      pool.query(
+        `SELECT 
+          COUNT(*) FILTER (WHERE status = 'active') as active_projects,
+          COUNT(*) FILTER (WHERE status = 'active' AND progress_percentage >= 
+            EXTRACT(EPOCH FROM (CURRENT_DATE - start_date)) / 
+            NULLIF(EXTRACT(EPOCH FROM (target_completion - start_date)), 0) * 100) as on_schedule,
+          COALESCE(SUM(contract_value), 0) as total_value,
+          COALESCE(AVG(progress_percentage), 0) as avg_progress
+        FROM construction_projects WHERE tenant_id = $1 AND is_active = true`,
+        [tenantId]
+      ),
+      pool.query(
+        `SELECT 
+          COUNT(*) FILTER (WHERE created_at >= CURRENT_DATE - INTERVAL '1 year') as incidents_ytd,
+          MAX(incident_date) as last_incident
+        FROM construction_safety WHERE tenant_id = $1`,
+        [tenantId]
+      )
+    ]);
+
+    const lastIncident = safetyResult.rows[0]?.last_incident;
+    const daysSinceLastIncident = lastIncident 
+      ? Math.floor((Date.now() - new Date(lastIncident).getTime()) / (1000 * 60 * 60 * 24))
+      : null;
+
     res.json({
       success: true,
       data: {
         summary: {
-          activeProjects: 12,
-          totalContractValue: 285000000,
-          onSchedule: 9,
-          delayed: 3,
-          safetyIncidentsYTD: 4,
-          daysSinceLastIncident: 28,
-          avgProgress: 62
-        },
-        projectsAtRisk: [],
-        upcomingInspections: [],
-        resourceUtilization: 78
+          activeProjects: parseInt(projectsResult.rows[0]?.active_projects || '0'),
+          totalContractValue: parseFloat(projectsResult.rows[0]?.total_value || '0'),
+          onSchedule: parseInt(projectsResult.rows[0]?.on_schedule || '0'),
+          avgProgress: Math.round(parseFloat(projectsResult.rows[0]?.avg_progress || '0')),
+          safetyIncidentsYTD: parseInt(safetyResult.rows[0]?.incidents_ytd || '0'),
+          daysSinceLastIncident
+        }
       }
     });
   } catch (error) {
@@ -46,369 +75,341 @@ router.get('/workspace', async (req, res) => {
 // ============================================================================
 // CONSTRUCTION PROJECTS
 // ============================================================================
-router.get('/projects', async (req, res) => {
+router.get('/projects', async (req: Request, res: Response) => {
   try {
-    const { status, cidbGrade } = req.query;
-    
-    const projects = [
-      {
-        id: 'CONST-001',
-        name: 'Sandton Office Tower',
-        client: 'Property Holdings Ltd',
-        location: { address: 'Sandton CBD, Johannesburg', province: 'Gauteng' },
-        type: 'commercial',
-        cidbGrade: '9GB',
-        contractValue: 125000000,
-        status: 'active',
-        progress: 45,
-        startDate: '2025-01-15',
-        targetCompletion: '2026-06-30',
-        projectManager: 'David Nkosi',
-        safetyOfficer: 'Maria Santos'
-      },
-      {
-        id: 'CONST-002',
-        name: 'N2 Highway Extension',
-        client: 'SANRAL',
-        location: { address: 'N2 between Port Elizabeth and Grahamstown', province: 'Eastern Cape' },
-        type: 'civil',
-        cidbGrade: '9CE',
-        contractValue: 85000000,
-        status: 'active',
-        progress: 72,
-        startDate: '2024-06-01',
-        targetCompletion: '2025-12-31',
-        projectManager: 'Johan van Wyk',
-        safetyOfficer: 'Sipho Dlamini'
-      },
-      {
-        id: 'CONST-003',
-        name: 'Cape Town Residential Complex',
-        client: 'Urban Developers',
-        location: { address: 'Century City, Cape Town', province: 'Western Cape' },
-        type: 'residential',
-        cidbGrade: '7GB',
-        contractValue: 45000000,
-        status: 'active',
-        progress: 28,
-        startDate: '2025-03-01',
-        targetCompletion: '2026-03-31',
-        projectManager: 'Fatima Adams',
-        safetyOfficer: 'Peter Muller'
-      }
-    ];
-    
-    res.json({ success: true, data: projects });
+    const tenantId = (req as any).tenantId;
+    const { status, cidbGrade, projectType } = req.query;
+
+    let query = `
+      SELECT id, code, name, client_name, location_address, province, project_type,
+        cidb_grade, contract_value, currency, status, progress_percentage,
+        start_date, target_completion, project_manager_name, safety_officer_name, created_at
+      FROM construction_projects WHERE tenant_id = $1 AND is_active = true
+    `;
+    const params: any[] = [tenantId];
+
+    if (status) {
+      params.push(status);
+      query += ` AND status = $${params.length}`;
+    }
+    if (cidbGrade) {
+      params.push(cidbGrade);
+      query += ` AND cidb_grade = $${params.length}`;
+    }
+    if (projectType) {
+      params.push(projectType);
+      query += ` AND project_type = $${params.length}`;
+    }
+
+    query += ' ORDER BY created_at DESC';
+    const result = await pool.query(query, params);
+
+    res.json({
+      success: true,
+      data: result.rows.map(p => ({
+        id: p.id,
+        code: p.code,
+        name: p.name,
+        client: p.client_name,
+        location: { address: p.location_address, province: p.province },
+        type: p.project_type,
+        cidbGrade: p.cidb_grade,
+        contractValue: parseFloat(p.contract_value) || 0,
+        currency: p.currency,
+        status: p.status,
+        progress: p.progress_percentage,
+        startDate: p.start_date,
+        targetCompletion: p.target_completion,
+        projectManager: p.project_manager_name,
+        safetyOfficer: p.safety_officer_name
+      }))
+    });
   } catch (error) {
     console.error('Get projects error:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch projects' });
   }
 });
 
-router.get('/projects/:id', async (req, res) => {
+router.get('/projects/:id', async (req: Request, res: Response) => {
   try {
+    const tenantId = (req as any).tenantId;
     const { id } = req.params;
-    
-    res.json({
-      success: true,
-      data: {
-        id,
-        name: 'Sandton Office Tower',
-        client: { name: 'Property Holdings Ltd', contact: 'James Smith', phone: '+27 11 555 1234' },
-        location: { address: 'Sandton CBD, Johannesburg', province: 'Gauteng', coordinates: { lat: -26.1076, lng: 28.0567 } },
-        type: 'commercial',
-        cidbGrade: '9GB',
-        contractValue: 125000000,
-        status: 'active',
-        progress: 45,
-        startDate: '2025-01-15',
-        targetCompletion: '2026-06-30',
-        team: {
-          projectManager: { name: 'David Nkosi', phone: '+27 82 555 1111' },
-          safetyOfficer: { name: 'Maria Santos', phone: '+27 82 555 2222' },
-          siteForeman: { name: 'Thabo Mokoena', phone: '+27 82 555 3333' }
-        },
-        phases: [
-          { id: 'PH-001', name: 'Foundation', progress: 100, status: 'completed' },
-          { id: 'PH-002', name: 'Structure', progress: 65, status: 'in-progress' },
-          { id: 'PH-003', name: 'Finishing', progress: 0, status: 'pending' }
-        ],
-        budget: {
-          contracted: 125000000,
-          spent: 52000000,
-          committed: 18000000,
-          remaining: 55000000
-        }
-      }
-    });
+
+    const result = await pool.query(
+      'SELECT * FROM construction_projects WHERE id = $1 AND tenant_id = $2',
+      [id, tenantId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Project not found' });
+    }
+
+    res.json({ success: true, data: result.rows[0] });
   } catch (error) {
     console.error('Get project error:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch project' });
   }
 });
 
-// ============================================================================
-// CIDB COMPLIANCE
-// ============================================================================
-router.get('/cidb/registration', async (req, res) => {
+router.post('/projects', async (req: Request, res: Response) => {
   try {
-    res.json({
-      success: true,
-      data: {
-        registrationNumber: 'CIDB-2020-12345',
-        companyName: 'WorldClass Construction (Pty) Ltd',
-        grades: [
-          { category: 'GB', grade: 9, description: 'General Building', expiryDate: '2026-03-31' },
-          { category: 'CE', grade: 8, description: 'Civil Engineering', expiryDate: '2026-03-31' }
-        ],
-        status: 'active',
-        bbbeeLevel: 2,
-        taxClearance: { status: 'valid', expiryDate: '2025-12-31' },
-        coida: { status: 'valid', certificateNumber: 'COIDA-2025-789' }
-      }
-    });
-  } catch (error) {
-    console.error('Get CIDB registration error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch CIDB registration' });
+    const tenantId = (req as any).tenantId;
+    const { code, name, clientName, locationAddress, province, projectType, cidbGrade,
+            contractValue, currency, startDate, targetCompletion, projectManagerName,
+            safetyOfficerName, description } = req.body;
+
+    const result = await pool.query(
+      `INSERT INTO construction_projects 
+        (tenant_id, code, name, client_name, location_address, province, project_type,
+         cidb_grade, contract_value, currency, start_date, target_completion,
+         project_manager_name, safety_officer_name, description, status, progress_percentage)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, 'planning', 0)
+      RETURNING *`,
+      [tenantId, code, name, clientName, locationAddress, province, projectType, cidbGrade,
+       contractValue, currency || 'ZAR', startDate, targetCompletion, projectManagerName,
+       safetyOfficerName, description]
+    );
+
+    res.status(201).json({ success: true, data: result.rows[0], message: 'Project created' });
+  } catch (error: any) {
+    console.error('Create project error:', error);
+    if (error.code === '23505') {
+      return res.status(400).json({ success: false, error: 'Project code already exists' });
+    }
+    res.status(500).json({ success: false, error: 'Failed to create project' });
   }
 });
 
-router.get('/cidb/grades', async (req, res) => {
+router.put('/projects/:id', async (req: Request, res: Response) => {
   try {
-    const grades = {
-      GB: [
-        { grade: 1, maxValue: 200000, description: 'R0 - R200,000' },
-        { grade: 2, maxValue: 500000, description: 'R200,001 - R500,000' },
-        { grade: 3, maxValue: 1500000, description: 'R500,001 - R1,500,000' },
-        { grade: 4, maxValue: 3000000, description: 'R1,500,001 - R3,000,000' },
-        { grade: 5, maxValue: 6500000, description: 'R3,000,001 - R6,500,000' },
-        { grade: 6, maxValue: 13000000, description: 'R6,500,001 - R13,000,000' },
-        { grade: 7, maxValue: 40000000, description: 'R13,000,001 - R40,000,000' },
-        { grade: 8, maxValue: 130000000, description: 'R40,000,001 - R130,000,000' },
-        { grade: 9, maxValue: null, description: 'Above R130,000,000' }
-      ]
-    };
-    
-    res.json({ success: true, data: grades });
+    const tenantId = (req as any).tenantId;
+    const { id } = req.params;
+    const { status, progressPercentage, actualCompletion } = req.body;
+
+    const result = await pool.query(
+      `UPDATE construction_projects SET
+        status = COALESCE($3, status),
+        progress_percentage = COALESCE($4, progress_percentage),
+        actual_completion = COALESCE($5, actual_completion),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1 AND tenant_id = $2
+      RETURNING *`,
+      [id, tenantId, status, progressPercentage, actualCompletion]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Project not found' });
+    }
+
+    res.json({ success: true, data: result.rows[0], message: 'Project updated' });
   } catch (error) {
-    console.error('Get CIDB grades error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch CIDB grades' });
+    console.error('Update project error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update project' });
   }
 });
 
 // ============================================================================
-// SAFETY (OHS ACT)
+// PROJECT PHASES
 // ============================================================================
-router.get('/safety/incidents', async (req, res) => {
+router.get('/projects/:projectId/phases', async (req: Request, res: Response) => {
   try {
-    const { projectId, severity } = req.query;
-    
-    const incidents = [
-      {
-        id: 'SAFE-001',
-        project: 'CONST-001',
-        date: '2025-11-15',
-        type: 'near-miss',
-        severity: 'low',
-        description: 'Unsecured scaffolding reported',
-        reportedBy: 'Site Inspector',
-        status: 'closed',
-        actionsTaken: 'Scaffolding secured and re-inspected',
-        investigationComplete: true
-      }
-    ];
-    
-    res.json({ success: true, data: incidents });
+    const tenantId = (req as any).tenantId;
+    const { projectId } = req.params;
+
+    const result = await pool.query(
+      `SELECT * FROM construction_phases 
+      WHERE project_id = $1 AND tenant_id = $2 
+      ORDER BY phase_number`,
+      [projectId, tenantId]
+    );
+
+    res.json({ success: true, data: result.rows });
   } catch (error) {
-    console.error('Get safety incidents error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch safety incidents' });
+    console.error('Get phases error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch phases' });
   }
 });
 
-router.post('/safety/incidents', async (req, res) => {
+router.post('/projects/:projectId/phases', async (req: Request, res: Response) => {
   try {
-    const incidentData = req.body;
-    const incidentId = `SAFE-${Date.now()}`;
-    
-    res.status(201).json({
-      success: true,
-      data: { id: incidentId, ...incidentData, status: 'open' },
-      message: 'Safety incident reported'
-    });
+    const tenantId = (req as any).tenantId;
+    const { projectId } = req.params;
+    const { phaseNumber, name, description, startDate, targetEndDate, budget } = req.body;
+
+    const result = await pool.query(
+      `INSERT INTO construction_phases 
+        (tenant_id, project_id, phase_number, name, description, start_date, target_end_date, budget, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
+      RETURNING *`,
+      [tenantId, projectId, phaseNumber, name, description, startDate, targetEndDate, budget]
+    );
+
+    res.status(201).json({ success: true, data: result.rows[0], message: 'Phase added' });
   } catch (error) {
-    console.error('Report safety incident error:', error);
+    console.error('Add phase error:', error);
+    res.status(500).json({ success: false, error: 'Failed to add phase' });
+  }
+});
+
+router.put('/phases/:id', async (req: Request, res: Response) => {
+  try {
+    const tenantId = (req as any).tenantId;
+    const { id } = req.params;
+    const { status, progressPercentage, actualEndDate, actualCost } = req.body;
+
+    const result = await pool.query(
+      `UPDATE construction_phases SET
+        status = COALESCE($3, status),
+        progress_percentage = COALESCE($4, progress_percentage),
+        actual_end_date = COALESCE($5, actual_end_date),
+        actual_cost = COALESCE($6, actual_cost)
+      WHERE id = $1 AND tenant_id = $2
+      RETURNING *`,
+      [id, tenantId, status, progressPercentage, actualEndDate, actualCost]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Phase not found' });
+    }
+
+    res.json({ success: true, data: result.rows[0], message: 'Phase updated' });
+  } catch (error) {
+    console.error('Update phase error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update phase' });
+  }
+});
+
+// ============================================================================
+// SAFETY INCIDENTS
+// ============================================================================
+router.get('/safety/incidents', async (req: Request, res: Response) => {
+  try {
+    const tenantId = (req as any).tenantId;
+    const { projectId, status, severity } = req.query;
+
+    let query = `
+      SELECT s.*, p.name as project_name
+      FROM construction_safety s
+      LEFT JOIN construction_projects p ON s.project_id = p.id
+      WHERE s.tenant_id = $1
+    `;
+    const params: any[] = [tenantId];
+
+    if (projectId) {
+      params.push(projectId);
+      query += ` AND s.project_id = $${params.length}`;
+    }
+    if (status) {
+      params.push(status);
+      query += ` AND s.status = $${params.length}`;
+    }
+    if (severity) {
+      params.push(severity);
+      query += ` AND s.severity = $${params.length}`;
+    }
+
+    query += ' ORDER BY s.incident_date DESC';
+    const result = await pool.query(query, params);
+
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Get incidents error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch incidents' });
+  }
+});
+
+router.post('/safety/incidents', async (req: Request, res: Response) => {
+  try {
+    const tenantId = (req as any).tenantId;
+    const { projectId, incidentDate, incidentType, severity, description, locationOnSite,
+            injuriesCount, fatalitiesCount, treatmentGiven, reportedBy } = req.body;
+
+    const result = await pool.query(
+      `INSERT INTO construction_safety 
+        (tenant_id, project_id, incident_date, incident_type, severity, description,
+         location_on_site, injuries_count, fatalities_count, treatment_given, reported_by, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'open')
+      RETURNING *`,
+      [tenantId, projectId, incidentDate, incidentType, severity, description,
+       locationOnSite, injuriesCount || 0, fatalitiesCount || 0, treatmentGiven, reportedBy]
+    );
+
+    res.status(201).json({ success: true, data: result.rows[0], message: 'Incident reported' });
+  } catch (error) {
+    console.error('Report incident error:', error);
     res.status(500).json({ success: false, error: 'Failed to report incident' });
   }
 });
 
-router.get('/safety/inspections', async (req, res) => {
+// ============================================================================
+// MATERIALS
+// ============================================================================
+router.get('/projects/:projectId/materials', async (req: Request, res: Response) => {
   try {
-    const inspections = [
-      {
-        id: 'INSP-001',
-        project: 'CONST-001',
-        type: 'weekly-safety',
-        date: '2025-12-09',
-        inspector: 'Maria Santos',
-        result: 'pass',
-        score: 92,
-        findings: [
-          { area: 'PPE Compliance', status: 'pass', notes: 'All workers wearing required PPE' },
-          { area: 'Scaffolding', status: 'pass', notes: 'Properly secured and tagged' },
-          { area: 'Housekeeping', status: 'minor', notes: 'Some debris to be cleared' }
-        ],
-        nextInspection: '2025-12-16'
-      }
-    ];
-    
-    res.json({ success: true, data: inspections });
-  } catch (error) {
-    console.error('Get inspections error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch inspections' });
-  }
-});
+    const tenantId = (req as any).tenantId;
+    const { projectId } = req.params;
 
-// ============================================================================
-// MATERIALS & RESOURCES
-// ============================================================================
-router.get('/materials', async (req, res) => {
-  try {
-    const { projectId } = req.query;
-    
-    const materials = [
-      {
-        id: 'MAT-001',
-        project: 'CONST-001',
-        name: 'Ready-mix Concrete',
-        unit: 'm³',
-        budgeted: 5000,
-        delivered: 2250,
-        used: 2100,
-        remaining: 150,
-        supplier: 'AfriSam',
-        unitCost: 1850
-      },
-      {
-        id: 'MAT-002',
-        project: 'CONST-001',
-        name: 'Reinforcement Steel',
-        unit: 'tonnes',
-        budgeted: 450,
-        delivered: 280,
-        used: 265,
-        remaining: 15,
-        supplier: 'ArcelorMittal SA',
-        unitCost: 15500
-      }
-    ];
-    
-    res.json({ success: true, data: materials });
+    const result = await pool.query(
+      `SELECT * FROM construction_materials 
+      WHERE project_id = $1 AND tenant_id = $2 
+      ORDER BY material_name`,
+      [projectId, tenantId]
+    );
+
+    res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Get materials error:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch materials' });
   }
 });
 
-// ============================================================================
-// SUBCONTRACTORS
-// ============================================================================
-router.get('/subcontractors', async (req, res) => {
+router.post('/projects/:projectId/materials', async (req: Request, res: Response) => {
   try {
-    const { projectId } = req.query;
-    
-    const subcontractors = [
-      {
-        id: 'SUB-001',
-        company: 'Elite Electrical (Pty) Ltd',
-        cidbGrade: '6EB',
-        bbbeeLevel: 2,
-        scope: 'Electrical installations',
-        project: 'CONST-001',
-        contractValue: 8500000,
-        progress: 35,
-        status: 'active',
-        contact: { name: 'Sam Naidoo', phone: '+27 83 555 4444' }
-      },
-      {
-        id: 'SUB-002',
-        company: 'Pro Plumbing Services',
-        cidbGrade: '5EP',
-        bbbeeLevel: 3,
-        scope: 'Plumbing and drainage',
-        project: 'CONST-001',
-        contractValue: 4200000,
-        progress: 50,
-        status: 'active',
-        contact: { name: 'Ahmed Patel', phone: '+27 83 555 5555' }
-      }
-    ];
-    
-    res.json({ success: true, data: subcontractors });
+    const tenantId = (req as any).tenantId;
+    const { projectId } = req.params;
+    const { materialCode, materialName, category, unit, quantityRequired, unitCost, supplierName } = req.body;
+
+    const result = await pool.query(
+      `INSERT INTO construction_materials 
+        (tenant_id, project_id, material_code, material_name, category, unit, 
+         quantity_required, unit_cost, supplier_name, delivery_status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending')
+      RETURNING *`,
+      [tenantId, projectId, materialCode, materialName, category, unit, 
+       quantityRequired, unitCost, supplierName]
+    );
+
+    res.status(201).json({ success: true, data: result.rows[0], message: 'Material added' });
   } catch (error) {
-    console.error('Get subcontractors error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch subcontractors' });
+    console.error('Add material error:', error);
+    res.status(500).json({ success: false, error: 'Failed to add material' });
   }
 });
 
-// ============================================================================
-// QUALITY CONTROL
-// ============================================================================
-router.get('/quality/checklists', async (req, res) => {
+router.put('/materials/:id', async (req: Request, res: Response) => {
   try {
-    const { projectId, phase } = req.query;
-    
-    const checklists = [
-      {
-        id: 'QC-001',
-        project: 'CONST-001',
-        phase: 'Structure',
-        name: 'Concrete Pour Checklist',
-        items: [
-          { item: 'Reinforcement inspection', status: 'pass', inspector: 'QC Engineer', date: '2025-12-10' },
-          { item: 'Formwork alignment', status: 'pass', inspector: 'Site Foreman', date: '2025-12-10' },
-          { item: 'Slump test', status: 'pass', result: '75mm', inspector: 'Lab Tech', date: '2025-12-10' },
-          { item: 'Cube samples taken', status: 'pass', quantity: 6, inspector: 'Lab Tech', date: '2025-12-10' }
-        ],
-        overallStatus: 'approved',
-        approvedBy: 'David Nkosi',
-        approvalDate: '2025-12-10'
-      }
-    ];
-    
-    res.json({ success: true, data: checklists });
-  } catch (error) {
-    console.error('Get quality checklists error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch checklists' });
-  }
-});
+    const tenantId = (req as any).tenantId;
+    const { id } = req.params;
+    const { quantityDelivered, quantityUsed, deliveryStatus } = req.body;
 
-// ============================================================================
-// PROGRESS CLAIMS
-// ============================================================================
-router.get('/claims', async (req, res) => {
-  try {
-    const { projectId, status } = req.query;
-    
-    const claims = [
-      {
-        id: 'CLAIM-001',
-        project: 'CONST-001',
-        claimNumber: 6,
-        period: 'November 2025',
-        grossValue: 12500000,
-        retention: 625000,
-        previouslyCertified: 39500000,
-        thisCertificate: 11875000,
-        status: 'submitted',
-        submittedDate: '2025-12-05',
-        dueDate: '2025-12-20'
-      }
-    ];
-    
-    res.json({ success: true, data: claims });
+    const result = await pool.query(
+      `UPDATE construction_materials SET
+        quantity_delivered = COALESCE($3, quantity_delivered),
+        quantity_used = COALESCE($4, quantity_used),
+        delivery_status = COALESCE($5, delivery_status)
+      WHERE id = $1 AND tenant_id = $2
+      RETURNING *`,
+      [id, tenantId, quantityDelivered, quantityUsed, deliveryStatus]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Material not found' });
+    }
+
+    res.json({ success: true, data: result.rows[0], message: 'Material updated' });
   } catch (error) {
-    console.error('Get claims error:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch claims' });
+    console.error('Update material error:', error);
+    res.status(500).json({ success: false, error: 'Failed to update material' });
   }
 });
 

@@ -1,8 +1,12 @@
 import express from 'express';
 import TreasuryController from '../controllers/treasury.controller';
 import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
+
+// Apply tenant middleware to all treasury routes
+router.use(tenantMiddleware);
 
 // Treasury Accounts
 router.get('/accounts', authenticateToken, TreasuryController.getTreasuryAccounts);

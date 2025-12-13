@@ -10,17 +10,25 @@ import * as payslipService from '../services/payslip.service';
 import * as documentService from '../services/employee-documents.service';
 import * as leaveService from '../services/leave-accrual.service';
 
+type TenantRequest = Request & { tenant?: { id: string }; user?: { id?: number } };
+
+const getTenantId = (req: TenantRequest) => req.tenant?.id;
+
 /**
  * GET /api/hr/compliance/irp5/:employee_id/:tax_year
  * Generate IRP5 certificate data for an employee
  */
-export const getIRP5 = async (req: Request, res: Response) => {
+export const getIRP5 = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { employee_id, tax_year } = req.params;
 
     const irp5Data = await taxService.generateIRP5Data(
       parseInt(employee_id),
-      parseInt(tax_year)
+      parseInt(tax_year),
+      tenantId
     );
 
     res.json({
@@ -41,11 +49,14 @@ export const getIRP5 = async (req: Request, res: Response) => {
  * GET /api/hr/compliance/emp501/:tax_year
  * Generate EMP501 reconciliation data
  */
-export const getEMP501 = async (req: Request, res: Response) => {
+export const getEMP501 = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { tax_year } = req.params;
 
-    const emp501Data = await taxService.generateEMP501Data(parseInt(tax_year));
+    const emp501Data = await taxService.generateEMP501Data(parseInt(tax_year), tenantId);
 
     res.json({
       success: true,
@@ -65,13 +76,17 @@ export const getEMP501 = async (req: Request, res: Response) => {
  * GET /api/hr/payslips/:employee_id/:run_id
  * Get payslip data
  */
-export const getPayslip = async (req: Request, res: Response) => {
+export const getPayslip = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { employee_id, run_id } = req.params;
 
     const payslipData = await payslipService.getPayslipData(
       parseInt(employee_id),
-      parseInt(run_id)
+      parseInt(run_id),
+      tenantId
     );
 
     if (!payslipData) {
@@ -99,13 +114,17 @@ export const getPayslip = async (req: Request, res: Response) => {
  * GET /api/hr/payslips/:employee_id/:run_id/html
  * Get payslip as HTML (for printing/PDF)
  */
-export const getPayslipHTML = async (req: Request, res: Response) => {
+export const getPayslipHTML = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { employee_id, run_id } = req.params;
 
     const payslipData = await payslipService.getPayslipData(
       parseInt(employee_id),
-      parseInt(run_id)
+      parseInt(run_id),
+      tenantId
     );
 
     if (!payslipData) {
@@ -201,13 +220,17 @@ export const getTaxBrackets = async (req: Request, res: Response) => {
  * POST /api/hr/employees/:employee_id/documents
  * Upload employee document
  */
-export const uploadDocument = async (req: Request, res: Response) => {
+export const uploadDocument = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { employee_id } = req.params;
     const documentData = req.body;
-    const userId = (req as any).user?.id || 1;
+    const userId = req.user?.id || 1;
 
     const document = await documentService.createDocument(
+      tenantId,
       parseInt(employee_id),
       {
         ...documentData,
@@ -234,12 +257,16 @@ export const uploadDocument = async (req: Request, res: Response) => {
  * GET /api/hr/employees/:employee_id/documents
  * Get employee documents
  */
-export const getEmployeeDocuments = async (req: Request, res: Response) => {
+export const getEmployeeDocuments = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { employee_id } = req.params;
     const { document_type } = req.query;
 
     const documents = await documentService.getEmployeeDocuments(
+      tenantId,
       parseInt(employee_id),
       document_type as string | undefined
     );
@@ -263,11 +290,14 @@ export const getEmployeeDocuments = async (req: Request, res: Response) => {
  * DELETE /api/hr/documents/:document_id
  * Delete employee document
  */
-export const deleteDocument = async (req: Request, res: Response) => {
+export const deleteDocument = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { document_id } = req.params;
 
-    await documentService.deleteDocument(parseInt(document_id));
+    await documentService.deleteDocument(tenantId, parseInt(document_id));
 
     res.json({
       success: true,
@@ -287,12 +317,15 @@ export const deleteDocument = async (req: Request, res: Response) => {
  * GET /api/hr/documents/expiring
  * Get documents expiring soon
  */
-export const getExpiringDocuments = async (req: Request, res: Response) => {
+export const getExpiringDocuments = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { days } = req.query;
     const daysAhead = parseInt(days as string) || 30;
 
-    const documents = await documentService.getExpiringDocuments(daysAhead);
+    const documents = await documentService.getExpiringDocuments(tenantId, daysAhead);
 
     res.json({
       success: true,
@@ -313,13 +346,17 @@ export const getExpiringDocuments = async (req: Request, res: Response) => {
  * POST /api/hr/employees/:employee_id/contracts
  * Create employee contract
  */
-export const createContract = async (req: Request, res: Response) => {
+export const createContract = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { employee_id } = req.params;
     const contractData = req.body;
-    const userId = (req as any).user?.id || 1;
+    const userId = req.user?.id || 1;
 
     const contract = await documentService.createContract(
+      tenantId,
       parseInt(employee_id),
       {
         ...contractData,
@@ -346,12 +383,16 @@ export const createContract = async (req: Request, res: Response) => {
  * GET /api/hr/employees/:employee_id/contracts
  * Get employee contracts
  */
-export const getEmployeeContracts = async (req: Request, res: Response) => {
+export const getEmployeeContracts = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { employee_id } = req.params;
     const { include_history } = req.query;
 
     const contracts = await documentService.getEmployeeContracts(
+      tenantId,
       parseInt(employee_id),
       include_history === 'true'
     );
@@ -375,13 +416,17 @@ export const getEmployeeContracts = async (req: Request, res: Response) => {
  * POST /api/hr/contracts/:contract_id/terminate
  * Terminate employee contract
  */
-export const terminateContract = async (req: Request, res: Response) => {
+export const terminateContract = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { contract_id } = req.params;
     const { termination_date, termination_reason } = req.body;
-    const userId = (req as any).user?.id || 1;
+    const userId = req.user?.id || 1;
 
     await documentService.terminateContract(
+      tenantId,
       parseInt(contract_id),
       new Date(termination_date),
       termination_reason,
@@ -406,12 +451,15 @@ export const terminateContract = async (req: Request, res: Response) => {
  * GET /api/hr/contracts/expiring
  * Get contracts expiring soon
  */
-export const getExpiringContracts = async (req: Request, res: Response) => {
+export const getExpiringContracts = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { days } = req.query;
     const daysAhead = parseInt(days as string) || 60;
 
-    const contracts = await documentService.getExpiringContracts(daysAhead);
+    const contracts = await documentService.getExpiringContracts(tenantId, daysAhead);
 
     res.json({
       success: true,
@@ -432,9 +480,12 @@ export const getExpiringContracts = async (req: Request, res: Response) => {
  * POST /api/hr/leave/process-accruals
  * Process monthly leave accruals
  */
-export const processLeaveAccruals = async (req: Request, res: Response) => {
+export const processLeaveAccruals = async (req: TenantRequest, res: Response) => {
   try {
-    const result = await leaveService.processMonthlyAccruals();
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
+    const result = await leaveService.processMonthlyAccruals(tenantId);
 
     res.json({
       success: true,
@@ -455,8 +506,11 @@ export const processLeaveAccruals = async (req: Request, res: Response) => {
  * POST /api/hr/leave/year-end-carryover
  * Process year-end leave carryover
  */
-export const processYearEndCarryover = async (req: Request, res: Response) => {
+export const processYearEndCarryover = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { from_year, to_year } = req.body;
 
     if (!from_year || !to_year) {
@@ -467,6 +521,7 @@ export const processYearEndCarryover = async (req: Request, res: Response) => {
     }
 
     const result = await leaveService.processYearEndCarryover(
+      tenantId,
       parseInt(from_year),
       parseInt(to_year)
     );
@@ -490,8 +545,11 @@ export const processYearEndCarryover = async (req: Request, res: Response) => {
  * GET /api/hr/leave/calendar/:department_id
  * Get leave calendar for department
  */
-export const getLeaveCalendar = async (req: Request, res: Response) => {
+export const getLeaveCalendar = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { department_id } = req.params;
     const { start_date, end_date } = req.query;
 
@@ -503,6 +561,7 @@ export const getLeaveCalendar = async (req: Request, res: Response) => {
       : new Date(new Date().setMonth(new Date().getMonth() + 2));
 
     const calendar = await leaveService.getDepartmentLeaveCalendar(
+      tenantId,
       parseInt(department_id),
       startDate,
       endDate
@@ -527,8 +586,11 @@ export const getLeaveCalendar = async (req: Request, res: Response) => {
  * GET /api/hr/compliance/bcea-check/:employee_id
  * Check BCEA (Basic Conditions of Employment Act) compliance
  */
-export const checkBCEACompliance = async (req: Request, res: Response) => {
+export const checkBCEACompliance = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     const { employee_id } = req.params;
 
     // Get employee details
@@ -540,9 +602,9 @@ export const checkBCEACompliance = async (req: Request, res: Response) => {
         c.contract_type,
         c.probation_period_months
       FROM hr.employees e
-      LEFT JOIN hr.employee_contracts c ON e.employee_id = c.employee_id AND c.status = 'ACTIVE'
-      WHERE e.employee_id = $1
-    `, [employee_id]);
+      LEFT JOIN hr.employee_contracts c ON e.employee_id = c.employee_id AND e.tenant_id = c.tenant_id AND c.status = 'ACTIVE'
+      WHERE e.tenant_id = $1 AND e.employee_id = $2
+    `, [tenantId, employee_id]);
 
     if (empResult.rows.length === 0) {
       return res.status(404).json({
@@ -566,9 +628,9 @@ export const checkBCEACompliance = async (req: Request, res: Response) => {
     const leaveResult = await pool.query(`
       SELECT lt.leave_name, b.closing_balance, lt.default_days
       FROM hr.employee_leave_balances b
-      JOIN hr.leave_types lt ON b.leave_type_id = lt.leave_type_id
-      WHERE b.employee_id = $1 AND b.year = EXTRACT(YEAR FROM CURRENT_DATE)
-    `, [employee_id]);
+      JOIN hr.leave_types lt ON b.leave_type_id = lt.leave_type_id AND lt.tenant_id = $1
+      WHERE b.tenant_id = $1 AND b.employee_id = $2 AND b.year = EXTRACT(YEAR FROM CURRENT_DATE)
+    `, [tenantId, employee_id]);
 
     const annualLeave = leaveResult.rows.find(l => l.leave_name === 'Annual Leave');
     if (annualLeave && annualLeave.closing_balance < 15) {
@@ -622,14 +684,18 @@ export const checkBCEACompliance = async (req: Request, res: Response) => {
  * GET /api/hr/compliance/report
  * Get overall HR compliance report
  */
-export const getComplianceReport = async (req: Request, res: Response) => {
+export const getComplianceReport = async (req: TenantRequest, res: Response) => {
   try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ success: false, error: 'Tenant context not found' });
+
     // Count employees by status
     const statusCount = await pool.query(`
       SELECT employment_status, COUNT(*) as count
       FROM hr.employees
+      WHERE tenant_id = $1
       GROUP BY employment_status
-    `);
+    `, [tenantId]);
 
     // Count expiring documents
     const expiringDocs = await pool.query(`
@@ -639,7 +705,8 @@ export const getComplianceReport = async (req: Request, res: Response) => {
         AND expiry_date <= CURRENT_DATE + INTERVAL '30 days'
         AND expiry_date >= CURRENT_DATE
         AND is_deleted = false
-    `);
+        AND tenant_id = $1
+    `, [tenantId]);
 
     // Count expiring contracts
     const expiringContracts = await pool.query(`
@@ -649,14 +716,16 @@ export const getComplianceReport = async (req: Request, res: Response) => {
         AND end_date <= CURRENT_DATE + INTERVAL '60 days'
         AND end_date >= CURRENT_DATE
         AND status = 'ACTIVE'
-    `);
+        AND tenant_id = $1
+    `, [tenantId]);
 
     // Count pending leave requests
     const pendingLeave = await pool.query(`
       SELECT COUNT(*) as count
       FROM hr.leave_requests
       WHERE status = 'Pending'
-    `);
+        AND tenant_id = $1
+    `, [tenantId]);
 
     // Check for employees without contracts
     const noContract = await pool.query(`
@@ -665,9 +734,10 @@ export const getComplianceReport = async (req: Request, res: Response) => {
       WHERE e.employment_status = 'Active'
         AND NOT EXISTS (
           SELECT 1 FROM hr.employee_contracts c
-          WHERE c.employee_id = e.employee_id AND c.status = 'ACTIVE'
+          WHERE c.employee_id = e.employee_id AND c.tenant_id = $1 AND c.status = 'ACTIVE'
         )
-    `);
+        AND e.tenant_id = $1
+    `, [tenantId]);
 
     // Check for employees without tax numbers
     const noTaxNumber = await pool.query(`
@@ -675,7 +745,8 @@ export const getComplianceReport = async (req: Request, res: Response) => {
       FROM hr.employees
       WHERE employment_status = 'Active'
         AND (tax_number IS NULL OR tax_number = '')
-    `);
+        AND tenant_id = $1
+    `, [tenantId]);
 
     res.json({
       success: true,

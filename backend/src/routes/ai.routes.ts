@@ -6,8 +6,12 @@
 
 import { Router, Request, Response } from 'express';
 import { createAIAssistant, AIAssistantService } from '../services/ai/AIAssistantService';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
+
+// Apply tenant middleware to all AI routes
+router.use(tenantMiddleware);
 
 // Singleton AI assistant instance
 let aiAssistant: AIAssistantService | null = null;

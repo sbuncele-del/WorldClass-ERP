@@ -37,8 +37,9 @@ export interface RevenueByMonth {
 
 export const salesService = {
   async getStats(): Promise<SalesStats> {
-    const { data } = await apiClient.get('/api/sales/stats');
-    return data;
+    const { data } = await apiClient.get('/api/sales/workspace');
+    // Extract summary from workspace response
+    return data.data?.summary || data.summary || data;
   },
 
   async getOrders(params?: { limit?: number; status?: string }): Promise<{ data: SalesOrder[]; total: number }> {
