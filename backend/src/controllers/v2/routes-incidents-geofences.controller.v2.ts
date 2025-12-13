@@ -8,7 +8,7 @@
  */
 
 import { Request, Response } from 'express';
-import { pool } from '../config/database';
+import { pool } from '../../config/database';
 
 // Tenant-aware request type
 interface TenantRequest extends Request {
