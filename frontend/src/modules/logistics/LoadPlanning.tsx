@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FaTruck, FaBoxOpen, FaRoute } from 'react-icons/fa';
+import apiClient from '../../services/api';
 import '../../App.css';
 
 interface Job {
@@ -21,20 +22,6 @@ interface Vehicle {
   currentLoad: number;
   jobs: Job[];
 }
-
-const initialJobs: Job[] = [
-  { id: 'JOB-001', customer: 'Massmart', origin: 'JHB DC', destination: 'Durban Port', weight: 12000 },
-  { id: 'JOB-002', customer: 'Shoprite', origin: 'CPT DC', destination: 'George', weight: 8000 },
-  { id: 'JOB-003', customer: 'Unilever', origin: 'PE Factory', destination: 'Bloemfontein', weight: 22000 },
-  { id: 'JOB-004', customer: 'SPAR', origin: 'JHB DC', destination: 'Nelspruit', weight: 5000 },
-  { id: 'JOB-005', customer: 'Pick n Pay', origin: 'DUR DC', destination: 'Pietermaritzburg', weight: 3500 },
-];
-
-const initialVehicles: Vehicle[] = [
-  { id: 'VEH-001', reg: 'HZ 54 LK GP', driver: 'Bongani Zulu', capacity: 28000, currentLoad: 0, jobs: [] },
-  { id: 'VEH-002', reg: 'JX 99 YU GP', driver: 'Fezeka Mbeki', capacity: 14000, currentLoad: 0, jobs: [] },
-  { id: 'VEH-003', reg: 'CA 123-456', driver: 'Pieter van Zyl', capacity: 32000, currentLoad: 0, jobs: [] },
-];
 
 const JobCard: React.FC<{ job: Job }> = ({ job }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: job.id });
@@ -77,9 +64,33 @@ const VehicleLane: React.FC<{ vehicle: Vehicle, jobs: Job[] }> = ({ vehicle, job
 
 
 const LoadPlanning: React.FC = () => {
-  const [unassignedJobs, setUnassignedJobs] = useState(initialJobs);
-  const [vehicles, setVehicles] = useState(initialVehicles);
+  const [unassignedJobs, setUnassignedJobs] = useState<Job[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(true);
   const sensors = useSensors(useSensor(PointerSensor));
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [jobsRes, vehiclesRes] = await Promise.all([
+          apiClient.get('/api/logistics/jobs?status=unassigned'),
+          apiClient.get('/api/logistics/vehicles')
+        ]);
+        setUnassignedJobs(jobsRes.data.jobs || jobsRes.data || []);
+        setVehicles((vehiclesRes.data.vehicles || vehiclesRes.data || []).map((v: any) => ({
+          ...v,
+          jobs: v.jobs || [],
+          currentLoad: v.currentLoad || 0,
+          capacity: v.capacity || 28000
+        })));
+      } catch (error) {
+        console.error('Failed to fetch load planning data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const findContainer = (id: string) => {
     if (id === 'unassigned-jobs') {

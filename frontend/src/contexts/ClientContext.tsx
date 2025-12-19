@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { API_BASE_URL } from '../services/api.service';
 import type {
   Client,
   ClientSummary,
@@ -190,9 +191,8 @@ export const ClientProvider: React.FC<ClientProviderProps> = ({ children }) => {
     setError(null);
     try {
       // Load tenant settings from backend (NO MOCK DATA FALLBACK)
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      
-      const response = await fetch(`${apiUrl}/api/tenant/settings`, {
+            
+      const response = await fetch(`${API_BASE_URL}/api/tenant/settings`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       
@@ -241,14 +241,13 @@ export const ClientProvider: React.FC<ClientProviderProps> = ({ children }) => {
 
     try {
       // NO MOCK DATA - Real API only
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const token = localStorage.getItem('token');
+            const token = localStorage.getItem('token');
       
       if (!token) {
         throw new Error('No authentication token');
       }
       
-      const response = await fetch(`${apiUrl}/api/super-admin/tenants/${clientId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/super-admin/tenants/${clientId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       

@@ -69,12 +69,8 @@ const ChartOfAccountsEnhanced: React.FC = () => {
       const result = await response.json();
       setAccounts(result.data || []);
     } catch (error) {
-      console.error('Error:', error);
-      setAccounts([
-        { id: '1', code: '1000', name: 'Cash', account_type: 'ASSET', category: 'Current Assets', normal_balance: 'DEBIT', is_active: true },
-        { id: '2', code: '1100', name: 'Accounts Receivable', account_type: 'ASSET', category: 'Current Assets', normal_balance: 'DEBIT', is_active: true },
-        { id: '3', code: '4000', name: 'Sales Revenue', account_type: 'REVENUE', category: 'Operating Revenue', normal_balance: 'CREDIT', is_active: true }
-      ]);
+      console.error('Error fetching accounts:', error);
+      setAccounts([]);
     } finally {
       setLoading(false);
     }

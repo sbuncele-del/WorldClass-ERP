@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface Load {
@@ -19,19 +20,39 @@ interface Vehicle {
 }
 
 const LoadPlanningEnhanced: React.FC = () => {
-  const [loads, setLoads] = useState<Load[]>([
-    { id: 1, customer: 'Massmart', route: 'JHB DC → Durban Port', weight: 12000, assigned: false },
-    { id: 2, customer: 'Shoprite', route: 'CPT DC → George', weight: 8000, assigned: false },
-    { id: 3, customer: 'Unilever', route: 'PE Factory → Bloemfontein', weight: 22000, assigned: false },
-    { id: 4, customer: 'SPAR', route: 'JHB DC → Nelspruit', weight: 5000, assigned: false },
-    { id: 5, customer: 'Pick n Pay', route: 'DUR DC → Pietermaritzburg', weight: 3500, assigned: false },
-  ]);
+  const [loads, setLoads] = useState<Load[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    { reg: 'HZ 54 LK GP', driver: 'Bongani Zulu', capacity: 28000, currentLoad: 0, assignedLoads: [] },
-    { reg: 'ABC 123 GP', driver: 'John Mthembu', capacity: 30000, currentLoad: 0, assignedLoads: [] },
-    { reg: 'DEF 456 GP', driver: 'Sarah Ndlovu', capacity: 28000, currentLoad: 0, assignedLoads: [] },
-  ]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [loadsRes, vehiclesRes] = await Promise.all([
+          apiClient.get('/api/logistics/loads'),
+          apiClient.get('/api/logistics/vehicles')
+        ]);
+        setLoads((loadsRes.data.loads || loadsRes.data || []).map((l: any) => ({
+          id: l.id,
+          customer: l.customer || l.customer_name,
+          route: l.route || `${l.origin} → ${l.destination}`,
+          weight: l.weight || 0,
+          assigned: l.assigned || false
+        })));
+        setVehicles((vehiclesRes.data.vehicles || vehiclesRes.data || []).map((v: any) => ({
+          reg: v.reg || v.registration,
+          driver: v.driver || v.driver_name,
+          capacity: v.capacity || 28000,
+          currentLoad: v.currentLoad || v.current_load || 0,
+          assignedLoads: v.assignedLoads || []
+        })));
+      } catch (error) {
+        console.error('Failed to fetch load planning data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', path: '/logistics/dashboard' },

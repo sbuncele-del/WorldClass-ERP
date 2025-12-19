@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './BudgetManagement.css';
 
 interface BudgetScenario {
@@ -58,6 +59,7 @@ interface Account {
 
 const BudgetManagement: React.FC = () => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [scenarios, setScenarios] = useState<BudgetScenario[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -99,7 +101,7 @@ const BudgetManagement: React.FC = () => {
       if (filters.status) queryParams.append('status', filters.status);
       if (filters.department) queryParams.append('department', filters.department);
 
-      const response = await fetch(`http://localhost:3000/api/financial/forecasting/budgets?${queryParams}`);
+      const response = await fetch(`${API_BASE_URL}/api/financial/forecasting/budgets?${queryParams}`);
       const data = await response.json();
       
       if (data.success) {
@@ -113,7 +115,7 @@ const BudgetManagement: React.FC = () => {
 
   const fetchScenarios = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/financial/forecasting/scenarios`);
+      const response = await fetch(`${API_BASE_URL}/api/financial/forecasting/scenarios`);
       const data = await response.json();
       
       if (data.success) {
@@ -126,7 +128,7 @@ const BudgetManagement: React.FC = () => {
 
   const fetchAccounts = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/financial/accounts');
+      const response = await fetch(`${API_BASE_URL}/api/financial/accounts`);
       const data = await response.json();
       
       if (data.success) {
@@ -139,7 +141,7 @@ const BudgetManagement: React.FC = () => {
 
   const fetchBudgetDetails = async (budgetId: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/financial/forecasting/budgets/${budgetId}`);
+      const response = await fetch(`${API_BASE_URL}/api/financial/forecasting/budgets/${budgetId}`);
       const data = await response.json();
       
       if (data.success) {
@@ -181,8 +183,8 @@ const BudgetManagement: React.FC = () => {
       }
 
       const endpoint = selectedBudget
-        ? `http://localhost:3000/api/financial/forecasting/budgets/${selectedBudget.id}`
-        : 'http://localhost:3000/api/financial/forecasting/budgets';
+        ? `${API_BASE_URL}/api/financial/forecasting/budgets/${selectedBudget.id}`
+        : `${API_BASE_URL}/api/financial/forecasting/budgets`;
 
       const method = selectedBudget ? 'PUT' : 'POST';
 
@@ -218,7 +220,7 @@ const BudgetManagement: React.FC = () => {
     if (!confirm('Are you sure you want to delete this budget?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/financial/forecasting/budgets/${budgetId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/financial/forecasting/budgets/${budgetId}`, {
         method: 'DELETE'
       });
 

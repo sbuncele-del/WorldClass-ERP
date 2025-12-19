@@ -31,6 +31,7 @@ import {
 import { useClient } from '../contexts/ClientContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useUser } from '../contexts/UserContext';
+import { API_BASE_URL } from '../services/api.service';
 import './EnterpriseDashboard.css';
 
 interface WorkspaceCard {
@@ -85,17 +86,16 @@ const EnterpriseDashboard: React.FC = () => {
     
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      
+            
       // Fetch real data from backend
       const [metricsRes, tasksRes, alertsRes] = await Promise.all([
-        fetch(`${apiUrl}/api/financial/dashboard/metrics`, {
+        fetch(`${API_BASE_URL}/api/financial/dashboard/metrics`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${apiUrl}/api/financial/dashboard/tasks`, {
+        fetch(`${API_BASE_URL}/api/financial/dashboard/tasks`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${apiUrl}/api/financial/dashboard/alerts`, {
+        fetch(`${API_BASE_URL}/api/financial/dashboard/alerts`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);

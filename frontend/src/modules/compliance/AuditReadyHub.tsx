@@ -13,13 +13,14 @@
  * - South African Regulatory Compliance (SARS, CIPC, B-BBEE)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
   Input, Select, DatePicker, Modal, Form, Typography, Avatar,
   Timeline, Descriptions, Tooltip, Dropdown, Switch, Alert,
-  List, Divider, Steps, Upload, message, Checkbox, Empty, Collapse
+  List, Divider, Steps, Upload, message, Checkbox, Empty, Collapse, Spin
 } from 'antd';
+import apiClient from '../../services/api';
 import {
   HomeOutlined, TeamOutlined, CalendarOutlined, ClockCircleOutlined,
   DollarOutlined, BarChartOutlined, CheckCircleOutlined, WarningOutlined,
@@ -122,67 +123,44 @@ const AuditReadyHub: React.FC = () => {
   const [generating, setGenerating] = useState(false);
   const [auditorModalVisible, setAuditorModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(true);
 
-  // Sample data
-  const [documents] = useState<AuditDocument[]>([
-    { id: 'DOC-001', name: 'Annual Financial Statements', category: 'Financial', status: 'ready', lastUpdated: '2025-12-10', size: '2.3 MB', version: '3.0', preparedBy: 'Finance Team', reviewer: 'CFO' },
-    { id: 'DOC-002', name: 'Trial Balance', category: 'Financial', status: 'ready', lastUpdated: '2025-12-11', size: '856 KB', version: '1.2', preparedBy: 'Accountant' },
-    { id: 'DOC-003', name: 'General Ledger Extract', category: 'Financial', status: 'ready', lastUpdated: '2025-12-11', size: '4.7 MB', version: '1.0', preparedBy: 'System' },
-    { id: 'DOC-004', name: 'Bank Reconciliation', category: 'Cash', status: 'ready', lastUpdated: '2025-12-09', size: '1.2 MB', version: '2.1', preparedBy: 'Treasury' },
-    { id: 'DOC-005', name: 'VAT201 Returns', category: 'Tax', status: 'ready', lastUpdated: '2025-12-08', size: '654 KB', version: '1.0', preparedBy: 'Tax Team' },
-    { id: 'DOC-006', name: 'EMP201 Submissions', category: 'Tax', status: 'ready', lastUpdated: '2025-12-05', size: '1.1 MB', version: '1.0', preparedBy: 'Payroll' },
-    { id: 'DOC-007', name: 'Asset Register (IAS 16)', category: 'Assets', status: 'ready', lastUpdated: '2025-12-10', size: '1.5 MB', version: '2.0', preparedBy: 'Asset Manager' },
-    { id: 'DOC-008', name: 'Debtors Age Analysis', category: 'Financial', status: 'review', lastUpdated: '2025-12-11', size: '890 KB', version: '1.1', preparedBy: 'Credit Control' },
-    { id: 'DOC-009', name: 'Creditors Age Analysis', category: 'Financial', status: 'pending', lastUpdated: '2025-12-10', size: '780 KB', version: '1.0', preparedBy: 'AP Team' },
-    { id: 'DOC-010', name: 'B-BBEE Certificate', category: 'Compliance', status: 'ready', lastUpdated: '2025-06-15', size: '450 KB', version: '1.0', preparedBy: 'HR' },
-    { id: 'DOC-011', name: 'CIPC Annual Return', category: 'Compliance', status: 'missing', lastUpdated: '-', size: '-', version: '-', preparedBy: '-' },
-    { id: 'DOC-012', name: 'Directors Resolution', category: 'Governance', status: 'ready', lastUpdated: '2025-11-30', size: '320 KB', version: '1.0', preparedBy: 'Company Secretary' }
-  ]);
+  // Data state
+  const [documents, setDocuments] = useState<AuditDocument[]>([]);
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [auditors, setAuditors] = useState<AuditorAccess[]>([]);
+  const [auditorMessages, setAuditorMessages] = useState<AuditorMessage[]>([]);
+  const [documentRequests, setDocumentRequests] = useState<DocumentRequest[]>([]);
 
-  const [checklist] = useState<ChecklistItem[]>([
-    { id: 'CHK-001', name: 'Balance Sheet Prepared', category: 'Financial Statements', completed: true, priority: 'high', assignee: 'Finance Team' },
-    { id: 'CHK-002', name: 'Income Statement Prepared', category: 'Financial Statements', completed: true, priority: 'high', assignee: 'Finance Team' },
-    { id: 'CHK-003', name: 'Cash Flow Statement Prepared', category: 'Financial Statements', completed: true, priority: 'high', assignee: 'Finance Team' },
-    { id: 'CHK-004', name: 'Statement of Changes in Equity', category: 'Financial Statements', completed: true, priority: 'high', assignee: 'Finance Team' },
-    { id: 'CHK-005', name: 'Notes to Financial Statements', category: 'Financial Statements', completed: true, priority: 'high', assignee: 'Finance Team' },
-    { id: 'CHK-006', name: 'Bank Reconciliations Complete', category: 'Reconciliations', completed: true, priority: 'high', assignee: 'Treasury' },
-    { id: 'CHK-007', name: 'Intercompany Reconciliations', category: 'Reconciliations', completed: true, priority: 'medium', assignee: 'Group Accountant' },
-    { id: 'CHK-008', name: 'VAT Reconciliation', category: 'Tax', completed: true, priority: 'high', assignee: 'Tax Team' },
-    { id: 'CHK-009', name: 'PAYE Reconciliation (IRP5)', category: 'Tax', completed: true, priority: 'high', assignee: 'Payroll' },
-    { id: 'CHK-010', name: 'CIPC Annual Return Filed', category: 'Compliance', completed: false, dueDate: '2025-12-31', priority: 'critical', assignee: 'Company Secretary' },
-    { id: 'CHK-011', name: 'B-BBEE Certificate Valid', category: 'Compliance', completed: true, priority: 'medium', assignee: 'HR' },
-    { id: 'CHK-012', name: 'Directors Register Updated', category: 'Governance', completed: true, priority: 'low', assignee: 'Company Secretary' },
-    { id: 'CHK-013', name: 'Share Register Updated', category: 'Governance', completed: true, priority: 'low', assignee: 'Company Secretary' },
-    { id: 'CHK-014', name: 'Related Party Disclosures', category: 'IFRS', completed: true, priority: 'high', assignee: 'CFO' },
-    { id: 'CHK-015', name: 'Segment Reporting', category: 'IFRS', completed: false, dueDate: '2025-12-20', priority: 'medium', assignee: 'Finance Team' }
-  ]);
-
-  const [auditLogs] = useState<AuditLog[]>([
-    { id: 'LOG-001', timestamp: '2025-12-11 14:32:15', user: 'john.smith@company.co.za', action: 'Document Upload', module: 'Audit Pack', details: 'Uploaded Annual Financial Statements v3.0', ipAddress: '192.168.1.100' },
-    { id: 'LOG-002', timestamp: '2025-12-11 13:45:22', user: 'sarah.jones@company.co.za', action: 'Checklist Update', module: 'Compliance', details: 'Marked VAT Reconciliation as complete', ipAddress: '192.168.1.101' },
-    { id: 'LOG-003', timestamp: '2025-12-11 11:20:08', user: 'admin@company.co.za', action: 'Auditor Access', module: 'Security', details: 'Granted access to PwC audit team', ipAddress: '192.168.1.1' },
-    { id: 'LOG-004', timestamp: '2025-12-10 16:55:33', user: 'finance@company.co.za', action: 'Report Generated', module: 'Reports', details: 'Generated Trial Balance for Dec 2025', ipAddress: '192.168.1.102' },
-    { id: 'LOG-005', timestamp: '2025-12-10 15:12:44', user: 'external.auditor@pwc.co.za', action: 'Document Download', module: 'Audit Pack', details: 'Downloaded Bank Reconciliation', ipAddress: '41.185.22.101' }
-  ]);
-
-  const [auditors, setAuditors] = useState<AuditorAccess[]>([
-    { id: 'AUD-001', name: 'James van der Merwe', firm: 'PwC South Africa', email: 'jvdmerwe@pwc.co.za', accessLevel: 'full', expiryDate: '2026-03-31', status: 'active', lastLogin: '2025-12-11 09:15', allowedCategories: ['Financial', 'Tax', 'Cash', 'Assets', 'Compliance', 'Governance'], allowedActions: ['view', 'download', 'comment', 'request'], portalLink: 'https://audit.aetheros.co.za/portal/aud-001-xyz123' },
-    { id: 'AUD-002', name: 'Linda Nkosi', firm: 'PwC South Africa', email: 'lnkosi@pwc.co.za', accessLevel: 'limited', expiryDate: '2026-03-31', status: 'active', lastLogin: '2025-12-10 14:30', allowedCategories: ['Financial', 'Tax'], allowedActions: ['view', 'download', 'comment'], portalLink: 'https://audit.aetheros.co.za/portal/aud-002-abc456' },
-    { id: 'AUD-003', name: 'Internal Audit Team', firm: 'Internal', email: 'internal.audit@company.co.za', accessLevel: 'readonly', expiryDate: '2025-12-31', status: 'active', lastLogin: '2025-12-11 11:00', allowedCategories: ['Financial', 'Tax', 'Cash', 'Compliance'], allowedActions: ['view', 'comment'], portalLink: 'https://audit.aetheros.co.za/portal/aud-003-int789' }
-  ]);
-
-  const [auditorMessages, setAuditorMessages] = useState<AuditorMessage[]>([
-    { id: 'MSG-001', from: 'jvdmerwe@pwc.co.za', to: 'finance@company.co.za', subject: 'Requesting clarification on Note 12', content: 'Hi Team,\n\nCould you please provide additional supporting documentation for the Related Party transactions noted in Note 12? We need the underlying agreements and board resolutions.\n\nThank you,\nJames', timestamp: '2025-12-11 10:30', isRead: false, type: 'query' },
-    { id: 'MSG-002', from: 'finance@company.co.za', to: 'jvdmerwe@pwc.co.za', subject: 'RE: Requesting clarification on Note 12', content: 'Hi James,\n\nPlease find attached the related party agreements and board resolutions as requested. Let me know if you need anything else.\n\nRegards,\nFinance Team', timestamp: '2025-12-11 11:45', isRead: true, attachments: ['Related_Party_Agreements.pdf', 'Board_Resolution_2025.pdf'], type: 'response' },
-    { id: 'MSG-003', from: 'lnkosi@pwc.co.za', to: 'finance@company.co.za', subject: 'Tax computation query', content: 'Good day,\n\nPlease provide the supporting calculations for the deferred tax computation.\n\nRegards,\nLinda', timestamp: '2025-12-10 14:20', isRead: true, type: 'query' },
-    { id: 'MSG-004', from: 'internal.audit@company.co.za', to: 'finance@company.co.za', subject: 'Internal audit findings', content: 'Please note the following findings from our Q3 review...', timestamp: '2025-12-09 09:00', isRead: true, type: 'notification' }
-  ]);
-
-  const [documentRequests, setDocumentRequests] = useState<DocumentRequest[]>([
-    { id: 'REQ-001', auditorId: 'AUD-001', auditorName: 'James van der Merwe', documentName: 'Management Representation Letter', category: 'Governance', reason: 'Required for audit file completion', status: 'pending', requestedDate: '2025-12-11' },
-    { id: 'REQ-002', auditorId: 'AUD-001', auditorName: 'James van der Merwe', documentName: 'Going Concern Assessment', category: 'Financial', reason: 'ISA 570 requirement', status: 'fulfilled', requestedDate: '2025-12-08', responseDate: '2025-12-09', respondedBy: 'CFO' },
-    { id: 'REQ-003', auditorId: 'AUD-002', auditorName: 'Linda Nkosi', documentName: 'Tax Computation Workings', category: 'Tax', reason: 'Verify deferred tax calculation', status: 'approved', requestedDate: '2025-12-10', responseDate: '2025-12-10', respondedBy: 'Tax Manager' }
-  ]);
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [docsRes, checklistRes, logsRes, auditorsRes, messagesRes, requestsRes] = await Promise.all([
+          apiClient.get('/api/compliance/audit/documents'),
+          apiClient.get('/api/compliance/audit/checklist'),
+          apiClient.get('/api/compliance/audit/logs'),
+          apiClient.get('/api/compliance/audit/auditors'),
+          apiClient.get('/api/compliance/audit/messages'),
+          apiClient.get('/api/compliance/audit/requests')
+        ]);
+        setDocuments(docsRes.data || []);
+        setChecklist(checklistRes.data || []);
+        setAuditLogs(logsRes.data || []);
+        setAuditors(auditorsRes.data || []);
+        setAuditorMessages(messagesRes.data || []);
+        setDocumentRequests(requestsRes.data || []);
+      } catch (error) {
+        console.error('Failed to fetch audit data:', error);
+        message.error('Failed to load audit data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const [accessConfigModalVisible, setAccessConfigModalVisible] = useState(false);
   const [selectedAuditor, setSelectedAuditor] = useState<AuditorAccess | null>(null);

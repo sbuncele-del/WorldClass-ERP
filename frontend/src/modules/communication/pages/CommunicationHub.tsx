@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../../services/api';
 import { 
   Card, Row, Col, Avatar, Badge, List, Input, Button, Space, 
-  Typography, Tabs, Tag, Tooltip, Dropdown, Statistic
+  Typography, Tabs, Tag, Tooltip, Dropdown, Statistic, Spin
 } from 'antd';
 import { 
   MessageOutlined, VideoCameraOutlined, PhoneOutlined, TeamOutlined,
@@ -41,30 +42,6 @@ interface RecentCall {
   time: string;
 }
 
-// Sample data
-const sampleChannels: Channel[] = [
-  { id: '1', name: 'general', type: 'public', members: 45, unread: 3, lastMessage: 'Good morning everyone!', lastActivity: '5 min ago', pinned: true },
-  { id: '2', name: 'website-redesign', type: 'project', members: 8, unread: 12, lastMessage: 'The new mockups are ready for review', lastActivity: '15 min ago', pinned: true },
-  { id: '3', name: 'mobile-app', type: 'project', members: 6, unread: 0, lastMessage: 'Build 2.3.1 deployed to TestFlight', lastActivity: '1 hour ago', pinned: false },
-  { id: '4', name: 'engineering', type: 'private', members: 15, unread: 5, lastMessage: 'Sprint planning at 2pm today', lastActivity: '30 min ago', pinned: false },
-  { id: '5', name: 'sales-team', type: 'private', members: 12, unread: 0, lastMessage: 'Q1 targets exceeded by 15%!', lastActivity: '2 hours ago', pinned: false },
-  { id: '6', name: 'random', type: 'public', members: 45, unread: 0, lastMessage: 'Anyone up for lunch?', lastActivity: '45 min ago', pinned: false }
-];
-
-const sampleDMs: DirectMessage[] = [
-  { id: '1', user: { name: 'Sarah Johnson', status: 'online' }, unread: 2, lastMessage: 'Can you review the proposal?', lastActivity: '2 min ago' },
-  { id: '2', user: { name: 'Mike Wilson', status: 'online' }, unread: 0, lastMessage: 'Thanks for the help!', lastActivity: '20 min ago' },
-  { id: '3', user: { name: 'Emily Chen', status: 'away' }, unread: 1, lastMessage: 'The designs are attached', lastActivity: '1 hour ago' },
-  { id: '4', user: { name: 'David Lee', status: 'offline' }, unread: 0, lastMessage: 'Let me check and get back to you', lastActivity: '3 hours ago' },
-  { id: '5', user: { name: 'Alex Turner', status: 'online' }, unread: 0, lastMessage: 'Meeting confirmed for tomorrow', lastActivity: 'Yesterday' }
-];
-
-const sampleCalls: RecentCall[] = [
-  { id: '1', type: 'video', participants: ['Sarah Johnson', 'Mike Wilson', 'Emily Chen'], duration: '45 min', time: '10:30 AM' },
-  { id: '2', type: 'audio', participants: ['David Lee'], duration: '12 min', time: '9:15 AM' },
-  { id: '3', type: 'video', participants: ['Team Weekly'], duration: '1 hr 5 min', time: 'Yesterday' }
-];
-
 const statusColors = {
   online: '#52c41a',
   away: '#faad14',
@@ -73,10 +50,40 @@ const statusColors = {
 
 const CommunicationHub: React.FC = () => {
   const navigate = useNavigate();
-  const [channels] = useState<Channel[]>(sampleChannels);
-  const [dms] = useState<DirectMessage[]>(sampleDMs);
-  const [calls] = useState<RecentCall[]>(sampleCalls);
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [dms, setDms] = useState<DirectMessage[]>([]);
+  const [calls, setCalls] = useState<RecentCall[]>([]);
   const [searchText, setSearchText] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCommunicationData = async () => {
+      setLoading(true);
+      try {
+        const [channelsRes, dmsRes, callsRes] = await Promise.all([
+          apiClient.get('/api/communication/channels').catch(() => ({ data: [] })),
+          apiClient.get('/api/communication/messages').catch(() => ({ data: [] })),
+          apiClient.get('/api/communication/calls').catch(() => ({ data: [] })),
+        ]);
+        if (channelsRes.data?.length) setChannels(channelsRes.data);
+        if (dmsRes.data?.length) setDms(dmsRes.data);
+        if (callsRes.data?.length) setCalls(callsRes.data);
+      } catch (err) {
+        console.error('Error fetching communication data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCommunicationData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="communication-hub" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <Spin size="large" tip="Loading communication data..." />
+      </div>
+    );
+  }
 
   // Stats
   const totalUnread = channels.reduce((sum, c) => sum + c.unread, 0) + dms.reduce((sum, d) => sum + d.unread, 0);

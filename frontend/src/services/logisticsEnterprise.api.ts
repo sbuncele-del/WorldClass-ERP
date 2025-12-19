@@ -1,4 +1,6 @@
-import { apiFetch } from '../utils/api';
+import { apiGet, apiPost } from '../services/api.service';
+
+const BASE = '/api/v2/logistics/enterprise';
 
 export interface TransportationPlanPayload {
   planId?: string;
@@ -23,81 +25,40 @@ export interface TransportationPlanPayload {
 }
 
 export const logisticsEnterpriseAPI = {
-  getFeatureGates: () => apiFetch('/api/logistics/enterprise/feature-gates'),
-  getBenchmarks: () => apiFetch('/api/logistics/enterprise/benchmarks'),
-  getInnovationRoadmap: () => apiFetch('/api/logistics/enterprise/innovation-roadmap'),
+  getFeatureGates: () => apiGet(`${BASE}/feature-gates`),
+  getBenchmarks: () => apiGet(`${BASE}/benchmarks`),
+  getInnovationRoadmap: () => apiGet(`${BASE}/innovation-roadmap`),
 
-  listTransportationPlans: () => apiFetch('/api/logistics/enterprise/atms/plans'),
+  listTransportationPlans: () => apiGet(`${BASE}/atms/plans`),
   upsertTransportationPlan: (payload: TransportationPlanPayload) =>
-    apiFetch('/api/logistics/enterprise/atms/plans', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }),
+    apiPost(`${BASE}/atms/plans`, payload),
 
-  getYardOverview: (params?: { zoneType?: string; includeMovements?: boolean }) => {
-    const query = new URLSearchParams();
-    if (params?.zoneType) query.append('zoneType', params.zoneType);
-    if (params?.includeMovements) query.append('includeMovements', 'true');
-    return apiFetch(`/api/logistics/enterprise/yard/overview${query.toString() ? `?${query}` : ''}`);
-  },
+  getYardOverview: (params?: { zoneType?: string; includeMovements?: boolean }) =>
+    apiGet(`${BASE}/yard/overview`, params),
 
   scheduleDockAppointment: (payload: Record<string, unknown>) =>
-    apiFetch('/api/logistics/enterprise/yard/dock-appointments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }),
+    apiPost(`${BASE}/yard/dock-appointments`, payload),
 
   submitFreightAudit: (payload: Record<string, unknown>) =>
-    apiFetch('/api/logistics/enterprise/freight/audits', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }),
+    apiPost(`${BASE}/freight/audits`, payload),
 
   upsertCarrierContract: (payload: Record<string, unknown>) =>
-    apiFetch('/api/logistics/enterprise/carriers/contracts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }),
+    apiPost(`${BASE}/carriers/contracts`, payload),
 
   scoreCarrierPerformance: (payload: Record<string, unknown>) =>
-    apiFetch('/api/logistics/enterprise/carriers/scorecards', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }),
+    apiPost(`${BASE}/carriers/scorecards`, payload),
 
   recordRevenueRecognition: (payload: Record<string, unknown>) =>
-    apiFetch('/api/logistics/enterprise/finance/revenue-recognition', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }),
+    apiPost(`${BASE}/finance/revenue-recognition`, payload),
 
-  getRouteProfitability: (params?: { routeId?: string; periodStart?: string; periodEnd?: string }) => {
-    const query = new URLSearchParams();
-    if (params?.routeId) query.append('routeId', params.routeId);
-    if (params?.periodStart) query.append('periodStart', params.periodStart);
-    if (params?.periodEnd) query.append('periodEnd', params.periodEnd);
-    return apiFetch(`/api/logistics/enterprise/analytics/route-profitability${query.toString() ? `?${query}` : ''}`);
-  },
+  getRouteProfitability: (params?: { routeId?: string; periodStart?: string; periodEnd?: string }) =>
+    apiGet(`${BASE}/analytics/route-profitability`, params),
 
   ingestIotEvent: (payload: Record<string, unknown>) =>
-    apiFetch('/api/logistics/enterprise/iot/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }),
+    apiPost(`${BASE}/iot/events`, payload),
 
   createPredictiveMaintenanceAlert: (payload: Record<string, unknown>) =>
-    apiFetch('/api/logistics/enterprise/ai/predictive-maintenance', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }),
+    apiPost(`${BASE}/ai/predictive-maintenance`, payload),
 };
 
 export default logisticsEnterpriseAPI;

@@ -1,25 +1,29 @@
 import { Router } from 'express';
+import AdminControllerV2 from '../controllers/admin.controller.v2';
+// Legacy controller for endpoints not yet migrated to V2
 import AdminController from '../controllers/admin.controller';
 import * as adminWorkspaceController from '../modules/admin/controllers/admin.workspace.controller';
-import { authenticateToken } from '../middleware/auth';
+import { tenantMiddleware } from '../middleware/tenant';
 import { requirePermission } from '../middleware/permissions';
 
 const router = Router();
 
 /**
- * Admin Routes
+ * Admin Routes - NOW USING V2 CONTROLLER for tenant isolation
  * 
- * All routes require authentication
- * Most routes require specific permissions
+ * All routes use tenant middleware for multi-tenant security
  */
+
+// Apply tenant middleware to all routes
+router.use(tenantMiddleware);
 
 // ============================================================================
 // WORKSPACE
 // ============================================================================
-router.get('/workspace', authenticateToken, adminWorkspaceController.getAdminWorkspace);
+router.get('/workspace', adminWorkspaceController.getAdminWorkspace);
 
 // ============================================================================
-// USER MANAGEMENT ROUTES
+// USER MANAGEMENT ROUTES (V2 - Tenant Isolated)
 // ============================================================================
 
 /**
@@ -29,9 +33,8 @@ router.get('/workspace', authenticateToken, adminWorkspaceController.getAdminWor
  */
 router.get(
   '/users',
-  authenticateToken,
   requirePermission('ADMIN_USERS_MANAGE'),
-  AdminController.getAllUsers
+  AdminControllerV2.getAllUsers
 );
 
 /**
@@ -41,9 +44,8 @@ router.get(
  */
 router.get(
   '/users/:id',
-  authenticateToken,
   requirePermission('ADMIN_USERS_MANAGE'),
-  AdminController.getUserById
+  AdminControllerV2.getUserById
 );
 
 /**
@@ -53,9 +55,8 @@ router.get(
  */
 router.post(
   '/users',
-  authenticateToken,
   requirePermission('ADMIN_USERS_MANAGE'),
-  AdminController.createUser
+  AdminControllerV2.createUser
 );
 
 /**
@@ -65,9 +66,8 @@ router.post(
  */
 router.put(
   '/users/:id',
-  authenticateToken,
   requirePermission('ADMIN_USERS_MANAGE'),
-  AdminController.updateUser
+  AdminControllerV2.updateUser
 );
 
 /**
@@ -77,9 +77,8 @@ router.put(
  */
 router.delete(
   '/users/:id',
-  authenticateToken,
   requirePermission('ADMIN_USERS_MANAGE'),
-  AdminController.deleteUser
+  AdminControllerV2.deleteUser
 );
 
 /**
@@ -89,13 +88,12 @@ router.delete(
  */
 router.post(
   '/users/:id/reset-password',
-  authenticateToken,
   requirePermission('ADMIN_USERS_MANAGE'),
-  AdminController.resetPassword
+  AdminController.resetPassword // Legacy - add to V2 later
 );
 
 // ============================================================================
-// ROLE MANAGEMENT ROUTES
+// ROLE MANAGEMENT ROUTES (V2 - Tenant Isolated)
 // ============================================================================
 
 /**
@@ -105,9 +103,8 @@ router.post(
  */
 router.get(
   '/roles',
-  authenticateToken,
   requirePermission('ADMIN_ROLES_MANAGE'),
-  AdminController.getAllRoles
+  AdminControllerV2.getRoles
 );
 
 /**
@@ -117,9 +114,8 @@ router.get(
  */
 router.get(
   '/roles/:id',
-  authenticateToken,
   requirePermission('ADMIN_ROLES_MANAGE'),
-  AdminController.getRoleById
+  AdminController.getRoleById // Legacy - add to V2 later
 );
 
 /**
@@ -129,9 +125,8 @@ router.get(
  */
 router.post(
   '/roles',
-  authenticateToken,
   requirePermission('ADMIN_ROLES_MANAGE'),
-  AdminController.createRole
+  AdminControllerV2.createRole
 );
 
 /**
@@ -141,9 +136,8 @@ router.post(
  */
 router.post(
   '/roles/:id/permissions',
-  authenticateToken,
   requirePermission('ADMIN_ROLES_MANAGE'),
-  AdminController.updateRolePermissions
+  AdminController.updateRolePermissions // Legacy - add to V2 later
 );
 
 // ============================================================================
@@ -157,13 +151,12 @@ router.post(
  */
 router.get(
   '/permissions',
-  authenticateToken,
   requirePermission('ADMIN_ROLES_MANAGE'),
-  AdminController.getAllPermissions
+  AdminController.getAllPermissions // Legacy - permissions are tenant-independent
 );
 
 // ============================================================================
-// SYSTEM SETTINGS ROUTES
+// SYSTEM SETTINGS ROUTES (V2 - Tenant Isolated)
 // ============================================================================
 
 /**
@@ -173,9 +166,8 @@ router.get(
  */
 router.get(
   '/settings',
-  authenticateToken,
   requirePermission('ADMIN_SETTINGS_MANAGE'),
-  AdminController.getAllSettings
+  AdminControllerV2.getSettings
 );
 
 /**
@@ -185,13 +177,12 @@ router.get(
  */
 router.put(
   '/settings/:key',
-  authenticateToken,
   requirePermission('ADMIN_SETTINGS_MANAGE'),
-  AdminController.updateSetting
+  AdminControllerV2.updateSettings
 );
 
 // ============================================================================
-// NOTIFICATION ROUTES
+// NOTIFICATION ROUTES (Legacy - needs V2 migration)
 // ============================================================================
 
 /**
@@ -201,7 +192,6 @@ router.put(
  */
 router.get(
   '/notifications',
-  authenticateToken,
   AdminController.getNotifications
 );
 
@@ -212,12 +202,11 @@ router.get(
  */
 router.put(
   '/notifications/:id/read',
-  authenticateToken,
   AdminController.markNotificationRead
 );
 
 // ============================================================================
-// AUDIT LOG ROUTES
+// AUDIT LOG ROUTES (V2 - Tenant Isolated)
 // ============================================================================
 
 /**
@@ -227,9 +216,8 @@ router.put(
  */
 router.get(
   '/audit-logs',
-  authenticateToken,
-  requirePermission('ADMIN_USERS_MANAGE'), // Or specific AUDIT permission
-  AdminController.getAuditLogs
+  requirePermission('ADMIN_USERS_MANAGE'),
+  AdminControllerV2.getAuditLog
 );
 
 export default router;

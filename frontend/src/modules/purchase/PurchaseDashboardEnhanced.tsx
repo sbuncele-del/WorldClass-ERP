@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
 import type { SecondaryNavSection } from '../../components/layout/SecondaryNav';
 import { ShoppingCart, Package, FileText, TrendingUp, Users, Plus, Upload } from 'lucide-react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface PurchaseStats {
@@ -30,6 +31,7 @@ interface PurchaseStats {
 const PurchaseDashboardEnhanced: React.FC = () => {
   const [stats, setStats] = useState<PurchaseStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -37,30 +39,60 @@ const PurchaseDashboardEnhanced: React.FC = () => {
 
   const fetchDashboardData = async () => {
     setLoading(true);
+    setError(null);
     try {
+      const response = await apiClient.get('/api/purchase/dashboard');
+      if (response.data) {
+        setStats(response.data);
+      } else {
+        // Fallback to default structure if API returns empty
+        setStats({
+          current_period: {
+            fiscal_year: new Date().getFullYear(),
+            period_number: new Date().getMonth() + 1,
+            period_name: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
+            status: 'OPEN'
+          },
+          purchase_summary: {
+            total_spend: 0,
+            active_pos: 0,
+            pending_approvals: 0,
+            total_suppliers: 0,
+            average_po_value: 0,
+            pending_receipts: 0
+          },
+          top_suppliers: {
+            supplier_1: { name: 'N/A', spend: 0 },
+            supplier_2: { name: 'N/A', spend: 0 },
+            supplier_3: { name: 'N/A', spend: 0 }
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching purchase dashboard data:', err);
+      setError('Failed to load dashboard data');
+      // Set empty stats on error
       setStats({
         current_period: {
-          fiscal_year: 2025,
-          period_number: 11,
-          period_name: 'November 2025',
+          fiscal_year: new Date().getFullYear(),
+          period_number: new Date().getMonth() + 1,
+          period_name: new Date().toLocaleString('default', { month: 'long', year: 'numeric' }),
           status: 'OPEN'
         },
         purchase_summary: {
-          total_spend: 1847320,
-          active_pos: 24,
-          pending_approvals: 8,
-          total_suppliers: 45,
-          average_po_value: 76972,
-          pending_receipts: 12
+          total_spend: 0,
+          active_pos: 0,
+          pending_approvals: 0,
+          total_suppliers: 0,
+          average_po_value: 0,
+          pending_receipts: 0
         },
         top_suppliers: {
-          supplier_1: { name: 'Tech Supplies International', spend: 485600 },
-          supplier_2: { name: 'Office Equipment Ltd', spend: 362400 },
-          supplier_3: { name: 'Industrial Parts Co', spend: 298800 }
+          supplier_1: { name: 'N/A', spend: 0 },
+          supplier_2: { name: 'N/A', spend: 0 },
+          supplier_3: { name: 'N/A', spend: 0 }
         }
       });
-    } catch (err) {
-      console.error('Error fetching purchase dashboard data:', err);
     } finally {
       setLoading(false);
     }

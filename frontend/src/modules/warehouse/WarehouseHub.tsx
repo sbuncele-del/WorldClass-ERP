@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, 
   Row, 
@@ -20,7 +20,10 @@ import {
   Alert,
   Tooltip,
   Switch,
-  DatePicker
+  DatePicker,
+  Spin,
+  Empty,
+  message
 } from 'antd';
 import {
   HomeOutlined,
@@ -54,8 +57,69 @@ import {
   StatusBanner,
   HubTabs,
 } from '../../components/hub';
+import apiClient from '../../services/api';
 
 const { Option } = Select;
+
+interface WarehouseStats {
+  totalLocations: number;
+  utilizationRate: number;
+  pendingReceipts: number;
+  pendingPicks: number;
+  activeTransfers: number;
+  todayShipments: number;
+}
+
+interface WarehouseZone {
+  id: string;
+  name: string;
+  type: string;
+  locations: number;
+  utilized: number;
+  status: string;
+}
+
+interface PendingReceipt {
+  id: string;
+  po: string;
+  supplier: string;
+  items: number;
+  expectedDate: string;
+  status: string;
+  dock: string;
+}
+
+interface PickOrder {
+  id: string;
+  order: string;
+  customer: string;
+  items: number;
+  lines: number;
+  priority: string;
+  status: string;
+  picker: string;
+  progress: number;
+}
+
+interface StockTransfer {
+  id: string;
+  from: string;
+  to: string;
+  sku: string;
+  qty: number;
+  status: string;
+  reason: string;
+}
+
+interface LocationInventory {
+  location: string;
+  sku: string;
+  product: string;
+  qty: number;
+  capacity: number;
+  lastCounted: string;
+  status: string;
+}
 
 const WarehouseHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -64,61 +128,106 @@ const WarehouseHub: React.FC = () => {
   const [transferModalVisible, setTransferModalVisible] = useState(false);
   const [zoneModalVisible, setZoneModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(true);
 
-  // Warehouse KPIs
-  const warehouseStats = {
-    totalLocations: 1248,
-    utilizationRate: 78.5,
-    pendingReceipts: 12,
-    pendingPicks: 45,
-    activeTransfers: 8,
-    todayShipments: 23
+  // API State
+  const [warehouseStats, setWarehouseStats] = useState<WarehouseStats>({
+    totalLocations: 0,
+    utilizationRate: 0,
+    pendingReceipts: 0,
+    pendingPicks: 0,
+    activeTransfers: 0,
+    todayShipments: 0
+  });
+  const [warehouseZones, setWarehouseZones] = useState<WarehouseZone[]>([]);
+  const [pendingReceipts, setPendingReceipts] = useState<PendingReceipt[]>([]);
+  const [pickOrders, setPickOrders] = useState<PickOrder[]>([]);
+  const [stockTransfers, setStockTransfers] = useState<StockTransfer[]>([]);
+  const [locationInventory, setLocationInventory] = useState<LocationInventory[]>([]);
+
+  // Fetch warehouse data from API
+  useEffect(() => {
+    const fetchWarehouseData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, zonesRes, receiptsRes, picksRes, transfersRes, inventoryRes] = await Promise.all([
+          apiClient.get('/api/warehouse/stats').catch(() => ({ data: null })),
+          apiClient.get('/api/warehouse/zones').catch(() => ({ data: [] })),
+          apiClient.get('/api/warehouse/receipts/pending').catch(() => ({ data: [] })),
+          apiClient.get('/api/warehouse/picks/pending').catch(() => ({ data: [] })),
+          apiClient.get('/api/warehouse/transfers/active').catch(() => ({ data: [] })),
+          apiClient.get('/api/warehouse/inventory/locations').catch(() => ({ data: [] })),
+        ]);
+
+        if (statsRes.data) {
+          setWarehouseStats(statsRes.data.data || statsRes.data);
+        }
+        setWarehouseZones(zonesRes.data?.data || zonesRes.data || []);
+        setPendingReceipts(receiptsRes.data?.data || receiptsRes.data || []);
+        setPickOrders(picksRes.data?.data || picksRes.data || []);
+        setStockTransfers(transfersRes.data?.data || transfersRes.data || []);
+        setLocationInventory(inventoryRes.data?.data || inventoryRes.data || []);
+      } catch (error) {
+        console.error('Error fetching warehouse data:', error);
+        message.error('Failed to load warehouse data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWarehouseData();
+  }, []);
+
+  // Export function
+  const handleExport = () => {
+    try {
+      let csvContent = '';
+      let filename = '';
+      const now = new Date().toISOString().split('T')[0];
+
+      if (activeTab === 'locations') {
+        csvContent = 'Zone,Name,Type,Locations,Utilized,Status\n';
+        warehouseZones.forEach(z => {
+          csvContent += `"${z.id}","${z.name}","${z.type}",${z.locations},${z.utilized},"${z.status}"\n`;
+        });
+        filename = `warehouse-zones-${now}.csv`;
+      } else if (activeTab === 'receiving') {
+        csvContent = 'GRN,PO,Supplier,Items,Expected Date,Status,Dock\n';
+        pendingReceipts.forEach(r => {
+          csvContent += `"${r.id}","${r.po}","${r.supplier}",${r.items},"${r.expectedDate}","${r.status}","${r.dock}"\n`;
+        });
+        filename = `pending-receipts-${now}.csv`;
+      } else if (activeTab === 'picking') {
+        csvContent = 'Pick ID,Order,Customer,Items,Lines,Priority,Status,Picker,Progress\n';
+        pickOrders.forEach(p => {
+          csvContent += `"${p.id}","${p.order}","${p.customer}",${p.items},${p.lines},"${p.priority}","${p.status}","${p.picker}",${p.progress}%\n`;
+        });
+        filename = `pick-orders-${now}.csv`;
+      } else if (activeTab === 'transfers') {
+        csvContent = 'Transfer ID,From,To,SKU,Qty,Status,Reason\n';
+        stockTransfers.forEach(t => {
+          csvContent += `"${t.id}","${t.from}","${t.to}","${t.sku}",${t.qty},"${t.status}","${t.reason}"\n`;
+        });
+        filename = `stock-transfers-${now}.csv`;
+      } else {
+        csvContent = 'Location,SKU,Product,Qty,Capacity,Last Counted,Status\n';
+        locationInventory.forEach(l => {
+          csvContent += `"${l.location}","${l.sku}","${l.product}",${l.qty},${l.capacity},"${l.lastCounted}","${l.status}"\n`;
+        });
+        filename = `location-inventory-${now}.csv`;
+      }
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      message.success(`Exported ${filename}`);
+    } catch (err) {
+      message.error('Export failed');
+    }
   };
-
-  // Warehouse zones
-  const warehouseZones = [
-    { id: 'Z-A', name: 'Zone A - Receiving', type: 'Receiving', locations: 120, utilized: 45, status: 'active' },
-    { id: 'Z-B', name: 'Zone B - Bulk Storage', type: 'Storage', locations: 450, utilized: 380, status: 'active' },
-    { id: 'Z-C', name: 'Zone C - Pick & Pack', type: 'Picking', locations: 280, utilized: 210, status: 'active' },
-    { id: 'Z-D', name: 'Zone D - Shipping', type: 'Shipping', locations: 98, utilized: 67, status: 'active' },
-    { id: 'Z-E', name: 'Zone E - Cold Storage', type: 'Cold Chain', locations: 150, utilized: 142, status: 'warning' },
-    { id: 'Z-F', name: 'Zone F - Hazmat', type: 'Hazardous', locations: 50, utilized: 18, status: 'active' },
-    { id: 'Z-G', name: 'Zone G - Returns', type: 'Returns', locations: 100, utilized: 35, status: 'active' }
-  ];
-
-  // Pending receipts
-  const pendingReceipts = [
-    { id: 'GRN-2024-0089', po: 'PO-2024-0156', supplier: 'Global Electronics Ltd', items: 15, expectedDate: '2024-12-11', status: 'arriving_today', dock: 'Dock 1' },
-    { id: 'GRN-2024-0090', po: 'PO-2024-0157', supplier: 'Premium Parts Co', items: 8, expectedDate: '2024-12-11', status: 'in_transit', dock: 'Dock 2' },
-    { id: 'GRN-2024-0091', po: 'PO-2024-0158', supplier: 'Tech Components Inc', items: 23, expectedDate: '2024-12-12', status: 'scheduled', dock: 'Dock 1' },
-    { id: 'GRN-2024-0092', po: 'PO-2024-0159', supplier: 'Industrial Supplies', items: 5, expectedDate: '2024-12-12', status: 'scheduled', dock: 'Dock 3' }
-  ];
-
-  // Pick orders
-  const pickOrders = [
-    { id: 'PICK-2024-0234', order: 'SO-2024-0789', customer: 'Acme Corporation', items: 5, lines: 12, priority: 'high', status: 'picking', picker: 'John M.', progress: 75 },
-    { id: 'PICK-2024-0235', order: 'SO-2024-0790', customer: 'Tech Solutions Ltd', items: 3, lines: 8, priority: 'normal', status: 'assigned', picker: 'Sarah K.', progress: 0 },
-    { id: 'PICK-2024-0236', order: 'SO-2024-0791', customer: 'Global Traders', items: 8, lines: 20, priority: 'urgent', status: 'picking', picker: 'Mike R.', progress: 45 },
-    { id: 'PICK-2024-0237', order: 'SO-2024-0792', customer: 'Premier Retail', items: 2, lines: 5, priority: 'normal', status: 'pending', picker: '-', progress: 0 },
-    { id: 'PICK-2024-0238', order: 'SO-2024-0793', customer: 'Sunrise Industries', items: 6, lines: 15, priority: 'high', status: 'packing', picker: 'Lisa T.', progress: 100 }
-  ];
-
-  // Stock transfers
-  const stockTransfers = [
-    { id: 'TRF-2024-0045', from: 'Zone B - Bin B-12-3', to: 'Zone C - Pick Face C-05', sku: 'SKU-001234', qty: 50, status: 'in_progress', reason: 'Replenishment' },
-    { id: 'TRF-2024-0046', from: 'Zone A - Dock 1', to: 'Zone B - Bin B-15-2', sku: 'SKU-005678', qty: 100, status: 'pending', reason: 'Put-away' },
-    { id: 'TRF-2024-0047', from: 'Zone C - Pick Face C-08', to: 'Zone G - Returns', sku: 'SKU-003456', qty: 5, status: 'completed', reason: 'Damaged' },
-    { id: 'TRF-2024-0048', from: 'Warehouse A', to: 'Warehouse B', sku: 'SKU-007890', qty: 200, status: 'in_transit', reason: 'Inter-warehouse' }
-  ];
-
-  // Location inventory
-  const locationInventory = [
-    { location: 'B-12-3-A', sku: 'SKU-001234', product: 'Electronic Component A', qty: 150, capacity: 200, lastCounted: '2024-12-05', status: 'ok' },
-    { location: 'B-15-2-B', sku: 'SKU-005678', product: 'Circuit Board X200', qty: 80, capacity: 100, lastCounted: '2024-12-08', status: 'ok' },
-    { location: 'C-05-1-A', sku: 'SKU-003456', product: 'Connector Kit Pro', qty: 5, capacity: 50, lastCounted: '2024-12-10', status: 'low' },
-    { location: 'E-02-1-A', sku: 'SKU-009012', product: 'Temperature Sensor', qty: 245, capacity: 250, lastCounted: '2024-12-01', status: 'full' },
-    { location: 'D-08-3-B', sku: 'SKU-004567', product: 'Power Supply Unit', qty: 0, capacity: 75, lastCounted: '2024-12-09', status: 'empty' }
-  ];
 
   // Zone columns
   const zoneColumns = [
@@ -796,7 +905,7 @@ const WarehouseHub: React.FC = () => {
         actions={
           <>
             <Button icon={<SyncOutlined />}>Sync</Button>
-            <Button icon={<DownloadOutlined />}>Export</Button>
+            <Button icon={<DownloadOutlined />} onClick={handleExport}>Export</Button>
             <Button type="primary" icon={<ScanOutlined />}>Scan Mode</Button>
           </>
         }

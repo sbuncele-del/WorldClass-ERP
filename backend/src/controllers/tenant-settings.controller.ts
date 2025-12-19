@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
 import pool from '../config/database';
 import { AuthRequest } from '../middleware/auth';
+import { TenantRequest } from '../types';
 
 // Get tenant settings
 export const getTenantSettings = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const tenantId = req.user?.tenantId;
+    // Support both AuthRequest.user.tenantId and TenantRequest.tenant.id
+    const tenantId = req.user?.tenantId || (req as unknown as TenantRequest).tenant?.id;
 
     if (!tenantId) {
       res.status(401).json({ error: 'Not authenticated' });
@@ -76,8 +78,8 @@ export const getTenantSettings = async (req: AuthRequest, res: Response): Promis
 // Update tenant settings
 export const updateTenantSettings = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const tenantId = req.user?.tenantId;
-    const userId = req.user?.userId;
+    const tenantId = req.user?.tenantId || (req as unknown as TenantRequest).tenant?.id;
+    const userId = req.user?.userId || (req as unknown as TenantRequest).user?.id;
 
     if (!tenantId) {
       res.status(401).json({ error: 'Not authenticated' });
@@ -203,7 +205,7 @@ export const updateTenantSettings = async (req: AuthRequest, res: Response): Pro
 // Get module configuration
 export const getModuleConfig = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user?.tenantId || (req as unknown as TenantRequest).tenant?.id;
 
     if (!tenantId) {
       res.status(401).json({ error: 'Not authenticated' });
@@ -253,8 +255,8 @@ export const getModuleConfig = async (req: AuthRequest, res: Response): Promise<
 // Update module configuration
 export const updateModuleConfig = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const tenantId = req.user?.tenantId;
-    const userId = req.user?.userId;
+    const tenantId = req.user?.tenantId || (req as unknown as TenantRequest).tenant?.id;
+    const userId = req.user?.userId || (req as unknown as TenantRequest).user?.id;
 
     if (!tenantId) {
       res.status(401).json({ error: 'Not authenticated' });
@@ -307,7 +309,7 @@ export const updateModuleConfig = async (req: AuthRequest, res: Response): Promi
 // Get team members
 export const getTeamMembers = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const tenantId = req.user?.tenantId;
+    const tenantId = req.user?.tenantId || (req as unknown as TenantRequest).tenant?.id;
 
     if (!tenantId) {
       res.status(401).json({ error: 'Not authenticated' });
@@ -347,8 +349,8 @@ export const getTeamMembers = async (req: AuthRequest, res: Response): Promise<v
 // Invite team member
 export const inviteTeamMember = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const tenantId = req.user?.tenantId;
-    const userId = req.user?.userId;
+    const tenantId = req.user?.tenantId || (req as unknown as TenantRequest).tenant?.id;
+    const userId = req.user?.userId || (req as unknown as TenantRequest).user?.id;
 
     if (!tenantId) {
       res.status(401).json({ error: 'Not authenticated' });
@@ -406,8 +408,8 @@ export const inviteTeamMember = async (req: AuthRequest, res: Response): Promise
 // Remove team member
 export const removeTeamMember = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const tenantId = req.user?.tenantId;
-    const userId = req.user?.userId;
+    const tenantId = req.user?.tenantId || (req as unknown as TenantRequest).tenant?.id;
+    const userId = req.user?.userId || (req as unknown as TenantRequest).user?.id;
     const { memberId } = req.params;
 
     if (!tenantId) {

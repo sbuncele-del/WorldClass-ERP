@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface GoodsReceipt {
@@ -31,90 +32,8 @@ const GoodsReceiptPage: React.FC = () => {
   const fetchGoodsReceipts = async () => {
     setLoading(true);
     try {
-      const mockReceipts: GoodsReceipt[] = [
-        {
-          id: 'GRN001',
-          grn_number: 'GRN-2025-015',
-          po_number: 'PO-2025-018',
-          supplier_name: 'Tech Supplies International',
-          supplier_code: 'TSI-001',
-          receipt_date: '2025-01-12',
-          received_by: 'Thabo Mkhize',
-          status: 'QUALITY_CHECK',
-          total_items: 8,
-          received_items: 8,
-          rejected_items: 0,
-          storage_location: 'Warehouse A - Bay 12',
-          quality_score: null,
-          notes: 'All items received, awaiting quality inspection'
-        },
-        {
-          id: 'GRN002',
-          grn_number: 'GRN-2025-016',
-          po_number: 'PO-2025-019',
-          supplier_name: 'Office Equipment Ltd',
-          supplier_code: 'OEL-002',
-          receipt_date: '2025-01-10',
-          received_by: 'Sarah van der Merwe',
-          status: 'APPROVED',
-          total_items: 12,
-          received_items: 12,
-          rejected_items: 0,
-          storage_location: 'Warehouse B - Bay 5',
-          quality_score: 95,
-          notes: 'Excellent condition, approved for use'
-        },
-        {
-          id: 'GRN003',
-          grn_number: 'GRN-2025-017',
-          po_number: 'PO-2025-020',
-          supplier_name: 'Industrial Parts Co',
-          supplier_code: 'IPC-003',
-          receipt_date: '2025-01-11',
-          received_by: 'Johan Botha',
-          status: 'REJECTED',
-          total_items: 15,
-          received_items: 15,
-          rejected_items: 3,
-          storage_location: 'Returns Area',
-          quality_score: 68,
-          notes: '3 items damaged in transit, return to supplier'
-        },
-        {
-          id: 'GRN004',
-          grn_number: 'GRN-2025-018',
-          po_number: 'PO-2025-021',
-          supplier_name: 'Tech Supplies International',
-          supplier_code: 'TSI-001',
-          receipt_date: '2025-01-09',
-          received_by: 'Nomvula Dlamini',
-          status: 'APPROVED',
-          total_items: 5,
-          received_items: 5,
-          rejected_items: 0,
-          storage_location: 'Warehouse A - Bay 8',
-          quality_score: 98,
-          notes: 'Perfect condition, all items approved'
-        },
-        {
-          id: 'GRN005',
-          grn_number: 'GRN-2025-019',
-          po_number: 'PO-2025-019',
-          supplier_name: 'Office Equipment Ltd',
-          supplier_code: 'OEL-002',
-          receipt_date: '2025-01-13',
-          received_by: 'Pieter Kruger',
-          status: 'PENDING',
-          total_items: 0,
-          received_items: 0,
-          rejected_items: 0,
-          storage_location: '',
-          quality_score: null,
-          notes: 'Awaiting delivery'
-        }
-      ];
-
-      setReceipts(mockReceipts);
+      const response = await apiClient.get('/api/purchase/receipts');
+      setReceipts(response.data?.data || response.data || []);
     } catch (err) {
       console.error('Error fetching goods receipts:', err);
     } finally {

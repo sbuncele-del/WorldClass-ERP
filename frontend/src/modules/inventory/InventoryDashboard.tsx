@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
 import type { SecondaryNavSection } from '../../components/layout/SecondaryNav';
 import { Package, PackagePlus, ClipboardList, FileText, TrendingUp, Barcode } from 'lucide-react';
+import { API_BASE_URL } from '../../services/api.service';
 
 interface DashboardData {
   summary: {
@@ -53,7 +54,7 @@ export default function InventoryDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/inventory/dashboard');
+      const response = await fetch(`${API_BASE_URL}/api/inventory/dashboard`);
       const result = await response.json();
       
       if (result.success) {

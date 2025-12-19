@@ -15,6 +15,7 @@ const CreateTrip: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [drivers, setDrivers] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
@@ -23,12 +24,14 @@ const CreateTrip: React.FC = () => {
 
   const loadFormData = async () => {
     try {
-      const [driversRes, vehiclesRes] = await Promise.all([
+      const [driversRes, vehiclesRes, customersRes] = await Promise.all([
         driversAPI.getDrivers({ status: 'ACTIVE' }),
-        vehiclesAPI.getVehicles({ status: 'ACTIVE' })
+        vehiclesAPI.getVehicles({ status: 'ACTIVE' }),
+        tripsAPI.getCustomers ? tripsAPI.getCustomers() : Promise.resolve({ customers: [] })
       ]);
       setDrivers(driversRes.drivers || []);
       setVehicles(vehiclesRes.vehicles || []);
+      setCustomers(customersRes.customers || []);
     } catch (error) {
       console.error('Error loading form data:', error);
       message.warning('Could not load drivers/vehicles. Using demo data.');
@@ -81,10 +84,6 @@ const CreateTrip: React.FC = () => {
     }
   };
 
-  const customerOptions = [
-    'Massmart', 'Shoprite', 'Pick n Pay', 'Unilever', 'SPAR', 'Sasol', 'Woolworths', 'Game', 'Makro'
-  ];
-
   return (
     <EnterpriseLayout
       moduleTitle="Create New Trip"
@@ -108,9 +107,11 @@ const CreateTrip: React.FC = () => {
                   rules={[{ required: true, message: 'Please select a customer' }]}
                 >
                   <Select placeholder="Select customer" size="large" showSearch>
-                    {customerOptions.map(c => (
-                      <Option key={c} value={c}>{c}</Option>
-                    ))}
+                    {customers.length > 0 ? customers.map((c: any) => (
+                      <Option key={c.id || c.name} value={c.name || c}>{c.name || c}</Option>
+                    )) : (
+                      <Option value="">No customers available</Option>
+                    )}
                   </Select>
                 </Form.Item>
               </Col>
@@ -127,11 +128,7 @@ const CreateTrip: React.FC = () => {
                         {d.first_name} {d.last_name}
                       </Option>
                     )) : (
-                      <>
-                        <Option value="John Mthembu">John Mthembu</Option>
-                        <Option value="Peter Nkosi">Peter Nkosi</Option>
-                        <Option value="David Molefe">David Molefe</Option>
-                      </>
+                      <Option value="">No drivers available</Option>
                     )}
                   </Select>
                 </Form.Item>

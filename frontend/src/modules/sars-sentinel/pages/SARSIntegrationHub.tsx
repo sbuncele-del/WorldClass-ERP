@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import apiClient from '../../../services/api';
 import {
   Card,
   Row,
@@ -21,6 +22,7 @@ import {
   Select,
   message,
   Divider,
+  Spin,
 } from 'antd';
 import {
   ApiOutlined,
@@ -47,211 +49,79 @@ import './SARSIntegrationHub.css';
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
-// Mock data for SARS ISV integration status
-const integrationStatus = {
+// Default integration status
+const defaultIntegrationStatus = {
   isv: {
-    registered: true,
-    accessKey: 'WCLASS-ERP-PROD-2025-******',
-    environment: 'PRODUCTION',
-    lastAuthenticated: '2025-12-11T10:30:00',
-    expiresAt: '2026-06-11',
-    status: 'active',
+    registered: false,
+    accessKey: '',
+    environment: '',
+    lastAuthenticated: '',
+    expiresAt: '',
+    status: 'inactive',
   },
   sftp: {
-    connected: true,
-    server: 'sftp://efiling.sars.gov.za',
-    lastSync: '2025-12-11T09:15:00',
-    filesUploaded: 1247,
-    filesDownloaded: 892,
+    connected: false,
+    server: '',
+    lastSync: '',
+    filesUploaded: 0,
+    filesDownloaded: 0,
   },
   eFiling: {
-    connected: true,
-    linkedProfiles: 247,
-    pendingNotifications: 12,
-    lastPoll: '2025-12-11T10:28:00',
+    connected: false,
+    linkedProfiles: 0,
+    pendingNotifications: 0,
+    lastPoll: '',
   },
 };
 
-// Tax types and their submission status
-const taxTypes = [
-  {
-    code: 'EMP201',
-    name: 'Monthly Employer Declaration',
-    description: 'PAYE, SDL, UIF monthly submission',
-    frequency: 'Monthly',
-    nextDue: '2025-12-07',
-    status: 'ready',
-    apiSupported: true,
-    bulkSupported: true,
-    clientsPending: 42,
-    clientsSubmitted: 205,
-  },
-  {
-    code: 'EMP501',
-    name: 'Employer Annual Reconciliation',
-    description: 'Annual PAYE reconciliation with IRP5s',
-    frequency: 'Annual',
-    nextDue: '2026-05-31',
-    status: 'upcoming',
-    apiSupported: true,
-    bulkSupported: true,
-    clientsPending: 0,
-    clientsSubmitted: 0,
-  },
-  {
-    code: 'VAT201',
-    name: 'VAT Return',
-    description: 'Vendor VAT declaration',
-    frequency: 'Bi-monthly',
-    nextDue: '2025-12-25',
-    status: 'ready',
-    apiSupported: false,
-    bulkSupported: false,
-    clientsPending: 38,
-    clientsSubmitted: 89,
-  },
-  {
-    code: 'IT14',
-    name: 'Company Income Tax Return',
-    description: 'Corporate income tax declaration',
-    frequency: 'Annual',
-    nextDue: '2026-01-31',
-    status: 'upcoming',
-    apiSupported: true,
-    bulkSupported: true,
-    clientsPending: 12,
-    clientsSubmitted: 0,
-  },
-  {
-    code: 'IRP3',
-    name: 'Tax Directives',
-    description: 'Employee tax directive requests',
-    frequency: 'On demand',
-    nextDue: '-',
-    status: 'ready',
-    apiSupported: true,
-    bulkSupported: true,
-    clientsPending: 8,
-    clientsSubmitted: 156,
-  },
-  {
-    code: 'ITR12',
-    name: 'Individual Tax Return',
-    description: 'Personal income tax return',
-    frequency: 'Annual',
-    nextDue: '2025-11-24',
-    status: 'overdue',
-    apiSupported: true,
-    bulkSupported: false,
-    clientsPending: 15,
-    clientsSubmitted: 112,
-  },
-];
+// Default tax types
+const defaultTaxTypes: any[] = [];
 
-// Recent submissions
-const recentSubmissions = [
-  {
-    id: 'SUB-2025-1234',
-    type: 'EMP201',
-    client: 'ABC Trading (Pty) Ltd',
-    period: 'November 2025',
-    submittedAt: '2025-12-11T10:15:00',
-    status: 'accepted',
-    sarsRef: 'SARS-EMP201-20251211-001234',
-    amount: 125750.00,
-  },
-  {
-    id: 'SUB-2025-1233',
-    type: 'TAX_DIRECTIVE',
-    client: 'XYZ Manufacturing CC',
-    period: 'December 2025',
-    submittedAt: '2025-12-11T09:45:00',
-    status: 'processing',
-    sarsRef: 'SARS-IRP3-20251211-000892',
-    amount: null,
-  },
-  {
-    id: 'SUB-2025-1232',
-    type: 'EMP201',
-    client: 'Tech Solutions Ltd',
-    period: 'November 2025',
-    submittedAt: '2025-12-11T08:30:00',
-    status: 'accepted',
-    sarsRef: 'SARS-EMP201-20251211-001122',
-    amount: 89200.00,
-  },
-  {
-    id: 'SUB-2025-1231',
-    type: 'IT14',
-    client: 'Retail Group SA',
-    period: 'FY 2024',
-    submittedAt: '2025-12-10T16:20:00',
-    status: 'rejected',
-    sarsRef: '-',
-    amount: null,
-    error: 'Invalid financial year period specified',
-  },
-  {
-    id: 'SUB-2025-1230',
-    type: 'VAT201',
-    client: 'Import Export Co',
-    period: 'Oct-Nov 2025',
-    submittedAt: '2025-12-10T14:10:00',
-    status: 'accepted',
-    sarsRef: 'SARS-VAT201-20251210-004567',
-    amount: 45680.00,
-  },
-];
-
-// SARS eFiling notifications
-const efilingNotifications = [
-  {
-    id: 1,
-    type: 'AUDIT_NOTICE',
-    client: 'Tech Solutions Ltd',
-    subject: 'Selection for Comprehensive Audit',
-    receivedAt: '2025-12-10T14:30:00',
-    deadline: '2025-12-25',
-    priority: 'critical',
-    read: false,
-  },
-  {
-    id: 2,
-    type: 'RFI',
-    client: 'ABC Trading (Pty) Ltd',
-    subject: 'Request for Information - VAT Input Claims',
-    receivedAt: '2025-12-09T09:15:00',
-    deadline: '2025-12-23',
-    priority: 'high',
-    read: false,
-  },
-  {
-    id: 3,
-    type: 'ASSESSMENT',
-    client: 'Retail Group SA',
-    subject: 'Income Tax Assessment - 2024 Tax Year',
-    receivedAt: '2025-12-08T16:45:00',
-    deadline: null,
-    priority: 'medium',
-    read: true,
-  },
-  {
-    id: 4,
-    type: 'IRP5_QUERY',
-    client: 'XYZ Manufacturing CC',
-    subject: 'IRP5 Certificate Query',
-    receivedAt: '2025-12-07T11:20:00',
-    deadline: '2025-12-21',
-    priority: 'medium',
-    read: true,
-  },
-];
+// Default submissions
+const defaultSubmissions: any[] = [];
+const defaultNotifications: any[] = [];
 
 const SARSIntegrationHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(true);
+  const [integrationStatus, setIntegrationStatus] = useState(defaultIntegrationStatus);
+  const [taxTypes, setTaxTypes] = useState<any[]>(defaultTaxTypes);
+  const [recentSubmissions, setRecentSubmissions] = useState<any[]>(defaultSubmissions);
+  const [efilingNotifications, setEfilingNotifications] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchSARSData = async () => {
+      setLoading(true);
+      try {
+        const [statusRes, taxTypesRes, submissionsRes, notificationsRes] = await Promise.all([
+          apiClient.get('/api/sars/integration-status').catch(() => ({ data: null })),
+          apiClient.get('/api/sars/tax-types').catch(() => ({ data: [] })),
+          apiClient.get('/api/sars/submissions').catch(() => ({ data: [] })),
+          apiClient.get('/api/sars/notifications').catch(() => ({ data: [] })),
+        ]);
+        if (statusRes.data) setIntegrationStatus({ ...defaultIntegrationStatus, ...statusRes.data });
+        if (taxTypesRes.data?.length) setTaxTypes(taxTypesRes.data);
+        if (submissionsRes.data?.length) setRecentSubmissions(submissionsRes.data);
+        if (notificationsRes.data?.length) setEfilingNotifications(notificationsRes.data);
+      } catch (err) {
+        console.error('Error fetching SARS data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSARSData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="sars-integration-hub" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <Spin size="large" tip="Loading SARS integration data..." />
+      </div>
+    );
+  }
 
   const handleSync = async () => {
     setSyncing(true);

@@ -579,7 +579,7 @@ export async function getBudgetVsActual(req: Request, res: Response) {
             ELSE -jel.credit_amount 
           END)
           FROM journal_entry_lines jel
-          JOIN journal_entries je ON jel.journal_entry_id = je.id
+          JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           WHERE jel.account_code = bl.account_code
             AND je.status = 'POSTED'
             AND je.posting_date BETWEEN $2 AND $3
@@ -726,7 +726,7 @@ export async function generateForecast(req: Request, res: Response) {
           ELSE -jel.credit_amount 
         END) as amount
       FROM journal_entry_lines jel
-      JOIN journal_entries je ON jel.journal_entry_id = je.id
+      JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       WHERE jel.account_code = $1
         AND je.status = 'POSTED'
         AND je.posting_date >= CURRENT_DATE - INTERVAL '${historical_months} months'

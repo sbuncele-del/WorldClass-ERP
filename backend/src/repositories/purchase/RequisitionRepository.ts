@@ -23,6 +23,7 @@ export interface RequisitionLine {
 
 export interface Requisition {
   id: string;
+  requisition_id?: number;
   tenant_id: string;
   requisition_number: string;
   requisition_date: Date;
@@ -45,16 +46,19 @@ export interface Requisition {
 }
 
 export class RequisitionRepository extends BaseRepository<Requisition> {
-  protected tableName = 'requisitions';
+  protected tableName = 'purchase_requisitions';
   protected schema = 'purchase';
-  protected primaryKey = 'id';
+  protected primaryKey = 'requisition_id';
+  protected softDelete = false;
 
   async getWithLines(ctx: TenantContext, requisitionId: string): Promise<Requisition | null> {
     const requisition = await this.findById(ctx, requisitionId);
     if (!requisition) return null;
 
     const linesSql = `
-      SELECT * FROM purchase.requisition_lines
+      SELECT line_id as id, requisition_id, item_code, description, quantity, unit_of_measure,
+             estimated_unit_price, estimated_total, required_by_date, notes
+      FROM purchase.requisition_line_items
       WHERE tenant_id = $1 AND requisition_id = $2
       ORDER BY line_number
     `;
@@ -86,16 +90,16 @@ export class RequisitionRepository extends BaseRepository<Requisition> {
 
       const reqResult = await client.query<Requisition>(`
         INSERT INTO ${this.fullTableName}
-        (tenant_id, requisition_number, requisition_date, required_by_date, department, requested_by, priority, status, total_amount, notes, created_by)
+        (tenant_id, requisition_number, requisition_date, requested_by, department_id, required_by_date, priority, status, total_amount, notes, created_by)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
         RETURNING *
       `, [
         ctx.tenantId,
         requisitionNumber,
         data.requisition_date || new Date(),
-        data.required_by_date,
-        data.department,
         data.requested_by,
+        data.department,
+        data.required_by_date,
         data.priority || 'normal',
         data.status || 'draft',
         totalAmount,
@@ -108,12 +112,12 @@ export class RequisitionRepository extends BaseRepository<Requisition> {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         await client.query(`
-          INSERT INTO purchase.requisition_lines
+          INSERT INTO purchase.requisition_line_items
           (tenant_id, requisition_id, line_number, item_code, description, quantity, unit_of_measure, estimated_unit_price, estimated_total, required_by_date, notes)
           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
         `, [
           ctx.tenantId,
-          requisition.id,
+          requisition.requisition_id,
           i + 1,
           line.item_code,
           line.description,
@@ -142,7 +146,7 @@ export class RequisitionRepository extends BaseRepository<Requisition> {
   }
 
   async deleteIfNoPurchaseOrder(ctx: TenantContext, requisitionId: string): Promise<boolean> {
-    const poCheckSql = `SELECT COUNT(*) FROM purchase.orders WHERE tenant_id = $1 AND requisition_id = $2 AND deleted_at IS NULL`;
+    const poCheckSql = `SELECT COUNT(*) FROM purchase.purchase_orders WHERE tenant_id = $1 AND requisition_id = $2`;
     const poCheck = await this.rawQuery<{ count: string }>(ctx, poCheckSql, [requisitionId]);
     const hasPO = parseInt(poCheck[0]?.count || '0', 10) > 0;
     if (hasPO) return false;

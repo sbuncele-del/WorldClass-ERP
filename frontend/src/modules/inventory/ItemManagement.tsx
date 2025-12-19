@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../services/api.service';
 
 interface Category {
   category_id: number;
@@ -87,7 +88,7 @@ export default function ItemManagement() {
 
   const fetchItems = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/inventory/items');
+      const response = await fetch(`${API_BASE_URL}/api/inventory/items`);
       const result = await response.json();
       
       if (result.success) {
@@ -102,7 +103,7 @@ export default function ItemManagement() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/inventory/categories');
+      const response = await fetch(`${API_BASE_URL}/api/inventory/categories`);
       const result = await response.json();
       
       if (result.success) {
@@ -115,7 +116,7 @@ export default function ItemManagement() {
 
   const fetchUOMs = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/financial/accounts?account_type=Asset');
+      const response = await fetch(`${API_BASE_URL}/api/financial/accounts?account_type=Asset`);
       // For now, hardcode UOMs - in real implementation, create a UOM endpoint
       setUOMs([
         { uom_id: 1, uom_code: 'EA', uom_name: 'Each', uom_type: 'Quantity' },
@@ -146,8 +147,8 @@ export default function ItemManagement() {
 
     try {
       const url = editingItem
-        ? `http://localhost:3000/api/inventory/items/${editingItem.item_id}`
-        : 'http://localhost:3000/api/inventory/items';
+        ? `${API_BASE_URL}/api/inventory/items/${editingItem.item_id}`
+        : `${API_BASE_URL}/api/inventory/items`;
       
       const method = editingItem ? 'PUT' : 'POST';
 

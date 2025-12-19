@@ -1,5 +1,5 @@
 import express from 'express';
-import * as purchaseController from '../controllers/purchase.controller';
+// All purchase routes now use v2 controllers exclusively
 import * as purchaseControllerV2 from '../controllers/purchase.controller.v2';
 import * as purchaseWorkspaceController from '../modules/purchase/controllers/purchase.workspace.controller';
 import { tenantMiddleware } from '../middleware/tenant';
@@ -57,9 +57,18 @@ router.get('/vendor-invoices', purchaseControllerV2.getVendorInvoices);
 router.get('/vendor-invoices/:id', purchaseControllerV2.getVendorInvoice);
 router.post('/vendor-invoices', purchaseControllerV2.createVendorInvoice);
 router.put('/vendor-invoices/:id', purchaseControllerV2.updateVendorInvoice);
-router.delete('/vendor-invoices/:id', purchaseController.deleteVendorInvoice);
+router.delete('/vendor-invoices/:id', purchaseControllerV2.deleteVendorInvoice);
 router.post('/vendor-invoices/:id/approve', purchaseControllerV2.approveVendorInvoice);
 router.post('/vendor-invoices/:id/reject', purchaseControllerV2.rejectVendorInvoice);
 router.post('/vendor-invoices/:id/pay', purchaseControllerV2.payVendorInvoice);
+
+// ==================== INVOICE ROUTES (Aliases for Vendor Invoices) ====================
+router.get('/invoices', purchaseControllerV2.getVendorInvoices);
+router.get('/invoices/:id', purchaseControllerV2.getVendorInvoice);
+router.post('/invoices', purchaseControllerV2.createVendorInvoice);
+router.put('/invoices/:id', purchaseControllerV2.updateVendorInvoice);
+router.post('/invoices/:id/approve', purchaseControllerV2.approveVendorInvoice);
+router.post('/invoices/:id/reject', purchaseControllerV2.rejectVendorInvoice);
+router.post('/invoices/:id/pay', purchaseControllerV2.payVendorInvoice);
 
 export default router;

@@ -32,6 +32,8 @@ import {
   FundOutlined, FileDoneOutlined, ScheduleOutlined, CarryOutOutlined
 } from '@ant-design/icons';
 import { HubLayout, HubHeader, StatusBanner, HubTabs } from '../../components/hub';
+import { apiGet } from '../../services/api.service';
+import apiClient from '../../services/api';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -96,161 +98,75 @@ interface GanttTask {
   status: 'not-started' | 'in-progress' | 'at-risk' | 'done';
 }
 
-// Sample Data
-const sampleProjects: Project[] = [
-  {
-    id: 'PRJ-001',
-    name: 'ERP System Implementation',
-    code: 'ERP-2024',
-    client: 'Internal',
-    status: 'active',
-    priority: 'high',
-    progress: 65,
-    startDate: '2024-01-15',
-    endDate: '2024-12-31',
-    budget: 2500000,
-    spent: 1625000,
-    manager: 'Sarah Johnson',
-    team: 8,
-    tasks: { total: 156, completed: 98 },
-    milestones: { total: 12, completed: 7 },
-    type: 'internal'
-  },
-  {
-    id: 'PRJ-002',
-    name: 'Mall of Africa Extension',
-    code: 'MOA-EXT',
-    client: 'Attacq Limited',
-    status: 'active',
-    priority: 'critical',
-    progress: 42,
-    startDate: '2024-03-01',
-    endDate: '2025-06-30',
-    budget: 85000000,
-    spent: 35700000,
-    manager: 'Michael Ndlovu',
-    team: 45,
-    tasks: { total: 520, completed: 218 },
-    milestones: { total: 24, completed: 10 },
-    cidbGrade: '9CE',
-    type: 'construction'
-  },
-  {
-    id: 'PRJ-003',
-    name: 'Mobile Banking App',
-    code: 'MBA-V2',
-    client: 'First National Bank',
-    status: 'active',
-    priority: 'high',
-    progress: 78,
-    startDate: '2024-02-01',
-    endDate: '2024-09-30',
-    budget: 4500000,
-    spent: 3510000,
-    manager: 'Emily Chen',
-    team: 12,
-    tasks: { total: 89, completed: 69 },
-    milestones: { total: 8, completed: 6 },
-    type: 'client'
-  },
-  {
-    id: 'PRJ-004',
-    name: 'Warehouse Automation',
-    code: 'WH-AUTO',
-    client: 'Shoprite Holdings',
-    status: 'planning',
-    priority: 'medium',
-    progress: 15,
-    startDate: '2024-06-01',
-    endDate: '2025-02-28',
-    budget: 12000000,
-    spent: 1800000,
-    manager: 'David Mokoena',
-    team: 6,
-    tasks: { total: 45, completed: 7 },
-    milestones: { total: 10, completed: 1 },
-    type: 'client'
-  },
-  {
-    id: 'PRJ-005',
-    name: 'Road Infrastructure Upgrade',
-    code: 'RIU-GP',
-    client: 'Gauteng Province',
-    status: 'active',
-    priority: 'high',
-    progress: 55,
-    startDate: '2024-01-01',
-    endDate: '2025-12-31',
-    budget: 250000000,
-    spent: 137500000,
-    manager: 'Thabo Mthembu',
-    team: 120,
-    tasks: { total: 890, completed: 490 },
-    milestones: { total: 36, completed: 20 },
-    cidbGrade: '9CE',
-    type: 'construction'
-  }
-];
-
-const sampleTasks: Task[] = [
-  { id: 'TSK-001', title: 'Database schema design', project: 'PRJ-001', assignee: 'John Smith', status: 'done', priority: 'high', dueDate: '2024-06-15', estimatedHours: 40, actualHours: 38, tags: ['backend', 'database'] },
-  { id: 'TSK-002', title: 'API endpoint development', project: 'PRJ-001', assignee: 'Sarah Chen', status: 'in-progress', priority: 'high', dueDate: '2024-06-20', estimatedHours: 80, actualHours: 45, tags: ['backend', 'api'] },
-  { id: 'TSK-003', title: 'UI component library', project: 'PRJ-001', assignee: 'Mike Johnson', status: 'in-progress', priority: 'medium', dueDate: '2024-06-25', estimatedHours: 60, actualHours: 32, tags: ['frontend', 'ui'] },
-  { id: 'TSK-004', title: 'Authentication flow', project: 'PRJ-001', assignee: 'Emily Davis', status: 'review', priority: 'critical', dueDate: '2024-06-18', estimatedHours: 24, actualHours: 26, tags: ['security', 'auth'] },
-  { id: 'TSK-005', title: 'Testing & QA', project: 'PRJ-001', assignee: 'Alex Turner', status: 'todo', priority: 'medium', dueDate: '2024-07-01', estimatedHours: 40, actualHours: 0, tags: ['testing', 'qa'] },
-  { id: 'TSK-006', title: 'Foundation pour - Block A', project: 'PRJ-002', assignee: 'Site Team A', status: 'done', priority: 'critical', dueDate: '2024-05-15', estimatedHours: 160, actualHours: 172, tags: ['construction', 'foundation'] },
-  { id: 'TSK-007', title: 'Steel framework erection', project: 'PRJ-002', assignee: 'Site Team B', status: 'in-progress', priority: 'high', dueDate: '2024-06-30', estimatedHours: 320, actualHours: 180, tags: ['construction', 'steel'] },
-  { id: 'TSK-008', title: 'Electrical rough-in', project: 'PRJ-002', assignee: 'Electrical Sub', status: 'todo', priority: 'medium', dueDate: '2024-07-15', estimatedHours: 200, actualHours: 0, tags: ['electrical', 'mep'] }
-];
-
-const sampleTimeEntries: TimeEntry[] = [
-  { id: 'TE-001', project: 'PRJ-001', task: 'TSK-002', user: 'Sarah Chen', date: '2024-06-10', hours: 8, description: 'API development - user endpoints', billable: true, rate: 850 },
-  { id: 'TE-002', project: 'PRJ-001', task: 'TSK-003', user: 'Mike Johnson', date: '2024-06-10', hours: 7.5, description: 'Component library setup', billable: true, rate: 750 },
-  { id: 'TE-003', project: 'PRJ-003', task: 'Mobile UI', user: 'Emily Chen', date: '2024-06-10', hours: 8, description: 'Dashboard screens', billable: true, rate: 900 },
-  { id: 'TE-004', project: 'PRJ-002', task: 'TSK-007', user: 'Site Team B', date: '2024-06-10', hours: 10, description: 'Steel erection - Level 2', billable: false, rate: 0 }
-];
-
-const sampleGanttTasks: GanttTask[] = [
-  { id: 'GNT-001', projectId: 'PRJ-001', name: 'Architecture & Design', owner: 'Sarah Johnson', start: '2024-01-15', end: '2024-03-15', progress: 95, status: 'done' },
-  { id: 'GNT-002', projectId: 'PRJ-001', name: 'API Development', owner: 'Emily Chen', start: '2024-03-01', end: '2024-07-15', progress: 68, dependency: 'GNT-001', status: 'in-progress' },
-  { id: 'GNT-003', projectId: 'PRJ-001', name: 'Frontend UI', owner: 'Mike Johnson', start: '2024-03-20', end: '2024-08-15', progress: 54, dependency: 'GNT-001', status: 'in-progress' },
-  { id: 'GNT-004', projectId: 'PRJ-002', name: 'Enabling Works', owner: 'Site Team A', start: '2024-02-10', end: '2024-04-30', progress: 100, status: 'done' },
-  { id: 'GNT-005', projectId: 'PRJ-002', name: 'Structural Steel', owner: 'Site Team B', start: '2024-05-01', end: '2024-09-30', progress: 45, dependency: 'GNT-004', status: 'at-risk' },
-  { id: 'GNT-006', projectId: 'PRJ-002', name: 'Mechanical & Electrical', owner: 'Electrical Sub', start: '2024-07-01', end: '2024-12-15', progress: 20, dependency: 'GNT-005', status: 'not-started' }
-];
-
 const ProjectsHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [projectModalVisible, setProjectModalVisible] = useState(false);
   const [taskModalVisible, setTaskModalVisible] = useState(false);
   const [timeEntryModalVisible, setTimeEntryModalVisible] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [projects] = useState<Project[]>(sampleProjects);
-  const [tasks] = useState<Task[]>(sampleTasks);
-  const [timeEntries] = useState<TimeEntry[]>(sampleTimeEntries);
-  const [ganttTasks, setGanttTasks] = useState<GanttTask[]>(sampleGanttTasks);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [ganttTasks, setGanttTasks] = useState<GanttTask[]>([]);
   const [form] = Form.useForm();
   
-  // Fetch live API data
+  // Loading and API data states
+  const [loading, setLoading] = useState(true);
   const [apiStats, setApiStats] = useState<any>(null);
   const [apiLoading, setApiLoading] = useState(true);
   
   useEffect(() => {
-    const fetchWorkspaceData = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        const response = await fetch(`${API_URL}/api/v1/projects/workspace`);
-        const result = await response.json();
-        if (result.success && result.data?.summary) {
-          setApiStats(result.data.summary);
+        // Fetch stats
+        const statsResponse = await apiClient.get('/api/projects/stats');
+        if (statsResponse.data) {
+          setApiStats(statsResponse.data);
         }
+        
+        // Fetch projects list
+        const projectsResponse = await apiClient.get('/api/projects/list');
+        if (projectsResponse.data && Array.isArray(projectsResponse.data)) {
+          setProjects(projectsResponse.data);
+        } else if (projectsResponse.data?.projects) {
+          setProjects(projectsResponse.data.projects);
+        } else {
+          // Empty array if no data returned
+          setProjects([]);
+        }
+        
+        // Fetch tasks
+        const tasksResponse = await apiClient.get('/api/projects/tasks');
+        if (tasksResponse.data && Array.isArray(tasksResponse.data)) {
+          setTasks(tasksResponse.data);
+        } else if (tasksResponse.data?.tasks) {
+          setTasks(tasksResponse.data.tasks);
+        } else {
+          // Empty array if no data returned
+          setTasks([]);
+        }
+        
+        // Fetch gantt tasks and time entries
+        const [ganttRes, timeRes] = await Promise.all([
+          apiClient.get('/api/projects/gantt').catch(() => ({ data: [] })),
+          apiClient.get('/api/projects/time-entries').catch(() => ({ data: [] }))
+        ]);
+        setGanttTasks(ganttRes.data?.tasks || ganttRes.data || []);
+        setTimeEntries(timeRes.data?.entries || timeRes.data || []);
       } catch (err) {
-        console.log('Using local mock data for projects');
+        console.error('Failed to fetch projects data:', err);
+        // Empty arrays on error - no mock data
+        setProjects([]);
+        setTasks([]);
+        setGanttTasks([]);
+        setTimeEntries([]);
       } finally {
+        setLoading(false);
         setApiLoading(false);
       }
     };
-    fetchWorkspaceData();
+    fetchData();
   }, []);
 
   // Calculate stats - use API data if available, otherwise fall back to mock data

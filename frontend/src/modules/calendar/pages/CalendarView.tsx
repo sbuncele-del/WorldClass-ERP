@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, Button, Space, Typography, Modal, Form, Input, Select, 
-  DatePicker, TimePicker, Tag, Badge, Row, Col, List, Avatar, Checkbox
+  DatePicker, TimePicker, Tag, Badge, Row, Col, List, Avatar, Checkbox, Spin
 } from 'antd';
+import apiClient from '../../../services/api';
 import { 
   PlusOutlined, LeftOutlined, RightOutlined, CalendarOutlined,
   ClockCircleOutlined, TeamOutlined, VideoCameraOutlined, EnvironmentOutlined,
@@ -27,67 +28,6 @@ interface CalendarEvent {
   recurring?: boolean;
 }
 
-// Sample events
-const sampleEvents: CalendarEvent[] = [
-  {
-    id: '1',
-    title: 'Team Standup',
-    start: new Date(2024, 1, 20, 9, 0),
-    end: new Date(2024, 1, 20, 9, 30),
-    type: 'meeting',
-    color: '#1890ff',
-    attendees: ['Sarah', 'Mike', 'Emily', 'David'],
-    recurring: true
-  },
-  {
-    id: '2',
-    title: 'Project Review - Website Redesign',
-    description: 'Review progress on website redesign project',
-    start: new Date(2024, 1, 20, 14, 0),
-    end: new Date(2024, 1, 20, 15, 30),
-    type: 'meeting',
-    color: '#722ed1',
-    location: 'Conference Room A',
-    attendees: ['Sarah', 'Emily']
-  },
-  {
-    id: '3',
-    title: 'Submit Q1 Reports',
-    start: new Date(2024, 1, 21, 17, 0),
-    end: new Date(2024, 1, 21, 17, 0),
-    type: 'task',
-    color: '#fa541c'
-  },
-  {
-    id: '4',
-    title: 'Client Call - Acme Corp',
-    start: new Date(2024, 1, 22, 10, 0),
-    end: new Date(2024, 1, 22, 11, 0),
-    type: 'meeting',
-    color: '#52c41a',
-    location: 'Video Call',
-    attendees: ['Mike', 'Alex']
-  },
-  {
-    id: '5',
-    title: 'Sprint Planning',
-    start: new Date(2024, 1, 22, 14, 0),
-    end: new Date(2024, 1, 22, 16, 0),
-    type: 'meeting',
-    color: '#1890ff',
-    attendees: ['Sarah', 'Mike', 'Emily', 'David', 'Alex']
-  },
-  {
-    id: '6',
-    title: 'Product Launch',
-    start: new Date(2024, 1, 28, 0, 0),
-    end: new Date(2024, 1, 28, 23, 59),
-    type: 'project',
-    color: '#eb2f96',
-    isAllDay: true
-  }
-];
-
 const typeColors = {
   meeting: '#1890ff',
   task: '#fa541c',
@@ -97,12 +37,37 @@ const typeColors = {
 };
 
 const CalendarView: React.FC = () => {
-  const [currentDate, setCurrentDate] = useState(new Date(2024, 1, 20));
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('week');
-  const [events] = useState<CalendarEvent[]>(sampleEvents);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get('/api/calendar/events');
+      const eventsData = response.data?.data || response.data || [];
+      // Convert date strings to Date objects
+      const parsedEvents = eventsData.map((event: any) => ({
+        ...event,
+        start: new Date(event.start),
+        end: new Date(event.end)
+      }));
+      setEvents(parsedEvents);
+    } catch (error) {
+      console.error('Error fetching calendar events:', error);
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Get days for current view
   const getDaysInMonth = (date: Date) => {

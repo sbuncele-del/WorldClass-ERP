@@ -132,7 +132,7 @@ export class GLExplorerController {
       // Query with pagination
       const query = `
         SELECT 
-          je.id as journal_entry_id,
+          je.entry_id as journal_entry_id,
           je.journal_number,
           je.journal_date,
           je.posting_date,
@@ -155,7 +155,7 @@ export class GLExplorerController {
           coa.account_type,
           coa.account_category
         FROM journal_entries je
-        INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+        INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
         LEFT JOIN chart_of_accounts coa ON jel.account_code = coa.code
         WHERE ${whereClause}
         ORDER BY je.${sortColumn} ${sortDirection}, jel.line_number ASC
@@ -166,9 +166,9 @@ export class GLExplorerController {
 
       // Count total records
       const countQuery = `
-        SELECT COUNT(DISTINCT je.id) as total
+        SELECT COUNT(DISTINCT je.entry_id) as total
         FROM journal_entries je
-        INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+        INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
         LEFT JOIN chart_of_accounts coa ON jel.account_code = coa.code
         WHERE ${whereClause}
       `;
@@ -381,7 +381,7 @@ export class GLExplorerController {
 
       const query = `
         SELECT 
-          je.id,
+          je.entry_id,
           je.journal_number,
           je.journal_date,
           je.description,
@@ -394,7 +394,7 @@ export class GLExplorerController {
           jel.project_code,
           jel.department
         FROM journal_entries je
-        INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+        INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
         WHERE ${whereClause}
         ORDER BY je.journal_date DESC, je.created_at DESC
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -408,7 +408,7 @@ export class GLExplorerController {
           SUM(jel.debit_amount) as total_debits,
           SUM(jel.credit_amount) as total_credits
         FROM journal_entries je
-        INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+        INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
         WHERE jel.account_code = $1
         ${date_to ? 'AND je.journal_date <= $2' : ''}
       `;

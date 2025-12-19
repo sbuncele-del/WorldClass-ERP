@@ -93,8 +93,8 @@ export class AccountRepository extends BaseRepository<Account> {
     const sql = `
       SELECT 
         COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as balance
-      FROM financial.journal_entry_lines jel
-      JOIN financial.journal_entries je ON je.id = jel.journal_entry_id
+      FROM journal_entry_lines jel
+      JOIN journal_entries je ON je.entry_id = jel.journal_entry_id
       WHERE jel.tenant_id = $1 AND jel.account_id = $2 AND je.status = 'posted' ${dateCondition}
     `;
 
@@ -124,8 +124,8 @@ export class AccountRepository extends BaseRepository<Account> {
         CASE WHEN SUM(jel.debit_amount - jel.credit_amount) < 0 
           THEN ABS(SUM(jel.debit_amount - jel.credit_amount)) ELSE 0 END as credit_balance
       FROM ${this.fullTableName} a
-      LEFT JOIN financial.journal_entry_lines jel ON jel.account_id = a.id AND jel.tenant_id = a.tenant_id
-      LEFT JOIN financial.journal_entries je ON je.id = jel.journal_entry_id AND je.status = 'posted' AND je.posting_date <= $2
+      LEFT JOIN journal_entry_lines jel ON jel.account_id = a.id AND jel.tenant_id = a.tenant_id
+      LEFT JOIN journal_entries je ON je.entry_id = jel.journal_entry_id AND je.status = 'posted' AND je.posting_date <= $2
       WHERE a.tenant_id = $1 AND a.deleted_at IS NULL AND a.is_header = false
       GROUP BY a.id, a.account_number, a.name, a.account_type
       HAVING SUM(jel.debit_amount - jel.credit_amount) != 0 OR SUM(jel.debit_amount - jel.credit_amount) IS NULL

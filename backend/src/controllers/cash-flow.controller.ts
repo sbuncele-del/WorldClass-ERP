@@ -388,7 +388,7 @@ async function calculateNetIncome(start_date: string, end_date: string): Promise
   const revenueQuery = `
     SELECT COALESCE(SUM(jel.credit_amount - jel.debit_amount), 0) as revenue
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN '4000' AND '4999'
       AND je.journal_date BETWEEN $1 AND $2
       AND je.is_posted = true
@@ -397,7 +397,7 @@ async function calculateNetIncome(start_date: string, end_date: string): Promise
   const expensesQuery = `
     SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as expenses
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN '5000' AND '8999'
       AND je.journal_date BETWEEN $1 AND $2
       AND je.is_posted = true
@@ -416,7 +416,7 @@ async function getDepreciation(start_date: string, end_date: string): Promise<nu
   const query = `
     SELECT COALESCE(SUM(jel.debit_amount), 0) as depreciation
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN '6500' AND '6599'
       AND je.journal_date BETWEEN $1 AND $2
       AND je.is_posted = true
@@ -431,7 +431,7 @@ async function getAccountChange(start_date: string, end_date: string, account_st
   const beginningQuery = `
     SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as balance
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN $1 AND $2
       AND je.journal_date < $3
       AND je.is_posted = true
@@ -441,7 +441,7 @@ async function getAccountChange(start_date: string, end_date: string, account_st
   const endingQuery = `
     SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as balance
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN $1 AND $2
       AND je.journal_date <= $3
       AND je.is_posted = true
@@ -463,7 +463,7 @@ async function getCashBalance(date: string, isBeginning: boolean): Promise<numbe
   const query = `
     SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as balance
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN '1100' AND '1199'
       AND je.journal_date ${operator} $1
       AND je.is_posted = true
@@ -477,7 +477,7 @@ async function getDividends(start_date: string, end_date: string): Promise<numbe
   const query = `
     SELECT COALESCE(SUM(jel.debit_amount), 0) as dividends
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN '3200' AND '3299'
       AND je.journal_date BETWEEN $1 AND $2
       AND je.is_posted = true
@@ -493,7 +493,7 @@ async function getCashReceipts(start_date: string, end_date: string): Promise<nu
   const query = `
     SELECT COALESCE(SUM(jel.credit_amount), 0) as receipts
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN '4000' AND '4999'
       AND je.journal_date BETWEEN $1 AND $2
       AND je.is_posted = true
@@ -507,7 +507,7 @@ async function getCashPayments(start_date: string, end_date: string): Promise<nu
   const query = `
     SELECT COALESCE(SUM(jel.debit_amount), 0) as payments
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN '5000' AND '5999'
       AND je.journal_date BETWEEN $1 AND $2
       AND je.is_posted = true
@@ -521,7 +521,7 @@ async function getOperatingExpensePayments(start_date: string, end_date: string)
   const query = `
     SELECT COALESCE(SUM(jel.debit_amount), 0) as expenses
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN '6000' AND '6999'
       AND je.journal_date BETWEEN $1 AND $2
       AND je.is_posted = true
@@ -535,7 +535,7 @@ async function getInterestPaid(start_date: string, end_date: string): Promise<nu
   const query = `
     SELECT COALESCE(SUM(jel.debit_amount), 0) as interest
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN '7500' AND '7599'
       AND je.journal_date BETWEEN $1 AND $2
       AND je.is_posted = true
@@ -549,7 +549,7 @@ async function getTaxesPaid(start_date: string, end_date: string): Promise<numbe
   const query = `
     SELECT COALESCE(SUM(jel.debit_amount), 0) as taxes
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN '8000' AND '8999'
       AND je.journal_date BETWEEN $1 AND $2
       AND je.is_posted = true

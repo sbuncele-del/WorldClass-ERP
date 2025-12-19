@@ -1,34 +1,23 @@
+/**
+ * Onboarding Routes (V2, tenant-aware)
+ * Delegates to tenant-hardened V2 controller.
+ */
 import { Router } from 'express';
-import OnboardingController from '../controllers/onboarding.controller';
+import { authenticateToken } from '../middleware/auth';
 import { tenantMiddleware } from '../middleware/tenant';
+import OnboardingControllerV2 from '../controllers/onboarding.controller.v2';
 
 const router = Router();
 
-// All onboarding endpoints require authentication
+// All routes require authentication and tenant context
+router.use(authenticateToken);
 router.use(tenantMiddleware);
 
-/**
- * GET /api/onboarding/status
- * Get current onboarding status
- */
-router.get('/status', OnboardingController.getStatus);
-
-/**
- * PATCH /api/onboarding
- * Update onboarding data
- */
-router.patch('/', OnboardingController.update);
-
-/**
- * POST /api/onboarding/complete
- * Complete onboarding
- */
-router.post('/complete', OnboardingController.complete);
-
-/**
- * POST /api/onboarding/skip
- * Skip onboarding
- */
-router.post('/skip', OnboardingController.skip);
+router.get('/status', OnboardingControllerV2.getStatus);
+router.patch('/', OnboardingControllerV2.update);
+router.post('/complete', OnboardingControllerV2.complete);
+router.post('/skip', OnboardingControllerV2.skip);
+router.post('/reset', OnboardingControllerV2.reset);
+router.get('/checklist', OnboardingControllerV2.getChecklist);
 
 export default router;

@@ -1,26 +1,22 @@
+/**
+ * Payment Routes (V2, tenant-aware)
+ * Delegates to tenant-hardened V2 controller.
+ */
 import { Router } from 'express';
-import PaymentController from '../controllers/payment.controller';
+import { authenticateToken } from '../middleware/auth';
 import { tenantMiddleware } from '../middleware/tenant';
+import PaymentControllerV2 from '../controllers/payment.controller.v2';
 
 const router = Router();
 
-/**
- * Payment Routes (require authentication)
- */
+// All routes require authentication and tenant context
+router.use(authenticateToken);
+router.use(tenantMiddleware);
 
-// Create payment session
-router.post('/create-session', tenantMiddleware, PaymentController.createPaymentSession);
-
-// Get payment status
-router.get('/status/:reference', tenantMiddleware, PaymentController.getPaymentStatus);
-
-// Get payment history
-router.get('/history', tenantMiddleware, PaymentController.getPaymentHistory);
-
-// Cancel pending payment
-router.post('/cancel/:reference', tenantMiddleware, PaymentController.cancelPayment);
-
-// Get pricing information
-router.get('/pricing', PaymentController.getPricing);
+router.post('/create-session', PaymentControllerV2.createPaymentSession);
+router.get('/status/:reference', PaymentControllerV2.getPaymentStatus);
+router.get('/history', PaymentControllerV2.getPaymentHistory);
+router.post('/cancel/:reference', PaymentControllerV2.cancelPayment);
+router.get('/pricing', PaymentControllerV2.getPricing);
 
 export default router;

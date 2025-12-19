@@ -14,6 +14,9 @@ import { Response } from 'express';
 import { TenantRequest } from '../types';
 import aiAgentService from '../services/ai-agent.service';
 import { pool } from '../config/database';
+import { integrationService } from '../services/integration.service';
+import { customerRepository, invoiceRepository } from '../repositories/sales';
+import { supplierRepository, purchaseInvoiceRepository } from '../repositories/purchase';
 
 /**
  * Tenant context helper
@@ -507,6 +510,299 @@ export const financeReconcile = async (req: TenantRequest, res: Response) => {
   }
 };
 
+// ============================================================================
+// ACTIONABLE AI - Execute Commands (Natural Language → Transactions)
+// ============================================================================
+
+/**
+ * Intent types that the AI can recognize and execute
+ */
+type AIIntent = 
+  | 'CREATE_INVOICE'
+  | 'CREATE_QUOTE'
+  | 'RECORD_PAYMENT'
+  | 'CREATE_EXPENSE'
+  | 'CREATE_PURCHASE_ORDER'
+  | 'CREATE_JOURNAL_ENTRY'
+  | 'QUERY_DATA'
+  | 'GENERATE_REPORT'
+  | 'UNKNOWN';
+
+interface ParsedCommand {
+  intent: AIIntent;
+  confidence: number;
+  entities: {
+    customer?: string;
+    supplier?: string;
+    amount?: number;
+    description?: string;
+    items?: Array<{ description: string; quantity: number; unitPrice: number }>;
+    date?: string;
+    account?: string;
+  };
+  rawText: string;
+}
+
+/**
+ * Simple NLP parser for common ERP commands
+ * In production, this would be replaced with a proper NLP model
+ */
+function parseNaturalLanguage(text: string): ParsedCommand {
+  const lowerText = text.toLowerCase();
+  
+  // Extract amounts (R format or numbers)
+  const amountMatch = text.match(/r\s?([\d,]+(?:\.\d{2})?)|(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)/i);
+  const amount = amountMatch ? parseFloat(amountMatch[0].replace(/[r,\s]/gi, '')) : undefined;
+  
+  // Extract customer/supplier names (after "for", "to", "from")
+  const entityMatch = text.match(/(?:for|to|from)\s+([A-Z][a-zA-Z\s&]+?)(?:\s+for|\s+of|\s*$|,)/i);
+  const entityName = entityMatch ? entityMatch[1].trim() : undefined;
+  
+  // Determine intent
+  let intent: AIIntent = 'UNKNOWN';
+  let confidence = 0;
+  
+  if (lowerText.includes('invoice') || lowerText.includes('bill')) {
+    if (lowerText.includes('create') || lowerText.includes('new') || lowerText.includes('generate')) {
+      intent = 'CREATE_INVOICE';
+      confidence = 0.9;
+    }
+  } else if (lowerText.includes('quote') || lowerText.includes('quotation')) {
+    intent = 'CREATE_QUOTE';
+    confidence = 0.85;
+  } else if (lowerText.includes('payment') || lowerText.includes('paid') || lowerText.includes('received')) {
+    intent = 'RECORD_PAYMENT';
+    confidence = 0.9;
+  } else if (lowerText.includes('expense') || lowerText.includes('cost')) {
+    intent = 'CREATE_EXPENSE';
+    confidence = 0.85;
+  } else if (lowerText.includes('purchase order') || lowerText.includes('po')) {
+    intent = 'CREATE_PURCHASE_ORDER';
+    confidence = 0.85;
+  } else if (lowerText.includes('journal') || lowerText.includes('entry')) {
+    intent = 'CREATE_JOURNAL_ENTRY';
+    confidence = 0.8;
+  } else if (lowerText.includes('show') || lowerText.includes('list') || lowerText.includes('what') || lowerText.includes('how much')) {
+    intent = 'QUERY_DATA';
+    confidence = 0.75;
+  } else if (lowerText.includes('report') || lowerText.includes('summary')) {
+    intent = 'GENERATE_REPORT';
+    confidence = 0.75;
+  }
+  
+  return {
+    intent,
+    confidence,
+    entities: {
+      customer: intent === 'CREATE_INVOICE' || intent === 'CREATE_QUOTE' ? entityName : undefined,
+      supplier: intent === 'CREATE_PURCHASE_ORDER' || intent === 'CREATE_EXPENSE' ? entityName : undefined,
+      amount,
+      description: text
+    },
+    rawText: text
+  };
+}
+
+/**
+ * Execute a natural language command
+ * Converts text to actual ERP transactions
+ */
+export const executeCommand = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { command, confirm } = req.body;
+    
+    if (!command) {
+      return res.status(400).json({
+        success: false,
+        error: 'Command is required'
+      });
+    }
+    
+    // Parse the natural language command
+    const parsed = parseNaturalLanguage(command);
+    
+    // If confidence is too low, ask for clarification
+    if (parsed.confidence < 0.7) {
+      return res.json({
+        success: true,
+        data: {
+          status: 'clarification_needed',
+          message: "I'm not sure what you want me to do. Could you be more specific? Try phrases like:",
+          suggestions: [
+            "Create an invoice for [Customer] for R[amount]",
+            "Record a payment of R[amount] from [Customer]",
+            "Create a purchase order for [Supplier]",
+            "Show me outstanding invoices",
+            "Generate a profit and loss report"
+          ],
+          parsed
+        }
+      });
+    }
+    
+    // If not confirmed, return what we're about to do
+    if (!confirm) {
+      return res.json({
+        success: true,
+        data: {
+          status: 'pending_confirmation',
+          message: `I understood: ${getIntentDescription(parsed)}`,
+          intent: parsed.intent,
+          entities: parsed.entities,
+          confidence: parsed.confidence,
+          confirmationRequired: true,
+          nextStep: 'Call this endpoint again with confirm: true to execute'
+        }
+      });
+    }
+    
+    // Execute the command
+    const result = await executeIntent(tenantId, userId, parsed);
+    
+    res.json({
+      success: true,
+      data: {
+        status: 'executed',
+        message: result.message,
+        result: result.data
+      }
+    });
+    
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Execute command error:', error);
+    res.status(500).json({ success: false, error: 'Failed to execute command' });
+  }
+};
+
+function getIntentDescription(parsed: ParsedCommand): string {
+  switch (parsed.intent) {
+    case 'CREATE_INVOICE':
+      return `Create a sales invoice${parsed.entities.customer ? ` for ${parsed.entities.customer}` : ''}${parsed.entities.amount ? ` for R${parsed.entities.amount.toFixed(2)}` : ''}`;
+    case 'CREATE_QUOTE':
+      return `Create a quotation${parsed.entities.customer ? ` for ${parsed.entities.customer}` : ''}`;
+    case 'RECORD_PAYMENT':
+      return `Record a payment${parsed.entities.amount ? ` of R${parsed.entities.amount.toFixed(2)}` : ''}`;
+    case 'CREATE_EXPENSE':
+      return `Record an expense${parsed.entities.supplier ? ` from ${parsed.entities.supplier}` : ''}`;
+    case 'CREATE_PURCHASE_ORDER':
+      return `Create a purchase order${parsed.entities.supplier ? ` for ${parsed.entities.supplier}` : ''}`;
+    case 'CREATE_JOURNAL_ENTRY':
+      return `Create a journal entry${parsed.entities.amount ? ` for R${parsed.entities.amount.toFixed(2)}` : ''}`;
+    case 'QUERY_DATA':
+      return `Retrieve data: ${parsed.rawText}`;
+    case 'GENERATE_REPORT':
+      return `Generate report: ${parsed.rawText}`;
+    default:
+      return parsed.rawText;
+  }
+}
+
+async function executeIntent(
+  tenantId: string,
+  userId: string,
+  parsed: ParsedCommand
+): Promise<{ message: string; data?: any }> {
+  const ctx = { tenantId, userId };
+  
+  switch (parsed.intent) {
+    case 'CREATE_INVOICE': {
+      // Find or create customer
+      let customerId: string | undefined;
+      if (parsed.entities.customer) {
+        const customers = await customerRepository.search(ctx, parsed.entities.customer, { page: 1, limit: 1 });
+        if (customers.data.length > 0) {
+          customerId = String(customers.data[0].customer_id || customers.data[0].id);
+        }
+      }
+      
+      if (!customerId) {
+        return {
+          message: `Customer "${parsed.entities.customer || 'Unknown'}" not found. Please create the customer first or specify an existing customer.`,
+          data: { status: 'customer_not_found' }
+        };
+      }
+      
+      const invoice = await invoiceRepository.createInvoiceWithLines(
+        ctx,
+        {
+          customer_id: customerId,
+          invoice_date: new Date(),
+          due_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          total_amount: parsed.entities.amount || 0,
+          subtotal: parsed.entities.amount || 0,
+          status: 'draft',
+          notes: `Created via AI Assistant: "${parsed.rawText}"`
+        },
+        parsed.entities.items || [{
+          description: parsed.entities.description || 'Services rendered',
+          quantity: 1,
+          unit_price: parsed.entities.amount || 0,
+          line_total: parsed.entities.amount || 0
+        }]
+      );
+      
+      return {
+        message: `Invoice ${invoice.invoice_number} created for ${parsed.entities.customer}`,
+        data: { invoiceId: invoice.id, invoiceNumber: invoice.invoice_number, amount: invoice.total_amount }
+      };
+    }
+    
+    case 'RECORD_PAYMENT': {
+      // This would need invoice ID to be specified - for now return guidance
+      return {
+        message: 'To record a payment, please specify the invoice number. Use: "Record payment of R[amount] for invoice INV-001"',
+        data: { status: 'need_invoice_reference' }
+      };
+    }
+    
+    case 'QUERY_DATA': {
+      // Return summary data based on query
+      const query = parsed.rawText.toLowerCase();
+      
+      if (query.includes('outstanding') || query.includes('unpaid')) {
+        const result = await pool.query(
+          `SELECT COUNT(*) as count, COALESCE(SUM(balance_due), 0) as total 
+           FROM sales_invoices WHERE tenant_id = $1 AND status != 'paid' AND balance_due > 0`,
+          [tenantId]
+        );
+        return {
+          message: `You have ${result.rows[0].count} outstanding invoices totaling R${parseFloat(result.rows[0].total).toFixed(2)}`,
+          data: result.rows[0]
+        };
+      }
+      
+      if (query.includes('revenue') || query.includes('sales')) {
+        const result = await pool.query(
+          `SELECT COALESCE(SUM(total_amount), 0) as total 
+           FROM sales_invoices 
+           WHERE tenant_id = $1 AND status = 'paid' 
+           AND EXTRACT(MONTH FROM invoice_date) = EXTRACT(MONTH FROM CURRENT_DATE)`,
+          [tenantId]
+        );
+        return {
+          message: `Revenue this month: R${parseFloat(result.rows[0].total).toFixed(2)}`,
+          data: result.rows[0]
+        };
+      }
+      
+      return {
+        message: 'I can help you query: outstanding invoices, monthly revenue, expenses, customer balances',
+        data: { status: 'query_guidance' }
+      };
+    }
+    
+    default:
+      return {
+        message: `The "${parsed.intent}" action is not yet fully implemented. This is a demonstration of the AI command execution capability.`,
+        data: { status: 'not_implemented', intent: parsed.intent }
+      };
+  }
+}
+
 export default {
   getAgents,
   getAgent,
@@ -524,5 +820,6 @@ export default {
   complianceCheck,
   complianceRiskAssess,
   financeExplainVariance,
-  financeReconcile
+  financeReconcile,
+  executeCommand
 };

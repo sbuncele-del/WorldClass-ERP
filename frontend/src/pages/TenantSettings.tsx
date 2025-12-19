@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './TenantSettings.css';
+import { apiGet, apiPatch, apiPost, apiDelete } from '../services/api.service';
 
 interface TenantSettings {
   id: string;
@@ -99,49 +100,31 @@ const TenantSettings: React.FC = () => {
 
   const fetchTenantSettings = async () => {
     try {
-      const response = await fetch('/api/tenant/settings', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setSettings(data);
-      }
-    } catch {
-      console.error('Failed to load tenant settings');
+      const data = await apiGet<TenantSettings>('/api/v1/tenant/settings');
+      setSettings(data);
+    } catch (err: any) {
+      console.error('Failed to load tenant settings', err);
+      setMessage({ type: 'error', text: err?.message || 'Failed to load tenant settings' });
     }
   };
 
   const fetchModuleConfig = async () => {
     try {
-      const response = await fetch('/api/tenant/modules', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setModules(data);
-      }
-    } catch {
-      console.error('Failed to load module configuration');
+      const data = await apiGet<ModuleConfig>('/api/v1/tenant/modules');
+      setModules(data);
+    } catch (err: any) {
+      console.error('Failed to load module configuration', err);
+      setMessage({ type: 'error', text: err?.message || 'Failed to load module configuration' });
     }
   };
 
   const fetchTeamMembers = async () => {
     try {
-      const response = await fetch('/api/tenant/team', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setTeamMembers(data);
-      }
-    } catch {
-      console.error('Failed to load team members');
+      const data = await apiGet<TeamMember[]>('/api/v1/tenant/team');
+      setTeamMembers(data);
+    } catch (err: any) {
+      console.error('Failed to load team members', err);
+      setMessage({ type: 'error', text: err?.message || 'Failed to load team members' });
     }
   };
 
@@ -151,24 +134,11 @@ const TenantSettings: React.FC = () => {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/tenant/settings', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(settings),
-      });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Company settings updated successfully' });
-        setTimeout(() => setMessage(null), 3000);
-      } else {
-        const data = await response.json();
-        setMessage({ type: 'error', text: data.error || 'Failed to update settings' });
-      }
-    } catch {
-      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+      await apiPatch('/api/v1/tenant/settings', settings);
+      setMessage({ type: 'success', text: 'Company settings updated successfully' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err?.message || 'Failed to update settings' });
     } finally {
       setLoading(false);
     }
@@ -179,18 +149,11 @@ const TenantSettings: React.FC = () => {
     setModules(newModules);
 
     try {
-      await fetch('/api/tenant/modules', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(newModules),
-      });
+      await apiPatch('/api/v1/tenant/modules', newModules);
       setMessage({ type: 'success', text: 'Module configuration updated' });
       setTimeout(() => setMessage(null), 3000);
-    } catch {
-      setMessage({ type: 'error', text: 'Failed to update modules' });
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err?.message || 'Failed to update modules' });
       setModules(modules); // Revert on error
     }
   };
@@ -201,26 +164,13 @@ const TenantSettings: React.FC = () => {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/tenant/team/invite', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(inviteForm),
-      });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Invitation sent successfully' });
-        setInviteForm({ email: '', role: 'user' });
-        fetchTeamMembers();
-        setTimeout(() => setMessage(null), 3000);
-      } else {
-        const data = await response.json();
-        setMessage({ type: 'error', text: data.error || 'Failed to send invitation' });
-      }
-    } catch {
-      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+      await apiPost('/api/v1/tenant/team/invite', inviteForm);
+      setMessage({ type: 'success', text: 'Invitation sent successfully' });
+      setInviteForm({ email: '', role: 'user' });
+      fetchTeamMembers();
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err?.message || 'Failed to send invitation' });
     } finally {
       setLoading(false);
     }
@@ -230,22 +180,12 @@ const TenantSettings: React.FC = () => {
     if (!confirm('Are you sure you want to remove this user?')) return;
 
     try {
-      const response = await fetch(`/api/tenant/team/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'User removed successfully' });
-        fetchTeamMembers();
-        setTimeout(() => setMessage(null), 3000);
-      } else {
-        setMessage({ type: 'error', text: 'Failed to remove user' });
-      }
-    } catch {
-      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+      await apiDelete(`/api/v1/tenant/team/${userId}`);
+      setMessage({ type: 'success', text: 'User removed successfully' });
+      fetchTeamMembers();
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err?.message || 'Failed to remove user' });
     }
   };
 

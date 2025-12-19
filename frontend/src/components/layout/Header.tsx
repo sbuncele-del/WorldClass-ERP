@@ -13,7 +13,7 @@ export const Header: React.FC = () => {
       <div className="header-left">
         <div className="logo-section">
           <span className="logo-icon">⚡</span>
-          <span className="logo-text">AetherOS</span>
+          <span className="logo-text">SiyaBusa</span>
         </div>
         
         <ClientSelector />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Row,
@@ -27,6 +27,8 @@ import {
   Descriptions,
   Timeline,
   Popconfirm,
+  Spin,
+  Empty,
 } from 'antd';
 import {
   BankOutlined,
@@ -69,11 +71,12 @@ import {
   StatusIndicator,
   InfoListCard,
 } from '../../components/hub';
+import apiClient from '../../services/api';
 
 const { Title, Text, Paragraph } = Typography;
 
 // ===========================================
-// IAS 16 COMPLIANT ASSET POLICIES
+// IAS 16 COMPLIANT ASSET POLICIES - TYPE DEFINITIONS
 // ===========================================
 
 interface AssetPolicy {
@@ -90,11 +93,52 @@ interface AssetPolicy {
   nextReviewDate: string;
   approvedBy: string;
   status: 'active' | 'pending_approval' | 'superseded';
-  sarsWearAndTear?: number; // RSA tax allowance rate
+  sarsWearAndTear?: number;
   ias16Reference: string;
 }
 
-// Default IAS 16 compliant policies
+interface Asset {
+  id: string;
+  assetNumber: string;
+  description: string;
+  category: string;
+  categoryCode: string;
+  location: string;
+  department: string;
+  custodian: string;
+  acquisitionDate: string;
+  acquisitionCost: number;
+  directlyAttributableCosts: number;
+  estimatedDismantlingCost: number;
+  totalCost: number;
+  usefulLifeYears: number;
+  residualValue: number;
+  depreciationMethod: string;
+  monthlyDepreciation: number;
+  accumulatedDepreciation: number;
+  carryingValue: number;
+  status: 'active' | 'disposed' | 'impaired' | 'fully_depreciated' | 'under_construction';
+  lastDepreciationDate: string;
+  impairmentLoss: number;
+  recoverableAmount: number | null;
+  policyApplied: string;
+  policyVersion: string;
+}
+
+interface AssetStats {
+  totalAssets: number;
+  totalCost: number;
+  totalNBV: number;
+  accumulatedDepreciation: number;
+  assetsFullyDepreciated: number;
+  assetsDueForReview: number;
+  pendingDisposals: number;
+  impairedAssets: number;
+  monthlyDepreciation: number;
+  categories: number;
+}
+
+// Default IAS 16 compliant policies (used as fallback only)
 const assetPolicies: AssetPolicy[] = [
   {
     id: 'POL-001',
@@ -426,20 +470,6 @@ const pendingPolicyChanges = [
   },
 ];
 
-// Asset statistics
-const assetStats = {
-  totalAssets: 342,
-  totalCost: 45680000,
-  totalNBV: 32450000,
-  accumulatedDepreciation: 13230000,
-  assetsFullyDepreciated: 28,
-  assetsDueForReview: 15,
-  pendingDisposals: 4,
-  impairedAssets: 2,
-  monthlyDepreciation: 485000,
-  categories: 8,
-};
-
 const AssetsHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showAddAssetModal, setShowAddAssetModal] = useState(false);
@@ -448,6 +478,50 @@ const AssetsHub: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedPolicy, setSelectedPolicy] = useState<AssetPolicy | null>(null);
   const [addAssetForm] = Form.useForm();
+  const [loading, setLoading] = useState(true);
+
+  // State for API data
+  const [assetStats, setAssetStats] = useState<AssetStats>({
+    totalAssets: 0,
+    totalCost: 0,
+    totalNBV: 0,
+    accumulatedDepreciation: 0,
+    assetsFullyDepreciated: 0,
+    assetsDueForReview: 0,
+    pendingDisposals: 0,
+    impairedAssets: 0,
+    monthlyDepreciation: 0,
+    categories: 0,
+  });
+  const [assetRegister, setAssetRegister] = useState<Asset[]>([]);
+  const [assetPolicies, setAssetPolicies] = useState<AssetPolicy[]>([]);
+
+  // Fetch assets data from API
+  useEffect(() => {
+    const fetchAssetsData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, assetsRes, policiesRes] = await Promise.all([
+          apiClient.get('/api/assets/stats').catch(() => ({ data: null })),
+          apiClient.get('/api/assets/register').catch(() => ({ data: [] })),
+          apiClient.get('/api/assets/policies').catch(() => ({ data: [] })),
+        ]);
+
+        if (statsRes.data) {
+          setAssetStats(statsRes.data.data || statsRes.data);
+        }
+        setAssetRegister(assetsRes.data?.data || assetsRes.data || []);
+        setAssetPolicies(policiesRes.data?.data || policiesRes.data || []);
+      } catch (error) {
+        console.error('Error fetching assets data:', error);
+        message.error('Failed to load assets data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAssetsData();
+  }, []);
 
   const formatCurrency = (amount: number) => `R ${amount.toLocaleString('en-ZA')}`;
 

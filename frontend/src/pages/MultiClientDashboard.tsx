@@ -19,6 +19,7 @@ import {
 import { useClient } from '../contexts/ClientContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import type { ConsolidatedMetrics } from '../types/multi-tenant.types';
+import { API_BASE_URL } from '../services/api.service';
 import './MultiClientDashboard.css';
 
 const MultiClientDashboard: React.FC = () => {
@@ -34,8 +35,7 @@ const MultiClientDashboard: React.FC = () => {
   const fetchConsolidatedMetrics = async () => {
     setIsLoading(true);
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const response = await fetch(`${apiUrl}/api/dashboard/consolidated?currency=${displayCurrency}`);
+            const response = await fetch(`${API_BASE_URL}/api/dashboard/consolidated?currency=${displayCurrency}`);
       
       if (response.ok) {
         const data = await response.json();

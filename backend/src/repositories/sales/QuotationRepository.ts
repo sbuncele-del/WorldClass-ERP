@@ -54,6 +54,7 @@ export interface Quotation {
 export class QuotationRepository extends BaseRepository<Quotation> {
   protected tableName = 'quotations';
   protected schema = 'sales';
+  protected softDelete = false;  // Table doesn't have deleted_at column
 
   /**
    * Get quotations by status

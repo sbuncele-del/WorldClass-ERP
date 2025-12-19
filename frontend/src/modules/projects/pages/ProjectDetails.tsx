@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, Tabs, Button, Progress, Tag, Avatar, Timeline, Table, Space,
   Descriptions, Row, Col, Statistic, Dropdown, Modal, Form, Input, Select,
-  DatePicker, message, Drawer, List, Upload
+  DatePicker, message, Drawer, List, Upload, Spin
 } from 'antd';
 import { 
   ArrowLeftOutlined, EditOutlined, MoreOutlined, TeamOutlined,
@@ -11,6 +11,7 @@ import {
   SettingOutlined, ExportOutlined, DeleteOutlined, UserAddOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
+import apiClient from '../../../services/api';
 import './ProjectDetails.css';
 
 const { TabPane } = Tabs;
@@ -24,52 +25,6 @@ interface Task {
   dueDate: string;
   priority: 'low' | 'medium' | 'high';
 }
-
-// Sample project data
-const sampleProject = {
-  id: '1',
-  name: 'Website Redesign',
-  description: 'Complete overhaul of the corporate website with modern design, improved UX, and mobile-first approach. This project includes redesigning all main pages, implementing new CMS, and optimizing performance.',
-  status: 'active',
-  priority: 'high',
-  progress: 65,
-  startDate: '2024-01-15',
-  endDate: '2024-03-30',
-  budget: 50000,
-  spent: 32500,
-  manager: { id: '1', name: 'Sarah Johnson', email: 'sarah@company.com', role: 'Project Manager' },
-  team: [
-    { id: '2', name: 'Mike Wilson', email: 'mike@company.com', role: 'Lead Developer' },
-    { id: '3', name: 'Emily Chen', email: 'emily@company.com', role: 'UI Designer' },
-    { id: '4', name: 'David Lee', email: 'david@company.com', role: 'Backend Developer' }
-  ],
-  tasks: [
-    { id: '1', title: 'Design homepage mockup', status: 'done', assignee: 'Emily Chen', dueDate: '2024-01-25', priority: 'high' },
-    { id: '2', title: 'Implement header component', status: 'done', assignee: 'Mike Wilson', dueDate: '2024-02-01', priority: 'medium' },
-    { id: '3', title: 'Setup backend API', status: 'in-progress', assignee: 'David Lee', dueDate: '2024-02-15', priority: 'high' },
-    { id: '4', title: 'Mobile responsive design', status: 'in-progress', assignee: 'Emily Chen', dueDate: '2024-02-20', priority: 'medium' },
-    { id: '5', title: 'User testing', status: 'todo', assignee: 'Sarah Johnson', dueDate: '2024-03-01', priority: 'high' }
-  ],
-  milestones: [
-    { id: '1', name: 'Design Approval', date: '2024-01-30', status: 'completed' },
-    { id: '2', name: 'Development Phase 1', date: '2024-02-15', status: 'completed' },
-    { id: '3', name: 'Beta Release', date: '2024-03-01', status: 'in-progress' },
-    { id: '4', name: 'Final Launch', date: '2024-03-30', status: 'pending' }
-  ],
-  activities: [
-    { user: 'Emily Chen', action: 'completed task "Design homepage mockup"', time: '2 hours ago' },
-    { user: 'Mike Wilson', action: 'commented on "Implement header component"', time: '4 hours ago' },
-    { user: 'Sarah Johnson', action: 'updated project timeline', time: '1 day ago' },
-    { user: 'David Lee', action: 'started working on "Setup backend API"', time: '2 days ago' }
-  ],
-  files: [
-    { name: 'Design_Mockups_v2.fig', size: '15.4 MB', uploadedBy: 'Emily Chen', date: '2024-01-28' },
-    { name: 'Technical_Specs.pdf', size: '2.1 MB', uploadedBy: 'Mike Wilson', date: '2024-01-20' },
-    { name: 'Project_Requirements.docx', size: '450 KB', uploadedBy: 'Sarah Johnson', date: '2024-01-15' }
-  ],
-  client: 'Acme Corp',
-  category: 'Development'
-};
 
 const statusColors = {
   'todo': 'default',
@@ -86,11 +41,65 @@ const priorityColors = {
 const ProjectDetails: React.FC = () => {
   const navigate = useNavigate();
   const { projectId } = useParams();
-  const [project] = useState(sampleProject);
+  const [project, setProject] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [addTaskVisible, setAddTaskVisible] = useState(false);
   const [teamDrawerVisible, setTeamDrawerVisible] = useState(false);
   const [form] = Form.useForm();
+
+  // Fetch project details from API
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        setLoading(true);
+        const [projectRes, tasksRes, teamRes] = await Promise.all([
+          apiClient.get(`/api/projects/${projectId}`),
+          apiClient.get(`/api/projects/${projectId}/tasks`),
+          apiClient.get(`/api/projects/${projectId}/team`)
+        ]);
+        
+        const projectData = projectRes.data?.project || projectRes.data || {};
+        const tasks = tasksRes.data?.tasks || tasksRes.data || [];
+        const team = teamRes.data?.members || teamRes.data || [];
+        
+        setProject({
+          ...projectData,
+          tasks,
+          team,
+          milestones: projectData.milestones || [],
+          activities: projectData.activities || [],
+          files: projectData.files || []
+        });
+      } catch (error) {
+        console.error('Failed to fetch project:', error);
+        message.error('Failed to load project details');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    if (projectId) {
+      fetchProject();
+    }
+  }, [projectId]);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div style={{ textAlign: 'center', padding: '100px' }}>
+        <h2>Project not found</h2>
+        <Button onClick={() => navigate('/projects')}>Back to Projects</Button>
+      </div>
+    );
+  }
 
   const taskColumns = [
     {

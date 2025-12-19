@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface Trip {
@@ -20,6 +21,33 @@ const TripManagementEnhanced: React.FC = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchTrips = async () => {
+      try {
+        const response = await apiClient.get('/api/logistics/trips');
+        const data = response.data.trips || response.data || [];
+        setTrips(data.map((t: any) => ({
+          trip_id: t.trip_id || t.id,
+          customer: t.customer || t.customer_name,
+          origin: t.origin,
+          destination: t.destination,
+          driver: t.driver || t.driver_name,
+          vehicle_reg: t.vehicle_reg || t.registration,
+          status: t.status || 'Planned',
+          pod_status: t.pod_status || 'Pending',
+          eta: t.eta || ''
+        })));
+      } catch (error) {
+        console.error('Failed to fetch trips:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTrips();
+  }, []);
 
   const tabs = [
     { id: 'command', label: '🎯 Command Center', path: '/logistics/dashboard' },
@@ -36,15 +64,6 @@ const TripManagementEnhanced: React.FC = () => {
     { label: 'Trip Management' }
   ];
 
-  const mockTrips: Trip[] = [
-    { trip_id: 'TRP-2025-00125', customer: 'Massmart', origin: 'JHB DC', destination: 'Cape Town DC', driver: 'John Mthembu', vehicle_reg: 'ABC 123 GP', status: 'In Transit', pod_status: 'Pending', eta: '2025-11-11 18:00' },
-    { trip_id: 'TRP-2025-00126', customer: 'Shoprite', origin: 'DUR DC', destination: 'Pretoria DC', driver: 'Sarah Ndlovu', vehicle_reg: 'DEF 456 GP', status: 'Delivered', pod_status: 'Received', eta: '2025-11-10 14:00' },
-    { trip_id: 'TRP-2025-00127', customer: 'Unilever', origin: 'PE Factory', destination: 'JHB Warehouse', driver: 'Thabo Dlamini', vehicle_reg: 'GHI 789 GP', status: 'Loading', pod_status: 'Pending', eta: '2025-11-12 09:00' },
-    { trip_id: 'TRP-2025-00128', customer: 'Sasol', origin: 'Secunda Plant', destination: 'Richards Bay', driver: 'Peter Mokoena', vehicle_reg: 'JKL 012 GP', status: 'Planned', pod_status: 'Pending', eta: '2025-11-13 12:00' },
-    { trip_id: 'TRP-2025-00129', customer: 'Pick n Pay', origin: 'JHB DC', destination: 'Polokwane', driver: 'Bongani Zulu', vehicle_reg: 'MNO 345 GP', status: 'In Transit', pod_status: 'Pending', eta: '2025-11-11 11:00' },
-    { trip_id: 'TRP-2025-00130', customer: 'SPAR', origin: 'Cape Town DC', destination: 'George', driver: 'Fezeka Mbeki', vehicle_reg: 'PQR 678 WC', status: 'Delivered', pod_status: 'Received', eta: '2025-11-09 16:00' },
-  ];
-
   const getStatusColor = (status: Trip['status']) => {
     switch (status) {
       case 'Planned': return '#64748b';
@@ -57,7 +76,7 @@ const TripManagementEnhanced: React.FC = () => {
     }
   };
 
-  const filteredTrips = mockTrips.filter(trip => {
+  const filteredTrips = trips.filter(trip => {
     const matchesSearch = trip.trip_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           trip.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           trip.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -87,21 +106,21 @@ const TripManagementEnhanced: React.FC = () => {
             <span className="metric-label">Total Trips</span>
             <span className="metric-icon" style={{ fontSize: '1.5rem' }}>📦</span>
           </div>
-          <div className="metric-value">{mockTrips.length}</div>
+          <div className="metric-value">{trips.length}</div>
         </div>
         <div className="metric-card" style={{ borderLeftColor: '#8b5cf6' }}>
           <div className="metric-header">
             <span className="metric-label">In Transit</span>
             <span className="metric-icon" style={{ fontSize: '1.5rem' }}>🚚</span>
           </div>
-          <div className="metric-value">{mockTrips.filter(t => t.status === 'In Transit').length}</div>
+          <div className="metric-value">{trips.filter(t => t.status === 'In Transit').length}</div>
         </div>
         <div className="metric-card" style={{ borderLeftColor: '#f59e0b' }}>
           <div className="metric-header">
             <span className="metric-label">Pending POD</span>
             <span className="metric-icon" style={{ fontSize: '1.5rem' }}>📄</span>
           </div>
-          <div className="metric-value">{mockTrips.filter(t => t.pod_status === 'Pending' && t.status !== 'Cancelled').length}</div>
+          <div className="metric-value">{trips.filter(t => t.pod_status === 'Pending' && t.status !== 'Cancelled').length}</div>
         </div>
         <div className="metric-card" style={{ borderLeftColor: '#10b981' }}>
           <div className="metric-header">
@@ -109,7 +128,7 @@ const TripManagementEnhanced: React.FC = () => {
             <span className="metric-icon" style={{ fontSize: '1.5rem' }}>✅</span>
           </div>
           <div className="metric-value">
-            {mockTrips.filter(t => t.status === 'Delivered' && new Date(t.eta).toDateString() === new Date().toDateString()).length}
+            {trips.filter(t => t.status === 'Delivered' && new Date(t.eta).toDateString() === new Date().toDateString()).length}
           </div>
         </div>
       </div>

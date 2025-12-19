@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './QuotationManagement.css';
 
 interface Quotation {
@@ -81,7 +82,7 @@ const QuotationManagement: React.FC = () => {
       if (searchTerm) params.append('search', searchTerm);
       if (filterStatus) params.append('status', filterStatus);
 
-      const response = await fetch(`http://localhost:3000/api/sales/quotations?${params}`);
+      const response = await fetch(`${API_BASE_URL}/api/sales/quotations?${params}`);
       const data = await response.json();
       setQuotations(data.quotations || []);
     } catch (error) {
@@ -93,7 +94,7 @@ const QuotationManagement: React.FC = () => {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/sales/customers?limit=100');
+      const response = await fetch(`${API_BASE_URL}/api/sales/customers?limit=100`);
       const data = await response.json();
       setCustomers(data.customers || []);
     } catch (error) {
@@ -103,7 +104,7 @@ const QuotationManagement: React.FC = () => {
 
   const fetchQuotationDetails = async (id: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/sales/quotations/${id}`);
+      const response = await fetch(`${API_BASE_URL}/api/sales/quotations/${id}`);
       const data = await response.json();
       setSelectedQuotation(data.quotation);
       setLines(data.lines || []);
@@ -212,8 +213,8 @@ const QuotationManagement: React.FC = () => {
       setLoading(true);
       const totals = calculateTotals();
       const url = selectedQuotation
-        ? `http://localhost:3000/api/sales/quotations/${selectedQuotation.id}`
-        : 'http://localhost:3000/api/sales/quotations';
+        ? `${API_BASE_URL}/api/sales/quotations/${selectedQuotation.id}`
+        : `${API_BASE_URL}/api/sales/quotations`;
 
       const method = selectedQuotation ? 'PUT' : 'POST';
 
@@ -244,7 +245,7 @@ const QuotationManagement: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3000/api/sales/quotations/${id}/convert-to-order`, {
+      const response = await fetch(`${API_BASE_URL}/api/sales/quotations/${id}/convert-to-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -266,7 +267,7 @@ const QuotationManagement: React.FC = () => {
 
   const handleUpdateStatus = async (id: number, status: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/sales/quotations/${id}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/sales/quotations/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })

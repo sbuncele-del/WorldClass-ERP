@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface Requisition {
@@ -30,85 +31,8 @@ const PurchaseRequisitionsPage: React.FC = () => {
   const fetchRequisitions = async () => {
     setLoading(true);
     try {
-      const mockRequisitions: Requisition[] = [
-        {
-          id: 'PR001',
-          number: 'PR-2025-001',
-          requester: 'Thabo Mkhize',
-          department: 'IT Department',
-          date: '2025-01-10',
-          status: 'SUBMITTED',
-          priority: 'HIGH',
-          estimated_value: 45800,
-          item_count: 5,
-          approver: 'Sarah van der Merwe',
-          approval_date: null,
-          po_number: null,
-          notes: 'Urgent server upgrades required'
-        },
-        {
-          id: 'PR002',
-          number: 'PR-2025-002',
-          requester: 'Johan Botha',
-          department: 'Operations',
-          date: '2025-01-08',
-          status: 'APPROVED',
-          priority: 'MEDIUM',
-          estimated_value: 28400,
-          item_count: 12,
-          approver: 'Nomvula Dlamini',
-          approval_date: '2025-01-09',
-          po_number: null,
-          notes: 'Monthly stationery supplies'
-        },
-        {
-          id: 'PR003',
-          number: 'PR-2025-003',
-          requester: 'Nomvula Dlamini',
-          department: 'Manufacturing',
-          date: '2025-01-05',
-          status: 'CONVERTED',
-          priority: 'URGENT',
-          estimated_value: 127600,
-          item_count: 8,
-          approver: 'Pieter Kruger',
-          approval_date: '2025-01-06',
-          po_number: 'PO-2025-018',
-          notes: 'Critical production materials'
-        },
-        {
-          id: 'PR004',
-          number: 'PR-2025-004',
-          requester: 'Pieter Kruger',
-          department: 'Maintenance',
-          date: '2025-01-12',
-          status: 'DRAFT',
-          priority: 'LOW',
-          estimated_value: 15200,
-          item_count: 3,
-          approver: '',
-          approval_date: null,
-          po_number: null,
-          notes: 'Spare parts for preventive maintenance'
-        },
-        {
-          id: 'PR005',
-          number: 'PR-2025-005',
-          requester: 'Sarah van der Merwe',
-          department: 'Quality Control',
-          date: '2025-01-07',
-          status: 'REJECTED',
-          priority: 'MEDIUM',
-          estimated_value: 34500,
-          item_count: 6,
-          approver: 'Johan Botha',
-          approval_date: '2025-01-08',
-          po_number: null,
-          notes: 'Budget not available this period'
-        }
-      ];
-
-      setRequisitions(mockRequisitions);
+      const response = await apiClient.get('/api/purchase/requisitions');
+      setRequisitions(response.data?.data || response.data || []);
     } catch (err) {
       console.error('Error fetching requisitions:', err);
     } finally {

@@ -10,6 +10,7 @@ import {
   TeamOutlined, CloseOutlined, ExpandOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
+import apiClient from '../../../services/api';
 import './VideoCall.css';
 
 const { Title, Text } = Typography;
@@ -24,18 +25,11 @@ interface Participant {
   isScreenSharing: boolean;
 }
 
-// Sample participants
-const sampleParticipants: Participant[] = [
-  { id: '1', name: 'You', isMuted: false, isVideoOff: false, isSpeaking: false, isHost: true, isScreenSharing: false },
-  { id: '2', name: 'Sarah Johnson', isMuted: false, isVideoOff: false, isSpeaking: true, isHost: false, isScreenSharing: false },
-  { id: '3', name: 'Mike Wilson', isMuted: true, isVideoOff: false, isSpeaking: false, isHost: false, isScreenSharing: false },
-  { id: '4', name: 'Emily Chen', isMuted: false, isVideoOff: true, isSpeaking: false, isHost: false, isScreenSharing: false }
-];
-
 const VideoCall: React.FC = () => {
   const navigate = useNavigate();
   const { callId } = useParams();
-  const [participants, setParticipants] = useState<Participant[]>(sampleParticipants);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
@@ -43,6 +37,27 @@ const VideoCall: React.FC = () => {
   const [showParticipants, setShowParticipants] = useState(false);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [callDuration, setCallDuration] = useState(0);
+
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      try {
+        const response = await apiClient.get(`/api/communications/calls/${callId}/participants`);
+        const data = response.data?.data || response.data || [];
+        // Add current user if not present
+        if (!data.find((p: Participant) => p.id === '1')) {
+          data.unshift({ id: '1', name: 'You', isMuted: false, isVideoOff: false, isSpeaking: false, isHost: true, isScreenSharing: false });
+        }
+        setParticipants(data);
+      } catch (err) {
+        console.error('Error fetching participants:', err);
+        // Default to current user
+        setParticipants([{ id: '1', name: 'You', isMuted: false, isVideoOff: false, isSpeaking: false, isHost: true, isScreenSharing: false }]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchParticipants();
+  }, [callId]);
 
   // Timer for call duration
   useEffect(() => {
@@ -311,11 +326,11 @@ const VideoCall: React.FC = () => {
           <div>
             <Text type="secondary">Meeting Link</Text>
             <Input.Search
-              value="https://aetheros.app/meet/abc123"
+              value="https://siyabusa.app/meet/abc123"
               readOnly
               enterButton="Copy"
               onSearch={() => {
-                navigator.clipboard.writeText('https://aetheros.app/meet/abc123');
+                navigator.clipboard.writeText('https://siyabusa.app/meet/abc123');
                 message.success('Link copied!');
               }}
             />

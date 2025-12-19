@@ -122,7 +122,7 @@ export class RecurringEntriesController {
       const historyResult = await pool.query(
         `SELECT reh.*, je.journal_number
          FROM recurring_entry_history reh
-         LEFT JOIN journal_entries je ON reh.journal_entry_id = je.id
+         LEFT JOIN journal_entries je ON reh.journal_entry_id = je.entry_id
          WHERE reh.recurring_entry_id = $1
          ORDER BY reh.generated_date DESC
          LIMIT 20`,

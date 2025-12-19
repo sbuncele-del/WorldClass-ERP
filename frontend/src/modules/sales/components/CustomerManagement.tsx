@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './CustomerManagement.css';
 
 interface Customer {
@@ -81,7 +82,7 @@ const CustomerManagement: React.FC = () => {
       if (filterStatus) params.append('status', filterStatus);
       if (filterGroup) params.append('customer_group', filterGroup);
       
-      const response = await fetch(`http://localhost:3000/api/sales/customers?${params}`);
+      const response = await fetch(`${API_BASE_URL}/api/sales/customers?${params}`);
       const data = await response.json();
       setCustomers(data.customers || []);
     } catch (error) {
@@ -93,7 +94,7 @@ const CustomerManagement: React.FC = () => {
 
   const fetchCustomerDetails = async (id: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/sales/customers/${id}`);
+      const response = await fetch(`${API_BASE_URL}/api/sales/customers/${id}`);
       const data = await response.json();
       setSelectedCustomer(data.customer);
       setContacts(data.contacts || []);
@@ -133,8 +134,8 @@ const CustomerManagement: React.FC = () => {
     try {
       setLoading(true);
       const url = selectedCustomer
-        ? `http://localhost:3000/api/sales/customers/${selectedCustomer.id}`
-        : 'http://localhost:3000/api/sales/customers';
+        ? `${API_BASE_URL}/api/sales/customers/${selectedCustomer.id}`
+        : `${API_BASE_URL}/api/sales/customers`;
       
       const method = selectedCustomer ? 'PUT' : 'POST';
       
@@ -164,7 +165,7 @@ const CustomerManagement: React.FC = () => {
     if (!confirm('Are you sure you want to delete this customer?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/sales/customers/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/sales/customers/${id}`, {
         method: 'DELETE'
       });
 

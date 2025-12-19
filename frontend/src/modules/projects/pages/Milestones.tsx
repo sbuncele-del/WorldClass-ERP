@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, Timeline, Button, Space, Select, Tag, Progress, Modal, 
   Form, Input, DatePicker, message, Row, Col, Statistic, Avatar
@@ -23,94 +23,6 @@ interface Milestone {
   tasks: { total: number; completed: number };
 }
 
-// Sample data
-const sampleMilestones: Milestone[] = [
-  {
-    id: '1',
-    name: 'Design Approval',
-    description: 'Complete all design mockups and get stakeholder approval',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    date: '2024-01-30',
-    status: 'completed',
-    progress: 100,
-    assignee: 'Emily Chen',
-    tasks: { total: 8, completed: 8 }
-  },
-  {
-    id: '2',
-    name: 'Development Phase 1',
-    description: 'Complete core frontend components and basic functionality',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    date: '2024-02-15',
-    status: 'completed',
-    progress: 100,
-    assignee: 'Mike Wilson',
-    tasks: { total: 12, completed: 12 }
-  },
-  {
-    id: '3',
-    name: 'Beta Release',
-    description: 'Deploy beta version for internal testing',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    date: '2024-03-01',
-    status: 'in-progress',
-    progress: 75,
-    assignee: 'Sarah Johnson',
-    tasks: { total: 10, completed: 7 }
-  },
-  {
-    id: '4',
-    name: 'Final Launch',
-    description: 'Production deployment and public release',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    date: '2024-03-30',
-    status: 'upcoming',
-    progress: 0,
-    assignee: 'Sarah Johnson',
-    tasks: { total: 6, completed: 0 }
-  },
-  {
-    id: '5',
-    name: 'UI/UX Complete',
-    description: 'Finish all mobile app design work',
-    project: 'Mobile App',
-    projectColor: '#52c41a',
-    date: '2024-02-28',
-    status: 'completed',
-    progress: 100,
-    assignee: 'Emily Chen',
-    tasks: { total: 15, completed: 15 }
-  },
-  {
-    id: '6',
-    name: 'Alpha Release',
-    description: 'First internal alpha build for testing',
-    project: 'Mobile App',
-    projectColor: '#52c41a',
-    date: '2024-03-15',
-    status: 'overdue',
-    progress: 60,
-    assignee: 'Mike Wilson',
-    tasks: { total: 8, completed: 5 }
-  },
-  {
-    id: '7',
-    name: 'App Store Submission',
-    description: 'Submit to Apple App Store and Google Play',
-    project: 'Mobile App',
-    projectColor: '#52c41a',
-    date: '2024-06-15',
-    status: 'upcoming',
-    progress: 0,
-    assignee: 'Sarah Johnson',
-    tasks: { total: 4, completed: 0 }
-  }
-];
-
 const statusConfig = {
   'completed': { color: 'success', icon: <CheckCircleOutlined />, label: 'Completed' },
   'in-progress': { color: 'processing', icon: <ClockCircleOutlined />, label: 'In Progress' },
@@ -119,11 +31,29 @@ const statusConfig = {
 };
 
 const Milestones: React.FC = () => {
-  const [milestones, setMilestones] = useState<Milestone[]>(sampleMilestones);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [projectFilter, setProjectFilter] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [form] = Form.useForm();
+
+  // Fetch milestones from API
+  useEffect(() => {
+    const fetchMilestones = async () => {
+      try {
+        const res = await fetch('/api/projects/milestones', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setMilestones(data.milestones || data.data || data || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch milestones:', error);
+      }
+    };
+    fetchMilestones();
+  }, []);
 
   const projects = [...new Set(milestones.map(m => m.project))];
 

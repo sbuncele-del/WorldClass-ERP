@@ -98,113 +98,43 @@ const ProjectsDashboard: React.FC = () => {
   const loadDashboardData = async () => {
     setIsLoading(true);
     try {
-      // For now, use sample data until backend is ready
-      const sampleStats: DashboardStats = {
-        totalProjects: 12,
-        activeProjects: 5,
-        completedProjects: 4,
-        overdueProjects: 2,
-        totalTasks: 156,
-        completedTasks: 89,
-        totalHoursLogged: 1240,
-        averageProgress: 65
-      };
+      // Fetch stats from API
+      const statsResponse = await apiFetch('/api/projects/stats');
+      if (statsResponse) {
+        setStats({
+          totalProjects: statsResponse.totalProjects || 0,
+          activeProjects: statsResponse.activeProjects || 0,
+          completedProjects: statsResponse.completedProjects || 0,
+          overdueProjects: statsResponse.overdueProjects || 0,
+          totalTasks: statsResponse.totalTasks || 0,
+          completedTasks: statsResponse.completedTasks || 0,
+          totalHoursLogged: statsResponse.totalHoursLogged || 0,
+          averageProgress: statsResponse.averageProgress || 0
+        });
+      }
 
-      const sampleProjects: Project[] = [
-        {
-          id: '1',
-          name: 'ERP System Implementation',
-          description: 'Full enterprise resource planning system rollout',
-          status: 'active',
-          priority: 'high',
-          progress: 68,
-          startDate: '2025-01-01',
-          endDate: '2025-06-30',
-          budget: 150000,
-          spent: 98000,
-          teamSize: 8,
-          tasksTotal: 45,
-          tasksCompleted: 31,
-          owner: { id: '1', name: 'John Smith' },
-          team: [
-            { id: '1', name: 'John Smith' },
-            { id: '2', name: 'Sarah Johnson' },
-            { id: '3', name: 'Mike Chen' }
-          ],
-          tags: ['IT', 'Infrastructure'],
-          lastActivity: '2 hours ago'
-        },
-        {
-          id: '2',
-          name: 'Marketing Campaign Q1',
-          description: 'Brand awareness campaign for Q1 2025',
-          status: 'active',
-          priority: 'medium',
-          progress: 42,
-          startDate: '2025-01-15',
-          endDate: '2025-03-31',
-          budget: 50000,
-          spent: 18500,
-          teamSize: 4,
-          tasksTotal: 28,
-          tasksCompleted: 12,
-          owner: { id: '4', name: 'Emily Davis' },
-          team: [
-            { id: '4', name: 'Emily Davis' },
-            { id: '5', name: 'Tom Wilson' }
-          ],
-          tags: ['Marketing', 'Branding'],
-          lastActivity: '5 hours ago'
-        },
-        {
-          id: '3',
-          name: 'Office Relocation',
-          description: 'Move headquarters to new building',
-          status: 'planning',
-          priority: 'high',
-          progress: 15,
-          startDate: '2025-02-01',
-          endDate: '2025-04-30',
-          budget: 80000,
-          spent: 5000,
-          teamSize: 6,
-          tasksTotal: 35,
-          tasksCompleted: 5,
-          owner: { id: '6', name: 'Lisa Brown' },
-          team: [
-            { id: '6', name: 'Lisa Brown' },
-            { id: '7', name: 'James Lee' }
-          ],
-          tags: ['Operations', 'Facilities'],
-          lastActivity: '1 day ago'
-        },
-        {
-          id: '4',
-          name: 'Product Launch - Widget Pro',
-          description: 'Launch of new flagship product',
-          status: 'on-hold',
-          priority: 'critical',
-          progress: 55,
-          startDate: '2024-11-01',
-          endDate: '2025-02-28',
-          budget: 200000,
-          spent: 125000,
-          teamSize: 12,
-          tasksTotal: 62,
-          tasksCompleted: 34,
-          owner: { id: '8', name: 'David Martinez' },
-          team: [
-            { id: '8', name: 'David Martinez' },
-            { id: '9', name: 'Anna White' },
-            { id: '10', name: 'Chris Taylor' }
-          ],
-          tags: ['Product', 'Launch'],
-          lastActivity: '3 days ago'
-        }
-      ];
-
-      setStats(sampleStats);
-      setProjects(sampleProjects);
+      // Fetch projects from API
+      const projectsResponse = await apiFetch('/api/projects/list');
+      const projectsData = projectsResponse?.projects || projectsResponse || [];
+      setProjects(projectsData.map((p: any) => ({
+        id: p.id || p.project_id,
+        name: p.name || p.project_name,
+        description: p.description || '',
+        status: p.status || 'planning',
+        priority: p.priority || 'medium',
+        progress: p.progress || 0,
+        startDate: p.startDate || p.start_date || '',
+        endDate: p.endDate || p.end_date || '',
+        budget: p.budget || 0,
+        spent: p.spent || 0,
+        teamSize: p.teamSize || p.team_size || 0,
+        tasksTotal: p.tasksTotal || p.tasks_total || 0,
+        tasksCompleted: p.tasksCompleted || p.tasks_completed || 0,
+        owner: p.owner || { id: '', name: 'Unassigned' },
+        team: p.team || [],
+        tags: p.tags || [],
+        lastActivity: p.lastActivity || p.last_activity || ''
+      })));
     } catch (error) {
       console.error('Error loading projects:', error);
     } finally {

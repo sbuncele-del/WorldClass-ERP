@@ -51,7 +51,7 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
         END) as net_profit
       FROM journal_entry_lines jel
       JOIN chart_of_accounts coa ON jel.account_id = coa.id
-      JOIN journal_entries je ON jel.journal_entry_id = je.id
+      JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       WHERE je.status = 'POSTED'
         ${currentPeriod ? `AND je.posting_date >= $1 AND je.posting_date <= $2` : ''}
     `;
@@ -82,7 +82,7 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
         END) as total_equity
       FROM journal_entry_lines jel
       JOIN chart_of_accounts coa ON jel.account_id = coa.id
-      JOIN journal_entries je ON jel.journal_entry_id = je.id
+      JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       WHERE je.status = 'POSTED'
     `;
     const balancesResult = await client.query(balancesQuery);
@@ -173,7 +173,7 @@ export const getDimensionBreakdown = async (req: Request, res: Response): Promis
       FROM journal_entry_lines jel
       JOIN ${dimension.table} d ON jel.${dimension.idColumn} = d.id
       JOIN chart_of_accounts coa ON jel.account_id = coa.id
-      JOIN journal_entries je ON jel.journal_entry_id = je.id
+      JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       WHERE coa.account_type = $1
         AND je.status = 'POSTED'
         AND jel.${dimension.idColumn} IS NOT NULL
@@ -219,7 +219,7 @@ export const getRecentEntries = async (req: Request, res: Response): Promise<voi
 
     const query = `
       SELECT 
-        je.id,
+        je.entry_id,
         je.journal_number,
         je.posting_date,
         je.description,
@@ -231,10 +231,10 @@ export const getRecentEntries = async (req: Request, res: Response): Promise<voi
         fp.period_name,
         fp.fiscal_year
       FROM journal_entries je
-      LEFT JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      LEFT JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
       LEFT JOIN fiscal_periods fp ON je.posting_date >= fp.start_date 
         AND je.posting_date <= fp.end_date
-      GROUP BY je.id, fp.period_name, fp.fiscal_year
+      GROUP BY je.entry_id, fp.period_name, fp.fiscal_year
       ORDER BY je.created_at DESC
       LIMIT $1
     `;
@@ -242,7 +242,7 @@ export const getRecentEntries = async (req: Request, res: Response): Promise<voi
     const result = await client.query(query, [limit]);
     
     const entries = result.rows.map(row => ({
-      id: row.id,
+      entry_id: row.entry_id,
       journal_number: row.journal_number,
       posting_date: row.posting_date,
       description: row.description,

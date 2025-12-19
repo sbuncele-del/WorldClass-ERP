@@ -15,13 +15,12 @@ import { FeatureFlagProvider } from './contexts/FeatureFlagContext';
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 
-// Layout Components (loaded immediately for shell)
-import TopBar from './components/layout/TopBar';
-import Sidebar from './components/layout/Sidebar';
+// Premium Layout Components (loaded immediately for shell)
+import PremiumSidebar from './components/layout/PremiumSidebar';
+import PremiumTopBar from './components/layout/PremiumTopBar';
 
-// Premium Layout Components
-const PremiumSidebar = lazy(() => import('./components/layout/PremiumSidebar'));
-const PremiumTopBar = lazy(() => import('./components/layout/PremiumTopBar'));
+// Role-Based Workspace (Main Dashboard Hub)
+const RoleBasedWorkspace = lazy(() => import('./components/RoleBasedWorkspace'));
 
 // Landing Page (lazy loaded for performance)
 const LandingPage = lazy(() => import('./pages/LandingPage'));
@@ -38,6 +37,7 @@ const Support = lazy(() => import('./pages/Support'));
 const Partners = lazy(() => import('./pages/Partners'));
 const Blog = lazy(() => import('./pages/Blog'));
 const CaseStudies = lazy(() => import('./pages/CaseStudies'));
+const Pricing = lazy(() => import('./pages/Pricing'));
 
 // Lazy-loaded Authentication Pages
 const Signup = lazy(() => import('./pages/Signup'));
@@ -103,6 +103,11 @@ const MiningHub = lazy(() => import('./modules/mining/MiningHub'));
 const AgricultureHub = lazy(() => import('./modules/agriculture/AgricultureHub'));
 const ProjectsHub = lazy(() => import('./modules/projects/ProjectsHub'));
 const ProposalsHub = lazy(() => import('./modules/proposals/ProposalsHub'));
+const ProposalEditor = lazy(() => import('./modules/proposals/ProposalEditor'));
+const ProProposalBuilder = lazy(() => import('./modules/proposals/ProProposalBuilder'));
+const SmartProposalBuilder = lazy(() => import('./modules/proposals/SmartProposalBuilder'));
+const CoffeePitchDeck = lazy(() => import('./modules/proposals/CoffeePitchDeck'));
+const SiyaBusaPitchDeck = lazy(() => import('./modules/proposals/SiyaBusaPitchDeck'));
 const ConstructionHub = lazy(() => import('./modules/construction/ConstructionHub'));
 const HealthcareHub = lazy(() => import('./modules/healthcare/HealthcareHub'));
 const PropertyHub = lazy(() => import('./modules/property/PropertyHub'));
@@ -150,7 +155,7 @@ const PageLoader = () => (
 function App() {
   // Load saved theme on app startup
   useEffect(() => {
-    const savedTheme = localStorage.getItem('aetheros-theme-colors');
+    const savedTheme = localStorage.getItem('siyabusa-theme-colors');
     if (savedTheme) {
       try {
         const colors = JSON.parse(savedTheme);
@@ -166,7 +171,7 @@ function App() {
         document.documentElement.style.setProperty('--button-gradient', colors.gradient);
         document.documentElement.style.setProperty('--chart-gradient', colors.gradient);
         
-        const themeId = localStorage.getItem('aetheros-theme') || 'default';
+        const themeId = localStorage.getItem('siyabusa-theme') || 'default';
         document.body.setAttribute('data-theme', themeId);
       } catch {
         // Silently fail in production
@@ -238,6 +243,7 @@ function App() {
                       {/* Public Routes - No Layout */}
                       <Route path="/login" element={<Login />} />
                       <Route path="/signup" element={<Signup />} />
+                      <Route path="/pricing" element={<Pricing />} />
                       <Route path="/forgot-password" element={<ForgotPassword />} />
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/verify-email" element={<VerifyEmail />} />
@@ -263,62 +269,85 @@ function App() {
                         }
                       />
                       
-                      {/* Protected Routes - With Layout */}
+                      {/* Protected Routes - With Premium Layout */}
                       <Route path="/app/*" element={
                         <ProtectedRoute>
-                          <div className="app">
-                            <TopBar />
-                            <Sidebar />
+                          <div className="app premium-layout">
+                            <PremiumTopBar />
+                            <PremiumSidebar />
                             <main className="main-content-v2">
                               <Suspense fallback={<PageLoader />}>
                                 <Routes>
-                                  <Route path="/" element={<EnterpriseDashboard />} />
-                                  <Route path="/dashboard" element={<EnterpriseDashboard />} />
-                                  <Route path="/logistics/*" element={<LogisticsModule />} />
-                                  <Route path="/sales/*" element={<Sales />} />
-                                  <Route path="/purchase/*" element={<Purchase />} />
-                                  <Route path="/financial/*" element={<FinancialManagement />} />
-                                  <Route path="/inventory/*" element={<InventoryDashboard />} />
-                                  <Route path="/hr/*" element={<HRDashboard />} />
-                                  <Route path="/practice/*" element={<PracticeDashboard />} />
-                                  <Route path="/practice/clients" element={<ClientManagement />} />
-                                  <Route path="/assets/*" element={<AssetDashboard />} />
-                                  <Route path="/warehouse/*" element={<WarehouseDashboard />} />
-                                  <Route path="/manufacturing/*" element={<ManufacturingDashboard />} />
-                                  <Route path="/cash/*" element={<CashManagement />} />
-                                  <Route path="/banking/*" element={<BankingDashboard />} />
-                                  <Route path="/banking-hub" element={<BankingHub />} />
-                                  <Route path="/sars/*" element={<SARSSentinel />} />
-                                  <Route path="/multi-entity" element={<MultiEntityHub />} />
-                                  <Route path="/practice-hub" element={<PracticeHub />} />
-                                  <Route path="/hr-hub" element={<HRHub />} />
-                                  <Route path="/financial-hub" element={<FinancialHub />} />
-                                  <Route path="/sales-hub" element={<SalesHub />} />
-                                  <Route path="/inventory-hub" element={<InventoryHub />} />
-                                  <Route path="/purchase-hub" element={<PurchaseHub />} />
-                                  <Route path="/assets-hub" element={<AssetsHub />} />
-                                  <Route path="/warehouse-hub" element={<WarehouseHub />} />
-                                  <Route path="/manufacturing-hub" element={<ManufacturingHub />} />
-                                  <Route path="/logistics-hub" element={<LogisticsHub />} />
-                                  <Route path="/mining-hub" element={<MiningHub />} />
-                                  <Route path="/agriculture-hub" element={<AgricultureHub />} />
-                                  <Route path="/projects-hub" element={<ProjectsHub />} />
-                                  <Route path="/proposals-hub" element={<ProposalsHub />} />
-                                  <Route path="/construction-hub" element={<ConstructionHub />} />
-                                  <Route path="/healthcare-hub" element={<HealthcareHub />} />
-                                  <Route path="/property-hub" element={<PropertyHub />} />
-                                  <Route path="/communications-hub" element={<CommunicationsHub />} />
+                                  {/* Main Dashboard */}
+                                  <Route path="/" element={<RoleBasedWorkspace />} />
+                                  <Route path="/dashboard" element={<RoleBasedWorkspace />} />
+                                  <Route path="/workspace" element={<RoleBasedWorkspace />} />
+                                  
+                                  {/* Core Business Hubs */}
+                                  <Route path="/sales/*" element={<SalesHub />} />
+                                  <Route path="/sales-hub/*" element={<SalesHub />} />
+                                  <Route path="/purchase/*" element={<PurchaseHub />} />
+                                  <Route path="/purchase-hub/*" element={<PurchaseHub />} />
+                                  <Route path="/inventory/*" element={<InventoryHub />} />
+                                  <Route path="/inventory-hub/*" element={<InventoryHub />} />
+                                  <Route path="/warehouse/*" element={<WarehouseHub />} />
+                                  <Route path="/warehouse-hub/*" element={<WarehouseHub />} />
+                                  <Route path="/manufacturing/*" element={<ManufacturingHub />} />
+                                  <Route path="/manufacturing-hub/*" element={<ManufacturingHub />} />
+                                  
+                                  {/* Financial Hubs */}
+                                  <Route path="/financial/*" element={<FinancialHub />} />
+                                  <Route path="/financial-hub/*" element={<FinancialHub />} />
+                                  <Route path="/banking/*" element={<BankingHub />} />
+                                  <Route path="/banking-hub/*" element={<BankingHub />} />
+                                  <Route path="/assets/*" element={<AssetsHub />} />
+                                  <Route path="/assets-hub/*" element={<AssetsHub />} />
+                                  <Route path="/treasury" element={<TreasuryManagement />} />
+                                  <Route path="/cash" element={<CashManagement />} />
+                                  <Route path="/cash-management" element={<CashManagement />} />
+                                  
+                                  {/* HR & Practice Hubs */}
+                                  <Route path="/hr/*" element={<HRHub />} />
+                                  <Route path="/hr-hub/*" element={<HRHub />} />
+                                  <Route path="/practice/*" element={<PracticeHub />} />
+                                  <Route path="/practice-hub/*" element={<PracticeHub />} />
+                                  
+                                  {/* Operations Hubs */}
+                                  <Route path="/logistics/*" element={<LogisticsHub />} />
+                                  <Route path="/logistics-hub/*" element={<LogisticsHub />} />
+                                  <Route path="/projects/*" element={<ProjectsHub />} />
+                                  <Route path="/projects-hub/*" element={<ProjectsHub />} />
+                                  <Route path="/proposals/pitch/coffee" element={<CoffeePitchDeck />} />
+                                  <Route path="/proposals/pitch/siyabusa" element={<SiyaBusaPitchDeck />} />
+                                  <Route path="/proposals/new" element={<SmartProposalBuilder />} />
+                                  <Route path="/proposals/builder" element={<SmartProposalBuilder />} />
+                                  <Route path="/proposals/edit/:id" element={<ProposalEditor />} />
+                                  <Route path="/proposals" element={<ProposalsHub />} />
+                                  <Route path="/communication/*" element={<CommunicationsHub />} />
+                                  <Route path="/communications-hub/*" element={<CommunicationsHub />} />
+                                  <Route path="/calendar/*" element={<CalendarModule />} />
+                                  
+                                  {/* Industry Hubs */}
+                                  <Route path="/healthcare/*" element={<HealthcareHub />} />
+                                  <Route path="/healthcare-hub/*" element={<HealthcareHub />} />
+                                  <Route path="/construction/*" element={<ConstructionHub />} />
+                                  <Route path="/construction-hub/*" element={<ConstructionHub />} />
+                                  <Route path="/agriculture/*" element={<AgricultureHub />} />
+                                  <Route path="/agriculture-hub/*" element={<AgricultureHub />} />
+                                  <Route path="/mining/*" element={<MiningHub />} />
+                                  <Route path="/mining-hub/*" element={<MiningHub />} />
+                                  <Route path="/property/*" element={<PropertyHub />} />
+                                  <Route path="/property-hub/*" element={<PropertyHub />} />
+                                  
+                                  {/* Compliance & Admin Hubs */}
                                   <Route path="/audit-ready" element={<AuditReadyHub />} />
                                   <Route path="/regulatory" element={<RegulatoryHub />} />
-                                  <Route path="/admin-hub" element={<AdminHub />} />
-                                  <Route path="/projects/*" element={<ProjectsModule />} />
-                                  <Route path="/communication/*" element={<CommunicationModule />} />
-                                  <Route path="/calendar/*" element={<CalendarModule />} />
-                                  <Route path="/proposals/*" element={<ProposalsModule />} />
-                                  <Route path="/workspace" element={<MyWorkspace />} />
-                                  <Route path="/audit" element={<AuditReady />} />
-                                  <Route path="/treasury" element={<TreasuryManagement />} />
-                                  <Route path="/api-test" element={<APITestDashboard />} />
+                                  <Route path="/sars/*" element={<SARSSentinel />} />
+                                  <Route path="/admin/*" element={<AdminHub />} />
+                                  <Route path="/admin-hub/*" element={<AdminHub />} />
+                                  <Route path="/multi-entity" element={<MultiEntityHub />} />
+                                  
+                                  {/* Settings & Profile */}
                                   <Route path="/profile" element={<ProfileSettings />} />
                                   <Route path="/tenant-settings" element={<TenantSettings />} />
                                   <Route path="/users" element={<UserManagement />} />
@@ -327,13 +356,7 @@ function App() {
                                   <Route path="/help" element={<HelpCenter />} />
                                   <Route path="/onboarding" element={<Onboarding />} />
                                   <Route path="/billing" element={<Billing />} />
-                                  {/* Industry Pages */}
-                                  <Route path="/healthcare/*" element={<Healthcare />} />
-                                  <Route path="/construction/*" element={<Construction />} />
-                                  <Route path="/agriculture/*" element={<Agriculture />} />
-                                  <Route path="/mining/*" element={<Mining />} />
-                                  <Route path="/wholesale/*" element={<Wholesale />} />
-                                  <Route path="/professional-services/*" element={<ProfessionalServices />} />
+                                  <Route path="/api-test" element={<APITestDashboard />} />
                                 </Routes>
                               </Suspense>
                             </main>

@@ -3,7 +3,9 @@
  * Centralized service for all logistics module API calls
  */
 
-import { getApiUrl, apiFetch, uploadFile } from '../utils/api';
+import { apiGet, apiPost, apiPut, apiPatch, apiDelete, apiUpload } from '../services/api.service';
+
+const BASE = '/api/v2/logistics';
 
 export interface Trip {
   trip_id: string;
@@ -92,75 +94,49 @@ export const tripsAPI = {
     from_date?: string;
     to_date?: string;
   }): Promise<{ trips: Trip[]; total: number }> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-      });
-    }
-
-    const url = `/api/logistics/trips${params.toString() ? `?${params.toString()}` : ''}`;
-    return apiFetch(url);
+    return apiGet(`${BASE}/trips`, filters);
   },
 
   /**
    * Get single trip by ID
    */
   async getTripById(tripId: string): Promise<Trip> {
-    return apiFetch(`/api/logistics/trips/${tripId}`);
+    return apiGet(`${BASE}/trips/${tripId}`);
   },
 
   /**
    * Create new trip
    */
   async createTrip(tripData: Partial<Trip>): Promise<Trip> {
-    return apiFetch('/api/logistics/trips', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(tripData),
-    });
+    return apiPost(`${BASE}/trips`, tripData);
   },
 
   /**
    * Update trip
    */
   async updateTrip(tripId: string, tripData: Partial<Trip>): Promise<Trip> {
-    return apiFetch(`/api/logistics/trips/${tripId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(tripData),
-    });
+    return apiPut(`${BASE}/trips/${tripId}`, tripData);
   },
 
   /**
    * Update trip status
    */
   async updateTripStatus(tripId: string, status: Trip['status']): Promise<void> {
-    return apiFetch(`/api/logistics/trips/${tripId}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
+    return apiPatch(`${BASE}/trips/${tripId}`, { status });
   },
 
   /**
    * Start trip
    */
   async startTrip(tripId: string): Promise<void> {
-    return apiFetch(`/api/logistics/trips/${tripId}/start`, {
-      method: 'POST',
-    });
+    return apiPost(`${BASE}/trips/${tripId}/start`);
   },
 
   /**
    * Complete trip
    */
   async completeTrip(tripId: string, podData?: any): Promise<void> {
-    return apiFetch(`/api/logistics/trips/${tripId}/complete`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(podData || {}),
-    });
+    return apiPost(`${BASE}/trips/${tripId}/complete`, podData || {});
   },
 };
 
@@ -180,35 +156,21 @@ export const fuelAPI = {
     limit?: string;
     page?: string;
   }): Promise<FuelTransactionResponse> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) params.append(key, String(value));
-      });
-    }
-
-    const url = `/api/logistics/fuel${params.toString() ? `?${params.toString()}` : ''}`;
-    return apiFetch(url);
+    return apiGet(`${BASE}/fuel`, filters);
   },
 
   /**
    * Create fuel transaction
    */
   async createFuelTransaction(data: Partial<FuelTransaction>): Promise<{ fuel_transaction: FuelTransaction }> {
-    return apiFetch('/api/logistics/fuel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    return apiPost(`${BASE}/fuel`, data);
   },
 
   /**
    * Reconcile fuel transaction
    */
   async reconcileFuelTransaction(id: number | string): Promise<void> {
-    return apiFetch(`/api/logistics/fuel/${id}/reconcile`, {
-      method: 'POST',
-    });
+    return apiPost(`${BASE}/fuel/reconcile`, { id });
   },
 };
 
@@ -220,36 +182,28 @@ export const loadsAPI = {
    * Get all loads
    */
   async getLoads(): Promise<any[]> {
-    return apiFetch('/api/logistics/loads');
+    return apiGet(`${BASE}/loads`);
   },
 
   /**
    * Get load by ID
    */
   async getLoadById(loadId: string): Promise<any> {
-    return apiFetch(`/api/logistics/loads/${loadId}`);
+    return apiGet(`${BASE}/loads/${loadId}`);
   },
 
   /**
    * Create new load
    */
   async createLoad(loadData: any): Promise<any> {
-    return apiFetch('/api/logistics/loads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(loadData),
-    });
+    return apiPost(`${BASE}/loads`, loadData);
   },
 
   /**
    * Update load status
    */
   async updateLoadStatus(loadId: string, status: string): Promise<void> {
-    return apiFetch(`/api/logistics/loads/${loadId}/status`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
+    return apiPut(`${BASE}/loads/${loadId}/status`, { status });
   },
 };
 
@@ -261,21 +215,15 @@ export const maintenanceAPI = {
    * Get maintenance records
    */
   async getMaintenanceRecords(vehicleReg?: string): Promise<any[]> {
-    const url = vehicleReg 
-      ? `/api/logistics/maintenance?vehicle_reg=${vehicleReg}`
-      : '/api/logistics/maintenance';
-    return apiFetch(url);
+    const params = vehicleReg ? { vehicle_reg: vehicleReg } : undefined;
+    return apiGet(`${BASE}/maintenance`, params);
   },
 
   /**
    * Create maintenance record
    */
   async createMaintenanceRecord(data: any): Promise<any> {
-    return apiFetch('/api/logistics/maintenance', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    return apiPost(`${BASE}/maintenance`, data);
   },
 };
 
@@ -287,7 +235,11 @@ export const documentsAPI = {
    * Extract data from document using AWS Textract
    */
   async extractDocument(file: File, onProgress?: (progress: number) => void): Promise<DocumentExtraction> {
-    return uploadFile('/api/logistics/documents/extract', file, onProgress);
+    return apiUpload(`${BASE}/documents/extract`, (() => {
+      const formData = new FormData();
+      formData.append('file', file);
+      return formData;
+    })());
   },
 };
 
@@ -299,7 +251,7 @@ export const dashboardAPI = {
    * Get logistics dashboard statistics
    */
   async getDashboardStats(): Promise<any> {
-    return apiFetch('/api/logistics/dashboard');
+    return apiGet(`${BASE}/dashboard`);
   },
 };
 
@@ -315,53 +267,35 @@ export const vehiclesAPI = {
     vehicle_type?: string;
     search?: string;
   }): Promise<{ vehicles: Vehicle[]; total: number }> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-      });
-    }
-
-    const url = `/api/logistics/vehicles${params.toString() ? `?${params.toString()}` : ''}`;
-    return apiFetch(url);
+    return apiGet(`${BASE}/vehicles`, filters);
   },
 
   /**
    * Get single vehicle by ID
    */
   async getVehicleById(vehicleId: number): Promise<Vehicle> {
-    return apiFetch(`/api/logistics/vehicles/${vehicleId}`);
+    return apiGet(`${BASE}/vehicles/${vehicleId}`);
   },
 
   /**
    * Create new vehicle
    */
   async createVehicle(vehicleData: Partial<Vehicle>): Promise<Vehicle> {
-    return apiFetch('/api/logistics/vehicles', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(vehicleData),
-    });
+    return apiPost(`${BASE}/vehicles`, vehicleData);
   },
 
   /**
    * Update vehicle
    */
   async updateVehicle(vehicleId: number, vehicleData: Partial<Vehicle>): Promise<Vehicle> {
-    return apiFetch(`/api/logistics/vehicles/${vehicleId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(vehicleData),
-    });
+    return apiPut(`${BASE}/vehicles/${vehicleId}`, vehicleData);
   },
 
   /**
    * Delete vehicle
    */
   async deleteVehicle(vehicleId: number): Promise<void> {
-    return apiFetch(`/api/logistics/vehicles/${vehicleId}`, {
-      method: 'DELETE',
-    });
+    return apiDelete(`${BASE}/vehicles/${vehicleId}`);
   },
 };
 
@@ -377,53 +311,35 @@ export const driversAPI = {
     license_class?: string;
     search?: string;
   }): Promise<{ drivers: any[]; total: number }> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-      });
-    }
-
-    const url = `/api/logistics/drivers${params.toString() ? `?${params.toString()}` : ''}`;
-    return apiFetch(url);
+    return apiGet(`${BASE}/drivers`, filters);
   },
 
   /**
    * Get single driver by ID
    */
   async getDriverById(driverId: number): Promise<any> {
-    return apiFetch(`/api/logistics/drivers/${driverId}`);
+    return apiGet(`${BASE}/drivers/${driverId}`);
   },
 
   /**
    * Create new driver
    */
   async createDriver(driverData: any): Promise<any> {
-    return apiFetch('/api/logistics/drivers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(driverData),
-    });
+    return apiPost(`${BASE}/drivers`, driverData);
   },
 
   /**
    * Update driver
    */
   async updateDriver(driverId: number, driverData: any): Promise<any> {
-    return apiFetch(`/api/logistics/drivers/${driverId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(driverData),
-    });
+    return apiPut(`${BASE}/drivers/${driverId}`, driverData);
   },
 
   /**
    * Delete driver
    */
   async deleteDriver(driverId: number): Promise<void> {
-    return apiFetch(`/api/logistics/drivers/${driverId}`, {
-      method: 'DELETE',
-    });
+    return apiDelete(`${BASE}/drivers/${driverId}`);
   },
 };
 
@@ -435,7 +351,7 @@ export const workspaceAPI = {
    * Get logistics workspace data
    */
   async getWorkspace(): Promise<any> {
-    return apiFetch('/api/logistics/workspace');
+    return apiGet(`${BASE}/workspace`);
   },
 };
 
@@ -474,37 +390,23 @@ export const routesAPI = {
     page?: number;
     limit?: number;
   }): Promise<{ routes: Route[]; total: number; page: number; totalPages: number }> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) params.append(key, String(value));
-      });
-    }
-    return apiFetch(`/api/logistics/routes${params.toString() ? `?${params}` : ''}`);
+    return apiGet(`${BASE}/routes`, filters);
   },
 
   async getRouteById(routeId: number): Promise<Route> {
-    return apiFetch(`/api/logistics/routes/${routeId}`);
+    return apiGet(`${BASE}/routes/${routeId}`);
   },
 
   async createRoute(data: Partial<Route>): Promise<Route> {
-    return apiFetch('/api/logistics/routes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    return apiPost(`${BASE}/routes`, data);
   },
 
   async updateRoute(routeId: number, data: Partial<Route>): Promise<Route> {
-    return apiFetch(`/api/logistics/routes/${routeId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    return apiPut(`${BASE}/routes/${routeId}`, data);
   },
 
   async deleteRoute(routeId: number): Promise<void> {
-    return apiFetch(`/api/logistics/routes/${routeId}`, { method: 'DELETE' });
+    return apiDelete(`${BASE}/routes/${routeId}`);
   },
 };
 
@@ -554,37 +456,23 @@ export const incidentsAPI = {
     page?: number;
     limit?: number;
   }): Promise<{ incidents: Incident[]; total: number; page: number; totalPages: number }> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) params.append(key, String(value));
-      });
-    }
-    return apiFetch(`/api/logistics/incidents${params.toString() ? `?${params}` : ''}`);
+    return apiGet(`${BASE}/incidents`, filters);
   },
 
   async getIncidentById(incidentId: number): Promise<Incident> {
-    return apiFetch(`/api/logistics/incidents/${incidentId}`);
+    return apiGet(`${BASE}/incidents/${incidentId}`);
   },
 
   async createIncident(data: Partial<Incident>): Promise<Incident> {
-    return apiFetch('/api/logistics/incidents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    return apiPost(`${BASE}/incidents`, data);
   },
 
   async updateIncident(incidentId: number, data: Partial<Incident>): Promise<Incident> {
-    return apiFetch(`/api/logistics/incidents/${incidentId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    return apiPut(`${BASE}/incidents/${incidentId}`, data);
   },
 
   async deleteIncident(incidentId: number): Promise<void> {
-    return apiFetch(`/api/logistics/incidents/${incidentId}`, { method: 'DELETE' });
+    return apiDelete(`${BASE}/incidents/${incidentId}`);
   },
 };
 
@@ -639,55 +527,27 @@ export const geofencesAPI = {
     page?: number;
     limit?: number;
   }): Promise<{ geofences: Geofence[]; total: number; page: number; totalPages: number }> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) params.append(key, String(value));
-      });
-    }
-    return apiFetch(`/api/logistics/geofences${params.toString() ? `?${params}` : ''}`);
+    return apiGet(`${BASE}/geofences`, filters);
   },
 
   async getGeofenceById(geofenceId: number): Promise<Geofence> {
-    return apiFetch(`/api/logistics/geofences/${geofenceId}`);
+    return apiGet(`${BASE}/geofences/${geofenceId}`);
   },
 
   async createGeofence(data: Partial<Geofence>): Promise<Geofence> {
-    return apiFetch('/api/logistics/geofences', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    return apiPost(`${BASE}/geofences`, data);
   },
 
   async updateGeofence(geofenceId: number, data: Partial<Geofence>): Promise<Geofence> {
-    return apiFetch(`/api/logistics/geofences/${geofenceId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
+    return apiPut(`${BASE}/geofences/${geofenceId}`, data);
   },
 
   async deleteGeofence(geofenceId: number): Promise<void> {
-    return apiFetch(`/api/logistics/geofences/${geofenceId}`, { method: 'DELETE' });
+    return apiDelete(`${BASE}/geofences/${geofenceId}`);
   },
 
-  async getGeofenceEvents(filters?: {
-    geofence_id?: number;
-    vehicle_id?: number;
-    event_type?: string;
-    start_date?: string;
-    end_date?: string;
-    page?: number;
-    limit?: number;
-  }): Promise<{ events: GeofenceEvent[]; page: number }> {
-    const params = new URLSearchParams();
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) params.append(key, String(value));
-      });
-    }
-    return apiFetch(`/api/logistics/geofence-events${params.toString() ? `?${params}` : ''}`);
+  async getGeofenceEvents(geofenceId: number): Promise<{ events: GeofenceEvent[]; page?: number }> {
+    return apiGet(`${BASE}/geofences/${geofenceId}/events`);
   },
 };
 

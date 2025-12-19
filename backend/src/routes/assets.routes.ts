@@ -1,81 +1,51 @@
 /**
- * Asset Management Routes
+ * Asset Management Routes (V2, tenant-aware)
  * API endpoints for fixed assets, depreciation, disposals, transfers, and maintenance
  * IAS 16 compliant asset lifecycle management
  */
 
 import { Router } from 'express';
-import assetsController from '../controllers/assets.controller';
-import * as assetsWorkspaceController from '../modules/assets/controllers/assets.workspace.controller';
+import { authenticateToken } from '../middleware/auth';
 import { tenantMiddleware } from '../middleware/tenant';
+import assetsController from '../controllers/assets.controller.v2';
+import * as assetsWorkspaceController from '../modules/assets/controllers/assets.workspace.controller';
 
 const router = Router();
 
-// Apply tenant middleware to all asset routes
+// All routes require authentication and tenant context
+router.use(authenticateToken);
 router.use(tenantMiddleware);
 
-// ==================================================
-// WORKSPACE
-// ==================================================
+// Workspace
 router.get('/workspace', assetsWorkspaceController.getAssetsWorkspace);
 
-// ==================================================
-// FIXED ASSETS
-// ==================================================
-
-// Get all assets (with filtering/pagination)
+// Fixed Assets CRUD
 router.get('/assets', assetsController.getAllAssets);
-
-// Get single asset by ID
 router.get('/assets/:id', assetsController.getAssetById);
-
-// Create new asset
 router.post('/assets', assetsController.createAsset);
-
-// Update asset
 router.put('/assets/:id', assetsController.updateAsset);
+router.delete('/assets/:id', assetsController.deleteAsset);
 
-// ==================================================
-// DEPRECIATION
-// ==================================================
+// Asset Categories
+router.get('/categories', assetsController.getAssetCategories);
+router.post('/categories', assetsController.createAssetCategory);
 
-// Calculate depreciation for specific asset and period
-router.post('/assets/:id/depreciation/calculate', assetsController.calculateDepreciation);
+// Depreciation
+router.post('/depreciation/run', assetsController.runDepreciation);
 
-// Get depreciation schedule projection for asset
-router.get('/assets/:asset_id/depreciation/schedule', assetsController.getDepreciationSchedule);
+// Disposals
+router.get('/disposals', assetsController.getAssetDisposals);
+router.post('/assets/:asset_id/dispose', assetsController.createAssetDisposal);
 
-// Batch calculate depreciation for all assets
-router.post('/assets/depreciation/batch', assetsController.batchCalculateDepreciation);
+// Transfers
+router.get('/transfers', assetsController.getAssetTransfers);
+router.post('/assets/:asset_id/transfer', assetsController.createAssetTransfer);
 
-// Post depreciation to GL
-router.post('/depreciation/post-to-gl', assetsController.postDepreciationToGL);
+// Maintenance
+router.get('/maintenance', assetsController.getAssetMaintenance);
+router.post('/assets/:asset_id/maintenance', assetsController.createAssetMaintenance);
 
-// ==================================================
-// DISPOSAL WORKFLOWS (IAS 16.67-72)
-// ==================================================
-
-// Dispose asset (sale, scrapping, write-off)
-router.post('/assets/:asset_id/dispose', assetsController.disposeAsset);
-
-// ==================================================
-// REVALUATION & IMPAIRMENT (IAS 16.31-42, IAS 36)
-// ==================================================
-
-// Get revaluation/impairment history
-router.get('/assets/:asset_id/valuations', assetsController.getRevaluations);
-
-// Record revaluation (IAS 16 revaluation model)
-router.post('/assets/:asset_id/revaluations', assetsController.createRevaluation);
-
-// Record impairment (IAS 36)
-router.post('/assets/:asset_id/impairments', assetsController.createImpairment);
-
-// ==================================================
-// CAPITAL VS EXPENSE CLASSIFICATION (IAS 16.7-14)
-// ==================================================
-
-// Classify expenditure as capital or expense
-router.post('/classify-expenditure', assetsController.classifyExpenditure);
+// Dashboard
+router.get('/dashboard', assetsController.getAssetDashboard);
 
 export default router;

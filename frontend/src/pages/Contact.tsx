@@ -25,7 +25,7 @@ const Contact: React.FC = () => {
       <nav className="footer-page-nav">
         <Link to="/" className="logo">
           <span className="logo-icon">◈</span>
-          <span>AetherOS</span>
+          <span>SiyaBusa</span>
         </Link>
         <Link to="/" className="back-link">← Back to Home</Link>
       </nav>
@@ -45,7 +45,7 @@ const Contact: React.FC = () => {
             <section className="contact-info">
               <h2>Get in Touch</h2>
               <p>
-                Have questions about AetherOS? Want to schedule a demo? Our team is here to help.
+                Have questions about SiyaBusa? Want to schedule a demo? Our team is here to help.
               </p>
 
               <div className="contact-methods">
@@ -53,7 +53,7 @@ const Contact: React.FC = () => {
                   <div className="contact-icon">📧</div>
                   <div>
                     <h3>General Inquiries</h3>
-                    <a href="mailto:hello@aetheros.io">hello@aetheros.io</a>
+                    <a href="mailto:hello@siyabusa.co.za">hello@siyabusa.co.za</a>
                   </div>
                 </div>
 
@@ -61,7 +61,7 @@ const Contact: React.FC = () => {
                   <div className="contact-icon">💼</div>
                   <div>
                     <h3>Sales</h3>
-                    <a href="mailto:sales@aetheros.io">sales@aetheros.io</a>
+                    <a href="mailto:sales@siyabusa.co.za">sales@siyabusa.co.za</a>
                   </div>
                 </div>
 
@@ -69,7 +69,7 @@ const Contact: React.FC = () => {
                   <div className="contact-icon">🛠️</div>
                   <div>
                     <h3>Support</h3>
-                    <a href="mailto:support@aetheros.io">support@aetheros.io</a>
+                    <a href="mailto:support@siyabusa.co.za">support@siyabusa.co.za</a>
                   </div>
                 </div>
 
@@ -85,7 +85,7 @@ const Contact: React.FC = () => {
               <div className="company-info-box">
                 <h3>Masaphokati Technologies (Pty) Ltd</h3>
                 <p>
-                  The company behind AetherOS, dedicated to transforming how African 
+                  The company behind SiyaBusa, dedicated to transforming how African 
                   businesses manage their operations.
                 </p>
               </div>
@@ -178,7 +178,7 @@ const Contact: React.FC = () => {
       </main>
 
       <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} AetherOS by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
       </footer>
     </div>
   );

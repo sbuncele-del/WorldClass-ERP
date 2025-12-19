@@ -1,20 +1,35 @@
 /**
  * Centralized API Service
- * All API calls should go through this service to ensure:
- * 1. Consistent base URL
- * 2. Authentication headers
- * 3. Error handling
- * 4. Tenant context
+ * 
+ * ALL API calls MUST go through this service. No exceptions.
+ * 
+ * Features:
+ * 1. Single source of truth for API base URL
+ * 2. Automatic authentication headers
+ * 3. Tenant context injection
+ * 4. Consistent error handling
+ * 5. Request/response logging in development
+ * 
+ * Usage:
+ *   import { api } from '@/services/api.service';
+ *   const data = await api.get('/api/sales/customers');
+ *   const result = await api.post('/api/sales/orders', orderData);
  */
 
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Empty string = use relative URLs (same origin, e.g., CloudFront proxy)
+// Set VITE_API_URL only if API is on a different domain
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
+// Export for components that need direct access (rare cases)
+export { API_BASE_URL };
 
 /**
  * Get authentication token from localStorage
  */
 const getAuthToken = (): string | null => {
-  return localStorage.getItem('token');
+  // Accept both token keys for compatibility
+  return localStorage.getItem('token') || localStorage.getItem('authToken');
 };
 
 /**
@@ -66,6 +81,7 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
     // Handle authentication errors
     if (response.status === 401) {
       localStorage.removeItem('token');
+      localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       window.location.href = '/login';
       throw new Error('Authentication required');
@@ -206,15 +222,20 @@ export const workspaceApi = {
     getQuotations: (params?: any) => apiGet('/api/sales/quotations', params),
     createLead: (data: any) => apiPost('/api/sales/leads', data),
     updateLead: (id: number, data: any) => apiPut(`/api/sales/leads/${id}`, data),
+    createCustomer: (data: any) => apiPost('/api/sales/customers', data),
+    createOrder: (data: any) => apiPost('/api/sales/orders', data),
+    createQuotation: (data: any) => apiPost('/api/sales/quotations', data),
   },
 
   // Purchase Workspace
   purchase: {
+    getWorkspace: () => apiGet('/api/purchase/workspace'),
     getDashboard: () => apiGet('/api/purchase/dashboard'),
     getSuppliers: (params?: any) => apiGet('/api/purchase/suppliers', params),
     getRequisitions: (params?: any) => apiGet('/api/purchase/requisitions', params),
     getPurchaseOrders: (params?: any) => apiGet('/api/purchase/orders', params),
     createPurchaseOrder: (data: any) => apiPost('/api/purchase/orders', data),
+    createSupplier: (data: any) => apiPost('/api/purchase/suppliers', data),
   },
 
   // Inventory Workspace
@@ -293,6 +314,7 @@ export const workspaceApi = {
     getRoles: () => apiGet('/api/admin/roles'),
     getPermissions: () => apiGet('/api/admin/permissions'),
     createUser: (data: any) => apiPost('/api/admin/users', data),
+    getAuditLogs: (params?: any) => apiGet('/api/admin/audit-logs', params),
   },
 
   // Cash Management Workspace
@@ -361,6 +383,7 @@ export const authApi = {
     // Store token and user info
     if (response.token) {
       localStorage.setItem('token', response.token);
+      localStorage.setItem('authToken', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       if (response.workspace) {
         localStorage.setItem('workspaceId', response.workspace.id);
@@ -376,6 +399,7 @@ export const authApi = {
       await apiPost('/api/auth/logout');
     } finally {
       localStorage.removeItem('token');
+      localStorage.removeItem('authToken');
       localStorage.removeItem('user');
       localStorage.removeItem('workspaceId');
       localStorage.removeItem('tenantId');
@@ -386,16 +410,13 @@ export const authApi = {
 
   register: (data: any) => apiPost('/api/auth/register', data),
 
-  forgotPassword: (email: string) => apiPost('/api/auth/forgot-password', { email }),
-
-  resetPassword: (token: string, password: string) => 
-    apiPost('/api/auth/reset-password', { token, password }),
+  // Password reset flow (V2 controllers)
+  requestPasswordReset: (email: string) => apiPost('/api/v2/auth/password/reset-request', { email }),
+  verifyResetToken: (token: string) => apiPost('/api/v2/auth/password/verify-token', { token }),
+  validatePassword: (password: string) => apiPost('/api/v2/auth/password/validate', { password }),
+  resetPassword: (token: string, password: string, confirmPassword?: string) => 
+    apiPost('/api/v2/auth/password/reset', { token, password, confirmPassword: confirmPassword ?? password }),
 };
-
-/**
- * Export API base URL for direct usage if needed
- */
-export { API_BASE_URL };
 
 /**
  * Export a test function to check API connectivity

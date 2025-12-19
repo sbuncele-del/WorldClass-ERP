@@ -1,31 +1,37 @@
+/**
+ * Audit Trail Routes (V2, tenant-aware)
+ * Delegates to tenant-hardened V2 controller.
+ */
 import { Router } from 'express';
-import auditTrailController from '../controllers/audit-trail.controller';
+import { authenticateToken } from '../middleware/auth';
 import { tenantMiddleware } from '../middleware/tenant';
+import AuditTrailControllerV2 from '../controllers/audit-trail.controller.v2';
 
 const router = Router();
 
-// Apply tenant middleware to all audit trail routes
+// All routes require authentication and tenant context
+router.use(authenticateToken);
 router.use(tenantMiddleware);
 
 // Get audit logs with filters
-router.get('/', auditTrailController.getAuditLogs.bind(auditTrailController));
-
-// Get single audit log
-router.get('/:id', auditTrailController.getAuditLogById.bind(auditTrailController));
+router.get('/', AuditTrailControllerV2.getAuditTrail);
 
 // Get entity history
-router.get('/entity/:entity_type/:entity_id', auditTrailController.getEntityHistory.bind(auditTrailController));
+router.get('/entity/:entity_type/:entity_id', AuditTrailControllerV2.getEntityHistory);
 
 // Get user activity
-router.get('/user/:user_id/activity', auditTrailController.getUserActivity.bind(auditTrailController));
+router.get('/user/:user_id/activity', AuditTrailControllerV2.getUserActivity);
 
 // Get audit summary statistics
-router.get('/summary/statistics', auditTrailController.getAuditSummary.bind(auditTrailController));
+router.get('/summary', AuditTrailControllerV2.getAuditSummary);
 
-// Create manual audit log
-router.post('/', auditTrailController.createAuditLog.bind(auditTrailController));
+// Export audit trail to CSV
+router.get('/export', AuditTrailControllerV2.exportAuditTrail);
 
-// Export audit logs to CSV
-router.get('/export/csv', auditTrailController.exportAuditLogs.bind(auditTrailController));
+// Log manual audit entry
+router.post('/', AuditTrailControllerV2.logAuditEntry);
+
+// Get change comparison
+router.get('/:id/comparison', AuditTrailControllerV2.getChangeComparison);
 
 export default router;

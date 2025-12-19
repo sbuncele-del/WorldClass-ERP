@@ -92,12 +92,12 @@ export const getVehicles = async (req: TenantRequest, res: Response) => {
     }
 
     if (search) {
-      query += ` AND (v.registration_number ILIKE $${paramCount} OR v.make ILIKE $${paramCount} OR v.model ILIKE $${paramCount})`;
+      query += ` AND (v.vehicle_registration ILIKE $${paramCount} OR v.make ILIKE $${paramCount} OR v.model ILIKE $${paramCount})`;
       values.push(`%${search}%`);
       paramCount++;
     }
 
-    query += ` ORDER BY v.registration_number ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    query += ` ORDER BY v.vehicle_registration ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     values.push(parseInt(limit as string), offset);
 
     const result = await pool.query(query, values);
@@ -152,22 +152,22 @@ export const createVehicle = async (req: TenantRequest, res: Response) => {
 
     const result = await pool.query(
       `INSERT INTO logistics.vehicles (
-        tenant_id, registration_number, make, model, year, vehicle_type,
-        capacity_weight, capacity_volume, fuel_type, status, created_by
+        tenant_id, vehicle_registration, make, model, year, vehicle_type,
+        capacity_kg, capacity_m3, fuel_type, status, notes
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *`,
       [
         tenantId,
-        vehicleData.registration_number,
+        vehicleData.vehicle_registration || vehicleData.registration_number,
         vehicleData.make,
         vehicleData.model,
         vehicleData.year,
         vehicleData.vehicle_type,
-        vehicleData.capacity_weight,
-        vehicleData.capacity_volume,
+        vehicleData.capacity_kg || vehicleData.capacity_weight,
+        vehicleData.capacity_m3 || vehicleData.capacity_volume,
         vehicleData.fuel_type,
         vehicleData.status || 'ACTIVE',
-        userId
+        vehicleData.notes
       ]
     );
 
@@ -326,7 +326,7 @@ export const getRoutes = async (req: TenantRequest, res: Response) => {
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
     let query = `
-      SELECT r.*, v.registration_number, d.first_name || ' ' || d.last_name as driver_name
+      SELECT r.*, v.vehicle_registration, d.first_name || ' ' || d.last_name as driver_name
       FROM logistics.routes r
       LEFT JOIN logistics.vehicles v ON r.vehicle_id = v.vehicle_id
       LEFT JOIN logistics.drivers d ON r.driver_id = d.driver_id

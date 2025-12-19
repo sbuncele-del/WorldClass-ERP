@@ -619,6 +619,283 @@ export const updateUserEntityPermissions = async (req: TenantRequest, res: Respo
   }
 };
 
+// ============================================================================
+// USER ENTITIES (for current user)
+// ============================================================================
+
+/**
+ * Get entities accessible by current user
+ */
+export const getUserEntities = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+
+    const result = await pool.query(
+      `SELECT DISTINCT
+        e.id,
+        e.code,
+        e.name,
+        e.type,
+        e.level,
+        e.status,
+        ep.can_view,
+        ep.can_edit,
+        ep.can_post,
+        ep.can_approve
+       FROM legal_entities e
+       LEFT JOIN entity_permissions ep ON e.id = ep.entity_id AND ep.user_id = $2
+       WHERE e.tenant_id = $1 
+         AND (ep.can_view = true OR NOT EXISTS (SELECT 1 FROM entity_permissions WHERE entity_id = e.id))
+       ORDER BY e.level, e.name`,
+      [tenantId, userId]
+    );
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get user entities error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get user entities' });
+  }
+};
+
+/**
+ * Grant entity permission to user
+ */
+export const grantEntityPermission = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId: currentUserId } = getTenantContext(req);
+    const { user_id, entity_id, can_view, can_edit, can_post, can_approve } = req.body;
+
+    if (!user_id || !entity_id) {
+      return res.status(400).json({ success: false, error: 'user_id and entity_id are required' });
+    }
+
+    // Verify entity belongs to tenant
+    const entityCheck = await pool.query(
+      `SELECT id FROM legal_entities WHERE id = $1 AND tenant_id = $2`,
+      [entity_id, tenantId]
+    );
+
+    if (entityCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Entity not found' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO entity_permissions 
+        (user_id, entity_id, can_view, can_edit, can_post, can_approve, updated_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       ON CONFLICT (user_id, entity_id) DO UPDATE SET
+         can_view = $3,
+         can_edit = $4,
+         can_post = $5,
+         can_approve = $6,
+         updated_by = $7,
+         updated_at = NOW()
+       RETURNING *`,
+      [user_id, entity_id, can_view ?? true, can_edit ?? false, can_post ?? false, can_approve ?? false, currentUserId]
+    );
+
+    res.json({
+      success: true,
+      data: result.rows[0],
+      message: 'Entity permission granted'
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Grant entity permission error:', error);
+    res.status(500).json({ success: false, error: 'Failed to grant entity permission' });
+  }
+};
+
+// ============================================================================
+// INTER-ENTITY TRANSACTIONS
+// ============================================================================
+
+/**
+ * Get inter-entity transactions
+ */
+export const getInterEntityTransactions = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { entityId, status, startDate, endDate, page = 1, limit = 50 } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
+
+    let query = `
+      SELECT 
+        it.*,
+        se.name as source_entity_name,
+        te.name as target_entity_name
+       FROM intercompany_transactions it
+       JOIN legal_entities se ON it.source_entity_id = se.id
+       JOIN legal_entities te ON it.target_entity_id = te.id
+       WHERE it.tenant_id = $1
+    `;
+    const params: any[] = [tenantId];
+    let paramIdx = 2;
+
+    if (entityId) {
+      query += ` AND (it.source_entity_id = $${paramIdx} OR it.target_entity_id = $${paramIdx})`;
+      params.push(entityId);
+      paramIdx++;
+    }
+    if (status) {
+      query += ` AND it.status = $${paramIdx}`;
+      params.push(status);
+      paramIdx++;
+    }
+    if (startDate) {
+      query += ` AND it.transaction_date >= $${paramIdx}`;
+      params.push(startDate);
+      paramIdx++;
+    }
+    if (endDate) {
+      query += ` AND it.transaction_date <= $${paramIdx}`;
+      params.push(endDate);
+      paramIdx++;
+    }
+
+    query += ` ORDER BY it.transaction_date DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`;
+    params.push(Number(limit), offset);
+
+    const result = await pool.query(query, params);
+
+    res.json({
+      success: true,
+      data: result.rows,
+      pagination: { page: Number(page), limit: Number(limit) }
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get inter-entity transactions error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get inter-entity transactions' });
+  }
+};
+
+/**
+ * Create inter-entity transaction
+ */
+export const createInterEntityTransaction = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { 
+      source_entity_id, target_entity_id, transaction_type, 
+      transaction_date, amount, currency, description 
+    } = req.body;
+
+    if (!source_entity_id || !target_entity_id || !amount) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'source_entity_id, target_entity_id, and amount are required' 
+      });
+    }
+
+    // Verify both entities belong to tenant
+    const entityCheck = await pool.query(
+      `SELECT id FROM legal_entities WHERE id IN ($1, $2) AND tenant_id = $3`,
+      [source_entity_id, target_entity_id, tenantId]
+    );
+
+    if (entityCheck.rows.length !== 2) {
+      return res.status(404).json({ success: false, error: 'One or both entities not found' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO intercompany_transactions 
+        (tenant_id, source_entity_id, target_entity_id, transaction_type, 
+         transaction_date, amount, currency, description, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING *`,
+      [tenantId, source_entity_id, target_entity_id, transaction_type || 'transfer',
+       transaction_date || new Date(), amount, currency || 'ZAR', description, userId]
+    );
+
+    res.status(201).json({
+      success: true,
+      data: result.rows[0],
+      message: 'Inter-entity transaction created'
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Create inter-entity transaction error:', error);
+    res.status(500).json({ success: false, error: 'Failed to create inter-entity transaction' });
+  }
+};
+
+// ============================================================================
+// CONSOLIDATION & REPORTING
+// ============================================================================
+
+/**
+ * Get consolidated financial data across entities
+ */
+export const getConsolidatedData = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { startDate, endDate, entityIds } = req.query;
+
+    // Get all entities or specific ones
+    let entityFilter = '';
+    const params: any[] = [tenantId];
+    
+    if (entityIds && Array.isArray(entityIds) && entityIds.length > 0) {
+      entityFilter = ` AND id = ANY($2)`;
+      params.push(entityIds);
+    }
+
+    // Get entities for consolidation
+    const entitiesResult = await pool.query(
+      `SELECT id, code, name, type, level, currency 
+       FROM legal_entities 
+       WHERE tenant_id = $1 AND status = 'active'${entityFilter}
+       ORDER BY level, name`,
+      params
+    );
+
+    // Get inter-company transactions for elimination
+    const intercoQuery = `
+      SELECT 
+        source_entity_id, target_entity_id, 
+        SUM(amount) as total_amount,
+        currency
+       FROM intercompany_transactions
+       WHERE tenant_id = $1 
+         AND status = 'completed'
+         ${startDate ? `AND transaction_date >= '${startDate}'` : ''}
+         ${endDate ? `AND transaction_date <= '${endDate}'` : ''}
+       GROUP BY source_entity_id, target_entity_id, currency
+    `;
+    const intercoResult = await pool.query(intercoQuery, [tenantId]);
+
+    res.json({
+      success: true,
+      data: {
+        entities: entitiesResult.rows,
+        intercompanyEliminations: intercoResult.rows,
+        consolidationDate: new Date().toISOString(),
+        periodStart: startDate || null,
+        periodEnd: endDate || null
+      }
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get consolidated data error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get consolidated data' });
+  }
+};
+
 export default {
   getEntities,
   getEntity,
@@ -630,5 +907,10 @@ export default {
   getEntityAncestors,
   getEntityDescendants,
   getUserEntityPermissions,
-  updateUserEntityPermissions
+  updateUserEntityPermissions,
+  getUserEntities,
+  grantEntityPermission,
+  getInterEntityTransactions,
+  createInterEntityTransaction,
+  getConsolidatedData
 };

@@ -204,11 +204,11 @@ export class BalanceSheetController {
           jel.credit_amount,
           (jel.debit_amount - jel.credit_amount) as net_amount
         FROM journal_entry_lines jel
-        INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+        INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
         WHERE jel.account_code = $1
           AND je.journal_date <= $2
           AND je.is_posted = true
-        ORDER BY je.journal_date, je.id
+        ORDER BY je.journal_date, je.entry_id
       `;
 
       const result = await pool.query(query, [accountCode, asOfDate]);
@@ -324,7 +324,7 @@ async function fetchBalanceSheetAccounts(
       COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as balance
     FROM chart_of_accounts coa
     LEFT JOIN journal_entry_lines jel ON coa.code = jel.account_code
-    LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id
+    LEFT JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       AND je.journal_date <= $1
       AND je.is_posted = true
     WHERE coa.code BETWEEN $2 AND $3
@@ -358,7 +358,7 @@ async function calculateRetainedEarnings(as_of_date: string): Promise<number> {
   const revenueQuery = `
     SELECT COALESCE(SUM(jel.credit_amount - jel.debit_amount), 0) as revenue
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN '4000' AND '4999'
       AND je.journal_date BETWEEN $1 AND $2
       AND je.is_posted = true
@@ -368,7 +368,7 @@ async function calculateRetainedEarnings(as_of_date: string): Promise<number> {
   const expensesQuery = `
     SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as expenses
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN '5000' AND '8999'
       AND je.journal_date BETWEEN $1 AND $2
       AND je.is_posted = true
@@ -445,7 +445,7 @@ async function getInventoryValue(as_of_date: string): Promise<number> {
   const query = `
     SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as inventory
     FROM journal_entry_lines jel
-    INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+    INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     WHERE jel.account_code BETWEEN '1200' AND '1299'
       AND je.journal_date <= $1
       AND je.is_posted = true

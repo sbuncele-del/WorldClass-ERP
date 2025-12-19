@@ -1,31 +1,37 @@
+/**
+ * Recurring Entries Routes (V2, tenant-aware)
+ * Delegates to tenant-hardened V2 controller.
+ */
 import { Router } from 'express';
-import { RecurringEntriesController } from '../controllers/recurring-entries.controller';
+import { authenticateToken } from '../middleware/auth';
 import { tenantMiddleware } from '../middleware/tenant';
+import RecurringEntriesControllerV2 from '../controllers/recurring-entries.controller.v2';
 
 const router = Router();
 
-// Apply tenant middleware to all recurring entry routes
+// All routes require authentication and tenant context
+router.use(authenticateToken);
 router.use(tenantMiddleware);
 
 // Get all recurring entries
-router.get('/', RecurringEntriesController.getRecurringEntries);
+router.get('/', RecurringEntriesControllerV2.getRecurringEntries);
 
 // Get single recurring entry
-router.get('/:id', RecurringEntriesController.getRecurringEntry);
+router.get('/:id', RecurringEntriesControllerV2.getRecurringEntryById);
 
 // Create new recurring entry
-router.post('/', RecurringEntriesController.createRecurringEntry);
+router.post('/', RecurringEntriesControllerV2.createRecurringEntry);
 
 // Update recurring entry
-router.put('/:id', RecurringEntriesController.updateRecurringEntry);
+router.put('/:id', RecurringEntriesControllerV2.updateRecurringEntry);
 
 // Delete recurring entry
-router.delete('/:id', RecurringEntriesController.deleteRecurringEntry);
-
-// Toggle active/inactive
-router.patch('/:id/toggle', RecurringEntriesController.toggleActive);
+router.delete('/:id', RecurringEntriesControllerV2.deleteRecurringEntry);
 
 // Generate journal entry from template
-router.post('/:id/generate', RecurringEntriesController.generateEntry);
+router.post('/:id/generate', RecurringEntriesControllerV2.generateEntry);
+
+// Get pending entries due for generation
+router.get('/pending/due', RecurringEntriesControllerV2.getPendingEntries);
 
 export default router;

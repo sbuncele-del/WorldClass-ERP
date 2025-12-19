@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { apiPost } from '../services/api.service';
 import './ResetPassword.css';
 
 interface PasswordStrength {
@@ -43,25 +44,24 @@ const ResetPassword: React.FC = () => {
     setToken(tokenParam);
 
     try {
-      const response = await fetch('/api/auth/password/verify-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token: tokenParam }),
-      });
-
-      const data = await response.json();
+      const data = await apiPost<{
+        success: boolean;
+        data?: { message?: string };
+      }>('/api/v2/auth/password/verify-token', { token: tokenParam });
 
       if (data.success) {
+        if (data.data?.message) {
+          setMessage({ type: 'success', text: data.data.message });
+        }
         setTokenValid(true);
       } else {
-        setMessage({ type: 'error', text: data.message });
+        setMessage({ type: 'error', text: 'Invalid reset token' });
         setTokenValid(false);
       }
     } catch (error) {
       console.error('Token verification error:', error);
-      setMessage({ type: 'error', text: 'Failed to verify reset token' });
+      const errorText = error instanceof Error ? error.message : 'Failed to verify reset token';
+      setMessage({ type: 'error', text: errorText });
       setTokenValid(false);
     } finally {
       setIsVerifying(false);
@@ -78,20 +78,15 @@ const ResetPassword: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/auth/password/validate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ password: pwd }),
-      });
+      const data = await apiPost<{
+        success: boolean;
+        data?: { strength: PasswordStrength['strength']; errors: string[] };
+      }>('/api/v2/auth/password/validate', { password: pwd });
 
-      const data = await response.json();
-      
-      if (data.success) {
+      if (data.success && data.data) {
         setPasswordStrength({
-          strength: data.strength,
-          errors: data.errors || [],
+          strength: data.data.strength,
+          errors: data.data.errors || [],
         });
       }
     } catch (error) {
@@ -127,24 +122,19 @@ const ResetPassword: React.FC = () => {
     setMessage(null);
 
     try {
-      const response = await fetch('/api/auth/password/reset', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          token,
-          password,
-          confirmPassword,
-        }),
+      const data = await apiPost<{
+        success: boolean;
+        data?: { message?: string };
+      }>('/api/v2/auth/password/reset', {
+        token,
+        password,
+        confirmPassword,
       });
-
-      const data = await response.json();
 
       if (data.success) {
         setMessage({
           type: 'success',
-          text: 'Password reset successfully! Redirecting to login...',
+          text: data.data?.message || 'Password reset successfully! Redirecting to login...',
         });
         
         // Redirect to login after 2 seconds
@@ -154,14 +144,15 @@ const ResetPassword: React.FC = () => {
       } else {
         setMessage({
           type: 'error',
-          text: data.message || 'Failed to reset password',
+          text: 'Failed to reset password',
         });
       }
     } catch (error) {
       console.error('Password reset error:', error);
+      const errorText = error instanceof Error ? error.message : 'An error occurred. Please try again.';
       setMessage({
         type: 'error',
-        text: 'An error occurred. Please try again.',
+        text: errorText,
       });
     } finally {
       setIsLoading(false);
@@ -186,7 +177,7 @@ const ResetPassword: React.FC = () => {
         <div className="reset-password-container">
           <div className="reset-password-logo">
             <div className="logo-icon">🔒</div>
-            <h1>Worldclass ERP</h1>
+            <h1>SiyaBusa ERP</h1>
           </div>
           <div className="reset-password-card">
             <div className="verifying-state">
@@ -205,7 +196,7 @@ const ResetPassword: React.FC = () => {
         <div className="reset-password-container">
           <div className="reset-password-logo">
             <div className="logo-icon">❌</div>
-            <h1>Worldclass ERP</h1>
+            <h1>SiyaBusa ERP</h1>
           </div>
           <div className="reset-password-card">
             <h2>Invalid Reset Link</h2>
@@ -240,7 +231,7 @@ const ResetPassword: React.FC = () => {
         {/* Logo */}
         <div className="reset-password-logo">
           <div className="logo-icon">🔐</div>
-          <h1>Worldclass ERP</h1>
+          <h1>SiyaBusa ERP</h1>
         </div>
 
         {/* Card */}

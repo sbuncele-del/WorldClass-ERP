@@ -264,15 +264,35 @@ router.post('/sales/orders/:id/confirm', SalesV2.confirmSalesOrder);
 router.post('/sales/orders/:id/cancel', SalesV2.cancelSalesOrder);
 router.get('/sales/invoices', SalesV2.getInvoices);
 router.get('/sales/invoices/:id', SalesV2.getInvoice);
+// GL Posting - Sales Invoice Integration
+router.post('/sales/invoices/:id/post-to-gl', SalesV2.postInvoiceToGL);
+router.get('/sales/invoices/:id/gl-status', SalesV2.getInvoiceGLStatus);
+router.post('/sales/invoices/:id/record-payment', SalesV2.recordPaymentReceived);
 
 // ============================================================================
 // PURCHASE
 // ============================================================================
+// Suppliers
 router.get('/purchase/suppliers', PurchaseV2.getSuppliers);
 router.get('/purchase/suppliers/:id', PurchaseV2.getSupplier);
 router.post('/purchase/suppliers', PurchaseV2.createSupplier);
 router.put('/purchase/suppliers/:id', PurchaseV2.updateSupplier);
 router.delete('/purchase/suppliers/:id', PurchaseV2.deleteSupplier);
+// Vendors (Aliases for Suppliers)
+router.get('/purchase/vendors', PurchaseV2.getSuppliers);
+router.get('/purchase/vendors/:id', PurchaseV2.getSupplier);
+router.post('/purchase/vendors', PurchaseV2.createSupplier);
+router.put('/purchase/vendors/:id', PurchaseV2.updateSupplier);
+router.delete('/purchase/vendors/:id', PurchaseV2.deleteSupplier);
+// Requisitions
+router.get('/purchase/requisitions', PurchaseV2.getRequisitions);
+router.get('/purchase/requisitions/:id', PurchaseV2.getRequisition);
+router.post('/purchase/requisitions', PurchaseV2.createRequisition);
+router.put('/purchase/requisitions/:id', PurchaseV2.updateRequisition);
+router.delete('/purchase/requisitions/:id', PurchaseV2.deleteRequisition);
+router.post('/purchase/requisitions/:id/approve', PurchaseV2.approveRequisition);
+router.post('/purchase/requisitions/:id/reject', PurchaseV2.rejectRequisition);
+// Purchase Orders
 router.get('/purchase/orders', PurchaseV2.getPurchaseOrders);
 router.get('/purchase/orders/:id', PurchaseV2.getPurchaseOrder);
 router.post('/purchase/orders', PurchaseV2.createPurchaseOrder);
@@ -280,9 +300,46 @@ router.put('/purchase/orders/:id', PurchaseV2.updatePurchaseOrder);
 router.post('/purchase/orders/:id/send', PurchaseV2.sendPurchaseOrder);
 router.post('/purchase/orders/:id/acknowledge', PurchaseV2.acknowledgePurchaseOrder);
 router.post('/purchase/orders/:id/cancel', PurchaseV2.cancelPurchaseOrder);
+// Purchase Orders (alternate path)
+router.get('/purchase/purchase-orders', PurchaseV2.getPurchaseOrders);
+router.get('/purchase/purchase-orders/:id', PurchaseV2.getPurchaseOrder);
+router.post('/purchase/purchase-orders', PurchaseV2.createPurchaseOrder);
+router.put('/purchase/purchase-orders/:id', PurchaseV2.updatePurchaseOrder);
+router.post('/purchase/purchase-orders/:id/send', PurchaseV2.sendPurchaseOrder);
+router.post('/purchase/purchase-orders/:id/acknowledge', PurchaseV2.acknowledgePurchaseOrder);
+router.post('/purchase/purchase-orders/:id/cancel', PurchaseV2.cancelPurchaseOrder);
+// Goods Receipts
+router.get('/purchase/goods-receipts', PurchaseV2.getGoodsReceipts);
+router.get('/purchase/goods-receipts/:id', PurchaseV2.getGoodsReceipt);
+router.post('/purchase/goods-receipts', PurchaseV2.createGoodsReceipt);
+router.put('/purchase/goods-receipts/:id', PurchaseV2.updateGoodsReceipt);
+router.delete('/purchase/goods-receipts/:id', PurchaseV2.deleteGoodsReceipt);
+router.post('/purchase/goods-receipts/:id/confirm', PurchaseV2.confirmGoodsReceipt);
+// Vendor Invoices
 router.get('/purchase/invoices', PurchaseV2.getVendorInvoices);
 router.get('/purchase/invoices/:id', PurchaseV2.getVendorInvoice);
 router.post('/purchase/invoices', PurchaseV2.createVendorInvoice);
+router.put('/purchase/invoices/:id', PurchaseV2.updateVendorInvoice);
+router.delete('/purchase/invoices/:id', PurchaseV2.deleteVendorInvoice);
+router.post('/purchase/invoices/:id/approve', PurchaseV2.approveVendorInvoice);
+router.post('/purchase/invoices/:id/reject', PurchaseV2.rejectVendorInvoice);
+router.post('/purchase/invoices/:id/pay', PurchaseV2.payVendorInvoice);
+// Vendor Invoices (alternate path)
+router.get('/purchase/vendor-invoices', PurchaseV2.getVendorInvoices);
+router.get('/purchase/vendor-invoices/:id', PurchaseV2.getVendorInvoice);
+router.post('/purchase/vendor-invoices', PurchaseV2.createVendorInvoice);
+router.put('/purchase/vendor-invoices/:id', PurchaseV2.updateVendorInvoice);
+router.delete('/purchase/vendor-invoices/:id', PurchaseV2.deleteVendorInvoice);
+router.post('/purchase/vendor-invoices/:id/approve', PurchaseV2.approveVendorInvoice);
+router.post('/purchase/vendor-invoices/:id/reject', PurchaseV2.rejectVendorInvoice);
+router.post('/purchase/vendor-invoices/:id/pay', PurchaseV2.payVendorInvoice);
+// GL Posting - Purchase Bill Integration
+router.post('/purchase/invoices/:id/post-to-gl', PurchaseV2.postBillToGL);
+router.get('/purchase/invoices/:id/gl-status', PurchaseV2.getBillGLStatus);
+router.post('/purchase/invoices/:id/record-payment', PurchaseV2.recordPaymentMade);
+router.post('/purchase/vendor-invoices/:id/post-to-gl', PurchaseV2.postBillToGL);
+router.get('/purchase/vendor-invoices/:id/gl-status', PurchaseV2.getBillGLStatus);
+router.post('/purchase/vendor-invoices/:id/record-payment', PurchaseV2.recordPaymentMade);
 
 // ============================================================================
 // ASSETS
@@ -634,6 +691,8 @@ router.post('/ai/compliance/check', AIAssistantControllerV2.complianceCheck);
 router.post('/ai/compliance/risk-assess', AIAssistantControllerV2.complianceRiskAssess);
 router.post('/ai/finance/explain-variance', AIAssistantControllerV2.financeExplainVariance);
 router.post('/ai/finance/reconcile', AIAssistantControllerV2.financeReconcile);
+// Actionable AI - Execute natural language commands
+router.post('/ai/execute-command', AIAssistantControllerV2.executeCommand);
 
 // ============================================================================
 // SALES LIVE (POS/CRM)

@@ -4,31 +4,11 @@ import './Healthcare.css';
 const Mining: React.FC = () => {
   const [activeTab, setActiveTab] = useState('operations');
 
-  const operations = [
-    { id: 'MINE001', name: 'Platinum Mine - Shaft 3', location: 'Rustenburg', status: 'Active', production: '4,200 oz/month', depth: '1,850m', workers: 450, safety: 'Excellent' },
-    { id: 'MINE002', name: 'Gold Mine - North Pit', location: 'Witwatersrand', status: 'Active', production: '850 kg/month', depth: '2,400m', workers: 620, safety: 'Good' },
-    { id: 'MINE003', name: 'Coal Mine - Open Cast', location: 'Mpumalanga', status: 'Active', production: '125,000 tons/month', depth: '180m', workers: 280, safety: 'Excellent' },
-    { id: 'MINE004', name: 'Diamond Mine - Kimberlite', location: 'Kimberley', status: 'Maintenance', production: '12,500 carats/month', depth: '780m', workers: 340, safety: 'Good' },
-  ];
-
-  const equipment = [
-    { id: 'EQ001', name: 'Continuous Miner CM-800', type: 'Mining Machine', status: 'Active', location: 'Shaft 3', hoursUsed: '8,240 hrs', utilization: '92%', nextService: '2025-11-20' },
-    { id: 'EQ002', name: 'Haul Truck CAT 797F', type: 'Transport', status: 'Active', location: 'North Pit', hoursUsed: '12,450 hrs', utilization: '88%', nextService: '2025-11-25' },
-    { id: 'EQ003', name: 'Drilling Rig Atlas Copco', type: 'Drilling', status: 'Maintenance', location: 'Workshop', hoursUsed: '6,830 hrs', utilization: '0%', nextService: '2025-11-15' },
-    { id: 'EQ004', name: 'Conveyor System CS-2400', type: 'Processing', status: 'Active', location: 'Coal Mine', hoursUsed: '15,600 hrs', utilization: '95%', nextService: '2025-12-01' },
-  ];
-
-  const safety = [
-    { id: 'SAF001', date: '2025-11-11', shift: 'Morning', location: 'Shaft 3', incident: 'Minor Slip', severity: 'Low', status: 'Resolved', reportedBy: 'Safety Officer A' },
-    { id: 'SAF002', date: '2025-11-10', shift: 'Afternoon', location: 'North Pit', incident: 'Equipment Malfunction', severity: 'Medium', status: 'Under Review', reportedBy: 'Supervisor B' },
-    { id: 'SAF003', date: '2025-11-09', shift: 'Night', location: 'Coal Mine', incident: 'Near Miss - Falling Rock', severity: 'Medium', status: 'Resolved', reportedBy: 'Safety Officer C' },
-  ];
-
-  const production = [
-    { month: 'Nov 2025', platinum: '4,200 oz', gold: '850 kg', coal: '125,000 tons', diamonds: '12,500 carats', revenue: 'R 145M', target: 'R 140M', status: 'Above Target' },
-    { month: 'Oct 2025', platinum: '4,100 oz', gold: '820 kg', coal: '118,000 tons', diamonds: '11,800 carats', revenue: 'R 138M', target: 'R 135M', status: 'Above Target' },
-    { month: 'Sep 2025', platinum: '3,950 oz', gold: '795 kg', coal: '112,000 tons', diamonds: '10,900 carats', revenue: 'R 128M', target: 'R 135M', status: 'Below Target' },
-  ];
+  // All data should come from API - starting empty
+  const operations: Array<{ id: string; name: string; location: string; status: string; production: string; depth: string; workers: number; safety: string }> = [];
+  const equipment: Array<{ id: string; name: string; type: string; status: string; location: string; hoursUsed: string; utilization: string; nextService: string }> = [];
+  const safety: Array<{ id: string; date: string; shift: string; location: string; incident: string; severity: string; status: string; reportedBy: string }> = [];
+  const production: Array<{ month: string; platinum: string; gold: string; coal: string; diamonds: string; revenue: string; target: string; status: string }> = [];
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {

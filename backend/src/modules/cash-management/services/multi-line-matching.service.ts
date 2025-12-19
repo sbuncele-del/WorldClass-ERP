@@ -121,7 +121,7 @@ export class MultiLineMatchingService {
           je.reference_number,
           je.description as journal_description
          FROM journal_entry_lines jel
-         JOIN journal_entries je ON jel.journal_entry_id = je.id
+         JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
          WHERE je.tenant_id = $1
          AND je.entry_date BETWEEN $2 AND $3
          AND je.status = 'POSTED'

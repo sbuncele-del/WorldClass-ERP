@@ -12,13 +12,14 @@
  * - Automated Reminders
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
   Input, Select, DatePicker, Modal, Form, Typography, Avatar,
   Timeline, Descriptions, Tooltip, Switch, Alert,
-  List, Divider, Steps, Upload, message, Calendar, Empty
+  List, Divider, Steps, Upload, message, Calendar, Empty, Spin
 } from 'antd';
+import apiClient from '../../services/api';
 import {
   HomeOutlined, TeamOutlined, CalendarOutlined, ClockCircleOutlined,
   CheckCircleOutlined, WarningOutlined,
@@ -72,38 +73,35 @@ const RegulatoryHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [filingModalVisible, setFilingModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(true);
 
-  // Sample data
-  const [filings] = useState<RegulatoryFiling[]>([
-    { id: 'FIL-001', name: 'VAT201 Return', authority: 'SARS', type: 'Tax', dueDate: '2025-12-25', status: 'pending', period: 'Nov 2025', amount: 125000 },
-    { id: 'FIL-002', name: 'EMP201 Monthly', authority: 'SARS', type: 'PAYE', dueDate: '2025-12-07', status: 'submitted', period: 'Nov 2025', submittedDate: '2025-12-05', reference: 'EMP201-2025-11-001' },
-    { id: 'FIL-003', name: 'EMP501 Reconciliation', authority: 'SARS', type: 'PAYE', dueDate: '2025-10-31', status: 'submitted', period: 'Oct 2025', submittedDate: '2025-10-28', reference: 'IRP5-2025-001' },
-    { id: 'FIL-004', name: 'IT14 Company Tax', authority: 'SARS', type: 'Income Tax', dueDate: '2025-12-31', status: 'draft', period: 'FY 2025' },
-    { id: 'FIL-005', name: 'Annual Return (CM29)', authority: 'CIPC', type: 'Company', dueDate: '2025-12-31', status: 'pending', period: '2025' },
-    { id: 'FIL-006', name: 'B-BBEE Certificate', authority: 'B-BBEE Commission', type: 'Compliance', dueDate: '2025-06-30', status: 'submitted', period: '2025', submittedDate: '2025-06-15', reference: 'BBBEE-2025-LV3' },
-    { id: 'FIL-007', name: 'UIF Declaration', authority: 'Department of Labour', type: 'Labour', dueDate: '2025-12-07', status: 'submitted', period: 'Nov 2025', submittedDate: '2025-12-05' },
-    { id: 'FIL-008', name: 'COIDA Return', authority: 'Compensation Fund', type: 'Insurance', dueDate: '2026-03-31', status: 'upcoming', period: 'FY 2025' },
-    { id: 'FIL-009', name: 'Skills Development Levy', authority: 'SARS', type: 'SDL', dueDate: '2025-12-07', status: 'submitted', period: 'Nov 2025', submittedDate: '2025-12-05', amount: 15000 }
-  ]);
+  // Data state
+  const [filings, setFilings] = useState<RegulatoryFiling[]>([]);
+  const [requirements, setRequirements] = useState<ComplianceRequirement[]>([]);
+  const [upcomingDeadlines, setUpcomingDeadlines] = useState<DeadlineEvent[]>([]);
 
-  const [requirements] = useState<ComplianceRequirement[]>([
-    { id: 'REQ-001', name: 'VAT Registration', authority: 'SARS', frequency: 'Annual', nextDue: '2025-02-28', status: 'compliant', lastFiled: '2024-02-15', description: 'VAT vendor registration renewal' },
-    { id: 'REQ-002', name: 'Company Registration', authority: 'CIPC', frequency: 'Annual', nextDue: '2025-12-31', status: 'attention', lastFiled: '2024-11-15', description: 'Annual return and company status confirmation' },
-    { id: 'REQ-003', name: 'Tax Clearance Certificate', authority: 'SARS', frequency: 'On Demand', nextDue: '2025-06-30', status: 'compliant', lastFiled: '2025-06-01', description: 'Good standing certificate for tenders' },
-    { id: 'REQ-004', name: 'B-BBEE Verification', authority: 'B-BBEE Commission', frequency: 'Annual', nextDue: '2026-06-30', status: 'compliant', lastFiled: '2025-06-15', description: 'Level verification by accredited agency' },
-    { id: 'REQ-005', name: 'PAYE Registration', authority: 'SARS', frequency: 'Ongoing', nextDue: '-', status: 'compliant', lastFiled: '-', description: 'Employer PAYE registration status' },
-    { id: 'REQ-006', name: 'UIF Registration', authority: 'Department of Labour', frequency: 'Ongoing', nextDue: '-', status: 'compliant', lastFiled: '-', description: 'Unemployment Insurance Fund compliance' },
-    { id: 'REQ-007', name: 'COIDA Registration', authority: 'Compensation Fund', frequency: 'Annual', nextDue: '2026-03-31', status: 'compliant', lastFiled: '2025-03-15', description: 'Workers compensation insurance' },
-    { id: 'REQ-008', name: 'PoPI Compliance', authority: 'Information Regulator', frequency: 'Ongoing', nextDue: '-', status: 'compliant', description: 'Protection of Personal Information Act compliance' }
-  ]);
-
-  const upcomingDeadlines: DeadlineEvent[] = [
-    { date: '2025-12-07', filings: [{ name: 'EMP201 Monthly', authority: 'SARS', type: 'PAYE' }] },
-    { date: '2025-12-25', filings: [{ name: 'VAT201 Return', authority: 'SARS', type: 'Tax' }] },
-    { date: '2025-12-31', filings: [{ name: 'IT14 Company Tax', authority: 'SARS', type: 'Income Tax' }, { name: 'CIPC Annual Return', authority: 'CIPC', type: 'Company' }] },
-    { date: '2026-01-07', filings: [{ name: 'EMP201 Monthly', authority: 'SARS', type: 'PAYE' }] },
-    { date: '2026-01-25', filings: [{ name: 'VAT201 Return', authority: 'SARS', type: 'Tax' }] }
-  ];
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [filingsRes, requirementsRes, deadlinesRes] = await Promise.all([
+          apiClient.get('/api/compliance/regulatory/filings'),
+          apiClient.get('/api/compliance/regulatory/requirements'),
+          apiClient.get('/api/compliance/regulatory/deadlines')
+        ]);
+        setFilings(filingsRes.data || []);
+        setRequirements(requirementsRes.data || []);
+        setUpcomingDeadlines(deadlinesRes.data || []);
+      } catch (error) {
+        console.error('Failed to fetch regulatory data:', error);
+        message.error('Failed to load regulatory data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Calculations
   const submittedFilings = filings.filter(f => f.status === 'submitted').length;

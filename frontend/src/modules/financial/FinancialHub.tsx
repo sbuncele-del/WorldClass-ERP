@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Row,
@@ -21,6 +21,8 @@ import {
   Divider,
   List,
   Alert,
+  Spin,
+  Empty,
 } from 'antd';
 import {
   DollarOutlined,
@@ -45,6 +47,7 @@ import {
   SafetyCertificateOutlined,
   GlobalOutlined,
   BookOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons';
 import {
   HubLayout,
@@ -56,81 +59,62 @@ import {
   StatusIndicator,
   InfoListCard,
 } from '../../components/hub';
+import { financialService } from '../../services/financial.service';
+import type { FinancialStats, JournalEntry, TrialBalanceEntry } from '../../services/financial.service';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
-// Financial Stats
-const financialStats = {
-  revenue: 24500000,
-  expenses: 18200000,
-  netIncome: 6300000,
-  grossMargin: 42.5,
-  // Balance Sheet
-  totalAssets: 85000000,
-  totalLiabilities: 32000000,
-  equity: 53000000,
-  // Cash
-  cashBalance: 12500000,
-  receivables: 8900000,
-  payables: 5600000,
-  // Period
-  currentPeriod: 'December 2025',
-  periodStatus: 'open',
-  closingDate: '2026-01-15',
-};
+// Types for state
+interface FinancialStatsState {
+  revenue: number;
+  expenses: number;
+  netIncome: number;
+  grossMargin: number;
+  totalAssets: number;
+  totalLiabilities: number;
+  equity: number;
+  cashBalance: number;
+  receivables: number;
+  payables: number;
+  currentPeriod: string;
+  periodStatus: string;
+  closingDate: string;
+}
 
-// Trial Balance Summary
-const trialBalance = [
-  { code: '1000', name: 'Assets', debit: 85000000, credit: 0, type: 'asset' },
-  { code: '2000', name: 'Liabilities', debit: 0, credit: 32000000, type: 'liability' },
-  { code: '3000', name: 'Equity', debit: 0, credit: 53000000, type: 'equity' },
-  { code: '4000', name: 'Revenue', debit: 0, credit: 24500000, type: 'revenue' },
-  { code: '5000', name: 'Expenses', debit: 18200000, credit: 0, type: 'expense' },
-];
+interface TrialBalanceItem {
+  code: string;
+  name: string;
+  debit: number;
+  credit: number;
+  type: string;
+}
 
-// Recent Journal Entries
-const recentJournals = [
-  {
-    id: 'JE-2025-1245',
-    date: '2025-12-11',
-    description: 'Monthly depreciation entry',
-    debit: 125000,
-    credit: 125000,
-    status: 'posted',
-    createdBy: 'System',
-  },
-  {
-    id: 'JE-2025-1244',
-    date: '2025-12-10',
-    description: 'Customer invoice - XYZ Corp',
-    debit: 450000,
-    credit: 450000,
-    status: 'posted',
-    createdBy: 'Sarah Chen',
-  },
-  {
-    id: 'JE-2025-1243',
-    date: '2025-12-10',
-    description: 'Supplier payment - ABC Supplies',
-    debit: 125000,
-    credit: 125000,
-    status: 'posted',
-    createdBy: 'Michael Brown',
-  },
-  {
-    id: 'JE-2025-1242',
-    date: '2025-12-09',
-    description: 'Payroll accrual - December',
-    debit: 890000,
-    credit: 890000,
-    status: 'pending',
-    createdBy: 'HR System',
-  },
-];
+interface JournalItem {
+  id: string;
+  date: string;
+  description: string;
+  debit: number;
+  credit: number;
+  status: string;
+  createdBy: string;
+}
 
-// Financial Reports
-const financialReports = [
+interface FinancialReport {
+  name: string;
+  period: string;
+  status: string;
+  icon: React.ReactNode;
+}
+
+interface PeriodStatus {
+  period: string;
+  status: string;
+  closedDate: string | null;
+}
+
+// Default financial reports (these are UI configs, not from API)
+const defaultFinancialReports: FinancialReport[] = [
   { name: 'Income Statement', period: 'December 2025', status: 'ready', icon: <BarChartOutlined /> },
   { name: 'Balance Sheet', period: 'December 2025', status: 'ready', icon: <PieChartOutlined /> },
   { name: 'Cash Flow Statement', period: 'December 2025', status: 'generating', icon: <DollarOutlined /> },
@@ -141,17 +125,156 @@ const financialReports = [
   { name: 'VAT Report', period: 'November 2025', status: 'submitted', icon: <SafetyCertificateOutlined /> },
 ];
 
-// Period Status
-const periodStatuses = [
-  { period: 'October 2025', status: 'closed', closedDate: '2025-11-10' },
-  { period: 'November 2025', status: 'closed', closedDate: '2025-12-08' },
-  { period: 'December 2025', status: 'open', closedDate: null },
-  { period: 'January 2026', status: 'future', closedDate: null },
-];
-
 const FinancialHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showJournalModal, setShowJournalModal] = useState(false);
+
+  // API State
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [financialStats, setFinancialStats] = useState<FinancialStatsState>({
+    revenue: 0,
+    expenses: 0,
+    netIncome: 0,
+    grossMargin: 0,
+    totalAssets: 0,
+    totalLiabilities: 0,
+    equity: 0,
+    cashBalance: 0,
+    receivables: 0,
+    payables: 0,
+    currentPeriod: 'December 2025',
+    periodStatus: 'open',
+    closingDate: '2026-01-15',
+  });
+  const [trialBalance, setTrialBalance] = useState<TrialBalanceItem[]>([]);
+  const [recentJournals, setRecentJournals] = useState<JournalItem[]>([]);
+  const [financialReports] = useState<FinancialReport[]>(defaultFinancialReports);
+  const [periodStatuses, setPeriodStatuses] = useState<PeriodStatus[]>([
+    { period: 'October 2025', status: 'closed', closedDate: '2025-11-10' },
+    { period: 'November 2025', status: 'closed', closedDate: '2025-12-08' },
+    { period: 'December 2025', status: 'open', closedDate: null },
+    { period: 'January 2026', status: 'future', closedDate: null },
+  ]);
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchFinancialData = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Fetch stats
+        const stats = await financialService.getStats();
+        const revenue = parseFloat(stats.total_revenue) || 0;
+        const expenses = parseFloat(stats.total_expenses) || 0;
+        const assets = parseFloat(stats.total_assets) || 0;
+        const liabilities = parseFloat(stats.total_liabilities) || 0;
+        
+        setFinancialStats({
+          revenue,
+          expenses,
+          netIncome: parseFloat(stats.net_income) || (revenue - expenses),
+          grossMargin: revenue > 0 ? ((revenue - expenses) / revenue) * 100 : 0,
+          totalAssets: assets,
+          totalLiabilities: liabilities,
+          equity: parseFloat(stats.equity) || (assets - liabilities),
+          cashBalance: parseFloat(stats.cash_balance) || 0,
+          receivables: parseFloat(stats.receivables) || 0,
+          payables: parseFloat(stats.payables) || 0,
+          currentPeriod: 'December 2025',
+          periodStatus: 'open',
+          closingDate: '2026-01-15',
+        });
+
+        // Fetch trial balance
+        try {
+          const tbResponse = await financialService.getTrialBalance();
+          if (tbResponse.data && Array.isArray(tbResponse.data)) {
+            setTrialBalance(tbResponse.data.map((entry: TrialBalanceEntry) => ({
+              code: entry.account_code,
+              name: entry.account_name,
+              debit: entry.debit || 0,
+              credit: entry.credit || 0,
+              type: entry.account_type?.toLowerCase() || 'asset',
+            })));
+          }
+        } catch {
+          // Use derived trial balance from stats if endpoint fails
+          setTrialBalance([
+            { code: '1000', name: 'Assets', debit: assets, credit: 0, type: 'asset' },
+            { code: '2000', name: 'Liabilities', debit: 0, credit: liabilities, type: 'liability' },
+            { code: '3000', name: 'Equity', debit: 0, credit: assets - liabilities, type: 'equity' },
+            { code: '4000', name: 'Revenue', debit: 0, credit: revenue, type: 'revenue' },
+            { code: '5000', name: 'Expenses', debit: expenses, credit: 0, type: 'expense' },
+          ]);
+        }
+
+        // Fetch journal entries
+        try {
+          const journalsResponse = await financialService.getJournalEntries({ limit: 10 });
+          if (journalsResponse.data && Array.isArray(journalsResponse.data)) {
+            setRecentJournals(journalsResponse.data.map((j: JournalEntry) => ({
+              id: j.journal_number || j.journal_id,
+              date: j.entry_date,
+              description: j.description,
+              debit: j.total_debit,
+              credit: j.total_credit,
+              status: j.status?.toLowerCase() || 'posted',
+              createdBy: j.created_by || 'System',
+            })));
+          }
+        } catch {
+          // Leave empty if no journals
+          setRecentJournals([]);
+        }
+
+        // Fetch periods
+        try {
+          const periodsResponse = await financialService.getPeriods();
+          if (periodsResponse.data && Array.isArray(periodsResponse.data)) {
+            setPeriodStatuses(periodsResponse.data.map(p => ({
+              period: p.period,
+              status: p.status,
+              closedDate: p.closed_date || null,
+            })));
+          }
+        } catch {
+          // Keep defaults
+        }
+
+      } catch (err: unknown) {
+        console.error('Failed to fetch financial data:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load financial data';
+        setError(errorMessage);
+        message.error('Failed to load financial data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFinancialData();
+  }, []);
+
+  // Refresh data function
+  const handleRefresh = () => {
+    setLoading(true);
+    financialService.getStats()
+      .then(stats => {
+        const revenue = parseFloat(stats.total_revenue) || 0;
+        const expenses = parseFloat(stats.total_expenses) || 0;
+        setFinancialStats(prev => ({
+          ...prev,
+          revenue,
+          expenses,
+          netIncome: revenue - expenses,
+          cashBalance: parseFloat(stats.cash_balance) || 0,
+        }));
+        message.success('Data refreshed');
+      })
+      .catch(() => message.error('Failed to refresh'))
+      .finally(() => setLoading(false));
+  };
 
   const formatCurrency = (amount: number) => `R ${amount.toLocaleString('en-ZA')}`;
 

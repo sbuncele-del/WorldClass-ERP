@@ -1,55 +1,31 @@
+/**
+ * Approval Routes (V2, tenant-aware)
+ * Delegates to tenant-hardened V2 controller.
+ */
 import express from 'express';
-import {
-  submitForApproval,
-  approveEntry,
-  rejectEntry,
-  recallEntry,
-  getPendingApprovals,
-  getApprovalHistory,
-  getApprovalStats
-} from '../controllers/approval.controller';
+import { authenticateToken } from '../middleware/auth';
 import { tenantMiddleware } from '../middleware/tenant';
+import * as ApprovalControllerV2 from '../controllers/approval.controller.v2';
 
 const router = express.Router();
 
-// Apply tenant middleware to all approval routes
+// All routes require authentication and tenant context
+router.use(authenticateToken);
 router.use(tenantMiddleware);
 
-/**
- * Approval Workflow Routes
- * Handles multi-level approval processes for journal entries
- */
+// Approval Actions
+router.post('/submit/:journalEntryId', ApprovalControllerV2.submitForApproval);
+router.post('/approve/:journalEntryId', ApprovalControllerV2.approveEntry);
+router.post('/reject/:journalEntryId', ApprovalControllerV2.rejectEntry);
 
-// === Approval Actions ===
+// Approval Queries
+router.get('/pending', ApprovalControllerV2.getPendingApprovals);
+router.get('/history/:journalEntryId', ApprovalControllerV2.getApprovalHistory);
 
-// POST /api/financial/approvals/submit/:journalEntryId
-// Submit journal entry for approval
-router.post('/submit/:journalEntryId', submitForApproval);
-
-// POST /api/financial/approvals/approve/:journalEntryId
-// Approve entry at current level
-router.post('/approve/:journalEntryId', approveEntry);
-
-// POST /api/financial/approvals/reject/:journalEntryId
-// Reject entry with reason
-router.post('/reject/:journalEntryId', rejectEntry);
-
-// POST /api/financial/approvals/recall/:journalEntryId
-// Recall entry (preparer only)
-router.post('/recall/:journalEntryId', recallEntry);
-
-// === Approval Queries ===
-
-// GET /api/financial/approvals/pending
-// Get entries pending approval (filterable by role/user)
-router.get('/pending', getPendingApprovals);
-
-// GET /api/financial/approvals/history/:journalEntryId
-// Get approval history for specific entry
-router.get('/history/:journalEntryId', getApprovalHistory);
-
-// GET /api/financial/approvals/stats
-// Get approval statistics (dashboard metrics)
-router.get('/stats', getApprovalStats);
+// Workflow Management
+router.get('/workflows', ApprovalControllerV2.getWorkflows);
+router.post('/workflows', ApprovalControllerV2.createWorkflow);
+router.get('/workflows/:id/levels', ApprovalControllerV2.getWorkflowLevels);
+router.post('/workflows/:id/levels', ApprovalControllerV2.createWorkflowLevel);
 
 export default router;

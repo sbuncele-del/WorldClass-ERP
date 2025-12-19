@@ -4,6 +4,7 @@ import {
   ZoomInOutlined, ZoomOutOutlined, FullscreenOutlined, FilterOutlined,
   LeftOutlined, RightOutlined, CalendarOutlined, DownloadOutlined
 } from '@ant-design/icons';
+import apiClient from '../../../services/api';
 import './GanttView.css';
 
 const { RangePicker } = DatePicker;
@@ -22,147 +23,7 @@ interface GanttTask {
   type: 'task' | 'milestone' | 'project';
 }
 
-// Sample data
-const sampleTasks: GanttTask[] = [
-  {
-    id: '1',
-    name: 'Website Redesign',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    start: new Date('2024-01-15'),
-    end: new Date('2024-03-30'),
-    progress: 65,
-    assignee: 'Sarah Johnson',
-    status: 'in-progress',
-    type: 'project'
-  },
-  {
-    id: '2',
-    name: 'Design Phase',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    start: new Date('2024-01-15'),
-    end: new Date('2024-02-01'),
-    progress: 100,
-    assignee: 'Emily Chen',
-    status: 'completed',
-    type: 'task'
-  },
-  {
-    id: '3',
-    name: 'Design Approval',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    start: new Date('2024-02-01'),
-    end: new Date('2024-02-01'),
-    progress: 100,
-    assignee: 'Sarah Johnson',
-    status: 'completed',
-    type: 'milestone',
-    dependencies: ['2']
-  },
-  {
-    id: '4',
-    name: 'Frontend Development',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    start: new Date('2024-02-02'),
-    end: new Date('2024-03-01'),
-    progress: 70,
-    assignee: 'Mike Wilson',
-    status: 'in-progress',
-    type: 'task',
-    dependencies: ['3']
-  },
-  {
-    id: '5',
-    name: 'Backend API',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    start: new Date('2024-02-05'),
-    end: new Date('2024-02-28'),
-    progress: 50,
-    assignee: 'David Lee',
-    status: 'in-progress',
-    type: 'task'
-  },
-  {
-    id: '6',
-    name: 'Testing & QA',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    start: new Date('2024-03-01'),
-    end: new Date('2024-03-20'),
-    progress: 0,
-    assignee: 'Sarah Johnson',
-    status: 'not-started',
-    type: 'task',
-    dependencies: ['4', '5']
-  },
-  {
-    id: '7',
-    name: 'Launch',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    start: new Date('2024-03-30'),
-    end: new Date('2024-03-30'),
-    progress: 0,
-    assignee: 'Sarah Johnson',
-    status: 'not-started',
-    type: 'milestone',
-    dependencies: ['6']
-  },
-  {
-    id: '8',
-    name: 'Mobile App Development',
-    project: 'Mobile App',
-    projectColor: '#52c41a',
-    start: new Date('2024-02-01'),
-    end: new Date('2024-06-30'),
-    progress: 40,
-    assignee: 'Mike Wilson',
-    status: 'in-progress',
-    type: 'project'
-  },
-  {
-    id: '9',
-    name: 'UI/UX Design',
-    project: 'Mobile App',
-    projectColor: '#52c41a',
-    start: new Date('2024-02-01'),
-    end: new Date('2024-02-28'),
-    progress: 100,
-    assignee: 'Emily Chen',
-    status: 'completed',
-    type: 'task'
-  },
-  {
-    id: '10',
-    name: 'iOS Development',
-    project: 'Mobile App',
-    projectColor: '#52c41a',
-    start: new Date('2024-03-01'),
-    end: new Date('2024-05-15'),
-    progress: 30,
-    assignee: 'Alex Turner',
-    status: 'in-progress',
-    type: 'task',
-    dependencies: ['9']
-  },
-  {
-    id: '11',
-    name: 'Android Development',
-    project: 'Mobile App',
-    projectColor: '#52c41a',
-    start: new Date('2024-03-01'),
-    end: new Date('2024-05-15'),
-    progress: 25,
-    assignee: 'Lisa Park',
-    status: 'delayed',
-    type: 'task',
-    dependencies: ['9']
-  }
-];
+// Note: Task data is now fetched from /api/projects/gantt API endpoint
 
 const statusColors = {
   'not-started': '#d9d9d9',
@@ -172,10 +33,30 @@ const statusColors = {
 };
 
 const GanttView: React.FC = () => {
-  const [tasks] = useState<GanttTask[]>(sampleTasks);
+  const [tasks, setTasks] = useState<GanttTask[]>([]);
+  const [loading, setLoading] = useState(true);
   const [zoom, setZoom] = useState<'day' | 'week' | 'month'>('week');
   const [viewStart, setViewStart] = useState(new Date('2024-01-01'));
   const chartRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await apiClient.get('/api/projects/gantt');
+        const data = response.data?.data || response.data || [];
+        setTasks(data.map((t: any) => ({
+          ...t,
+          start: new Date(t.start),
+          end: new Date(t.end)
+        })));
+      } catch (err) {
+        console.error('Error fetching gantt data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTasks();
+  }, []);
 
   // Calculate timeline
   const getViewEnd = () => {

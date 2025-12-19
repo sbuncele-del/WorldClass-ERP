@@ -1,4 +1,4 @@
-import React, { useState, lazy, Suspense } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import {
   Card,
   Row,
@@ -28,7 +28,9 @@ import {
   Steps,
   Spin,
   QRCode,
+  message,
 } from 'antd';
+import apiClient from '../../services/api';
 import {
   HomeOutlined,
   CarOutlined,
@@ -83,6 +85,77 @@ const VehicleTrackingMap = lazy(() => import('./VehicleTrackingMap'));
 const { Title, Text } = Typography;
 const { Option } = Select;
 
+interface LogisticsStats {
+  activeTrips: number;
+  totalVehicles: number;
+  availableVehicles: number;
+  driversOnDuty: number;
+  deliveriesToday: number;
+  onTimeRate: number;
+  fuelCostMTD: number;
+  revenueGenerated: number;
+}
+
+interface Trip {
+  id: string;
+  driver: string;
+  vehicle: string;
+  route: string;
+  customer: string;
+  cargo: string;
+  weight: number;
+  status: string;
+  progress: number;
+  eta: string;
+  lastLocation: string;
+}
+
+interface Vehicle {
+  id: string;
+  registration: string;
+  type: string;
+  capacity: number;
+  status: string;
+  driver: string;
+  lastService: string;
+  nextService: string;
+  fuelLevel: number;
+}
+
+interface Driver {
+  id: string;
+  name: string;
+  license: string;
+  licenseExpiry: string;
+  status: string;
+  currentTrip: string;
+  hoursThisWeek: number;
+  rating: number;
+}
+
+interface FuelRecord {
+  id: string;
+  date: string;
+  vehicle: string;
+  driver: string;
+  liters: number;
+  pricePerLiter: number;
+  total: number;
+  odometer: number;
+  location: string;
+}
+
+interface RouteAnalysis {
+  route: string;
+  distance: number;
+  avgTime: string;
+  trips: number;
+  revenue: number;
+  fuelCost: number;
+  profit: number;
+  profitMargin: number;
+}
+
 const LogisticsHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [tripModalVisible, setTripModalVisible] = useState(false);
@@ -90,112 +163,111 @@ const LogisticsHub: React.FC = () => {
   const [fuelModalVisible, setFuelModalVisible] = useState(false);
   const [driverAppModalVisible, setDriverAppModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(true);
+
+  // State for data
+  const [logisticsStats, setLogisticsStats] = useState<LogisticsStats>({
+    activeTrips: 0,
+    totalVehicles: 0,
+    availableVehicles: 0,
+    driversOnDuty: 0,
+    deliveriesToday: 0,
+    onTimeRate: 0,
+    fuelCostMTD: 0,
+    revenueGenerated: 0
+  });
+  const [activeTrips, setActiveTrips] = useState<Trip[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [fuelRecords, setFuelRecords] = useState<FuelRecord[]>([]);
+  const [routeAnalysis, setRouteAnalysis] = useState<RouteAnalysis[]>([]);
+  const [customers, setCustomers] = useState<{id: string; name: string}[]>([]);
+
+  useEffect(() => {
+    const fetchLogisticsData = async () => {
+      try {
+        const [dashboardRes, tripsRes, vehiclesRes, driversRes, fuelRes, routesRes, customersRes] = await Promise.all([
+          apiClient.get('/api/logistics/dashboard'),
+          apiClient.get('/api/logistics/trips'),
+          apiClient.get('/api/logistics/vehicles'),
+          apiClient.get('/api/logistics/drivers'),
+          apiClient.get('/api/logistics/fuel/records'),
+          apiClient.get('/api/logistics/routes/analysis'),
+          apiClient.get('/api/sales/customers')
+        ]);
+
+        if (dashboardRes.data) {
+          const data = dashboardRes.data.data || dashboardRes.data;
+          setLogisticsStats(prev => ({ ...prev, ...data }));
+        }
+        if (tripsRes.data) setActiveTrips(tripsRes.data.data || tripsRes.data || []);
+        if (vehiclesRes.data) setVehicles(vehiclesRes.data.data || vehiclesRes.data || []);
+        if (driversRes.data) setDrivers(driversRes.data.data || driversRes.data || []);
+        if (fuelRes.data) setFuelRecords(fuelRes.data.data || fuelRes.data || []);
+        if (routesRes.data) setRouteAnalysis(routesRes.data.data || routesRes.data || []);
+        if (customersRes.data) setCustomers(customersRes.data.data || customersRes.data || []);
+      } catch (error) {
+        console.error('Error fetching logistics data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLogisticsData();
+  }, []);
 
   // Mobile Driver App URL
   const driverAppUrl = `${window.location.origin}/driver-app`;
 
-  // Logistics KPIs
-  const logisticsStats = {
-    activeTrips: 24,
-    totalVehicles: 45,
-    availableVehicles: 18,
-    driversOnDuty: 28,
-    deliveriesToday: 156,
-    onTimeRate: 94.2,
-    fuelCostMTD: 425000,
-    revenueGenerated: 2850000
-  };
+  // Export function
+  const handleExport = () => {
+    try {
+      let csvContent = '';
+      let filename = '';
+      const now = new Date().toISOString().split('T')[0];
 
-  // Active Trips
-  const activeTrips = [
-    { 
-      id: 'TRP-2024-0456', 
-      driver: 'John Sibanda', 
-      vehicle: 'TRK-015',
-      route: 'JHB → Durban',
-      customer: 'Shoprite Holdings',
-      cargo: 'FMCG Goods',
-      weight: 28.5,
-      status: 'in_transit',
-      progress: 65,
-      eta: '2024-12-11 16:30',
-      lastLocation: 'Harrismith Toll Plaza'
-    },
-    { 
-      id: 'TRP-2024-0457', 
-      driver: 'Peter Mokoena', 
-      vehicle: 'TRK-022',
-      route: 'Cape Town → Bloemfontein',
-      customer: 'Pick n Pay',
-      cargo: 'Fresh Produce',
-      weight: 22.0,
-      status: 'in_transit',
-      progress: 45,
-      eta: '2024-12-11 18:00',
-      lastLocation: 'Beaufort West'
-    },
-    { 
-      id: 'TRP-2024-0458', 
-      driver: 'Sarah Nkosi', 
-      vehicle: 'TRK-008',
-      route: 'Pretoria → Polokwane',
-      customer: 'Massmart',
-      cargo: 'Electronics',
-      weight: 15.2,
-      status: 'loading',
-      progress: 0,
-      eta: '2024-12-11 14:00',
-      lastLocation: 'Pretoria Depot'
-    },
-    { 
-      id: 'TRP-2024-0459', 
-      driver: 'Mike van der Berg', 
-      vehicle: 'TRK-031',
-      route: 'Durban → East London',
-      customer: 'Clicks Group',
-      cargo: 'Pharmaceuticals',
-      weight: 12.8,
-      status: 'delivered',
-      progress: 100,
-      eta: '-',
-      lastLocation: 'East London DC'
+      if (activeTab === 'vehicles') {
+        csvContent = 'Vehicle ID,Registration,Type,Capacity,Status,Driver,Fuel Level\n';
+        vehicles.forEach(v => {
+          csvContent += `"${v.id}","${v.registration}","${v.type}",${v.capacity},"${v.status}","${v.driver}",${v.fuelLevel}%\n`;
+        });
+        filename = `vehicles-${now}.csv`;
+      } else if (activeTab === 'drivers') {
+        csvContent = 'Driver ID,Name,License,License Expiry,Status,Hours This Week,Rating\n';
+        drivers.forEach(d => {
+          csvContent += `"${d.id}","${d.name}","${d.license}","${d.licenseExpiry}","${d.status}",${d.hoursThisWeek},${d.rating}\n`;
+        });
+        filename = `drivers-${now}.csv`;
+      } else if (activeTab === 'fuel') {
+        csvContent = 'ID,Date,Vehicle,Driver,Liters,Price/L,Total,Odometer,Location\n';
+        fuelRecords.forEach(f => {
+          csvContent += `"${f.id}","${f.date}","${f.vehicle}","${f.driver}",${f.liters},${f.pricePerLiter},${f.total},${f.odometer},"${f.location}"\n`;
+        });
+        filename = `fuel-records-${now}.csv`;
+      } else if (activeTab === 'routes') {
+        csvContent = 'Route,Distance,Avg Time,Trips,Revenue,Fuel Cost,Profit,Margin\n';
+        routeAnalysis.forEach(r => {
+          csvContent += `"${r.route}",${r.distance},"${r.avgTime}",${r.trips},${r.revenue},${r.fuelCost},${r.profit},${r.profitMargin}%\n`;
+        });
+        filename = `route-analysis-${now}.csv`;
+      } else {
+        csvContent = 'Trip ID,Driver,Vehicle,Route,Customer,Weight,Status,Progress,ETA\n';
+        activeTrips.forEach(t => {
+          csvContent += `"${t.id}","${t.driver}","${t.vehicle}","${t.route}","${t.customer}",${t.weight},"${t.status}",${t.progress}%,"${t.eta}"\n`;
+        });
+        filename = `active-trips-${now}.csv`;
+      }
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      message.success(`Exported ${filename}`);
+    } catch (err) {
+      message.error('Export failed');
     }
-  ];
-
-  // Fleet Vehicles
-  const vehicles = [
-    { id: 'TRK-015', registration: 'GP 123 456', type: 'Truck', capacity: 30, status: 'on_trip', driver: 'John Sibanda', lastService: '2024-11-15', nextService: '2024-12-15', fuelLevel: 75 },
-    { id: 'TRK-022', registration: 'WC 789 012', type: 'Truck', capacity: 28, status: 'on_trip', driver: 'Peter Mokoena', lastService: '2024-11-20', nextService: '2024-12-20', fuelLevel: 60 },
-    { id: 'TRK-008', registration: 'GP 345 678', type: 'Truck', capacity: 25, status: 'loading', driver: 'Sarah Nkosi', lastService: '2024-11-10', nextService: '2024-12-10', fuelLevel: 95 },
-    { id: 'TRK-031', registration: 'KZN 901 234', type: 'Truck', capacity: 20, status: 'available', driver: '-', lastService: '2024-11-25', nextService: '2024-12-25', fuelLevel: 80 },
-    { id: 'VAN-005', registration: 'GP 567 890', type: 'Van', capacity: 5, status: 'maintenance', driver: '-', lastService: '2024-12-01', nextService: '2025-01-01', fuelLevel: 45 },
-    { id: 'TRK-042', registration: 'FS 234 567', type: 'Truck', capacity: 32, status: 'available', driver: '-', lastService: '2024-11-28', nextService: '2024-12-28', fuelLevel: 100 }
-  ];
-
-  // Drivers
-  const drivers = [
-    { id: 'DRV-001', name: 'John Sibanda', license: 'EC', licenseExpiry: '2025-06-15', status: 'on_duty', currentTrip: 'TRP-2024-0456', hoursThisWeek: 38, rating: 4.8 },
-    { id: 'DRV-002', name: 'Peter Mokoena', license: 'EC', licenseExpiry: '2025-03-20', status: 'on_duty', currentTrip: 'TRP-2024-0457', hoursThisWeek: 42, rating: 4.6 },
-    { id: 'DRV-003', name: 'Sarah Nkosi', license: 'C1', licenseExpiry: '2025-09-10', status: 'on_duty', currentTrip: 'TRP-2024-0458', hoursThisWeek: 35, rating: 4.9 },
-    { id: 'DRV-004', name: 'Mike van der Berg', license: 'EC', licenseExpiry: '2024-12-30', status: 'available', currentTrip: '-', hoursThisWeek: 40, rating: 4.7 },
-    { id: 'DRV-005', name: 'Thabo Dlamini', license: 'C', licenseExpiry: '2025-08-05', status: 'off_duty', currentTrip: '-', hoursThisWeek: 45, rating: 4.5 }
-  ];
-
-  // Fuel Records
-  const fuelRecords = [
-    { id: 'FUEL-2024-0890', date: '2024-12-11', vehicle: 'TRK-015', driver: 'John Sibanda', liters: 250, pricePerLiter: 22.50, total: 5625, odometer: 245680, location: 'Shell Midrand' },
-    { id: 'FUEL-2024-0889', date: '2024-12-11', vehicle: 'TRK-022', driver: 'Peter Mokoena', liters: 280, pricePerLiter: 22.45, total: 6286, odometer: 198450, location: 'Engen N1' },
-    { id: 'FUEL-2024-0888', date: '2024-12-10', vehicle: 'TRK-008', driver: 'Sarah Nkosi', liters: 200, pricePerLiter: 22.50, total: 4500, odometer: 156230, location: 'Caltex Centurion' },
-    { id: 'FUEL-2024-0887', date: '2024-12-10', vehicle: 'TRK-031', driver: 'Mike van der Berg', liters: 320, pricePerLiter: 22.40, total: 7168, odometer: 312890, location: 'BP Durban' }
-  ];
-
-  // Route Analysis
-  const routeAnalysis = [
-    { route: 'JHB → Durban', distance: 580, avgTime: '6.5 hrs', trips: 45, revenue: 450000, fuelCost: 85000, profit: 365000, profitMargin: 81.1 },
-    { route: 'Cape Town → Bloemfontein', distance: 1000, avgTime: '10 hrs', trips: 28, revenue: 380000, fuelCost: 95000, profit: 285000, profitMargin: 75.0 },
-    { route: 'Pretoria → Polokwane', distance: 290, avgTime: '3.5 hrs', trips: 62, revenue: 310000, fuelCost: 45000, profit: 265000, profitMargin: 85.5 },
-    { route: 'Durban → East London', distance: 640, avgTime: '7 hrs', trips: 35, revenue: 280000, fuelCost: 72000, profit: 208000, profitMargin: 74.3 }
-  ];
+  };
 
   // Trip columns
   const tripColumns = [
@@ -479,16 +551,21 @@ const LogisticsHub: React.FC = () => {
       >
         <Row gutter={24}>
           <Col span={6}>
-            <Statistic title="Revenue (MTD)" value={2850000} prefix="R" valueStyle={{ color: '#52c41a' }} />
+            <Statistic title="Revenue (MTD)" value={logisticsStats.revenueGenerated || 0} prefix="R" valueStyle={{ color: '#52c41a' }} />
           </Col>
           <Col span={6}>
-            <Statistic title="Fuel Costs (MTD)" value={425000} prefix="R" valueStyle={{ color: '#ff4d4f' }} />
+            <Statistic title="Fuel Costs (MTD)" value={logisticsStats.fuelCostMTD || 0} prefix="R" valueStyle={{ color: '#ff4d4f' }} />
           </Col>
           <Col span={6}>
-            <Statistic title="Maintenance (MTD)" value={85000} prefix="R" valueStyle={{ color: '#fa8c16' }} />
+            <Statistic title="Maintenance (MTD)" value={0} prefix="R" valueStyle={{ color: '#fa8c16' }} />
           </Col>
           <Col span={6}>
-            <Statistic title="Gross Margin" value={82.1} suffix="%" valueStyle={{ color: '#1890ff' }} />
+            <Statistic 
+              title="Gross Margin" 
+              value={logisticsStats.revenueGenerated > 0 ? ((logisticsStats.revenueGenerated - logisticsStats.fuelCostMTD) / logisticsStats.revenueGenerated * 100).toFixed(1) : 0} 
+              suffix="%" 
+              valueStyle={{ color: '#1890ff' }} 
+            />
           </Col>
         </Row>
         <Alert
@@ -510,7 +587,7 @@ const LogisticsHub: React.FC = () => {
         extra={
           <Space>
             <Input.Search placeholder="Search trips..." style={{ width: 250 }} />
-            <Button icon={<DownloadOutlined />}>Export</Button>
+            <Button icon={<DownloadOutlined />} onClick={handleExport}>Export</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setTripModalVisible(true)}>
               Create Trip
             </Button>
@@ -656,7 +733,7 @@ const LogisticsHub: React.FC = () => {
         title="Fuel Records"
         extra={
           <Space>
-            <Button icon={<DownloadOutlined />}>Export</Button>
+            <Button icon={<DownloadOutlined />} onClick={handleExport}>Export</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setFuelModalVisible(true)}>
               Log Fuel
             </Button>
@@ -1163,10 +1240,9 @@ const LogisticsHub: React.FC = () => {
             <Col span={12}>
               <Form.Item label="Customer" name="customer" rules={[{ required: true }]}>
                 <Select placeholder="Select customer">
-                  <Option value="shoprite">Shoprite Holdings</Option>
-                  <Option value="pnp">Pick n Pay</Option>
-                  <Option value="massmart">Massmart</Option>
-                  <Option value="clicks">Clicks Group</Option>
+                  {customers.map(c => (
+                    <Option key={c.id} value={c.id}>{c.name}</Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>

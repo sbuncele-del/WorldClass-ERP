@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import {
   Card,
   Row,
@@ -90,73 +91,91 @@ const MiningHub: React.FC = () => {
   const [incidentModalVisible, setIncidentModalVisible] = useState(false);
   const [productionModalVisible, setProductionModalVisible] = useState(false);
   const [complianceModalVisible, setComplianceModalVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [form] = Form.useForm();
 
   // Mining KPIs
-  const miningStats = {
-    totalProduction: 45250, // tons
-    goldRecovery: 4.2, // grams per ton
-    operatingCosts: 185000, // R per kg
-    safetyIncidents: 2,
-    fatalityFreeShifts: 1248,
-    environmentalScore: 94.5,
-    complianceScore: 98.2,
-    employeeCount: 2450
-  };
+  const [miningStats, setMiningStats] = useState({
+    totalProduction: 0,
+    goldRecovery: 0,
+    operatingCosts: 0,
+    safetyIncidents: 0,
+    fatalityFreeShifts: 0,
+    environmentalScore: 0,
+    complianceScore: 0,
+    employeeCount: 0
+  });
 
   // Compliance Status - MPRDA, MHSA, Environmental
-  const complianceItems = [
-    { id: 'COMP-001', regulation: 'MPRDA Mining Right', reference: 'MR-2021/0045', status: 'compliant', expiryDate: '2041-03-15', lastAudit: '2024-10-15', nextAudit: '2025-04-15', authority: 'DMR' },
-    { id: 'COMP-002', regulation: 'MHSA Certificate', reference: 'MHSA-2024/0012', status: 'compliant', expiryDate: '2025-06-30', lastAudit: '2024-06-30', nextAudit: '2025-06-30', authority: 'DMR' },
-    { id: 'COMP-003', regulation: 'Environmental Management Plan', reference: 'EMP-2023/0089', status: 'compliant', expiryDate: '2028-12-31', lastAudit: '2024-08-20', nextAudit: '2025-08-20', authority: 'DMRE' },
-    { id: 'COMP-004', regulation: 'Water Use License', reference: 'WUL-2022/0156', status: 'compliant', expiryDate: '2032-09-15', lastAudit: '2024-09-15', nextAudit: '2025-09-15', authority: 'DWS' },
-    { id: 'COMP-005', regulation: 'Social & Labour Plan', reference: 'SLP-2023/0034', status: 'attention', expiryDate: '2028-03-31', lastAudit: '2024-03-31', nextAudit: '2025-03-31', authority: 'DMR' },
-    { id: 'COMP-006', regulation: 'Rehabilitation Trust', reference: 'RT-2024/0078', status: 'compliant', expiryDate: 'Ongoing', lastAudit: '2024-11-30', nextAudit: '2025-05-31', authority: 'DMR' },
-    { id: 'COMP-007', regulation: 'BBBEE Mining Charter', reference: 'MC-2023/0056', status: 'compliant', expiryDate: '2025-12-31', lastAudit: '2024-07-15', nextAudit: '2025-07-15', authority: 'dtic' }
-  ];
+  const [complianceItems, setComplianceItems] = useState<any[]>([]);
 
   // Safety Incidents - MHSA Compliance
-  const safetyIncidents = [
-    { id: 'INC-2024-0045', date: '2024-12-05', type: 'Near Miss', category: 'Fall of Ground', severity: 'low', location: 'Shaft 2 - Level 45', shift: 'Day', status: 'closed', investigation: 'completed', dmrReported: true },
-    { id: 'INC-2024-0044', date: '2024-11-28', type: 'LTI', category: 'Equipment', severity: 'medium', location: 'Surface - Processing', shift: 'Night', status: 'closed', investigation: 'completed', dmrReported: true },
-    { id: 'INC-2024-0043', date: '2024-11-15', type: 'First Aid', category: 'Slip/Trip', severity: 'low', location: 'Shaft 1 - Surface', shift: 'Day', status: 'closed', investigation: 'completed', dmrReported: false },
-    { id: 'INC-2024-0042', date: '2024-10-20', type: 'Near Miss', category: 'Electrical', severity: 'high', location: 'Substation 3', shift: 'Night', status: 'closed', investigation: 'completed', dmrReported: true }
-  ];
+  const [safetyIncidents, setSafetyIncidents] = useState<any[]>([]);
 
   // Production Data - SAMREC Compliant
-  const productionData = [
-    { date: '2024-12-11', shaft: 'Shaft 1', level: '42-45', tons: 4250, grade: 4.5, goldOz: 612, recoveryRate: 94.2, status: 'in_progress' },
-    { date: '2024-12-11', shaft: 'Shaft 2', level: '38-42', tons: 3800, grade: 4.1, goldOz: 498, recoveryRate: 93.8, status: 'in_progress' },
-    { date: '2024-12-10', shaft: 'Shaft 1', level: '42-45', tons: 4500, grade: 4.3, goldOz: 620, recoveryRate: 94.5, status: 'completed' },
-    { date: '2024-12-10', shaft: 'Shaft 2', level: '38-42', tons: 4100, grade: 4.0, goldOz: 525, recoveryRate: 93.2, status: 'completed' },
-    { date: '2024-12-09', shaft: 'Shaft 1', level: '42-45', tons: 4350, grade: 4.4, goldOz: 613, recoveryRate: 94.0, status: 'completed' }
-  ];
+  const [productionData, setProductionData] = useState<any[]>([]);
 
   // Mineral Resources - SAMREC Compliant Reporting
-  const mineralResources = [
-    { category: 'Measured', tons: 12500000, grade: 4.5, goldOz: 1800000, confidence: 'High', lastUpdate: '2024-09-30', competentPerson: 'J. van Wyk (Pr.Sci.Nat)' },
-    { category: 'Indicated', tons: 8500000, grade: 4.2, goldOz: 1144000, confidence: 'Moderate', lastUpdate: '2024-09-30', competentPerson: 'J. van Wyk (Pr.Sci.Nat)' },
-    { category: 'Inferred', tons: 5200000, grade: 3.8, goldOz: 632000, confidence: 'Low', lastUpdate: '2024-09-30', competentPerson: 'J. van Wyk (Pr.Sci.Nat)' }
-  ];
+  const [mineralResources, setMineralResources] = useState<any[]>([]);
 
   // Environmental Monitoring
-  const environmentalData = [
-    { parameter: 'Dust (PM10)', location: 'Tailings Dam', value: 45, unit: 'μg/m³', limit: 75, status: 'compliant', trend: 'stable' },
-    { parameter: 'Noise Level', location: 'Community Boundary', value: 52, unit: 'dB(A)', limit: 65, status: 'compliant', trend: 'stable' },
-    { parameter: 'Water pH', location: 'Discharge Point', value: 7.2, unit: 'pH', limit: '6-9', status: 'compliant', trend: 'stable' },
-    { parameter: 'TSS', location: 'Discharge Point', value: 18, unit: 'mg/L', limit: 25, status: 'compliant', trend: 'improving' },
-    { parameter: 'Cyanide (CN)', location: 'Process Water', value: 0.08, unit: 'mg/L', limit: 0.2, status: 'compliant', trend: 'stable' }
-  ];
+  const [environmentalData, setEnvironmentalData] = useState<any[]>([]);
 
   // Workforce - MHSA & SLP Compliance
-  const workforceStats = {
-    totalEmployees: 2450,
-    contractors: 580,
-    hdsa: 89, // Historically Disadvantaged SA
-    women: 18,
-    localCommunity: 72,
-    trainingHours: 45000
-  };
+  const [workforceStats, setWorkforceStats] = useState({
+    totalEmployees: 0,
+    contractors: 0,
+    hdsa: 0,
+    women: 0,
+    localCommunity: 0,
+    trainingHours: 0
+  });
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, operationsRes, safetyRes, productionRes] = await Promise.all([
+          apiClient.get('/api/mining/stats'),
+          apiClient.get('/api/mining/operations'),
+          apiClient.get('/api/mining/safety'),
+          apiClient.get('/api/mining/production')
+        ]);
+
+        // Update stats
+        if (statsRes.data) {
+          setMiningStats(statsRes.data.stats || statsRes.data);
+          if (statsRes.data.workforce) {
+            setWorkforceStats(statsRes.data.workforce);
+          }
+        }
+
+        // Update operations data
+        if (operationsRes.data) {
+          setComplianceItems(operationsRes.data.compliance || []);
+          setMineralResources(operationsRes.data.resources || []);
+          setEnvironmentalData(operationsRes.data.environmental || []);
+        }
+
+        // Update safety data
+        if (safetyRes.data) {
+          setSafetyIncidents(safetyRes.data.incidents || safetyRes.data || []);
+        }
+
+        // Update production data
+        if (productionRes.data) {
+          setProductionData(productionRes.data.production || productionRes.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching mining data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Compliance columns
   const complianceColumns = [

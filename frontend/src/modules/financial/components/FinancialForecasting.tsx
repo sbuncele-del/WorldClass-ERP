@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './FinancialForecasting.css';
 
 interface ForecastResult {
@@ -33,7 +34,7 @@ const FinancialForecasting: React.FC = () => {
 
   const fetchAccounts = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/financial/accounts');
+      const response = await fetch(`${API_BASE_URL}/api/financial/accounts`);
       const data = await response.json();
       
       if (data.success) {
@@ -58,7 +59,7 @@ const FinancialForecasting: React.FC = () => {
     setForecastResult(null);
 
     try {
-      const response = await fetch('http://localhost:3000/api/financial/forecasting/forecast/generate', {
+      const response = await fetch(`${API_BASE_URL}/api/financial/forecasting/forecast/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

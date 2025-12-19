@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '../../services/api';
 import './MessagesDropdown.css';
 
 interface Message {
@@ -13,63 +14,31 @@ interface Message {
   link?: string;
 }
 
-const mockMessages: Message[] = [
-  {
-    id: '1',
-    type: 'approval',
-    icon: '⚠️',
-    title: 'Approval Required',
-    description: 'Purchase Order #PO-2025-156 - R 45,000 from Shoprite',
-    time: '10 minutes ago',
-    actionable: true
-  },
-  {
-    id: '2',
-    type: 'task',
-    icon: '📋',
-    title: 'Task Assigned',
-    description: 'Review driver performance report - Due: Today 17:00',
-    time: '2 hours ago',
-    actionable: true,
-    link: '/logistics/reports'
-  },
-  {
-    id: '3',
-    type: 'message',
-    icon: '💬',
-    title: 'Message from John Mthembu',
-    description: 'POD signature required for TRP-00125',
-    time: '5 hours ago',
-    actionable: false,
-    link: '/logistics/trips/TRP-2025-00125'
-  },
-  {
-    id: '4',
-    type: 'task',
-    icon: '📝',
-    title: 'Document Review',
-    description: 'Annual financial statements need approval',
-    time: '1 day ago',
-    actionable: true,
-    link: '/financial'
-  },
-  {
-    id: '5',
-    type: 'approval',
-    icon: '✅',
-    title: 'Expense Claim',
-    description: 'Sarah Ndlovu - Fuel expenses R 1,250',
-    time: '2 days ago',
-    actionable: true
-  }
-];
-
 interface MessagesDropdownProps {
   onClose: () => void;
 }
 
 const MessagesDropdown: React.FC<MessagesDropdownProps> = ({ onClose }) => {
   const navigate = useNavigate();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const fetchMessages = async () => {
+    try {
+      const response = await apiClient.get('/api/messages');
+      const data = response.data?.data || response.data || [];
+      setMessages(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching messages:', err);
+      setMessages([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleApprove = (messageId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -93,43 +62,52 @@ const MessagesDropdown: React.FC<MessagesDropdownProps> = ({ onClose }) => {
       <div className="dropdown-header">
         <div>
           <h3>Inbox</h3>
-          <span className="pending-badge">{mockMessages.filter(m => m.actionable).length} pending</span>
+          <span className="pending-badge">{messages.filter(m => m.actionable).length} pending</span>
         </div>
         <button className="close-btn" onClick={onClose}>✕</button>
       </div>
 
       <div className="messages-list">
-        {mockMessages.map((message) => (
-          <div
-            key={message.id}
-            className={`message-item ${message.actionable ? 'actionable' : ''}`}
-            onClick={() => handleMessageClick(message)}
-          >
-            <div className="message-icon">{message.icon}</div>
-            <div className="message-content">
-              <div className="message-title">{message.title}</div>
-              <div className="message-description">{message.description}</div>
-              <div className="message-time">{message.time}</div>
-              
-              {message.actionable && message.type === 'approval' && (
-                <div className="message-actions" onClick={(e) => e.stopPropagation()}>
-                  <button 
-                    className="action-btn approve"
-                    onClick={(e) => handleApprove(message.id, e)}
-                  >
-                    Approve
-                  </button>
-                  <button 
-                    className="action-btn reject"
-                    onClick={(e) => handleReject(message.id, e)}
-                  >
-                    Reject
-                  </button>
-                </div>
-              )}
-            </div>
+        {loading ? (
+          <div className="empty-state">Loading...</div>
+        ) : messages.length === 0 ? (
+          <div className="empty-state">
+            <span style={{ fontSize: '2rem' }}>📭</span>
+            <p>No messages</p>
           </div>
-        ))}
+        ) : (
+          messages.map((message) => (
+            <div
+              key={message.id}
+              className={`message-item ${message.actionable ? 'actionable' : ''}`}
+              onClick={() => handleMessageClick(message)}
+            >
+              <div className="message-icon">{message.icon}</div>
+              <div className="message-content">
+                <div className="message-title">{message.title}</div>
+                <div className="message-description">{message.description}</div>
+                <div className="message-time">{message.time}</div>
+                
+                {message.actionable && message.type === 'approval' && (
+                  <div className="message-actions" onClick={(e) => e.stopPropagation()}>
+                    <button 
+                      className="action-btn approve"
+                      onClick={(e) => handleApprove(message.id, e)}
+                    >
+                      Approve
+                    </button>
+                    <button 
+                      className="action-btn reject"
+                      onClick={(e) => handleReject(message.id, e)}
+                    >
+                      Reject
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        )}
       </div>
 
       <div className="dropdown-footer">

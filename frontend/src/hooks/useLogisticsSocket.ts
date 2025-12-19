@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { API_BASE_URL } from '../services/api.service';
 
 interface TripStatusChange {
   tripId: string;
@@ -53,8 +54,7 @@ export function useLogisticsSocket(opts: UseLogisticsSocketOptions) {
 
   const socket = useMemo(() => {
     if (!enabled) return null;
-    const url = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-    return io(url, {
+    return io(API_BASE_URL, {
       path: '/logistics-ws',
       transports: ['websocket', 'polling'],
       auth: { token },

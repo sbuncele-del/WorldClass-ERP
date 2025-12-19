@@ -7,7 +7,7 @@ import SARSIntegrationHub from './pages/SARSIntegrationHub';
 const SARSSentinel: React.FC = () => {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/sars/dashboard" replace />} />
+      <Route path="/" element={<SARSDashboardEnhanced />} />
       <Route path="/dashboard" element={<SARSDashboardEnhanced />} />
       <Route path="/correspondence" element={<CorrespondencePage />} />
       <Route path="/integration" element={<SARSIntegrationHub />} />

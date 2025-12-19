@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface Correspondence {
@@ -26,81 +27,12 @@ const CorrespondencePage: React.FC = () => {
   }, []);
 
   const fetchCorrespondence = async () => {
-    // Mock data - replace with actual API call
-    const mockData: Correspondence[] = [
-      {
-        id: '1',
-        reference_number: 'RFI-2025-1234',
-        client_name: 'ABC Trading (Pty) Ltd',
-        client_tax_number: '9012345678',
-        document_type: 'Request for Information',
-        received_date: '2025-11-01',
-        deadline: '2025-11-15',
-        days_remaining: 7,
-        urgency_level: 'HIGH',
-        status: 'IN_PROGRESS',
-        assigned_to: 'John Smith',
-        description: 'SARS requesting supporting documentation for VAT input claims for period ending October 2025'
-      },
-      {
-        id: '2',
-        reference_number: 'ADR-2025-5678',
-        client_name: 'XYZ Manufacturing CC',
-        client_tax_number: '9087654321',
-        document_type: 'Additional Document Request',
-        received_date: '2025-10-28',
-        deadline: '2025-11-08',
-        days_remaining: 0,
-        urgency_level: 'CRITICAL',
-        status: 'OVERDUE',
-        assigned_to: 'Sarah Johnson',
-        description: 'Additional documentation required for PAYE reconciliation discrepancy'
-      },
-      {
-        id: '3',
-        reference_number: 'AUD-2025-9012',
-        client_name: 'Tech Solutions Ltd',
-        client_tax_number: '9034567890',
-        document_type: 'Audit Notice',
-        received_date: '2025-11-05',
-        deadline: '2025-11-25',
-        days_remaining: 17,
-        urgency_level: 'CRITICAL',
-        status: 'NEW',
-        assigned_to: 'Unassigned',
-        description: 'Notice of selection for comprehensive audit - 2023/2024 tax year'
-      },
-      {
-        id: '4',
-        reference_number: 'ITR-2025-3456',
-        client_name: 'Retail Group SA',
-        client_tax_number: '9056789012',
-        document_type: 'IT14 Query',
-        received_date: '2025-11-06',
-        deadline: '2025-11-20',
-        days_remaining: 12,
-        urgency_level: 'MEDIUM',
-        status: 'AWAITING_CLIENT',
-        assigned_to: 'Michael Brown',
-        description: 'Query regarding foreign dividend withholding tax calculation'
-      },
-      {
-        id: '5',
-        reference_number: 'VAT-2025-7890',
-        client_name: 'Import Export Co',
-        client_tax_number: '9078901234',
-        document_type: 'VAT Verification',
-        received_date: '2025-10-15',
-        deadline: '2025-11-10',
-        days_remaining: 2,
-        urgency_level: 'HIGH',
-        status: 'IN_PROGRESS',
-        assigned_to: 'Lisa Anderson',
-        description: 'Verification of imported goods VAT treatment and customs documentation'
-      }
-    ];
-
-    setCorrespondence(mockData);
+    try {
+      const response = await apiClient.get('/api/sars/correspondence');
+      setCorrespondence(response.data?.data || response.data || []);
+    } catch (err) {
+      console.error('Error fetching correspondence:', err);
+    }
   };
 
   const getUrgencyColor = (urgency: string) => {

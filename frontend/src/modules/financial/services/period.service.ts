@@ -4,6 +4,7 @@
  */
 
 import axios from 'axios';
+import { API_BASE_URL } from '../../../services/api.service';
 import type {
   FiscalYear,
   AccountingPeriod,
@@ -14,7 +15,7 @@ import type {
   CreatePeriodDTO
 } from '../types/period.types';
 
-const API_BASE = 'http://localhost:3000/api/financial/periods';
+const API_BASE = `${API_BASE_URL}/api/financial/periods`;
 
 export class PeriodService {
   // ===== FISCAL YEARS =====

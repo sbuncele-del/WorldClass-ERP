@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../services/api.service';
 
 interface StockAdjustment {
   adjustment_id: number;
@@ -30,7 +31,7 @@ export default function StockAdjustments() {
 
   const fetchAdjustments = async () => {
     try {
-      let url = 'http://localhost:3000/api/inventory/stock-adjustments';
+      let url = `${API_BASE_URL}/api/inventory/stock-adjustments`;
       if (filterStatus) url += `?status=${filterStatus}`;
       
       const response = await fetch(url);

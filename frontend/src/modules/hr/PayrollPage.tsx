@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface PayrollRun {
@@ -20,6 +21,7 @@ interface PayrollRun {
 const PayrollPage: React.FC = () => {
   const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
@@ -29,73 +31,15 @@ const PayrollPage: React.FC = () => {
 
   const fetchPayrollRuns = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const mockRuns: PayrollRun[] = [
-        {
-          id: 'PR001',
-          run_number: 'PAY-2025-11',
-          period: 'November 2025',
-          status: 'PROCESSING',
-          employee_count: 124,
-          gross_total: 6420800,
-          paye_total: 1284160,
-          uif_total: 64208,
-          sdl_total: 64208,
-          net_total: 5008224,
-          payment_date: '2025-11-25',
-          processed_by: 'Sarah van der Merwe',
-          notes: 'Regular monthly payroll'
-        },
-        {
-          id: 'PR002',
-          run_number: 'PAY-2025-10',
-          period: 'October 2025',
-          status: 'SUBMITTED_SARS',
-          employee_count: 122,
-          gross_total: 6258400,
-          paye_total: 1251680,
-          uif_total: 62584,
-          sdl_total: 62584,
-          net_total: 4881552,
-          payment_date: '2025-10-25',
-          processed_by: 'Sarah van der Merwe',
-          notes: 'EMP201 submitted to SARS'
-        },
-        {
-          id: 'PR003',
-          run_number: 'PAY-2025-09',
-          period: 'September 2025',
-          status: 'PAID',
-          employee_count: 120,
-          gross_total: 6144000,
-          paye_total: 1228800,
-          uif_total: 61440,
-          sdl_total: 61440,
-          net_total: 4792320,
-          payment_date: '2025-09-25',
-          processed_by: 'Thabo Mkhize',
-          notes: 'All payments completed'
-        },
-        {
-          id: 'PR004',
-          run_number: 'BONUS-2025-Q3',
-          period: 'Q3 2025 Bonus',
-          status: 'APPROVED',
-          employee_count: 115,
-          gross_total: 1840000,
-          paye_total: 552000,
-          uif_total: 18400,
-          sdl_total: 18400,
-          net_total: 1251200,
-          payment_date: '2025-10-15',
-          processed_by: 'Sarah van der Merwe',
-          notes: 'Quarterly performance bonus'
-        }
-      ];
-
-      setPayrollRuns(mockRuns);
-    } catch (err) {
+      const response = await apiClient.get('/api/hr/payroll/periods');
+      const data = response.data?.data || response.data || [];
+      setPayrollRuns(Array.isArray(data) ? data : []);
+    } catch (err: any) {
       console.error('Error fetching payroll runs:', err);
+      setError(err.response?.data?.message || 'Failed to load payroll data');
+      setPayrollRuns([]);
     } finally {
       setLoading(false);
     }

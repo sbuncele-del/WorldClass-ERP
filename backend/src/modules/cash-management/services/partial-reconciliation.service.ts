@@ -103,7 +103,7 @@ export class PartialReconciliationService {
       const journalLineResult = await client.query(
         `SELECT jel.*, je.entry_date, je.reference_number
          FROM journal_entry_lines jel
-         JOIN journal_entries je ON jel.journal_entry_id = je.id
+         JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
          WHERE jel.id = $1 AND je.tenant_id = $2`,
         [request.journalEntryLineId, tenantId]
       );
@@ -456,7 +456,7 @@ export class PartialReconciliationService {
           je.reference_number,
           je.description as journal_description
          FROM journal_entry_lines jel
-         JOIN journal_entries je ON jel.journal_entry_id = je.id
+         JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
          WHERE je.tenant_id = $2
          AND je.entry_date BETWEEN $3 AND $4
          AND je.status = 'POSTED'

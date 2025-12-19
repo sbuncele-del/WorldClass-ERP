@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './ProjectsManager.css';
 
 interface Project {
@@ -52,7 +53,7 @@ const ProjectsManager: React.FC = () => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      const url = `http://localhost:3000/api/financial/dimensions/projects${showInactive ? '?include_inactive=true' : ''}`;
+      const url = `${API_BASE_URL}/api/financial/dimensions/projects${showInactive ? '?include_inactive=true' : ''}`;
       const response = await fetch(url);
       const result = await response.json();
       
@@ -120,8 +121,8 @@ const ProjectsManager: React.FC = () => {
 
     try {
       const url = editingProject
-        ? `http://localhost:3000/api/financial/dimensions/projects/${editingProject.id}`
-        : 'http://localhost:3000/api/financial/dimensions/projects';
+        ? `${API_BASE_URL}/api/financial/dimensions/projects/${editingProject.id}`
+        : `${API_BASE_URL}/api/financial/dimensions/projects`;
       
       const response = await fetch(url, {
         method: editingProject ? 'PUT' : 'POST',
@@ -144,7 +145,7 @@ const ProjectsManager: React.FC = () => {
 
   const handleToggleActive = async (project: Project) => {
     try {
-      const url = `http://localhost:3000/api/financial/dimensions/projects/${project.id}/${
+      const url = `${API_BASE_URL}/api/financial/dimensions/projects/${project.id}/${
         project.is_active ? 'deactivate' : 'activate'
       }`;
       

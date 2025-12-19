@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Table, Button, Space, Input, Select, Tag, Progress, Avatar, 
   Dropdown, Modal, Form, DatePicker, message, Card, Row, Col 
@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
+import apiClient from '../../../services/api';
 import './ProjectsList.css';
 
 const { Option } = Select;
@@ -34,98 +35,6 @@ interface Project {
   category: string;
 }
 
-// Sample data
-const sampleProjects: Project[] = [
-  {
-    id: '1',
-    name: 'Website Redesign',
-    description: 'Complete overhaul of the corporate website with modern design',
-    status: 'active',
-    priority: 'high',
-    progress: 65,
-    startDate: '2024-01-15',
-    endDate: '2024-03-30',
-    budget: 50000,
-    spent: 32500,
-    manager: { name: 'Sarah Johnson' },
-    team: [{ name: 'Mike Wilson' }, { name: 'Emily Chen' }, { name: 'David Lee' }],
-    tasksCompleted: 24,
-    totalTasks: 37,
-    client: 'Acme Corp',
-    category: 'Development'
-  },
-  {
-    id: '2',
-    name: 'Mobile App Development',
-    description: 'Native iOS and Android application for customer portal',
-    status: 'active',
-    priority: 'critical',
-    progress: 40,
-    startDate: '2024-02-01',
-    endDate: '2024-06-30',
-    budget: 120000,
-    spent: 48000,
-    manager: { name: 'Mike Wilson' },
-    team: [{ name: 'Sarah Johnson' }, { name: 'Alex Turner' }, { name: 'Lisa Park' }],
-    tasksCompleted: 16,
-    totalTasks: 42,
-    client: 'TechStart Inc',
-    category: 'Development'
-  },
-  {
-    id: '3',
-    name: 'ERP Implementation',
-    description: 'Deploy new ERP system across all departments',
-    status: 'planning',
-    priority: 'high',
-    progress: 15,
-    startDate: '2024-03-01',
-    endDate: '2024-09-30',
-    budget: 200000,
-    spent: 30000,
-    manager: { name: 'Emily Chen' },
-    team: [{ name: 'David Lee' }, { name: 'Sarah Johnson' }],
-    tasksCompleted: 5,
-    totalTasks: 65,
-    category: 'Operations'
-  },
-  {
-    id: '4',
-    name: 'Marketing Campaign Q2',
-    description: 'Spring marketing campaign across all channels',
-    status: 'completed',
-    priority: 'medium',
-    progress: 100,
-    startDate: '2024-01-01',
-    endDate: '2024-02-28',
-    budget: 35000,
-    spent: 33500,
-    manager: { name: 'Alex Turner' },
-    team: [{ name: 'Lisa Park' }],
-    tasksCompleted: 18,
-    totalTasks: 18,
-    client: 'Internal',
-    category: 'Marketing'
-  },
-  {
-    id: '5',
-    name: 'Data Migration',
-    description: 'Migrate legacy data to new cloud infrastructure',
-    status: 'on-hold',
-    priority: 'low',
-    progress: 30,
-    startDate: '2024-02-15',
-    endDate: '2024-04-15',
-    budget: 25000,
-    spent: 7500,
-    manager: { name: 'David Lee' },
-    team: [{ name: 'Mike Wilson' }, { name: 'Emily Chen' }],
-    tasksCompleted: 8,
-    totalTasks: 28,
-    category: 'Infrastructure'
-  }
-];
-
 const statusColors = {
   'planning': { color: 'blue', label: 'Planning' },
   'active': { color: 'green', label: 'Active' },
@@ -143,10 +52,43 @@ const priorityColors = {
 
 const ProjectsList: React.FC = () => {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<Project[]>(sampleProjects);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [createModalVisible, setCreateModalVisible] = useState(false);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const response = await apiClient.get('/api/projects/list');
+        const data = response.data?.projects || response.data || [];
+        setProjects(data.map((p: any) => ({
+          id: p.id || p.project_id,
+          name: p.name || p.project_name,
+          description: p.description || '',
+          status: p.status || 'planning',
+          priority: p.priority || 'medium',
+          progress: p.progress || 0,
+          startDate: p.startDate || p.start_date || '',
+          endDate: p.endDate || p.end_date || '',
+          budget: p.budget || 0,
+          spent: p.spent || 0,
+          manager: p.manager || { name: 'Unassigned' },
+          team: p.team || [],
+          tasksCompleted: p.tasksCompleted || p.tasks_completed || 0,
+          totalTasks: p.totalTasks || p.total_tasks || 0,
+          client: p.client || '',
+          category: p.category || 'General'
+        })));
+      } catch (error) {
+        console.error('Failed to fetch projects:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProjects();
+  }, []);
   const [form] = Form.useForm();
 
   const filteredProjects = projects.filter(project => {

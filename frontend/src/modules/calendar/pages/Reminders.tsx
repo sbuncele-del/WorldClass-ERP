@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Button,
@@ -19,7 +19,9 @@ import {
   Popconfirm,
   Tooltip,
   Progress,
+  Spin,
 } from 'antd';
+import apiClient from '../../../services/api';
 import {
   PlusOutlined,
   BellOutlined,
@@ -69,99 +71,25 @@ const Reminders: React.FC = () => {
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   const [form] = Form.useForm();
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sample data
-  const reminders: Reminder[] = [
-    {
-      id: '1',
-      title: 'Submit quarterly report',
-      description: 'Complete and submit Q4 financial report to management',
-      dueDate: '2024-01-15',
-      dueTime: '17:00',
-      priority: 'high',
-      category: 'Finance',
-      status: 'pending',
-      recurring: false,
-      notifications: { email: true, push: true, desktop: true },
-      linkedTo: { type: 'Task', name: 'Q4 Report', id: 'task-1' },
-      createdBy: 'John Smith',
-      createdAt: '2024-01-10',
-    },
-    {
-      id: '2',
-      title: 'Team standup meeting',
-      description: 'Daily team standup - discuss progress and blockers',
-      dueDate: '2024-01-16',
-      dueTime: '09:00',
-      priority: 'medium',
-      category: 'Meeting',
-      status: 'pending',
-      recurring: true,
-      recurringPattern: 'Daily',
-      notifications: { email: false, push: true, desktop: true },
-      createdBy: 'Sarah Johnson',
-      createdAt: '2024-01-01',
-    },
-    {
-      id: '3',
-      title: 'Follow up with client',
-      description: 'Send follow-up email to ABC Corp about proposal',
-      dueDate: '2024-01-14',
-      dueTime: '14:00',
-      priority: 'high',
-      category: 'Sales',
-      status: 'overdue',
-      recurring: false,
-      notifications: { email: true, push: true, desktop: false },
-      linkedTo: { type: 'Deal', name: 'ABC Corp Enterprise', id: 'deal-1' },
-      createdBy: 'Mike Davis',
-      createdAt: '2024-01-12',
-    },
-    {
-      id: '4',
-      title: 'Review employee evaluations',
-      description: 'Complete annual performance reviews for team members',
-      dueDate: '2024-01-20',
-      dueTime: '12:00',
-      priority: 'medium',
-      category: 'HR',
-      status: 'pending',
-      recurring: false,
-      notifications: { email: true, push: false, desktop: true },
-      createdBy: 'Emily Chen',
-      createdAt: '2024-01-05',
-    },
-    {
-      id: '5',
-      title: 'Backup system data',
-      description: 'Weekly backup of all system databases',
-      dueDate: '2024-01-17',
-      dueTime: '23:00',
-      priority: 'low',
-      category: 'IT',
-      status: 'pending',
-      recurring: true,
-      recurringPattern: 'Weekly',
-      notifications: { email: true, push: false, desktop: false },
-      createdBy: 'System',
-      createdAt: '2024-01-01',
-    },
-    {
-      id: '6',
-      title: 'Invoice payment reminder',
-      description: 'Payment due for vendor invoice #INV-2024-001',
-      dueDate: '2024-01-13',
-      dueTime: '09:00',
-      priority: 'high',
-      category: 'Finance',
-      status: 'completed',
-      recurring: false,
-      notifications: { email: true, push: true, desktop: true },
-      linkedTo: { type: 'Invoice', name: 'INV-2024-001', id: 'inv-1' },
-      createdBy: 'Accounting',
-      createdAt: '2024-01-06',
-    },
-  ];
+  useEffect(() => {
+    fetchReminders();
+  }, []);
+
+  const fetchReminders = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get('/api/calendar/reminders');
+      setReminders(response.data?.data || response.data || []);
+    } catch (error) {
+      console.error('Error fetching reminders:', error);
+      setReminders([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface Driver {
@@ -20,6 +21,22 @@ interface Driver {
 const DriverManagementEnhanced: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDrivers = async () => {
+      try {
+        const response = await apiClient.get('/api/logistics/drivers');
+        setDrivers(response.data?.data || response.data || []);
+      } catch (error) {
+        console.error('Error fetching drivers:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDrivers();
+  }, []);
 
   const tabs = [
     { id: 'command', label: '🎯 Command Center', path: '/logistics/dashboard' },
@@ -36,14 +53,7 @@ const DriverManagementEnhanced: React.FC = () => {
     { label: 'Driver Management' }
   ];
 
-  const mockDrivers: Driver[] = [
-    { driver_id: 'D001', name: 'John Mthembu', employee_id: 'E1021', id_number: '8501105180085', license_type: 'Code 14', prdp_expiry: '2026-10-15', medical_expiry: '2026-09-20', status: 'On Trip', total_trips: 128, on_time_rate: 98.5, incidents: 1 },
-    { driver_id: 'D002', name: 'Sarah Ndlovu', employee_id: 'E1022', id_number: '8803204181083', license_type: 'Code 14', prdp_expiry: '2025-11-25', medical_expiry: '2026-01-15', status: 'Active', total_trips: 95, on_time_rate: 99.2, incidents: 0 },
-    { driver_id: 'D003', name: 'Thabo Dlamini', employee_id: 'E1023', id_number: '9011055382089', license_type: 'Code 10', prdp_expiry: '2027-05-30', medical_expiry: '2027-05-30', status: 'Active', total_trips: 210, on_time_rate: 97.8, incidents: 3 },
-    { driver_id: 'D004', name: 'Peter Mokoena', employee_id: 'E1024', id_number: '9207155183081', license_type: 'Code 14', prdp_expiry: '2026-02-10', medical_expiry: '2026-02-10', status: 'On Leave', total_trips: 88, on_time_rate: 99.0, incidents: 0 },
-    { driver_id: 'D005', name: 'Michael van Wyk', employee_id: 'E1025', id_number: '8204015184086', license_type: 'Code 14', prdp_expiry: '2025-12-08', medical_expiry: '2025-12-01', status: 'Inactive', total_trips: 350, on_time_rate: 95.0, incidents: 8 },
-    { driver_id: 'D006', name: 'Bongani Zulu', employee_id: 'E1029', id_number: '9509225837089', license_type: 'Code 14', prdp_expiry: '2027-08-19', medical_expiry: '2027-08-19', status: 'Active', total_trips: 45, on_time_rate: 100, incidents: 0 },
-  ];
+  // Drivers loaded from API
 
   const getDaysUntilExpiry = (date: string) => {
     const today = new Date();
@@ -68,7 +78,7 @@ const DriverManagementEnhanced: React.FC = () => {
     }
   };
 
-  const filteredDrivers = mockDrivers.filter(driver => {
+  const filteredDrivers = drivers.filter(driver => {
     const matchesSearch = driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           driver.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           driver.id_number.includes(searchTerm);
@@ -98,7 +108,7 @@ const DriverManagementEnhanced: React.FC = () => {
             <span className="metric-label">Total Drivers</span>
             <span className="metric-icon" style={{ fontSize: '1.5rem' }}>👨‍✈️</span>
           </div>
-          <div className="metric-value">{mockDrivers.length}</div>
+          <div className="metric-value">{drivers.length}</div>
           <div className="metric-footer">
             <span className="metric-change">All statuses</span>
           </div>
@@ -109,7 +119,7 @@ const DriverManagementEnhanced: React.FC = () => {
             <span className="metric-label">Available & Active</span>
             <span className="metric-icon" style={{ fontSize: '1.5rem' }}>✅</span>
           </div>
-          <div className="metric-value">{mockDrivers.filter(d => d.status === 'Active').length}</div>
+          <div className="metric-value">{drivers.filter(d => d.status === 'Active').length}</div>
           <div className="metric-footer">
             <span className="metric-change success">Ready for trips</span>
           </div>
@@ -120,7 +130,7 @@ const DriverManagementEnhanced: React.FC = () => {
             <span className="metric-label">On Trip</span>
             <span className="metric-icon" style={{ fontSize: '1.5rem' }}>🚚</span>
           </div>
-          <div className="metric-value">{mockDrivers.filter(d => d.status === 'On Trip').length}</div>
+          <div className="metric-value">{drivers.filter(d => d.status === 'On Trip').length}</div>
           <div className="metric-footer">
             <span className="metric-change">Currently driving</span>
           </div>
@@ -132,7 +142,7 @@ const DriverManagementEnhanced: React.FC = () => {
             <span className="metric-icon" style={{ fontSize: '1.5rem' }}>⚠️</span>
           </div>
           <div className="metric-value">
-            {mockDrivers.filter(d => getDaysUntilExpiry(d.prdp_expiry) <= 30 || getDaysUntilExpiry(d.medical_expiry) <= 30).length}
+            {drivers.filter(d => getDaysUntilExpiry(d.prdp_expiry) <= 30 || getDaysUntilExpiry(d.medical_expiry) <= 30).length}
           </div>
           <div className="metric-footer">
             <span className="metric-change error">Needs renewal</span>

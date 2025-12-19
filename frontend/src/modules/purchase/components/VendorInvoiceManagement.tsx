@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './VendorInvoiceManagement.css';
 
 interface VendorInvoice {
@@ -89,7 +90,7 @@ const VendorInvoiceManagement: React.FC = () => {
 
   const fetchInvoices = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/purchase/vendor-invoices');
+      const response = await fetch(`${API_BASE_URL}/api/purchase/vendor-invoices`);
       const data = await response.json();
       setInvoices(data);
     } catch (error) {
@@ -99,7 +100,7 @@ const VendorInvoiceManagement: React.FC = () => {
 
   const fetchAgedPayables = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/purchase/aged-payables');
+      const response = await fetch(`${API_BASE_URL}/api/purchase/aged-payables`);
       const data = await response.json();
       setAgedPayables(data);
     } catch (error) {
@@ -109,7 +110,7 @@ const VendorInvoiceManagement: React.FC = () => {
 
   const fetchThreeWayMatch = async (invoiceId: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/purchase/vendor-invoices/${invoiceId}/three-way-match`);
+      const response = await fetch(`${API_BASE_URL}/api/purchase/vendor-invoices/${invoiceId}/three-way-match`);
       const data = await response.json();
       setMatchData(data);
       setShowMatchModal(true);
@@ -122,7 +123,7 @@ const VendorInvoiceManagement: React.FC = () => {
     if (!confirm('Are you sure you want to approve this invoice?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/purchase/vendor-invoices/${invoiceId}/approve`, {
+      const response = await fetch(`${API_BASE_URL}/api/purchase/vendor-invoices/${invoiceId}/approve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -145,7 +146,7 @@ const VendorInvoiceManagement: React.FC = () => {
     if (!reason) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/purchase/vendor-invoices/${invoiceId}/reject`, {
+      const response = await fetch(`${API_BASE_URL}/api/purchase/vendor-invoices/${invoiceId}/reject`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason })
@@ -194,7 +195,7 @@ const VendorInvoiceManagement: React.FC = () => {
         ]
       };
 
-      const response = await fetch('http://localhost:3000/api/purchase/vendor-payments', {
+      const response = await fetch(`${API_BASE_URL}/api/purchase/vendor-payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

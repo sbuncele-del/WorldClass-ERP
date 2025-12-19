@@ -8,7 +8,7 @@ const Partners: React.FC = () => {
     {
       type: 'Technology Partners',
       icon: '🔧',
-      description: 'Integrate your software with AetherOS to create seamless workflows for shared customers.',
+      description: 'Integrate your software with SiyaBusa to create seamless workflows for shared customers.',
       benefits: [
         'API access and technical documentation',
         'Co-marketing opportunities',
@@ -19,7 +19,7 @@ const Partners: React.FC = () => {
     {
       type: 'Implementation Partners',
       icon: '🛠️',
-      description: 'Help businesses implement and customize AetherOS while growing your consulting practice.',
+      description: 'Help businesses implement and customize SiyaBusa while growing your consulting practice.',
       benefits: [
         'Implementation certification training',
         'Lead referrals from our sales team',
@@ -30,7 +30,7 @@ const Partners: React.FC = () => {
     {
       type: 'Reseller Partners',
       icon: '🤝',
-      description: 'Sell AetherOS to your client base and earn recurring revenue on subscriptions.',
+      description: 'Sell SiyaBusa to your client base and earn recurring revenue on subscriptions.',
       benefits: [
         'Competitive partner pricing',
         'Sales and product training',
@@ -41,7 +41,7 @@ const Partners: React.FC = () => {
     {
       type: 'Accounting Firms',
       icon: '📊',
-      description: 'Recommend AetherOS to your clients and benefit from streamlined collaboration.',
+      description: 'Recommend SiyaBusa to your clients and benefit from streamlined collaboration.',
       benefits: [
         'Free accountant portal access',
         'Multi-client management dashboard',
@@ -56,7 +56,7 @@ const Partners: React.FC = () => {
       <nav className="footer-page-nav">
         <Link to="/" className="logo">
           <span className="logo-icon">◈</span>
-          <span>AetherOS</span>
+          <span>SiyaBusa</span>
         </Link>
         <Link to="/" className="back-link">← Back to Home</Link>
       </nav>
@@ -69,13 +69,13 @@ const Partners: React.FC = () => {
         >
           <header className="page-header">
             <h1>Partner Program</h1>
-            <p className="subtitle">Grow your business with AetherOS</p>
+            <p className="subtitle">Grow your business with SiyaBusa</p>
           </header>
 
           <section className="content-section">
             <h2>Why Partner With Us?</h2>
             <p>
-              The AetherOS Partner Program is designed to help you grow your business while 
+              The SiyaBusa Partner Program is designed to help you grow your business while 
               delivering exceptional value to your clients. Whether you're a technology company, 
               consulting firm, or accounting practice, we have a partnership model that fits 
               your business.
@@ -157,7 +157,7 @@ const Partners: React.FC = () => {
             <div className="partner-testimonials">
               <blockquote className="testimonial">
                 <p>
-                  "Partnering with AetherOS has transformed our consulting practice. We've 
+                  "Partnering with SiyaBusa has transformed our consulting practice. We've 
                   increased revenue by 40% and our clients love the integrated solution."
                 </p>
                 <cite>— Partner, Johannesburg Consulting Firm</cite>
@@ -179,10 +179,10 @@ const Partners: React.FC = () => {
               transform their operations.
             </p>
             <div className="cta-buttons">
-              <a href="mailto:partners@aetheros.io?subject=Partnership Inquiry" className="btn-primary">
+              <a href="mailto:partners@siyabusa.co.za?subject=Partnership Inquiry" className="btn-primary">
                 Apply Now
               </a>
-              <a href="mailto:partners@aetheros.io" className="btn-secondary">
+              <a href="mailto:partners@siyabusa.co.za" className="btn-secondary">
                 Contact Partner Team
               </a>
             </div>
@@ -191,7 +191,7 @@ const Partners: React.FC = () => {
       </main>
 
       <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} AetherOS by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
       </footer>
     </div>
   );

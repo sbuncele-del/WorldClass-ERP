@@ -9,7 +9,7 @@ const Security: React.FC = () => {
       <nav className="footer-page-nav">
         <Link to="/" className="logo">
           <span className="logo-icon">◈</span>
-          <span>AetherOS</span>
+          <span>SiyaBusa</span>
         </Link>
         <Link to="/" className="back-link">← Back to Home</Link>
       </nav>
@@ -21,14 +21,14 @@ const Security: React.FC = () => {
           transition={{ duration: 0.6 }}
         >
           <header className="page-header">
-            <h1>Security at AetherOS</h1>
+            <h1>Security at SiyaBusa</h1>
             <p className="subtitle">Enterprise-grade security for your most sensitive data</p>
           </header>
 
           <section className="content-section">
             <h2>Our Security Commitment</h2>
             <p>
-              At AetherOS, security is not an afterthought—it's foundational to everything we build. 
+              At SiyaBusa, security is not an afterthought—it's foundational to everything we build. 
               Your business data is critical, and we treat its protection with the utmost seriousness. 
               We implement industry-leading security practices to ensure your information remains 
               confidential, intact, and available when you need it.
@@ -43,7 +43,7 @@ const Security: React.FC = () => {
               <div className="security-content">
                 <h3>Cloud Hosting</h3>
                 <p>
-                  AetherOS is hosted on Amazon Web Services (AWS), leveraging their world-class 
+                  SiyaBusa is hosted on Amazon Web Services (AWS), leveraging their world-class 
                   infrastructure. AWS data centers maintain numerous compliance certifications 
                   including ISO 27001, SOC 1/2/3, and PCI DSS Level 1.
                 </p>
@@ -246,7 +246,7 @@ const Security: React.FC = () => {
               potential vulnerabilities. If you discover a security issue:
             </p>
             <div className="info-block">
-              <p><strong>Email:</strong> <a href="mailto:security@aetheros.io">security@aetheros.io</a></p>
+              <p><strong>Email:</strong> <a href="mailto:security@siyabusa.co.za">security@siyabusa.co.za</a></p>
               <p><strong>PGP Key:</strong> Available upon request</p>
             </div>
             <p>
@@ -283,7 +283,7 @@ const Security: React.FC = () => {
               compliance information.
             </p>
             <div className="cta-buttons">
-              <a href="mailto:security@aetheros.io" className="btn-primary">Contact Security Team</a>
+              <a href="mailto:security@siyabusa.co.za" className="btn-primary">Contact Security Team</a>
               <Link to="/privacy" className="btn-secondary">View Privacy Policy</Link>
             </div>
           </section>
@@ -291,7 +291,7 @@ const Security: React.FC = () => {
       </main>
 
       <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} AetherOS by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
       </footer>
     </div>
   );

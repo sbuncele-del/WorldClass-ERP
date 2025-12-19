@@ -11,13 +11,15 @@
  * - Financial Integration
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
   Input, Select, DatePicker, Modal, Form, Typography, Avatar,
   Timeline, Descriptions, Tooltip, Dropdown, InputNumber, Switch, Alert,
-  List, Tabs, Divider, Steps, Upload, message, Checkbox
+  List, Tabs, Divider, Steps, Upload, message, Checkbox, Spin
 } from 'antd';
+import apiClient from '../../services/api';
 import {
   FileTextOutlined, TeamOutlined, CalendarOutlined, ClockCircleOutlined,
   DollarOutlined, BarChartOutlined, CheckCircleOutlined, WarningOutlined,
@@ -82,124 +84,54 @@ interface PricingItem {
   taxable: boolean;
 }
 
-// Sample Data
-const sampleProposals: Proposal[] = [
-  {
-    id: 'PROP-001',
-    title: 'ERP Implementation Services',
-    client: 'Shoprite Holdings',
-    clientContact: 'John van der Berg',
-    status: 'sent',
-    value: 2500000,
-    validUntil: '2024-07-15',
-    createdDate: '2024-06-01',
-    sentDate: '2024-06-05',
-    template: 'IT Services',
-    owner: 'Sarah Johnson',
-    probability: 75,
-    viewCount: 12,
-    lastViewed: '2024-06-10',
-    signed: false
-  },
-  {
-    id: 'PROP-002',
-    title: 'Annual Audit Services 2024',
-    client: 'Discovery Limited',
-    clientContact: 'Nadia Patel',
-    status: 'accepted',
-    value: 850000,
-    validUntil: '2024-06-30',
-    createdDate: '2024-05-15',
-    sentDate: '2024-05-18',
-    template: 'Audit Services',
-    owner: 'Michael Chen',
-    probability: 100,
-    viewCount: 8,
-    lastViewed: '2024-05-25',
-    signed: true
-  },
-  {
-    id: 'PROP-003',
-    title: 'Cloud Migration Project',
-    client: 'Standard Bank',
-    clientContact: 'Themba Ndlovu',
-    status: 'viewed',
-    value: 4200000,
-    validUntil: '2024-07-30',
-    createdDate: '2024-06-08',
-    sentDate: '2024-06-10',
-    template: 'IT Services',
-    owner: 'Sarah Johnson',
-    probability: 60,
-    viewCount: 5,
-    lastViewed: '2024-06-12',
-    signed: false
-  },
-  {
-    id: 'PROP-004',
-    title: 'Tax Advisory Services',
-    client: 'Pick n Pay',
-    clientContact: 'Linda Mokoena',
-    status: 'draft',
-    value: 320000,
-    validUntil: '2024-08-15',
-    createdDate: '2024-06-12',
-    template: 'Tax Services',
-    owner: 'David Williams',
-    probability: 50,
-    viewCount: 0,
-    signed: false
-  },
-  {
-    id: 'PROP-005',
-    title: 'Financial System Upgrade',
-    client: 'Woolworths',
-    clientContact: 'Peter Smith',
-    status: 'declined',
-    value: 1800000,
-    validUntil: '2024-06-01',
-    createdDate: '2024-04-20',
-    sentDate: '2024-04-25',
-    template: 'IT Services',
-    owner: 'Emily Davis',
-    probability: 0,
-    viewCount: 15,
-    lastViewed: '2024-05-28',
-    signed: false
-  }
-];
-
-const sampleTemplates: Template[] = [
-  { id: 'TPL-001', name: 'IT Services Proposal', category: 'Technology', description: 'Standard IT consulting and implementation', usageCount: 45, winRate: 68, lastUsed: '2024-06-10', sections: ['Executive Summary', 'Scope', 'Timeline', 'Pricing', 'Terms'], previewImage: 'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?w=640', preview: 'Modular IT consulting deck covering scope, delivery plan, and pricing with optional managed services.' },
-  { id: 'TPL-002', name: 'Audit Services', category: 'Professional', description: 'Annual audit and assurance services', usageCount: 32, winRate: 82, lastUsed: '2024-06-08', sections: ['Introduction', 'Methodology', 'Team', 'Fees', 'Engagement Letter'], previewImage: 'https://images.unsplash.com/photo-1454165205744-3b78555e5572?w=640', preview: 'Clean assurance proposal with audit scope, deliverables, and ISA-based methodology.' },
-  { id: 'TPL-003', name: 'Tax Advisory', category: 'Professional', description: 'Tax planning and advisory services', usageCount: 28, winRate: 71, lastUsed: '2024-06-05', sections: ['Scope', 'Services', 'Deliverables', 'Fees', 'Terms'], previewImage: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=640', preview: 'Advisory pack with tax planning roadmap, compliance calendar, and retainer options.' },
-  { id: 'TPL-004', name: 'Construction Tender', category: 'Construction', description: 'CIDB compliant construction tender', usageCount: 15, winRate: 45, lastUsed: '2024-05-28', sections: ['Tender Summary', 'BOQ', 'Schedule', 'Safety', 'BBBEE'], previewImage: 'https://images.unsplash.com/photo-1433838552652-f9a46b332c40?w=640', preview: 'CIDB aligned tender with BOQ, programme, safety plan, and BBBEE credentials.' },
-  { id: 'TPL-005', name: 'Software Development', category: 'Technology', description: 'Custom software development project', usageCount: 22, winRate: 58, lastUsed: '2024-06-01', sections: ['Requirements', 'Solution', 'Tech Stack', 'Timeline', 'Pricing'], previewImage: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=640', preview: 'Agile delivery plan with sprints, backlog, QA approach, and acceptance criteria.' },
-  { id: 'TPL-006', name: 'Investor Pitch Deck', category: 'Pitch Deck', description: '11-slide VC-ready pitch deck with visuals', usageCount: 18, winRate: 64, lastUsed: '2024-06-09', sections: ['Problem', 'Solution', 'Market', 'Business Model', 'Traction', 'Roadmap', 'Team'], previewImage: 'https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?w=640', preview: 'Covers story arc, traction highlights, GTM, and financial asks.', deckSlides: ['Title & Vision', 'Problem / Opportunity', 'Solution & Product', 'Market Size (TAM/SAM/SOM)', 'Business Model', 'Traction & KPIs', 'Product Roadmap', 'GTM Strategy', 'Competition', 'Team', 'Financials & Ask'] }
-];
-
-const samplePricing: PricingItem[] = [
-  { id: 'PRC-001', name: 'Senior Consultant', category: 'Professional Services', description: 'Senior-level consulting hours', unitPrice: 1500, unit: 'hour', margin: 40, taxable: true },
-  { id: 'PRC-002', name: 'Junior Consultant', category: 'Professional Services', description: 'Junior-level consulting hours', unitPrice: 850, unit: 'hour', margin: 35, taxable: true },
-  { id: 'PRC-003', name: 'Project Manager', category: 'Professional Services', description: 'Project management', unitPrice: 1800, unit: 'hour', margin: 45, taxable: true },
-  { id: 'PRC-004', name: 'Software License', category: 'Software', description: 'Annual software license', unitPrice: 25000, unit: 'license', margin: 20, taxable: true },
-  { id: 'PRC-005', name: 'Cloud Hosting', category: 'Infrastructure', description: 'Monthly cloud hosting', unitPrice: 5000, unit: 'month', margin: 25, taxable: true },
-  { id: 'PRC-006', name: 'Training Session', category: 'Training', description: 'Full-day training session', unitPrice: 8500, unit: 'day', margin: 50, taxable: true }
-];
+// Sample Data removed - now fetched from API
 
 const ProposalsHub: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [proposalModalVisible, setProposalModalVisible] = useState(false);
   const [templateModalVisible, setTemplateModalVisible] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
   const [previewVisible, setPreviewVisible] = useState(false);
   const [pricingModalVisible, setPricingModalVisible] = useState(false);
-  const [proposals] = useState<Proposal[]>(sampleProposals);
-  const [templates] = useState<Template[]>(sampleTemplates);
-  const [pricing] = useState<PricingItem[]>(samplePricing);
+  const [loading, setLoading] = useState(true);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [pricing, setPricing] = useState<PricingItem[]>([]);
   const [form] = Form.useForm();
 
-  // Calculate stats
+  // Load proposals, templates, and pricing from API on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [proposalsRes, templatesRes, pricingRes] = await Promise.all([
+          apiClient.get('/api/proposals'),
+          apiClient.get('/api/proposals/templates'),
+          apiClient.get('/api/proposals/pricing/items'),
+        ]);
+        setProposals(proposalsRes.data || []);
+        setTemplates(templatesRes.data || []);
+        setPricing(pricingRes.data || []);
+      } catch (error) {
+        console.error('Failed to fetch proposals hub data:', error);
+        // Fallback to localStorage for proposals
+        const saved = localStorage.getItem('siyabusa_proposals');
+        if (saved) {
+          try {
+            setProposals(JSON.parse(saved));
+          } catch (e) {
+            console.error('Failed to load proposals from localStorage', e);
+          }
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Calculate stats from actual proposals
   const proposalStats = {
     total: proposals.length,
     draft: proposals.filter(p => p.status === 'draft').length,
@@ -207,10 +139,22 @@ const ProposalsHub: React.FC = () => {
     viewed: proposals.filter(p => p.status === 'viewed').length,
     accepted: proposals.filter(p => p.status === 'accepted').length,
     declined: proposals.filter(p => p.status === 'declined').length,
-    totalValue: proposals.reduce((sum, p) => sum + p.value, 0),
-    wonValue: proposals.filter(p => p.status === 'accepted').reduce((sum, p) => sum + p.value, 0),
-    pipelineValue: proposals.filter(p => ['sent', 'viewed'].includes(p.status)).reduce((sum, p) => sum + p.value, 0),
-    winRate: Math.round((proposals.filter(p => p.status === 'accepted').length / proposals.filter(p => ['accepted', 'declined'].includes(p.status)).length) * 100) || 0
+    totalValue: proposals.reduce((sum, p) => sum + (p.value || p.total || 0), 0),
+    wonValue: proposals.filter(p => p.status === 'accepted').reduce((sum, p) => sum + (p.value || p.total || 0), 0),
+    pipelineValue: proposals.filter(p => ['sent', 'viewed', 'draft'].includes(p.status)).reduce((sum, p) => sum + (p.value || p.total || 0), 0),
+    winRate: proposals.filter(p => ['accepted', 'declined'].includes(p.status)).length > 0 
+      ? Math.round((proposals.filter(p => p.status === 'accepted').length / proposals.filter(p => ['accepted', 'declined'].includes(p.status)).length) * 100) 
+      : 0
+  };
+
+  // Navigate to create new proposal
+  const handleNewProposal = () => {
+    navigate('/app/proposals/new');
+  };
+
+  // Navigate to edit proposal
+  const handleEditProposal = (id: string) => {
+    navigate(`/app/proposals/edit/${id}`);
   };
 
   const getStatusColor = (status: string) => {
@@ -321,13 +265,25 @@ const ProposalsHub: React.FC = () => {
         <Col xs={24} lg={16}>
           <Card 
             title={<><FileTextOutlined /> Recent Proposals</>}
-            extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setProposalModalVisible(true)}>New Proposal</Button>}
+            extra={<Button type="primary" icon={<PlusOutlined />} onClick={handleNewProposal}>New Proposal</Button>}
           >
+            {proposals.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <FileTextOutlined style={{ fontSize: 48, color: '#ccc', marginBottom: 16 }} />
+                <Title level={4} type="secondary">No proposals yet</Title>
+                <Text type="secondary">Create your first proposal to get started</Text>
+                <br /><br />
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleNewProposal}>
+                  Create Your First Proposal
+                </Button>
+              </div>
+            ) : (
             <Table
               dataSource={proposals.slice(0, 5)}
               rowKey="id"
               size="small"
               pagination={false}
+              onRow={(record) => ({ onClick: () => handleEditProposal(record.id), style: { cursor: 'pointer' } })}
               columns={[
                 {
                   title: 'Proposal',
@@ -368,13 +324,14 @@ const ProposalsHub: React.FC = () => {
                   key: 'actions',
                   render: (_, record) => (
                     <Space>
-                      <Button size="small" icon={<EyeOutlined />} />
+                      <Button size="small" icon={<EyeOutlined />} onClick={() => handleEditProposal(record.id)} />
                       <Button size="small" icon={<SendOutlined />} disabled={record.status !== 'draft'} />
                     </Space>
                   )
                 }
               ]}
             />
+            )}
           </Card>
         </Col>
 
@@ -455,15 +412,27 @@ const ProposalsHub: React.FC = () => {
               <Option value="declined">Declined</Option>
             </Select>
             <Button icon={<FilterOutlined />}>Filter</Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setProposalModalVisible(true)}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleNewProposal}>
               New Proposal
             </Button>
           </Space>
         }
       >
+        {proposals.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px' }}>
+            <FileTextOutlined style={{ fontSize: 64, color: '#ccc', marginBottom: 16 }} />
+            <Title level={3} type="secondary">No proposals yet</Title>
+            <Text type="secondary">Create your first proposal to start winning business</Text>
+            <br /><br />
+            <Button type="primary" size="large" icon={<PlusOutlined />} onClick={handleNewProposal}>
+              Create Your First Proposal
+            </Button>
+          </div>
+        ) : (
         <Table
           dataSource={proposals}
           rowKey="id"
+          onRow={(record) => ({ onClick: () => handleEditProposal(record.id), style: { cursor: 'pointer' } })}
           columns={[
             {
               title: 'Proposal',
@@ -554,7 +523,7 @@ const ProposalsHub: React.FC = () => {
                 <Dropdown
                   menu={{
                     items: [
-                      { key: 'view', label: 'View/Edit', icon: <EyeOutlined /> },
+                      { key: 'view', label: 'View/Edit', icon: <EyeOutlined />, onClick: () => handleEditProposal(record.id) },
                       { key: 'duplicate', label: 'Duplicate', icon: <CopyOutlined /> },
                       { key: 'send', label: 'Send', icon: <SendOutlined />, disabled: record.status !== 'draft' },
                       { key: 'download', label: 'Download PDF', icon: <DownloadOutlined /> },
@@ -569,6 +538,7 @@ const ProposalsHub: React.FC = () => {
             }
           ]}
         />
+        )}
       </Card>
     </div>
   );
@@ -933,9 +903,9 @@ const ProposalsHub: React.FC = () => {
         gradient="cyan"
         actions={
           <>
-            <Button icon={<SyncOutlined />}>Refresh</Button>
+            <Button icon={<SyncOutlined />} onClick={() => window.location.reload()}>Refresh</Button>
             <Button icon={<ExportOutlined />}>Export</Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setProposalModalVisible(true)}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleNewProposal}>
               New Proposal
             </Button>
           </>

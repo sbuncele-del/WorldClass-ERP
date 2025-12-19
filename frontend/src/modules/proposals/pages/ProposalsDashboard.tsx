@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Row,
@@ -12,7 +12,10 @@ import {
   Typography,
   Avatar,
   Dropdown,
+  Alert,
+  Spin,
 } from 'antd';
+import apiClient from '../../../services/api';
 import {
   PlusOutlined,
   FileTextOutlined,
@@ -28,6 +31,9 @@ import {
   FileDoneOutlined,
   FileSearchOutlined,
   FileExclamationOutlined,
+  RocketOutlined,
+  ThunderboltOutlined,
+  StarFilled,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
@@ -53,79 +59,42 @@ interface Proposal {
 
 const ProposalsDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalProposals: 0,
+    openProposals: 0,
+    acceptedValue: 0,
+    winRate: 0,
+    avgTimeToClose: 0,
+    viewedToday: 0,
+  });
+  const [recentProposals, setRecentProposals] = useState<Proposal[]>([]);
 
-  // Sample statistics
-  const stats = {
-    totalProposals: 156,
-    openProposals: 23,
-    acceptedValue: 487500,
-    winRate: 68,
-    avgTimeToClose: 5.2,
-    viewedToday: 8,
-  };
-
-  // Sample recent proposals
-  const recentProposals: Proposal[] = [
-    {
-      id: '1',
-      title: 'Enterprise Software Implementation',
-      client: 'TechCorp Industries',
-      value: 125000,
-      status: 'sent',
-      createdAt: '2024-01-12',
-      sentAt: '2024-01-13',
-      expiresAt: '2024-02-13',
-      template: 'Enterprise Solution',
-      owner: 'John Smith',
-    },
-    {
-      id: '2',
-      title: 'Annual Accounting Services',
-      client: 'ABC Manufacturing',
-      value: 48000,
-      status: 'viewed',
-      createdAt: '2024-01-10',
-      sentAt: '2024-01-11',
-      viewedAt: '2024-01-14',
-      expiresAt: '2024-02-10',
-      template: 'Professional Services',
-      owner: 'Sarah Johnson',
-    },
-    {
-      id: '3',
-      title: 'Cloud Migration Project',
-      client: 'Global Logistics Ltd',
-      value: 85000,
-      status: 'accepted',
-      createdAt: '2024-01-08',
-      sentAt: '2024-01-09',
-      viewedAt: '2024-01-10',
-      template: 'IT Services',
-      owner: 'Mike Davis',
-    },
-    {
-      id: '4',
-      title: 'Marketing Strategy Consulting',
-      client: 'Sunrise Brands',
-      value: 35000,
-      status: 'draft',
-      createdAt: '2024-01-14',
-      template: 'Consulting',
-      owner: 'Emily Chen',
-    },
-    {
-      id: '5',
-      title: 'HR System Integration',
-      client: 'Pacific Hotels Group',
-      value: 62000,
-      status: 'declined',
-      createdAt: '2024-01-05',
-      sentAt: '2024-01-06',
-      viewedAt: '2024-01-08',
-      template: 'Enterprise Solution',
-      owner: 'John Smith',
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, proposalsRes] = await Promise.all([
+          apiClient.get('/api/proposals/stats'),
+          apiClient.get('/api/proposals/recent'),
+        ]);
+        setStats(statsRes.data || {
+          totalProposals: 0,
+          openProposals: 0,
+          acceptedValue: 0,
+          winRate: 0,
+          avgTimeToClose: 0,
+          viewedToday: 0,
+        });
+        setRecentProposals(proposalsRes.data || []);
+      } catch (error) {
+        console.error('Failed to fetch proposals dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -234,6 +203,95 @@ const ProposalsDashboard: React.FC = () => {
 
   return (
     <div className="proposals-dashboard">
+      {/* World-Class Builder Promo Banner */}
+      <Card 
+        style={{ 
+          marginBottom: 24, 
+          background: 'linear-gradient(135deg, #1e3a5f 0%, #722ed1 100%)',
+          border: 'none'
+        }}
+      >
+        <Row align="middle" justify="space-between">
+          <Col>
+            <Space size="large">
+              <div style={{
+                width: 60,
+                height: 60,
+                borderRadius: 12,
+                background: 'rgba(255,255,255,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <RocketOutlined style={{ fontSize: 32, color: 'white' }} />
+              </div>
+              <div>
+                <Space align="center" style={{ marginBottom: 4 }}>
+                  <Typography.Title level={4} style={{ color: 'white', margin: 0 }}>
+                    World-Class Proposal Builder
+                  </Typography.Title>
+                  <Tag color="gold" icon={<StarFilled />}>NEW</Tag>
+                </Space>
+                <Typography.Text style={{ color: 'rgba(255,255,255,0.85)' }}>
+                  5-Phase intelligent workflow: Intake → AI Content → Design → Collaboration → Delivery
+                </Typography.Text>
+              </div>
+            </Space>
+          </Col>
+          <Col>
+            <Space>
+              <Button 
+                size="large"
+                ghost
+                style={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)' }}
+                onClick={() => navigate('/proposals/builder')}
+              >
+                Learn More
+              </Button>
+              <Button 
+                type="primary"
+                size="large"
+                icon={<ThunderboltOutlined />}
+                onClick={() => navigate('/proposals/builder')}
+                style={{ 
+                  background: '#52c41a', 
+                  borderColor: '#52c41a',
+                  fontWeight: 600
+                }}
+              >
+                Start Building
+              </Button>
+            </Space>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* Featured Pitch Decks */}
+      <Row gutter={24} style={{ marginBottom: 24 }}>
+        <Col span={12}>
+          <Card hoverable onClick={() => navigate('/proposals/pitch/coffee')} style={{ background: '#fff', border: '1px solid #e5e7eb' }}>
+            <Space align="start">
+              <div style={{ width: 48, height: 48, background: '#d4a855', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>☕</div>
+              <div>
+                <Title level={5} style={{ margin: 0 }}>Coffee Value Chain Pitch</Title>
+                <Text type="secondary">Eswatini Coffee Investment Deck</Text>
+              </div>
+            </Space>
+          </Card>
+        </Col>
+        <Col span={12}>
+          <Card hoverable onClick={() => navigate('/proposals/pitch/siyabusa')} style={{ background: '#fff', border: '1px solid #e5e7eb' }}>
+            <Space align="start">
+              <div style={{ width: 48, height: 48, background: '#3b82f6', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: '#fff' }}>🚀</div>
+              <div>
+                <Title level={5} style={{ margin: 0 }}>SiyaBusa ERP Pitch</Title>
+                <Text type="secondary">Investment & Growth Deck</Text>
+              </div>
+            </Space>
+          </Card>
+        </Col>
+      </Row>
+
       <div className="page-header">
         <div>
           <Title level={4} style={{ margin: 0 }}>Proposal Builder</Title>

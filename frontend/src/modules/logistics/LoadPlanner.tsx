@@ -1,9 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
+
+interface SalesOrder {
+  id: string;
+  customerName: string;
+  orderDate: string;
+  deliveryDate: string;
+  origin: string;
+  destination: string;
+  distance: string;
+  itemCount: number;
+  weight: string;
+  volume: string;
+  value: string;
+  priority: string;
+  status: 'ready' | 'pending' | 'in-progress';
+}
 
 export default function LoadPlanner() {
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
+  const [pendingSalesOrders, setPendingSalesOrders] = useState<SalesOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const response = await apiClient.get('/api/logistics/loads');
+        setPendingSalesOrders(response.data?.data || response.data || []);
+      } catch (error) {
+        console.error('Error fetching pending orders:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchOrders();
+  }, []);
 
   const tabs = [
     { id: 'command', label: '🎯 Command Center', path: '/logistics/dashboard' },
@@ -20,84 +53,7 @@ export default function LoadPlanner() {
     { label: 'Load Planner' }
   ];
 
-  // Sample sales orders ready for load planning
-  const pendingSalesOrders = [
-    {
-      id: 'SO-2025-001',
-      customerName: 'Pick n Pay',
-      orderDate: '2025-11-10',
-      deliveryDate: '2025-11-12',
-      origin: 'Johannesburg Warehouse',
-      destination: 'Cape Town Store #5',
-      distance: '1,420 km',
-      itemCount: 850,
-      weight: '12,500 kg',
-      volume: '35 m³',
-      value: 'R 285,000',
-      priority: 'high',
-      status: 'ready' as const
-    },
-    {
-      id: 'SO-2025-002',
-      customerName: 'Shoprite Midrand',
-      orderDate: '2025-11-10',
-      deliveryDate: '2025-11-11',
-      origin: 'Johannesburg Warehouse',
-      destination: 'Midrand Distribution',
-      distance: '35 km',
-      itemCount: 320,
-      weight: '4,200 kg',
-      volume: '12 m³',
-      value: 'R 98,500',
-      priority: 'urgent',
-      status: 'ready' as const
-    },
-    {
-      id: 'SO-2025-003',
-      customerName: 'Woolworths Durban',
-      orderDate: '2025-11-09',
-      deliveryDate: '2025-11-13',
-      origin: 'Johannesburg Warehouse',
-      destination: 'Durban Gateway',
-      distance: '570 km',
-      itemCount: 620,
-      weight: '8,900 kg',
-      volume: '28 m³',
-      value: 'R 425,000',
-      priority: 'medium',
-      status: 'ready' as const
-    },
-    {
-      id: 'SO-2025-004',
-      customerName: 'Checkers Pretoria',
-      orderDate: '2025-11-10',
-      deliveryDate: '2025-11-11',
-      origin: 'Johannesburg Warehouse',
-      destination: 'Pretoria East',
-      distance: '58 km',
-      itemCount: 180,
-      weight: '2,800 kg',
-      volume: '9 m³',
-      value: 'R 67,000',
-      priority: 'medium',
-      status: 'ready' as const
-    },
-    {
-      id: 'SO-2025-005',
-      customerName: 'Spar Polokwane',
-      orderDate: '2025-11-11',
-      deliveryDate: '2025-11-14',
-      origin: 'Johannesburg Warehouse',
-      destination: 'Polokwane Central',
-      distance: '340 km',
-      itemCount: 450,
-      weight: '6,500 kg',
-      volume: '18 m³',
-      value: 'R 152,000',
-      priority: 'low',
-      status: 'ready' as const
-    }
-  ];
+  // Pending sales orders loaded from API
 
   const handleSelectOrder = (orderId: string) => {
     setSelectedOrders(prev => 

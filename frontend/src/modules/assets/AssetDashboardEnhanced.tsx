@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
 import type { SecondaryNavSection } from '../../components/layout/SecondaryNav';
 import { Boxes, Wrench, FileText, TrendingUp, Plus, Recycle } from 'lucide-react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface AssetStats {
@@ -38,29 +39,57 @@ const AssetDashboardEnhanced: React.FC = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
+      const response = await apiClient.get('/api/assets/dashboard');
+      if (response.data) {
+        setStats(response.data);
+      } else {
+        // Fallback to default if API returns nothing
+        setStats({
+          current_period: {
+            fiscal_year: new Date().getFullYear(),
+            period_number: new Date().getMonth() + 1,
+            period_name: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+            status: 'OPEN'
+          },
+          asset_summary: {
+            total_assets: 0,
+            total_value: 0,
+            monthly_depreciation: 0,
+            maintenance_due: 0,
+            active_assets: 0,
+            disposed_ytd: 0
+          },
+          top_categories: {
+            cat_1: { name: 'Category 1', value: 0 },
+            cat_2: { name: 'Category 2', value: 0 },
+            cat_3: { name: 'Category 3', value: 0 }
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching asset dashboard data:', err);
+      // Set default stats on error
       setStats({
         current_period: {
-          fiscal_year: 2025,
-          period_number: 11,
-          period_name: 'November 2025',
+          fiscal_year: new Date().getFullYear(),
+          period_number: new Date().getMonth() + 1,
+          period_name: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
           status: 'OPEN'
         },
         asset_summary: {
-          total_assets: 487,
-          total_value: 18945600,
-          monthly_depreciation: 156280,
-          maintenance_due: 12,
-          active_assets: 462,
-          disposed_ytd: 8
+          total_assets: 0,
+          total_value: 0,
+          monthly_depreciation: 0,
+          maintenance_due: 0,
+          active_assets: 0,
+          disposed_ytd: 0
         },
         top_categories: {
-          cat_1: { name: 'IT Equipment & Computers', value: 5248000 },
-          cat_2: { name: 'Machinery & Equipment', value: 7892000 },
-          cat_3: { name: 'Vehicles & Transport', value: 3650000 }
+          cat_1: { name: 'Category 1', value: 0 },
+          cat_2: { name: 'Category 2', value: 0 },
+          cat_3: { name: 'Category 3', value: 0 }
         }
       });
-    } catch (err) {
-      console.error('Error fetching asset dashboard data:', err);
     } finally {
       setLoading(false);
     }

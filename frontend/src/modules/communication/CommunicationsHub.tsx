@@ -14,7 +14,7 @@
  * - PoPI Act Compliance
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
   Input, Select, DatePicker, TimePicker, Modal, Form, Typography, Avatar,
@@ -38,6 +38,7 @@ import {
   DesktopOutlined, UsergroupAddOutlined, PlayCircleOutlined
 } from '@ant-design/icons';
 import { HubLayout, HubHeader, StatusBanner, HubTabs } from '../../components/hub';
+import apiClient from '../../services/api';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -145,62 +146,6 @@ interface Notification {
   sender?: string;
 }
 
-// Sample Data
-const sampleMessages: Message[] = [
-  { id: 'MSG-001', type: 'email', subject: 'Invoice #INV-2024-0156 Attached', content: 'Please find attached your invoice for June 2024...', from: 'accounts@company.co.za', to: ['client@email.com'], status: 'delivered', priority: 'normal', timestamp: '2024-06-15 09:30', attachments: ['INV-2024-0156.pdf'], isRead: true },
-  { id: 'MSG-002', type: 'sms', content: 'Your appointment is confirmed for 15 June at 10:00. Reply CONFIRM to accept.', from: 'Company', to: ['+27821234567'], status: 'delivered', priority: 'normal', timestamp: '2024-06-14 16:45', isRead: true },
-  { id: 'MSG-003', type: 'whatsapp', content: 'Hi John, your order #ORD-5678 has been dispatched and will arrive tomorrow.', from: '+27110001234', to: ['+27829876543'], status: 'read', priority: 'normal', timestamp: '2024-06-14 14:20', isRead: true },
-  { id: 'MSG-004', type: 'internal', subject: 'Team Meeting Tomorrow', content: 'Reminder: Team meeting tomorrow at 9:00 AM in the boardroom.', from: 'manager@company.co.za', to: ['team@company.co.za'], status: 'sent', priority: 'high', timestamp: '2024-06-14 17:00', isRead: false },
-  { id: 'MSG-005', type: 'email', subject: 'Quote Request - Office Supplies', content: 'Please provide a quote for the following items...', from: 'procurement@client.co.za', to: ['sales@company.co.za'], status: 'delivered', priority: 'normal', timestamp: '2024-06-14 11:15', isStarred: true, isRead: false },
-  { id: 'MSG-006', type: 'announcement', subject: 'System Maintenance Notice', content: 'The system will be undergoing maintenance this Saturday from 22:00 to 02:00.', from: 'IT Department', to: ['all@company.co.za'], status: 'sent', priority: 'high', timestamp: '2024-06-13 09:00', isRead: true }
-];
-
-const sampleContacts: Contact[] = [
-  { id: 'CON-001', name: 'John Smith', email: 'john@techcorp.co.za', phone: '+27821234567', company: 'TechCorp', type: 'customer', groups: ['VIP', 'Enterprise'], optInEmail: true, optInSMS: true, optInWhatsApp: true, lastContact: '2024-06-14' },
-  { id: 'CON-002', name: 'Sarah Johnson', email: 'sarah@supplies.co.za', phone: '+27839876543', company: 'Office Supplies Ltd', type: 'supplier', groups: ['Suppliers'], optInEmail: true, optInSMS: false, optInWhatsApp: true, lastContact: '2024-06-10' },
-  { id: 'CON-003', name: 'Mike Nkosi', email: 'mike.nkosi@company.co.za', phone: '+27761112233', type: 'employee', groups: ['Sales Team'], optInEmail: true, optInSMS: true, optInWhatsApp: true, lastContact: '2024-06-15' },
-  { id: 'CON-004', name: 'Lisa van der Berg', email: 'lisa@startup.co.za', phone: '+27845556666', company: 'StartUp Inc', type: 'lead', groups: ['Leads', 'SME'], optInEmail: true, optInSMS: true, optInWhatsApp: false, lastContact: '2024-06-12' },
-  { id: 'CON-005', name: 'David Mokoena', email: 'david@enterprise.co.za', phone: '+27829998877', company: 'Enterprise Solutions', type: 'customer', groups: ['Enterprise', 'Gold'], optInEmail: true, optInSMS: true, optInWhatsApp: true, lastContact: '2024-06-15' }
-];
-
-const sampleTemplates: Template[] = [
-  { id: 'TPL-001', name: 'Invoice Notification', type: 'email', category: 'Finance', subject: 'Invoice #{invoice_number} - {company_name}', content: 'Dear {customer_name},\n\nPlease find attached your invoice #{invoice_number} for {amount}.\n\nPayment is due by {due_date}.\n\nRegards,\n{company_name}', variables: ['customer_name', 'invoice_number', 'amount', 'due_date', 'company_name'], usageCount: 156, lastUsed: '2024-06-15' },
-  { id: 'TPL-002', name: 'Appointment Reminder', type: 'sms', category: 'Scheduling', content: 'Hi {name}, reminder: Your appointment is on {date} at {time}. Reply CONFIRM or call {phone} to reschedule.', variables: ['name', 'date', 'time', 'phone'], usageCount: 423, lastUsed: '2024-06-14' },
-  { id: 'TPL-003', name: 'Order Dispatch', type: 'whatsapp', category: 'Sales', content: 'Hi {customer_name}! 📦 Your order #{order_number} has been dispatched. Track it here: {tracking_link}', variables: ['customer_name', 'order_number', 'tracking_link'], usageCount: 89, lastUsed: '2024-06-14' },
-  { id: 'TPL-004', name: 'Payment Received', type: 'email', category: 'Finance', subject: 'Payment Confirmation - {company_name}', content: 'Dear {customer_name},\n\nThank you for your payment of {amount} received on {date}.\n\nYour account balance is now {balance}.\n\nRegards,\n{company_name}', variables: ['customer_name', 'amount', 'date', 'balance', 'company_name'], usageCount: 234, lastUsed: '2024-06-15' },
-  { id: 'TPL-005', name: 'Welcome Message', type: 'email', category: 'Onboarding', subject: 'Welcome to {company_name}!', content: 'Dear {customer_name},\n\nWelcome to {company_name}! We\'re excited to have you on board.\n\nYour account has been created. Login at: {login_url}\n\nRegards,\n{company_name} Team', variables: ['customer_name', 'company_name', 'login_url'], usageCount: 67, lastUsed: '2024-06-13' }
-];
-
-const sampleCampaigns: Campaign[] = [
-  { id: 'CMP-001', name: 'June Newsletter', type: 'email', status: 'completed', recipients: 2500, sent: 2500, delivered: 2380, opened: 892, clicked: 234, completedDate: '2024-06-01' },
-  { id: 'CMP-002', name: 'Winter Sale Promo', type: 'sms', status: 'running', recipients: 1500, sent: 1200, delivered: 1150, opened: 0, clicked: 0 },
-  { id: 'CMP-003', name: 'Product Launch', type: 'whatsapp', status: 'scheduled', recipients: 800, sent: 0, delivered: 0, opened: 0, clicked: 0, scheduledDate: '2024-06-20 09:00' },
-  { id: 'CMP-004', name: 'Customer Feedback Survey', type: 'email', status: 'draft', recipients: 3200, sent: 0, delivered: 0, opened: 0, clicked: 0 }
-];
-
-const sampleAnnouncements: Announcement[] = [
-  { id: 'ANN-001', title: 'System Maintenance Notice', content: 'The ERP system will undergo scheduled maintenance this Saturday from 22:00 to 02:00. Please save all work before this time.', author: 'IT Department', department: 'IT', priority: 'high', status: 'published', publishDate: '2024-06-13', expiryDate: '2024-06-16', viewCount: 145, targetAudience: ['All Staff'] },
-  { id: 'ANN-002', title: 'New Leave Policy', content: 'Please note the updated leave policy effective 1 July 2024. Key changes include increased annual leave and new parental leave benefits.', author: 'HR Department', department: 'HR', priority: 'normal', status: 'published', publishDate: '2024-06-10', viewCount: 312, targetAudience: ['All Staff'] },
-  { id: 'ANN-003', title: 'Q2 Results Announcement', content: 'We are pleased to announce strong Q2 results. Revenue up 15% YoY. Thank you to all teams for their hard work!', author: 'CEO Office', department: 'Executive', priority: 'normal', status: 'published', publishDate: '2024-06-05', viewCount: 428, targetAudience: ['All Staff'] },
-  { id: 'ANN-004', title: 'Office Closure - Youth Day', content: 'Please note that our offices will be closed on 16 June for Youth Day. Normal operations resume on 17 June.', author: 'Admin', department: 'Admin', priority: 'normal', status: 'published', publishDate: '2024-06-12', expiryDate: '2024-06-17', viewCount: 267, targetAudience: ['All Staff'] }
-];
-
-const sampleMeetings: Meeting[] = [
-  { id: 'MTG-001', title: 'Client Onboarding - Shoprite', description: 'Initial setup meeting for ERP implementation', host: 'Sarah Johnson', participants: ['Mike Chen', 'Emily Davis'], externalGuests: ['john@shoprite.co.za', 'mary@shoprite.co.za'], scheduledStart: '2024-06-15 10:00', scheduledEnd: '2024-06-15 11:30', status: 'scheduled', type: 'video', meetingLink: 'https://meet.worldclass-erp.co.za/mtg-001', passcode: '123456', recording: true },
-  { id: 'MTG-002', title: 'Weekly Sales Standup', description: 'Weekly sales team sync', host: 'David Mokoena', participants: ['Sales Team'], externalGuests: [], scheduledStart: '2024-06-15 09:00', scheduledEnd: '2024-06-15 09:30', status: 'live', type: 'video', meetingLink: 'https://meet.worldclass-erp.co.za/mtg-002', recording: false },
-  { id: 'MTG-003', title: 'Investor Pitch - Series B', description: 'Presentation to potential investors', host: 'CEO', participants: ['CFO', 'CTO'], externalGuests: ['investor1@vc.com', 'investor2@vc.com'], scheduledStart: '2024-06-16 14:00', scheduledEnd: '2024-06-16 15:00', status: 'scheduled', type: 'webinar', meetingLink: 'https://meet.worldclass-erp.co.za/mtg-003', passcode: 'INVEST2024', recording: true },
-  { id: 'MTG-004', title: 'Support Call - Discovery', description: 'Technical support session', host: 'Tech Support', participants: ['Support Team'], externalGuests: ['techteam@discovery.co.za'], scheduledStart: '2024-06-14 15:00', scheduledEnd: '2024-06-14 15:45', status: 'ended', type: 'video', meetingLink: 'https://meet.worldclass-erp.co.za/mtg-004', recording: true, recordingUrl: '/recordings/mtg-004.mp4' }
-];
-
-const sampleNotifications: Notification[] = [
-  { id: 'NOT-001', type: 'meeting', title: 'Meeting Starting Soon', content: 'Client Onboarding - Shoprite starts in 15 minutes', timestamp: '2024-06-15 09:45', isRead: false, priority: 'high', actionUrl: '/meetings/MTG-001' },
-  { id: 'NOT-002', type: 'message', title: 'New Email Received', content: 'Quote Request - Office Supplies from procurement@client.co.za', timestamp: '2024-06-14 11:15', isRead: false, priority: 'normal', sender: 'procurement@client.co.za' },
-  { id: 'NOT-003', type: 'approval', title: 'Purchase Order Approval Required', content: 'PO-2024-0089 requires your approval (R45,000)', timestamp: '2024-06-14 10:30', isRead: true, priority: 'high', actionUrl: '/approvals/PO-2024-0089' },
-  { id: 'NOT-004', type: 'system', title: 'Backup Completed', content: 'Daily system backup completed successfully', timestamp: '2024-06-15 02:00', isRead: true, priority: 'low' },
-  { id: 'NOT-005', type: 'task', title: 'Task Due Tomorrow', content: 'Review Q2 Financial Reports - Due June 16', timestamp: '2024-06-15 08:00', isRead: false, priority: 'normal', actionUrl: '/tasks/TSK-456' },
-  { id: 'NOT-006', type: 'alert', title: 'Low Stock Alert', content: 'Item SKU-1234 is below reorder level', timestamp: '2024-06-14 16:20', isRead: true, priority: 'urgent', actionUrl: '/inventory/SKU-1234' }
-];
-
 const CommunicationsHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [composeModalVisible, setComposeModalVisible] = useState(false);
@@ -209,15 +154,45 @@ const CommunicationsHub: React.FC = () => {
   const [announcementModalVisible, setAnnouncementModalVisible] = useState(false);
   const [meetingModalVisible, setMeetingModalVisible] = useState(false);
   const [meetingLoading, setMeetingLoading] = useState(false);
-  const [messages] = useState<Message[]>(sampleMessages);
-  const [contacts] = useState<Contact[]>(sampleContacts);
-  const [templates] = useState<Template[]>(sampleTemplates);
-  const [campaigns] = useState<Campaign[]>(sampleCampaigns);
-  const [announcements] = useState<Announcement[]>(sampleAnnouncements);
-  const [meetings, setMeetings] = useState<Meeting[]>(sampleMeetings);
-  const [notifications, setNotifications] = useState<Notification[]>(sampleNotifications);
+  const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selectedFolder, setSelectedFolder] = useState('inbox');
   const [form] = Form.useForm();
+
+  // Fetch all communication data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [messagesRes, contactsRes, templatesRes, campaignsRes, announcementsRes, meetingsRes, notificationsRes] = await Promise.all([
+          apiClient.get('/api/communications/messages').catch(() => ({ data: [] })),
+          apiClient.get('/api/communications/contacts').catch(() => ({ data: [] })),
+          apiClient.get('/api/communications/templates').catch(() => ({ data: [] })),
+          apiClient.get('/api/communications/campaigns').catch(() => ({ data: [] })),
+          apiClient.get('/api/communications/announcements').catch(() => ({ data: [] })),
+          apiClient.get('/api/meetings').catch(() => ({ data: [] })),
+          apiClient.get('/api/notifications').catch(() => ({ data: [] }))
+        ]);
+        setMessages(messagesRes.data?.messages || messagesRes.data || []);
+        setContacts(contactsRes.data?.contacts || contactsRes.data || []);
+        setTemplates(templatesRes.data?.templates || templatesRes.data || []);
+        setCampaigns(campaignsRes.data?.campaigns || campaignsRes.data || []);
+        setAnnouncements(announcementsRes.data?.announcements || announcementsRes.data || []);
+        setMeetings(meetingsRes.data?.meetings || meetingsRes.data || []);
+        setNotifications(notificationsRes.data?.notifications || notificationsRes.data || []);
+      } catch (error) {
+        console.error('Failed to fetch communications data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Daily.co Meeting API Integration
   const createInstantMeeting = useCallback(async () => {

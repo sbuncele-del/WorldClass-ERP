@@ -63,11 +63,28 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
     admin: false
   });
 
-  // Mock entities - in production, this comes from context/API
+  // Get tenant info from localStorage (set during login)
+  const getTenantInfo = () => {
+    try {
+      const tenantStr = localStorage.getItem('tenant');
+      if (tenantStr) {
+        return JSON.parse(tenantStr);
+      }
+    } catch (e) {
+      console.error('Failed to parse tenant info', e);
+    }
+    return null;
+  };
+
+  const tenant = getTenantInfo();
+  
+  // Use actual tenant data instead of mock
   const entities: Entity[] = [
-    { id: '1', name: 'ABC Trading (Pty) Ltd', type: 'company' },
-    { id: '2', name: 'ABC Holdings', type: 'company' },
-    { id: '3', name: 'Johannesburg Branch', type: 'branch' },
+    { 
+      id: tenant?.id || '1', 
+      name: tenant?.name || 'Your Company', 
+      type: 'company' 
+    }
   ];
   
   const [currentEntity, setCurrentEntity] = useState(entities[0]);
@@ -300,7 +317,7 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
       {!isCollapsed && (
         <div className="sidebar-footer">
           <div className="sidebar-version">
-            <span>WorldClass ERP</span>
+            <span>SiyaBusa ERP</span>
             <span className="version-tag">v2.0</span>
           </div>
         </div>

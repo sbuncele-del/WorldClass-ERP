@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './InvoiceManagement.css';
 
 interface Invoice {
@@ -56,7 +57,7 @@ const InvoiceManagement: React.FC = () => {
       if (filterStatus) params.append('status', filterStatus);
       if (filterPaymentStatus) params.append('payment_status', filterPaymentStatus);
 
-      const response = await fetch(`http://localhost:3000/api/sales/invoices?${params}`);
+      const response = await fetch(`${API_BASE_URL}/api/sales/invoices?${params}`);
       const data = await response.json();
       setInvoices(data.invoices || []);
     } catch (error) {
@@ -68,7 +69,7 @@ const InvoiceManagement: React.FC = () => {
 
   const fetchInvoiceDetails = async (id: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/sales/invoices/${id}`);
+      const response = await fetch(`${API_BASE_URL}/api/sales/invoices/${id}`);
       const data = await response.json();
       setSelectedInvoice(data.invoice);
       setIsModalOpen(true);
@@ -91,7 +92,7 @@ const InvoiceManagement: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3000/api/sales/payments', {
+      const response = await fetch(`${API_BASE_URL}/api/sales/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -1,10 +1,11 @@
 /**
  * API Configuration and Utility Functions
- * Centralized API configuration for the frontend
+ * Re-exports from centralized API service for backward compatibility
  */
+import { API_BASE_URL } from '../services/api.service';
 
-// Get API base URL from environment
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Re-export for backward compatibility
+export { API_BASE_URL };
 
 // Remove trailing slash if present
 export const API_URL = API_BASE_URL.replace(/\/$/, '');
@@ -15,7 +16,7 @@ export const API_URL = API_BASE_URL.replace(/\/$/, '');
 export const getApiUrl = (endpoint: string): string => {
   // Ensure endpoint starts with /
   const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  return `${API_URL}${normalizedEndpoint}`;
+  return `${API_BASE_URL}${normalizedEndpoint}`;
 };
 
 /**

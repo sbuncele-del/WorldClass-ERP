@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Row,
@@ -17,7 +17,9 @@ import {
   message,
   Tabs,
   Divider,
+  Spin,
 } from 'antd';
+import apiClient from '../../../services/api';
 import {
   PlusOutlined,
   SearchOutlined,
@@ -59,119 +61,28 @@ const PricingLibrary: React.FC = () => {
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [editingItem, setEditingItem] = useState<PricingItem | null>(null);
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<PricingCategory[]>([]);
+  const [pricingItems, setPricingItems] = useState<PricingItem[]>([]);
 
-  const categories: PricingCategory[] = [
-    { id: '1', name: 'Implementation', itemCount: 12, color: '#1890ff' },
-    { id: '2', name: 'Training', itemCount: 8, color: '#52c41a' },
-    { id: '3', name: 'Support', itemCount: 6, color: '#722ed1' },
-    { id: '4', name: 'Consulting', itemCount: 15, color: '#fa8c16' },
-    { id: '5', name: 'Development', itemCount: 10, color: '#eb2f96' },
-    { id: '6', name: 'Maintenance', itemCount: 4, color: '#13c2c2' },
-  ];
-
-  const pricingItems: PricingItem[] = [
-    {
-      id: '1',
-      name: 'System Implementation - Basic',
-      description: 'Standard system implementation including setup and configuration',
-      category: 'Implementation',
-      unitPrice: 25000,
-      unit: 'project',
-      taxable: true,
-      tags: ['Popular', 'Standard'],
-    },
-    {
-      id: '2',
-      name: 'System Implementation - Enterprise',
-      description: 'Full enterprise implementation with custom integrations',
-      category: 'Implementation',
-      unitPrice: 75000,
-      unit: 'project',
-      taxable: true,
-      tags: ['Enterprise'],
-    },
-    {
-      id: '3',
-      name: 'User Training - Onsite',
-      description: 'Full-day onsite training session for up to 20 users',
-      category: 'Training',
-      unitPrice: 2500,
-      unit: 'day',
-      taxable: true,
-      tags: ['Training'],
-    },
-    {
-      id: '4',
-      name: 'User Training - Virtual',
-      description: 'Half-day virtual training session',
-      category: 'Training',
-      unitPrice: 1200,
-      unit: 'session',
-      taxable: true,
-      tags: ['Training', 'Virtual'],
-    },
-    {
-      id: '5',
-      name: 'Premium Support - Annual',
-      description: '24/7 premium support with dedicated account manager',
-      category: 'Support',
-      unitPrice: 24000,
-      unit: 'year',
-      taxable: true,
-      tags: ['Support', 'Premium'],
-    },
-    {
-      id: '6',
-      name: 'Standard Support - Annual',
-      description: 'Business hours support via email and phone',
-      category: 'Support',
-      unitPrice: 12000,
-      unit: 'year',
-      taxable: true,
-      tags: ['Support'],
-    },
-    {
-      id: '7',
-      name: 'Strategic Consulting',
-      description: 'Business process analysis and optimization',
-      category: 'Consulting',
-      unitPrice: 350,
-      unit: 'hour',
-      taxable: true,
-      tags: ['Consulting'],
-    },
-    {
-      id: '8',
-      name: 'Technical Consulting',
-      description: 'Technical architecture and integration consulting',
-      category: 'Consulting',
-      unitPrice: 275,
-      unit: 'hour',
-      taxable: true,
-      tags: ['Consulting', 'Technical'],
-    },
-    {
-      id: '9',
-      name: 'Custom Development',
-      description: 'Custom feature development and customization',
-      category: 'Development',
-      unitPrice: 225,
-      unit: 'hour',
-      taxable: true,
-      tags: ['Development'],
-    },
-    {
-      id: '10',
-      name: 'API Integration',
-      description: 'Third-party API integration development',
-      category: 'Development',
-      unitPrice: 8500,
-      unit: 'integration',
-      taxable: true,
-      discount: 10,
-      tags: ['Development', 'Integration'],
-    },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [categoriesRes, itemsRes] = await Promise.all([
+          apiClient.get('/api/proposals/pricing/categories'),
+          apiClient.get('/api/proposals/pricing/items'),
+        ]);
+        setCategories(categoriesRes.data || []);
+        setPricingItems(itemsRes.data || []);
+      } catch (error) {
+        console.error('Failed to fetch pricing data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const columns: ColumnsType<PricingItem> = [
     {

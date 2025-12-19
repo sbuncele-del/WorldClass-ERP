@@ -1,36 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import apiClient from '../services/api';
 import './Construction.css';
 
 const Construction: React.FC = () => {
   const [activeTab, setActiveTab] = useState('projects');
+  const [projects, setProjects] = useState<any[]>([]);
+  const [equipment, setEquipment] = useState<any[]>([]);
+  const [subcontractors, setSubcontractors] = useState<any[]>([]);
+  const [materials, setMaterials] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const projects = [
-    { id: 'PRJ001', name: 'Downtown Office Complex', client: 'ABC Corp', status: 'In Progress', completion: 65, budget: 'R 45M', spent: 'R 28M', deadline: '2026-03-15', manager: 'John Smith' },
-    { id: 'PRJ002', name: 'Residential Estate Phase 2', client: 'XYZ Developers', status: 'In Progress', completion: 42, budget: 'R 32M', spent: 'R 12M', deadline: '2026-06-30', manager: 'Sarah Jones' },
-    { id: 'PRJ003', name: 'Shopping Mall Renovation', client: 'Retail Holdings', status: 'Planning', completion: 15, budget: 'R 18M', spent: 'R 2M', deadline: '2025-12-20', manager: 'Mike Brown' },
-    { id: 'PRJ004', name: 'Highway Bridge Construction', client: 'Government', status: 'In Progress', completion: 78, budget: 'R 67M', spent: 'R 51M', deadline: '2025-11-30', manager: 'Emily Davis' },
-  ];
-
-  const equipment = [
-    { id: 'EQ001', name: 'Excavator CAT 320', type: 'Heavy Machinery', status: 'Active', location: 'Project PRJ001', utilization: '85%', lastService: '2025-10-15', nextService: '2025-12-15' },
-    { id: 'EQ002', name: 'Concrete Mixer', type: 'Equipment', status: 'Active', location: 'Project PRJ002', utilization: '72%', lastService: '2025-11-01', nextService: '2026-01-01' },
-    { id: 'EQ003', name: 'Tower Crane', type: 'Heavy Machinery', status: 'Maintenance', location: 'Yard', utilization: '0%', lastService: '2025-11-08', nextService: '2025-11-20' },
-    { id: 'EQ004', name: 'Dump Truck Fleet (5)', type: 'Transport', status: 'Active', location: 'Project PRJ004', utilization: '90%', lastService: '2025-10-20', nextService: '2025-12-20' },
-  ];
-
-  const subcontractors = [
-    { id: 'SUB001', name: 'Elite Electrical Solutions', trade: 'Electrical', projects: 3, rating: 4.8, totalValue: 'R 8.5M', outstanding: 'R 1.2M', status: 'Active' },
-    { id: 'SUB002', name: 'Premium Plumbing Co', trade: 'Plumbing', projects: 2, rating: 4.6, totalValue: 'R 5.2M', outstanding: 'R 800K', status: 'Active' },
-    { id: 'SUB003', name: 'Master Painters Ltd', trade: 'Painting', projects: 4, rating: 4.9, totalValue: 'R 3.8M', outstanding: 'R 0', status: 'Active' },
-    { id: 'SUB004', name: 'Steel & Iron Works', trade: 'Metalwork', projects: 2, rating: 4.7, totalValue: 'R 12.5M', outstanding: 'R 2.5M', status: 'Active' },
-  ];
-
-  const materials = [
-    { id: 'MAT001', name: 'Concrete Grade 40', category: 'Raw Material', stock: '450 m³', allocated: '320 m³', unit: 'm³', supplier: 'ConCrete Suppliers', lastOrder: '2025-11-05', status: 'In Stock' },
-    { id: 'MAT002', name: 'Steel Rebar 16mm', category: 'Structural', stock: '2,400 kg', allocated: '1,800 kg', unit: 'kg', supplier: 'Steel Merchants', lastOrder: '2025-11-08', status: 'In Stock' },
-    { id: 'MAT003', name: 'Bricks Standard', category: 'Masonry', stock: '8,500 units', allocated: '6,200 units', unit: 'units', supplier: 'Brick Factory', lastOrder: '2025-10-28', status: 'Low Stock' },
-    { id: 'MAT004', name: 'Cement 50kg bags', category: 'Raw Material', stock: '850 bags', allocated: '620 bags', unit: 'bags', supplier: 'Cement Depot', lastOrder: '2025-11-10', status: 'In Stock' },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [projectsRes, equipmentRes, subcontractorsRes, materialsRes] = await Promise.all([
+          apiClient.get('/api/construction/projects'),
+          apiClient.get('/api/construction/equipment'),
+          apiClient.get('/api/construction/subcontractors'),
+          apiClient.get('/api/construction/materials')
+        ]);
+        setProjects(projectsRes.data?.data || projectsRes.data || []);
+        setEquipment(equipmentRes.data?.data || equipmentRes.data || []);
+        setSubcontractors(subcontractorsRes.data?.data || subcontractorsRes.data || []);
+        setMaterials(materialsRes.data?.data || materialsRes.data || []);
+      } catch (err) {
+        console.error('Error fetching construction data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {

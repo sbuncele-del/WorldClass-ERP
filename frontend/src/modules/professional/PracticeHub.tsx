@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import {
   Card,
   Row,
@@ -23,6 +24,7 @@ import {
   message,
   Divider,
   List,
+  Spin,
 } from 'antd';
 import {
   TeamOutlined,
@@ -49,108 +51,62 @@ import './PracticeHub.css';
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
-// Practice stats
-const practiceStats = {
-  activeClients: 47,
-  activeEngagements: 68,
-  teamMembers: 12,
-  utilization: 78,
-  wipValue: 1250000,
-  arBalance: 890000,
-  monthlyRevenue: 2450000,
-  targetRevenue: 3000000,
+// Default practice stats
+const defaultPracticeStats = {
+  activeClients: 0,
+  activeEngagements: 0,
+  teamMembers: 0,
+  utilization: 0,
+  wipValue: 0,
+  arBalance: 0,
+  monthlyRevenue: 0,
+  targetRevenue: 1,
 };
 
-// Active engagements
-const activeEngagements = [
-  {
-    id: 'ENG-001',
-    client: 'Stellar Holdings Ltd',
-    type: 'Annual Audit',
-    partner: 'John Matthews',
-    manager: 'Sarah Chen',
-    status: 'in-progress',
-    progress: 65,
-    deadline: '2025-12-31',
-    budget: 450000,
-    wip: 292500,
-    priority: 'high',
-  },
-  {
-    id: 'ENG-002',
-    client: 'TechVentures Inc',
-    type: 'Tax Planning',
-    partner: 'John Matthews',
-    manager: 'Michael Brown',
-    status: 'in-progress',
-    progress: 40,
-    deadline: '2025-12-20',
-    budget: 125000,
-    wip: 50000,
-    priority: 'medium',
-  },
-  {
-    id: 'ENG-003',
-    client: 'Global Manufacturing',
-    type: 'Advisory',
-    partner: 'Lisa Wang',
-    manager: 'David Kim',
-    status: 'review',
-    progress: 90,
-    deadline: '2025-12-15',
-    budget: 280000,
-    wip: 252000,
-    priority: 'high',
-  },
-  {
-    id: 'ENG-004',
-    client: 'Retail Solutions',
-    type: 'Monthly Accounting',
-    partner: 'Lisa Wang',
-    manager: 'Emma Wilson',
-    status: 'in-progress',
-    progress: 100,
-    deadline: '2025-12-10',
-    budget: 35000,
-    wip: 35000,
-    priority: 'low',
-  },
-  {
-    id: 'ENG-005',
-    client: 'Fintech Startup',
-    type: 'Due Diligence',
-    partner: 'John Matthews',
-    manager: 'Sarah Chen',
-    status: 'pending',
-    progress: 0,
-    deadline: '2026-01-15',
-    budget: 180000,
-    wip: 0,
-    priority: 'medium',
-  },
-];
-
-// Team members
-const teamMembers = [
-  { id: 1, name: 'John Matthews', role: 'Partner', avatar: 'JM', utilization: 85, billable: 142, target: 160, color: '#667eea' },
-  { id: 2, name: 'Lisa Wang', role: 'Partner', avatar: 'LW', utilization: 82, billable: 138, target: 160, color: '#764ba2' },
-  { id: 3, name: 'Sarah Chen', role: 'Manager', avatar: 'SC', utilization: 92, billable: 152, target: 165, color: '#10b981' },
-  { id: 4, name: 'Michael Brown', role: 'Manager', avatar: 'MB', utilization: 75, billable: 128, target: 165, color: '#f59e0b' },
-  { id: 5, name: 'David Kim', role: 'Senior', avatar: 'DK', utilization: 88, billable: 145, target: 165, color: '#3b82f6' },
-  { id: 6, name: 'Emma Wilson', role: 'Associate', avatar: 'EW', utilization: 65, billable: 110, target: 170, color: '#ec4899' },
-];
-
-// Upcoming deadlines
-const upcomingDeadlines = [
-  { client: 'Retail Solutions', engagement: 'Monthly Accounting', date: '2025-12-10', daysLeft: 0, type: 'urgent' },
-  { client: 'Global Manufacturing', engagement: 'Advisory', date: '2025-12-15', daysLeft: 4, type: 'warning' },
-  { client: 'TechVentures Inc', engagement: 'Tax Planning', date: '2025-12-20', daysLeft: 9, type: 'normal' },
-  { client: 'Stellar Holdings', engagement: 'Annual Audit', date: '2025-12-31', daysLeft: 20, type: 'normal' },
-];
+// Default empty arrays for API data
+const defaultEngagements: any[] = [];
+const defaultTeamMembers: any[] = [];
+const defaultDeadlines: any[] = [];
 
 const PracticeHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showNewEngagement, setShowNewEngagement] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [practiceStats, setPracticeStats] = useState(defaultPracticeStats);
+  const [activeEngagements, setActiveEngagements] = useState<any[]>(defaultEngagements);
+  const [teamMembers, setTeamMembers] = useState<any[]>(defaultTeamMembers);
+  const [upcomingDeadlines, setUpcomingDeadlines] = useState<any[]>(defaultDeadlines);
+
+  useEffect(() => {
+    const fetchPracticeData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, engagementsRes, teamRes, deadlinesRes] = await Promise.all([
+          apiClient.get('/api/practice/stats').catch(() => ({ data: null })),
+          apiClient.get('/api/practice/engagements').catch(() => ({ data: [] })),
+          apiClient.get('/api/practice/team').catch(() => ({ data: [] })),
+          apiClient.get('/api/practice/deadlines').catch(() => ({ data: [] })),
+        ]);
+        if (statsRes.data) setPracticeStats({ ...defaultPracticeStats, ...statsRes.data });
+        if (engagementsRes.data?.length) setActiveEngagements(engagementsRes.data);
+        if (teamRes.data?.length) setTeamMembers(teamRes.data);
+        if (deadlinesRes.data?.length) setUpcomingDeadlines(deadlinesRes.data);
+      } catch (err) {
+        console.error('Error fetching practice data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPracticeData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="practice-hub" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+        <Spin size="large" tip="Loading practice data..." />
+      </div>
+    );
+  }
 
   const getStatusTag = (status: string) => {
     const configs: Record<string, { color: string; text: string }> = {

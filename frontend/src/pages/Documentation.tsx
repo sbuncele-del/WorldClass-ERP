@@ -9,7 +9,7 @@ const Documentation: React.FC = () => {
       title: 'Getting Started',
       icon: '🚀',
       docs: [
-        { title: 'Quick Start Guide', description: 'Set up your AetherOS account in minutes', link: '#' },
+        { title: 'Quick Start Guide', description: 'Set up your SiyaBusa account in minutes', link: '#' },
         { title: 'System Requirements', description: 'Browser and device compatibility', link: '#' },
         { title: 'First-Time Setup', description: 'Configure your company and preferences', link: '#' },
         { title: 'User Management', description: 'Add team members and set permissions', link: '#' },
@@ -75,7 +75,7 @@ const Documentation: React.FC = () => {
       title: 'Integrations',
       icon: '🔗',
       docs: [
-        { title: 'API Overview', description: 'Introduction to the AetherOS API', link: '#' },
+        { title: 'API Overview', description: 'Introduction to the SiyaBusa API', link: '#' },
         { title: 'Authentication', description: 'OAuth 2.0 and API key setup', link: '#' },
         { title: 'Bank Feeds', description: 'Connect your bank accounts', link: '#' },
         { title: 'Third-Party Apps', description: 'Available integrations and setup', link: '#' },
@@ -100,7 +100,7 @@ const Documentation: React.FC = () => {
       <nav className="footer-page-nav">
         <Link to="/" className="logo">
           <span className="logo-icon">◈</span>
-          <span>AetherOS</span>
+          <span>SiyaBusa</span>
         </Link>
         <Link to="/" className="back-link">← Back to Home</Link>
       </nav>
@@ -113,7 +113,7 @@ const Documentation: React.FC = () => {
         >
           <header className="page-header">
             <h1>Documentation</h1>
-            <p className="subtitle">Everything you need to master AetherOS</p>
+            <p className="subtitle">Everything you need to master SiyaBusa</p>
           </header>
 
           <section className="content-section">
@@ -158,7 +158,7 @@ const Documentation: React.FC = () => {
       </main>
 
       <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} AetherOS by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
       </footer>
     </div>
   );

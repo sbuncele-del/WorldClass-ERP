@@ -9,7 +9,7 @@ const Support: React.FC = () => {
       <nav className="footer-page-nav">
         <Link to="/" className="logo">
           <span className="logo-icon">◈</span>
-          <span>AetherOS</span>
+          <span>SiyaBusa</span>
         </Link>
         <Link to="/" className="back-link">← Back to Home</Link>
       </nav>
@@ -39,8 +39,8 @@ const Support: React.FC = () => {
                 <div className="support-icon">📧</div>
                 <h2>Email Support</h2>
                 <p>Send us a detailed message and we'll respond within 24 hours.</p>
-                <a href="mailto:support@aetheros.io" className="btn-secondary">
-                  support@aetheros.io
+                <a href="mailto:support@siyabusa.co.za" className="btn-secondary">
+                  support@siyabusa.co.za
                 </a>
               </div>
 
@@ -57,7 +57,7 @@ const Support: React.FC = () => {
                 <div className="support-icon">🎓</div>
                 <h2>Training</h2>
                 <p>Schedule a training session for you and your team.</p>
-                <a href="mailto:training@aetheros.io" className="btn-secondary">
+                <a href="mailto:training@siyabusa.co.za" className="btn-secondary">
                   Request Training
                 </a>
               </div>
@@ -79,7 +79,7 @@ const Support: React.FC = () => {
               <details className="faq-item">
                 <summary>Can I import data from my existing system?</summary>
                 <p>
-                  Yes! AetherOS supports importing data from Excel, CSV files, and many 
+                  Yes! SiyaBusa supports importing data from Excel, CSV files, and many 
                   popular accounting systems. Our implementation team can assist with 
                   complex migrations. Contact us to discuss your specific requirements.
                 </p>
@@ -134,7 +134,7 @@ const Support: React.FC = () => {
               <details className="faq-item">
                 <summary>What browsers are supported?</summary>
                 <p>
-                  AetherOS works best on the latest versions of Chrome, Firefox, Safari, 
+                  SiyaBusa works best on the latest versions of Chrome, Firefox, Safari, 
                   and Edge. We recommend using Chrome for the best experience. Internet 
                   Explorer is not supported.
                 </p>
@@ -200,7 +200,7 @@ const Support: React.FC = () => {
             <h2>Still Need Help?</h2>
             <p>Our team is ready to assist you with any questions or issues.</p>
             <div className="cta-buttons">
-              <a href="mailto:support@aetheros.io" className="btn-primary">Email Support</a>
+              <a href="mailto:support@siyabusa.co.za" className="btn-primary">Email Support</a>
               <Link to="/contact" className="btn-secondary">Contact Us</Link>
             </div>
           </section>
@@ -208,7 +208,7 @@ const Support: React.FC = () => {
       </main>
 
       <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} AetherOS by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
       </footer>
     </div>
   );

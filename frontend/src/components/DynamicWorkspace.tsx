@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../services/api.service';
 import {
   DollarSign,
   TrendingUp,
@@ -83,15 +84,14 @@ const DynamicWorkspace: React.FC = () => {
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        const token = localStorage.getItem('token');
+                const token = localStorage.getItem('token');
 
         if (!token) {
           navigate('/login');
           return;
         }
 
-        const response = await fetch(`${apiUrl}/api/modules/available`, {
+        const response = await fetch(`${API_BASE_URL}/api/modules/available`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

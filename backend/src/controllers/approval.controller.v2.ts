@@ -191,7 +191,7 @@ export const approveEntry = async (req: TenantRequest, res: Response): Promise<v
       SELECT je.*, aw.name as workflow_name
       FROM journal_entries je
       LEFT JOIN approval_workflows aw ON je.workflow_id = aw.id
-      WHERE je.id = $1 AND je.tenant_id = $2
+      WHERE je.entry_id = $1 AND je.tenant_id = $2
     `, [journalEntryId, tenantId]);
 
     if (entryQuery.rows.length === 0) {

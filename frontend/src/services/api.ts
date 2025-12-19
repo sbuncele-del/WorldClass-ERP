@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Production: empty string = relative URLs through CloudFront proxy
+// VITE_API_URL should be set in .env files, no fallback
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

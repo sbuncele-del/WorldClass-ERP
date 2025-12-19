@@ -27,6 +27,7 @@ import {
   Loader
 } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
+import { API_BASE_URL } from '../services/api.service';
 import './DriverDashboard.css';
 
 interface Trip {
@@ -218,9 +219,8 @@ const DriverDashboard: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      
-      const response = await fetch(`${apiUrl}/api/delivery/${currentTrip.id}/driver-arrived`, {
+            
+      const response = await fetch(`${API_BASE_URL}/api/delivery/${currentTrip.id}/driver-arrived`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -267,9 +267,8 @@ const DriverDashboard: React.FC = () => {
     setIsProcessing(true);
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      
-      const response = await fetch(`${apiUrl}/api/delivery/${currentTrip?.id}/verify-code`, {
+            
+      const response = await fetch(`${API_BASE_URL}/api/delivery/${currentTrip?.id}/verify-code`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -365,8 +364,7 @@ const DriverDashboard: React.FC = () => {
     setIsUploading(true);
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
+      
       const formData = new FormData();
       podFiles.forEach((file, index) => {
         formData.append(`pod_${index}`, file);
@@ -374,7 +372,7 @@ const DriverDashboard: React.FC = () => {
       formData.append('verification_id', deliveryVerificationId || '');
       formData.append('notes', 'Delivered successfully');
 
-      const response = await fetch(`${apiUrl}/api/delivery/${currentTrip?.id}/pod`, {
+      const response = await fetch(`${API_BASE_URL}/api/delivery/${currentTrip?.id}/pod`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -456,9 +454,8 @@ const DriverDashboard: React.FC = () => {
     // Send to backend API
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      
-      await fetch(`${apiUrl}/api/messages`, {
+            
+      await fetch(`${API_BASE_URL}/api/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -492,8 +489,7 @@ const DriverDashboard: React.FC = () => {
     // Send emergency alert to backend
     try {
       const token = localStorage.getItem('token');
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      
+            
       // Get current location if available
       let location = 'Unknown';
       let coordinates = null;
@@ -513,7 +509,7 @@ const DriverDashboard: React.FC = () => {
         }
       }
       
-      await fetch(`${apiUrl}/api/messages/emergency`, {
+      await fetch(`${API_BASE_URL}/api/messages/emergency`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -54,7 +54,8 @@ export interface JournalEntry {
 
 export class JournalEntryRepository extends BaseRepository<JournalEntry> {
   protected tableName = 'journal_entries';
-  protected schema = 'financial';
+  protected schema = 'public';
+  protected primaryKey = 'entry_id';
 
   /**
    * Get entry with lines
@@ -65,7 +66,7 @@ export class JournalEntryRepository extends BaseRepository<JournalEntry> {
 
     const linesSql = `
       SELECT jel.*, a.account_number, a.name as account_name
-      FROM financial.journal_entry_lines jel
+      FROM journal_entry_lines jel
       JOIN financial.accounts a ON a.id = jel.account_id
       WHERE jel.journal_entry_id = $2 AND jel.tenant_id = $1
       ORDER BY jel.line_number
@@ -122,12 +123,12 @@ export class JournalEntryRepository extends BaseRepository<JournalEntry> {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         await client.query(`
-          INSERT INTO financial.journal_entry_lines
+          INSERT INTO journal_entry_lines
           (tenant_id, journal_entry_id, line_number, account_id, description,
            debit_amount, credit_amount, cost_center_id, project_id)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         `, [
-          ctx.tenantId, entry.id, i + 1, line.account_id, line.description,
+          ctx.tenantId, entry.entry_id, i + 1, line.account_id, line.description,
           line.debit_amount || 0, line.credit_amount || 0,
           line.cost_center_id, line.project_id
         ]);
@@ -267,8 +268,8 @@ export class JournalEntryRepository extends BaseRepository<JournalEntry> {
           COALESCE(jel.description, je.description) as description,
           jel.debit_amount as debit,
           jel.credit_amount as credit
-        FROM financial.journal_entry_lines jel
-        JOIN ${this.fullTableName} je ON je.id = jel.journal_entry_id
+        FROM journal_entry_lines jel
+        JOIN ${this.fullTableName} je ON je.entry_id = jel.journal_entry_id
         WHERE jel.tenant_id = $1 
           AND jel.account_id = $2
           AND je.status = 'posted'

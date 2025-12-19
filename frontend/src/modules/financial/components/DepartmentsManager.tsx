@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './DepartmentsManager.css';
 
 interface Department {
@@ -46,7 +47,7 @@ const DepartmentsManager: React.FC = () => {
   const fetchDepartments = async () => {
     try {
       setLoading(true);
-      const url = `http://localhost:3000/api/financial/dimensions/departments${showInactive ? '?include_inactive=true' : ''}`;
+      const url = `${API_BASE_URL}/api/financial/dimensions/departments${showInactive ? '?include_inactive=true' : ''}`;
       const response = await fetch(url);
       const result = await response.json();
       
@@ -108,8 +109,8 @@ const DepartmentsManager: React.FC = () => {
 
     try {
       const url = editingDepartment
-        ? `http://localhost:3000/api/financial/dimensions/departments/${editingDepartment.id}`
-        : 'http://localhost:3000/api/financial/dimensions/departments';
+        ? `${API_BASE_URL}/api/financial/dimensions/departments/${editingDepartment.id}`
+        : `${API_BASE_URL}/api/financial/dimensions/departments`;
       
       const response = await fetch(url, {
         method: editingDepartment ? 'PUT' : 'POST',
@@ -132,7 +133,7 @@ const DepartmentsManager: React.FC = () => {
 
   const handleToggleActive = async (department: Department) => {
     try {
-      const url = `http://localhost:3000/api/financial/dimensions/departments/${department.id}/${
+      const url = `${API_BASE_URL}/api/financial/dimensions/departments/${department.id}/${
         department.is_active ? 'deactivate' : 'activate'
       }`;
       

@@ -1,31 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { vehiclesAPI, Vehicle } from '../../services/logistics.api';
 import '../../styles/erp-ui.css';
-
-interface Vehicle {
-  vehicle_id: number;
-  vehicle_number: string;
-  registration_number: string;
-  make: string;
-  model: string;
-  vehicle_type: string;
-  year_of_manufacture: number;
-  status: string;
-  current_driver: string;
-  last_service_date: string;
-  next_service_date: string;
-  next_service_km: number;
-  current_odometer: number;
-  license_expiry: string;
-  roadworthy_expiry: string;
-  insurance_expiry: string;
-}
 
 const FleetManagement: React.FC = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [filter, setFilter] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchVehicles();
@@ -33,104 +16,13 @@ const FleetManagement: React.FC = () => {
 
   const fetchVehicles = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // Mock data - replace with actual API call
-      const mockVehicles: Vehicle[] = [
-        {
-          vehicle_id: 1,
-          vehicle_number: 'TRK-001',
-          registration_number: 'ABC 123 GP',
-          make: 'Mercedes-Benz',
-          model: 'Actros 2646',
-          vehicle_type: 'TRUCK',
-          year_of_manufacture: 2022,
-          status: 'ACTIVE',
-          current_driver: 'John Mthembu',
-          last_service_date: '2025-09-15',
-          next_service_date: '2025-12-15',
-          next_service_km: 195000,
-          current_odometer: 185420,
-          license_expiry: '2026-03-20',
-          roadworthy_expiry: '2025-11-30',
-          insurance_expiry: '2026-02-15'
-        },
-        {
-          vehicle_id: 2,
-          vehicle_number: 'TRK-002',
-          registration_number: 'DEF 456 GP',
-          make: 'Volvo',
-          model: 'FH16',
-          vehicle_type: 'TRUCK',
-          year_of_manufacture: 2021,
-          status: 'ACTIVE',
-          current_driver: 'Sarah Ndlovu',
-          last_service_date: '2025-10-01',
-          next_service_date: '2026-01-01',
-          next_service_km: 220000,
-          current_odometer: 212350,
-          license_expiry: '2026-05-10',
-          roadworthy_expiry: '2026-01-15',
-          insurance_expiry: '2025-12-20'
-        },
-        {
-          vehicle_id: 3,
-          vehicle_number: 'TRK-003',
-          registration_number: 'GHI 789 GP',
-          make: 'Scania',
-          model: 'R500',
-          vehicle_type: 'TRUCK',
-          year_of_manufacture: 2020,
-          status: 'MAINTENANCE',
-          current_driver: '-',
-          last_service_date: '2025-08-20',
-          next_service_date: '2025-11-20',
-          next_service_km: 175000,
-          current_odometer: 176340,
-          license_expiry: '2025-11-15',
-          roadworthy_expiry: '2025-11-10',
-          insurance_expiry: '2026-04-30'
-        },
-        {
-          vehicle_id: 4,
-          vehicle_number: 'VAN-001',
-          registration_number: 'JKL 012 GP',
-          make: 'Mercedes-Benz',
-          model: 'Sprinter 519',
-          vehicle_type: 'VAN',
-          year_of_manufacture: 2023,
-          status: 'ACTIVE',
-          current_driver: 'Thabo Dlamini',
-          last_service_date: '2025-10-10',
-          next_service_date: '2026-01-10',
-          next_service_km: 35000,
-          current_odometer: 28450,
-          license_expiry: '2026-08-20',
-          roadworthy_expiry: '2026-03-15',
-          insurance_expiry: '2026-06-30'
-        },
-        {
-          vehicle_id: 5,
-          vehicle_number: 'BKK-001',
-          registration_number: 'MNO 345 GP',
-          make: 'Toyota',
-          model: 'Hilux 2.8GD',
-          vehicle_type: 'BAKKIE',
-          year_of_manufacture: 2024,
-          status: 'ACTIVE',
-          current_driver: 'Peter Mokoena',
-          last_service_date: '2025-09-25',
-          next_service_date: '2025-12-25',
-          next_service_km: 25000,
-          current_odometer: 18920,
-          license_expiry: '2027-01-10',
-          roadworthy_expiry: '2026-09-20',
-          insurance_expiry: '2026-03-15'
-        }
-      ];
-
-      setVehicles(mockVehicles);
+      const response = await vehiclesAPI.getVehicles();
+      setVehicles(response.vehicles || []);
     } catch (error) {
       console.error('Error fetching vehicles:', error);
+      setError('Failed to load vehicles. Please retry.');
     } finally {
       setLoading(false);
     }
@@ -184,8 +76,17 @@ const FleetManagement: React.FC = () => {
           <h1 className="dashboard-title">🚚 Fleet Management</h1>
           <p className="dashboard-subtitle">Manage vehicles, maintenance, and documents</p>
         </div>
-        <button className="action-button primary">+ Add Vehicle</button>
+        <div className="header-actions" style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="action-button" onClick={fetchVehicles}>Refresh</button>
+          <button className="action-button primary">+ Add Vehicle</button>
+        </div>
       </div>
+
+      {error && (
+        <div className="alert error" style={{ marginBottom: '1rem' }}>
+          {error}
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>

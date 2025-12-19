@@ -219,9 +219,9 @@ export class JournalEntryService {
         END as balance
       FROM chart_of_accounts a
       LEFT JOIN journal_entry_lines jel ON jel.account_id = a.id
-      LEFT JOIN journal_entries je ON je.id = jel.journal_entry_id
-      WHERE (je.status = 'POSTED' OR je.id IS NULL)
-        AND (je.fiscal_year < $1 OR (je.fiscal_year = $1 AND je.fiscal_period <= $2) OR je.id IS NULL)
+      LEFT JOIN journal_entries je ON je.entry_id = jel.journal_entry_id
+      WHERE (je.status = 'POSTED' OR je.entry_id IS NULL)
+        AND (je.fiscal_year < $1 OR (je.fiscal_year = $1 AND je.fiscal_period <= $2) OR je.entry_id IS NULL)
         AND a.is_header = false
         AND a.is_active = true
       GROUP BY a.id, a.code, a.name, a.account_type, a.normal_balance

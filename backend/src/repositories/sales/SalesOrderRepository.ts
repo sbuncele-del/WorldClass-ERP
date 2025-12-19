@@ -65,6 +65,7 @@ export interface SalesOrder {
 export class SalesOrderRepository extends BaseRepository<SalesOrder> {
   protected tableName = 'orders';
   protected schema = 'sales';
+  protected softDelete = false;  // Table doesn't have deleted_at column
 
   /**
    * Get orders by status

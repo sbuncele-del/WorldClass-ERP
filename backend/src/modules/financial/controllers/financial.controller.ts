@@ -484,7 +484,7 @@ export const getAccountLedger = async (req: Request, res: Response): Promise<voi
         jel.department,
         jel.project
       FROM journal_entry_lines jel
-      INNER JOIN journal_entries je ON je.id = jel.journal_entry_id
+      INNER JOIN journal_entries je ON je.entry_id = jel.journal_entry_id
       WHERE ${conditions.join(' AND ')}
       ORDER BY je.posting_date, je.journal_number, jel.line_number
     `;

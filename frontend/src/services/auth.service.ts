@@ -53,6 +53,7 @@ export interface PasswordResetRequestData {
 export interface PasswordResetData {
   token: string;
   newPassword: string;
+  confirmPassword?: string;
 }
 
 class AuthService {
@@ -65,6 +66,7 @@ class AuthService {
     // Store tokens
     if (response.data.data?.tokens?.accessToken) {
       localStorage.setItem('token', response.data.data.tokens.accessToken);
+      localStorage.setItem('authToken', response.data.data.tokens.accessToken);
       localStorage.setItem('refreshToken', response.data.data.tokens.refreshToken);
       localStorage.setItem('user', JSON.stringify(response.data.data.user));
       localStorage.setItem('tenant', JSON.stringify(response.data.data.tenant));
@@ -88,6 +90,7 @@ class AuthService {
     // Store tokens
     if (response.data.data?.tokens?.accessToken) {
       localStorage.setItem('token', response.data.data.tokens.accessToken);
+      localStorage.setItem('authToken', response.data.data.tokens.accessToken);
       localStorage.setItem('refreshToken', response.data.data.tokens.refreshToken);
       localStorage.setItem('user', JSON.stringify(response.data.data.user));
       localStorage.setItem('tenant', JSON.stringify(response.data.data.tenant));
@@ -111,6 +114,7 @@ class AuthService {
     } finally {
       // Clear local storage regardless of API response
       localStorage.removeItem('token');
+      localStorage.removeItem('authToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
       localStorage.removeItem('tenant');
@@ -136,6 +140,7 @@ class AuthService {
     // Update token
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('authToken', response.data.token);
     }
 
     return response.data;
@@ -145,8 +150,8 @@ class AuthService {
    * Request password reset
    */
   async requestPasswordReset(data: PasswordResetRequestData): Promise<{ message: string }> {
-    const response = await apiClient.post<{ message: string }>(
-      '/api/auth/password-reset/request',
+    const response = await apiClient.post<{ message?: string; success?: boolean }>(
+      '/api/v2/auth/password/reset-request',
       data
     );
     return response.data;
@@ -156,11 +161,15 @@ class AuthService {
    * Reset password with token
    */
   async resetPassword(data: PasswordResetData): Promise<{ message: string }> {
-    const response = await apiClient.post<{ message: string }>(
-      '/api/auth/password-reset/confirm',
-      data
+    const response = await apiClient.post<{ message?: string; success?: boolean }>(
+      '/api/v2/auth/password/reset',
+      {
+        token: data.token,
+        password: data.newPassword,
+        confirmPassword: data.confirmPassword ?? data.newPassword,
+      }
     );
-    return response.data;
+    return response.data as { message: string };
   }
 
   /**
@@ -183,14 +192,14 @@ class AuthService {
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
-    return !!localStorage.getItem('token');
+    return !!(localStorage.getItem('token') || localStorage.getItem('authToken'));
   }
 
   /**
    * Get authentication token
    */
   getToken(): string | null {
-    return localStorage.getItem('token');
+    return localStorage.getItem('token') || localStorage.getItem('authToken');
   }
 }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import apiClient from '../../services/api';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
 import type { SecondaryNavSection } from '../../components/layout/SecondaryNav';
 import { DollarSign, Calendar, Shield, UserPlus, BarChart3, FileText } from 'lucide-react';
@@ -38,29 +39,57 @@ const HRDashboardEnhanced: React.FC = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
+      const response = await apiClient.get('/api/hr/dashboard/stats');
+      if (response.data?.success && response.data?.data) {
+        setStats(response.data.data);
+      } else {
+        // Fallback to default structure if API returns unexpected format
+        setStats({
+          current_period: {
+            fiscal_year: new Date().getFullYear(),
+            period_number: new Date().getMonth() + 1,
+            period_name: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+            status: 'OPEN'
+          },
+          hr_summary: {
+            total_employees: 0,
+            active_employees: 0,
+            total_payroll: 0,
+            pending_leave: 0,
+            open_positions: 0,
+            compliance_score: 0
+          },
+          top_departments: {
+            dept_1: { name: 'N/A', headcount: 0 },
+            dept_2: { name: 'N/A', headcount: 0 },
+            dept_3: { name: 'N/A', headcount: 0 }
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching HR dashboard data:', err);
+      // Set fallback data on error
       setStats({
         current_period: {
-          fiscal_year: 2025,
-          period_number: 11,
-          period_name: 'November 2025',
+          fiscal_year: new Date().getFullYear(),
+          period_number: new Date().getMonth() + 1,
+          period_name: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
           status: 'OPEN'
         },
         hr_summary: {
-          total_employees: 127,
-          active_employees: 124,
-          total_payroll: 4856300,
-          pending_leave: 18,
-          open_positions: 5,
-          compliance_score: 94
+          total_employees: 0,
+          active_employees: 0,
+          total_payroll: 0,
+          pending_leave: 0,
+          open_positions: 0,
+          compliance_score: 0
         },
         top_departments: {
-          dept_1: { name: 'Operations', headcount: 45 },
-          dept_2: { name: 'Sales & Marketing', headcount: 28 },
-          dept_3: { name: 'IT & Development', headcount: 22 }
+          dept_1: { name: 'N/A', headcount: 0 },
+          dept_2: { name: 'N/A', headcount: 0 },
+          dept_3: { name: 'N/A', headcount: 0 }
         }
       });
-    } catch (err) {
-      console.error('Error fetching HR dashboard data:', err);
     } finally {
       setLoading(false);
     }

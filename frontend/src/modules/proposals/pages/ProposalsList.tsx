@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Table,
@@ -14,7 +14,9 @@ import {
   Modal,
   message,
   Tooltip,
+  Spin,
 } from 'antd';
+import apiClient from '../../../services/api';
 import {
   PlusOutlined,
   SearchOutlined,
@@ -62,123 +64,23 @@ const ProposalsList: React.FC = () => {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
 
-  // Sample data
-  const proposals: Proposal[] = [
-    {
-      id: '1',
-      title: 'Enterprise Software Implementation',
-      client: 'TechCorp Industries',
-      clientEmail: 'procurement@techcorp.com',
-      value: 125000,
-      status: 'sent',
-      createdAt: '2024-01-12',
-      sentAt: '2024-01-13',
-      expiresAt: '2024-02-13',
-      template: 'Enterprise Solution',
-      owner: 'John Smith',
-      tags: ['Enterprise', 'Software'],
-    },
-    {
-      id: '2',
-      title: 'Annual Accounting Services',
-      client: 'ABC Manufacturing',
-      clientEmail: 'cfo@abcmfg.com',
-      value: 48000,
-      status: 'viewed',
-      createdAt: '2024-01-10',
-      sentAt: '2024-01-11',
-      viewedAt: '2024-01-14',
-      expiresAt: '2024-02-10',
-      template: 'Professional Services',
-      owner: 'Sarah Johnson',
-      tags: ['Accounting', 'Annual'],
-    },
-    {
-      id: '3',
-      title: 'Cloud Migration Project',
-      client: 'Global Logistics Ltd',
-      clientEmail: 'cto@globallogistics.com',
-      value: 85000,
-      status: 'accepted',
-      createdAt: '2024-01-08',
-      sentAt: '2024-01-09',
-      viewedAt: '2024-01-10',
-      acceptedAt: '2024-01-12',
-      template: 'IT Services',
-      owner: 'Mike Davis',
-      tags: ['Cloud', 'Migration'],
-    },
-    {
-      id: '4',
-      title: 'Marketing Strategy Consulting',
-      client: 'Sunrise Brands',
-      clientEmail: 'marketing@sunrisebrands.com',
-      value: 35000,
-      status: 'draft',
-      createdAt: '2024-01-14',
-      template: 'Consulting',
-      owner: 'Emily Chen',
-      tags: ['Marketing', 'Strategy'],
-    },
-    {
-      id: '5',
-      title: 'HR System Integration',
-      client: 'Pacific Hotels Group',
-      clientEmail: 'hr@pacifichotels.com',
-      value: 62000,
-      status: 'declined',
-      createdAt: '2024-01-05',
-      sentAt: '2024-01-06',
-      viewedAt: '2024-01-08',
-      template: 'Enterprise Solution',
-      owner: 'John Smith',
-      tags: ['HR', 'Integration'],
-    },
-    {
-      id: '6',
-      title: 'Cybersecurity Assessment',
-      client: 'FinSecure Bank',
-      clientEmail: 'security@finsecure.com',
-      value: 45000,
-      status: 'sent',
-      createdAt: '2024-01-11',
-      sentAt: '2024-01-12',
-      expiresAt: '2024-02-12',
-      template: 'Security Services',
-      owner: 'Alex Turner',
-      tags: ['Security', 'Assessment'],
-    },
-    {
-      id: '7',
-      title: 'E-commerce Platform Development',
-      client: 'Fashion Forward Inc',
-      clientEmail: 'tech@fashionforward.com',
-      value: 175000,
-      status: 'viewed',
-      createdAt: '2024-01-09',
-      sentAt: '2024-01-10',
-      viewedAt: '2024-01-15',
-      expiresAt: '2024-02-09',
-      template: 'Development',
-      owner: 'Sarah Johnson',
-      tags: ['E-commerce', 'Development'],
-    },
-    {
-      id: '8',
-      title: 'Business Process Optimization',
-      client: 'Metro Healthcare',
-      clientEmail: 'ops@metrohealthcare.com',
-      value: 55000,
-      status: 'expired',
-      createdAt: '2023-12-01',
-      sentAt: '2023-12-02',
-      expiresAt: '2024-01-02',
-      template: 'Consulting',
-      owner: 'Mike Davis',
-      tags: ['Healthcare', 'Optimization'],
-    },
-  ];
+  useEffect(() => {
+    const fetchProposals = async () => {
+      setLoading(true);
+      try {
+        const response = await apiClient.get('/api/proposals');
+        setProposals(response.data || []);
+      } catch (error) {
+        console.error('Failed to fetch proposals:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProposals();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {

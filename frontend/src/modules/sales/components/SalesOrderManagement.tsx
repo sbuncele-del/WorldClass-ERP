@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './SalesOrderManagement.css';
 
 interface SalesOrder {
@@ -52,7 +53,7 @@ const SalesOrderManagement: React.FC = () => {
       if (searchTerm) params.append('search', searchTerm);
       if (filterStatus) params.append('status', filterStatus);
 
-      const response = await fetch(`http://localhost:3000/api/sales/orders?${params}`);
+      const response = await fetch(`${API_BASE_URL}/api/sales/orders?${params}`);
       const data = await response.json();
       setOrders(data.orders || []);
     } catch (error) {
@@ -64,7 +65,7 @@ const SalesOrderManagement: React.FC = () => {
 
   const fetchOrderDetails = async (id: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/sales/orders/${id}`);
+      const response = await fetch(`${API_BASE_URL}/api/sales/orders/${id}`);
       const data = await response.json();
       setSelectedOrder(data.order);
       setOrderLines(data.lines || []);
@@ -76,7 +77,7 @@ const SalesOrderManagement: React.FC = () => {
 
   const handleUpdateStatus = async (id: number, status: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/sales/orders/${id}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/sales/orders/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -103,7 +104,7 @@ const SalesOrderManagement: React.FC = () => {
 
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3000/api/sales/invoices/from-order', {
+      const response = await fetch(`${API_BASE_URL}/api/sales/invoices/from-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order_id: orderId })

@@ -10,35 +10,36 @@ import { BaseRepository, TenantContext, PaginatedResult, PaginationOptions } fro
 export type PurchaseInvoiceStatus = 'draft' | 'received' | 'partial' | 'paid' | 'overdue' | 'cancelled';
 
 export interface PurchaseInvoice {
-  id: string;
+  invoice_id: number;
   tenant_id: string;
   invoice_number: string;
-  supplier_invoice_number?: string;
-  supplier_id: string;
-  supplier_name?: string;
-  order_id?: string;
+  supplier_id?: number;
+  po_id?: number;
+  gr_id?: number;
   invoice_date: Date;
-  due_date: Date;
+  due_date?: Date;
   status: PurchaseInvoiceStatus;
   subtotal: number;
   discount_amount?: number;
-  tax_amount?: number;
+  vat_rate?: number;
+  vat_amount?: number;
   total_amount: number;
   amount_paid: number;
-  balance_due: number;
-  currency_code: string;
-  exchange_rate?: number;
+  amount_outstanding?: number;
+  currency_code?: string;
   notes?: string;
   created_at: Date;
-  created_by?: string;
+  created_by?: number;
   updated_at?: Date;
-  updated_by?: string;
+  updated_by?: number;
   deleted_at?: Date;
 }
 
 export class PurchaseInvoiceRepository extends BaseRepository<PurchaseInvoice> {
-  protected tableName = 'invoices';
+  protected tableName = 'vendor_invoices';
   protected schema = 'purchase';
+  protected primaryKey = 'invoice_id';
+  protected softDelete = false;
 
   /**
    * Get invoices by status
@@ -58,7 +59,6 @@ export class PurchaseInvoiceRepository extends BaseRepository<PurchaseInvoice> {
     let sql = `
       SELECT * FROM ${this.fullTableName}
       WHERE tenant_id = $1 
-        AND deleted_at IS NULL
         AND status NOT IN ('paid', 'cancelled')
     `;
     const params: any[] = [];
@@ -80,7 +80,6 @@ export class PurchaseInvoiceRepository extends BaseRepository<PurchaseInvoice> {
     const sql = `
       SELECT * FROM ${this.fullTableName}
       WHERE tenant_id = $1 
-        AND deleted_at IS NULL
         AND due_date < CURRENT_DATE
         AND status NOT IN ('paid', 'cancelled')
       ORDER BY due_date ASC
@@ -104,7 +103,7 @@ export class PurchaseInvoiceRepository extends BaseRepository<PurchaseInvoice> {
     try {
       const invoiceResult = await client.query(`
         SELECT * FROM ${this.fullTableName}
-        WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
+        WHERE ${this.primaryKey} = $1 AND tenant_id = $2
       `, [invoiceId, ctx.tenantId]);
 
       const invoice = invoiceResult.rows[0];
@@ -114,7 +113,8 @@ export class PurchaseInvoiceRepository extends BaseRepository<PurchaseInvoice> {
       }
 
       const newAmountPaid = parseFloat(invoice.amount_paid) + amount;
-      const newBalanceDue = parseFloat(invoice.total_amount) - newAmountPaid;
+      const currentOutstanding = invoice.amount_outstanding ?? (parseFloat(invoice.total_amount) - parseFloat(invoice.amount_paid || 0));
+      const newBalanceDue = currentOutstanding - amount;
       
       let newStatus: PurchaseInvoiceStatus = invoice.status;
       if (newBalanceDue <= 0) {
@@ -125,13 +125,13 @@ export class PurchaseInvoiceRepository extends BaseRepository<PurchaseInvoice> {
 
       await client.query(`
         UPDATE ${this.fullTableName}
-        SET amount_paid = $1, balance_due = $2, status = $3, updated_at = NOW(), updated_by = $4
-        WHERE id = $5 AND tenant_id = $6
+        SET amount_paid = $1, amount_outstanding = $2, status = $3, updated_at = NOW(), updated_by = $4
+        WHERE ${this.primaryKey} = $5 AND tenant_id = $6
       `, [newAmountPaid, Math.max(0, newBalanceDue), newStatus, ctx.userId, invoiceId, ctx.tenantId]);
 
       // Record payment
       await client.query(`
-        INSERT INTO purchase.payments
+        INSERT INTO purchase.vendor_payments
         (tenant_id, invoice_id, supplier_id, amount, payment_date, payment_method, reference, created_by)
         VALUES ($1, $2, $3, $4, CURRENT_DATE, $5, $6, $7)
       `, [ctx.tenantId, invoiceId, invoice.supplier_id, amount, paymentMethod, reference, ctx.userId]);
@@ -157,15 +157,14 @@ export class PurchaseInvoiceRepository extends BaseRepository<PurchaseInvoice> {
   }> {
     const sql = `
       SELECT
-        COALESCE(SUM(CASE WHEN due_date >= CURRENT_DATE THEN balance_due ELSE 0 END), 0) as current,
-        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE AND due_date >= CURRENT_DATE - 30 THEN balance_due ELSE 0 END), 0) as days_1_30,
-        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE - 30 AND due_date >= CURRENT_DATE - 60 THEN balance_due ELSE 0 END), 0) as days_31_60,
-        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE - 60 AND due_date >= CURRENT_DATE - 90 THEN balance_due ELSE 0 END), 0) as days_61_90,
-        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE - 90 THEN balance_due ELSE 0 END), 0) as over_90,
-        COALESCE(SUM(balance_due), 0) as total
+        COALESCE(SUM(CASE WHEN due_date >= CURRENT_DATE THEN amount_outstanding ELSE 0 END), 0) as current,
+        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE AND due_date >= CURRENT_DATE - 30 THEN amount_outstanding ELSE 0 END), 0) as days_1_30,
+        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE - 30 AND due_date >= CURRENT_DATE - 60 THEN amount_outstanding ELSE 0 END), 0) as days_31_60,
+        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE - 60 AND due_date >= CURRENT_DATE - 90 THEN amount_outstanding ELSE 0 END), 0) as days_61_90,
+        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE - 90 THEN amount_outstanding ELSE 0 END), 0) as over_90,
+        COALESCE(SUM(amount_outstanding), 0) as total
       FROM ${this.fullTableName}
       WHERE tenant_id = $1 
-        AND deleted_at IS NULL
         AND status NOT IN ('paid', 'cancelled')
     `;
 
@@ -192,8 +191,8 @@ export class PurchaseInvoiceRepository extends BaseRepository<PurchaseInvoice> {
 
     try {
       const orderResult = await client.query(`
-        SELECT * FROM purchase.orders
-        WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
+        SELECT * FROM purchase.purchase_orders
+        WHERE po_id = $1 AND tenant_id = $2
       `, [orderId, ctx.tenantId]);
 
       const order = orderResult.rows[0];
@@ -212,15 +211,24 @@ export class PurchaseInvoiceRepository extends BaseRepository<PurchaseInvoice> {
 
       const invoiceResult = await client.query(`
         INSERT INTO ${this.fullTableName}
-        (tenant_id, invoice_number, supplier_invoice_number, supplier_id, order_id,
-         invoice_date, due_date, status, subtotal, discount_amount, tax_amount,
-         total_amount, amount_paid, balance_due, currency_code, created_by)
-        VALUES ($1, $2, $3, $4, $5, CURRENT_DATE, $6, 'received', $7, $8, $9, $10, 0, $10, $11, $12)
+        (tenant_id, invoice_number, supplier_id, po_id,
+         invoice_date, due_date, status, subtotal, discount_amount, vat_rate, vat_amount,
+         total_amount, amount_paid, amount_outstanding, currency_code, created_by)
+        VALUES ($1, $2, $3, $4, CURRENT_DATE, $5, 'received', $6, $7, $8, $9, $10, 0, $10, $11, $12)
         RETURNING *
       `, [
-        ctx.tenantId, invoiceNumber, supplierInvoiceNumber, order.supplier_id, orderId,
-        dueDate, order.subtotal, order.discount_amount, order.tax_amount,
-        order.total_amount, order.currency_code, ctx.userId
+        ctx.tenantId,
+        invoiceNumber,
+        order.supplier_id,
+        orderId,
+        dueDate,
+        order.subtotal || 0,
+        order.discount_amount || 0,
+        order.vat_rate || 15,
+        order.vat_amount || 0,
+        order.total || 0,
+        order.currency_code || 'ZAR',
+        ctx.userId
       ]);
 
       await this.commitTransaction(client);

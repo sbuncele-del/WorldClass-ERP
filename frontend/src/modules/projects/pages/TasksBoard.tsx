@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Tag, Avatar, Button, Space, Input, Select, Tooltip, Badge, Modal, Form, DatePicker, message } from 'antd';
 import { Plus, MoreVertical, Clock, MessageSquare, Paperclip, User, Calendar, Flag } from 'lucide-react';
+import apiClient from '../../../services/api';
 import './TasksBoard.css';
 
 interface Task {
@@ -57,93 +58,10 @@ const TasksBoard: React.FC = () => {
   const loadTasks = async () => {
     setIsLoading(true);
     try {
-      // Sample data - replace with API call
-      const sampleTasks: Task[] = [
-        {
-          id: '1',
-          title: 'Design system architecture',
-          description: 'Create the overall system architecture document',
-          status: 'done',
-          priority: 'high',
-          assignee: { id: '1', name: 'John Smith' },
-          dueDate: '2025-01-10',
-          tags: ['Design', 'Documentation'],
-          comments: 5,
-          attachments: 2,
-          projectId: '1',
-          projectName: 'ERP Implementation'
-        },
-        {
-          id: '2',
-          title: 'Set up development environment',
-          description: 'Configure Docker, databases, and CI/CD',
-          status: 'in-progress',
-          priority: 'high',
-          assignee: { id: '2', name: 'Sarah Johnson' },
-          dueDate: '2025-01-15',
-          tags: ['DevOps', 'Setup'],
-          comments: 3,
-          attachments: 1,
-          projectId: '1',
-          projectName: 'ERP Implementation'
-        },
-        {
-          id: '3',
-          title: 'User authentication module',
-          description: 'Implement OAuth2 and JWT authentication',
-          status: 'todo',
-          priority: 'critical',
-          assignee: { id: '3', name: 'Mike Chen' },
-          dueDate: '2025-01-20',
-          tags: ['Security', 'Backend'],
-          comments: 8,
-          attachments: 0,
-          projectId: '1',
-          projectName: 'ERP Implementation'
-        },
-        {
-          id: '4',
-          title: 'Database schema design',
-          description: 'Design PostgreSQL schema for all modules',
-          status: 'review',
-          priority: 'high',
-          assignee: { id: '1', name: 'John Smith' },
-          dueDate: '2025-01-12',
-          tags: ['Database', 'Design'],
-          comments: 12,
-          attachments: 3,
-          projectId: '1',
-          projectName: 'ERP Implementation'
-        },
-        {
-          id: '5',
-          title: 'Create marketing materials',
-          description: 'Design brochures and social media content',
-          status: 'backlog',
-          priority: 'medium',
-          assignee: { id: '4', name: 'Emily Davis' },
-          tags: ['Marketing'],
-          comments: 0,
-          attachments: 0,
-          projectId: '2',
-          projectName: 'Marketing Campaign'
-        },
-        {
-          id: '6',
-          title: 'API integration testing',
-          description: 'Write integration tests for all API endpoints',
-          status: 'todo',
-          priority: 'medium',
-          assignee: { id: '2', name: 'Sarah Johnson' },
-          dueDate: '2025-01-25',
-          tags: ['Testing', 'QA'],
-          comments: 2,
-          attachments: 0,
-          projectId: '1',
-          projectName: 'ERP Implementation'
-        }
-      ];
-
+      // Fetch tasks from API
+      const response = await apiClient.get('/api/projects/tasks');
+      const tasksData = response.data?.data || response.data || [];
+      
       const columnDefs: Omit<Column, 'tasks'>[] = [
         { id: 'backlog', title: 'Backlog', status: 'backlog', color: '#8c8c8c' },
         { id: 'todo', title: 'To Do', status: 'todo', color: '#1890ff' },
@@ -154,7 +72,7 @@ const TasksBoard: React.FC = () => {
 
       const populatedColumns = columnDefs.map(col => ({
         ...col,
-        tasks: sampleTasks.filter(t => t.status === col.status)
+        tasks: tasksData.filter((t: Task) => t.status === col.status)
       }));
 
       setColumns(populatedColumns);

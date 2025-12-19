@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface Invoice {
@@ -25,68 +26,22 @@ const InvoicesPage: React.FC = () => {
   const fetchInvoices = async () => {
     setLoading(true);
     try {
-      setInvoices([
-        {
-          invoice_id: 1,
-          invoice_number: 'INV-2025-001',
-          customer_name: 'Acme Corporation',
-          invoice_date: '2025-11-01',
-          due_date: '2025-12-01',
-          total_amount: 450000,
-          paid_amount: 450000,
-          balance: 0,
-          status: 'PAID',
-          payment_terms: 'Net 30'
-        },
-        {
-          invoice_id: 2,
-          invoice_number: 'INV-2025-002',
-          customer_name: 'TechStart Solutions',
-          invoice_date: '2025-11-03',
-          due_date: '2025-12-03',
-          total_amount: 285000,
-          paid_amount: 100000,
-          balance: 185000,
-          status: 'PARTIAL',
-          payment_terms: 'Net 30'
-        },
-        {
-          invoice_id: 3,
-          invoice_number: 'INV-2025-003',
-          customer_name: 'Global Enterprises',
-          invoice_date: '2025-11-05',
-          due_date: '2025-12-05',
-          total_amount: 825000,
-          paid_amount: 0,
-          balance: 825000,
-          status: 'SENT',
-          payment_terms: 'Net 30'
-        },
-        {
-          invoice_id: 4,
-          invoice_number: 'INV-2025-004',
-          customer_name: 'Innovation Labs',
-          invoice_date: '2025-10-01',
-          due_date: '2025-11-01',
-          total_amount: 125000,
-          paid_amount: 0,
-          balance: 125000,
-          status: 'OVERDUE',
-          payment_terms: 'Net 30'
-        },
-        {
-          invoice_id: 5,
-          invoice_number: 'INV-2025-005',
-          customer_name: 'Acme Corporation',
-          invoice_date: '2025-11-07',
-          due_date: '2025-12-07',
-          total_amount: 385000,
-          paid_amount: 385000,
-          balance: 0,
-          status: 'PAID',
-          payment_terms: 'Net 30'
-        }
-      ]);
+      const response = await apiClient.get('/api/sales/invoices');
+      const data = response.data;
+      // Map API response to component interface
+      const mappedInvoices = (data.invoices || data || []).map((inv: any) => ({
+        invoice_id: inv.id || inv.invoice_id,
+        invoice_number: inv.invoice_number,
+        customer_name: inv.customer_name,
+        invoice_date: inv.invoice_date,
+        due_date: inv.due_date,
+        total_amount: inv.total_amount || 0,
+        paid_amount: inv.amount_paid || inv.paid_amount || 0,
+        balance: inv.amount_due || inv.balance || (inv.total_amount - (inv.amount_paid || 0)),
+        status: inv.payment_status || inv.status || 'DRAFT',
+        payment_terms: inv.payment_terms || 'Net 30'
+      }));
+      setInvoices(mappedInvoices);
     } catch (err) {
       console.error('Error fetching invoices:', err);
     } finally {

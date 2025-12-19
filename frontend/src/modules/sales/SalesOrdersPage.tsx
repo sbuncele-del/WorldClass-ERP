@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface SalesOrder {
@@ -24,63 +25,21 @@ const SalesOrdersPage: React.FC = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      setOrders([
-        {
-          order_id: 1,
-          order_number: 'SO-2025-001',
-          customer_name: 'Acme Corporation',
-          order_date: '2025-11-01',
-          delivery_date: '2025-11-15',
-          total_amount: 450000,
-          status: 'SHIPPED',
-          payment_status: 'PAID',
-          items_count: 5
-        },
-        {
-          order_id: 2,
-          order_number: 'SO-2025-002',
-          customer_name: 'TechStart Solutions',
-          order_date: '2025-11-03',
-          delivery_date: '2025-11-17',
-          total_amount: 285000,
-          status: 'PROCESSING',
-          payment_status: 'PARTIAL',
-          items_count: 3
-        },
-        {
-          order_id: 3,
-          order_number: 'SO-2025-003',
-          customer_name: 'Global Enterprises',
-          order_date: '2025-11-05',
-          delivery_date: '2025-11-20',
-          total_amount: 825000,
-          status: 'CONFIRMED',
-          payment_status: 'PENDING',
-          items_count: 8
-        },
-        {
-          order_id: 4,
-          order_number: 'SO-2025-004',
-          customer_name: 'Innovation Labs',
-          order_date: '2025-11-07',
-          delivery_date: '2025-11-22',
-          total_amount: 125000,
-          status: 'PROCESSING',
-          payment_status: 'PAID',
-          items_count: 2
-        },
-        {
-          order_id: 5,
-          order_number: 'SO-2025-005',
-          customer_name: 'Acme Corporation',
-          order_date: '2025-10-25',
-          delivery_date: '2025-11-08',
-          total_amount: 385000,
-          status: 'DELIVERED',
-          payment_status: 'PAID',
-          items_count: 6
-        }
-      ]);
+      const response = await apiClient.get('/api/sales/orders');
+      const data = response.data;
+      // Map API response to component interface
+      const mappedOrders = (data.orders || data || []).map((order: any) => ({
+        order_id: order.id || order.order_id,
+        order_number: order.order_number,
+        customer_name: order.customer_name,
+        order_date: order.order_date,
+        delivery_date: order.promised_date || order.delivery_date || order.required_date,
+        total_amount: order.total_amount || 0,
+        status: order.status || 'CONFIRMED',
+        payment_status: order.payment_status || 'PENDING',
+        items_count: order.items_count || order.line_count || 0
+      }));
+      setOrders(mappedOrders);
     } catch (err) {
       console.error('Error fetching orders:', err);
     } finally {

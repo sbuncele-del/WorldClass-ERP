@@ -31,7 +31,7 @@ const SystemSettings: React.FC = () => {
             <div style={{ display: 'grid', gap: '1.5rem', maxWidth: '800px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#1e293b' }}>Company Name</label>
-                <input type="text" defaultValue="Aetheros ERP Solutions" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '2px solid #e2e8f0' }} />
+                <input type="text" defaultValue="SiyaBusa ERP Solutions" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '2px solid #e2e8f0' }} />
               </div>
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#1e293b' }}>Registration Number</label>
@@ -52,7 +52,7 @@ const SystemSettings: React.FC = () => {
                 </div>
                 <div>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, color: '#1e293b' }}>Email</label>
-                  <input type="email" defaultValue="info@aetheros.co.za" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '2px solid #e2e8f0' }} />
+                  <input type="email" defaultValue="info@siyabusa.co.za" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '2px solid #e2e8f0' }} />
                 </div>
               </div>
             </div>

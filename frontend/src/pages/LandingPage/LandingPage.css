@@ -69,6 +69,179 @@
   --transition-slow: 400ms ease;
 }
 
+/* ============================================
+   SiyaBusa Premium Preview (Scoped Overrides)
+   Toggle via landing-page.premium class
+   ============================================ */
+.premium-toggle {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--aether-border);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.premium-toggle.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-color: transparent;
+  box-shadow: var(--shadow-md);
+}
+
+/* Premium CTA Buttons - Refined & Polished */
+.landing-page.premium .btn-primary,
+.landing-page.premium .hero-ctas .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 32px;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.35);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-page.premium .btn-primary::before,
+.landing-page.premium .hero-ctas .btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.landing-page.premium .btn-primary:hover,
+.landing-page.premium .hero-ctas .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(102, 126, 234, 0.45);
+}
+
+.landing-page.premium .btn-primary:hover::before,
+.landing-page.premium .hero-ctas .btn-primary:hover::before {
+  opacity: 1;
+}
+
+.landing-page.premium .btn-primary span,
+.landing-page.premium .hero-ctas .btn-primary span {
+  position: relative;
+  z-index: 1;
+}
+
+.landing-page.premium .btn-ghost,
+.landing-page.premium .hero-ctas .btn-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 999px;
+  padding: 14px 32px;
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.landing-page.premium .btn-ghost:hover,
+.landing-page.premium .hero-ctas .btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(255, 255, 255, 0.1);
+}
+
+/* Premium Secondary/Outline Buttons */
+.landing-page.premium .btn-secondary {
+  background: transparent;
+  border: 1.5px solid rgba(102, 126, 234, 0.4);
+  color: #667eea;
+  border-radius: 999px;
+  padding: 12px 28px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.landing-page.premium .btn-secondary:hover {
+  background: rgba(102, 126, 234, 0.08);
+  border-color: #667eea;
+  transform: translateY(-1px);
+}
+
+/* Premium Link Buttons */
+.landing-page.premium .btn-link {
+  color: #667eea;
+  font-weight: 600;
+  position: relative;
+  padding: 8px 0;
+  transition: color 0.2s ease;
+}
+
+.landing-page.premium .btn-link::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #667eea, #764ba2);
+  transition: width 0.3s ease;
+}
+
+.landing-page.premium .btn-link:hover::after {
+  width: 100%;
+}
+
+/* Premium Icon Buttons */
+.landing-page.premium .btn-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  color: #667eea;
+  transition: all 0.3s ease;
+}
+
+.landing-page.premium .btn-icon:hover {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-color: transparent;
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.landing-page.premium .nav {
+  background: rgba(17, 17, 25, 0.8);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(16px);
+}
+
+.landing-page.premium .btn-primary,
+.landing-page.premium .btn-secondary,
+.landing-page.premium .btn-ghost {
+  border-radius: 16px;
+}
+
+.landing-page.premium .card,
+.landing-page.premium .module-card,
+.landing-page.premium .industry-card,
+.landing-page.premium .comparison-card,
+.landing-page.premium .testimonial-card,
+.landing-page.premium .roi-card {
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+}
+
 /* Dark Mode Variables */
 .landing-page.dark {
   --aether-bg: #0A0A14;
@@ -369,22 +542,50 @@ h4 { font-size: var(--text-xl); }
 }
 
 .theme-toggle {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: transparent;
-  border: 1px solid var(--aether-border);
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--aether-border);
   border-radius: var(--radius-full);
   color: var(--aether-text);
   cursor: pointer;
   transition: all var(--transition-base);
+  backdrop-filter: blur(8px);
 }
 
 .theme-toggle:hover {
+  background: var(--aether-teal);
   border-color: var(--aether-teal);
-  color: var(--aether-teal);
+  color: white;
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(45, 212, 191, 0.3);
+}
+
+.landing-page.dark .theme-toggle {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fbbf24;
+}
+
+.landing-page.dark .theme-toggle:hover {
+  background: #fbbf24;
+  border-color: #fbbf24;
+  color: #1a1a2e;
+}
+
+.landing-page.light .theme-toggle {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.15);
+  color: #6366f1;
+}
+
+.landing-page.light .theme-toggle:hover {
+  background: #6366f1;
+  border-color: #6366f1;
+  color: white;
 }
 
 .mobile-menu-btn {

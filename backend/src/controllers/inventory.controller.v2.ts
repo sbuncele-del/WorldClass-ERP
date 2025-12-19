@@ -795,3 +795,670 @@ export const getMovementSummary = async (req: TenantRequest, res: Response) => {
     });
   }
 };
+
+// ============================================================================
+// STOCK LEVELS (V2 - Tenant Isolated)
+// ============================================================================
+
+import pool from '../config/database';
+
+export const getStockLevels = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { warehouse_id, item_id, low_stock_only, limit = 100, offset = 0 } = req.query;
+
+    let query = `
+      SELECT 
+        sl.stock_level_id,
+        sl.item_id,
+        i.item_code,
+        i.item_name,
+        sl.warehouse_id,
+        w.warehouse_name,
+        sl.quantity_on_hand,
+        sl.quantity_reserved,
+        sl.quantity_available,
+        sl.reorder_level,
+        sl.reorder_quantity,
+        sl.last_count_date,
+        sl.updated_at
+      FROM inventory.stock_levels sl
+      JOIN inventory.items i ON sl.item_id = i.item_id AND i.tenant_id = sl.tenant_id
+      JOIN inventory.warehouses w ON sl.warehouse_id = w.warehouse_id AND w.tenant_id = sl.tenant_id
+      WHERE sl.tenant_id = $1
+    `;
+    const params: any[] = [ctx.tenantId];
+    let paramCount = 2;
+
+    if (warehouse_id) {
+      query += ` AND sl.warehouse_id = $${paramCount}`;
+      params.push(warehouse_id);
+      paramCount++;
+    }
+    if (item_id) {
+      query += ` AND sl.item_id = $${paramCount}`;
+      params.push(item_id);
+      paramCount++;
+    }
+    if (low_stock_only === 'true') {
+      query += ` AND sl.quantity_available <= sl.reorder_level`;
+    }
+
+    query += ` ORDER BY i.item_name ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    params.push(limit, offset);
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error fetching stock levels:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch stock levels' });
+  }
+};
+
+// ============================================================================
+// STOCK MOVEMENTS EXTENDED (V2 - Tenant Isolated)
+// ============================================================================
+
+export const createStockMovement = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { item_id, warehouse_id, movement_type, quantity, reference_number, notes } = req.body;
+
+    // Generate movement number
+    const countResult = await pool.query(
+      'SELECT COUNT(*) FROM inventory.stock_movements WHERE tenant_id = $1',
+      [ctx.tenantId]
+    );
+    const movementNumber = `MOV-${String(parseInt(countResult.rows[0].count) + 1).padStart(6, '0')}`;
+
+    const result = await pool.query(
+      `INSERT INTO inventory.stock_movements (tenant_id, movement_number, item_id, warehouse_id, movement_type, quantity, reference_number, notes, status, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', $9)
+       RETURNING *`,
+      [ctx.tenantId, movementNumber, item_id, warehouse_id, movement_type, quantity, reference_number, notes, ctx.userId]
+    );
+
+    res.status(201).json({ success: true, data: result.rows[0], message: 'Stock movement created' });
+  } catch (error) {
+    console.error('Error creating stock movement:', error);
+    res.status(500).json({ success: false, message: 'Failed to create stock movement' });
+  }
+};
+
+export const postStockMovement = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+
+    // Get movement
+    const movementResult = await pool.query(
+      'SELECT * FROM inventory.stock_movements WHERE movement_id = $1 AND tenant_id = $2',
+      [id, ctx.tenantId]
+    );
+
+    if (movementResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Movement not found' });
+    }
+
+    const movement = movementResult.rows[0];
+    if (movement.status === 'posted') {
+      return res.status(400).json({ success: false, message: 'Movement already posted' });
+    }
+
+    // Update stock level
+    const multiplier = ['IN', 'RECEIPT', 'TRANSFER_IN', 'ADJUSTMENT_IN'].includes(movement.movement_type) ? 1 : -1;
+
+    await pool.query(
+      `INSERT INTO inventory.stock_levels (tenant_id, item_id, warehouse_id, quantity_on_hand, quantity_available)
+       VALUES ($1, $2, $3, $4, $4)
+       ON CONFLICT (tenant_id, item_id, warehouse_id) 
+       DO UPDATE SET 
+         quantity_on_hand = inventory.stock_levels.quantity_on_hand + $4,
+         quantity_available = inventory.stock_levels.quantity_available + $4,
+         updated_at = NOW()`,
+      [ctx.tenantId, movement.item_id, movement.warehouse_id, movement.quantity * multiplier]
+    );
+
+    // Update movement status
+    const result = await pool.query(
+      'UPDATE inventory.stock_movements SET status = $1, posted_at = NOW(), posted_by = $2 WHERE movement_id = $3 AND tenant_id = $4 RETURNING *',
+      ['posted', ctx.userId, id, ctx.tenantId]
+    );
+
+    res.json({ success: true, data: result.rows[0], message: 'Stock movement posted' });
+  } catch (error) {
+    console.error('Error posting stock movement:', error);
+    res.status(500).json({ success: false, message: 'Failed to post stock movement' });
+  }
+};
+
+// ============================================================================
+// STOCK ADJUSTMENTS (V2 - Tenant Isolated)
+// ============================================================================
+
+export const getStockAdjustments = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { status, warehouse_id, limit = 50, offset = 0 } = req.query;
+
+    let query = `SELECT * FROM inventory.stock_adjustments WHERE tenant_id = $1`;
+    const params: any[] = [ctx.tenantId];
+    let paramCount = 2;
+
+    if (status) {
+      query += ` AND status = $${paramCount}`;
+      params.push(status);
+      paramCount++;
+    }
+    if (warehouse_id) {
+      query += ` AND warehouse_id = $${paramCount}`;
+      params.push(warehouse_id);
+      paramCount++;
+    }
+
+    query += ` ORDER BY created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    params.push(limit, offset);
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error fetching stock adjustments:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch stock adjustments' });
+  }
+};
+
+export const getStockAdjustmentById = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+
+    const result = await pool.query(
+      'SELECT * FROM inventory.stock_adjustments WHERE adjustment_id = $1 AND tenant_id = $2',
+      [id, ctx.tenantId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Stock adjustment not found' });
+    }
+
+    // Get lines
+    const linesResult = await pool.query(
+      'SELECT * FROM inventory.stock_adjustment_lines WHERE adjustment_id = $1',
+      [id]
+    );
+
+    res.json({ success: true, data: { ...result.rows[0], lines: linesResult.rows } });
+  } catch (error) {
+    console.error('Error fetching stock adjustment:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch stock adjustment' });
+  }
+};
+
+export const createStockAdjustment = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { warehouse_id, adjustment_type, reason, notes, lines } = req.body;
+
+    // Generate adjustment number
+    const countResult = await pool.query(
+      'SELECT COUNT(*) FROM inventory.stock_adjustments WHERE tenant_id = $1',
+      [ctx.tenantId]
+    );
+    const adjustmentNumber = `ADJ-${String(parseInt(countResult.rows[0].count) + 1).padStart(6, '0')}`;
+
+    const result = await pool.query(
+      `INSERT INTO inventory.stock_adjustments (tenant_id, adjustment_number, warehouse_id, adjustment_type, reason, notes, status, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, 'draft', $7)
+       RETURNING *`,
+      [ctx.tenantId, adjustmentNumber, warehouse_id, adjustment_type || 'ADJUSTMENT', reason, notes, ctx.userId]
+    );
+
+    const adjustmentId = result.rows[0].adjustment_id;
+
+    // Insert lines
+    if (lines && lines.length > 0) {
+      for (const line of lines) {
+        await pool.query(
+          `INSERT INTO inventory.stock_adjustment_lines (adjustment_id, item_id, quantity_before, quantity_adjustment, quantity_after, notes)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [adjustmentId, line.item_id, line.quantity_before || 0, line.quantity_adjustment, (line.quantity_before || 0) + line.quantity_adjustment, line.notes]
+        );
+      }
+    }
+
+    res.status(201).json({ success: true, data: result.rows[0], message: 'Stock adjustment created' });
+  } catch (error) {
+    console.error('Error creating stock adjustment:', error);
+    res.status(500).json({ success: false, message: 'Failed to create stock adjustment' });
+  }
+};
+
+export const postStockAdjustment = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+
+    // Get adjustment
+    const adjResult = await pool.query(
+      'SELECT * FROM inventory.stock_adjustments WHERE adjustment_id = $1 AND tenant_id = $2',
+      [id, ctx.tenantId]
+    );
+
+    if (adjResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Adjustment not found' });
+    }
+
+    if (adjResult.rows[0].status === 'posted') {
+      return res.status(400).json({ success: false, message: 'Adjustment already posted' });
+    }
+
+    // Get lines
+    const linesResult = await pool.query(
+      'SELECT * FROM inventory.stock_adjustment_lines WHERE adjustment_id = $1',
+      [id]
+    );
+
+    // Apply adjustments to stock levels
+    for (const line of linesResult.rows) {
+      await pool.query(
+        `INSERT INTO inventory.stock_levels (tenant_id, item_id, warehouse_id, quantity_on_hand, quantity_available)
+         VALUES ($1, $2, $3, $4, $4)
+         ON CONFLICT (tenant_id, item_id, warehouse_id) 
+         DO UPDATE SET 
+           quantity_on_hand = inventory.stock_levels.quantity_on_hand + $4,
+           quantity_available = inventory.stock_levels.quantity_available + $4,
+           updated_at = NOW()`,
+        [ctx.tenantId, line.item_id, adjResult.rows[0].warehouse_id, line.quantity_adjustment]
+      );
+    }
+
+    // Update adjustment status
+    const result = await pool.query(
+      'UPDATE inventory.stock_adjustments SET status = $1, posted_at = NOW(), posted_by = $2 WHERE adjustment_id = $3 AND tenant_id = $4 RETURNING *',
+      ['posted', ctx.userId, id, ctx.tenantId]
+    );
+
+    res.json({ success: true, data: result.rows[0], message: 'Stock adjustment posted' });
+  } catch (error) {
+    console.error('Error posting stock adjustment:', error);
+    res.status(500).json({ success: false, message: 'Failed to post stock adjustment' });
+  }
+};
+
+// ============================================================================
+// STOCK TAKES (V2 - Tenant Isolated)
+// ============================================================================
+
+export const getStockTakes = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { status, warehouse_id, limit = 50, offset = 0 } = req.query;
+
+    let query = `SELECT * FROM inventory.stock_takes WHERE tenant_id = $1`;
+    const params: any[] = [ctx.tenantId];
+    let paramCount = 2;
+
+    if (status) {
+      query += ` AND status = $${paramCount}`;
+      params.push(status);
+      paramCount++;
+    }
+    if (warehouse_id) {
+      query += ` AND warehouse_id = $${paramCount}`;
+      params.push(warehouse_id);
+      paramCount++;
+    }
+
+    query += ` ORDER BY created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    params.push(limit, offset);
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error fetching stock takes:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch stock takes' });
+  }
+};
+
+export const createStockTake = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { warehouse_id, stock_take_date, notes, lines } = req.body;
+
+    // Generate stock take number
+    const countResult = await pool.query(
+      'SELECT COUNT(*) FROM inventory.stock_takes WHERE tenant_id = $1',
+      [ctx.tenantId]
+    );
+    const takeNumber = `ST-${String(parseInt(countResult.rows[0].count) + 1).padStart(6, '0')}`;
+
+    const result = await pool.query(
+      `INSERT INTO inventory.stock_takes (tenant_id, stock_take_number, warehouse_id, stock_take_date, notes, status, created_by)
+       VALUES ($1, $2, $3, $4, $5, 'draft', $6)
+       RETURNING *`,
+      [ctx.tenantId, takeNumber, warehouse_id, stock_take_date || new Date(), notes, ctx.userId]
+    );
+
+    const takeId = result.rows[0].stock_take_id;
+
+    // Insert lines if provided
+    if (lines && lines.length > 0) {
+      for (const line of lines) {
+        await pool.query(
+          `INSERT INTO inventory.stock_take_lines (stock_take_id, item_id, system_quantity, counted_quantity, variance)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [takeId, line.item_id, line.system_quantity || 0, line.counted_quantity, (line.counted_quantity || 0) - (line.system_quantity || 0)]
+        );
+      }
+    }
+
+    res.status(201).json({ success: true, data: result.rows[0], message: 'Stock take created' });
+  } catch (error) {
+    console.error('Error creating stock take:', error);
+    res.status(500).json({ success: false, message: 'Failed to create stock take' });
+  }
+};
+
+export const postStockTake = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+
+    // Get stock take
+    const takeResult = await pool.query(
+      'SELECT * FROM inventory.stock_takes WHERE stock_take_id = $1 AND tenant_id = $2',
+      [id, ctx.tenantId]
+    );
+
+    if (takeResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Stock take not found' });
+    }
+
+    if (takeResult.rows[0].status === 'posted') {
+      return res.status(400).json({ success: false, message: 'Stock take already posted' });
+    }
+
+    // Get lines
+    const linesResult = await pool.query(
+      'SELECT * FROM inventory.stock_take_lines WHERE stock_take_id = $1',
+      [id]
+    );
+
+    // Apply variances to stock levels
+    for (const line of linesResult.rows) {
+      if (line.variance !== 0) {
+        await pool.query(
+          `INSERT INTO inventory.stock_levels (tenant_id, item_id, warehouse_id, quantity_on_hand, quantity_available)
+           VALUES ($1, $2, $3, $4, $4)
+           ON CONFLICT (tenant_id, item_id, warehouse_id) 
+           DO UPDATE SET 
+             quantity_on_hand = inventory.stock_levels.quantity_on_hand + $4,
+             quantity_available = inventory.stock_levels.quantity_available + $4,
+             last_count_date = NOW(),
+             updated_at = NOW()`,
+          [ctx.tenantId, line.item_id, takeResult.rows[0].warehouse_id, line.variance]
+        );
+      }
+    }
+
+    // Update stock take status
+    const result = await pool.query(
+      'UPDATE inventory.stock_takes SET status = $1, posted_at = NOW(), posted_by = $2 WHERE stock_take_id = $3 AND tenant_id = $4 RETURNING *',
+      ['posted', ctx.userId, id, ctx.tenantId]
+    );
+
+    res.json({ success: true, data: result.rows[0], message: 'Stock take posted' });
+  } catch (error) {
+    console.error('Error posting stock take:', error);
+    res.status(500).json({ success: false, message: 'Failed to post stock take' });
+  }
+};
+
+// ============================================================================
+// BATCHES & SERIALS (V2 - Tenant Isolated)
+// ============================================================================
+
+export const getStockBatches = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { item_id, warehouse_id, expired_only, limit = 100, offset = 0 } = req.query;
+
+    let query = `
+      SELECT b.*, i.item_code, i.item_name, w.warehouse_name
+      FROM inventory.stock_batches b
+      JOIN inventory.items i ON b.item_id = i.item_id AND i.tenant_id = b.tenant_id
+      LEFT JOIN inventory.warehouses w ON b.warehouse_id = w.warehouse_id AND w.tenant_id = b.tenant_id
+      WHERE b.tenant_id = $1
+    `;
+    const params: any[] = [ctx.tenantId];
+    let paramCount = 2;
+
+    if (item_id) {
+      query += ` AND b.item_id = $${paramCount}`;
+      params.push(item_id);
+      paramCount++;
+    }
+    if (warehouse_id) {
+      query += ` AND b.warehouse_id = $${paramCount}`;
+      params.push(warehouse_id);
+      paramCount++;
+    }
+    if (expired_only === 'true') {
+      query += ` AND b.expiry_date < NOW()`;
+    }
+
+    query += ` ORDER BY b.expiry_date ASC NULLS LAST LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    params.push(limit, offset);
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error fetching stock batches:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch stock batches' });
+  }
+};
+
+export const getSerialNumbers = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { item_id, warehouse_id, status, limit = 100, offset = 0 } = req.query;
+
+    let query = `
+      SELECT sn.*, i.item_code, i.item_name, w.warehouse_name
+      FROM inventory.serial_numbers sn
+      JOIN inventory.items i ON sn.item_id = i.item_id AND i.tenant_id = sn.tenant_id
+      LEFT JOIN inventory.warehouses w ON sn.warehouse_id = w.warehouse_id AND w.tenant_id = sn.tenant_id
+      WHERE sn.tenant_id = $1
+    `;
+    const params: any[] = [ctx.tenantId];
+    let paramCount = 2;
+
+    if (item_id) {
+      query += ` AND sn.item_id = $${paramCount}`;
+      params.push(item_id);
+      paramCount++;
+    }
+    if (warehouse_id) {
+      query += ` AND sn.warehouse_id = $${paramCount}`;
+      params.push(warehouse_id);
+      paramCount++;
+    }
+    if (status) {
+      query += ` AND sn.status = $${paramCount}`;
+      params.push(status);
+      paramCount++;
+    }
+
+    query += ` ORDER BY sn.serial_number ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    params.push(limit, offset);
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error fetching serial numbers:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch serial numbers' });
+  }
+};
+
+// ============================================================================
+// REORDER SUGGESTIONS (V2 - Tenant Isolated)
+// ============================================================================
+
+export const getReorderSuggestions = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { warehouse_id, limit = 100, offset = 0 } = req.query;
+
+    let query = `
+      SELECT 
+        sl.item_id,
+        i.item_code,
+        i.item_name,
+        sl.warehouse_id,
+        w.warehouse_name,
+        sl.quantity_on_hand,
+        sl.quantity_available,
+        sl.reorder_level,
+        sl.reorder_quantity,
+        (sl.reorder_level - sl.quantity_available) as suggested_order_quantity
+      FROM inventory.stock_levels sl
+      JOIN inventory.items i ON sl.item_id = i.item_id AND i.tenant_id = sl.tenant_id
+      JOIN inventory.warehouses w ON sl.warehouse_id = w.warehouse_id AND w.tenant_id = sl.tenant_id
+      WHERE sl.tenant_id = $1
+        AND sl.quantity_available <= sl.reorder_level
+        AND sl.reorder_level > 0
+    `;
+    const params: any[] = [ctx.tenantId];
+    let paramCount = 2;
+
+    if (warehouse_id) {
+      query += ` AND sl.warehouse_id = $${paramCount}`;
+      params.push(warehouse_id);
+      paramCount++;
+    }
+
+    query += ` ORDER BY (sl.quantity_available / NULLIF(sl.reorder_level, 0)) ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    params.push(limit, offset);
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('Error fetching reorder suggestions:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch reorder suggestions' });
+  }
+};
+
+export const generateReorderSuggestions = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { warehouse_id } = req.body;
+
+    // Same as getReorderSuggestions but can trigger PO creation in future
+    let query = `
+      SELECT 
+        sl.item_id,
+        i.item_code,
+        i.item_name,
+        sl.warehouse_id,
+        w.warehouse_name,
+        sl.quantity_on_hand,
+        sl.quantity_available,
+        sl.reorder_level,
+        GREATEST(sl.reorder_quantity, sl.reorder_level - sl.quantity_available) as suggested_order_quantity
+      FROM inventory.stock_levels sl
+      JOIN inventory.items i ON sl.item_id = i.item_id AND i.tenant_id = sl.tenant_id
+      JOIN inventory.warehouses w ON sl.warehouse_id = w.warehouse_id AND w.tenant_id = sl.tenant_id
+      WHERE sl.tenant_id = $1
+        AND sl.quantity_available <= sl.reorder_level
+        AND sl.reorder_level > 0
+    `;
+    const params: any[] = [ctx.tenantId];
+
+    if (warehouse_id) {
+      query += ` AND sl.warehouse_id = $2`;
+      params.push(warehouse_id);
+    }
+
+    query += ` ORDER BY (sl.quantity_available / NULLIF(sl.reorder_level, 0)) ASC`;
+
+    const result = await pool.query(query, params);
+    res.json({ 
+      success: true, 
+      data: result.rows, 
+      message: `Found ${result.rows.length} items needing reorder` 
+    });
+  } catch (error) {
+    console.error('Error generating reorder suggestions:', error);
+    res.status(500).json({ success: false, message: 'Failed to generate reorder suggestions' });
+  }
+};
+
+// ============================================================================
+// INVENTORY DASHBOARD (V2 - Tenant Isolated)
+// ============================================================================
+
+export const getInventoryDashboard = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+
+    // Total items
+    const itemsResult = await pool.query(
+      'SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE is_active = true) as active FROM inventory.items WHERE tenant_id = $1',
+      [ctx.tenantId]
+    );
+
+    // Total warehouses
+    const warehousesResult = await pool.query(
+      'SELECT COUNT(*) as total FROM inventory.warehouses WHERE tenant_id = $1',
+      [ctx.tenantId]
+    );
+
+    // Low stock items
+    const lowStockResult = await pool.query(
+      `SELECT COUNT(*) as count 
+       FROM inventory.stock_levels 
+       WHERE tenant_id = $1 
+         AND quantity_available <= reorder_level 
+         AND reorder_level > 0`,
+      [ctx.tenantId]
+    );
+
+    // Stock value (sum of quantity * cost)
+    const stockValueResult = await pool.query(
+      `SELECT COALESCE(SUM(sl.quantity_on_hand * i.unit_cost), 0) as total_value
+       FROM inventory.stock_levels sl
+       JOIN inventory.items i ON sl.item_id = i.item_id AND i.tenant_id = sl.tenant_id
+       WHERE sl.tenant_id = $1`,
+      [ctx.tenantId]
+    );
+
+    // Recent movements
+    const recentMovementsResult = await pool.query(
+      `SELECT sm.*, i.item_name, w.warehouse_name
+       FROM inventory.stock_movements sm
+       JOIN inventory.items i ON sm.item_id = i.item_id AND i.tenant_id = sm.tenant_id
+       JOIN inventory.warehouses w ON sm.warehouse_id = w.warehouse_id AND w.tenant_id = sm.tenant_id
+       WHERE sm.tenant_id = $1
+       ORDER BY sm.created_at DESC
+       LIMIT 10`,
+      [ctx.tenantId]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          total_items: parseInt(itemsResult.rows[0].total),
+          active_items: parseInt(itemsResult.rows[0].active),
+          total_warehouses: parseInt(warehousesResult.rows[0].total),
+          low_stock_items: parseInt(lowStockResult.rows[0].count),
+          total_stock_value: parseFloat(stockValueResult.rows[0].total_value)
+        },
+        recent_movements: recentMovementsResult.rows
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching inventory dashboard:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch inventory dashboard' });
+  }
+};

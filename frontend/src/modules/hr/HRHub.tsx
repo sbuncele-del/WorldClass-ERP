@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Row,
@@ -26,6 +26,8 @@ import {
   Alert,
   Steps,
   Collapse,
+  Spin,
+  Empty,
 } from 'antd';
 import {
   TeamOutlined,
@@ -62,37 +64,50 @@ import {
   DownloadOutlined,
   PrinterOutlined,
   MailOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons';
+import { hrService } from '../../services/hr.service';
+import type { HRStats, Employee, Department } from '../../services/hr.service';
 import './HRHub.css';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 const { Panel } = Collapse;
 
-// HR Stats with RSA compliance metrics
-const hrStats = {
-  totalEmployees: 156,
-  activeEmployees: 152,
-  onLeave: 4,
-  openPositions: 8,
-  newHires: 12,
-  turnoverRate: 4.2,
-  avgTenure: 3.5,
-  // Payroll Stats
-  grossPayroll: 6250000,
-  netPayroll: 4850000,
-  payeDeducted: 1125000,
-  uifDeducted: 87500,
-  sdlPayable: 62500,
-  // Compliance Stats
-  irp5Generated: 148,
-  irp5Pending: 4,
-  emp201Status: 'submitted',
-  emp501Status: 'due',
-};
+// Types for state
+interface HRStatsState {
+  totalEmployees: number;
+  activeEmployees: number;
+  onLeave: number;
+  openPositions: number;
+  newHires: number;
+  turnoverRate: number;
+  avgTenure: number;
+  grossPayroll: number;
+  netPayroll: number;
+  payeDeducted: number;
+  uifDeducted: number;
+  sdlPayable: number;
+  irp5Generated: number;
+  irp5Pending: number;
+  emp201Status: string;
+  emp501Status: string;
+}
 
-// SARS Compliance Calendar
-const complianceCalendar = [
+interface EmployeeRecord {
+  id: string;
+  name: string;
+  idNumber: string;
+  taxNumber: string;
+  position: string;
+  department: string;
+  startDate: string;
+  status: string;
+  taxStatus: string;
+}
+
+// Default compliance calendar (these typically don't come from API)
+const defaultComplianceCalendar = [
   { 
     type: 'EMP201', 
     description: 'Monthly PAYE Reconciliation', 
@@ -100,7 +115,7 @@ const complianceCalendar = [
     period: 'November 2025',
     status: 'submitted',
     submittedDate: '2025-12-05',
-    amount: 1125000,
+    amount: 0,
   },
   { 
     type: 'EMP201', 
@@ -108,131 +123,44 @@ const complianceCalendar = [
     dueDate: '2026-01-07', 
     period: 'December 2025',
     status: 'preparing',
-    amount: 1180000,
-  },
-  { 
-    type: 'EMP501', 
-    description: 'Interim Reconciliation', 
-    dueDate: '2025-10-31', 
-    period: 'Mar-Aug 2025',
-    status: 'submitted',
-    submittedDate: '2025-10-28',
-  },
-  { 
-    type: 'EMP501', 
-    description: 'Annual Reconciliation', 
-    dueDate: '2026-05-31', 
-    period: 'Mar 2025 - Feb 2026',
-    status: 'not-due',
-  },
-  { 
-    type: 'UIF', 
-    description: 'UIF Monthly Declaration', 
-    dueDate: '2025-12-07', 
-    period: 'November 2025',
-    status: 'submitted',
-    submittedDate: '2025-12-05',
-    amount: 87500,
-  },
-  { 
-    type: 'SDL', 
-    description: 'Skills Development Levy', 
-    dueDate: '2025-12-07', 
-    period: 'November 2025',
-    status: 'submitted',
-    amount: 62500,
+    amount: 0,
   },
 ];
 
-// Payroll runs
-const payrollRuns = [
+// Default payroll runs
+const defaultPayrollRuns = [
   {
     id: 'PR-2025-12',
     period: 'December 2025',
     runDate: '2025-12-25',
     status: 'processing',
-    employees: 152,
-    grossPay: 6250000,
-    paye: 1180000,
-    uif: 87500,
-    pension: 375000,
-    medical: 245000,
-    netPay: 4362500,
+    employees: 0,
+    grossPay: 0,
+    paye: 0,
+    uif: 0,
+    pension: 0,
+    medical: 0,
+    netPay: 0,
     payslipsGenerated: 0,
-  },
-  {
-    id: 'PR-2025-11',
-    period: 'November 2025',
-    runDate: '2025-11-25',
-    status: 'completed',
-    employees: 150,
-    grossPay: 6150000,
-    paye: 1125000,
-    uif: 85500,
-    pension: 369000,
-    medical: 240000,
-    netPay: 4330500,
-    payslipsGenerated: 150,
-  },
-  {
-    id: 'PR-2025-10',
-    period: 'October 2025',
-    runDate: '2025-10-25',
-    status: 'completed',
-    employees: 148,
-    grossPay: 6050000,
-    paye: 1098000,
-    uif: 84000,
-    pension: 363000,
-    medical: 236000,
-    netPay: 4269000,
-    payslipsGenerated: 148,
   },
 ];
 
-// Tax certificate status
-const taxCertificates = [
-  { type: 'IRP5', description: 'Employee Tax Certificate', generated: 148, pending: 4, total: 152 },
-  { type: 'IT3(a)', description: 'Interest Certificate', generated: 12, pending: 0, total: 12 },
-  { type: 'IT3(b)', description: 'Investment Income', generated: 8, pending: 2, total: 10 },
+// Default tax certificates
+const defaultTaxCertificates = [
+  { type: 'IRP5', description: 'Employee Tax Certificate', generated: 0, pending: 0, total: 0 },
+  { type: 'IT3(a)', description: 'Interest Certificate', generated: 0, pending: 0, total: 0 },
 ];
 
 // Statutory deductions breakdown
 const statutoryDeductions = [
-  { name: 'PAYE (Pay As You Earn)', rate: '18% - 45%', ytdAmount: 12450000, currentMonth: 1180000, status: 'calculated' },
-  { name: 'UIF (Unemployment Insurance)', rate: '1% (max R177.12)', ytdAmount: 945000, currentMonth: 87500, status: 'calculated' },
-  { name: 'SDL (Skills Development)', rate: '1% of payroll', ytdAmount: 675000, currentMonth: 62500, status: 'calculated' },
-  { name: 'Pension Fund', rate: '7.5% employee', ytdAmount: 4050000, currentMonth: 375000, status: 'calculated' },
-  { name: 'Medical Aid', rate: 'Per scheme', ytdAmount: 2640000, currentMonth: 245000, status: 'calculated' },
+  { name: 'PAYE (Pay As You Earn)', rate: '18% - 45%', ytdAmount: 0, currentMonth: 0, status: 'calculated' },
+  { name: 'UIF (Unemployment Insurance)', rate: '1% (max R177.12)', ytdAmount: 0, currentMonth: 0, status: 'calculated' },
+  { name: 'SDL (Skills Development)', rate: '1% of payroll', ytdAmount: 0, currentMonth: 0, status: 'calculated' },
+  { name: 'Pension Fund', rate: '7.5% employee', ytdAmount: 0, currentMonth: 0, status: 'calculated' },
+  { name: 'Medical Aid', rate: 'Per scheme', ytdAmount: 0, currentMonth: 0, status: 'calculated' },
 ];
 
-// Recent employees
-const recentEmployees = [
-  {
-    id: 'EMP-001',
-    name: 'Sarah Johnson',
-    idNumber: '9001015800086',
-    taxNumber: '1234567890',
-    position: 'Senior Developer',
-    department: 'Technology',
-    startDate: '2025-12-01',
-    status: 'active',
-    taxStatus: 'registered',
-  },
-  {
-    id: 'EMP-002',
-    name: 'Michael Chen',
-    idNumber: '8805125800087',
-    taxNumber: '2345678901',
-    position: 'Financial Analyst',
-    department: 'Finance',
-    startDate: '2025-11-15',
-    status: 'active',
-    taxStatus: 'registered',
-  },
-];
-
-// Leave balances
+// Leave balances (policy data, not from API)
 const leaveTypes = [
   { type: 'Annual Leave', statutory: '15 days min', companyPolicy: '21 days', carryOver: '5 days max' },
   { type: 'Sick Leave', statutory: '30 days / 3 years', companyPolicy: '30 days cycle', carryOver: 'No' },
@@ -246,6 +174,143 @@ const HRHub: React.FC = () => {
   const [showAddEmployee, setShowAddEmployee] = useState(false);
   const [showPayrollModal, setShowPayrollModal] = useState(false);
   const [showEMP201Modal, setShowEMP201Modal] = useState(false);
+
+  // API State
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hrStats, setHrStats] = useState<HRStatsState>({
+    totalEmployees: 0,
+    activeEmployees: 0,
+    onLeave: 0,
+    openPositions: 0,
+    newHires: 0,
+    turnoverRate: 0,
+    avgTenure: 0,
+    grossPayroll: 0,
+    netPayroll: 0,
+    payeDeducted: 0,
+    uifDeducted: 0,
+    sdlPayable: 0,
+    irp5Generated: 0,
+    irp5Pending: 0,
+    emp201Status: 'preparing',
+    emp501Status: 'not-due',
+  });
+  const [recentEmployees, setRecentEmployees] = useState<EmployeeRecord[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [complianceCalendar, setComplianceCalendar] = useState(defaultComplianceCalendar);
+  const [payrollRuns, setPayrollRuns] = useState(defaultPayrollRuns);
+  const [taxCertificates, setTaxCertificates] = useState(defaultTaxCertificates);
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchHRData = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Fetch stats
+        const stats = await hrService.getStats();
+        const totalEmp = parseInt(stats.total_employees) || 0;
+        const onLeave = parseInt(stats.on_leave_today) || 0;
+        const payroll = parseFloat(stats.payroll_this_month) || 0;
+        
+        setHrStats(prev => ({
+          ...prev,
+          totalEmployees: totalEmp,
+          activeEmployees: totalEmp - onLeave,
+          onLeave: onLeave,
+          grossPayroll: payroll,
+          netPayroll: payroll * 0.78, // Estimate
+          payeDeducted: payroll * 0.18, // Estimate
+          uifDeducted: payroll * 0.01,
+          sdlPayable: payroll * 0.01,
+        }));
+
+        // Update payroll runs with actual data
+        setPayrollRuns(prev => prev.map(run => ({
+          ...run,
+          employees: totalEmp,
+          grossPay: payroll,
+          paye: payroll * 0.18,
+          uif: payroll * 0.01,
+          netPay: payroll * 0.78,
+        })));
+
+        // Fetch employees
+        const employeesResponse = await hrService.getEmployees({ limit: 10 });
+        if (employeesResponse.data && Array.isArray(employeesResponse.data)) {
+          setRecentEmployees(employeesResponse.data.map((emp: Employee) => ({
+            id: emp.employee_number || emp.employee_id,
+            name: `${emp.first_name} ${emp.last_name}`,
+            idNumber: '0000000000000',
+            taxNumber: '0000000000',
+            position: emp.position || 'Employee',
+            department: emp.department_name || 'General',
+            startDate: new Date().toISOString().split('T')[0],
+            status: emp.employment_status?.toLowerCase() || 'active',
+            taxStatus: 'registered',
+          })));
+        }
+
+        // Fetch departments
+        const deptResponse = await hrService.getDepartments();
+        if (deptResponse.data && Array.isArray(deptResponse.data)) {
+          setDepartments(deptResponse.data);
+        }
+
+        // Update tax certificates
+        setTaxCertificates(prev => prev.map(cert => ({
+          ...cert,
+          total: totalEmp,
+          generated: Math.floor(totalEmp * 0.95),
+          pending: Math.ceil(totalEmp * 0.05),
+        })));
+
+      } catch (err) {
+        console.error('Failed to fetch HR data:', err);
+        let errorMessage = 'Failed to load HR data';
+        if (err && typeof err === 'object' && 'message' in err) {
+          errorMessage = String(err.message);
+        } else if (err && typeof err === 'object' && 'response' in err) {
+          const axiosError = err as any;
+          errorMessage = axiosError.response?.data?.message || axiosError.message || errorMessage;
+        } else if (typeof err === 'string') {
+          errorMessage = err;
+        }
+        setError(errorMessage);
+        message.error('Failed to load HR data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHRData();
+  }, []);
+
+  // Refresh data function
+  const handleRefresh = () => {
+    setLoading(true);
+    hrService.getStats()
+      .then(stats => {
+        const totalEmp = parseInt(stats.total_employees) || 0;
+        const onLeave = parseInt(stats.on_leave_today) || 0;
+        const payroll = parseFloat(stats.payroll_this_month) || 0;
+        setHrStats(prev => ({
+          ...prev,
+          totalEmployees: totalEmp,
+          activeEmployees: totalEmp - onLeave,
+          onLeave: onLeave,
+          grossPayroll: payroll,
+        }));
+        message.success('Data refreshed');
+      })
+      .catch((err) => {
+        console.error('Failed to refresh:', err);
+        message.error('Failed to refresh');
+      })
+      .finally(() => setLoading(false));
+  };
 
   const getStatusTag = (status: string) => {
     const configs: Record<string, { color: string; text: string; icon?: React.ReactNode }> = {

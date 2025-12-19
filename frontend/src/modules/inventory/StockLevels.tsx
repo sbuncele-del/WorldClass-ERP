@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../services/api.service';
 
 interface StockLevel {
   stock_level_id: number;
@@ -39,7 +40,7 @@ export default function StockLevels() {
 
   const fetchStockLevels = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/inventory/stock-levels');
+      const response = await fetch(`${API_BASE_URL}/api/inventory/stock-levels`);
       const result = await response.json();
       
       if (result.success) {

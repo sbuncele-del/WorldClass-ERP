@@ -1,14 +1,16 @@
 import express from 'express';
-import * as projectsController from '../controllers/practice/projects.controller';
-import * as timeTrackingController from '../controllers/practice/time-tracking.controller';
-import * as clientHealthController from '../controllers/practice/client-health.controller';
-import * as tasksController from '../controllers/practice/tasks.controller';
+import * as projectsController from '../controllers/v2/practice-projects.controller.v2';
+import * as timeTrackingController from '../controllers/v2/practice-time-tracking.controller.v2';
+import * as clientHealthController from '../controllers/v2/practice-client-health.controller.v2';
+import * as tasksController from '../controllers/v2/practice-tasks.controller.v2';
 import * as practiceWorkspaceController from '../modules/practice/controllers/practice.workspace.controller';
 import { tenantMiddleware } from '../middleware/tenant';
+import { authenticateToken } from '../middleware/auth';
 
 const router = express.Router();
 
-// Apply tenant middleware to all practice management routes
+// Apply authentication and tenant middleware to all practice management routes
+router.use(authenticateToken);
 router.use(tenantMiddleware);
 
 /**

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { API_BASE_URL } from '../../../services/api.service';
 import './ReportViewer.css';
 
 interface Column {
@@ -46,7 +47,7 @@ const ReportViewer: React.FC = () => {
 
   const fetchTemplate = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/api/financial/custom-reports/templates/${id}`);
+      const response = await fetch(`${API_BASE_URL}/api/financial/custom-reports/templates/${id}`);
       const data = await response.json();
       setTemplate(data);
 
@@ -67,7 +68,7 @@ const ReportViewer: React.FC = () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:3000/api/financial/custom-reports/templates/${id}/execute`,
+        `${API_BASE_URL}/api/financial/custom-reports/templates/${id}/execute`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -80,7 +80,7 @@ const VerifyEmail: React.FC = () => {
         {/* Logo */}
         <div className="verify-email-logo">
           <div className="logo-icon">📧</div>
-          <h1>Worldclass ERP</h1>
+          <h1>SiyaBusa ERP</h1>
         </div>
 
         {/* Status Card */}

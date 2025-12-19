@@ -65,7 +65,7 @@ const ResendVerification: React.FC = () => {
         {/* Logo */}
         <div className="resend-verification-logo">
           <div className="logo-icon">📬</div>
-          <h1>Worldclass ERP</h1>
+          <h1>SiyaBusa ERP</h1>
         </div>
 
         {/* Card */}

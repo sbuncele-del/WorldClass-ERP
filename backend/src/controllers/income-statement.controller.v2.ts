@@ -165,7 +165,7 @@ export class IncomeStatementControllerV2 {
         FROM journal_entry_lines jel
         JOIN chart_of_accounts coa ON jel.account_id = coa.id
           AND coa.tenant_id = $1
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
         WHERE jel.tenant_id = $1
           AND je.status = 'POSTED'
@@ -224,7 +224,7 @@ export class IncomeStatementControllerV2 {
         FROM journal_entry_lines jel
         JOIN chart_of_accounts coa ON jel.account_id = coa.id
           AND coa.tenant_id = $1
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
         WHERE jel.tenant_id = $1
           AND je.status = 'POSTED'
@@ -346,7 +346,7 @@ async function fetchAccountBalances(
     FROM chart_of_accounts coa
     LEFT JOIN journal_entry_lines jel ON coa.id = jel.account_id
       AND jel.tenant_id = $1
-    LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id
+    LEFT JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       AND je.tenant_id = $1
       AND je.status = 'POSTED'
       AND je.journal_date >= $2

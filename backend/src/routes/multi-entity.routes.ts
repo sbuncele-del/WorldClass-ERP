@@ -1,29 +1,16 @@
 /**
  * Multi-Entity Routes
  * API endpoints for entity management
+ * NOW USING V2 CONTROLLER with proper tenant isolation
  */
 
 import express from 'express';
-import {
-    getEntities,
-    getEntityById,
-    createEntity,
-    updateEntity,
-    getEntityAncestors,
-    getEntityDescendants,
-    getUserEntities,
-    grantEntityPermission,
-    getInterEntityTransactions,
-    createInterEntityTransaction,
-    getConsolidatedData
-} from '../controllers/multi-entity.controller';
-import { authenticateToken } from '../middleware/auth';
+import * as MultiEntityV2 from '../controllers/multi-entity.controller.v2';
 import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
 
-// All routes require authentication and tenant context
-router.use(authenticateToken);
+// All routes require tenant context (auth is handled by tenantMiddleware)
 router.use(tenantMiddleware);
 
 // ================================================
@@ -35,44 +22,62 @@ router.use(tenantMiddleware);
  * Get all entities for tenant
  * Query: ?includeInactive=true&entityType=BRANCH
  */
-router.get('/', getEntities);
+router.get('/', MultiEntityV2.getEntities);
 
 /**
  * GET /api/entities/user
  * Get user's accessible entities
  */
-router.get('/user', getUserEntities);
+router.get('/user', MultiEntityV2.getUserEntities);
 
 /**
- * GET /api/entities/:entityId
+ * GET /api/entities/:id
  * Get entity by ID with settings
  */
-router.get('/:entityId', getEntityById);
+router.get('/:id', MultiEntityV2.getEntity);
 
 /**
  * POST /api/entities
  * Create new entity
- * Body: { entity_code, entity_name, entity_type, ... }
+ * Body: { code, name, type, ... }
  */
-router.post('/', createEntity);
+router.post('/', MultiEntityV2.createEntity);
 
 /**
- * PUT /api/entities/:entityId
+ * PUT /api/entities/:id
  * Update entity
  */
-router.put('/:entityId', updateEntity);
+router.put('/:id', MultiEntityV2.updateEntity);
 
 /**
- * GET /api/entities/:entityId/ancestors
+ * DELETE /api/entities/:id
+ * Delete entity (soft delete)
+ */
+router.delete('/:id', MultiEntityV2.deleteEntity);
+
+/**
+ * GET /api/entities/:id/ancestors
  * Get entity hierarchy (parent, grandparent, etc.)
  */
-router.get('/:entityId/ancestors', getEntityAncestors);
+router.get('/:id/ancestors', MultiEntityV2.getEntityAncestors);
 
 /**
- * GET /api/entities/:entityId/descendants
+ * GET /api/entities/:id/descendants
  * Get entity children (subsidiaries, branches)
  */
-router.get('/:entityId/descendants', getEntityDescendants);
+router.get('/:id/descendants', MultiEntityV2.getEntityDescendants);
+
+/**
+ * GET /api/entities/:id/hierarchy
+ * Get full entity hierarchy tree
+ */
+router.get('/:id/hierarchy', MultiEntityV2.getEntityHierarchy);
+
+/**
+ * POST /api/entities/:id/move
+ * Move entity to new parent
+ */
+router.post('/:id/move', MultiEntityV2.moveEntity);
 
 // ================================================
 // ENTITY PERMISSIONS
@@ -81,9 +86,21 @@ router.get('/:entityId/descendants', getEntityDescendants);
 /**
  * POST /api/entities/permissions
  * Grant entity permission to user
- * Body: { user_id, entity_id, can_view, can_create, ... }
+ * Body: { user_id, entity_id, can_view, can_edit, ... }
  */
-router.post('/permissions', grantEntityPermission);
+router.post('/permissions', MultiEntityV2.grantEntityPermission);
+
+/**
+ * GET /api/entities/permissions/user/:userId
+ * Get user's entity permissions
+ */
+router.get('/permissions/user/:userId', MultiEntityV2.getUserEntityPermissions);
+
+/**
+ * PUT /api/entities/permissions/user/:userId
+ * Update user's entity permissions
+ */
+router.put('/permissions/user/:userId', MultiEntityV2.updateUserEntityPermissions);
 
 // ================================================
 // INTER-ENTITY TRANSACTIONS
@@ -92,16 +109,16 @@ router.post('/permissions', grantEntityPermission);
 /**
  * GET /api/entities/transactions/inter-entity
  * Get inter-entity transactions
- * Query: ?entityId=xxx&eliminationStatus=PENDING&startDate=2024-01-01
+ * Query: ?entityId=xxx&status=PENDING&startDate=2024-01-01
  */
-router.get('/transactions/inter-entity', getInterEntityTransactions);
+router.get('/transactions/inter-entity', MultiEntityV2.getInterEntityTransactions);
 
 /**
  * POST /api/entities/transactions/inter-entity
  * Create inter-entity transaction
- * Body: { source_entity_id, destination_entity_id, transaction_type, amount, ... }
+ * Body: { source_entity_id, target_entity_id, transaction_type, amount, ... }
  */
-router.post('/transactions/inter-entity', createInterEntityTransaction);
+router.post('/transactions/inter-entity', MultiEntityV2.createInterEntityTransaction);
 
 // ================================================
 // CONSOLIDATION & REPORTING
@@ -112,6 +129,6 @@ router.post('/transactions/inter-entity', createInterEntityTransaction);
  * Get consolidated financial data across entities
  * Query: ?startDate=2024-01-01&endDate=2024-12-31&entityIds[]=xxx
  */
-router.get('/reports/consolidated', getConsolidatedData);
+router.get('/reports/consolidated', MultiEntityV2.getConsolidatedData);
 
 export default router;

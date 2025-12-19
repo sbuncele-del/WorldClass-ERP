@@ -12,13 +12,14 @@
  * - Integration Management
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
   Input, Select, DatePicker, Modal, Form, Typography, Avatar,
   Descriptions, Tooltip, Switch, Alert,
-  List, Divider, Tabs, Upload, message, Checkbox, Empty, ColorPicker
+  List, Divider, Tabs, Upload, message, Checkbox, Empty, ColorPicker, Spin
 } from 'antd';
+import apiClient from '../../services/api';
 import {
   HomeOutlined, TeamOutlined, CalendarOutlined, ClockCircleOutlined,
   CheckCircleOutlined, WarningOutlined,
@@ -79,35 +80,35 @@ const AdminHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [userModalVisible, setUserModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(true);
 
-  // Sample data
-  const [users] = useState<User[]>([
-    { id: 'USR-001', name: 'John Smith', email: 'john.smith@company.co.za', role: 'Administrator', department: 'IT', status: 'active', lastLogin: '2025-12-11 14:30', mfaEnabled: true, createdAt: '2024-01-15' },
-    { id: 'USR-002', name: 'Sarah Jones', email: 'sarah.jones@company.co.za', role: 'Finance Manager', department: 'Finance', status: 'active', lastLogin: '2025-12-11 13:45', mfaEnabled: true, createdAt: '2024-02-20' },
-    { id: 'USR-003', name: 'Michael Brown', email: 'michael.brown@company.co.za', role: 'Sales Rep', department: 'Sales', status: 'active', lastLogin: '2025-12-11 10:15', mfaEnabled: false, createdAt: '2024-03-10' },
-    { id: 'USR-004', name: 'Linda Nkosi', email: 'linda.nkosi@company.co.za', role: 'HR Manager', department: 'HR', status: 'active', lastLogin: '2025-12-10 16:30', mfaEnabled: true, createdAt: '2024-04-05' },
-    { id: 'USR-005', name: 'David Chen', email: 'david.chen@company.co.za', role: 'Accountant', department: 'Finance', status: 'inactive', lastLogin: '2025-11-28 09:00', mfaEnabled: false, createdAt: '2024-05-15' },
-    { id: 'USR-006', name: 'New Employee', email: 'new.employee@company.co.za', role: 'Intern', department: 'Operations', status: 'pending', mfaEnabled: false, createdAt: '2025-12-10' }
-  ]);
+  // Data state
+  const [users, setUsers] = useState<User[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
 
-  const [auditLogs] = useState<AuditLogEntry[]>([
-    { id: 'LOG-001', timestamp: '2025-12-11 14:32:15', user: 'john.smith@company.co.za', action: 'User Login', module: 'Authentication', details: 'Successful login from Chrome browser', ipAddress: '192.168.1.100', status: 'success' },
-    { id: 'LOG-002', timestamp: '2025-12-11 14:28:44', user: 'sarah.jones@company.co.za', action: 'Invoice Created', module: 'Sales', details: 'Created invoice INV-2025-1234 for R 25,000', ipAddress: '192.168.1.101', status: 'success' },
-    { id: 'LOG-003', timestamp: '2025-12-11 14:15:22', user: 'admin@company.co.za', action: 'User Permission Changed', module: 'Administration', details: 'Updated role for user michael.brown', ipAddress: '192.168.1.1', status: 'success' },
-    { id: 'LOG-004', timestamp: '2025-12-11 13:55:08', user: 'unknown', action: 'Failed Login Attempt', module: 'Authentication', details: '3 failed attempts for admin@company.co.za', ipAddress: '41.185.22.101', status: 'failed' },
-    { id: 'LOG-005', timestamp: '2025-12-11 13:45:33', user: 'sarah.jones@company.co.za', action: 'Report Generated', module: 'Reports', details: 'Generated Financial Statement Q4 2025', ipAddress: '192.168.1.101', status: 'success' },
-    { id: 'LOG-006', timestamp: '2025-12-11 12:30:15', user: 'system', action: 'Backup Complete', module: 'System', details: 'Daily backup completed successfully', ipAddress: 'localhost', status: 'success' },
-    { id: 'LOG-007', timestamp: '2025-12-11 11:22:44', user: 'john.smith@company.co.za', action: 'Settings Updated', module: 'Administration', details: 'Updated company email settings', ipAddress: '192.168.1.100', status: 'success' }
-  ]);
-
-  const [integrations] = useState<Integration[]>([
-    { id: 'INT-001', name: 'SARS eFiling', type: 'Tax', status: 'connected', lastSync: '2025-12-11 06:00', description: 'Direct submission to SARS' },
-    { id: 'INT-002', name: 'Nedbank Banking', type: 'Banking', status: 'connected', lastSync: '2025-12-11 08:30', description: 'Bank feeds and payments' },
-    { id: 'INT-003', name: 'Sage Payroll', type: 'Payroll', status: 'connected', lastSync: '2025-12-10 18:00', description: 'Payroll data sync' },
-    { id: 'INT-004', name: 'Microsoft 365', type: 'Productivity', status: 'connected', lastSync: '2025-12-11 14:00', description: 'Email and calendar sync' },
-    { id: 'INT-005', name: 'Shopify', type: 'E-commerce', status: 'disconnected', description: 'Online store integration' },
-    { id: 'INT-006', name: 'SMS Gateway', type: 'Communication', status: 'error', lastSync: '2025-12-09 10:00', description: 'Bulk SMS notifications' }
-  ]);
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [usersRes, auditLogsRes, integrationsRes] = await Promise.all([
+          apiClient.get('/api/admin/users'),
+          apiClient.get('/api/admin/audit-logs'),
+          apiClient.get('/api/admin/integrations')
+        ]);
+        setUsers(usersRes.data || []);
+        setAuditLogs(auditLogsRes.data || []);
+        setIntegrations(integrationsRes.data || []);
+      } catch (error) {
+        console.error('Failed to fetch admin data:', error);
+        message.error('Failed to load admin data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Calculations
   const activeUsers = users.filter(u => u.status === 'active').length;

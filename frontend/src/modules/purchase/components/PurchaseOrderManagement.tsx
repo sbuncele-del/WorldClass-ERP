@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './PurchaseOrderManagement.css';
 
 interface Vendor {
@@ -95,7 +96,7 @@ const PurchaseOrderManagement: React.FC = () => {
   const fetchPurchaseOrders = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3000/api/purchase/purchase-orders');
+      const response = await fetch(`${API_BASE_URL}/api/purchase/purchase-orders`);
       const data = await response.json();
       
       if (data.success) {
@@ -114,7 +115,7 @@ const PurchaseOrderManagement: React.FC = () => {
   // Fetch requisitions
   const fetchRequisitions = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/purchase/requisitions');
+      const response = await fetch(`${API_BASE_URL}/api/purchase/requisitions`);
       const data = await response.json();
       
       if (data.success) {
@@ -128,7 +129,7 @@ const PurchaseOrderManagement: React.FC = () => {
   // Fetch vendors
   const fetchVendors = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/purchase/vendors?status=active');
+      const response = await fetch(`${API_BASE_URL}/api/purchase/vendors?status=active`);
       const data = await response.json();
       
       if (data.success) {
@@ -209,7 +210,7 @@ const PurchaseOrderManagement: React.FC = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:3000/api/purchase/purchase-orders', {
+      const response = await fetch(`${API_BASE_URL}/api/purchase/purchase-orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(poFormData)
@@ -236,7 +237,7 @@ const PurchaseOrderManagement: React.FC = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:3000/api/purchase/requisitions', {
+      const response = await fetch(`${API_BASE_URL}/api/purchase/requisitions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(reqFormData)
@@ -260,7 +261,7 @@ const PurchaseOrderManagement: React.FC = () => {
   // Update PO status
   const handleUpdatePOStatus = async (id: number, status: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/purchase/purchase-orders/${id}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/purchase/purchase-orders/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
@@ -285,7 +286,7 @@ const PurchaseOrderManagement: React.FC = () => {
   // Update requisition status
   const handleUpdateReqStatus = async (id: number, status: string, approved_by?: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/purchase/requisitions/${id}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/purchase/requisitions/${id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, approved_by })
@@ -307,7 +308,7 @@ const PurchaseOrderManagement: React.FC = () => {
   // View PO details
   const handleViewPO = async (po: PurchaseOrder) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/purchase/purchase-orders/${po.id}`);
+      const response = await fetch(`${API_BASE_URL}/api/purchase/purchase-orders/${po.id}`);
       const data = await response.json();
 
       if (data.success) {

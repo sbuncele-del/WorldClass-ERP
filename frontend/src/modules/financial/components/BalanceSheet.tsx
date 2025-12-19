@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './BalanceSheet.css';
 
 interface AccountBalance {
@@ -63,7 +64,7 @@ const BalanceSheet: React.FC = () => {
     setError(null);
 
     try {
-      const url = `http://localhost:3000/api/financial/reports/balance-sheet?as_of_date=${asOfDate}&compare_prior=${showComparison}`;
+      const url = `${API_BASE_URL}/api/financial/reports/balance-sheet?as_of_date=${asOfDate}&compare_prior=${showComparison}`;
 
       const response = await fetch(url);
       const result = await response.json();

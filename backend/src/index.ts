@@ -102,7 +102,7 @@ validateEnv();
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   integrations: [
-    nodeProfilingIntegration(),
+    nodeProfilingIntegration() as any,  // Type assertion for Sentry version mismatch
   ],
   tracesSampleRate: 1.0,
   profilesSampleRate: 1.0,

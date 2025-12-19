@@ -145,7 +145,7 @@ export class GLExplorerControllerV2 {
       const query = `
         SELECT 
           jel.id as line_id,
-          je.id as journal_entry_id,
+          je.entry_id as journal_entry_id,
           je.entry_number,
           je.journal_date,
           je.description as entry_description,
@@ -161,7 +161,7 @@ export class GLExplorerControllerV2 {
           jel.project_code,
           jel.department
         FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
         LEFT JOIN chart_of_accounts coa ON jel.account_id = coa.id
           AND coa.tenant_id = $1
@@ -178,7 +178,7 @@ export class GLExplorerControllerV2 {
       const countQuery = `
         SELECT COUNT(*) as total
         FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
         WHERE ${whereClause}
       `;
@@ -243,11 +243,11 @@ export class GLExplorerControllerV2 {
             THEN COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0)
             ELSE COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0)
           END as balance,
-          COUNT(DISTINCT je.id) as entry_count
+          COUNT(DISTINCT je.entry_id) as entry_count
         FROM chart_of_accounts coa
         LEFT JOIN journal_entry_lines jel ON coa.id = jel.account_id
           AND jel.tenant_id = $1
-        LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id
+        LEFT JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
           AND je.status = 'POSTED'
           AND je.journal_date <= $2
@@ -289,7 +289,7 @@ export class GLExplorerControllerV2 {
   static async getAccountLedger(req: TenantRequest, res: Response): Promise<void> {
     try {
       const { tenantId } = getTenantContext(req);
-      const { accountCode } = req.params;
+      const accountCode = req.params.accountCode || (req.params as any).account_code;
       const { date_from, date_to, page = 1, limit = 100 } = req.query;
 
       const dateFrom = (date_from as string) || '1900-01-01';
@@ -320,7 +320,7 @@ export class GLExplorerControllerV2 {
             ELSE COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0)
           END as opening_balance
         FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
         JOIN chart_of_accounts coa ON jel.account_id = coa.id
           AND coa.tenant_id = $1
@@ -335,7 +335,7 @@ export class GLExplorerControllerV2 {
       // Get transactions
       const transQuery = `
         SELECT 
-          je.id as journal_entry_id,
+          je.entry_id as journal_entry_id,
           je.entry_number,
           je.journal_date,
           je.description,
@@ -345,7 +345,7 @@ export class GLExplorerControllerV2 {
           jel.debit_amount,
           jel.credit_amount
         FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.id
+        JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
         JOIN chart_of_accounts coa ON jel.account_id = coa.id
           AND coa.tenant_id = $1
@@ -353,7 +353,7 @@ export class GLExplorerControllerV2 {
           AND je.status = 'POSTED'
           AND je.journal_date >= $2 AND je.journal_date <= $3
           AND coa.account_code = $4
-        ORDER BY je.journal_date, je.id
+        ORDER BY je.journal_date, je.entry_id
         LIMIT $5 OFFSET $6
       `;
 

@@ -9,55 +9,60 @@ import { BaseRepository, TenantContext, PaginatedResult, PaginationOptions } fro
 
 export type PurchaseOrderStatus = 'draft' | 'pending_approval' | 'approved' | 'sent' | 'partial' | 'received' | 'cancelled';
 
+// Matches existing purchase.po_line_items schema with friendly aliases
 export interface PurchaseOrderLine {
-  id: string;
-  order_id: string;
-  item_id: string;
+  line_id: number;
+  po_id: number;
   item_code?: string;
-  item_name?: string;
+  description?: string;
   quantity: number;
+  unit_of_measure?: string;
   unit_price: number;
-  discount_percent?: number;
-  tax_rate?: number;
-  tax_amount?: number;
+  discount_percentage?: number;
+  discount_amount?: number;
+  vat_rate?: number;
+  vat_amount?: number;
   line_total: number;
   quantity_received?: number;
   notes?: string;
 }
 
+// Matches existing purchase.purchase_orders schema with friendly aliases
 export interface PurchaseOrder {
-  id: string;
+  po_id: number;
   tenant_id: string;
-  order_number: string;
-  supplier_id: string;
-  supplier_name?: string;
-  order_date: Date;
+  po_number: string;
+  po_date: Date;
+  order_date?: Date;
   expected_date?: Date;
-  status: PurchaseOrderStatus;
-  warehouse_id?: string;
+  supplier_id?: number;
+  requisition_id?: number;
+  delivery_date?: Date;
+  payment_terms?: string;
+  status: string;
   subtotal: number;
   discount_amount?: number;
-  tax_amount?: number;
-  shipping_amount?: number;
-  total_amount: number;
-  currency_code: string;
-  exchange_rate?: number;
-  payment_terms?: number;
+  vat_rate?: number;
+  vat_amount?: number;
+  total: number;
+  currency_code?: string;
+  sent_to_supplier?: boolean;
+  acknowledged_by_supplier?: boolean;
+  warehouse_id?: number;
   notes?: string;
-  internal_notes?: string;
-  approved_by?: string;
-  approved_at?: Date;
-  lines?: PurchaseOrderLine[];
   created_at: Date;
-  created_by?: string;
+  created_by?: number;
   updated_at?: Date;
-  updated_by?: string;
+  updated_by?: number;
   deleted_at?: Date;
+  lines?: PurchaseOrderLine[];
 }
 
 export class PurchaseOrderRepository extends BaseRepository<PurchaseOrder> {
-  protected tableName = 'orders';
+  protected tableName = 'purchase_orders';
   protected schema = 'purchase';
+  protected primaryKey = 'po_id';
+  protected softDelete = false;
 
   /**
    * Get orders by status
@@ -86,10 +91,23 @@ export class PurchaseOrderRepository extends BaseRepository<PurchaseOrder> {
     if (!order) return null;
 
     const linesSql = `
-      SELECT pol.*, i.code as item_code, i.name as item_name
-      FROM purchase.order_lines pol
-      LEFT JOIN inventory.items i ON i.id = pol.item_id
-      WHERE pol.order_id = $2 AND pol.tenant_id = $1
+      SELECT 
+        line_id, 
+        po_id, 
+        item_code, 
+        description, 
+        quantity, 
+        unit_of_measure,
+        unit_price,
+        discount_percentage,
+        discount_amount,
+        vat_rate,
+        vat_amount,
+        line_total,
+        quantity_received,
+        notes
+      FROM purchase.po_line_items pol
+      WHERE pol.tenant_id = $1 AND pol.po_id = $2
       ORDER BY pol.line_number
     `;
 
@@ -108,47 +126,94 @@ export class PurchaseOrderRepository extends BaseRepository<PurchaseOrder> {
     const client = await this.beginTransaction();
 
     try {
-      // Generate order number
-      const numResult = await client.query(`
-        SELECT COALESCE(MAX(CAST(SUBSTRING(order_number FROM '[0-9]+$') AS INTEGER)), 0) + 1 as next_num
-        FROM ${this.fullTableName}
-        WHERE tenant_id = $1
-      `, [ctx.tenantId]);
+      // Generate order number against legacy po_number column
+      const numResult = await client.query(
+        `SELECT COALESCE(MAX(CAST(SUBSTRING(po_number FROM '[0-9]+$') AS INTEGER)), 0) + 1 as next_num
+         FROM ${this.fullTableName}
+         WHERE tenant_id = $1`,
+        [ctx.tenantId]
+      );
       const orderNumber = `PO-${String(numResult.rows[0].next_num).padStart(6, '0')}`;
 
-      // Create order
-      const orderResult = await client.query(`
-        INSERT INTO ${this.fullTableName}
-        (tenant_id, order_number, supplier_id, order_date, expected_date, status, warehouse_id,
-         subtotal, discount_amount, tax_amount, shipping_amount, total_amount,
-         currency_code, payment_terms, notes, created_by)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-        RETURNING *
-      `, [
-        ctx.tenantId, orderNumber, orderData.supplier_id,
-        orderData.order_date || new Date(), orderData.expected_date,
-        orderData.status || 'draft', orderData.warehouse_id,
-        orderData.subtotal || 0, orderData.discount_amount || 0,
-        orderData.tax_amount || 0, orderData.shipping_amount || 0,
-        orderData.total_amount || 0, orderData.currency_code || 'ZAR',
-        orderData.payment_terms, orderData.notes, ctx.userId
-      ]);
+      // Basic totals derived from lines when not provided
+      const computedSubtotal = lines.reduce((sum, l) => {
+        const qty = Number(l.quantity) || 0;
+        const price = Number(l.unit_price) || 0;
+        return sum + qty * price;
+      }, 0);
+      const subtotal = orderData.subtotal ?? computedSubtotal;
+      const discountAmount = orderData.discount_amount ?? 0;
+      const vatRate = orderData.vat_rate ?? 15;
+      const vatAmount = orderData.vat_amount ?? ((subtotal - discountAmount) * (vatRate / 100));
+      const total = orderData.total ?? (subtotal - discountAmount + vatAmount);
+
+      // Create order (Note: created_by is INTEGER in DB schema, skip it for UUID users)
+      const orderResult = await client.query(
+        `INSERT INTO ${this.fullTableName}
+         (tenant_id, po_number, po_date, order_date, expected_date, supplier_id, requisition_id, delivery_date,
+          payment_terms, status, warehouse_id, subtotal, discount_amount, vat_rate, vat_amount, total,
+          currency_code, notes)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+         RETURNING *`,
+        [
+          ctx.tenantId,
+          orderNumber,
+          orderData.po_date || new Date(),
+          orderData.order_date || new Date(),
+          orderData.expected_date,
+          orderData.supplier_id,
+          orderData.requisition_id,
+          orderData.delivery_date,
+          orderData.payment_terms,
+          orderData.status || 'draft',
+          orderData.warehouse_id,
+          subtotal,
+          discountAmount,
+          vatRate,
+          vatAmount,
+          total,
+          orderData.currency_code || 'ZAR',
+          orderData.notes
+        ]
+      );
 
       const order = orderResult.rows[0];
 
       // Create lines
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        await client.query(`
-          INSERT INTO purchase.order_lines
-          (tenant_id, order_id, line_number, item_id, quantity, unit_price,
-           discount_percent, tax_rate, tax_amount, line_total, notes)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        `, [
-          ctx.tenantId, order.id, i + 1, line.item_id, line.quantity, line.unit_price,
-          line.discount_percent || 0, line.tax_rate || 0, line.tax_amount || 0,
-          line.line_total, line.notes
-        ]);
+        const qty = Number(line.quantity) || 0;
+        const price = Number(line.unit_price) || 0;
+        const discountPct = Number(line.discount_percentage) || 0;
+        const discountValue = line.discount_amount ?? ((qty * price) * (discountPct / 100));
+        const rate = Number(line.vat_rate ?? 15);
+        const lineTotalBeforeTax = qty * price - discountValue;
+        const taxValue = line.vat_amount ?? (lineTotalBeforeTax * (rate / 100));
+        const lineTotal = line.line_total ?? (lineTotalBeforeTax + taxValue);
+
+        await client.query(
+          `INSERT INTO purchase.po_line_items
+           (tenant_id, po_id, line_number, item_code, description, quantity, unit_of_measure, unit_price,
+            discount_percentage, discount_amount, vat_rate, vat_amount, line_total, quantity_received, notes)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)` ,
+          [
+            ctx.tenantId,
+            order.po_id,
+            i + 1,
+            line.item_code,
+            line.description,
+            qty,
+            line.unit_of_measure || 'Unit',
+            price,
+            discountPct,
+            discountValue,
+            rate,
+            taxValue,
+            lineTotal,
+            line.quantity_received || 0,
+            line.notes
+          ]
+        );
       }
 
       await this.commitTransaction(client);
@@ -244,8 +309,8 @@ export class PurchaseOrderRepository extends BaseRepository<PurchaseOrder> {
     const sql = `
       SELECT 
         COUNT(*) as total_orders,
-        COALESCE(SUM(total_amount), 0) as total_amount,
-        COALESCE(AVG(total_amount), 0) as average_order_value
+        COALESCE(SUM(total), 0) as total_amount,
+        COALESCE(AVG(total), 0) as average_order_value
       FROM ${this.fullTableName}
       WHERE tenant_id = $1 
         AND deleted_at IS NULL

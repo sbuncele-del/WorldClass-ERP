@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 
 interface Employee {
   employee_id: number;
@@ -49,11 +50,10 @@ export default function EmployeeManagement() {
 
   const fetchEmployees = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/hr/employees');
-      const result = await response.json();
+      const response = await apiClient.get('/api/hr/employees');
       
-      if (result.success) {
-        setEmployees(result.data);
+      if (response.data?.success) {
+        setEmployees(response.data.data || []);
       }
     } catch (error) {
       console.error('Error fetching employees:', error);
@@ -64,11 +64,10 @@ export default function EmployeeManagement() {
 
   const fetchDepartments = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/hr/departments');
-      const result = await response.json();
+      const response = await apiClient.get('/api/hr/departments');
       
-      if (result.success) {
-        setDepartments(result.data);
+      if (response.data?.success) {
+        setDepartments(response.data.data || []);
       }
     } catch (error) {
       console.error('Error fetching departments:', error);
@@ -77,11 +76,10 @@ export default function EmployeeManagement() {
 
   const fetchPositions = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/hr/positions');
-      const result = await response.json();
+      const response = await apiClient.get('/api/hr/positions');
       
-      if (result.success) {
-        setPositions(result.data);
+      if (response.data?.success) {
+        setPositions(response.data.data || []);
       }
     } catch (error) {
       console.error('Error fetching positions:', error);

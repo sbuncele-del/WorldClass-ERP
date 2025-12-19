@@ -1,35 +1,25 @@
+/**
+ * Dashboard Routes (V2, tenant-aware)
+ * Delegates to tenant-hardened V2 controller.
+ */
 import express from 'express';
-import { 
-  getDashboardStats, 
-  getDimensionBreakdown, 
-  getRecentEntries,
-  getDashboardMetrics,
-  getRecentActivity,
-  getInventoryAlerts,
-  getTopProducts
-} from '../controllers/dashboard.controller';
-import DashboardController from '../controllers/dashboard.controller';
+import { authenticateToken } from '../middleware/auth';
 import { tenantMiddleware } from '../middleware/tenant';
+import DashboardControllerV2 from '../controllers/dashboard.controller.v2';
 
 const router = express.Router();
 
-/**
- * Dashboard Routes
- * Provides endpoints for financial dashboard data
- */
+// All routes require authentication and tenant context
+router.use(authenticateToken);
+router.use(tenantMiddleware);
 
-// Main Dashboard Endpoints (for Enterprise Dashboard)
-router.get('/metrics', tenantMiddleware, DashboardController.getMetrics);
-router.get('/tasks', tenantMiddleware, DashboardController.getTasks);
-router.get('/alerts', tenantMiddleware, DashboardController.getAlerts);
-router.get('/executive', tenantMiddleware, DashboardController.getExecutiveDashboard);
-
-// Legacy Dashboard Endpoints
-router.get('/stats', getDashboardStats);
-router.get('/breakdown/:dimensionType', getDimensionBreakdown);
-router.get('/recent-entries', getRecentEntries);
-router.get('/activity', tenantMiddleware, getRecentActivity);
-router.get('/inventory-alerts', tenantMiddleware, getInventoryAlerts);
-router.get('/top-products', tenantMiddleware, getTopProducts);
+// Main Dashboard Endpoints
+router.get('/stats', DashboardControllerV2.getDashboardStats);
+router.get('/revenue-trend', DashboardControllerV2.getRevenueTrend);
+router.get('/expense-breakdown', DashboardControllerV2.getExpenseBreakdown);
+router.get('/recent-entries', DashboardControllerV2.getRecentEntries);
+router.get('/cash-position', DashboardControllerV2.getCashPosition);
+router.get('/aging', DashboardControllerV2.getAgingSummary);
+router.get('/kpis', DashboardControllerV2.getKPIs);
 
 export default router;

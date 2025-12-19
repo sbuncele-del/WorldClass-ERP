@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { FaSearch, FaPlus, FaFileAlt, FaMapMarkerAlt, FaCheckCircle, FaClock } from 'react-icons/fa';
+import apiClient from '../../services/api';
 import '../../App.css';
 
 interface Trip {
@@ -15,15 +16,6 @@ interface Trip {
   eta: string;
 }
 
-const mockTrips: Trip[] = [
-  { trip_id: 'TRP-2025-00125', customer: 'Massmart', origin: 'JHB DC', destination: 'Cape Town DC', driver: 'John Mthembu', vehicle_reg: 'ABC 123 GP', status: 'In Transit', pod_status: 'Pending', eta: '2025-11-11 18:00' },
-  { trip_id: 'TRP-2025-00126', customer: 'Shoprite', origin: 'DUR DC', destination: 'Pretoria DC', driver: 'Sarah Ndlovu', vehicle_reg: 'DEF 456 GP', status: 'Delivered', pod_status: 'Received', eta: '2025-11-10 14:00' },
-  { trip_id: 'TRP-2025-00127', customer: 'Unilever', origin: 'PE Factory', destination: 'JHB Warehouse', driver: 'Thabo Dlamini', vehicle_reg: 'GHI 789 GP', status: 'Loading', pod_status: 'Pending', eta: '2025-11-12 09:00' },
-  { trip_id: 'TRP-2025-00128', customer: 'Sasol', origin: 'Secunda Plant', destination: 'Richards Bay', driver: 'Peter Mokoena', vehicle_reg: 'JKL 012 GP', status: 'Planned', pod_status: 'Pending', eta: '2025-11-13 12:00' },
-  { trip_id: 'TRP-2025-00129', customer: 'Pick n Pay', origin: 'JHB DC', destination: 'Polokwane', driver: 'Bongani Zulu', vehicle_reg: 'MNO 345 GP', status: 'In Transit', pod_status: 'Pending', eta: '2025-11-11 11:00' },
-  { trip_id: 'TRP-2025-00130', customer: 'SPAR', origin: 'Cape Town DC', destination: 'George', driver: 'Fezeka Mbeki', vehicle_reg: 'PQR 678 WC', status: 'Delivered', pod_status: 'Received', eta: '2025-11-09 16:00' },
-];
-
 const getStatusBadge = (status: Trip['status']) => {
   switch (status) {
     case 'Planned': return 'badge-gray';
@@ -37,11 +29,31 @@ const getStatusBadge = (status: Trip['status']) => {
 };
 
 const TripManagement: React.FC = () => {
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
+  useEffect(() => {
+    fetchTrips();
+  }, []);
+
+  const fetchTrips = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get('/api/logistics/trips');
+      const data = response.data?.data || response.data || [];
+      setTrips(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching trips:', err);
+      setTrips([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredTrips = useMemo(() => {
-    return mockTrips.filter(trip => {
+    return trips.filter(trip => {
       const matchesSearch = trip.trip_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             trip.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             trip.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -49,14 +61,14 @@ const TripManagement: React.FC = () => {
       const matchesStatus = statusFilter === 'All' || trip.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [searchTerm, statusFilter]);
+  }, [trips, searchTerm, statusFilter]);
 
   const summaryStats = useMemo(() => ({
-    total: mockTrips.length,
-    inTransit: mockTrips.filter(t => t.status === 'In Transit').length,
-    pendingPOD: mockTrips.filter(t => t.pod_status === 'Pending' && t.status !== 'Cancelled').length,
-    deliveredToday: mockTrips.filter(t => t.status === 'Delivered' && new Date(t.eta).toDateString() === new Date().toDateString()).length,
-  }), []);
+    total: trips.length,
+    inTransit: trips.filter(t => t.status === 'In Transit').length,
+    pendingPOD: trips.filter(t => t.pod_status === 'Pending' && t.status !== 'Cancelled').length,
+    deliveredToday: trips.filter(t => t.status === 'Delivered' && new Date(t.eta).toDateString() === new Date().toDateString()).length,
+  }), [trips]);
 
   return (
     <div className="page-container">

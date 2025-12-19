@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, List, Button, Space, Input, Avatar, Tag, Typography, 
   Modal, Form, Select, message, Row, Col, Badge
@@ -7,6 +7,7 @@ import {
   PlusOutlined, BellOutlined, PushpinOutlined, CalendarOutlined,
   TeamOutlined, NotificationOutlined
 } from '@ant-design/icons';
+import apiClient from '../../../services/api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -23,69 +24,6 @@ interface Announcement {
   totalAudience: number;
 }
 
-const sampleAnnouncements: Announcement[] = [
-  {
-    id: '1',
-    title: 'Company All-Hands Meeting Next Friday',
-    content: 'Please join us for our quarterly all-hands meeting on Friday, March 1st at 2:00 PM. We will be discussing Q1 results, upcoming initiatives, and recognizing outstanding team members.',
-    author: { name: 'CEO Office' },
-    date: '2024-02-20',
-    priority: 'important',
-    pinned: true,
-    audience: 'All Employees',
-    readBy: 38,
-    totalAudience: 45
-  },
-  {
-    id: '2',
-    title: 'New Project Management Tool Rollout',
-    content: 'We are excited to announce the rollout of our new project management tool starting next week. Training sessions will be held throughout the week. Please check your calendar for your assigned session.',
-    author: { name: 'IT Department' },
-    date: '2024-02-19',
-    priority: 'normal',
-    pinned: true,
-    audience: 'All Employees',
-    readBy: 42,
-    totalAudience: 45
-  },
-  {
-    id: '3',
-    title: 'Urgent: System Maintenance Tonight',
-    content: 'Our systems will undergo scheduled maintenance tonight from 11 PM to 3 AM. Please save all work and log out before 11 PM. We apologize for any inconvenience.',
-    author: { name: 'IT Department' },
-    date: '2024-02-18',
-    priority: 'urgent',
-    pinned: false,
-    audience: 'All Employees',
-    readBy: 45,
-    totalAudience: 45
-  },
-  {
-    id: '4',
-    title: 'Q1 Sales Targets Achieved! 🎉',
-    content: 'Congratulations to the entire sales team for exceeding our Q1 targets by 15%! This is a tremendous achievement and reflects the hard work and dedication of everyone involved.',
-    author: { name: 'Sales Leadership' },
-    date: '2024-02-15',
-    priority: 'normal',
-    pinned: false,
-    audience: 'Sales Team',
-    readBy: 12,
-    totalAudience: 12
-  },
-  {
-    id: '5',
-    title: 'Updated Travel & Expense Policy',
-    content: 'Please review the updated travel and expense policy effective March 1st. Key changes include updated per diem rates and new approval workflows for international travel.',
-    author: { name: 'HR Department' },
-    date: '2024-02-14',
-    priority: 'normal',
-    pinned: false,
-    audience: 'All Employees',
-    readBy: 30,
-    totalAudience: 45
-  }
-];
-
 const priorityConfig = {
   normal: { color: 'default', label: 'Normal' },
   important: { color: 'blue', label: 'Important' },
@@ -93,9 +31,24 @@ const priorityConfig = {
 };
 
 const Announcements: React.FC = () => {
-  const [announcements, setAnnouncements] = useState<Announcement[]>(sampleAnnouncements);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [loading, setLoading] = useState(true);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    const fetchAnnouncements = async () => {
+      try {
+        const response = await apiClient.get('/api/communications/announcements');
+        setAnnouncements(response.data?.data || response.data || []);
+      } catch (err) {
+        console.error('Error fetching announcements:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnnouncements();
+  }, []);
 
   const pinnedAnnouncements = announcements.filter(a => a.pinned);
   const recentAnnouncements = announcements.filter(a => !a.pinned);

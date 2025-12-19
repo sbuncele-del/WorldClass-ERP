@@ -1,4 +1,6 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { workspaceApi } from '../../services/api.service';
+import apiClient from '../../services/api';
 import {
   Card,
   Row,
@@ -49,141 +51,11 @@ import './BankingHub.css';
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
-// Bank connections
-const bankConnections = [
-  {
-    id: 'fnb-main',
-    bank: 'First National Bank',
-    logo: '🏦',
-    accountName: 'Main Operating Account',
-    accountNumber: '****4521',
-    type: 'Current',
-    currency: 'ZAR',
-    balance: 2450000,
-    available: 2350000,
-    status: 'connected',
-    lastSync: '2025-12-11T10:30:00',
-    feedType: 'Open Banking API',
-  },
-  {
-    id: 'fnb-savings',
-    bank: 'First National Bank',
-    logo: '🏦',
-    accountName: 'Savings Reserve',
-    accountNumber: '****4522',
-    type: 'Savings',
-    currency: 'ZAR',
-    balance: 5000000,
-    available: 5000000,
-    status: 'connected',
-    lastSync: '2025-12-11T10:30:00',
-    feedType: 'Open Banking API',
-  },
-  {
-    id: 'std-usd',
-    bank: 'Standard Bank',
-    logo: '🏛️',
-    accountName: 'USD Foreign Currency',
-    accountNumber: '****7890',
-    type: 'Foreign Currency',
-    currency: 'USD',
-    balance: 125000,
-    available: 125000,
-    status: 'connected',
-    lastSync: '2025-12-11T09:45:00',
-    feedType: 'Statement Import',
-  },
-  {
-    id: 'nedbank-credit',
-    bank: 'Nedbank',
-    logo: '🏧',
-    accountName: 'Business Credit Card',
-    accountNumber: '****1234',
-    type: 'Credit Card',
-    currency: 'ZAR',
-    balance: -45000,
-    available: 155000,
-    status: 'connected',
-    lastSync: '2025-12-11T08:00:00',
-    feedType: 'Open Banking API',
-  },
-  {
-    id: 'absa-pending',
-    bank: 'ABSA',
-    logo: '🔴',
-    accountName: 'Treasury Account',
-    accountNumber: '****5678',
-    type: 'Current',
-    currency: 'ZAR',
-    balance: 0,
-    available: 0,
-    status: 'pending',
-    lastSync: null,
-    feedType: 'Awaiting Setup',
-  },
-];
+// Default empty arrays for API data
+const defaultBankConnections: any[] = [];
 
-// Recent transactions
-const recentTransactions = [
-  {
-    id: 'TXN-001',
-    date: '2025-12-11',
-    description: 'Supplier Payment - ABC Supplies',
-    account: 'Main Operating Account',
-    amount: -125000,
-    currency: 'ZAR',
-    status: 'cleared',
-    reconciled: true,
-  },
-  {
-    id: 'TXN-002',
-    date: '2025-12-11',
-    description: 'Customer Receipt - XYZ Corp',
-    account: 'Main Operating Account',
-    amount: 450000,
-    currency: 'ZAR',
-    status: 'cleared',
-    reconciled: true,
-  },
-  {
-    id: 'TXN-003',
-    date: '2025-12-10',
-    description: 'Payroll - December 2025',
-    account: 'Main Operating Account',
-    amount: -890000,
-    currency: 'ZAR',
-    status: 'cleared',
-    reconciled: false,
-  },
-  {
-    id: 'TXN-004',
-    date: '2025-12-10',
-    description: 'International Transfer - UK Subsidiary',
-    account: 'USD Foreign Currency',
-    amount: -50000,
-    currency: 'USD',
-    status: 'pending',
-    reconciled: false,
-  },
-  {
-    id: 'TXN-005',
-    date: '2025-12-09',
-    description: 'Credit Card Purchase - Office Supplies',
-    account: 'Business Credit Card',
-    amount: -2500,
-    currency: 'ZAR',
-    status: 'cleared',
-    reconciled: true,
-  },
-];
-
-// Cash flow forecast
-const cashFlowForecast = [
-  { period: 'Week 1', inflow: 1200000, outflow: 850000, net: 350000 },
-  { period: 'Week 2', inflow: 980000, outflow: 1100000, net: -120000 },
-  { period: 'Week 3', inflow: 1450000, outflow: 920000, net: 530000 },
-  { period: 'Week 4', inflow: 870000, outflow: 750000, net: 120000 },
-];
+const defaultTransactions: any[] = [];
+const defaultCashFlowForecast: any[] = [];
 
 // Lazy load the enhanced AI-powered reconciliation component
 const BankReconciliation = lazy(() => import('../../components/BankReconciliationHub'));
@@ -196,27 +68,41 @@ const BankingHub: React.FC = () => {
   // Fetch live API data for banking/cash management
   const [apiData, setApiData] = useState<any>(null);
   const [apiLoading, setApiLoading] = useState(true);
+  const [bankConnections, setBankConnections] = useState<any[]>(defaultBankConnections);
+  const [recentTransactions, setRecentTransactions] = useState<any[]>(defaultTransactions);
+  const [cashFlowForecast, setCashFlowForecast] = useState<any[]>(defaultCashFlowForecast);
   
   useEffect(() => {
-    const fetchWorkspaceData = async () => {
+    const fetchBankingData = async () => {
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        const token = localStorage.getItem('token');
-        const headers: Record<string, string> = {};
-        if (token) headers['Authorization'] = `Bearer ${token}`;
+        // Fetch from workspaceApi and apiClient in parallel
+        const [workspaceResult, connectionsRes, transactionsRes, forecastRes] = await Promise.all([
+          workspaceApi.cashManagement.getWorkspace().catch(() => null),
+          apiClient.get('/api/banking/connections').catch(() => ({ data: [] })),
+          apiClient.get('/api/banking/transactions').catch(() => ({ data: [] })),
+          apiClient.get('/api/banking/cash-flow-forecast').catch(() => ({ data: [] })),
+        ]);
         
-        const response = await fetch(`${API_URL}/api/v1/cash-management/workspace`, { headers });
-        const result = await response.json();
-        if (result.success && result.data) {
-          setApiData(result.data);
+        // Handle workspace data
+        if (workspaceResult) {
+          if ((workspaceResult as any)?.data) {
+            setApiData((workspaceResult as any).data);
+          } else {
+            setApiData(workspaceResult);
+          }
         }
+        
+        // Handle bank connections
+        if (connectionsRes.data?.length) setBankConnections(connectionsRes.data);
+        if (transactionsRes.data?.length) setRecentTransactions(transactionsRes.data);
+        if (forecastRes.data?.length) setCashFlowForecast(forecastRes.data);
       } catch (err) {
         console.log('Using local mock data for banking');
       } finally {
         setApiLoading(false);
       }
     };
-    fetchWorkspaceData();
+    fetchBankingData();
   }, []);
 
   const handleSyncAll = async () => {

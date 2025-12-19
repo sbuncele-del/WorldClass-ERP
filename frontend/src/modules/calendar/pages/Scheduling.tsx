@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Button,
@@ -20,7 +20,9 @@ import {
   Tooltip,
   Radio,
   message,
+  Spin,
 } from 'antd';
+import apiClient from '../../../services/api';
 import {
   PlusOutlined,
   CalendarOutlined,
@@ -63,106 +65,51 @@ interface TimeSlot {
   endTime: string;
 }
 
+interface UpcomingBooking {
+  id: string;
+  title: string;
+  guest: string;
+  guestEmail: string;
+  date: string;
+  time: string;
+  duration: number;
+  type: string;
+}
+
 const Scheduling: React.FC = () => {
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [settingsModalVisible, setSettingsModalVisible] = useState(false);
   const [selectedLink, setSelectedLink] = useState<SchedulingLink | null>(null);
   const [form] = Form.useForm();
+  const [schedulingLinks, setSchedulingLinks] = useState<SchedulingLink[]>([]);
+  const [availability, setAvailability] = useState<TimeSlot[]>([]);
+  const [upcomingBookings, setUpcomingBookings] = useState<UpcomingBooking[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sample data
-  const schedulingLinks: SchedulingLink[] = [
-    {
-      id: '1',
-      name: '30 Minute Meeting',
-      duration: 30,
-      type: 'one-on-one',
-      location: 'video',
-      description: 'Quick call to discuss your needs',
-      url: 'https://cal.worldclass-erp.com/johndoe/30min',
-      color: '#1890ff',
-      isActive: true,
-      bookings: 24,
-    },
-    {
-      id: '2',
-      name: '1 Hour Consultation',
-      duration: 60,
-      type: 'one-on-one',
-      location: 'video',
-      description: 'In-depth consultation session',
-      url: 'https://cal.worldclass-erp.com/johndoe/consultation',
-      color: '#52c41a',
-      isActive: true,
-      bookings: 12,
-    },
-    {
-      id: '3',
-      name: 'Team Demo',
-      duration: 45,
-      type: 'group',
-      location: 'video',
-      description: 'Product demo for your team (up to 10 people)',
-      url: 'https://cal.worldclass-erp.com/johndoe/team-demo',
-      color: '#722ed1',
-      isActive: true,
-      bookings: 8,
-    },
-    {
-      id: '4',
-      name: 'Phone Call',
-      duration: 15,
-      type: 'one-on-one',
-      location: 'phone',
-      description: 'Quick phone conversation',
-      url: 'https://cal.worldclass-erp.com/johndoe/call',
-      color: '#fa8c16',
-      isActive: false,
-      bookings: 5,
-    },
-  ];
+  useEffect(() => {
+    fetchSchedulingData();
+  }, []);
 
-  const availability: TimeSlot[] = [
-    { day: 'Monday', enabled: true, startTime: '09:00', endTime: '17:00' },
-    { day: 'Tuesday', enabled: true, startTime: '09:00', endTime: '17:00' },
-    { day: 'Wednesday', enabled: true, startTime: '09:00', endTime: '17:00' },
-    { day: 'Thursday', enabled: true, startTime: '09:00', endTime: '17:00' },
-    { day: 'Friday', enabled: true, startTime: '09:00', endTime: '12:00' },
-    { day: 'Saturday', enabled: false, startTime: '10:00', endTime: '14:00' },
-    { day: 'Sunday', enabled: false, startTime: '10:00', endTime: '14:00' },
-  ];
-
-  const upcomingBookings = [
-    {
-      id: '1',
-      title: '30 Minute Meeting',
-      guest: 'Alice Brown',
-      guestEmail: 'alice@example.com',
-      date: '2024-01-16',
-      time: '10:00',
-      duration: 30,
-      type: 'video',
-    },
-    {
-      id: '2',
-      title: '1 Hour Consultation',
-      guest: 'Bob Wilson',
-      guestEmail: 'bob@company.com',
-      date: '2024-01-16',
-      time: '14:00',
-      duration: 60,
-      type: 'video',
-    },
-    {
-      id: '3',
-      title: 'Team Demo',
-      guest: 'Carol Smith (+ 4 others)',
-      guestEmail: 'carol@corp.com',
-      date: '2024-01-17',
-      time: '11:00',
-      duration: 45,
-      type: 'video',
-    },
-  ];
+  const fetchSchedulingData = async () => {
+    try {
+      setLoading(true);
+      const [linksRes, availabilityRes, bookingsRes] = await Promise.all([
+        apiClient.get('/api/calendar/scheduling-links'),
+        apiClient.get('/api/calendar/availability'),
+        apiClient.get('/api/calendar/bookings')
+      ]);
+      setSchedulingLinks(linksRes.data?.data || linksRes.data || []);
+      setAvailability(availabilityRes.data?.data || availabilityRes.data || []);
+      setUpcomingBookings(bookingsRes.data?.data || bookingsRes.data || []);
+    } catch (error) {
+      console.error('Error fetching scheduling data:', error);
+      setSchedulingLinks([]);
+      setAvailability([]);
+      setUpcomingBookings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const copyLink = (url: string) => {
     navigator.clipboard.writeText(url);

@@ -168,7 +168,7 @@ const Onboarding = () => {
               </linearGradient>
             </defs>
           </svg>
-          <span className="onboarding-logo-text">Aetheros ERP</span>
+          <span className="onboarding-logo-text">SiyaBusa ERP</span>
         </div>
 
         <div className="onboarding-progress-bar">

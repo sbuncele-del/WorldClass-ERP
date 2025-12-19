@@ -324,6 +324,21 @@ export const updateVendorInvoice = async (req: TenantRequest, res: Response) => 
   }
 };
 
+export const deleteVendorInvoice = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+
+    const deleted = await purchaseInvoiceRepository.delete(ctx, id);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Vendor invoice not found' });
+
+    res.json({ success: true, message: 'Vendor invoice deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting vendor invoice:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete vendor invoice', error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+};
+
 export const approveVendorInvoice = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
@@ -600,8 +615,8 @@ export const getPurchaseDashboard = async (req: TenantRequest, res: Response) =>
       purchaseInvoiceRepository.getOverdueInvoices(ctx)
     ]);
 
-    const unpaidTotal = unpaidInvoices.reduce((sum, inv) => sum + (inv.balance_due || 0), 0);
-    const overdueTotal = overdueInvoices.reduce((sum, inv) => sum + (inv.balance_due || 0), 0);
+    const unpaidTotal = unpaidInvoices.reduce((sum, inv) => sum + (inv.amount_outstanding || 0), 0);
+    const overdueTotal = overdueInvoices.reduce((sum, inv) => sum + (inv.amount_outstanding || 0), 0);
 
     res.json({
       success: true,
@@ -621,3 +636,190 @@ export const getPurchaseDashboard = async (req: TenantRequest, res: Response) =>
     res.status(500).json({ success: false, message: 'Failed to fetch purchase dashboard', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 };
+
+// ============================================================================
+// GL POSTING - Integration with Financial Module
+// ============================================================================
+
+import { integrationService } from '../services/integration.service';
+
+/**
+ * Post a purchase bill/invoice to the General Ledger
+ * Creates: DR Expense/Inventory, DR VAT Input, CR Accounts Payable
+ */
+export const postBillToGL = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+
+    // Get invoice - use findById from BaseRepository
+    const invoice = await purchaseInvoiceRepository.findById(ctx, id);
+
+    if (!invoice) {
+      return res.status(404).json({
+        success: false,
+        message: 'Bill/Invoice not found'
+      });
+    }
+
+    // Check GL posting status from database (field may exist from migration)
+    const invoiceData = invoice as any;
+    if (invoiceData.gl_posted) {
+      return res.status(400).json({
+        success: false,
+        message: 'Bill already posted to GL',
+        journalEntryId: invoiceData.gl_journal_id
+      });
+    }
+
+    if (invoice.status === 'draft') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot post draft bill. Please approve the bill first.'
+      });
+    }
+
+    // Prepare bill data for posting
+    const billForPosting = {
+      id: String(invoice.invoice_id),
+      bill_number: invoice.invoice_number,
+      supplier_id: String(invoice.supplier_id || ''),
+      supplier_name: (invoice as any).supplier_name || 'Unknown Supplier',
+      bill_date: invoice.invoice_date instanceof Date 
+        ? invoice.invoice_date.toISOString().split('T')[0] 
+        : String(invoice.invoice_date),
+      subtotal: invoice.subtotal || invoice.total_amount,
+      vat_amount: invoice.vat_amount || 0,
+      total_amount: invoice.total_amount,
+      lines: [] // Lines not available in this query - posting uses header amounts
+    };
+
+    // Post to GL
+    const result = await integrationService.postPurchaseBillToGL(
+      ctx.tenantId,
+      billForPosting,
+      ctx.userId || 'system'
+    );
+
+    if (result.success) {
+      res.json({
+        success: true,
+        message: result.message,
+        journalEntryId: result.journalEntryId
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: result.message
+      });
+    }
+  } catch (error) {
+    console.error('Error posting bill to GL:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to post bill to GL',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+/**
+ * Get GL posting status for a bill
+ */
+export const getBillGLStatus = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+
+    const status = await integrationService.getPostingStatus(
+      ctx.tenantId,
+      'PURCHASE_BILL',
+      id
+    );
+
+    res.json({
+      success: true,
+      data: status
+    });
+  } catch (error) {
+    console.error('Error getting bill GL status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get GL status'
+    });
+  }
+};
+
+/**
+ * Record a payment made to supplier and post to GL
+ */
+export const recordPaymentMade = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+    const { amount, payment_date, payment_reference, bank_account_code } = req.body;
+
+    // Get invoice
+    const invoice = await purchaseInvoiceRepository.findById(ctx, id);
+    if (!invoice) {
+      return res.status(404).json({
+        success: false,
+        message: 'Bill not found'
+      });
+    }
+
+    const balanceDue = invoice.amount_outstanding || (invoice.total_amount - (invoice.amount_paid || 0));
+    if (amount > balanceDue) {
+      return res.status(400).json({
+        success: false,
+        message: `Payment amount (${amount}) exceeds balance due (${balanceDue})`
+      });
+    }
+
+    // Post payment to GL
+    const glResult = await integrationService.postPaymentMadeToGL(
+      ctx.tenantId,
+      {
+        id: `PAY-${Date.now()}`,
+        payment_date: payment_date || new Date().toISOString().split('T')[0],
+        amount,
+        bill_number: invoice.invoice_number,
+        supplier_name: (invoice as any).supplier_name || 'Supplier',
+        bank_account_code,
+        payment_reference: payment_reference || `Payment for ${invoice.invoice_number}`
+      },
+      ctx.userId || 'system'
+    );
+
+    // Update invoice payment status
+    const newAmountPaid = (invoice.amount_paid || 0) + amount;
+    const newBalance = invoice.total_amount - newAmountPaid;
+    const newStatus = newBalance <= 0 ? 'paid' : 'partial';
+
+    await purchaseInvoiceRepository.update(ctx, id, {
+      amount_paid: newAmountPaid,
+      amount_outstanding: newBalance,
+      status: newStatus
+    });
+
+    res.json({
+      success: true,
+      message: 'Payment recorded successfully',
+      data: {
+        invoice_id: id,
+        amount_paid: amount,
+        new_balance: newBalance,
+        status: newStatus,
+        gl_journal_id: glResult.journalEntryId
+      }
+    });
+  } catch (error) {
+    console.error('Error recording payment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to record payment',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+

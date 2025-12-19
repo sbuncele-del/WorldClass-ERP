@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface PurchaseOrder {
@@ -32,95 +33,8 @@ const PurchaseOrdersPage: React.FC = () => {
   const fetchPurchaseOrders = async () => {
     setLoading(true);
     try {
-      const mockOrders: PurchaseOrder[] = [
-        {
-          id: 'PO001',
-          po_number: 'PO-2025-018',
-          supplier_name: 'Tech Supplies International',
-          supplier_code: 'TSI-001',
-          order_date: '2025-01-06',
-          delivery_date: '2025-01-20',
-          status: 'CONFIRMED',
-          payment_terms: '30 Days',
-          total_amount: 127600,
-          item_count: 8,
-          received_items: 0,
-          requester: 'Nomvula Dlamini',
-          department: 'Manufacturing',
-          pr_number: 'PR-2025-003',
-          notes: 'Critical production materials'
-        },
-        {
-          id: 'PO002',
-          po_number: 'PO-2025-019',
-          supplier_name: 'Office Equipment Ltd',
-          supplier_code: 'OEL-002',
-          order_date: '2025-01-08',
-          delivery_date: '2025-01-18',
-          status: 'PARTIALLY_RECEIVED',
-          payment_terms: '60 Days',
-          total_amount: 45800,
-          item_count: 12,
-          received_items: 7,
-          requester: 'Thabo Mkhize',
-          department: 'IT Department',
-          pr_number: 'PR-2025-001',
-          notes: 'Office supplies monthly order'
-        },
-        {
-          id: 'PO003',
-          po_number: 'PO-2025-020',
-          supplier_name: 'Industrial Parts Co',
-          supplier_code: 'IPC-003',
-          order_date: '2025-01-10',
-          delivery_date: '2025-01-25',
-          status: 'SENT',
-          payment_terms: '45 Days',
-          total_amount: 89200,
-          item_count: 15,
-          received_items: 0,
-          requester: 'Pieter Kruger',
-          department: 'Maintenance',
-          pr_number: null,
-          notes: 'Spare parts for Q1'
-        },
-        {
-          id: 'PO004',
-          po_number: 'PO-2025-021',
-          supplier_name: 'Tech Supplies International',
-          supplier_code: 'TSI-001',
-          order_date: '2025-01-05',
-          delivery_date: '2025-01-15',
-          status: 'RECEIVED',
-          payment_terms: '30 Days',
-          total_amount: 34500,
-          item_count: 5,
-          received_items: 5,
-          requester: 'Sarah van der Merwe',
-          department: 'Operations',
-          pr_number: 'PR-2024-098',
-          notes: 'Received in full, no issues'
-        },
-        {
-          id: 'PO005',
-          po_number: 'PO-2025-022',
-          supplier_name: 'Chemical Warehouse',
-          supplier_code: 'CWH-005',
-          order_date: '2025-01-12',
-          delivery_date: '2025-02-05',
-          status: 'DRAFT',
-          payment_terms: '30 Days',
-          total_amount: 67400,
-          item_count: 10,
-          received_items: 0,
-          requester: 'Johan Botha',
-          department: 'Quality Control',
-          pr_number: null,
-          notes: 'Draft - pending approval'
-        }
-      ];
-
-      setOrders(mockOrders);
+      const response = await apiClient.get('/api/purchase/orders');
+      setOrders(response.data?.data || response.data || []);
     } catch (err) {
       console.error('Error fetching purchase orders:', err);
     } finally {

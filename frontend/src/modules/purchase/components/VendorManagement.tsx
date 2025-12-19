@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './VendorManagement.css';
 
 interface Vendor {
@@ -81,7 +82,7 @@ const VendorManagement: React.FC = () => {
   const fetchVendors = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3000/api/purchase/vendors');
+      const response = await fetch(`${API_BASE_URL}/api/purchase/vendors`);
       const data = await response.json();
       
       if (data.success) {
@@ -148,7 +149,7 @@ const VendorManagement: React.FC = () => {
     e.preventDefault();
     
     try {
-      const response = await fetch('http://localhost:3000/api/purchase/vendors', {
+      const response = await fetch(`${API_BASE_URL}/api/purchase/vendors`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -176,7 +177,7 @@ const VendorManagement: React.FC = () => {
     if (!selectedVendor) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/purchase/vendors/${selectedVendor.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/purchase/vendors/${selectedVendor.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
@@ -204,7 +205,7 @@ const VendorManagement: React.FC = () => {
     if (!window.confirm('Are you sure you want to deactivate this vendor?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3000/api/purchase/vendors/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/purchase/vendors/${id}`, {
         method: 'DELETE'
       });
 
@@ -224,7 +225,7 @@ const VendorManagement: React.FC = () => {
   // View vendor details
   const handleViewVendor = async (vendor: Vendor) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/purchase/vendors/${vendor.id}`);
+      const response = await fetch(`${API_BASE_URL}/api/purchase/vendors/${vendor.id}`);
       const data = await response.json();
 
       if (data.success) {

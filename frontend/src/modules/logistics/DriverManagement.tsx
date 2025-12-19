@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { FaSearch, FaPlus, FaFilePdf, FaUserCheck, FaUserTimes, FaUserClock } from 'react-icons/fa';
+import apiClient from '../../services/api';
 import '../../App.css';
 
 interface Driver {
@@ -17,15 +18,6 @@ interface Driver {
   incidents: number;
 }
 
-const mockDrivers: Driver[] = [
-  { driver_id: 'D001', name: 'John Mthembu', employee_id: 'E1021', id_number: '8501105180085', license_type: 'Code 14', prdp_expiry: '2026-10-15', medical_expiry: '2026-09-20', status: 'On Trip', total_trips: 128, on_time_rate: 98.5, incidents: 1 },
-  { driver_id: 'D002', name: 'Sarah Ndlovu', employee_id: 'E1022', id_number: '8803204181083', license_type: 'Code 14', prdp_expiry: '2025-11-25', medical_expiry: '2026-01-15', status: 'Active', total_trips: 95, on_time_rate: 99.2, incidents: 0 },
-  { driver_id: 'D003', name: 'Thabo Dlamini', employee_id: 'E1023', id_number: '9011055382089', license_type: 'Code 10', prdp_expiry: '2027-05-30', medical_expiry: '2027-05-30', status: 'Active', total_trips: 210, on_time_rate: 97.8, incidents: 3 },
-  { driver_id: 'D004', name: 'Peter Mokoena', employee_id: 'E1024', id_number: '9207155183081', license_type: 'Code 14', prdp_expiry: '2026-02-10', medical_expiry: '2026-02-10', status: 'On Leave', total_trips: 88, on_time_rate: 99.0, incidents: 0 },
-  { driver_id: 'D005', name: 'Michael van Wyk', employee_id: 'E1025', id_number: '8204015184086', license_type: 'Code 14', prdp_expiry: '2025-12-08', medical_expiry: '2025-12-01', status: 'Inactive', total_trips: 350, on_time_rate: 95.0, incidents: 8 },
-  { driver_id: 'D006', name: 'Bongani Zulu', employee_id: 'E1029', id_number: '9509225837089', license_type: 'Code 14', prdp_expiry: '2027-08-19', medical_expiry: '2027-08-19', status: 'Active', total_trips: 45, on_time_rate: 100, incidents: 0 },
-];
-
 const getDaysUntilExpiry = (date: string) => {
   const today = new Date();
   const expiryDate = new Date(date);
@@ -40,26 +32,46 @@ const getExpiryColor = (days: number) => {
 };
 
 const DriverManagement: React.FC = () => {
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
+  useEffect(() => {
+    fetchDrivers();
+  }, []);
+
+  const fetchDrivers = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get('/api/logistics/drivers');
+      const data = response.data?.data || response.data || [];
+      setDrivers(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching drivers:', err);
+      setDrivers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredDrivers = useMemo(() => {
-    return mockDrivers.filter(driver => {
+    return drivers.filter(driver => {
       const matchesSearch = driver.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             driver.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                             driver.id_number.includes(searchTerm);
       const matchesStatus = statusFilter === 'All' || driver.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [searchTerm, statusFilter]);
+  }, [drivers, searchTerm, statusFilter]);
 
   const summaryStats = useMemo(() => ({
-    total: mockDrivers.length,
-    active: mockDrivers.filter(d => d.status === 'Active').length,
-    onTrip: mockDrivers.filter(d => d.status === 'On Trip').length,
-    onLeave: mockDrivers.filter(d => d.status === 'On Leave').length,
-    expiringSoon: mockDrivers.filter(d => getDaysUntilExpiry(d.prdp_expiry) <= 30 || getDaysUntilExpiry(d.medical_expiry) <= 30).length,
-  }), []);
+    total: drivers.length,
+    active: drivers.filter(d => d.status === 'Active').length,
+    onTrip: drivers.filter(d => d.status === 'On Trip').length,
+    onLeave: drivers.filter(d => d.status === 'On Leave').length,
+    expiringSoon: drivers.filter(d => getDaysUntilExpiry(d.prdp_expiry) <= 30 || getDaysUntilExpiry(d.medical_expiry) <= 30).length,
+  }), [drivers]);
 
   const renderStatusIcon = (status: Driver['status']) => {
     switch (status) {

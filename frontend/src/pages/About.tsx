@@ -9,7 +9,7 @@ const About: React.FC = () => {
       <nav className="footer-page-nav">
         <Link to="/" className="logo">
           <span className="logo-icon">◈</span>
-          <span>AetherOS</span>
+          <span>SiyaBusa</span>
         </Link>
         <Link to="/" className="back-link">← Back to Home</Link>
       </nav>
@@ -21,14 +21,14 @@ const About: React.FC = () => {
           transition={{ duration: 0.6 }}
         >
           <header className="page-header">
-            <h1>About AetherOS</h1>
+            <h1>About SiyaBusa</h1>
             <p className="subtitle">A product of Masaphokati Technologies</p>
           </header>
 
           <section className="content-section">
             <h2>Our Story</h2>
             <p>
-              AetherOS is the flagship enterprise resource planning platform developed by 
+              SiyaBusa is the flagship enterprise resource planning platform developed by 
               <strong> Masaphokati Technologies</strong>, a South African company dedicated to 
               transforming the fintech and enterprise software landscape. We believe that 
               business management systems should serve business owners—not just accountants.
@@ -70,7 +70,7 @@ const About: React.FC = () => {
                   genuinely useful.
                 </p>
                 <p>
-                  AetherOS is the culmination of that vision—a system designed from the ground 
+                  SiyaBusa is the culmination of that vision—a system designed from the ground 
                   up to serve the people who run businesses, not just the people who audit them.
                 </p>
               </div>
@@ -150,7 +150,7 @@ const About: React.FC = () => {
       </main>
 
       <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} AetherOS by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
       </footer>
     </div>
   );

@@ -11,7 +11,7 @@ const PrivacyPolicy: React.FC = () => {
       <nav className="footer-page-nav">
         <Link to="/" className="logo">
           <span className="logo-icon">◈</span>
-          <span>AetherOS</span>
+          <span>SiyaBusa</span>
         </Link>
         <Link to="/" className="back-link">← Back to Home</Link>
       </nav>
@@ -32,7 +32,7 @@ const PrivacyPolicy: React.FC = () => {
               <h2>1. Introduction</h2>
               <p>
                 Masaphokati Technologies (Pty) Ltd ("we", "us", "our", or "Masaphokati Technologies"), 
-                operating under the brand AetherOS, is committed to protecting your personal information 
+                operating under the brand SiyaBusa, is committed to protecting your personal information 
                 and respecting your privacy. This Privacy Policy explains how we collect, use, store, 
                 and protect your personal information in accordance with the Protection of Personal 
                 Information Act 4 of 2013 ("POPIA") and other applicable South African legislation.
@@ -48,9 +48,9 @@ const PrivacyPolicy: React.FC = () => {
               <p>For the purposes of POPIA, the responsible party is:</p>
               <div className="info-block">
                 <p><strong>Company:</strong> Masaphokati Technologies (Pty) Ltd</p>
-                <p><strong>Trading As:</strong> AetherOS</p>
+                <p><strong>Trading As:</strong> SiyaBusa</p>
                 <p><strong>Address:</strong> Centurion, Gauteng, South Africa</p>
-                <p><strong>Email:</strong> privacy@aetheros.io</p>
+                <p><strong>Email:</strong> privacy@siyabusa.co.za</p>
                 <p><strong>Information Officer:</strong> Sibusiso Mavuso</p>
               </div>
             </section>
@@ -205,7 +205,7 @@ const PrivacyPolicy: React.FC = () => {
               </ul>
               <p>
                 To exercise any of these rights, please contact us at{' '}
-                <a href="mailto:privacy@aetheros.io">privacy@aetheros.io</a>. We will respond within 
+                <a href="mailto:privacy@siyabusa.co.za">privacy@siyabusa.co.za</a>. We will respond within 
                 30 days as required by POPIA.
               </p>
             </section>
@@ -250,7 +250,7 @@ const PrivacyPolicy: React.FC = () => {
               <h2>14. Contact Us</h2>
               <p>For any questions, concerns, or requests regarding this Privacy Policy or our data practices:</p>
               <div className="info-block">
-                <p><strong>Email:</strong> <a href="mailto:privacy@aetheros.io">privacy@aetheros.io</a></p>
+                <p><strong>Email:</strong> <a href="mailto:privacy@siyabusa.co.za">privacy@siyabusa.co.za</a></p>
                 <p><strong>Postal Address:</strong> Masaphokati Technologies (Pty) Ltd, Centurion, Gauteng, South Africa</p>
                 <p><strong>Information Officer:</strong> Sibusiso Mavuso</p>
               </div>
@@ -273,7 +273,7 @@ const PrivacyPolicy: React.FC = () => {
       </main>
 
       <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} AetherOS by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
       </footer>
     </div>
   );

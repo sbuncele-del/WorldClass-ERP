@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, Table, Button, Space, Select, DatePicker, Tag, Avatar, 
   Statistic, Row, Col, Modal, Form, Input, InputNumber, message, 
@@ -36,89 +36,8 @@ interface TimerState {
   elapsed: number;
 }
 
-// Sample data
-const sampleEntries: TimeEntry[] = [
-  {
-    id: '1',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    task: 'Frontend Development',
-    user: 'Mike Wilson',
-    date: '2024-02-20',
-    hours: 6.5,
-    description: 'Implemented responsive header and navigation components',
-    billable: true,
-    rate: 125,
-    status: 'approved'
-  },
-  {
-    id: '2',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    task: 'Code Review',
-    user: 'Sarah Johnson',
-    date: '2024-02-20',
-    hours: 2,
-    description: 'Reviewed pull requests and provided feedback',
-    billable: true,
-    rate: 150,
-    status: 'approved'
-  },
-  {
-    id: '3',
-    project: 'Mobile App',
-    projectColor: '#52c41a',
-    task: 'iOS Development',
-    user: 'Alex Turner',
-    date: '2024-02-20',
-    hours: 8,
-    description: 'Built user authentication flow and profile screen',
-    billable: true,
-    rate: 135,
-    status: 'submitted'
-  },
-  {
-    id: '4',
-    project: 'Website Redesign',
-    projectColor: '#1890ff',
-    task: 'Design Updates',
-    user: 'Emily Chen',
-    date: '2024-02-19',
-    hours: 4,
-    description: 'Updated design system components in Figma',
-    billable: true,
-    rate: 110,
-    status: 'approved'
-  },
-  {
-    id: '5',
-    project: 'Internal',
-    projectColor: '#722ed1',
-    task: 'Team Meeting',
-    user: 'Sarah Johnson',
-    date: '2024-02-19',
-    hours: 1.5,
-    description: 'Weekly team standup and planning',
-    billable: false,
-    status: 'draft'
-  },
-  {
-    id: '6',
-    project: 'Mobile App',
-    projectColor: '#52c41a',
-    task: 'Bug Fixes',
-    user: 'David Lee',
-    date: '2024-02-19',
-    hours: 3,
-    description: 'Fixed crash on app launch for older devices',
-    billable: true,
-    rate: 125,
-    status: 'approved'
-  }
-];
-
 const TimeTracking: React.FC = () => {
-  const [entries, setEntries] = useState<TimeEntry[]>(sampleEntries);
+  const [entries, setEntries] = useState<TimeEntry[]>([]);
   const [timer, setTimer] = useState<TimerState>({
     running: false,
     project: '',
@@ -128,6 +47,24 @@ const TimeTracking: React.FC = () => {
   });
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [form] = Form.useForm();
+
+  // Fetch time entries from API
+  useEffect(() => {
+    const fetchEntries = async () => {
+      try {
+        const res = await fetch('/api/projects/time-entries', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setEntries(data.entries || data.data || data || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch time entries:', error);
+      }
+    };
+    fetchEntries();
+  }, []);
 
   // Calculate stats
   const todayHours = entries.filter(e => e.date === '2024-02-20').reduce((sum, e) => sum + e.hours, 0);

@@ -1,8 +1,5 @@
 import { Request, Response } from 'express';
 import pool from '../../config/database';
-import { LogisticsAccountingService } from './logistics-accounting.service';
-
-const accountingService = new LogisticsAccountingService();
 
 // Helper to get table name (checks if logistics schema exists)
 const getTableName = (table: string) => `logistics.${table}`;
@@ -12,40 +9,8 @@ const getTableName = (table: string) => `logistics.${table}`;
 // ============================================================================
 
 /**
- * @swagger
- * /api/logistics/vehicles:
- *   get:
- *     summary: List vehicles
- *     description: Returns paginated vehicles filtered by status, type, or search term.
- *     tags: [Logistics]
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 50
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *       - in: query
- *         name: vehicle_type
- *         schema:
- *           type: string
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Vehicles retrieved successfully.
- *       500:
- *         description: Failed to fetch vehicles.
+ * GET /api/logistics/vehicles
+ * Get all vehicles with filtering
  */
 export const getVehicles = async (req: Request, res: Response) => {
   try {
@@ -156,36 +121,8 @@ export const getVehicleById = async (req: Request, res: Response) => {
 };
 
 /**
- * @swagger
- * /api/logistics/vehicles:
- *   post:
- *     summary: Create vehicle
- *     tags: [Logistics]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [vehicle_registration]
- *             properties:
- *               vehicle_registration:
- *                 type: string
- *               vin_number:
- *                 type: string
- *               make:
- *                 type: string
- *               model:
- *                 type: string
- *               vehicle_type:
- *                 type: string
- *     responses:
- *       201:
- *         description: Vehicle created.
- *       400:
- *         description: Invalid payload.
- *       500:
- *         description: Failed to create vehicle.
+ * POST /api/logistics/vehicles
+ * Create new vehicle
  */
 export const createVehicle = async (req: Request, res: Response) => {
   const client = await pool.connect();
@@ -321,35 +258,8 @@ export const deleteVehicle = async (req: Request, res: Response) => {
 // ============================================================================
 
 /**
- * @swagger
- * /api/logistics/drivers:
- *   get:
- *     summary: List drivers
- *     tags: [Logistics]
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 50
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *       - in: query
- *         name: search
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Drivers retrieved successfully.
- *       500:
- *         description: Failed to fetch drivers.
+ * GET /api/logistics/drivers
+ * Get all drivers
  */
 export const getDrivers = async (req: Request, res: Response) => {
   try {
@@ -581,49 +491,8 @@ export const deleteDriver = async (req: Request, res: Response) => {
 // ============================================================================
 
 /**
- * @swagger
- * /api/logistics/trips-legacy:
- *   get:
- *     summary: List trips (legacy)
- *     tags: [Logistics]
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 50
- *       - in: query
- *         name: status
- *         schema:
- *           type: string
- *       - in: query
- *         name: vehicle_id
- *         schema:
- *           type: string
- *       - in: query
- *         name: driver_id
- *         schema:
- *           type: string
- *       - in: query
- *         name: date_from
- *         schema:
- *           type: string
- *           format: date
- *       - in: query
- *         name: date_to
- *         schema:
- *           type: string
- *           format: date
- *     responses:
- *       200:
- *         description: Trips retrieved successfully.
- *       500:
- *         description: Failed to fetch trips.
+ * GET /api/logistics/trips
+ * Get all trips with filtering
  */
 export const getTrips = async (req: Request, res: Response) => {
   try {
@@ -727,7 +596,7 @@ export const getTripById = async (req: Request, res: Response) => {
       FROM logistics.trips t
       LEFT JOIN logistics.vehicles v ON t.vehicle_id = v.vehicle_id
       LEFT JOIN logistics.drivers d ON t.driver_id = d.driver_id
-      WHERE t.trip_id = $1::uuid`,
+      WHERE t.trip_id = $1`,
       [id]
     );
 
@@ -738,7 +607,7 @@ export const getTripById = async (req: Request, res: Response) => {
     // Get trip stops
     const stopsResult = await pool.query(
       `SELECT * FROM logistics_trip_stops 
-       WHERE trip_id = $1::uuid ORDER BY stop_sequence ASC`,
+       WHERE trip_id = $1 ORDER BY stop_sequence ASC`,
       [id]
     );
 
@@ -885,7 +754,7 @@ export const updateTrip = async (req: Request, res: Response) => {
     }
 
     values.push(id);
-    const query = `UPDATE logistics.trips SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE trip_id = $${paramCount}::uuid RETURNING *`;
+    const query = `UPDATE logistics.trips SET ${updates.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE trip_id = $${paramCount} RETURNING *`;
 
     const result = await pool.query(query, values);
 
@@ -914,7 +783,7 @@ export const startTrip = async (req: Request, res: Response) => {
        SET status = 'IN_TRANSIT', 
            actual_start_time = CURRENT_TIMESTAMP,
            updated_at = CURRENT_TIMESTAMP
-       WHERE trip_id = $1::uuid AND status IN ('PLANNED', 'ASSIGNED')
+       WHERE trip_id = $1 AND status IN ('PLANNED', 'ASSIGNED')
        RETURNING *`,
       [id]
     );
@@ -955,7 +824,7 @@ export const completeTrip = async (req: Request, res: Response) => {
            pod_notes = $4,
            pod_timestamp = CURRENT_TIMESTAMP,
            updated_at = CURRENT_TIMESTAMP
-      WHERE trip_id = $5::uuid AND status = 'IN_TRANSIT'
+       WHERE trip_id = $5 AND status = 'IN_TRANSIT'
        RETURNING *`,
       [actual_distance_km, pod_signature_path, pod_photo_path, pod_notes, id]
     );
@@ -964,35 +833,7 @@ export const completeTrip = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Trip not found or not in transit' });
     }
 
-    const trip = result.rows[0];
-
-    // Create accounting journal entry for trip revenue
-    let journalResult = null;
-    if (trip.trip_revenue && trip.trip_revenue > 0) {
-      try {
-        const tenantId = String(req.user?.tenantId || '00000000-0000-0000-0000-000000000001');
-        journalResult = await accountingService.recordTripRevenue(
-          tenantId,
-          {
-            trip_id: trip.trip_id,
-            trip_number: trip.trip_number,
-            customer_id: trip.customer_id,
-            revenue_amount: parseFloat(trip.trip_revenue),
-            trip_date: new Date(trip.trip_date),
-          },
-          String(req.user?.id || 'system')
-        );
-      } catch (accError) {
-        console.error('Failed to create trip accounting entry:', accError);
-        // Don't fail the trip completion, just log the error
-      }
-    }
-
-    res.json({
-      trip,
-      message: 'Trip completed successfully',
-      accounting: journalResult ? { journalEntryId: journalResult.journalEntryId, balanced: journalResult.balanced } : null,
-    });
+    res.json({ trip: result.rows[0], message: 'Trip completed successfully' });
   } catch (error) {
     console.error('Error completing trip:', error);
     res.status(500).json({ error: 'Failed to complete trip' });
@@ -1004,39 +845,8 @@ export const completeTrip = async (req: Request, res: Response) => {
 // ============================================================================
 
 /**
- * @swagger
- * /api/logistics/fuel:
- *   get:
- *     summary: List fuel transactions
- *     tags: [Logistics]
- *     parameters:
- *       - in: query
- *         name: vehicle_id
- *         schema:
- *           type: string
- *       - in: query
- *         name: driver_id
- *         schema:
- *           type: string
- *       - in: query
- *         name: date_from
- *         schema:
- *           type: string
- *           format: date-time
- *       - in: query
- *         name: date_to
- *         schema:
- *           type: string
- *           format: date-time
- *       - in: query
- *         name: reconciled
- *         schema:
- *           type: boolean
- *     responses:
- *       200:
- *         description: Fuel transactions retrieved.
- *       500:
- *         description: Failed to fetch fuel transactions.
+ * GET /api/logistics/fuel
+ * Get fuel transactions
  */
 export const getFuelTransactions = async (req: Request, res: Response) => {
   try {
@@ -1057,13 +867,13 @@ export const getFuelTransactions = async (req: Request, res: Response) => {
     const filters: string[] = ['1=1'];
 
     if (vehicle_id) {
-      filters.push(`f.vehicle_id = $${paramCount}::uuid`);
+      filters.push(`f.vehicle_id::text = $${paramCount}`);
       values.push(String(vehicle_id));
       paramCount++;
     }
 
     if (driver_id) {
-      filters.push(`f.driver_id = $${paramCount}::uuid`);
+      filters.push(`f.driver_id::text = $${paramCount}`);
       values.push(String(driver_id));
       paramCount++;
     }
@@ -1091,8 +901,8 @@ export const getFuelTransactions = async (req: Request, res: Response) => {
     const countQuery = `
       SELECT COUNT(*)
       FROM logistics.fuel_transactions f
-      LEFT JOIN logistics.vehicles v ON f.vehicle_id = v.vehicle_id
-      LEFT JOIN logistics.drivers d ON f.driver_id = d.driver_id
+      LEFT JOIN logistics.vehicles v ON f.vehicle_id::text = v.vehicle_id::text
+      LEFT JOIN logistics.drivers d ON f.driver_id::text = d.driver_id::text
       WHERE ${whereClause}
     `;
     const countResult = await pool.query(countQuery, values);
@@ -1101,8 +911,8 @@ export const getFuelTransactions = async (req: Request, res: Response) => {
     const dataQuery = `
       SELECT f.*, v.vehicle_registration, d.first_name || ' ' || d.last_name as driver_name
       FROM logistics.fuel_transactions f
-      LEFT JOIN logistics.vehicles v ON f.vehicle_id = v.vehicle_id
-      LEFT JOIN logistics.drivers d ON f.driver_id = d.driver_id
+      LEFT JOIN logistics.vehicles v ON f.vehicle_id::text = v.vehicle_id::text
+      LEFT JOIN logistics.drivers d ON f.driver_id::text = d.driver_id::text
       WHERE ${whereClause}
       ORDER BY f.transaction_date DESC
       LIMIT $${paramCount} OFFSET $${paramCount + 1}
@@ -1166,35 +976,7 @@ export const createFuelTransaction = async (req: Request, res: Response) => {
       ]
     );
 
-    const fuelTx = result.rows[0];
-
-    // Create accounting journal entry for fuel expense
-    let journalResult = null;
-    try {
-      const tenantId = String(req.user?.tenantId || '00000000-0000-0000-0000-000000000001');
-      journalResult = await accountingService.recordFuelPurchase(
-        tenantId,
-        {
-          transaction_id: fuelTx.transaction_id,
-          vehicle_id: fuelTx.vehicle_id,
-          vehicle_registration: fuelTx.vehicle_registration,
-          driver_id: fuelTx.driver_id,
-          fuel_station: fuelTx.fuel_station || 'Unknown',
-          litres: parseFloat(fuelTx.litres),
-          total_amount: parseFloat(fuelTx.total_amount),
-          payment_method: (fuelTx.payment_method || 'CASH').toUpperCase() as any,
-          transaction_date: new Date(fuelTx.transaction_date),
-        },
-        String(req.user?.id || 'system')
-      );
-    } catch (accError) {
-      console.error('Failed to create fuel accounting entry:', accError);
-    }
-
-    res.status(201).json({
-      fuel_transaction: fuelTx,
-      accounting: journalResult ? { journalEntryId: journalResult.journalEntryId, balanced: journalResult.balanced } : null,
-    });
+    res.status(201).json({ fuel_transaction: result.rows[0] });
   } catch (error) {
     console.error('Error creating fuel transaction:', error);
     res.status(500).json({ error: 'Failed to create fuel transaction' });
@@ -1271,8 +1053,8 @@ export const getLoads = async (req: Request, res: Response) => {
     const countQuery = `
       SELECT COUNT(*)
       FROM logistics.loads l
-      LEFT JOIN logistics.vehicles v ON l.vehicle_id = v.vehicle_id
-      LEFT JOIN logistics.drivers d ON l.driver_id = d.driver_id
+      LEFT JOIN logistics.vehicles v ON l.vehicle_id::text = v.vehicle_id::text
+      LEFT JOIN logistics.drivers d ON l.driver_id::text = d.driver_id::text
       WHERE ${whereClause}
     `;
     const countResult = await pool.query(countQuery, values);
@@ -1281,8 +1063,8 @@ export const getLoads = async (req: Request, res: Response) => {
     const dataQuery = `
       SELECT l.*, v.vehicle_registration, d.first_name || ' ' || d.last_name as driver_name
       FROM logistics.loads l
-      LEFT JOIN logistics.vehicles v ON l.vehicle_id = v.vehicle_id
-      LEFT JOIN logistics.drivers d ON l.driver_id = d.driver_id
+      LEFT JOIN logistics.vehicles v ON l.vehicle_id::text = v.vehicle_id::text
+      LEFT JOIN logistics.drivers d ON l.driver_id::text = d.driver_id::text
       WHERE ${whereClause}
       ORDER BY l.load_date DESC
       LIMIT $${paramCount} OFFSET $${paramCount + 1}
@@ -1316,9 +1098,9 @@ export const getLoadById = async (req: Request, res: Response) => {
         v.vehicle_registration, v.vehicle_registration,
         d.first_name || ' ' || d.last_name as driver_name
       FROM logistics.loads l
-      LEFT JOIN logistics.vehicles v ON l.vehicle_id = v.vehicle_id
-      LEFT JOIN logistics.drivers d ON l.driver_id = d.driver_id
-      WHERE l.load_id = $1::uuid`,
+      LEFT JOIN logistics.vehicles v ON l.vehicle_id::text = v.vehicle_id::text
+      LEFT JOIN logistics.drivers d ON l.driver_id::text = d.driver_id::text
+      WHERE l.load_id = $1`,
       [id]
     );
 
@@ -1328,7 +1110,7 @@ export const getLoadById = async (req: Request, res: Response) => {
 
     const itemsResult = await pool.query(
       `SELECT * FROM logistics_load_items 
-       WHERE load_id = $1::uuid ORDER BY delivery_sequence ASC`,
+       WHERE load_id = $1 ORDER BY delivery_sequence ASC`,
       [id]
     );
 
@@ -1436,7 +1218,7 @@ export const updateLoadStatus = async (req: Request, res: Response) => {
     const result = await pool.query(
       `UPDATE logistics.loads
        SET status = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE load_id = $2::uuid
+       WHERE load_id = $2
        RETURNING *`,
       [status, id]
     );
@@ -1711,95 +1493,5 @@ export const getDashboardStats = async (req: Request, res: Response) => {
   } catch (error: any) {
     console.error('Error fetching dashboard stats:', error);
     res.status(500).json({ error: 'Failed to fetch dashboard stats', details: error.message });
-  }
-};
-
-// ============================================================================
-// ACCOUNTING INTEGRATION ENDPOINTS
-// ============================================================================
-
-/**
- * GET /api/logistics/accounting/validate
- * Validate all logistics journal entries balance (Debits = Credits)
- */
-export const validateAccountingEntries = async (req: Request, res: Response) => {
-  try {
-    const tenantId = String(req.user?.tenantId || '00000000-0000-0000-0000-000000000001');
-    const result = await accountingService.validateAllEntriesBalance(tenantId);
-
-    res.json({
-      success: true,
-      validation: {
-        total_entries: result.total,
-        balanced_entries: result.balanced,
-        unbalanced_entries: result.unbalanced.length,
-        all_balanced: result.unbalanced.length === 0,
-      },
-      unbalanced_details: result.unbalanced,
-    });
-  } catch (error: any) {
-    console.error('Error validating accounting entries:', error);
-    res.status(500).json({ error: 'Failed to validate accounting entries', details: error.message });
-  }
-};
-
-/**
- * GET /api/logistics/accounting/pl-impact
- * Get P&L impact from logistics transactions
- */
-export const getAccountingPLImpact = async (req: Request, res: Response) => {
-  try {
-    const tenantId = String(req.user?.tenantId || '00000000-0000-0000-0000-000000000001');
-    const { date_from, date_to } = req.query;
-
-    const dateFrom = date_from ? new Date(date_from as string) : new Date(new Date().getFullYear(), 0, 1);
-    const dateTo = date_to ? new Date(date_to as string) : new Date();
-
-    const result = await accountingService.getPLImpact(tenantId, dateFrom, dateTo);
-
-    res.json({
-      success: true,
-      period: { from: dateFrom.toISOString(), to: dateTo.toISOString() },
-      pl_impact: result,
-      summary: {
-        gross_profit: result.revenue.total,
-        operating_expenses: result.expenses.total,
-        net_income: result.netIncome,
-        margin_percentage: result.revenue.total > 0 ? ((result.netIncome / result.revenue.total) * 100).toFixed(2) : 0,
-      },
-    });
-  } catch (error: any) {
-    console.error('Error getting P&L impact:', error);
-    res.status(500).json({ error: 'Failed to get P&L impact', details: error.message });
-  }
-};
-
-/**
- * GET /api/logistics/accounting/audit-trail
- * Get audit trail for logistics journal entries (SOX compliance)
- */
-export const getAccountingAuditTrail = async (req: Request, res: Response) => {
-  try {
-    const tenantId = String(req.user?.tenantId || '00000000-0000-0000-0000-000000000001');
-    const { limit = '50', offset = '0', source_type } = req.query;
-
-    const result = await accountingService.getAuditTrail(tenantId, {
-      limit: parseInt(limit as string),
-      offset: parseInt(offset as string),
-      source_type: source_type as string | undefined,
-    });
-
-    res.json({
-      success: true,
-      audit_trail: result.entries,
-      meta: {
-        total: result.total,
-        limit: parseInt(limit as string),
-        offset: parseInt(offset as string),
-      },
-    });
-  } catch (error: any) {
-    console.error('Error getting audit trail:', error);
-    res.status(500).json({ error: 'Failed to get audit trail', details: error.message });
   }
 };

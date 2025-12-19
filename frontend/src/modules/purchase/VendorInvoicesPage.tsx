@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface VendorInvoice {
@@ -32,112 +33,8 @@ const VendorInvoicesPage: React.FC = () => {
   const fetchVendorInvoices = async () => {
     setLoading(true);
     try {
-      const mockInvoices: VendorInvoice[] = [
-        {
-          id: 'VI001',
-          invoice_number: 'INV-TSI-2025-045',
-          vendor_name: 'Tech Supplies International',
-          vendor_code: 'TSI-001',
-          invoice_date: '2025-01-08',
-          due_date: '2025-02-07',
-          status: 'MATCHED',
-          po_number: 'PO-2025-018',
-          grn_number: 'GRN-2025-015',
-          amount: 127600,
-          outstanding: 127600,
-          payment_terms: '30 Days',
-          match_status: '3-WAY',
-          days_overdue: 0,
-          notes: 'All documents matched successfully'
-        },
-        {
-          id: 'VI002',
-          invoice_number: 'INV-OEL-2025-128',
-          vendor_name: 'Office Equipment Ltd',
-          vendor_code: 'OEL-002',
-          invoice_date: '2025-01-05',
-          due_date: '2025-03-06',
-          status: 'APPROVED',
-          po_number: 'PO-2025-019',
-          grn_number: 'GRN-2025-016',
-          amount: 45800,
-          outstanding: 45800,
-          payment_terms: '60 Days',
-          match_status: '3-WAY',
-          days_overdue: 0,
-          notes: 'Approved for payment'
-        },
-        {
-          id: 'VI003',
-          invoice_number: 'INV-IPC-2025-092',
-          vendor_name: 'Industrial Parts Co',
-          vendor_code: 'IPC-003',
-          invoice_date: '2024-12-28',
-          due_date: '2025-01-12',
-          status: 'PAID',
-          po_number: 'PO-2025-020',
-          grn_number: 'GRN-2025-017',
-          amount: 89200,
-          outstanding: 0,
-          payment_terms: '45 Days',
-          match_status: '3-WAY',
-          days_overdue: 0,
-          notes: 'Payment completed on 2025-01-10'
-        },
-        {
-          id: 'VI004',
-          invoice_number: 'INV-TSI-2025-046',
-          vendor_name: 'Tech Supplies International',
-          vendor_code: 'TSI-001',
-          invoice_date: '2024-12-20',
-          due_date: '2025-01-19',
-          status: 'APPROVED',
-          po_number: 'PO-2025-021',
-          grn_number: 'GRN-2025-018',
-          amount: 34500,
-          outstanding: 34500,
-          payment_terms: '30 Days',
-          match_status: '3-WAY',
-          days_overdue: -5,
-          notes: 'Payment overdue by 5 days'
-        },
-        {
-          id: 'VI005',
-          invoice_number: 'INV-CWH-2025-015',
-          vendor_name: 'Chemical Warehouse',
-          vendor_code: 'CWH-005',
-          invoice_date: '2025-01-10',
-          due_date: '2025-02-09',
-          status: 'DISPUTED',
-          po_number: 'PO-2024-198',
-          grn_number: null,
-          amount: 67400,
-          outstanding: 67400,
-          payment_terms: '30 Days',
-          match_status: 'PENDING',
-          days_overdue: 0,
-          notes: 'Price discrepancy - vendor investigation in progress'
-        },
-        {
-          id: 'VI006',
-          invoice_number: 'INV-BSL-2025-073',
-          vendor_name: 'Building Supplies Ltd',
-          vendor_code: 'BSL-004',
-          invoice_date: '2025-01-06',
-          due_date: '2025-02-05',
-          status: 'RECEIVED',
-          po_number: 'PO-2025-022',
-          grn_number: null,
-          amount: 52300,
-          outstanding: 52300,
-          payment_terms: '30 Days',
-          match_status: 'PENDING',
-          days_overdue: 0,
-          notes: 'Awaiting goods receipt'
-        }
-      ];
-
-      setInvoices(mockInvoices);
+      const response = await apiClient.get('/api/purchase/invoices');
+      setInvoices(response.data?.data || response.data || []);
     } catch (err) {
       console.error('Error fetching vendor invoices:', err);
     } finally {

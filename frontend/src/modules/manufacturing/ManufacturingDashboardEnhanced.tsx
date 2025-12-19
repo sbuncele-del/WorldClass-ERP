@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import apiClient from '../../services/api';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
 import type { SecondaryNavSection } from '../../components/layout/SecondaryNav';
 import { Factory, Wrench, FileText, TrendingUp, Plus, Boxes, Settings, Activity } from 'lucide-react';
@@ -38,29 +39,32 @@ const ManufacturingDashboardEnhanced: React.FC = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
+      const response = await apiClient.get('/api/manufacturing/dashboard');
+      setStats(response.data);
+    } catch (err) {
+      console.error('Error fetching manufacturing dashboard data:', err);
+      // Fallback to default data if API fails
       setStats({
         current_period: {
           fiscal_year: 2025,
-          period_number: 11,
-          period_name: 'November 2025',
+          period_number: 12,
+          period_name: 'December 2025',
           status: 'OPEN'
         },
         manufacturing_summary: {
-          active_orders: 38,
-          work_centers: 8,
-          total_boms: 156,
-          capacity_utilization: 78,
-          on_time_delivery: 94,
-          defect_rate: 2.3
+          active_orders: 0,
+          work_centers: 0,
+          total_boms: 0,
+          capacity_utilization: 0,
+          on_time_delivery: 0,
+          defect_rate: 0
         },
         top_products: {
-          prod_1: { name: 'Product A - Standard', quantity: 2450 },
-          prod_2: { name: 'Product B - Premium', quantity: 1820 },
-          prod_3: { name: 'Product C - Custom', quantity: 986 }
+          prod_1: { name: 'No data', quantity: 0 },
+          prod_2: { name: 'No data', quantity: 0 },
+          prod_3: { name: 'No data', quantity: 0 }
         }
       });
-    } catch (err) {
-      console.error('Error fetching manufacturing dashboard data:', err);
     } finally {
       setLoading(false);
     }
@@ -109,6 +113,17 @@ const ManufacturingDashboardEnhanced: React.FC = () => {
       ],
     },
   ];
+
+  if (loading || !stats) {
+    return (
+      <div className="dashboard-container">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Loading manufacturing dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <EnterpriseLayout

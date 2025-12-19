@@ -15,16 +15,11 @@
     "db:dimensions": "ts-node src/config/dimensions-migration.ts && ts-node src/config/dimensions-seed.ts",
     "db:periods": "ts-node src/config/period-migration.ts && ts-node src/config/period-seed.ts",
     "db:full-setup": "npm run db:migrate && npm run db:seed && npm run db:dimensions && npm run db:periods",
-    "db:multi-tenant": "ts-node src/config/run-multi-tenant-migration.ts",
-    "seed:demo": "psql \"$DATABASE_URL\" -f database/demo-tenant-fix.sql",
-    "test:email": "ts-node scripts/test-email.ts"
+    "db:multi-tenant": "ts-node src/config/run-multi-tenant-migration.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
-    "@aws-sdk/client-ses": "^3.946.0",
     "@aws-sdk/client-textract": "^3.931.0",
-    "@sentry/node": "^10.29.0",
-    "@sentry/profiling-node": "^10.29.0",
     "@types/bcrypt": "^6.0.0",
     "@types/bull": "^3.15.9",
     "@types/ioredis": "^4.28.10",
@@ -56,8 +51,6 @@
     "pg": "^8.16.3",
     "socket.io": "^4.8.1",
     "stripe": "^19.3.0",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1",
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
@@ -70,8 +63,6 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.10.5",
     "@types/nodemailer": "^6.4.21",
-    "@types/swagger-jsdoc": "^6.0.4",
-    "@types/swagger-ui-express": "^4.1.8",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
     "eslint": "^8.56.0",

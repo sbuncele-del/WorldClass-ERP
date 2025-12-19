@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { API_BASE_URL } from '../services/api.service';
 import type {
   CurrencyCode,
   Currency,
@@ -121,8 +122,7 @@ export const CurrencyProvider: React.FC<CurrencyProviderProps> = ({
     setError(null);
     
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const response = await fetch(`${apiUrl}/api/currency/exchange-rates`);
+            const response = await fetch(`${API_BASE_URL}/api/currency/exchange-rates`);
       
       if (response.ok) {
         const data = await response.json();

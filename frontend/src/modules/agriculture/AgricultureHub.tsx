@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import {
   Card,
   Row,
@@ -149,6 +150,68 @@ const AgricultureHub: React.FC = () => {
   const [liveWeather, setLiveWeather] = useState<WeatherAPIData | null>(null);
   const [form] = Form.useForm();
 
+  // Export function for Agriculture data
+  const handleExport = () => {
+    try {
+      let csvContent = '';
+      let filename = '';
+      const now = new Date().toISOString().split('T')[0];
+
+      if (activeTab === 'fields') {
+        csvContent = 'Field ID,Name,Hectares,Crop,Variety,Plant Date,Harvest Date,Status,Health %,Irrigated\n';
+        farmFields.forEach(f => {
+          csvContent += `"${f.id}","${f.name}",${f.hectares},"${f.crop}","${f.variety}","${f.plantDate}","${f.harvestDate}","${f.status}",${f.health},${f.irrigated}\n`;
+        });
+        filename = `farm-fields-${now}.csv`;
+      } else if (activeTab === 'livestock') {
+        csvContent = 'ID,Type,Breed,Count,Location,Status,Last Vet Visit,Value\n';
+        livestock.forEach(l => {
+          csvContent += `"${l.id}","${l.type}","${l.breed}",${l.count},"${l.location}","${l.status}","${l.lastVet}",${l.value}\n`;
+        });
+        filename = `livestock-${now}.csv`;
+      } else if (activeTab === 'inputs') {
+        csvContent = 'ID,Type,Product,Quantity,Unit,Cost,Supplier,Applied Date\n';
+        cropInputs.forEach(i => {
+          csvContent += `"${i.id}","${i.type}","${i.product}",${i.quantity},"${i.unit}",${i.cost},"${i.supplier}","${i.applied}"\n`;
+        });
+        filename = `crop-inputs-${now}.csv`;
+      } else if (activeTab === 'harvest') {
+        csvContent = 'ID,Field,Crop,Hectares,Yield (tons),Yield/Ha,Grade,Moisture %,Price/ton,Revenue,Date\n';
+        harvestRecords.forEach(h => {
+          csvContent += `"${h.id}","${h.field}","${h.crop}",${h.hectares},${h.yield},${h.yieldPerHa},"${h.grade}",${h.moisture},${h.price},${h.revenue},"${h.date}"\n`;
+        });
+        filename = `harvest-records-${now}.csv`;
+      } else if (activeTab === 'equipment') {
+        csvContent = 'ID,Name,Type,Status,Hours,Last Service,Next Service\n';
+        equipment.forEach(e => {
+          csvContent += `"${e.id}","${e.name}","${e.type}","${e.status}",${e.hours},"${e.lastService}","${e.nextService}"\n`;
+        });
+        filename = `farm-equipment-${now}.csv`;
+      } else {
+        // Dashboard summary
+        csvContent = 'Metric,Value\n';
+        csvContent += `Total Hectares,${agricultureStats.totalHectares}\n`;
+        csvContent += `Active Crops,${agricultureStats.activeCrops}\n`;
+        csvContent += `Estimated Yield (tons),${agricultureStats.estimatedYield}\n`;
+        csvContent += `Livestock Head,${agricultureStats.livestockHead}\n`;
+        csvContent += `Water Usage %,${agricultureStats.waterUsage}\n`;
+        csvContent += `Revenue,R ${agricultureStats.revenue.toLocaleString()}\n`;
+        csvContent += `Expenses,R ${agricultureStats.expenses.toLocaleString()}\n`;
+        filename = `agriculture-summary-${now}.csv`;
+      }
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      message.success(`Exported ${filename}`);
+    } catch (err) {
+      message.error('Export failed');
+    }
+  };
+
   // Weather API Configuration
   const weatherConfig = {
     apiKey: import.meta.env.VITE_OPENWEATHER_API_KEY || 'demo_key',
@@ -229,6 +292,44 @@ const AgricultureHub: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch agriculture data from API
+  useEffect(() => {
+    const fetchAgricultureData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, cropsRes, livestockRes, equipmentRes] = await Promise.all([
+          apiClient.get('/api/agriculture/stats'),
+          apiClient.get('/api/agriculture/crops'),
+          apiClient.get('/api/agriculture/livestock'),
+          apiClient.get('/api/agriculture/equipment')
+        ]);
+
+        if (statsRes.data) {
+          setAgricultureStats(statsRes.data);
+        }
+        if (cropsRes.data) {
+          setFarmFields(Array.isArray(cropsRes.data) ? cropsRes.data : cropsRes.data.fields || []);
+        }
+        if (livestockRes.data) {
+          setLivestock(Array.isArray(livestockRes.data) ? livestockRes.data : livestockRes.data.livestock || []);
+        }
+        if (equipmentRes.data) {
+          setEquipment(Array.isArray(equipmentRes.data) ? equipmentRes.data : equipmentRes.data.equipment || []);
+        }
+      } catch (error) {
+        console.error('Error fetching agriculture data:', error);
+        message.error('Failed to load agriculture data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAgricultureData();
+  }, []);
+
+  // Loading state for API data
+  const [loading, setLoading] = useState(true);
+
   // SARS Compliance Data
   const sarsCompliance: SARSFarmingIncome = {
     category: 'primary_producer',
@@ -243,33 +344,44 @@ const AgricultureHub: React.FC = () => {
   };
 
   // Agriculture KPIs
-  const agricultureStats = {
-    totalHectares: 2450,
-    activeCrops: 8,
-    estimatedYield: 12500, // tons
-    livestockHead: 850,
-    waterUsage: 78, // % of allocation
-    revenue: 45000000,
-    expenses: 28000000,
-    weatherRisk: 'moderate'
-  };
+  const [agricultureStats, setAgricultureStats] = useState({
+    totalHectares: 0,
+    activeCrops: 0,
+    estimatedYield: 0,
+    livestockHead: 0,
+    waterUsage: 0,
+    revenue: 0,
+    expenses: 0,
+    weatherRisk: 'low'
+  });
 
   // Farm Fields/Plots with GPS coordinates for mapping
-  const farmFields = [
-    { id: 'F-001', name: 'North Block A', hectares: 450, crop: 'Maize', variety: 'PAN 6479', plantDate: '2024-10-15', harvestDate: '2025-03-15', status: 'growing', health: 95, irrigated: true, coordinates: [[-29.080, 26.155], [-29.080, 26.170], [-29.095, 26.170], [-29.095, 26.155]] as [number, number][], color: '#52c41a' },
-    { id: 'F-002', name: 'North Block B', hectares: 380, crop: 'Soybeans', variety: 'PAN 1623R', plantDate: '2024-11-01', harvestDate: '2025-04-01', status: 'growing', health: 92, irrigated: true, coordinates: [[-29.080, 26.175], [-29.080, 26.188], [-29.095, 26.188], [-29.095, 26.175]] as [number, number][], color: '#1890ff' },
-    { id: 'F-003', name: 'South Block A', hectares: 520, crop: 'Wheat', variety: 'SST 806', plantDate: '2024-05-15', harvestDate: '2024-11-30', status: 'harvested', health: 0, irrigated: false, coordinates: [[-29.100, 26.155], [-29.100, 26.175], [-29.118, 26.175], [-29.118, 26.155]] as [number, number][], color: '#faad14' },
-    { id: 'F-004', name: 'South Block B', hectares: 400, crop: 'Sunflower', variety: 'AGSUN 8251', plantDate: '2024-11-15', harvestDate: '2025-04-15', status: 'growing', health: 88, irrigated: false, coordinates: [[-29.100, 26.180], [-29.100, 26.195], [-29.115, 26.195], [-29.115, 26.180]] as [number, number][], color: '#722ed1' },
-    { id: 'F-005', name: 'East Pivot 1', hectares: 120, crop: 'Potatoes', variety: 'Mondial', plantDate: '2024-09-01', harvestDate: '2025-01-15', status: 'growing', health: 90, irrigated: true, coordinates: [[-29.088, 26.200], [-29.088, 26.210], [-29.098, 26.210], [-29.098, 26.200]] as [number, number][], color: '#13c2c2' },
-    { id: 'F-006', name: 'West Grazing', hectares: 580, crop: 'Pasture', variety: 'Mixed Grass', plantDate: '-', harvestDate: '-', status: 'grazing', health: 85, irrigated: false, coordinates: [[-29.085, 26.130], [-29.085, 26.150], [-29.110, 26.150], [-29.110, 26.130]] as [number, number][], color: '#8c8c8c' }
-  ];
+  const [farmFields, setFarmFields] = useState<Array<{
+    id: string;
+    name: string;
+    hectares: number;
+    crop: string;
+    variety: string;
+    plantDate: string;
+    harvestDate: string;
+    status: string;
+    health: number;
+    irrigated: boolean;
+    coordinates: [number, number][];
+    color: string;
+  }>>([]);
 
   // Livestock
-  const livestock = [
-    { id: 'L-001', type: 'Cattle', breed: 'Bonsmara', count: 450, location: 'West Grazing', status: 'healthy', lastVet: '2024-11-15', value: 6750000 },
-    { id: 'L-002', type: 'Cattle', breed: 'Angus', count: 180, location: 'North Paddock', status: 'healthy', lastVet: '2024-11-20', value: 3600000 },
-    { id: 'L-003', type: 'Sheep', breed: 'Dorper', count: 220, location: 'South Paddock', status: 'healthy', lastVet: '2024-11-10', value: 880000 }
-  ];
+  const [livestock, setLivestock] = useState<Array<{
+    id: string;
+    type: string;
+    breed: string;
+    count: number;
+    location: string;
+    status: string;
+    lastVet: string;
+    value: number;
+  }>>([]);
 
   // Crop Inputs (Seeds, Fertilizer, Chemicals)
   const cropInputs = [
@@ -302,12 +414,15 @@ const AgricultureHub: React.FC = () => {
   };
 
   // Equipment
-  const equipment = [
-    { id: 'EQ-001', name: 'John Deere 8R 410', type: 'Tractor', status: 'operational', hours: 4520, lastService: '2024-11-01', nextService: '2024-12-15' },
-    { id: 'EQ-002', name: 'Case IH 7250', type: 'Combine', status: 'operational', hours: 1850, lastService: '2024-10-15', nextService: '2025-03-01' },
-    { id: 'EQ-003', name: 'Pivot Irrigation System', type: 'Irrigation', status: 'operational', hours: 8500, lastService: '2024-09-01', nextService: '2025-03-01' },
-    { id: 'EQ-004', name: 'Sprayer - Apache AS1240', type: 'Sprayer', status: 'maintenance', hours: 2100, lastService: '2024-12-01', nextService: '2024-12-10' }
-  ];
+  const [equipment, setEquipment] = useState<Array<{
+    id: string;
+    name: string;
+    type: string;
+    status: string;
+    hours: number;
+    lastService: string;
+    nextService: string;
+  }>>([]);
 
   // Field columns
   const fieldColumns = [
@@ -775,7 +890,7 @@ const AgricultureHub: React.FC = () => {
         title="Crop Inputs"
         extra={
           <Space>
-            <Button icon={<DownloadOutlined />}>Export</Button>
+            <Button icon={<DownloadOutlined />} onClick={handleExport}>Export</Button>
             <Button type="primary" icon={<PlusOutlined />}>Add Input</Button>
           </Space>
         }
@@ -820,7 +935,7 @@ const AgricultureHub: React.FC = () => {
         title="Harvest Records"
         extra={
           <Space>
-            <Button icon={<DownloadOutlined />}>Export</Button>
+            <Button icon={<DownloadOutlined />} onClick={handleExport}>Export</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setHarvestModalVisible(true)}>
               Record Harvest
             </Button>

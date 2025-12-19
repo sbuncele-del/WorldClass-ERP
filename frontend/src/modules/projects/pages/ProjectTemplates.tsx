@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, Button, Space, Row, Col, Tag, Modal, Form, Input, Select, 
   message, Tooltip, Badge, Checkbox
@@ -8,6 +8,7 @@ import {
   StarOutlined, StarFilled, FolderOutlined, CheckSquareOutlined,
   CalendarOutlined, TeamOutlined, BarChartOutlined
 } from '@ant-design/icons';
+import apiClient from '../../../services/api';
 import './ProjectTemplates.css';
 
 interface Template {
@@ -24,109 +25,7 @@ interface Template {
   features: string[];
 }
 
-// Sample data
-const sampleTemplates: Template[] = [
-  {
-    id: '1',
-    name: 'Software Development',
-    description: 'Complete software development lifecycle from planning to deployment',
-    category: 'Development',
-    tasks: 45,
-    milestones: 8,
-    duration: '3 months',
-    favorite: true,
-    usageCount: 12,
-    lastUsed: '2024-02-15',
-    features: ['Agile sprints', 'Code review checkpoints', 'Testing phases', 'Deployment workflow']
-  },
-  {
-    id: '2',
-    name: 'Website Redesign',
-    description: 'Website redesign project with UX research and development phases',
-    category: 'Design',
-    tasks: 32,
-    milestones: 6,
-    duration: '2 months',
-    favorite: true,
-    usageCount: 8,
-    lastUsed: '2024-02-10',
-    features: ['UX audit', 'Wireframing', 'Visual design', 'Development', 'Launch']
-  },
-  {
-    id: '3',
-    name: 'Marketing Campaign',
-    description: 'End-to-end marketing campaign from strategy to execution',
-    category: 'Marketing',
-    tasks: 28,
-    milestones: 5,
-    duration: '6 weeks',
-    favorite: false,
-    usageCount: 15,
-    lastUsed: '2024-02-18',
-    features: ['Strategy', 'Content creation', 'Channel planning', 'Launch', 'Analytics']
-  },
-  {
-    id: '4',
-    name: 'Product Launch',
-    description: 'Comprehensive product launch checklist and workflow',
-    category: 'Product',
-    tasks: 52,
-    milestones: 10,
-    duration: '2 months',
-    favorite: false,
-    usageCount: 6,
-    features: ['Market research', 'Go-to-market strategy', 'Launch prep', 'Post-launch review']
-  },
-  {
-    id: '5',
-    name: 'Client Onboarding',
-    description: 'Structured onboarding process for new clients',
-    category: 'Operations',
-    tasks: 18,
-    milestones: 4,
-    duration: '2 weeks',
-    favorite: true,
-    usageCount: 22,
-    lastUsed: '2024-02-19',
-    features: ['Discovery call', 'Setup & config', 'Training', 'Handoff']
-  },
-  {
-    id: '6',
-    name: 'Event Planning',
-    description: 'Corporate event planning from concept to execution',
-    category: 'Operations',
-    tasks: 40,
-    milestones: 7,
-    duration: '6 weeks',
-    favorite: false,
-    usageCount: 4,
-    features: ['Venue selection', 'Vendor management', 'Marketing', 'Day-of coordination']
-  },
-  {
-    id: '7',
-    name: 'Mobile App Development',
-    description: 'Native or cross-platform mobile app development workflow',
-    category: 'Development',
-    tasks: 55,
-    milestones: 9,
-    duration: '4 months',
-    favorite: false,
-    usageCount: 7,
-    features: ['Design', 'iOS development', 'Android development', 'QA', 'App store submission']
-  },
-  {
-    id: '8',
-    name: 'Bug Fix Sprint',
-    description: 'Quick sprint template for addressing critical bugs',
-    category: 'Development',
-    tasks: 12,
-    milestones: 2,
-    duration: '1 week',
-    favorite: false,
-    usageCount: 18,
-    features: ['Triage', 'Fix', 'Test', 'Deploy']
-  }
-];
+// Note: Template data is now fetched from /api/projects/templates API endpoint
 
 const categoryColors: Record<string, string> = {
   'Development': '#1890ff',
@@ -137,12 +36,27 @@ const categoryColors: Record<string, string> = {
 };
 
 const ProjectTemplates: React.FC = () => {
-  const [templates, setTemplates] = useState<Template[]>(sampleTemplates);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [useTemplateModal, setUseTemplateModal] = useState<Template | null>(null);
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const response = await apiClient.get('/api/projects/templates');
+        setTemplates(response.data?.data || response.data || []);
+      } catch (err) {
+        console.error('Error fetching templates:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTemplates();
+  }, []);
 
   const categories = [...new Set(templates.map(t => t.category))];
 

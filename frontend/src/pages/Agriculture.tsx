@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import apiClient from '../services/api';
 import './Agriculture.css';
 
 // Financial Integration Interface
@@ -11,6 +12,11 @@ interface FinancialTransaction {
 
 const Agriculture: React.FC = () => {
   const [activeTab, setActiveTab] = useState('crops');
+  const [crops, setCrops] = useState<any[]>([]);
+  const [livestock, setLivestock] = useState<any[]>([]);
+  const [equipment, setEquipment] = useState<any[]>([]);
+  const [planning, setPlanning] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Financial Integration: GL Account Mapping
   const financialAccounts = {
@@ -58,32 +64,27 @@ const Agriculture: React.FC = () => {
     ];
   };
 
-  const crops = [
-    { id: 'CRP001', name: 'Maize', field: 'Field A - North', planted: '2025-09-01', harvestDate: '2026-01-15', area: '120 hectares', status: 'Growing', health: 'Good', yieldEstimate: '8,500 tons' },
-    { id: 'CRP002', name: 'Wheat', field: 'Field B - South', planted: '2025-08-15', harvestDate: '2025-12-20', area: '95 hectares', status: 'Growing', health: 'Excellent', yieldEstimate: '6,200 tons' },
-    { id: 'CRP003', name: 'Soybeans', field: 'Field C - East', planted: '2025-10-01', harvestDate: '2026-02-28', area: '80 hectares', status: 'Growing', health: 'Fair', yieldEstimate: '4,100 tons' },
-    { id: 'CRP004', name: 'Sunflower', field: 'Field D - West', planted: '2025-09-20', harvestDate: '2026-01-30', area: '65 hectares', status: 'Growing', health: 'Good', yieldEstimate: '3,800 tons' },
-  ];
-
-  const livestock = [
-    { id: 'LIV001', type: 'Dairy Cattle', count: 245, breed: 'Holstein', location: 'Barn 1', health: 'Healthy', production: '5,200 L/day', avgAge: '4.2 years', status: 'Active' },
-    { id: 'LIV002', type: 'Beef Cattle', count: 380, breed: 'Angus', location: 'Pasture 2', health: 'Healthy', production: 'N/A', avgAge: '2.8 years', status: 'Active' },
-    { id: 'LIV003', type: 'Poultry', count: 12500, breed: 'Broiler', location: 'Coop 3', health: 'Healthy', production: '8,400 eggs/day', avgAge: '6 months', status: 'Active' },
-    { id: 'LIV004', type: 'Sheep', count: 156, breed: 'Merino', location: 'Pasture 4', health: 'Healthy', production: '420 kg wool/year', avgAge: '3.5 years', status: 'Active' },
-  ];
-
-  const equipment = [
-    { id: 'AGE001', name: 'John Deere 8R Tractor', type: 'Tractor', status: 'Available', location: 'Equipment Shed', lastUsed: '2025-11-09', hoursUsed: '1,240 hrs', nextService: '2025-11-25' },
-    { id: 'AGE002', name: 'Case IH Combine Harvester', type: 'Harvester', status: 'In Use', location: 'Field B', lastUsed: '2025-11-11', hoursUsed: '580 hrs', nextService: '2025-12-10' },
-    { id: 'AGE003', name: 'Irrigation System - Center Pivot', type: 'Irrigation', status: 'Available', location: 'Field A', lastUsed: '2025-11-10', hoursUsed: '3,200 hrs', nextService: '2025-11-30' },
-    { id: 'AGE004', name: 'Fertilizer Spreader', type: 'Equipment', status: 'Maintenance', location: 'Workshop', lastUsed: '2025-11-05', hoursUsed: '420 hrs', nextService: '2025-11-15' },
-  ];
-
-  const planning = [
-    { id: 'PLN001', season: 'Summer 2025/26', crop: 'Maize & Soybeans', plannedArea: '200 hectares', estimatedCost: 'R 4.2M', expectedRevenue: 'R 8.5M', status: 'Active', startDate: '2025-09-01' },
-    { id: 'PLN002', season: 'Winter 2026', crop: 'Wheat & Barley', plannedArea: '150 hectares', estimatedCost: 'R 3.1M', expectedRevenue: 'R 6.8M', status: 'Planning', startDate: '2026-04-01' },
-    { id: 'PLN003', season: 'Spring 2026', crop: 'Vegetables', plannedArea: '45 hectares', estimatedCost: 'R 1.8M', expectedRevenue: 'R 4.2M', status: 'Planning', startDate: '2026-08-01' },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [cropsRes, livestockRes, equipmentRes, planningRes] = await Promise.all([
+          apiClient.get('/api/agriculture/crops'),
+          apiClient.get('/api/agriculture/livestock'),
+          apiClient.get('/api/agriculture/equipment'),
+          apiClient.get('/api/agriculture/planning')
+        ]);
+        setCrops(cropsRes.data?.data || cropsRes.data || []);
+        setLivestock(livestockRes.data?.data || livestockRes.data || []);
+        setEquipment(equipmentRes.data?.data || equipmentRes.data || []);
+        setPlanning(planningRes.data?.data || planningRes.data || []);
+      } catch (err) {
+        console.error('Error fetching agriculture data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {

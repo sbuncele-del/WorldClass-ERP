@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '../../services/api';
 import './NotificationDropdown.css';
 
 interface Notification {
@@ -13,70 +14,37 @@ interface Notification {
   read: boolean;
 }
 
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    type: 'success',
-    icon: '🚚',
-    title: 'Trip Delivered',
-    message: 'Trip TRP-2025-00125 delivered successfully',
-    time: '2 minutes ago',
-    link: '/logistics/trips/TRP-2025-00125',
-    read: false
-  },
-  {
-    id: '2',
-    type: 'warning',
-    icon: '⚠️',
-    title: 'Vehicle Service Due',
-    message: 'ABC 123 GP requires service in 3 days',
-    time: '1 hour ago',
-    link: '/logistics/fleet',
-    read: false
-  },
-  {
-    id: '3',
-    type: 'info',
-    icon: '📝',
-    title: 'New Purchase Order',
-    message: 'PO #PO-2025-156 created by John Mthembu',
-    time: '3 hours ago',
-    link: '/purchase',
-    read: false
-  },
-  {
-    id: '4',
-    type: 'success',
-    icon: '💰',
-    title: 'Invoice Paid',
-    message: 'Invoice #INV-2025-0432 paid by Shoprite',
-    time: '5 hours ago',
-    link: '/financial',
-    read: true
-  },
-  {
-    id: '5',
-    type: 'warning',
-    icon: '📋',
-    title: 'Driver License Expiring',
-    message: 'Thabo Dlamini - PrDP expires in 14 days',
-    time: '1 day ago',
-    link: '/logistics/drivers',
-    read: true
-  }
-];
-
 interface NotificationDropdownProps {
   onClose: () => void;
 }
 
 const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ onClose }) => {
   const navigate = useNavigate();
-  const [notifications, setNotifications] = React.useState(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await apiClient.get('/api/communications/notifications');
+      const data = response.data?.data || response.data || [];
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching notifications:', err);
+      // Gracefully handle - empty notifications is fine
+      setNotifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const handleNotificationClick = (notification: Notification) => {
+    if (notification.link) {
     if (notification.link) {
       navigate(notification.link);
       onClose();

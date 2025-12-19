@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Row,
@@ -25,6 +25,8 @@ import {
   Badge,
   Avatar,
   Timeline,
+  Spin,
+  Empty,
 } from 'antd';
 import {
   ShoppingOutlined,
@@ -62,101 +64,158 @@ import {
   StatusIndicator,
   InfoListCard,
 } from '../../components/hub';
+import apiClient from '../../services/api';
 
 const { Title, Text, Paragraph } = Typography;
 
-// Purchase Statistics
-const purchaseStats = {
-  totalOrders: 1245,
-  totalSpend: 42500000,
-  pendingOrders: 28,
-  ordersThisMonth: 89,
-  avgOrderValue: 475000,
-  onTimeDelivery: 94,
-  activeSuppliers: 156,
-  pendingApprovals: 12,
-};
+interface PurchaseStats {
+  totalOrders: number;
+  totalSpend: number;
+  pendingOrders: number;
+  ordersThisMonth: number;
+  avgOrderValue: number;
+  onTimeDelivery: number;
+  activeSuppliers: number;
+  pendingApprovals: number;
+}
 
-// Supplier Summary
-const topSuppliers = [
-  { name: 'Steel Corp RSA', spend: 8500000, orders: 45, rating: 4.8, status: 'preferred', avatar: 'S' },
-  { name: 'Tech Components Ltd', spend: 6200000, orders: 32, rating: 4.5, status: 'approved', avatar: 'T' },
-  { name: 'Industrial Supplies ZA', spend: 4800000, orders: 28, rating: 4.7, status: 'preferred', avatar: 'I' },
-  { name: 'Packaging Solutions', spend: 3500000, orders: 65, rating: 4.2, status: 'approved', avatar: 'P' },
-  { name: 'Chemical Traders', spend: 2900000, orders: 18, rating: 4.6, status: 'preferred', avatar: 'C' },
-];
+interface Supplier {
+  id: string;
+  name: string;
+  spend: number;
+  orders: number;
+  rating: number;
+  status: string;
+  avatar: string;
+}
 
-// Recent Purchase Orders
-const recentOrders = [
-  {
-    id: 'PO-2025-3421',
-    supplier: 'Steel Corp RSA',
-    amount: 450000,
-    date: '2025-12-11',
-    status: 'pending_approval',
-    items: 5,
-    expectedDelivery: '2025-12-20',
-  },
-  {
-    id: 'PO-2025-3420',
-    supplier: 'Tech Components Ltd',
-    amount: 890000,
-    date: '2025-12-10',
-    status: 'approved',
-    items: 12,
-    expectedDelivery: '2025-12-18',
-  },
-  {
-    id: 'PO-2025-3419',
-    supplier: 'Industrial Supplies ZA',
-    amount: 125000,
-    date: '2025-12-10',
-    status: 'sent',
-    items: 3,
-    expectedDelivery: '2025-12-15',
-  },
-  {
-    id: 'PO-2025-3418',
-    supplier: 'Packaging Solutions',
-    amount: 65000,
-    date: '2025-12-09',
-    status: 'received',
-    items: 8,
-    expectedDelivery: '2025-12-12',
-  },
-  {
-    id: 'PO-2025-3417',
-    supplier: 'Chemical Traders',
-    amount: 340000,
-    date: '2025-12-08',
-    status: 'invoiced',
-    items: 4,
-    expectedDelivery: '2025-12-11',
-  },
-];
+interface PurchaseOrder {
+  id: string;
+  supplier: string;
+  amount: number;
+  date: string;
+  status: string;
+  items: number;
+  expectedDelivery: string;
+}
 
-// Pending Approvals
-const pendingApprovals = [
-  { id: 'PO-2025-3421', supplier: 'Steel Corp RSA', amount: 450000, requestedBy: 'Michael Brown', date: '2025-12-11' },
-  { id: 'PO-2025-3415', supplier: 'Heavy Equipment Co', amount: 1250000, requestedBy: 'Sarah Chen', date: '2025-12-10' },
-  { id: 'PO-2025-3412', supplier: 'Logistics Partners', amount: 890000, requestedBy: 'Thandi Nkosi', date: '2025-12-09' },
-];
+interface PendingApproval {
+  id: string;
+  supplier: string;
+  amount: number;
+  requestedBy: string;
+  date: string;
+}
 
-// Spend by Category
-const spendByCategory = [
-  { category: 'Raw Materials', spend: 18500000, percentage: 43, trend: 'up' },
-  { category: 'Equipment', spend: 8200000, percentage: 19, trend: 'down' },
-  { category: 'Services', spend: 6500000, percentage: 15, trend: 'up' },
-  { category: 'Consumables', spend: 5300000, percentage: 13, trend: 'stable' },
-  { category: 'Other', spend: 4000000, percentage: 10, trend: 'down' },
-];
+interface SpendCategory {
+  category: string;
+  spend: number;
+  percentage: number;
+  trend: string;
+}
 
 const PurchaseHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  // State for API data
+  const [purchaseStats, setPurchaseStats] = useState<PurchaseStats>({
+    totalOrders: 0,
+    totalSpend: 0,
+    pendingOrders: 0,
+    ordersThisMonth: 0,
+    avgOrderValue: 0,
+    onTimeDelivery: 0,
+    activeSuppliers: 0,
+    pendingApprovals: 0,
+  });
+  const [topSuppliers, setTopSuppliers] = useState<Supplier[]>([]);
+  const [recentOrders, setRecentOrders] = useState<PurchaseOrder[]>([]);
+  const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>([]);
+  const [spendByCategory, setSpendByCategory] = useState<SpendCategory[]>([]);
+
+  // Fetch all purchase data from API
+  useEffect(() => {
+    const fetchPurchaseData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, suppliersRes, ordersRes, approvalsRes, categoriesRes] = await Promise.all([
+          apiClient.get('/api/purchase/stats').catch(() => ({ data: null })),
+          apiClient.get('/api/purchase/suppliers/top').catch(() => ({ data: [] })),
+          apiClient.get('/api/purchase/orders/recent').catch(() => ({ data: [] })),
+          apiClient.get('/api/purchase/approvals/pending').catch(() => ({ data: [] })),
+          apiClient.get('/api/purchase/spend/categories').catch(() => ({ data: [] })),
+        ]);
+
+        if (statsRes.data) {
+          setPurchaseStats(statsRes.data.data || statsRes.data);
+        }
+        
+        const suppliers = suppliersRes.data?.data || suppliersRes.data || [];
+        setTopSuppliers(suppliers.map((s: any) => ({
+          ...s,
+          avatar: s.avatar || s.name?.charAt(0) || 'S'
+        })));
+        
+        setRecentOrders(ordersRes.data?.data || ordersRes.data || []);
+        setPendingApprovals(approvalsRes.data?.data || approvalsRes.data || []);
+        setSpendByCategory(categoriesRes.data?.data || categoriesRes.data || []);
+      } catch (error) {
+        console.error('Error fetching purchase data:', error);
+        message.error('Failed to load purchase data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPurchaseData();
+  }, []);
 
   const formatCurrency = (amount: number) => `R ${amount.toLocaleString('en-ZA')}`;
+
+  // Export function
+  const handleExport = () => {
+    try {
+      let csvContent = '';
+      let filename = '';
+      const now = new Date().toISOString().split('T')[0];
+
+      if (activeTab === 'suppliers') {
+        csvContent = 'Supplier,Total Spend,Orders,Rating,Status\n';
+        topSuppliers.forEach(s => {
+          csvContent += `"${s.name}",${s.spend},${s.orders},${s.rating},"${s.status}"\n`;
+        });
+        filename = `suppliers-${now}.csv`;
+      } else if (activeTab === 'orders') {
+        csvContent = 'PO Number,Supplier,Amount,Date,Status,Items,Expected Delivery\n';
+        recentOrders.forEach(o => {
+          csvContent += `"${o.id}","${o.supplier}",${o.amount},"${o.date}","${o.status}",${o.items},"${o.expectedDelivery}"\n`;
+        });
+        filename = `purchase-orders-${now}.csv`;
+      } else {
+        csvContent = 'Metric,Value\n';
+        csvContent += `Total Orders,${purchaseStats.totalOrders}\n`;
+        csvContent += `Total Spend,R ${purchaseStats.totalSpend.toLocaleString()}\n`;
+        csvContent += `Pending Orders,${purchaseStats.pendingOrders}\n`;
+        csvContent += `Orders This Month,${purchaseStats.ordersThisMonth}\n`;
+        csvContent += `On-Time Delivery,${purchaseStats.onTimeDelivery}%\n`;
+        csvContent += `Active Suppliers,${purchaseStats.activeSuppliers}\n`;
+        filename = `purchase-summary-${now}.csv`;
+      }
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      message.success(`Exported ${filename}`);
+    } catch (err) {
+      message.error('Export failed');
+    }
+  };
 
   const getStatusTag = (status: string) => {
     const configs: Record<string, { color: string; text: string; icon?: React.ReactNode }> = {
@@ -587,8 +646,8 @@ const PurchaseHub: React.FC = () => {
         gradient="purple"
         actions={
           <>
-            <Button icon={<SyncOutlined />}>Refresh</Button>
-            <Button icon={<DownloadOutlined />}>Export</Button>
+            <Button icon={<SyncOutlined spin={loading} />} onClick={() => window.location.reload()}>Refresh</Button>
+            <Button icon={<DownloadOutlined />} onClick={handleExport}>Export</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowOrderModal(true)}>
               Create PO
             </Button>
@@ -610,12 +669,19 @@ const PurchaseHub: React.FC = () => {
         ]}
       />
 
-      <HubTabs 
-        theme="purple"
-        tabs={tabs}
-        activeKey={activeTab}
-        onChange={setActiveTab}
-      />
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '100px 0' }}>
+          <Spin size="large" />
+          <div style={{ marginTop: 16 }}>Loading purchase data...</div>
+        </div>
+      ) : (
+        <HubTabs 
+          theme="purple"
+          tabs={tabs}
+          activeKey={activeTab}
+          onChange={setActiveTab}
+        />
+      )}
 
       {/* New Purchase Order Modal */}
       <Modal

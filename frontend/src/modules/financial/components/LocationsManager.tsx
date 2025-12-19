@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './LocationsManager.css';
 
 interface Location {
@@ -55,7 +56,7 @@ const LocationsManager: React.FC = () => {
   const fetchLocations = async () => {
     try {
       setLoading(true);
-      const url = `http://localhost:3000/api/financial/dimensions/locations${showInactive ? '?include_inactive=true' : ''}`;
+      const url = `${API_BASE_URL}/api/financial/dimensions/locations${showInactive ? '?include_inactive=true' : ''}`;
       const response = await fetch(url);
       const result = await response.json();
       
@@ -126,8 +127,8 @@ const LocationsManager: React.FC = () => {
 
     try {
       const url = editingLocation
-        ? `http://localhost:3000/api/financial/dimensions/locations/${editingLocation.id}`
-        : 'http://localhost:3000/api/financial/dimensions/locations';
+        ? `${API_BASE_URL}/api/financial/dimensions/locations/${editingLocation.id}`
+        : `${API_BASE_URL}/api/financial/dimensions/locations`;
       
       const response = await fetch(url, {
         method: editingLocation ? 'PUT' : 'POST',
@@ -150,7 +151,7 @@ const LocationsManager: React.FC = () => {
 
   const handleToggleActive = async (location: Location) => {
     try {
-      const url = `http://localhost:3000/api/financial/dimensions/locations/${location.id}/${
+      const url = `${API_BASE_URL}/api/financial/dimensions/locations/${location.id}/${
         location.is_active ? 'deactivate' : 'activate'
       }`;
       

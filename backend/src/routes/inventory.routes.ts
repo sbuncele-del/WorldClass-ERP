@@ -2,14 +2,12 @@
  * INVENTORY MANAGEMENT ROUTES
  * 
  * All routes for inventory module.
- * NOW USING REPOSITORY PATTERN (v2) for automatic tenant isolation.
+ * ALL ENDPOINTS NOW USE V2 CONTROLLER with automatic tenant isolation.
  */
 
 import express from 'express';
-// Use v2 controller with Repository Pattern for multi-tenant safety
+// V2 controller with Repository Pattern + direct tenant-safe queries for ALL endpoints
 import * as inventoryController from '../controllers/inventory.controller.v2';
-// Keep legacy controller for endpoints not yet migrated
-import * as legacyController from '../controllers/inventory.controller';
 import * as inventoryWorkspaceController from '../modules/inventory/controllers/inventory.workspace.controller';
 import { tenantMiddleware } from '../middleware/tenant';
 
@@ -22,6 +20,11 @@ router.use(tenantMiddleware);
 // WORKSPACE
 // ============================================================================
 router.get('/workspace', inventoryWorkspaceController.getInventoryWorkspace);
+
+// ============================================================================
+// DASHBOARD (v2 - Tenant Isolated)
+// ============================================================================
+router.get('/dashboard', inventoryController.getInventoryDashboard);
 
 // ============================================================================
 // ITEM CATEGORIES (v2 - Repository Pattern)
@@ -52,53 +55,46 @@ router.put('/items/:id', inventoryController.updateItem);
 router.delete('/items/:id', inventoryController.deleteItem);
 
 // ============================================================================
-// STOCK LEVELS (Legacy - pending migration)
+// STOCK LEVELS (v2 - Tenant Isolated)
 // ============================================================================
-router.get('/stock-levels', legacyController.getStockLevels);
+router.get('/stock-levels', inventoryController.getStockLevels);
 
 // ============================================================================
-// STOCK MOVEMENTS (v2 - Repository Pattern)
+// STOCK MOVEMENTS (v2 - Repository Pattern + Extended)
 // ============================================================================
 router.get('/stock-movements', inventoryController.getStockMovements);
 router.get('/stock-movements/summary', inventoryController.getMovementSummary);
+router.post('/stock-movements', inventoryController.createStockMovement);
 router.post('/stock-movements/receipt', inventoryController.createStockReceipt);
 router.post('/stock-movements/issue', inventoryController.createStockIssue);
 router.post('/stock-movements/transfer', inventoryController.createStockTransfer);
-
-// Legacy endpoints (pending migration)
-router.post('/stock-movements', legacyController.createStockMovement);
-router.post('/stock-movements/:id/post', legacyController.postStockMovement);
+router.post('/stock-movements/:id/post', inventoryController.postStockMovement);
 
 // ============================================================================
-// STOCK ADJUSTMENTS (Legacy - pending migration)
+// STOCK ADJUSTMENTS (v2 - Tenant Isolated)
 // ============================================================================
-router.get('/stock-adjustments', legacyController.getStockAdjustments);
-router.get('/stock-adjustments/:id', legacyController.getStockAdjustmentById);
-router.post('/stock-adjustments', legacyController.createStockAdjustment);
-router.post('/stock-adjustments/:id/post', legacyController.postStockAdjustment);
+router.get('/stock-adjustments', inventoryController.getStockAdjustments);
+router.get('/stock-adjustments/:id', inventoryController.getStockAdjustmentById);
+router.post('/stock-adjustments', inventoryController.createStockAdjustment);
+router.post('/stock-adjustments/:id/post', inventoryController.postStockAdjustment);
 
 // ============================================================================
-// STOCK TAKES (Legacy - pending migration)
+// STOCK TAKES (v2 - Tenant Isolated)
 // ============================================================================
-router.get('/stock-takes', legacyController.getStockTakes);
-router.post('/stock-takes', legacyController.createStockTake);
-router.post('/stock-takes/:id/post', legacyController.postStockTake);
+router.get('/stock-takes', inventoryController.getStockTakes);
+router.post('/stock-takes', inventoryController.createStockTake);
+router.post('/stock-takes/:id/post', inventoryController.postStockTake);
 
 // ============================================================================
-// BATCHES / SERIALS (Legacy - pending migration)
+// BATCHES / SERIALS (v2 - Tenant Isolated)
 // ============================================================================
-router.get('/batches', legacyController.getStockBatches);
-router.get('/serials', legacyController.getSerialNumbers);
+router.get('/batches', inventoryController.getStockBatches);
+router.get('/serials', inventoryController.getSerialNumbers);
 
 // ============================================================================
-// REORDER SUGGESTIONS (Legacy - pending migration)
+// REORDER SUGGESTIONS (v2 - Tenant Isolated)
 // ============================================================================
-router.get('/reorder-suggestions', legacyController.getReorderSuggestions);
-router.post('/reorder-suggestions/generate', legacyController.generateReorderSuggestions);
-
-// ============================================================================
-// DASHBOARD (Legacy - pending migration)
-// ============================================================================
-router.get('/dashboard', legacyController.getInventoryDashboard);
+router.get('/reorder-suggestions', inventoryController.getReorderSuggestions);
+router.post('/reorder-suggestions/generate', inventoryController.generateReorderSuggestions);
 
 export default router;

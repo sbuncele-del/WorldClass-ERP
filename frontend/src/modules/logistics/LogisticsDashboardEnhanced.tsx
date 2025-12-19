@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
 import type { SecondaryNavSection } from '../../components/layout/SecondaryNav';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface LogisticsStats {
@@ -62,77 +63,19 @@ const LogisticsDashboardEnhanced: React.FC = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      setStats({
-        fleet: {
-          total_vehicles: 45,
-          active_vehicles: 42,
-          in_maintenance: 3,
-          vehicles_on_road: 28
-        },
-        drivers: {
-          total_drivers: 52,
-          active_drivers: 48,
-          drivers_on_trip: 28,
-          available_drivers: 20
-        },
-        trips: {
-          today_trips: 35,
-          in_transit: 18,
-          completed_today: 12,
-          pending_pods: 5
-        },
-        performance: {
-          on_time_delivery_rate: 92.5,
-          fuel_efficiency: 3.8,
-          average_trip_duration: 4.2,
-          vehicle_utilization: 78.5
-        },
-        alerts: {
-          overdue_maintenance: 2,
-          expiring_licenses: 4,
-          fuel_anomalies: 1,
-          delayed_trips: 3
-        }
-      });
-
-      setActiveVehicles([
-        {
-          vehicle_id: 1,
-          vehicle_number: 'TRK-001',
-          registration_number: 'ABC 123 GP',
-          status: 'IN_TRANSIT',
-          current_location: 'N1 North, near Johannesburg',
-          driver_name: 'John Mthembu',
-          trip_number: 'TRIP-2025-001',
-          destination: 'Polokwane',
-          eta: '14:30',
-          load_percentage: 95
-        },
-        {
-          vehicle_id: 2,
-          vehicle_number: 'TRK-002',
-          registration_number: 'DEF 456 GP',
-          status: 'LOADING',
-          current_location: 'Warehouse A - Johannesburg',
-          driver_name: 'Sarah Ndlovu',
-          trip_number: 'TRIP-2025-002',
-          destination: 'Durban',
-          eta: '16:00',
-          load_percentage: 65
-        },
-        {
-          vehicle_id: 3,
-          vehicle_number: 'TRK-003',
-          registration_number: 'GHI 789 GP',
-          status: 'IN_TRANSIT',
-          current_location: 'N3, approaching Harrismith',
-          driver_name: 'Thabo Dlamini',
-          trip_number: 'TRIP-2025-003',
-          destination: 'Cape Town',
-          eta: 'Tomorrow 08:00',
-          load_percentage: 100
-        }
+      const [dashboardRes, vehiclesRes] = await Promise.all([
+        apiClient.get('/api/logistics/dashboard'),
+        apiClient.get('/api/logistics/vehicles')
       ]);
+      
+      if (dashboardRes.data) {
+        const data = dashboardRes.data.data || dashboardRes.data;
+        setStats(data);
+      }
+      
+      if (vehiclesRes.data) {
+        setActiveVehicles(vehiclesRes.data.data || vehiclesRes.data || []);
+      }
     } catch (error) {
       console.error('Error fetching logistics dashboard data:', error);
     } finally {

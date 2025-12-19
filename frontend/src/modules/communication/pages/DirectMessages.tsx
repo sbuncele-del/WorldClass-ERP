@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, List, Button, Space, Input, Avatar, Badge, Typography, 
   Modal, Select, message, Row, Col
@@ -7,6 +7,7 @@ import {
   PlusOutlined, SearchOutlined, UserOutlined, MessageOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '../../../services/api';
 
 const { Title, Text } = Typography;
 
@@ -17,15 +18,6 @@ interface DirectMessage {
   lastMessage: string;
   lastActivity: string;
 }
-
-const sampleDMs: DirectMessage[] = [
-  { id: '1', user: { name: 'Sarah Johnson', email: 'sarah@company.com', status: 'online' }, unread: 2, lastMessage: 'Can you review the proposal?', lastActivity: '2 min ago' },
-  { id: '2', user: { name: 'Mike Wilson', email: 'mike@company.com', status: 'online' }, unread: 0, lastMessage: 'Thanks for the help!', lastActivity: '20 min ago' },
-  { id: '3', user: { name: 'Emily Chen', email: 'emily@company.com', status: 'away' }, unread: 1, lastMessage: 'The designs are attached', lastActivity: '1 hour ago' },
-  { id: '4', user: { name: 'David Lee', email: 'david@company.com', status: 'offline' }, unread: 0, lastMessage: 'Let me check and get back to you', lastActivity: '3 hours ago' },
-  { id: '5', user: { name: 'Alex Turner', email: 'alex@company.com', status: 'online' }, unread: 0, lastMessage: 'Meeting confirmed for tomorrow', lastActivity: 'Yesterday' },
-  { id: '6', user: { name: 'Lisa Park', email: 'lisa@company.com', status: 'offline' }, unread: 0, lastMessage: 'Great work on the presentation!', lastActivity: '2 days ago' }
-];
 
 const statusColors = {
   online: '#52c41a',
@@ -41,9 +33,24 @@ const statusLabels = {
 
 const DirectMessages: React.FC = () => {
   const navigate = useNavigate();
-  const [dms] = useState<DirectMessage[]>(sampleDMs);
+  const [dms, setDms] = useState<DirectMessage[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [newMessageModalVisible, setNewMessageModalVisible] = useState(false);
+
+  useEffect(() => {
+    const fetchDMs = async () => {
+      try {
+        const response = await apiClient.get('/api/communications/direct-messages');
+        setDms(response.data?.data || response.data || []);
+      } catch (err) {
+        console.error('Error fetching direct messages:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDMs();
+  }, []);
 
   const filteredDMs = dms.filter(dm => 
     dm.user.name.toLowerCase().includes(searchText.toLowerCase())

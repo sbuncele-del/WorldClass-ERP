@@ -21,7 +21,7 @@ const blogPosts: BlogPost[] = [
     category: 'Industry Insights',
     date: 'December 5, 2025',
     readTime: '6 min read',
-    author: 'AetherOS Team'
+    author: 'SiyaBusa Team'
   },
   {
     id: 'popia-compliance-guide',
@@ -39,7 +39,7 @@ const blogPosts: BlogPost[] = [
     category: 'Financial Management',
     date: 'November 20, 2025',
     readTime: '5 min read',
-    author: 'AetherOS Team'
+    author: 'SiyaBusa Team'
   },
   {
     id: 'inventory-optimization',
@@ -48,7 +48,7 @@ const blogPosts: BlogPost[] = [
     category: 'Operations',
     date: 'November 15, 2025',
     readTime: '7 min read',
-    author: 'AetherOS Team'
+    author: 'SiyaBusa Team'
   },
   {
     id: 'ai-in-erp',
@@ -57,7 +57,7 @@ const blogPosts: BlogPost[] = [
     category: 'Technology',
     date: 'November 8, 2025',
     readTime: '6 min read',
-    author: 'AetherOS Team'
+    author: 'SiyaBusa Team'
   },
   {
     id: 'scaling-with-erp',
@@ -66,7 +66,7 @@ const blogPosts: BlogPost[] = [
     category: 'Growth',
     date: 'November 1, 2025',
     readTime: '5 min read',
-    author: 'AetherOS Team'
+    author: 'SiyaBusa Team'
   },
   {
     id: 'sme-erp-myths',
@@ -75,7 +75,7 @@ const blogPosts: BlogPost[] = [
     category: 'SME Focus',
     date: 'October 25, 2025',
     readTime: '6 min read',
-    author: 'AetherOS Team'
+    author: 'SiyaBusa Team'
   },
   {
     id: 'audit-ready',
@@ -102,7 +102,7 @@ const Blog: React.FC = () => {
       <nav className="footer-page-nav">
         <Link to="/" className="logo">
           <span className="logo-icon">◈</span>
-          <span>AetherOS</span>
+          <span>SiyaBusa</span>
         </Link>
         <Link to="/" className="back-link">← Back to Home</Link>
       </nav>
@@ -115,7 +115,7 @@ const Blog: React.FC = () => {
         >
           <header className="page-header">
             <h1>Blog</h1>
-            <p className="subtitle">Insights, guides, and news from the AetherOS team</p>
+            <p className="subtitle">Insights, guides, and news from the SiyaBusa team</p>
           </header>
 
           <section className="content-section">
@@ -169,7 +169,7 @@ const Blog: React.FC = () => {
       </main>
 
       <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} AetherOS by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
       </footer>
     </div>
   );

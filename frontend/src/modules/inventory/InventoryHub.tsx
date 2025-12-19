@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Row,
@@ -24,6 +24,8 @@ import {
   Alert,
   Badge,
   Avatar,
+  Spin,
+  Empty,
 } from 'antd';
 import {
   InboxOutlined,
@@ -48,6 +50,7 @@ import {
   BarcodeOutlined,
   EnvironmentOutlined,
   ShoppingCartOutlined,
+  LoadingOutlined,
 } from '@ant-design/icons';
 import {
   HubLayout,
@@ -59,56 +62,60 @@ import {
   StatusIndicator,
   InfoListCard,
 } from '../../components/hub';
+import { inventoryService } from '../../services/inventory.service';
+import type { InventoryStats, Product, StockMovement } from '../../services/inventory.service';
 
 const { Title, Text, Paragraph } = Typography;
 
-// Inventory Statistics
-const inventoryStats = {
-  totalItems: 4528,
-  totalValue: 28500000,
-  lowStock: 45,
-  outOfStock: 12,
-  reorderPending: 23,
-  turnoverRate: 4.2,
-  avgDaysStock: 42,
-  categories: 18,
-  warehouses: 5,
-};
+// Types for state
+interface InventoryStatsState {
+  totalItems: number;
+  totalValue: number;
+  lowStock: number;
+  outOfStock: number;
+  reorderPending: number;
+  turnoverRate: number;
+  avgDaysStock: number;
+  categories: number;
+  warehouses: number;
+}
 
-// Stock by Category
-const stockByCategory = [
-  { category: 'Raw Materials', items: 1250, value: 8500000, status: 'healthy', percentage: 30 },
-  { category: 'Finished Goods', items: 890, value: 12000000, status: 'healthy', percentage: 42 },
-  { category: 'Work in Progress', items: 420, value: 3500000, status: 'warning', percentage: 12 },
-  { category: 'Consumables', items: 1200, value: 2500000, status: 'healthy', percentage: 9 },
-  { category: 'Spare Parts', items: 768, value: 2000000, status: 'critical', percentage: 7 },
-];
+interface StockByCategory {
+  category: string;
+  items: number;
+  value: number;
+  status: string;
+  percentage: number;
+}
 
-// Low Stock Items
-const lowStockItems = [
-  { sku: 'RM-001245', name: 'Steel Sheets 2mm', current: 45, min: 100, unit: 'pcs', location: 'WH-A', daysLeft: 5 },
-  { sku: 'RM-001892', name: 'Copper Wire 1.5mm', current: 120, min: 200, unit: 'meters', location: 'WH-A', daysLeft: 8 },
-  { sku: 'FG-003421', name: 'Widget Assembly X500', current: 28, min: 50, unit: 'units', location: 'WH-B', daysLeft: 3 },
-  { sku: 'SP-000892', name: 'Motor Bearing B12', current: 15, min: 40, unit: 'pcs', location: 'WH-C', daysLeft: 12 },
-  { sku: 'CN-002145', name: 'Lubricant Oil 5L', current: 8, min: 25, unit: 'cans', location: 'WH-A', daysLeft: 2 },
-];
+interface LowStockItem {
+  sku: string;
+  name: string;
+  current: number;
+  min: number;
+  unit: string;
+  location: string;
+  daysLeft: number;
+}
 
-// Recent Stock Movements
-const stockMovements = [
-  { id: 'SM-2025-4521', date: '2025-12-11', type: 'receipt', item: 'Steel Sheets 2mm', qty: 500, from: 'Supplier', to: 'WH-A' },
-  { id: 'SM-2025-4520', date: '2025-12-11', type: 'transfer', item: 'Widget Assembly X500', qty: 50, from: 'WH-B', to: 'WH-C' },
-  { id: 'SM-2025-4519', date: '2025-12-10', type: 'issue', item: 'Copper Wire 1.5mm', qty: 200, from: 'WH-A', to: 'Production' },
-  { id: 'SM-2025-4518', date: '2025-12-10', type: 'adjustment', item: 'Motor Bearing B12', qty: -5, from: 'WH-C', to: 'Shrinkage' },
-  { id: 'SM-2025-4517', date: '2025-12-09', type: 'return', item: 'Lubricant Oil 5L', qty: 3, from: 'Production', to: 'WH-A' },
-];
+interface StockMovementItem {
+  id: string;
+  date: string;
+  type: string;
+  item: string;
+  qty: number;
+  from: string;
+  to: string;
+}
 
-// Warehouse Summary
-const warehouses = [
-  { code: 'WH-A', name: 'Main Warehouse', location: 'Johannesburg', capacity: 85, items: 2100, value: 15000000 },
-  { code: 'WH-B', name: 'Distribution Center', location: 'Cape Town', capacity: 72, items: 1200, value: 8500000 },
-  { code: 'WH-C', name: 'Spare Parts Store', location: 'Durban', capacity: 45, items: 800, value: 3000000 },
-  { code: 'WH-D', name: 'Raw Materials', location: 'Pretoria', capacity: 90, items: 428, value: 2000000 },
-];
+interface Warehouse {
+  code: string;
+  name: string;
+  location: string;
+  capacity: number;
+  items: number;
+  value: number;
+}
 
 const InventoryHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -117,6 +124,130 @@ const InventoryHub: React.FC = () => {
   const [showBarcodeModal, setShowBarcodeModal] = useState(false);
   const [testScanValue, setTestScanValue] = useState('INV-001245-2025');
   const [barcodeForm] = Form.useForm();
+
+  // API State
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [inventoryStats, setInventoryStats] = useState<InventoryStatsState>({
+    totalItems: 0,
+    totalValue: 0,
+    lowStock: 0,
+    outOfStock: 0,
+    reorderPending: 0,
+    turnoverRate: 0,
+    avgDaysStock: 0,
+    categories: 0,
+    warehouses: 0,
+  });
+  const [stockByCategory, setStockByCategory] = useState<StockByCategory[]>([]);
+  const [lowStockItems, setLowStockItems] = useState<LowStockItem[]>([]);
+  const [stockMovements, setStockMovements] = useState<StockMovementItem[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchInventoryData = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Fetch stats
+        const stats = await inventoryService.getStats();
+        setInventoryStats({
+          totalItems: parseInt(stats.total_products) || 0,
+          totalValue: parseFloat(stats.total_value) || 0,
+          lowStock: parseInt(stats.low_stock_items) || 0,
+          outOfStock: parseInt(stats.out_of_stock_items) || 0,
+          reorderPending: 0,
+          turnoverRate: 0,
+          avgDaysStock: 0,
+          categories: 0,
+          warehouses: 0,
+        });
+
+        // Fetch products (including low stock)
+        const productsResponse = await inventoryService.getProducts({ limit: 20 });
+        if (productsResponse.data && Array.isArray(productsResponse.data)) {
+          // Filter for low stock items
+          const lowStock = productsResponse.data
+            .filter((p: Product) => p.quantity_on_hand <= p.reorder_level)
+            .map((p: Product) => ({
+              sku: p.product_code,
+              name: p.product_name,
+              current: p.quantity_on_hand,
+              min: p.reorder_level,
+              unit: 'units',
+              location: 'WH-A',
+              daysLeft: Math.max(1, Math.floor(p.quantity_on_hand / 10)),
+            }));
+          setLowStockItems(lowStock);
+
+          // Group by category for stock by category
+          const categoryMap = new Map<string, { items: number; value: number }>();
+          productsResponse.data.forEach((p: Product) => {
+            const cat = p.category || 'Uncategorized';
+            const existing = categoryMap.get(cat) || { items: 0, value: 0 };
+            categoryMap.set(cat, {
+              items: existing.items + 1,
+              value: existing.value + (p.total_value || 0),
+            });
+          });
+          
+          const totalValue = Array.from(categoryMap.values()).reduce((sum, c) => sum + c.value, 0);
+          const categories = Array.from(categoryMap.entries()).map(([category, data]) => ({
+            category,
+            items: data.items,
+            value: data.value,
+            status: 'healthy',
+            percentage: totalValue > 0 ? Math.round((data.value / totalValue) * 100) : 0,
+          }));
+          setStockByCategory(categories);
+        }
+
+        // Fetch stock movements
+        const movementsResponse = await inventoryService.getStockMovements({ limit: 10 });
+        if (movementsResponse.data && Array.isArray(movementsResponse.data)) {
+          setStockMovements(movementsResponse.data.map((m: StockMovement, index: number) => ({
+            id: m.movement_id || `SM-${index}`,
+            date: m.movement_date,
+            type: m.movement_type?.toLowerCase() || 'transfer',
+            item: m.product_name,
+            qty: m.quantity,
+            from: 'Source',
+            to: 'Destination',
+          })));
+        }
+
+      } catch (err: unknown) {
+        console.error('Failed to fetch inventory data:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load inventory data';
+        setError(errorMessage);
+        message.error('Failed to load inventory data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInventoryData();
+  }, []);
+
+  // Refresh data function
+  const handleRefresh = () => {
+    setLoading(true);
+    inventoryService.getStats()
+      .then(stats => {
+        setInventoryStats(prev => ({
+          ...prev,
+          totalItems: parseInt(stats.total_products) || 0,
+          totalValue: parseFloat(stats.total_value) || 0,
+          lowStock: parseInt(stats.low_stock_items) || 0,
+          outOfStock: parseInt(stats.out_of_stock_items) || 0,
+        }));
+        message.success('Data refreshed');
+      })
+      .catch(() => message.error('Failed to refresh'))
+      .finally(() => setLoading(false));
+  };
 
   const formatCurrency = (amount: number) => `R ${amount.toLocaleString('en-ZA')}`;
 

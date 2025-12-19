@@ -17,7 +17,7 @@ Sentry.init({
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
   environment: import.meta.env.VITE_ENVIRONMENT || import.meta.env.MODE,
-  release: 'aetheros-erp@1.0.0',
+  release: 'siyabusa-erp@1.0.0',
   enabled: import.meta.env.PROD,
   beforeSend(event) {
     const userStr = localStorage.getItem('user');

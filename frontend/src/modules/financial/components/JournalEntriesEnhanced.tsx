@@ -43,31 +43,7 @@ const JournalEntriesEnhanced: React.FC = () => {
       setEntries(result.data || []);
     } catch (error) {
       console.error('Error fetching journal entries:', error);
-      // Fallback mock data
-      setEntries([
-        {
-          id: '1',
-          journal_number: 'JE-2024-001',
-          entry_date: '2024-01-15',
-          description: 'Monthly Sales Revenue',
-          status: 'POSTED',
-          debit_total: 45000.00,
-          credit_total: 45000.00,
-          created_by: 'Sarah Chen',
-          created_at: '2024-01-15T10:30:00'
-        },
-        {
-          id: '2',
-          journal_number: 'JE-2024-002',
-          entry_date: '2024-01-16',
-          description: 'Office Supplies Purchase',
-          status: 'PENDING_APPROVAL',
-          debit_total: 2500.00,
-          credit_total: 2500.00,
-          created_by: 'John Smith',
-          created_at: '2024-01-16T14:20:00'
-        }
-      ]);
+      setEntries([]);
     } finally {
       setLoading(false);
     }

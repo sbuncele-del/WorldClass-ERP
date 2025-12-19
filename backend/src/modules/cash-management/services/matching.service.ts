@@ -255,7 +255,7 @@ export class MatchingService {
     
     const query = `
       SELECT 
-        je.id as journal_entry_id,
+        je.entry_id as journal_entry_id,
         je.journal_number,
         je.description as journal_description,
         je.journal_date,
@@ -265,7 +265,7 @@ export class MatchingService {
         jel.reference,
         jel.account_code
       FROM journal_entry_lines jel
-      INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+      INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       WHERE jel.account_code = $1
       AND je.status = 'POSTED'
       AND jel.is_reconciled = false
@@ -337,7 +337,7 @@ export class MatchingService {
     // Search for reference in journal entry lines
     const query = `
       SELECT 
-        je.id as journal_entry_id,
+        je.entry_id as journal_entry_id,
         je.journal_number,
         je.description as journal_description,
         je.journal_date,
@@ -347,7 +347,7 @@ export class MatchingService {
         jel.reference,
         jel.account_code
       FROM journal_entry_lines jel
-      INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+      INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       WHERE jel.account_code = $1
       AND je.status = 'POSTED'
       AND jel.is_reconciled = false
@@ -410,7 +410,7 @@ export class MatchingService {
     
     const query = `
       SELECT 
-        je.id as journal_entry_id,
+        je.entry_id as journal_entry_id,
         je.journal_number,
         je.description as journal_description,
         je.journal_date,
@@ -420,7 +420,7 @@ export class MatchingService {
         jel.reference,
         jel.account_code
       FROM journal_entry_lines jel
-      INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+      INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       WHERE jel.account_code = $1
       AND je.status = 'POSTED'
       AND jel.is_reconciled = false
@@ -928,7 +928,7 @@ export class MatchingService {
       
       const glResult = await client.query(`
         SELECT 
-          je.id,
+          je.entry_id,
           je.journal_number,
           je.journal_date,
           je.description,
@@ -939,7 +939,7 @@ export class MatchingService {
           jel.reference,
           jel.is_reconciled
         FROM journal_entry_lines jel
-        INNER JOIN journal_entries je ON jel.journal_entry_id = je.id
+        INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
         WHERE jel.account_code = $1
         AND je.journal_date >= $2
         AND je.journal_date <= $3

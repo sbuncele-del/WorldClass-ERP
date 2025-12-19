@@ -7,9 +7,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../services/api.service';
 import './ReconciliationWorkspace.css';
 
-const API_BASE = 'http://localhost:3000/api/cash-management';
+const API_BASE = `${API_BASE_URL}/api/cash-management`;
 
 interface BankStatement {
   id: number;

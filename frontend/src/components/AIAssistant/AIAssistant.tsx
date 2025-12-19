@@ -292,7 +292,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
           <Bot size={20} />
         </div>
         <div className="ai-info">
-          <h3>AetherOS AI Assistant</h3>
+          <h3>SiyaBusa AI Assistant</h3>
           <span className="ai-status">
             <span className="status-dot"></span>
             Always online
@@ -320,7 +320,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
                   {/* AI Label */}
                   <div className="ai-label">
                     <Sparkles size={12} />
-                    <span>AETHEROS AI</span>
+                    <span>SIYABUSA AI</span>
                   </div>
 
                   {/* Processing indicator */}
@@ -402,11 +402,11 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
             <div className="message-bubble assistant-bubble">
               <div className="ai-label">
                 <Sparkles size={12} />
-                <span>AETHEROS AI</span>
+                <span>SIYABUSA AI</span>
               </div>
               <div className="processing">
                 <Loader2 className="spin" size={14} />
-                <span>Processing sale transaction...</span>
+                <span>Processing your request...</span>
               </div>
             </div>
           </motion.div>

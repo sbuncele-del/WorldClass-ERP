@@ -12,7 +12,7 @@ const TermsOfService: React.FC = () => {
       <nav className="footer-page-nav">
         <Link to="/" className="logo">
           <span className="logo-icon">◈</span>
-          <span>AetherOS</span>
+          <span>SiyaBusa</span>
         </Link>
         <Link to="/" className="back-link">← Back to Home</Link>
       </nav>
@@ -34,10 +34,10 @@ const TermsOfService: React.FC = () => {
               <p>
                 These Terms of Service ("Terms") constitute a legally binding agreement between you 
                 ("Customer", "you", or "your") and Masaphokati Technologies (Pty) Ltd, a company 
-                registered in South Africa, trading as AetherOS ("Company", "we", "us", or "our").
+                registered in South Africa, trading as SiyaBusa ("Company", "we", "us", or "our").
               </p>
               <p>
-                By accessing or using the AetherOS platform, website, mobile applications, or any 
+                By accessing or using the SiyaBusa platform, website, mobile applications, or any 
                 related services (collectively, the "Services"), you acknowledge that you have read, 
                 understood, and agree to be bound by these Terms. If you do not agree to these Terms, 
                 you must not access or use our Services.
@@ -51,7 +51,7 @@ const TermsOfService: React.FC = () => {
             <section className="legal-section">
               <h2>2. Description of Services</h2>
               <p>
-                AetherOS is a cloud-based enterprise resource planning (ERP) platform that provides 
+                SiyaBusa is a cloud-based enterprise resource planning (ERP) platform that provides 
                 business management tools including, but not limited to:
               </p>
               <ul>
@@ -423,7 +423,7 @@ const TermsOfService: React.FC = () => {
               <h3>16.7 Notices</h3>
               <p>
                 Notices to you will be sent to the email address associated with your account. 
-                Notices to us should be sent to legal@aetheros.io.
+                Notices to us should be sent to legal@siyabusa.co.za.
               </p>
             </section>
 
@@ -432,7 +432,7 @@ const TermsOfService: React.FC = () => {
               <p>For questions about these Terms, please contact us:</p>
               <div className="info-block">
                 <p><strong>Company:</strong> Masaphokati Technologies (Pty) Ltd</p>
-                <p><strong>Email:</strong> <a href="mailto:legal@aetheros.io">legal@aetheros.io</a></p>
+                <p><strong>Email:</strong> <a href="mailto:legal@siyabusa.co.za">legal@siyabusa.co.za</a></p>
                 <p><strong>Address:</strong> Centurion, Gauteng, South Africa</p>
               </div>
             </section>
@@ -450,7 +450,7 @@ const TermsOfService: React.FC = () => {
       </main>
 
       <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} AetherOS by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
       </footer>
     </div>
   );

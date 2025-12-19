@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
 import type { SecondaryNavSection } from '../../components/layout/SecondaryNav';
 import { DollarSign, RefreshCw, TrendingUp, FileText, Plus, CreditCard, BarChart3 } from 'lucide-react';
+import { API_BASE_URL } from '../../services/api.service';
 import '../../styles/erp-ui.css';
 
 interface CashStats {
@@ -37,8 +38,7 @@ const CashManagementDashboard: React.FC = () => {
     setLoading(true);
     try {
       // Connect to real backend API
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const response = await fetch(`${apiUrl}/api/cash/dashboard`);
+            const response = await fetch(`${API_BASE_URL}/api/cash/dashboard`);
       
       if (response.ok) {
         const data = await response.json();

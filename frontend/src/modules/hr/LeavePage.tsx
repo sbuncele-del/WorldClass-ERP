@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface LeaveRequest {
@@ -19,6 +20,7 @@ interface LeaveRequest {
 const LeavePage: React.FC = () => {
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
@@ -28,55 +30,15 @@ const LeavePage: React.FC = () => {
 
   const fetchLeaveRequests = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const mockRequests: LeaveRequest[] = [
-        {
-          id: 'LR001',
-          employee_name: 'Thabo Mkhize',
-          employee_number: 'E2023-001',
-          leave_type: 'ANNUAL',
-          start_date: '2025-12-20',
-          end_date: '2026-01-05',
-          days: 12,
-          status: 'PENDING',
-          reason: 'Year-end family holiday',
-          approver: 'Sarah van der Merwe',
-          balance_before: 15,
-          balance_after: 3
-        },
-        {
-          id: 'LR002',
-          employee_name: 'Nomvula Dlamini',
-          employee_number: 'E2024-015',
-          leave_type: 'SICK',
-          start_date: '2025-11-05',
-          end_date: '2025-11-06',
-          days: 2,
-          status: 'APPROVED',
-          reason: 'Medical certificate attached',
-          approver: 'Johan Botha',
-          balance_before: 10,
-          balance_after: 8
-        },
-        {
-          id: 'LR003',
-          employee_name: 'Pieter Kruger',
-          employee_number: 'E2024-022',
-          leave_type: 'FAMILY_RESPONSIBILITY',
-          start_date: '2025-11-10',
-          end_date: '2025-11-10',
-          days: 1,
-          status: 'APPROVED',
-          reason: 'Child illness',
-          approver: 'Sarah van der Merwe',
-          balance_before: 3,
-          balance_after: 2
-        }
-      ];
-
-      setRequests(mockRequests);
-    } catch (err) {
+      const response = await apiClient.get('/api/hr/leave/requests');
+      const data = response.data?.data || response.data || [];
+      setRequests(Array.isArray(data) ? data : []);
+    } catch (err: any) {
       console.error('Error fetching leave requests:', err);
+      setError(err.response?.data?.message || 'Failed to load leave requests');
+      setRequests([]);
     } finally {
       setLoading(false);
     }

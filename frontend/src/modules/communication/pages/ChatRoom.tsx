@@ -10,6 +10,7 @@ import {
   FileImageOutlined, FileOutlined, PictureOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
+import apiClient from '../../../services/api';
 import './ChatRoom.css';
 
 const { Text, Title } = Typography;
@@ -33,77 +34,6 @@ interface RoomMember {
   status: 'online' | 'away' | 'offline';
 }
 
-// Sample data
-const sampleMessages: Message[] = [
-  {
-    id: '1',
-    sender: { id: '2', name: 'Sarah Johnson' },
-    content: 'Good morning team! 👋',
-    timestamp: '9:00 AM',
-    type: 'text'
-  },
-  {
-    id: '2',
-    sender: { id: '3', name: 'Mike Wilson' },
-    content: 'Morning! Just pushed the latest changes to the staging branch.',
-    timestamp: '9:05 AM',
-    type: 'text',
-    reactions: [{ emoji: '👍', count: 3 }, { emoji: '🎉', count: 1 }]
-  },
-  {
-    id: '3',
-    sender: { id: '4', name: 'Emily Chen' },
-    content: 'Great work Mike! I\'ll review the PR after our standup.',
-    timestamp: '9:08 AM',
-    type: 'text'
-  },
-  {
-    id: '4',
-    sender: { id: '2', name: 'Sarah Johnson' },
-    content: 'Here are the updated mockups for the dashboard redesign:',
-    timestamp: '9:15 AM',
-    type: 'text',
-    attachments: [{ name: 'Dashboard_v2.fig', type: 'figma', size: '2.4 MB' }]
-  },
-  {
-    id: '5',
-    sender: { id: '1', name: 'You' },
-    content: 'These look amazing! Love the new color scheme. Quick question - are we keeping the sidebar navigation or moving to a top nav?',
-    timestamp: '9:20 AM',
-    type: 'text'
-  },
-  {
-    id: '6',
-    sender: { id: '4', name: 'Emily Chen' },
-    content: 'We\'re keeping the sidebar but making it collapsible. The user testing showed people prefer having more vertical space.',
-    timestamp: '9:22 AM',
-    type: 'text',
-    replyTo: { sender: 'You', content: 'Quick question - are we keeping the sidebar...' }
-  },
-  {
-    id: '7',
-    sender: { id: 'system', name: 'System' },
-    content: 'David Lee joined the channel',
-    timestamp: '9:30 AM',
-    type: 'system'
-  },
-  {
-    id: '8',
-    sender: { id: '5', name: 'David Lee' },
-    content: 'Hey everyone! Just catching up on the conversation. The mockups look great @Emily Chen!',
-    timestamp: '9:32 AM',
-    type: 'text'
-  }
-];
-
-const sampleMembers: RoomMember[] = [
-  { id: '2', name: 'Sarah Johnson', role: 'Project Manager', status: 'online' },
-  { id: '3', name: 'Mike Wilson', role: 'Lead Developer', status: 'online' },
-  { id: '4', name: 'Emily Chen', role: 'UI Designer', status: 'away' },
-  { id: '5', name: 'David Lee', role: 'Backend Developer', status: 'online' },
-  { id: '6', name: 'Alex Turner', role: 'QA Engineer', status: 'offline' }
-];
-
 const statusColors = {
   online: '#52c41a',
   away: '#faad14',
@@ -113,8 +43,9 @@ const statusColors = {
 const ChatRoom: React.FC = () => {
   const navigate = useNavigate();
   const { roomId, channelId, userId } = useParams();
-  const [messages, setMessages] = useState<Message[]>(sampleMessages);
-  const [members] = useState<RoomMember[]>(sampleMembers);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [members, setMembers] = useState<RoomMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [newMessage, setNewMessage] = useState('');
   const [showInfo, setShowInfo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -122,6 +53,25 @@ const ChatRoom: React.FC = () => {
   // Determine room type and name
   const roomType = channelId ? 'channel' : userId ? 'dm' : 'room';
   const roomName = channelId ? 'website-redesign' : userId ? 'Sarah Johnson' : 'General';
+
+  useEffect(() => {
+    const fetchChatData = async () => {
+      try {
+        const chatId = roomId || channelId || userId;
+        const [messagesRes, membersRes] = await Promise.all([
+          apiClient.get(`/api/communications/chat/${chatId}/messages`),
+          apiClient.get(`/api/communications/chat/${chatId}/members`)
+        ]);
+        setMessages(messagesRes.data?.data || messagesRes.data || []);
+        setMembers(membersRes.data?.data || membersRes.data || []);
+      } catch (err) {
+        console.error('Error fetching chat data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchChatData();
+  }, [roomId, channelId, userId]);
 
   useEffect(() => {
     // Scroll to bottom on new messages

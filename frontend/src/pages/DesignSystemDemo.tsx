@@ -24,7 +24,7 @@ const DesignSystemDemo: React.FC = () => {
     <div className="design-system-demo">
       {/* Hero Section */}
       <div className="demo-hero">
-        <h1>AetherOS Design System</h1>
+        <h1>SiyaBusa Design System</h1>
         <p className="demo-subtitle">
           Enterprise-grade design tokens and components for consistent, scalable UI
         </p>

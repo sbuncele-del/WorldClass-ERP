@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface Employee {
@@ -22,6 +23,7 @@ interface Employee {
 const EmployeesPage: React.FC = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
@@ -31,98 +33,15 @@ const EmployeesPage: React.FC = () => {
 
   const fetchEmployees = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const mockEmployees: Employee[] = [
-        {
-          id: 'EMP001',
-          employee_number: 'E2023-001',
-          first_name: 'Thabo',
-          last_name: 'Mkhize',
-          id_number: '8501155234081',
-          email: 'thabo.mkhize@company.co.za',
-          phone: '+27 82 345 6789',
-          department: 'Operations',
-          position: 'Operations Manager',
-          status: 'ACTIVE',
-          employment_type: 'PERMANENT',
-          hire_date: '2023-03-15',
-          basic_salary: 45000,
-          leave_balance: 12,
-          manager: 'Sarah van der Merwe'
-        },
-        {
-          id: 'EMP002',
-          employee_number: 'E2024-015',
-          first_name: 'Nomvula',
-          last_name: 'Dlamini',
-          id_number: '9208123456089',
-          email: 'nomvula.dlamini@company.co.za',
-          phone: '+27 71 234 5678',
-          department: 'Sales & Marketing',
-          position: 'Sales Executive',
-          status: 'ACTIVE',
-          employment_type: 'PERMANENT',
-          hire_date: '2024-02-01',
-          basic_salary: 32000,
-          leave_balance: 15,
-          manager: 'Johan Botha'
-        },
-        {
-          id: 'EMP003',
-          employee_number: 'E2024-022',
-          first_name: 'Pieter',
-          last_name: 'Kruger',
-          id_number: '9505208765432',
-          email: 'pieter.kruger@company.co.za',
-          phone: '+27 83 456 7890',
-          department: 'IT & Development',
-          position: 'Senior Developer',
-          status: 'PROBATION',
-          employment_type: 'PERMANENT',
-          hire_date: '2024-09-01',
-          basic_salary: 55000,
-          leave_balance: 2,
-          manager: 'Sarah van der Merwe'
-        },
-        {
-          id: 'EMP004',
-          employee_number: 'C2024-008',
-          first_name: 'Zanele',
-          last_name: 'Nkosi',
-          id_number: '9712156789012',
-          email: 'zanele.nkosi@company.co.za',
-          phone: '+27 76 789 0123',
-          department: 'Finance',
-          position: 'Accountant',
-          status: 'ACTIVE',
-          employment_type: 'CONTRACT',
-          hire_date: '2024-01-10',
-          basic_salary: 38000,
-          leave_balance: 8,
-          manager: 'Thabo Mkhize'
-        },
-        {
-          id: 'EMP005',
-          employee_number: 'E2023-045',
-          first_name: 'Johan',
-          last_name: 'Botha',
-          id_number: '8709127890123',
-          email: 'johan.botha@company.co.za',
-          phone: '+27 84 567 8901',
-          department: 'Sales & Marketing',
-          position: 'Sales Director',
-          status: 'NOTICE',
-          employment_type: 'PERMANENT',
-          hire_date: '2023-06-20',
-          basic_salary: 62000,
-          leave_balance: 5,
-          manager: 'CEO'
-        }
-      ];
-
-      setEmployees(mockEmployees);
-    } catch (err) {
+      const response = await apiClient.get('/api/hr/employees');
+      const data = response.data?.data || response.data || [];
+      setEmployees(Array.isArray(data) ? data : []);
+    } catch (err: any) {
       console.error('Error fetching employees:', err);
+      setError(err.response?.data?.message || 'Failed to load employees');
+      setEmployees([]);
     } finally {
       setLoading(false);
     }
@@ -171,6 +90,19 @@ const EmployeesPage: React.FC = () => {
         <div className="loading-spinner">
           <div className="spinner"></div>
           <p>Loading employees...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="dashboard-container">
+        <div className="content-card">
+          <div className="error-state" style={{ padding: '2rem', textAlign: 'center' }}>
+            <p style={{ color: '#e74c3c', marginBottom: '1rem' }}>⚠️ {error}</p>
+            <button className="btn-primary" onClick={fetchEmployees}>Retry</button>
+          </div>
         </div>
       </div>
     );

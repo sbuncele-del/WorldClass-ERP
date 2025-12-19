@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../../services/api.service';
 import '../styles/JournalEntriesList.css';
 
 interface JournalEntry {
@@ -32,7 +33,7 @@ const JournalEntriesList: React.FC = () => {
         params.append('status', filter);
       }
       
-      const response = await fetch(`http://localhost:3000/api/financial/journal-entries?${params}`);
+      const response = await fetch(`${API_BASE_URL}/api/financial/journal-entries?${params}`);
       const data = await response.json();
       
       if (data.success) {
@@ -51,7 +52,7 @@ const JournalEntriesList: React.FC = () => {
     }
     
     try {
-      const response = await fetch(`http://localhost:3000/api/financial/journal-entries/${id}/post`, {
+      const response = await fetch(`${API_BASE_URL}/api/financial/journal-entries/${id}/post`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: 'current-user' }),

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 const TripDetails: React.FC = () => {
@@ -8,28 +9,66 @@ const TripDetails: React.FC = () => {
   const { tripId } = useParams();
   
   const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [trip, setTrip] = useState({
-    trip_id: tripId || 'TRP-2025-00125',
-    customer: 'Massmart',
-    origin: 'JHB Distribution Center',
-    destination: 'Cape Town DC',
-    driver: 'John Mthembu',
-    vehicle_reg: 'ABC 123 GP',
-    vehicle_id: 'TRK-001',
-    status: 'In Transit',
+    trip_id: tripId || '',
+    customer: '',
+    origin: '',
+    destination: '',
+    driver: '',
+    vehicle_reg: '',
+    vehicle_id: '',
+    status: 'Planned',
     pod_status: 'Pending',
-    pickup_date: '2025-11-11T08:00',
-    delivery_date: '2025-11-11T18:00',
-    cargo_description: 'Palletized groceries - ambient goods',
-    cargo_weight: 15000,
-    current_location: 'N1 North, approaching Bloemfontein',
-    distance_covered: 456,
-    distance_total: 1398,
-    eta: '2025-11-11 18:00',
-    special_instructions: 'Contact receiver 30 min before arrival. Gate code: 4521',
-    created_at: '2025-11-10T14:30',
-    updated_at: '2025-11-11T10:15'
+    pickup_date: '',
+    delivery_date: '',
+    cargo_description: '',
+    cargo_weight: 0,
+    current_location: '',
+    distance_covered: 0,
+    distance_total: 0,
+    eta: '',
+    special_instructions: '',
+    created_at: '',
+    updated_at: ''
   });
+
+  useEffect(() => {
+    const fetchTrip = async () => {
+      try {
+        const response = await apiClient.get(`/api/logistics/trips/${tripId}`);
+        const data = response.data.trip || response.data;
+        setTrip({
+          trip_id: data.trip_id || data.id || tripId,
+          customer: data.customer || data.customer_name || '',
+          origin: data.origin || '',
+          destination: data.destination || '',
+          driver: data.driver || data.driver_name || '',
+          vehicle_reg: data.vehicle_reg || data.registration || '',
+          vehicle_id: data.vehicle_id || '',
+          status: data.status || 'Planned',
+          pod_status: data.pod_status || 'Pending',
+          pickup_date: data.pickup_date || '',
+          delivery_date: data.delivery_date || '',
+          cargo_description: data.cargo_description || data.description || '',
+          cargo_weight: data.cargo_weight || data.weight || 0,
+          current_location: data.current_location || '',
+          distance_covered: data.distance_covered || 0,
+          distance_total: data.distance_total || 0,
+          eta: data.eta || '',
+          special_instructions: data.special_instructions || '',
+          created_at: data.created_at || '',
+          updated_at: data.updated_at || ''
+        });
+      } catch (error) {
+        console.error('Failed to fetch trip:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (tripId) fetchTrip();
+    else setLoading(false);
+  }, [tripId]);
 
   const tabs = [
     { id: 'command', label: '🎯 Command Center', path: '/logistics/dashboard' },

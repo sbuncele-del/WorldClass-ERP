@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../../services/api.service';
 import './ReportLibrary.css';
 
 interface ReportTemplate {
@@ -40,7 +41,7 @@ const ReportLibrary: React.FC = () => {
 
   const fetchReports = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/financial/custom-reports/templates');
+      const response = await fetch(`${API_BASE_URL}/api/financial/custom-reports/templates`);
       const data = await response.json();
       setReports(data);
       setFilteredReports(data);
@@ -53,7 +54,7 @@ const ReportLibrary: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/financial/custom-reports/categories');
+      const response = await fetch(`${API_BASE_URL}/api/financial/custom-reports/categories`);
       const data = await response.json();
       setCategories(data);
     } catch (error) {
@@ -98,7 +99,7 @@ const ReportLibrary: React.FC = () => {
 
   const cloneReport = async (reportId: number, reportName: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/financial/custom-reports/templates/${reportId}/clone`, {
+      const response = await fetch(`${API_BASE_URL}/api/financial/custom-reports/templates/${reportId}/clone`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -125,7 +126,7 @@ const ReportLibrary: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/api/financial/custom-reports/templates/${reportId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/financial/custom-reports/templates/${reportId}`, {
         method: 'DELETE'
       });
 
@@ -143,7 +144,7 @@ const ReportLibrary: React.FC = () => {
 
   const toggleFavorite = async (reportId: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/financial/custom-reports/templates/${reportId}/favorite`, {
+      const response = await fetch(`${API_BASE_URL}/api/financial/custom-reports/templates/${reportId}/favorite`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: 1 })

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './ProductsManager.css';
 
 interface Product {
@@ -45,7 +46,7 @@ const ProductsManager: React.FC = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const url = `http://localhost:3000/api/financial/dimensions/products${showInactive ? '?include_inactive=true' : ''}`;
+      const url = `${API_BASE_URL}/api/financial/dimensions/products${showInactive ? '?include_inactive=true' : ''}`;
       const response = await fetch(url);
       const result = await response.json();
       
@@ -107,8 +108,8 @@ const ProductsManager: React.FC = () => {
 
     try {
       const url = editingProduct
-        ? `http://localhost:3000/api/financial/dimensions/products/${editingProduct.id}`
-        : 'http://localhost:3000/api/financial/dimensions/products';
+        ? `${API_BASE_URL}/api/financial/dimensions/products/${editingProduct.id}`
+        : `${API_BASE_URL}/api/financial/dimensions/products`;
       
       const response = await fetch(url, {
         method: editingProduct ? 'PUT' : 'POST',
@@ -131,7 +132,7 @@ const ProductsManager: React.FC = () => {
 
   const handleToggleActive = async (product: Product) => {
     try {
-      const url = `http://localhost:3000/api/financial/dimensions/products/${product.id}/${
+      const url = `${API_BASE_URL}/api/financial/dimensions/products/${product.id}/${
         product.is_active ? 'deactivate' : 'activate'
       }`;
       

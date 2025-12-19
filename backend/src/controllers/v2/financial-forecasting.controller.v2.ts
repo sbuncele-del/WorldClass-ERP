@@ -670,7 +670,7 @@ export async function getBudgetVsActual(req: TenantRequest, res: Response): Prom
             ELSE -jel.credit_amount 
           END)
           FROM journal_entry_lines jel
-          JOIN journal_entries je ON jel.journal_entry_id = je.id
+          JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           WHERE jel.account_code = bl.account_code
             AND je.tenant_id = $3
             AND je.status = 'POSTED'
@@ -832,7 +832,7 @@ export async function generateForecast(req: TenantRequest, res: Response): Promi
           ELSE -jel.credit_amount 
         END) as amount
       FROM journal_entry_lines jel
-      JOIN journal_entries je ON jel.journal_entry_id = je.id
+      JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       WHERE jel.account_code = $1
         AND je.tenant_id = $2
         AND je.status = 'POSTED'

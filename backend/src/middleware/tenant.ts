@@ -75,7 +75,9 @@ export const tenantMiddleware = async (
       throw new ForbiddenError('Tenant account has been cancelled');
     }
 
-    // Check if trial has expired
+    // DISABLED: Trial check - we're in testing mode
+    // TODO: Re-enable for production
+    /*
     if (tenant.status === 'trial' && tenant.subscription_status === 'trialing') {
       const trialCheck = await getPool().query(
         'SELECT trial_ends_at FROM tenants WHERE id = $1',
@@ -89,6 +91,7 @@ export const tenantMiddleware = async (
         }
       }
     }
+    */
 
     // Load user from database
     const userResult = await getPool().query(

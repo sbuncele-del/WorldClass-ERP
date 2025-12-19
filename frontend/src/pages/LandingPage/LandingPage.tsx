@@ -236,20 +236,20 @@ const Navigation: React.FC<{ isDark: boolean; toggleTheme: () => void }> = ({ is
           <div className="logo-icon">
             <Layers size={24} />
           </div>
-          <span className="logo-text">AetherOS</span>
+          <span className="logo-text">SiyaBusa</span>
         </div>
 
         <div className={`nav-links ${mobileMenuOpen ? 'open' : ''}`}>
           <a href="#features">Features</a>
           <a href="#modules">Modules</a>
-          <a href="#comparison">Why AetherOS</a>
+          <a href="#comparison">Why SiyaBusa</a>
           <a href="#industries">Industries</a>
           <a href="#pricing">Pricing</a>
         </div>
 
         <div className="nav-actions">
-          <button className="theme-toggle" onClick={toggleTheme}>
-            {isDark ? <Sun size={18} /> : <Moon size={18} />}
+          <button className="theme-toggle" onClick={toggleTheme} title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+            {isDark ? <Sun size={20} /> : <Moon size={20} />}
           </button>
           <button className="btn-driver" onClick={() => navigate('/driver')} title="Driver Mobile App">
             🚚 Driver App
@@ -382,7 +382,7 @@ const ValueProposition: React.FC = () => {
           whileInView="visible"
           viewport={{ once: true }}
         >
-          <span className="section-badge">Why AetherOS</span>
+          <span className="section-badge">Why SiyaBusa</span>
           <h2>Where Business Operations Meet Accounting Compliance</h2>
           <p>Real-time translation between business metrics and accounting standards</p>
         </motion.div>
@@ -944,7 +944,7 @@ const IndustrySolutions: React.FC = () => {
         >
           <span className="section-badge">Industry Solutions</span>
           <h2>Built for Your Industry. Compliant by Default.</h2>
-          <p className="section-subhead">Every industry has unique operational challenges and regulatory requirements. AetherOS adapts to your world — not the other way around.</p>
+          <p className="section-subhead">Every industry has unique operational challenges and regulatory requirements. SiyaBusa adapts to your world — not the other way around.</p>
         </motion.div>
 
         <motion.div
@@ -995,7 +995,7 @@ const IndustrySolutions: React.FC = () => {
                         </ul>
                       </div>
                       <div className="industry-column">
-                        <h4><Check size={16} /> AetherOS Solutions</h4>
+                        <h4><Check size={16} /> SiyaBusa Solutions</h4>
                         <ul>
                           {ind.solutions.map((s, j) => (
                             <li key={j}><Check size={14} className="solution-icon" /> {s}</li>
@@ -1066,7 +1066,7 @@ const ComparisonTable: React.FC = () => {
           viewport={{ once: true }}
         >
           <span className="section-badge">The Clear Choice</span>
-          <h2>Why Leaders Choose AetherOS</h2>
+          <h2>Why Leaders Choose SiyaBusa</h2>
           <p>See how we compare to legacy solutions</p>
         </motion.div>
 
@@ -1084,7 +1084,7 @@ const ComparisonTable: React.FC = () => {
                 <th className="highlight">
                   <div className="th-content">
                     <Layers size={20} />
-                    AetherOS
+                    SiyaBusa
                   </div>
                 </th>
                 <th>Traditional ERPs</th>
@@ -1237,7 +1237,7 @@ const AIDemo: React.FC = () => {
               <Cpu size={20} />
             </div>
             <div>
-              <h4>AetherOS AI Assistant</h4>
+              <h4>SiyaBusa AI Assistant</h4>
               <span className="online-status">
                 <span className="status-dot"></span>
                 Always online
@@ -1257,7 +1257,7 @@ const AIDemo: React.FC = () => {
                 {msg.role === 'ai' && (
                   <div className="message-header">
                     <Sparkles size={14} />
-                    <span>AetherOS AI</span>
+                    <span>SiyaBusa AI</span>
                   </div>
                 )}
                 <pre>{msg.content}</pre>
@@ -1311,7 +1311,7 @@ const AIDemo: React.FC = () => {
 const SocialProof: React.FC = () => {
   const testimonials: Testimonial[] = [
     {
-      quote: "AetherOS transformed our operations. What used to take our accounting team 3 days now happens automatically.",
+      quote: "SiyaBusa transformed our operations. What used to take our accounting team 3 days now happens automatically.",
       author: "Sarah M.",
       role: "CFO",
       company: "Leading Logistics Company",
@@ -1443,7 +1443,7 @@ const ROICalculator: React.FC = () => {
         >
           <span className="section-badge">Calculate Your ROI</span>
           <h2>Your Investment, Quantified</h2>
-          <p>See exactly how much time and money AetherOS can save your business</p>
+          <p>See exactly how much time and money SiyaBusa can save your business</p>
         </motion.div>
 
         <motion.div
@@ -1563,7 +1563,7 @@ const DemoForm: React.FC = () => {
             viewport={{ once: true }}
           >
             <h2>Schedule Your Personalized Demo</h2>
-            <p>See how AetherOS can transform your business operations and accounting compliance.</p>
+            <p>See how SiyaBusa can transform your business operations and accounting compliance.</p>
             
             <ul className="demo-benefits">
               <li><Check size={18} /> 30-minute personalized walkthrough</li>
@@ -1677,14 +1677,14 @@ const Footer: React.FC = () => {
           <div className="footer-brand">
             <div className="logo">
               <Layers size={28} />
-              <span>AetherOS</span>
+              <span>SiyaBusa</span>
             </div>
             <p>The AI-native business operating system that bridges operations and accounting compliance.</p>
             <p className="footer-company">A product of Masaphokati Technologies (Pty) Ltd</p>
             <div className="social-links">
-              <a href="https://twitter.com/aetheros_io" target="_blank" rel="noopener noreferrer" aria-label="Twitter">𝕏</a>
-              <a href="https://linkedin.com/company/aetheros" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">in</a>
-              <a href="https://youtube.com/@aetheros" target="_blank" rel="noopener noreferrer" aria-label="YouTube">▶</a>
+              <a href="https://twitter.com/siyabusa_erp" target="_blank" rel="noopener noreferrer" aria-label="Twitter">𝕏</a>
+              <a href="https://linkedin.com/company/siyabusa" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">in</a>
+              <a href="https://youtube.com/@siyabusa" target="_blank" rel="noopener noreferrer" aria-label="YouTube">▶</a>
             </div>
           </div>
 
@@ -1723,7 +1723,7 @@ const Footer: React.FC = () => {
         </div>
 
         <div className="footer-bottom">
-          <p>© {new Date().getFullYear()} AetherOS by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
           <div className="footer-legal">
             <Link to="/privacy">Privacy Policy</Link>
             <Link to="/terms">Terms of Service</Link>
@@ -1738,6 +1738,7 @@ const Footer: React.FC = () => {
 // Main Landing Page Component
 const LandingPage: React.FC = () => {
   const [isDark, setIsDark] = useState(false);
+  const [isPremium, setIsPremium] = useState(true);
 
   useEffect(() => {
     // Check system preference

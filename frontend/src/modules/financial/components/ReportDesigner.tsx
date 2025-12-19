@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './ReportDesigner.css';
 
 interface Column {
@@ -66,7 +67,7 @@ const ReportDesigner: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/financial/custom-reports/categories');
+      const response = await fetch(`${API_BASE_URL}/api/financial/custom-reports/categories`);
       const data = await response.json();
       setCategories(data);
     } catch (error) {
@@ -211,7 +212,7 @@ const ReportDesigner: React.FC = () => {
 
   const saveTemplate = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/financial/custom-reports/templates', {
+      const response = await fetch(`${API_BASE_URL}/api/financial/custom-reports/templates`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(template)

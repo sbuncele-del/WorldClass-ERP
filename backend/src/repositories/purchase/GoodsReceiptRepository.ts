@@ -7,9 +7,9 @@ import { BaseRepository, TenantContext } from '../BaseRepository';
 export type GoodsReceiptStatus = 'draft' | 'confirmed' | 'cancelled';
 
 export interface GoodsReceiptLine {
-  id: string;
-  goods_receipt_id: string;
-  order_line_id?: string;
+  line_id: number;
+  gr_id: number;
+  po_line_id?: number;
   item_code?: string;
   description?: string;
   quantity_ordered?: number;
@@ -22,25 +22,25 @@ export interface GoodsReceiptLine {
 }
 
 export interface GoodsReceipt {
-  id: string;
+  gr_id: number;
   tenant_id: string;
   gr_number: string;
   gr_date: Date;
-  order_id?: string;
-  supplier_id?: string;
+  po_id?: number;
+  supplier_id?: number;
   delivery_note_number?: string;
-  received_by?: string;
+  received_by?: number;
   status: GoodsReceiptStatus;
   total_quantity: number;
-  warehouse_id?: string;
+  warehouse_id?: number;
   notes?: string;
   confirmed?: boolean;
-  confirmed_by?: string;
+  confirmed_by?: number;
   confirmed_date?: Date;
   created_at: Date;
-  created_by?: string;
+  created_by?: number;
   updated_at?: Date;
-  updated_by?: string;
+  updated_by?: number;
   deleted_at?: Date;
   lines?: GoodsReceiptLine[];
 }
@@ -48,15 +48,18 @@ export interface GoodsReceipt {
 export class GoodsReceiptRepository extends BaseRepository<GoodsReceipt> {
   protected tableName = 'goods_receipts';
   protected schema = 'purchase';
-  protected primaryKey = 'id';
+  protected primaryKey = 'gr_id';
+  protected softDelete = false;
 
   async getWithLines(ctx: TenantContext, grId: string): Promise<GoodsReceipt | null> {
     const receipt = await this.findById(ctx, grId);
     if (!receipt) return null;
 
     const linesSql = `
-      SELECT * FROM purchase.goods_receipt_lines
-      WHERE tenant_id = $1 AND goods_receipt_id = $2
+      SELECT line_id, gr_id, po_line_id, line_number, item_code, description, quantity_ordered,
+             quantity_received, unit_of_measure, notes
+      FROM purchase.gr_line_items
+      WHERE tenant_id = $1 AND gr_id = $2
       ORDER BY line_number
     `;
     const lines = await this.rawQuery<GoodsReceiptLine>(ctx, linesSql, [grId]);
@@ -82,14 +85,14 @@ export class GoodsReceiptRepository extends BaseRepository<GoodsReceipt> {
 
       const grResult = await client.query<GoodsReceipt>(`
         INSERT INTO ${this.fullTableName}
-        (tenant_id, gr_number, gr_date, order_id, supplier_id, delivery_note_number, received_by, status, total_quantity, warehouse_id, notes, created_by)
+        (tenant_id, gr_number, gr_date, po_id, supplier_id, delivery_note_number, received_by, status, total_quantity, warehouse_id, notes, created_by)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
         RETURNING *
       `, [
         ctx.tenantId,
         grNumber,
         data.gr_date || new Date(),
-        data.order_id,
+        data.po_id,
         data.supplier_id,
         data.delivery_note_number,
         data.received_by,
@@ -105,20 +108,18 @@ export class GoodsReceiptRepository extends BaseRepository<GoodsReceipt> {
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         await client.query(`
-          INSERT INTO purchase.goods_receipt_lines
-          (tenant_id, goods_receipt_id, line_number, order_line_id, item_code, description, quantity_ordered, quantity_received, quantity_rejected, rejection_reason, unit_of_measure, notes)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+          INSERT INTO purchase.gr_line_items
+          (tenant_id, gr_id, line_number, po_line_id, item_code, description, quantity_ordered, quantity_received, unit_of_measure, notes)
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
         `, [
           ctx.tenantId,
-          receipt.id,
+          receipt.gr_id,
           i + 1,
-          line.order_line_id,
+          line.po_line_id,
           line.item_code,
           line.description,
           line.quantity_ordered || 0,
           line.quantity_received || 0,
-          line.quantity_rejected || 0,
-          line.rejection_reason,
           line.unit_of_measure || 'EA',
           line.notes
         ]);

@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import authService from '../services/auth.service';
+import { apiPost } from '../services/api.service';
 import './Login.css';
 
 const ForgotPassword = () => {
@@ -37,24 +37,12 @@ const ForgotPassword = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/password/reset-request', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setIsSuccess(true);
-      } else {
-        setError(data.message || 'Failed to send reset email. Please try again.');
-      }
+      await apiPost('/api/v2/auth/password/reset-request', { email });
+      setIsSuccess(true);
     } catch (err: unknown) {
       console.error('Password reset request error:', err);
-      setError('Failed to send reset email. Please try again.');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send reset email. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -1,128 +1,43 @@
+/**
+ * Audit Ready Routes (V2, tenant-aware)
+ * Delegates to tenant-hardened V2 controller.
+ */
 import express from 'express';
-import AuditReadyController from '../controllers/audit-ready.controller';
-import * as auditWorkspaceController from '../modules/audit/controllers/audit.workspace.controller';
 import { authenticateToken } from '../middleware/auth';
 import { tenantMiddleware } from '../middleware/tenant';
+import * as AuditReadyControllerV2 from '../controllers/audit-ready.controller.v2';
+import * as auditWorkspaceController from '../modules/audit/controllers/audit.workspace.controller';
 
 const router = express.Router();
 
-// Apply tenant middleware to all audit routes
+// All routes require authentication and tenant context
+router.use(authenticateToken);
 router.use(tenantMiddleware);
 
-// ============================================================================
-// WORKSPACE
-// ============================================================================
-router.get('/workspace', authenticateToken, auditWorkspaceController.getAuditWorkspace);
+// Workspace
+router.get('/workspace', auditWorkspaceController.getAuditWorkspace);
 
-// ============================================================================
-// AUDIT ENGAGEMENTS
-// ============================================================================
+// Audit Engagements
+router.get('/engagements', AuditReadyControllerV2.getEngagements);
+router.get('/engagements/:id', AuditReadyControllerV2.getEngagementById);
+router.post('/engagements', AuditReadyControllerV2.createEngagement);
+router.put('/engagements/:id/status', AuditReadyControllerV2.updateEngagementStatus);
 
-/**
- * @route   GET /api/audit/engagements
- * @desc    Get audit engagements
- * @access  Private
- */
-router.get('/engagements', authenticateToken, AuditReadyController.getEngagements);
+// Audit Findings
+router.get('/findings', AuditReadyControllerV2.getFindings);
+router.post('/findings', AuditReadyControllerV2.createFinding);
+router.put('/findings/:id', AuditReadyControllerV2.updateFinding);
 
-/**
- * @route   GET /api/audit/engagements/:id
- * @desc    Get engagement by ID
- * @access  Private
- */
-router.get('/engagements/:id', authenticateToken, AuditReadyController.getEngagementById);
+// Audit Evidence
+router.get('/evidence', AuditReadyControllerV2.getEvidence);
+router.post('/evidence', AuditReadyControllerV2.addEvidence);
 
-/**
- * @route   POST /api/audit/engagements
- * @desc    Create new audit engagement
- * @access  Private
- */
-router.post('/engagements', authenticateToken, AuditReadyController.createEngagement);
+// Checklists
+router.get('/checklist-templates', AuditReadyControllerV2.getChecklistTemplates);
+router.get('/checklist-items/:templateId', AuditReadyControllerV2.getChecklistItems);
 
-/**
- * @route   PUT /api/audit/engagements/:id/status
- * @desc    Update engagement status
- * @access  Private
- */
-router.put('/engagements/:id/status', authenticateToken, AuditReadyController.updateEngagementStatus);
-
-// ============================================================================
-// AUDIT FINDINGS
-// ============================================================================
-
-/**
- * @route   GET /api/audit/findings
- * @desc    Get audit findings
- * @access  Private
- */
-router.get('/findings', authenticateToken, AuditReadyController.getFindings);
-
-/**
- * @route   POST /api/audit/findings
- * @desc    Create new audit finding
- * @access  Private
- */
-router.post('/findings', authenticateToken, AuditReadyController.createFinding);
-
-/**
- * @route   PUT /api/audit/findings/:id
- * @desc    Update audit finding
- * @access  Private
- */
-router.put('/findings/:id', authenticateToken, AuditReadyController.updateFinding);
-
-// ============================================================================
-// AUDIT EVIDENCE
-// ============================================================================
-
-/**
- * @route   GET /api/audit/evidence
- * @desc    Get audit evidence
- * @access  Private
- */
-router.get('/evidence', authenticateToken, AuditReadyController.getEvidence);
-
-/**
- * @route   POST /api/audit/evidence
- * @desc    Add audit evidence
- * @access  Private
- */
-router.post('/evidence', authenticateToken, AuditReadyController.addEvidence);
-
-// ============================================================================
-// CHECKLISTS
-// ============================================================================
-
-/**
- * @route   GET /api/audit/checklist-templates
- * @desc    Get checklist templates
- * @access  Private
- */
-router.get('/checklist-templates', authenticateToken, AuditReadyController.getChecklistTemplates);
-
-/**
- * @route   GET /api/audit/checklist-items/:templateId
- * @desc    Get checklist items for template
- * @access  Private
- */
-router.get('/checklist-items/:templateId', authenticateToken, AuditReadyController.getChecklistItems);
-
-// ============================================================================
-// PERMANENT RECORDS
-// ============================================================================
-
-/**
- * @route   GET /api/audit/permanent-records
- * @desc    Get permanent records
- * @access  Private
- */
-router.get('/permanent-records', authenticateToken, AuditReadyController.getPermanentRecords);
-
-/**
- * @route   POST /api/audit/permanent-records
- * @desc    Add permanent record
- * @access  Private
- */
-router.post('/permanent-records', authenticateToken, AuditReadyController.addPermanentRecord);
+// Permanent Records
+router.get('/permanent-records', AuditReadyControllerV2.getPermanentRecords);
+router.post('/permanent-records', AuditReadyControllerV2.addPermanentRecord);
 
 export default router;

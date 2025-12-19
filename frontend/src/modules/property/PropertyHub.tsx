@@ -14,7 +14,7 @@
  * - Financial Integration (IFRS 16 Leases)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
   Input, Select, DatePicker, Modal, Form, Typography, Avatar,
@@ -35,6 +35,7 @@ import {
   WalletOutlined, MailOutlined, PhoneOutlined, CalculatorOutlined
 } from '@ant-design/icons';
 import { HubLayout, HubHeader, StatusBanner, HubTabs } from '../../components/hub';
+import apiClient from '../../services/api';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -149,48 +150,7 @@ interface Invoice {
   dueDate: string;
 }
 
-// Sample Data
-const sampleProperties: Property[] = [
-  { id: 'PROP-001', name: 'Sandton Square Apartments', code: 'SSA', type: 'residential', address: '123 Sandton Drive', suburb: 'Sandton', city: 'Johannesburg', province: 'Gauteng', erfNumber: 'ERF 12345', totalUnits: 48, occupiedUnits: 45, monthlyRental: 850000, marketValue: 85000000, lastValuation: '2024-01-15', manager: 'John van der Berg', imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop', images: ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800', 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800'] },
-  { id: 'PROP-002', name: 'Midrand Business Park', code: 'MBP', type: 'commercial', address: '456 Old Pretoria Road', suburb: 'Midrand', city: 'Johannesburg', province: 'Gauteng', erfNumber: 'ERF 67890', totalUnits: 24, occupiedUnits: 20, monthlyRental: 480000, marketValue: 65000000, lastValuation: '2024-03-01', manager: 'Sarah Mokoena', imageUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400&h=300&fit=crop', images: ['https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=800'] },
-  { id: 'PROP-003', name: 'Cape Quarter Mall', code: 'CQM', type: 'retail', address: '27 Somerset Road', suburb: 'Green Point', city: 'Cape Town', province: 'Western Cape', erfNumber: 'ERF 34567', totalUnits: 35, occupiedUnits: 32, monthlyRental: 1250000, marketValue: 180000000, lastValuation: '2023-11-20', imageUrl: 'https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=400&h=300&fit=crop', images: ['https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=800'] },
-  { id: 'PROP-004', name: 'Centurion Industrial Park', code: 'CIP', type: 'industrial', address: '89 Industrial Avenue', suburb: 'Centurion', city: 'Pretoria', province: 'Gauteng', erfNumber: 'ERF 78901', totalUnits: 12, occupiedUnits: 10, monthlyRental: 620000, marketValue: 95000000, lastValuation: '2024-02-10', manager: 'David Nkosi', imageUrl: 'https://images.unsplash.com/photo-1565793298595-6a879b1d9492?w=400&h=300&fit=crop', images: ['https://images.unsplash.com/photo-1565793298595-6a879b1d9492?w=800'] }
-];
 
-const sampleUnits: Unit[] = [
-  { id: 'UNIT-001', propertyId: 'PROP-001', unitNumber: 'A101', type: 'apartment', size: 85, bedrooms: 2, bathrooms: 2, monthlyRental: 18500, deposit: 37000, status: 'occupied', currentTenant: 'T-001', leaseEnd: '2025-03-31' },
-  { id: 'UNIT-002', propertyId: 'PROP-001', unitNumber: 'A102', type: 'apartment', size: 65, bedrooms: 1, bathrooms: 1, monthlyRental: 14500, deposit: 29000, status: 'occupied', currentTenant: 'T-002', leaseEnd: '2024-12-31' },
-  { id: 'UNIT-003', propertyId: 'PROP-001', unitNumber: 'A103', type: 'apartment', size: 95, bedrooms: 3, bathrooms: 2, monthlyRental: 22000, deposit: 44000, status: 'vacant' },
-  { id: 'UNIT-004', propertyId: 'PROP-002', unitNumber: 'B01', type: 'office', size: 250, monthlyRental: 45000, deposit: 90000, status: 'occupied', currentTenant: 'T-003', leaseEnd: '2026-06-30' },
-  { id: 'UNIT-005', propertyId: 'PROP-003', unitNumber: 'GF-01', type: 'retail', size: 150, monthlyRental: 65000, deposit: 130000, status: 'occupied', currentTenant: 'T-004', leaseEnd: '2027-02-28' }
-];
-
-const sampleTenants: Tenant[] = [
-  { id: 'T-001', name: 'Michael Smith', idNumber: '8501015800089', type: 'individual', email: 'michael@email.com', cellphone: '0821234567', unit: 'A101', property: 'Sandton Square Apartments', leaseStart: '2023-04-01', leaseEnd: '2025-03-31', monthlyRental: 18500, deposit: 37000, depositHeld: 37000, balance: 0, status: 'active' },
-  { id: 'T-002', name: 'Lisa Johnson', idNumber: '9003150800087', type: 'individual', email: 'lisa@email.com', cellphone: '0839876543', unit: 'A102', property: 'Sandton Square Apartments', leaseStart: '2024-01-01', leaseEnd: '2024-12-31', monthlyRental: 14500, deposit: 29000, depositHeld: 29000, balance: 14500, status: 'in-arrears' },
-  { id: 'T-003', name: 'Tech Solutions (Pty) Ltd', type: 'company', companyReg: '2018/123456/07', email: 'accounts@techsolutions.co.za', cellphone: '0114567890', unit: 'B01', property: 'Midrand Business Park', leaseStart: '2024-07-01', leaseEnd: '2026-06-30', monthlyRental: 45000, deposit: 90000, depositHeld: 90000, balance: 0, status: 'active' },
-  { id: 'T-004', name: 'Fashion Retail Group', type: 'company', companyReg: '2015/789012/07', email: 'accounts@fashionretail.co.za', cellphone: '0216789012', unit: 'GF-01', property: 'Cape Quarter Mall', leaseStart: '2022-03-01', leaseEnd: '2027-02-28', monthlyRental: 65000, deposit: 130000, depositHeld: 130000, balance: -5500, status: 'active' }
-];
-
-const sampleLeases: Lease[] = [
-  { id: 'LEASE-001', leaseNumber: 'LSE-2023-0001', tenant: 'Michael Smith', unit: 'A101', property: 'Sandton Square Apartments', type: 'residential', startDate: '2023-04-01', endDate: '2025-03-31', monthlyRental: 18500, escalation: 8, escalationDate: '2024-04-01', deposit: 37000, status: 'active' },
-  { id: 'LEASE-002', leaseNumber: 'LSE-2024-0001', tenant: 'Lisa Johnson', unit: 'A102', property: 'Sandton Square Apartments', type: 'residential', startDate: '2024-01-01', endDate: '2024-12-31', monthlyRental: 14500, escalation: 7, escalationDate: '2025-01-01', deposit: 29000, status: 'active' },
-  { id: 'LEASE-003', leaseNumber: 'LSE-2024-0002', tenant: 'Tech Solutions (Pty) Ltd', unit: 'B01', property: 'Midrand Business Park', type: 'commercial', startDate: '2024-07-01', endDate: '2026-06-30', monthlyRental: 45000, escalation: 6, escalationDate: '2025-07-01', deposit: 90000, status: 'active', ifrs16ROU: 1080000, ifrs16Liability: 1050000 },
-  { id: 'LEASE-004', leaseNumber: 'LSE-2022-0001', tenant: 'Fashion Retail Group', unit: 'GF-01', property: 'Cape Quarter Mall', type: 'commercial', startDate: '2022-03-01', endDate: '2027-02-28', monthlyRental: 65000, escalation: 8, escalationDate: '2023-03-01', deposit: 130000, status: 'active', ifrs16ROU: 3900000, ifrs16Liability: 3650000 }
-];
-
-const sampleMaintenance: MaintenanceRequest[] = [
-  { id: 'MNT-001', ticketNo: 'TKT-2024-0001', property: 'Sandton Square Apartments', unit: 'A105', tenant: 'David Mokoena', category: 'plumbing', priority: 'high', description: 'Leaking geyser', status: 'in-progress', reportedDate: '2024-06-10', assignedTo: 'ABC Plumbers' },
-  { id: 'MNT-002', ticketNo: 'TKT-2024-0002', property: 'Midrand Business Park', unit: 'B03', tenant: 'XYZ Company', category: 'electrical', priority: 'medium', description: 'Faulty light switch', status: 'assigned', reportedDate: '2024-06-12', assignedTo: 'Quick Electric' },
-  { id: 'MNT-003', ticketNo: 'TKT-2024-0003', property: 'Cape Quarter Mall', unit: 'GF-05', tenant: 'Coffee Shop Co', category: 'hvac', priority: 'high', description: 'Air conditioning not working', status: 'open', reportedDate: '2024-06-13' },
-  { id: 'MNT-004', ticketNo: 'TKT-2024-0004', property: 'Sandton Square Apartments', unit: 'A201', tenant: 'Jane Smith', category: 'general', priority: 'low', description: 'Kitchen cabinet door loose', status: 'completed', reportedDate: '2024-06-05', assignedTo: 'Handy Man Services', completedDate: '2024-06-08', cost: 450 }
-];
-
-const sampleInvoices: Invoice[] = [
-  { id: 'INV-001', invoiceNo: 'INV-2024-06-001', tenant: 'Michael Smith', property: 'Sandton Square Apartments', unit: 'A101', month: 'June 2024', rental: 18500, utilities: 850, levies: 1200, otherCharges: 0, total: 20550, paid: 20550, balance: 0, status: 'paid', dueDate: '2024-06-01' },
-  { id: 'INV-002', invoiceNo: 'INV-2024-06-002', tenant: 'Lisa Johnson', property: 'Sandton Square Apartments', unit: 'A102', month: 'June 2024', rental: 14500, utilities: 680, levies: 950, otherCharges: 0, total: 16130, paid: 0, balance: 16130, status: 'overdue', dueDate: '2024-06-01' },
-  { id: 'INV-003', invoiceNo: 'INV-2024-06-003', tenant: 'Tech Solutions (Pty) Ltd', property: 'Midrand Business Park', unit: 'B01', month: 'June 2024', rental: 45000, utilities: 2500, levies: 0, otherCharges: 1500, total: 49000, paid: 49000, balance: 0, status: 'paid', dueDate: '2024-06-07' }
-];
 
 const PropertyHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -198,26 +158,59 @@ const PropertyHub: React.FC = () => {
   const [tenantModalVisible, setTenantModalVisible] = useState(false);
   const [leaseModalVisible, setLeaseModalVisible] = useState(false);
   const [maintenanceModalVisible, setMaintenanceModalVisible] = useState(false);
-  const [properties] = useState<Property[]>(sampleProperties);
-  const [units] = useState<Unit[]>(sampleUnits);
-  const [tenants] = useState<Tenant[]>(sampleTenants);
-  const [leases] = useState<Lease[]>(sampleLeases);
-  const [maintenance] = useState<MaintenanceRequest[]>(sampleMaintenance);
-  const [invoices] = useState<Invoice[]>(sampleInvoices);
+  const [loading, setLoading] = useState(true);
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [leases, setLeases] = useState<Lease[]>([]);
+  const [maintenance, setMaintenance] = useState<MaintenanceRequest[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [propertyStats, setPropertyStats] = useState({
+    totalProperties: 0,
+    totalUnits: 0,
+    occupiedUnits: 0,
+    occupancyRate: 0,
+    monthlyRental: 0,
+    portfolioValue: 0,
+    tenantsInArrears: 0,
+    arrearsAmount: 0,
+    openMaintenance: 0
+  });
   const [form] = Form.useForm();
 
-  // Calculate stats
-  const propertyStats = {
-    totalProperties: properties.length,
-    totalUnits: properties.reduce((sum, p) => sum + p.totalUnits, 0),
-    occupiedUnits: properties.reduce((sum, p) => sum + p.occupiedUnits, 0),
-    occupancyRate: Math.round((properties.reduce((sum, p) => sum + p.occupiedUnits, 0) / properties.reduce((sum, p) => sum + p.totalUnits, 0)) * 100),
-    monthlyRental: properties.reduce((sum, p) => sum + p.monthlyRental, 0),
-    portfolioValue: properties.reduce((sum, p) => sum + p.marketValue, 0),
-    tenantsInArrears: tenants.filter(t => t.balance > 0).length,
-    arrearsAmount: tenants.filter(t => t.balance > 0).reduce((sum, t) => sum + t.balance, 0),
-    openMaintenance: maintenance.filter(m => ['open', 'assigned', 'in-progress'].includes(m.status)).length
-  };
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, propertiesRes, leasesRes, tenantsRes] = await Promise.all([
+          apiClient.get('/api/property/stats').catch(() => ({ data: null })),
+          apiClient.get('/api/property/properties').catch(() => ({ data: [] })),
+          apiClient.get('/api/property/leases').catch(() => ({ data: [] })),
+          apiClient.get('/api/property/tenants').catch(() => ({ data: [] }))
+        ]);
+
+        if (statsRes.data) {
+          setPropertyStats(statsRes.data);
+        }
+        if (propertiesRes.data) {
+          setProperties(Array.isArray(propertiesRes.data) ? propertiesRes.data : propertiesRes.data.properties || []);
+        }
+        if (leasesRes.data) {
+          setLeases(Array.isArray(leasesRes.data) ? leasesRes.data : leasesRes.data.leases || []);
+        }
+        if (tenantsRes.data) {
+          setTenants(Array.isArray(tenantsRes.data) ? tenantsRes.data : tenantsRes.data.tenants || []);
+        }
+      } catch (error) {
+        console.error('Error fetching property data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
@@ -418,81 +411,15 @@ const PropertyHub: React.FC = () => {
           showIcon
           style={{ marginBottom: 16 }}
         />
-        <Table
-          size="small"
-          pagination={false}
-          dataSource={[
-            { id: 'DEV-001', name: 'Waterfall Business Park Phase 3', status: 'Under Construction', landCost: 45000000, constructionCost: 85000000, professionalFees: 8500000, financeCost: 6200000, totalWIP: 144700000, completionDate: '2025-06-30', progress: 35 },
-            { id: 'DEV-002', name: 'Sandton View Apartments', status: 'Planning', landCost: 32000000, constructionCost: 0, professionalFees: 3200000, financeCost: 1800000, totalWIP: 37000000, completionDate: '2026-03-31', progress: 5 },
-            { id: 'DEV-003', name: 'Century City Retail Extension', status: 'Foundation', landCost: 28000000, constructionCost: 15000000, professionalFees: 4300000, financeCost: 2100000, totalWIP: 49400000, completionDate: '2025-09-30', progress: 18 }
-          ]}
-          columns={[
-            {
-              title: 'Development Project',
-              key: 'project',
-              render: (_, record) => (
-                <div>
-                  <Text strong>{record.name}</Text>
-                  <br />
-                  <Space size="small">
-                    <Tag>{record.id}</Tag>
-                    <Tag color={record.status === 'Under Construction' ? 'blue' : record.status === 'Planning' ? 'orange' : 'green'}>
-                      {record.status}
-                    </Tag>
-                  </Space>
-                </div>
-              )
-            },
-            { title: 'Land Cost', dataIndex: 'landCost', key: 'landCost', render: (v: number) => <Text>R{(v/1000000).toFixed(1)}M</Text> },
-            { title: 'Construction', dataIndex: 'constructionCost', key: 'constructionCost', render: (v: number) => <Text>{v > 0 ? `R${(v/1000000).toFixed(1)}M` : '-'}</Text> },
-            { title: 'Prof. Fees', dataIndex: 'professionalFees', key: 'professionalFees', render: (v: number) => <Text>R{(v/1000000).toFixed(1)}M</Text> },
-            { title: 'Finance Cost', dataIndex: 'financeCost', key: 'financeCost', render: (v: number) => <Text>R{(v/1000000).toFixed(1)}M</Text> },
-            { title: 'Total WIP', dataIndex: 'totalWIP', key: 'totalWIP', render: (v: number) => <Text strong type="warning">R{(v/1000000).toFixed(1)}M</Text> },
-            { title: 'Progress', dataIndex: 'progress', key: 'progress', render: (v: number) => <Progress percent={v} size="small" style={{ width: 60 }} /> },
-            { title: 'Completion', dataIndex: 'completionDate', key: 'completionDate', render: (d: string) => <Tag icon={<CalendarOutlined />}>{d}</Tag> }
-          ]}
-          summary={() => (
-            <Table.Summary fixed>
-              <Table.Summary.Row style={{ background: '#fafafa' }}>
-                <Table.Summary.Cell index={0}><Text strong>TOTAL WIP</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={1}><Text strong>R105.0M</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={2}><Text strong>R100.0M</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={3}><Text strong>R16.0M</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={4}><Text strong>R10.1M</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={5}><Text strong type="warning">R231.1M</Text></Table.Summary.Cell>
-                <Table.Summary.Cell index={6} />
-                <Table.Summary.Cell index={7} />
-              </Table.Summary.Row>
-            </Table.Summary>
-          )}
-        />
-        <Divider />
-        <Row gutter={16}>
-          <Col span={6}>
-            <Card size="small">
-              <Statistic title="Total WIP Balance" value={231100000} prefix="R" formatter={(v) => `${(Number(v)/1000000).toFixed(1)}M`} />
-              <Text type="secondary">GL Account: 1350</Text>
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small">
-              <Statistic title="Capitalized Interest (YTD)" value={10100000} prefix="R" formatter={(v) => `${(Number(v)/1000000).toFixed(1)}M`} />
-              <Text type="secondary">IAS 23 Borrowing Costs</Text>
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small">
-              <Statistic title="Expected Value on Completion" value={425000000} prefix="R" formatter={(v) => `${(Number(v)/1000000).toFixed(0)}M`} />
-              <Text type="secondary">Fair Value (IAS 40)</Text>
-            </Card>
-          </Col>
-          <Col span={6}>
-            <Card size="small">
-              <Statistic title="Development Profit (Est.)" value={193900000} prefix="R" valueStyle={{ color: '#52c41a' }} formatter={(v) => `${(Number(v)/1000000).toFixed(0)}M`} />
-              <Text type="secondary">45.6% Margin</Text>
-            </Card>
-          </Col>
-        </Row>
+        <div style={{ textAlign: 'center', padding: '40px 0', color: '#999' }}>
+          <BuildOutlined style={{ fontSize: 48, marginBottom: 16 }} />
+          <br />
+          <Text type="secondary">No development projects. Add a development project to track WIP costs.</Text>
+          <br />
+          <Button type="primary" icon={<PlusOutlined />} style={{ marginTop: 16 }}>
+            Add Development Project
+          </Button>
+        </div>
       </Card>
     </div>
   );

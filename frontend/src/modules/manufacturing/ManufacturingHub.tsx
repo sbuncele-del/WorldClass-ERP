@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import {
   Card,
   Row,
@@ -76,159 +77,85 @@ const ManufacturingHub: React.FC = () => {
   const [bomModalVisible, setBomModalVisible] = useState(false);
   const [qualityModalVisible, setQualityModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(true);
 
   // Manufacturing KPIs
-  const manufacturingStats = {
-    activeWorkOrders: 18,
-    completedToday: 12,
-    pendingQC: 5,
-    machineUtilization: 82.5,
-    oee: 78.3, // Overall Equipment Effectiveness
-    defectRate: 1.2,
-    onTimeDelivery: 94.5,
-    totalBOMs: 156
-  };
+  const [manufacturingStats, setManufacturingStats] = useState({
+    activeWorkOrders: 0,
+    completedToday: 0,
+    pendingQC: 0,
+    machineUtilization: 0,
+    oee: 0,
+    defectRate: 0,
+    onTimeDelivery: 0,
+    totalBOMs: 0
+  });
 
   // Work Orders
-  const workOrders = [
-    { 
-      id: 'WO-2024-0234', 
-      product: 'Circuit Board Assembly X200', 
-      sku: 'SKU-CB-X200',
-      quantity: 500, 
-      completed: 380,
-      startDate: '2024-12-09', 
-      dueDate: '2024-12-12',
-      status: 'in_progress',
-      priority: 'high',
-      workCenter: 'Assembly Line 1',
-      operator: 'Team Alpha'
-    },
-    { 
-      id: 'WO-2024-0235', 
-      product: 'Power Supply Unit Pro', 
-      sku: 'SKU-PSU-PRO',
-      quantity: 200, 
-      completed: 200,
-      startDate: '2024-12-08', 
-      dueDate: '2024-12-11',
-      status: 'pending_qc',
-      priority: 'normal',
-      workCenter: 'Assembly Line 2',
-      operator: 'Team Beta'
-    },
-    { 
-      id: 'WO-2024-0236', 
-      product: 'Sensor Module M100', 
-      sku: 'SKU-SM-M100',
-      quantity: 1000, 
-      completed: 0,
-      startDate: '2024-12-12', 
-      dueDate: '2024-12-15',
-      status: 'scheduled',
-      priority: 'normal',
-      workCenter: 'SMT Line 1',
-      operator: 'Team Gamma'
-    },
-    { 
-      id: 'WO-2024-0237', 
-      product: 'Controller Unit V3', 
-      sku: 'SKU-CU-V3',
-      quantity: 150, 
-      completed: 45,
-      startDate: '2024-12-10', 
-      dueDate: '2024-12-13',
-      status: 'in_progress',
-      priority: 'urgent',
-      workCenter: 'Assembly Line 1',
-      operator: 'Team Alpha'
-    },
-    { 
-      id: 'WO-2024-0238', 
-      product: 'LED Display Panel', 
-      sku: 'SKU-LED-DP',
-      quantity: 300, 
-      completed: 300,
-      startDate: '2024-12-07', 
-      dueDate: '2024-12-10',
-      status: 'completed',
-      priority: 'normal',
-      workCenter: 'Display Line',
-      operator: 'Team Delta'
-    }
-  ];
+  const [workOrders, setWorkOrders] = useState<Array<{
+    id: string;
+    product: string;
+    sku: string;
+    quantity: number;
+    completed: number;
+    startDate: string;
+    dueDate: string;
+    status: string;
+    priority: string;
+    workCenter: string;
+    operator: string;
+  }>>([]);
 
   // Bill of Materials
-  const billOfMaterials = [
-    {
-      id: 'BOM-001',
-      product: 'Circuit Board Assembly X200',
-      sku: 'SKU-CB-X200',
-      version: '2.1',
-      components: 24,
-      cost: 125.50,
-      status: 'active',
-      lastUpdated: '2024-11-15'
-    },
-    {
-      id: 'BOM-002',
-      product: 'Power Supply Unit Pro',
-      sku: 'SKU-PSU-PRO',
-      version: '1.3',
-      components: 18,
-      cost: 89.25,
-      status: 'active',
-      lastUpdated: '2024-10-22'
-    },
-    {
-      id: 'BOM-003',
-      product: 'Sensor Module M100',
-      sku: 'SKU-SM-M100',
-      version: '3.0',
-      components: 12,
-      cost: 45.80,
-      status: 'active',
-      lastUpdated: '2024-11-28'
-    },
-    {
-      id: 'BOM-004',
-      product: 'Controller Unit V3',
-      sku: 'SKU-CU-V3',
-      version: '1.0',
-      components: 32,
-      cost: 215.00,
-      status: 'draft',
-      lastUpdated: '2024-12-05'
-    }
-  ];
+  const [billOfMaterials, setBillOfMaterials] = useState<Array<{
+    id: string;
+    product: string;
+    sku: string;
+    version: string;
+    components: number;
+    cost: number;
+    status: string;
+    lastUpdated: string;
+  }>>([]);
 
-  // Work Centers / Machines
-  const workCenters = [
-    { id: 'WC-001', name: 'Assembly Line 1', type: 'Assembly', status: 'running', utilization: 85, currentWO: 'WO-2024-0234', operator: 'Team Alpha' },
-    { id: 'WC-002', name: 'Assembly Line 2', type: 'Assembly', status: 'idle', utilization: 0, currentWO: '-', operator: '-' },
-    { id: 'WC-003', name: 'SMT Line 1', type: 'SMT', status: 'maintenance', utilization: 0, currentWO: '-', operator: 'Maintenance' },
-    { id: 'WC-004', name: 'SMT Line 2', type: 'SMT', status: 'running', utilization: 92, currentWO: 'WO-2024-0239', operator: 'Team Echo' },
-    { id: 'WC-005', name: 'Display Line', type: 'Assembly', status: 'running', utilization: 78, currentWO: 'WO-2024-0240', operator: 'Team Delta' },
-    { id: 'WC-006', name: 'Testing Station 1', type: 'QC', status: 'running', utilization: 65, currentWO: 'QC Batch', operator: 'QC Team' },
-    { id: 'WC-007', name: 'Packaging Line', type: 'Packaging', status: 'idle', utilization: 0, currentWO: '-', operator: '-' }
-  ];
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, workOrdersRes, bomRes] = await Promise.all([
+          apiClient.get('/api/manufacturing/stats'),
+          apiClient.get('/api/manufacturing/work-orders'),
+          apiClient.get('/api/manufacturing/bom')
+        ]);
 
-  // Quality Control records
-  const qualityRecords = [
-    { id: 'QC-2024-0456', workOrder: 'WO-2024-0235', product: 'Power Supply Unit Pro', batchSize: 200, passed: 196, failed: 4, defectRate: 2.0, status: 'completed', inspector: 'John Q.' },
-    { id: 'QC-2024-0457', workOrder: 'WO-2024-0238', product: 'LED Display Panel', batchSize: 300, passed: 298, failed: 2, defectRate: 0.67, status: 'completed', inspector: 'Sarah M.' },
-    { id: 'QC-2024-0458', workOrder: 'WO-2024-0234', product: 'Circuit Board Assembly X200', batchSize: 100, passed: 0, failed: 0, defectRate: 0, status: 'pending', inspector: '-' },
-    { id: 'QC-2024-0459', workOrder: 'WO-2024-0237', product: 'Controller Unit V3', batchSize: 45, passed: 44, failed: 1, defectRate: 2.2, status: 'in_progress', inspector: 'Mike R.' }
-  ];
+        if (statsRes.data) {
+          setManufacturingStats(statsRes.data);
+        }
+        if (workOrdersRes.data) {
+          setWorkOrders(Array.isArray(workOrdersRes.data) ? workOrdersRes.data : workOrdersRes.data.data || []);
+        }
+        if (bomRes.data) {
+          setBillOfMaterials(Array.isArray(bomRes.data) ? bomRes.data : bomRes.data.data || []);
+        }
+      } catch (error) {
+        console.error('Error fetching manufacturing data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Production Schedule
-  const productionSchedule = [
-    { time: '06:00 - 14:00', shift: 'Morning', workCenter: 'Assembly Line 1', workOrder: 'WO-2024-0234', product: 'Circuit Board X200', target: 200 },
-    { time: '06:00 - 14:00', shift: 'Morning', workCenter: 'SMT Line 2', workOrder: 'WO-2024-0239', product: 'PCB Component A', target: 500 },
-    { time: '14:00 - 22:00', shift: 'Afternoon', workCenter: 'Assembly Line 1', workOrder: 'WO-2024-0237', product: 'Controller Unit V3', target: 75 },
-    { time: '14:00 - 22:00', shift: 'Afternoon', workCenter: 'Display Line', workOrder: 'WO-2024-0240', product: 'LED Panel', target: 150 },
-    { time: '22:00 - 06:00', shift: 'Night', workCenter: 'Assembly Line 2', workOrder: 'WO-2024-0236', product: 'Sensor Module', target: 300 }
-  ];
+    fetchData();
+  }, []);
+
+  // Work Centers / Machines - load from API, start empty
+  const workCenters: Array<{ id: string; name: string; type: string; status: string; utilization: number; currentWO: string; operator: string }> = [];
+
+  // Quality Control records - load from API, start empty
+  const qualityRecords: Array<{ id: string; workOrder: string; product: string; batchSize: number; passed: number; failed: number; defectRate: number; status: string; inspector: string }> = [];
+
+  // Production Schedule - load from API, start empty
+  const productionSchedule: Array<{ time: string; shift: string; workCenter: string; workOrder: string; product: string; target: number }> = [];
 
   // Work Order columns
   const workOrderColumns = [

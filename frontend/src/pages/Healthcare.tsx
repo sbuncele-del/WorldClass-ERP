@@ -1,36 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import apiClient from '../services/api';
 import './Healthcare.css';
 
 const Healthcare: React.FC = () => {
   const [activeTab, setActiveTab] = useState('patients');
+  const [patients, setPatients] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [inventory, setInventory] = useState<any[]>([]);
+  const [billing, setBilling] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const patients = [
-    { id: 'PT001', name: 'John Smith', age: 45, condition: 'Diabetes Type 2', lastVisit: '2025-11-08', nextAppointment: '2025-11-15', status: 'Active' },
-    { id: 'PT002', name: 'Sarah Johnson', age: 32, condition: 'Hypertension', lastVisit: '2025-11-10', nextAppointment: '2025-11-18', status: 'Active' },
-    { id: 'PT003', name: 'Michael Brown', age: 58, condition: 'Heart Disease', lastVisit: '2025-11-05', nextAppointment: '2025-11-20', status: 'Follow-up' },
-    { id: 'PT004', name: 'Emily Davis', age: 28, condition: 'Asthma', lastVisit: '2025-11-09', nextAppointment: '2025-12-01', status: 'Active' },
-  ];
-
-  const appointments = [
-    { id: 'AP001', patient: 'John Smith', doctor: 'Dr. Williams', time: '09:00 AM', date: '2025-11-15', type: 'Follow-up', status: 'Scheduled' },
-    { id: 'AP002', patient: 'Sarah Johnson', doctor: 'Dr. Martinez', time: '10:30 AM', date: '2025-11-15', type: 'Check-up', status: 'Scheduled' },
-    { id: 'AP003', patient: 'Michael Brown', doctor: 'Dr. Williams', time: '02:00 PM', date: '2025-11-15', type: 'Consultation', status: 'Scheduled' },
-    { id: 'AP004', patient: 'Emily Davis', doctor: 'Dr. Lee', time: '03:30 PM', date: '2025-11-15', type: 'Therapy', status: 'Scheduled' },
-  ];
-
-  const inventory = [
-    { id: 'MED001', name: 'Insulin', category: 'Medication', stock: 45, minStock: 20, unit: 'Vials', expiry: '2026-03-15', status: 'In Stock' },
-    { id: 'MED002', name: 'Antibiotics', category: 'Medication', stock: 120, minStock: 50, unit: 'Boxes', expiry: '2025-12-30', status: 'In Stock' },
-    { id: 'SUP001', name: 'Surgical Gloves', category: 'Supplies', stock: 15, minStock: 30, unit: 'Boxes', expiry: '2026-06-01', status: 'Low Stock' },
-    { id: 'EQP001', name: 'Blood Pressure Monitor', category: 'Equipment', stock: 8, minStock: 5, unit: 'Units', expiry: 'N/A', status: 'In Stock' },
-  ];
-
-  const billing = [
-    { id: 'INV001', patient: 'John Smith', date: '2025-11-08', amount: 'R 2,450', services: 'Consultation + Lab Tests', status: 'Paid', paymentMethod: 'Medical Aid' },
-    { id: 'INV002', patient: 'Sarah Johnson', date: '2025-11-10', amount: 'R 1,850', services: 'Check-up + Prescription', status: 'Paid', paymentMethod: 'Cash' },
-    { id: 'INV003', patient: 'Michael Brown', date: '2025-11-05', amount: 'R 3,200', services: 'ECG + Consultation', status: 'Pending', paymentMethod: 'Medical Aid' },
-    { id: 'INV004', patient: 'Emily Davis', date: '2025-11-09', amount: 'R 1,200', services: 'Therapy Session', status: 'Paid', paymentMethod: 'Card' },
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [patientsRes, appointmentsRes, inventoryRes, billingRes] = await Promise.all([
+          apiClient.get('/api/healthcare/patients'),
+          apiClient.get('/api/healthcare/appointments'),
+          apiClient.get('/api/healthcare/inventory'),
+          apiClient.get('/api/healthcare/billing')
+        ]);
+        setPatients(patientsRes.data?.data || patientsRes.data || []);
+        setAppointments(appointmentsRes.data?.data || appointmentsRes.data || []);
+        setInventory(inventoryRes.data?.data || inventoryRes.data || []);
+        setBilling(billingRes.data?.data || billingRes.data || []);
+      } catch (err) {
+        console.error('Error fetching healthcare data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {

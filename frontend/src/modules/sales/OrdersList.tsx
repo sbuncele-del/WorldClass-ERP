@@ -18,17 +18,16 @@ export const OrdersList: React.FC = () => {
     try {
       setLoading(true);
       const data = await salesService.getOrders({ limit: 100 });
-      setOrders(data.data);
+      if (data && data.data) {
+        setOrders(data.data);
+      } else if (data && Array.isArray(data)) {
+        setOrders(data);
+      } else {
+        setOrders([]);
+      }
     } catch (error) {
       console.error('Error loading orders:', error);
-      // Mock data for demo
-      setOrders([
-        { order_id: '1', order_number: 'SO-2025-001', customer_name: 'ABC Corp', order_date: '2025-11-01', total_amount: 125000, order_status: 'CONFIRMED', payment_status: 'PAID' },
-        { order_id: '2', order_number: 'SO-2025-002', customer_name: 'XYZ Ltd', order_date: '2025-11-03', total_amount: 89500, order_status: 'PENDING', payment_status: 'PENDING' },
-        { order_id: '3', order_number: 'SO-2025-003', customer_name: 'Tech Solutions', order_date: '2025-11-05', total_amount: 234000, order_status: 'SHIPPED', payment_status: 'PAID' },
-        { order_id: '4', order_number: 'SO-2025-004', customer_name: 'Global Inc', order_date: '2025-11-06', total_amount: 156000, order_status: 'DELIVERED', payment_status: 'PAID' },
-        { order_id: '5', order_number: 'SO-2025-005', customer_name: 'Prime Retail', order_date: '2025-11-07', total_amount: 78000, order_status: 'PENDING', payment_status: 'PENDING' }
-      ]);
+      setOrders([]);
     } finally {
       setLoading(false);
     }

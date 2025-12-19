@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface ComplianceItem {
@@ -16,6 +17,7 @@ interface ComplianceItem {
 const CompliancePage: React.FC = () => {
   const [items, setItems] = useState<ComplianceItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<string>('ALL');
 
   useEffect(() => {
@@ -24,90 +26,15 @@ const CompliancePage: React.FC = () => {
 
   const fetchComplianceItems = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const mockItems: ComplianceItem[] = [
-        {
-          id: 'C001',
-          category: 'LABOR_LAW',
-          requirement: 'Employment Contracts',
-          legislation: 'BCEA (Basic Conditions of Employment Act)',
-          status: 'COMPLIANT',
-          due_date: null,
-          responsible_person: 'Sarah van der Merwe',
-          last_review: '2025-10-15',
-          notes: 'All employees have signed contracts'
-        },
-        {
-          id: 'C002',
-          category: 'TAX',
-          requirement: 'Monthly EMP201 Submission',
-          legislation: 'Income Tax Act - SARS',
-          status: 'COMPLIANT',
-          due_date: '2025-12-07',
-          responsible_person: 'Finance Team',
-          last_review: '2025-11-07',
-          notes: 'October submission completed'
-        },
-        {
-          id: 'C003',
-          category: 'EMPLOYMENT_EQUITY',
-          requirement: 'EE Plan & Report',
-          legislation: 'Employment Equity Act',
-          status: 'IN_PROGRESS',
-          due_date: '2026-01-15',
-          responsible_person: 'HR Manager',
-          last_review: '2025-11-01',
-          notes: 'Annual report preparation underway'
-        },
-        {
-          id: 'C004',
-          category: 'SKILLS_DEVELOPMENT',
-          requirement: 'WSP/ATR Submission',
-          legislation: 'Skills Development Act',
-          status: 'AT_RISK',
-          due_date: '2025-12-31',
-          responsible_person: 'Training Coordinator',
-          last_review: '2025-09-20',
-          notes: 'Workplace Skills Plan needs updating'
-        },
-        {
-          id: 'C005',
-          category: 'LABOR_LAW',
-          requirement: 'Disciplinary Procedures',
-          legislation: 'LRA (Labour Relations Act)',
-          status: 'COMPLIANT',
-          due_date: null,
-          responsible_person: 'HR Manager',
-          last_review: '2025-08-10',
-          notes: 'Code of conduct updated and communicated'
-        },
-        {
-          id: 'C006',
-          category: 'HEALTH_SAFETY',
-          requirement: 'OH&S Representatives',
-          legislation: 'Occupational Health & Safety Act',
-          status: 'COMPLIANT',
-          due_date: '2026-03-01',
-          responsible_person: 'Safety Officer',
-          last_review: '2025-10-22',
-          notes: '2 safety reps elected and trained'
-        },
-        {
-          id: 'C007',
-          category: 'BBBEE',
-          requirement: 'B-BBEE Verification',
-          legislation: 'Broad-Based Black Economic Empowerment Act',
-          status: 'IN_PROGRESS',
-          due_date: '2025-12-31',
-          responsible_person: 'CEO',
-          last_review: '2025-10-01',
-          notes: 'Level 4 contributor, renewal in progress'
-        }
-      ];
-
-      setItems(mockItems);
-    } catch (err) {
+      const response = await apiClient.get('/api/compliance/items');
+      const data = response.data?.data || response.data || [];
+      setItems(Array.isArray(data) ? data : []);
+    } catch (err: any) {
       console.error('Error fetching compliance items:', err);
+      setError(err.response?.data?.message || 'Failed to load compliance data');
+      setItems([]);
     } finally {
       setLoading(false);
     }

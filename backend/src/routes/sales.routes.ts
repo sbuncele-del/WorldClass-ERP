@@ -1,8 +1,6 @@
 import { Router } from 'express';
-// Use v2 controller with Repository Pattern for multi-tenant safety
+// V2 controller with Repository Pattern + direct tenant-safe queries for ALL endpoints
 import * as salesController from '../controllers/sales.controller.v2';
-// Keep legacy controller for endpoints not yet migrated
-import * as legacyController from '../controllers/sales.controller';
 import * as salesWorkspaceController from '../modules/sales/controllers/sales.workspace.controller';
 import { tenantMiddleware } from '../middleware/tenant';
 
@@ -33,39 +31,38 @@ router.put('/customers/:id', salesController.updateCustomer);
 router.delete('/customers/:id', salesController.deleteCustomer);
 
 // ============================================================================
-// LEAD ROUTES (Legacy - pending migration)
+// LEAD ROUTES (v2 - Tenant Isolated)
 // ============================================================================
-router.get('/leads', legacyController.getLeads);
-router.get('/leads/:id', legacyController.getLeadById);
-router.post('/leads', legacyController.createLead);
-router.put('/leads/:id', legacyController.updateLead);
-router.delete('/leads/:id', legacyController.deleteLead);
-router.post('/leads/:id/convert', legacyController.convertLeadToOpportunity);
+router.get('/leads', salesController.getLeads);
+router.get('/leads/:id', salesController.getLeadById);
+router.post('/leads', salesController.createLead);
+router.put('/leads/:id', salesController.updateLead);
+router.delete('/leads/:id', salesController.deleteLead);
+router.post('/leads/:id/convert', salesController.convertLeadToOpportunity);
 
 // ============================================================================
-// OPPORTUNITY ROUTES (Legacy - pending migration)
+// OPPORTUNITY ROUTES (v2 - Tenant Isolated)
 // ============================================================================
-router.get('/opportunities', legacyController.getOpportunities);
-router.get('/opportunities/:id', legacyController.getOpportunityById);
-router.post('/opportunities', legacyController.createOpportunity);
-router.put('/opportunities/:id', legacyController.updateOpportunity);
-router.delete('/opportunities/:id', legacyController.deleteOpportunity);
+router.get('/opportunities', salesController.getOpportunities);
+router.get('/opportunities/:id', salesController.getOpportunityById);
+router.post('/opportunities', salesController.createOpportunity);
+router.put('/opportunities/:id', salesController.updateOpportunity);
+router.delete('/opportunities/:id', salesController.deleteOpportunity);
 
 // ============================================================================
-// QUOTATION ROUTES (v2 - Repository Pattern)
+// QUOTATION ROUTES (v2 - Repository Pattern + Extended)
 // ============================================================================
 router.get('/quotations', salesController.getQuotations);
 router.get('/quotations/:id', salesController.getQuotation);
 router.post('/quotations', salesController.createQuotation);
+router.put('/quotations/:id', salesController.updateQuotation);
+router.delete('/quotations/:id', salesController.deleteQuotation);
 router.post('/quotations/:id/convert', salesController.convertQuotationToOrder);
-// Legacy endpoints still needed
-router.put('/quotations/:id', legacyController.updateQuotation);
-router.delete('/quotations/:id', legacyController.deleteQuotation);
-router.post('/quotations/:id/send', legacyController.sendQuotation);
-router.post('/quotations/:id/accept', legacyController.acceptQuotation);
+router.post('/quotations/:id/send', salesController.sendQuotation);
+router.post('/quotations/:id/accept', salesController.acceptQuotation);
 
 // ============================================================================
-// SALES ORDER ROUTES (v2 - Repository Pattern)
+// SALES ORDER ROUTES (v2 - Repository Pattern + Extended)
 // ============================================================================
 router.get('/orders', salesController.getSalesOrders);
 router.get('/orders/:id', salesController.getSalesOrder);
@@ -73,9 +70,8 @@ router.post('/orders', salesController.createSalesOrder);
 router.put('/orders/:id', salesController.updateSalesOrder);
 router.post('/orders/:id/confirm', salesController.confirmSalesOrder);
 router.post('/orders/:id/cancel', salesController.cancelSalesOrder);
-// Legacy endpoints for ship/deliver
-router.post('/orders/:id/ship', legacyController.shipOrder);
-router.post('/orders/:id/deliver', legacyController.deliverOrder);
+router.post('/orders/:id/ship', salesController.shipOrder);
+router.post('/orders/:id/deliver', salesController.deliverOrder);
 
 // ============================================================================
 // INVOICE ROUTES (v2 - Repository Pattern)
@@ -93,39 +89,39 @@ router.post('/invoices/:id/void', salesController.voidInvoice);
 router.get('/reports/sales', salesController.getSalesReport);
 
 // ============================================================================
-// CREDIT NOTE ROUTES (Legacy - pending migration)
+// CREDIT NOTE ROUTES (v2 - Tenant Isolated)
 // ============================================================================
-router.get('/credit-notes', legacyController.getCreditNotes);
-router.get('/credit-notes/:id', legacyController.getCreditNoteById);
-router.post('/credit-notes', legacyController.createCreditNote);
-router.put('/credit-notes/:id', legacyController.updateCreditNote);
-router.delete('/credit-notes/:id', legacyController.deleteCreditNote);
+router.get('/credit-notes', salesController.getCreditNotes);
+router.get('/credit-notes/:id', salesController.getCreditNoteById);
+router.post('/credit-notes', salesController.createCreditNote);
+router.put('/credit-notes/:id', salesController.updateCreditNote);
+router.delete('/credit-notes/:id', salesController.deleteCreditNote);
 
 // ============================================================================
-// RECEIPT ROUTES (Legacy - pending migration)
+// RECEIPT ROUTES (v2 - Tenant Isolated)
 // ============================================================================
-router.get('/receipts', legacyController.getReceipts);
-router.get('/receipts/:id', legacyController.getReceiptById);
-router.post('/receipts', legacyController.createReceipt);
-router.put('/receipts/:id', legacyController.updateReceipt);
-router.delete('/receipts/:id', legacyController.deleteReceipt);
+router.get('/receipts', salesController.getReceipts);
+router.get('/receipts/:id', salesController.getReceiptById);
+router.post('/receipts', salesController.createReceipt);
+router.put('/receipts/:id', salesController.updateReceipt);
+router.delete('/receipts/:id', salesController.deleteReceipt);
 
 // ============================================================================
-// COMMISSION ROUTES (Legacy - pending migration)
+// COMMISSION ROUTES (v2 - Tenant Isolated)
 // ============================================================================
-router.get('/commissions', legacyController.getCommissions);
-router.get('/commissions/:id', legacyController.getCommissionById);
-router.post('/commissions', legacyController.createCommission);
-router.put('/commissions/:id', legacyController.updateCommission);
-router.delete('/commissions/:id', legacyController.deleteCommission);
+router.get('/commissions', salesController.getCommissions);
+router.get('/commissions/:id', salesController.getCommissionById);
+router.post('/commissions', salesController.createCommission);
+router.put('/commissions/:id', salesController.updateCommission);
+router.delete('/commissions/:id', salesController.deleteCommission);
 
 // ============================================================================
-// PRICING RULES ROUTES (Legacy - pending migration)
+// PRICING RULES ROUTES (v2 - Tenant Isolated)
 // ============================================================================
-router.get('/pricing', legacyController.getPricingRules);
-router.get('/pricing/:id', legacyController.getPricingRuleById);
-router.post('/pricing', legacyController.createPricingRule);
-router.put('/pricing/:id', legacyController.updatePricingRule);
-router.delete('/pricing/:id', legacyController.deletePricingRule);
+router.get('/pricing', salesController.getPricingRules);
+router.get('/pricing/:id', salesController.getPricingRuleById);
+router.post('/pricing', salesController.createPricingRule);
+router.put('/pricing/:id', salesController.updatePricingRule);
+router.delete('/pricing/:id', salesController.deletePricingRule);
 
 export default router;

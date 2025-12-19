@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface Asset {
@@ -20,6 +21,7 @@ interface Asset {
 const AssetRegisterPage: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
@@ -29,73 +31,15 @@ const AssetRegisterPage: React.FC = () => {
 
   const fetchAssets = async () => {
     setLoading(true);
+    setError(null);
     try {
-      const mockAssets: Asset[] = [
-        {
-          id: 'AST001',
-          asset_number: 'IT-2023-001',
-          description: 'Dell Latitude 5420 Laptop',
-          category: 'IT Equipment',
-          location: 'Head Office - IT Dept',
-          status: 'ACTIVE',
-          purchase_date: '2023-03-15',
-          purchase_cost: 18500,
-          accumulated_depreciation: 9250,
-          book_value: 9250,
-          useful_life_years: 3,
-          depreciation_method: 'STRAIGHT_LINE',
-          custodian: 'Thabo Mkhize'
-        },
-        {
-          id: 'AST002',
-          asset_number: 'VEH-2022-003',
-          description: 'Toyota Hilux 2.8 GD-6',
-          category: 'Vehicles',
-          location: 'Fleet - Sales',
-          status: 'ACTIVE',
-          purchase_date: '2022-06-20',
-          purchase_cost: 585000,
-          accumulated_depreciation: 146250,
-          book_value: 438750,
-          useful_life_years: 5,
-          depreciation_method: 'STRAIGHT_LINE',
-          custodian: 'Johan Botha'
-        },
-        {
-          id: 'AST003',
-          asset_number: 'MCH-2021-007',
-          description: 'CNC Milling Machine',
-          category: 'Machinery',
-          location: 'Factory - Production Floor',
-          status: 'UNDER_MAINTENANCE',
-          purchase_date: '2021-09-10',
-          purchase_cost: 1245000,
-          accumulated_depreciation: 498000,
-          book_value: 747000,
-          useful_life_years: 10,
-          depreciation_method: 'STRAIGHT_LINE',
-          custodian: 'Nomvula Dlamini'
-        },
-        {
-          id: 'AST004',
-          asset_number: 'FUR-2020-015',
-          description: 'Office Desk & Chair Set',
-          category: 'Furniture',
-          location: 'Head Office - Admin',
-          status: 'ACTIVE',
-          purchase_date: '2020-11-05',
-          purchase_cost: 8500,
-          accumulated_depreciation: 6800,
-          book_value: 1700,
-          useful_life_years: 7,
-          depreciation_method: 'STRAIGHT_LINE',
-          custodian: 'Sarah van der Merwe'
-        }
-      ];
-
-      setAssets(mockAssets);
-    } catch (err) {
+      const response = await apiClient.get('/api/assets');
+      const data = response.data?.data || response.data || [];
+      setAssets(Array.isArray(data) ? data : []);
+    } catch (err: any) {
       console.error('Error fetching assets:', err);
+      setError(err.response?.data?.message || 'Failed to load assets');
+      setAssets([]);
     } finally {
       setLoading(false);
     }

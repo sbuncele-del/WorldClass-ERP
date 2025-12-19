@@ -520,7 +520,7 @@ function buildReportQuery(template: any, columns: any[], filters: any[], params:
   // Add joins based on data source
   if (dataSource === 'journal_entry_lines') {
     sql += ` 
-      LEFT JOIN journal_entries je ON journal_entry_lines.entry_id = je.id
+      LEFT JOIN journal_entries je ON journal_entry_lines.entry_id = je.entry_id
       LEFT JOIN chart_of_accounts coa ON journal_entry_lines.account_code = coa.code
     `;
   } else if (dataSource === 'budget_lines') {

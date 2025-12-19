@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './GoodsReceivedManagement.css';
 
 interface PurchaseOrder {
@@ -77,7 +78,7 @@ const GoodsReceivedManagement: React.FC = () => {
 
   const fetchGRNs = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/purchase/goods-received-notes');
+      const response = await fetch(`${API_BASE_URL}/api/purchase/goods-received-notes`);
       const data = await response.json();
       setGrns(data);
     } catch (error) {
@@ -88,7 +89,7 @@ const GoodsReceivedManagement: React.FC = () => {
   const fetchAvailablePOs = async () => {
     try {
       // Fetch POs with status ACKNOWLEDGED or SENT (ready to receive)
-      const response = await fetch('http://localhost:3000/api/purchase/purchase-orders?status=ACKNOWLEDGED,SENT');
+      const response = await fetch(`${API_BASE_URL}/api/purchase/purchase-orders?status=ACKNOWLEDGED,SENT`);
       const data = await response.json();
       setAvailablePOs(data);
     } catch (error) {
@@ -98,7 +99,7 @@ const GoodsReceivedManagement: React.FC = () => {
 
   const fetchPOLineItems = async (poId: number) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/purchase/purchase-orders/${poId}/lines`);
+      const response = await fetch(`${API_BASE_URL}/api/purchase/purchase-orders/${poId}/lines`);
       const data = await response.json();
       
       setPOLineItems(data);
@@ -201,7 +202,7 @@ const GoodsReceivedManagement: React.FC = () => {
         }))
       };
 
-      const response = await fetch('http://localhost:3000/api/purchase/goods-received-notes', {
+      const response = await fetch(`${API_BASE_URL}/api/purchase/goods-received-notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

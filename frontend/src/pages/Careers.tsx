@@ -80,7 +80,7 @@ const jobListings: JobListing[] = [
     department: 'Customer Success',
     location: 'Johannesburg, SA',
     type: 'Full-time',
-    description: 'Be the trusted advisor for our enterprise clients, ensuring they achieve maximum value from AetherOS while driving retention and expansion.',
+    description: 'Be the trusted advisor for our enterprise clients, ensuring they achieve maximum value from SiyaBusa while driving retention and expansion.',
     requirements: [
       '3+ years in customer success or account management',
       'Experience with SaaS or enterprise software',
@@ -95,7 +95,7 @@ const jobListings: JobListing[] = [
     department: 'Customer Success',
     location: 'Cape Town / Johannesburg, SA',
     type: 'Full-time',
-    description: 'Guide new customers through AetherOS implementation, configuring the system to match their business processes and ensuring successful go-live.',
+    description: 'Guide new customers through SiyaBusa implementation, configuring the system to match their business processes and ensuring successful go-live.',
     requirements: [
       '2+ years in software implementation or consulting',
       'Background in accounting or business operations',
@@ -174,7 +174,7 @@ const Careers: React.FC = () => {
       <nav className="footer-page-nav">
         <Link to="/" className="logo">
           <span className="logo-icon">◈</span>
-          <span>AetherOS</span>
+          <span>SiyaBusa</span>
         </Link>
         <Link to="/" className="back-link">← Back to Home</Link>
       </nav>
@@ -186,7 +186,7 @@ const Careers: React.FC = () => {
           transition={{ duration: 0.6 }}
         >
           <header className="page-header">
-            <h1>Careers at AetherOS</h1>
+            <h1>Careers at SiyaBusa</h1>
             <p className="subtitle">Join us in transforming how businesses operate</p>
           </header>
 
@@ -238,7 +238,7 @@ const Careers: React.FC = () => {
             <p className="section-intro">
               We're always looking for talented individuals who share our passion for 
               building exceptional software. Don't see a perfect fit? Send your CV to{' '}
-              <a href="mailto:careers@aetheros.io">careers@aetheros.io</a>
+              <a href="mailto:careers@siyabusa.co.za">careers@siyabusa.co.za</a>
             </p>
 
             {departments.map(department => (
@@ -266,7 +266,7 @@ const Careers: React.FC = () => {
                           </ul>
                         </div>
                         <a 
-                          href={`mailto:careers@aetheros.io?subject=Application: ${job.title} (${job.id})`}
+                          href={`mailto:careers@siyabusa.co.za?subject=Application: ${job.title} (${job.id})`}
                           className="btn-apply"
                         >
                           Apply Now
@@ -315,7 +315,7 @@ const Careers: React.FC = () => {
               We're building something special. If you're passionate about creating 
               technology that makes a real difference, we want to hear from you.
             </p>
-            <a href="mailto:careers@aetheros.io" className="btn-primary">
+            <a href="mailto:careers@siyabusa.co.za" className="btn-primary">
               Send Your CV
             </a>
           </section>
@@ -323,7 +323,7 @@ const Careers: React.FC = () => {
       </main>
 
       <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} AetherOS by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
       </footer>
     </div>
   );

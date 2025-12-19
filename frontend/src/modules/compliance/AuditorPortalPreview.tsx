@@ -6,13 +6,14 @@
  * request additional information.
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card, Row, Col, Table, Tag, Button, Space, Badge,
   Input, Typography, Avatar, List, Divider, message,
   Alert, Progress, Tabs, Empty, Timeline, Modal, DatePicker,
-  TimePicker, Select, Calendar, Form, Tooltip
+  TimePicker, Select, Calendar, Form, Tooltip, Spin
 } from 'antd';
+import apiClient from '../../services/api';
 import {
   FileTextOutlined, DownloadOutlined, FolderOpenOutlined,
   MessageOutlined, SendOutlined, UserOutlined, LockOutlined,
@@ -38,95 +39,62 @@ const AuditorPortalPreview: React.FC = () => {
   const [selectedMeeting, setSelectedMeeting] = useState<any>(null);
   const [meetingDetailsModal, setMeetingDetailsModal] = useState(false);
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(true);
 
-  // Mock auditor info
-  const auditorInfo = {
-    name: 'James van der Merwe',
-    firm: 'PwC South Africa',
-    email: 'jvdmerwe@pwc.co.za',
-    clientName: 'ABC Trading (Pty) Ltd',
-    clientContacts: [
-      { name: 'Sarah Nkosi', role: 'CFO', email: 'cfo@abctrading.co.za' },
-      { name: 'Michael Botha', role: 'Finance Manager', email: 'finance@abctrading.co.za' },
-      { name: 'Thandi Molefe', role: 'Tax Manager', email: 'tax@abctrading.co.za' }
-    ],
-    accessExpiry: '2026-03-31',
-    allowedCategories: ['Financial', 'Tax', 'Cash', 'Assets', 'Compliance', 'Governance']
-  };
+  // Auditor info state
+  const [auditorInfo, setAuditorInfo] = useState({
+    name: '',
+    firm: '',
+    email: '',
+    clientName: '',
+    clientContacts: [] as { name: string; role: string; email: string }[],
+    accessExpiry: '',
+    allowedCategories: [] as string[]
+  });
 
-  // Mock scheduled meetings
-  const [scheduledMeetings, setScheduledMeetings] = useState([
-    { 
-      id: 'MTG-001', 
-      title: 'Year-End Audit Planning', 
-      date: '2025-12-15', 
-      time: '10:00', 
-      duration: 60,
-      attendees: ['Sarah Nkosi (CFO)', 'Michael Botha (Finance)'],
-      status: 'confirmed',
-      meetingLink: 'https://aetheros.daily.co/audit-mtg-001',
-      agenda: 'Discuss audit timeline, key focus areas, and document requirements',
-      createdBy: 'auditor'
-    },
-    { 
-      id: 'MTG-002', 
-      title: 'Tax Compliance Review', 
-      date: '2025-12-18', 
-      time: '14:00', 
-      duration: 45,
-      attendees: ['Thandi Molefe (Tax)'],
-      status: 'pending',
-      meetingLink: 'https://aetheros.daily.co/audit-mtg-002',
-      agenda: 'Review VAT and EMP submissions, discuss any concerns',
-      createdBy: 'client'
-    },
-    { 
-      id: 'MTG-003', 
-      title: 'Final Accounts Discussion', 
-      date: '2025-12-22', 
-      time: '09:00', 
-      duration: 90,
-      attendees: ['Sarah Nkosi (CFO)', 'Michael Botha (Finance)', 'Thandi Molefe (Tax)'],
-      status: 'confirmed',
-      meetingLink: 'https://aetheros.daily.co/audit-mtg-003',
-      agenda: 'Review draft financial statements and address audit queries',
-      createdBy: 'auditor'
-    }
-  ]);
+  // Scheduled meetings state
+  const [scheduledMeetings, setScheduledMeetings] = useState<any[]>([]);
 
-  // Mock documents available to auditor
-  const documents = [
-    { id: 'DOC-001', name: 'Annual Financial Statements FY2025', category: 'Financial', status: 'ready', lastUpdated: '2025-12-10', size: '2.3 MB' },
-    { id: 'DOC-002', name: 'Trial Balance - December 2025', category: 'Financial', status: 'ready', lastUpdated: '2025-12-11', size: '856 KB' },
-    { id: 'DOC-003', name: 'General Ledger Extract', category: 'Financial', status: 'ready', lastUpdated: '2025-12-11', size: '4.7 MB' },
-    { id: 'DOC-004', name: 'Bank Reconciliation - All Accounts', category: 'Cash', status: 'ready', lastUpdated: '2025-12-09', size: '1.2 MB' },
-    { id: 'DOC-005', name: 'VAT201 Returns (Full Year)', category: 'Tax', status: 'ready', lastUpdated: '2025-12-08', size: '654 KB' },
-    { id: 'DOC-006', name: 'EMP201 Submissions', category: 'Tax', status: 'ready', lastUpdated: '2025-12-05', size: '1.1 MB' },
-    { id: 'DOC-007', name: 'Asset Register (IAS 16 Compliant)', category: 'Assets', status: 'ready', lastUpdated: '2025-12-10', size: '1.5 MB' },
-    { id: 'DOC-008', name: 'B-BBEE Certificate', category: 'Compliance', status: 'ready', lastUpdated: '2025-06-15', size: '450 KB' },
-    { id: 'DOC-009', name: 'Directors Resolution - Year End', category: 'Governance', status: 'ready', lastUpdated: '2025-11-30', size: '320 KB' },
-    { id: 'DOC-010', name: 'Related Party Disclosures', category: 'Financial', status: 'ready', lastUpdated: '2025-12-10', size: '580 KB' }
-  ];
+  // Documents state
+  const [documents, setDocuments] = useState<any[]>([]);
 
-  // Mock messages
-  const messages = [
-    { id: 'MSG-001', from: 'finance@abctrading.co.za', subject: 'RE: Requesting clarification on Note 12', content: 'Please find attached the related party agreements and board resolutions as requested.', timestamp: '2025-12-11 11:45', isRead: true, attachments: ['Related_Party_Agreements.pdf'] },
-    { id: 'MSG-002', from: 'cfo@abctrading.co.za', subject: 'Welcome to the Audit Portal', content: 'Welcome James. All requested documents have been uploaded. Please let us know if you need anything else.', timestamp: '2025-12-10 09:00', isRead: true },
-  ];
+  // Messages state
+  const [messages, setMessages] = useState<any[]>([]);
 
-  // Mock document requests
-  const myRequests = [
-    { id: 'REQ-001', document: 'Management Representation Letter', status: 'pending', requestedDate: '2025-12-11', reason: 'Required for audit file completion' },
-    { id: 'REQ-002', document: 'Going Concern Assessment', status: 'fulfilled', requestedDate: '2025-12-08', fulfilledDate: '2025-12-09' },
-  ];
+  // Document requests state
+  const [myRequests, setMyRequests] = useState<any[]>([]);
 
-  // Activity log
-  const activityLog = [
-    { action: 'Downloaded', document: 'Bank Reconciliation', timestamp: '2025-12-11 14:30' },
-    { action: 'Viewed', document: 'Annual Financial Statements', timestamp: '2025-12-11 10:15' },
-    { action: 'Downloaded', document: 'Trial Balance', timestamp: '2025-12-10 16:45' },
-    { action: 'Sent Message', document: 'Query on Note 12', timestamp: '2025-12-10 14:20' },
-  ];
+  // Activity log state
+  const [activityLog, setActivityLog] = useState<any[]>([]);
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [auditorRes, meetingsRes, docsRes, msgsRes, requestsRes, activityRes] = await Promise.all([
+          apiClient.get('/api/compliance/auditor-portal/info'),
+          apiClient.get('/api/compliance/auditor-portal/meetings'),
+          apiClient.get('/api/compliance/auditor-portal/documents'),
+          apiClient.get('/api/compliance/auditor-portal/messages'),
+          apiClient.get('/api/compliance/auditor-portal/requests'),
+          apiClient.get('/api/compliance/auditor-portal/activity')
+        ]);
+        setAuditorInfo(auditorRes.data || auditorInfo);
+        setScheduledMeetings(meetingsRes.data || []);
+        setDocuments(docsRes.data || []);
+        setMessages(msgsRes.data || []);
+        setMyRequests(requestsRes.data || []);
+        setActivityLog(activityRes.data || []);
+      } catch (error) {
+        console.error('Failed to fetch auditor portal data:', error);
+        message.error('Failed to load auditor portal data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const filteredDocuments = documents.filter(doc => 
     doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -670,7 +638,7 @@ const AuditorPortalPreview: React.FC = () => {
                 duration: values.duration || 60,
                 attendees: values.attendees || [],
                 status: 'pending',
-                meetingLink: `https://aetheros.daily.co/audit-${Date.now()}`,
+                meetingLink: `https://siyabusa.daily.co/audit-${Date.now()}`,
                 agenda: values.agenda || '',
                 createdBy: 'auditor'
               };
@@ -756,14 +724,14 @@ const AuditorPortalPreview: React.FC = () => {
               Click below to join. You can share this link with the client team.
             </Paragraph>
             <Input 
-              value="https://aetheros.daily.co/instant-audit-call"
+              value="https://siyabusa.daily.co/instant-audit-call"
               readOnly
               addonAfter={
                 <Button 
                   type="text" 
                   icon={<LinkOutlined />}
                   onClick={() => {
-                    navigator.clipboard.writeText('https://aetheros.daily.co/instant-audit-call');
+                    navigator.clipboard.writeText('https://siyabusa.daily.co/instant-audit-call');
                     message.success('Link copied!');
                   }}
                 />
@@ -778,7 +746,7 @@ const AuditorPortalPreview: React.FC = () => {
                 block
                 onClick={() => {
                   message.success('Joining call...');
-                  window.open('https://aetheros.daily.co/instant-audit-call', '_blank');
+                  window.open('https://siyabusa.daily.co/instant-audit-call', '_blank');
                   setInstantCallModal(false);
                 }}
               >

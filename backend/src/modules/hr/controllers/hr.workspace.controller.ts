@@ -124,6 +124,7 @@ async function getLeaveRequests(tenantId: string) {
  * Get payroll status for current month
  */
 async function getPayrollStatus(tenantId: string) {
+  // Simplified query that doesn't require GROUP BY on optional columns
   const result = await query(
     `
     SELECT 
@@ -134,14 +135,11 @@ async function getPayrollStatus(tenantId: string) {
       pr.total_deductions,
       pr.total_net,
       pp.payment_date,
-      COUNT(prd.detail_id) as employee_count
+      pr.total_employees as employee_count
     FROM hr.payroll_runs pr
-    JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id AND pr.tenant_id = pp.tenant_id
-    LEFT JOIN hr.payroll_run_details prd ON pr.run_id = prd.run_id AND prd.tenant_id = pr.tenant_id
+    JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id
     WHERE pr.tenant_id = $1 
-      AND pp.period_start_date >= DATE_TRUNC('month', CURRENT_DATE)
-    GROUP BY pr.run_id, pp.period_name, pr.status, pr.total_gross, pr.total_deductions, pr.total_net, pp.payment_date
-    ORDER BY pp.period_start_date DESC
+    ORDER BY pr.run_date DESC
     LIMIT 3
     `,
     [tenantId]

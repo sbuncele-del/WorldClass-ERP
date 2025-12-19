@@ -1,10 +1,13 @@
 import { Router } from 'express';
 import { requirePermission, Permission } from '../../middleware/rbac.middleware';
-import { requireFeature } from '../../middleware/tenant';
+import { tenantMiddleware, requireFeature } from '../../middleware/tenant';
 import * as enterpriseController from '../../modules/logistics/enterprise/logistics.enterprise.controller';
 import { LOGISTICS_FEATURE_FLAGS } from '../../modules/logistics/logistics.features';
 
 const router = Router();
+
+// Enforce tenant context before RBAC/feature checks
+router.use(tenantMiddleware);
 
 // Feature discovery + planning
 router.get(

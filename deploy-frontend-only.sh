@@ -15,7 +15,7 @@ S3_BUCKET="aetheros-erp-frontend-483636500494"
 AWS_REGION="eu-north-1"
 
 echo -e "${YELLOW}What this does:${NC}"
-echo "  1. Rebuild frontend to connect to live backend (51.21.219.35:3000)"
+echo "  1. Rebuild frontend to connect to live backend (51.20.67.228:3000)"
 echo "  2. Deploy to S3"
 echo "  3. Your frontend will call REAL backend APIs"
 echo ""
@@ -32,7 +32,7 @@ cd frontend
 # Create production environment file
 echo "📝 Creating .env.production..."
 cat > .env.production << EOF
-VITE_API_URL=http://51.21.219.35:3000
+VITE_API_URL=http://51.20.67.228:3000
 VITE_APP_NAME=AetherOS ERP
 VITE_ENVIRONMENT=production
 EOF
@@ -93,7 +93,7 @@ echo "   Password: Demo123!"
 echo ""
 
 echo -e "${BLUE}📊 What's Connected:${NC}"
-echo "   ✅ Frontend → Backend API (51.21.219.35:3000)"
+echo "   ✅ Frontend → Backend API (51.20.67.228:3000)"
 echo "   ✅ Backend  → AWS RDS PostgreSQL"
 echo ""
 

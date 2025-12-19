@@ -243,19 +243,19 @@ router.get('/geofence-events',
 );
 
 // ============================================================================
-// ACCOUNTING INTEGRATION
+// ACCOUNTING INTEGRATION (TODO: implement controller methods)
 // ============================================================================
-router.get('/accounting/validate',
-  requirePermission(Permission.REPORTS_VIEW, Permission.ADMIN_FULL_ACCESS),
-  logisticsController.validateAccountingEntries
-);
-router.get('/accounting/pl-impact',
-  requirePermission(Permission.REPORTS_VIEW, Permission.ADMIN_FULL_ACCESS),
-  logisticsController.getAccountingPLImpact
-);
-router.get('/accounting/audit-trail',
-  requirePermission(Permission.REPORTS_VIEW, Permission.ADMIN_FULL_ACCESS),
-  logisticsController.getAccountingAuditTrail
-);
+// router.get('/accounting/validate',
+//   requirePermission(Permission.REPORTS_VIEW, Permission.ADMIN_FULL_ACCESS),
+//   logisticsController.validateAccountingEntries
+// );
+// router.get('/accounting/pl-impact',
+//   requirePermission(Permission.REPORTS_VIEW, Permission.ADMIN_FULL_ACCESS),
+//   logisticsController.getAccountingPLImpact
+// );
+// router.get('/accounting/audit-trail',
+//   requirePermission(Permission.REPORTS_VIEW, Permission.ADMIN_FULL_ACCESS),
+//   logisticsController.getAccountingAuditTrail
+// );
 
 export default router;

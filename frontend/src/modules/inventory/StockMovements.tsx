@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../services/api.service';
 
 interface StockMovement {
   movement_id: number;
@@ -40,7 +41,7 @@ export default function StockMovements() {
 
   const fetchMovements = async () => {
     try {
-      let url = 'http://localhost:3000/api/inventory/stock-movements?';
+      let url = `${API_BASE_URL}/api/inventory/stock-movements?`;
       const params = new URLSearchParams();
       
       if (filterType) params.append('movement_type', filterType);

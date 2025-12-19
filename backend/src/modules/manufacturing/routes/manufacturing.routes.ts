@@ -3,11 +3,15 @@
  */
 
 import { Router } from 'express';
-import * as manufacturingController from '../controllers/manufacturing.controller';
+import * as manufacturingController from '../controllers/manufacturing.controller.v2';
+import { tenantMiddleware } from '../../../middleware/tenant';
 import { MrpEngineService } from '../services/mrp-engine.service';
 import { ProductionSchedulerService } from '../services/production-scheduler.service';
 
 const router = Router();
+
+// Enforce tenant context for all manufacturing routes
+router.use(tenantMiddleware);
 
 // ==================================================
 // WORK CENTERS

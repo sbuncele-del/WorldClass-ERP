@@ -14,7 +14,7 @@
  * - Financial Integration (IFRS 15 Revenue Recognition)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
   Input, Select, DatePicker, Modal, Form, Typography, Avatar,
@@ -34,6 +34,8 @@ import {
   CreditCardOutlined, IdcardOutlined, PhoneOutlined, MailOutlined
 } from '@ant-design/icons';
 import { HubLayout, HubHeader, StatusBanner, HubTabs } from '../../components/hub';
+import apiClient from '../../services/api';
+import { useClient } from '../../contexts/ClientContext';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -123,62 +125,48 @@ interface Practitioner {
   appointmentsToday: number;
 }
 
-// Sample Data
-const samplePatients: Patient[] = [
-  { id: 'PAT-001', title: 'Mr', firstName: 'John', lastName: 'Smith', idNumber: '8501015800089', dob: '1985-01-01', gender: 'M', cellphone: '0821234567', email: 'john@email.com', medicalAid: 'Discovery Health', memberNumber: '123456789', dependantCode: '00', planOption: 'Executive', balance: 0, lastVisit: '2024-06-10' },
-  { id: 'PAT-002', title: 'Mrs', firstName: 'Sarah', lastName: 'Johnson', idNumber: '9003150800087', dob: '1990-03-15', gender: 'F', cellphone: '0839876543', email: 'sarah@email.com', medicalAid: 'GEMS', memberNumber: '987654321', dependantCode: '01', planOption: 'Emerald', balance: 450, lastVisit: '2024-06-08' },
-  { id: 'PAT-003', title: 'Ms', firstName: 'Thandi', lastName: 'Nkosi', idNumber: '9505200800083', dob: '1995-05-20', gender: 'F', cellphone: '0761112233', email: 'thandi@email.com', medicalAid: 'Bonitas', memberNumber: '456789123', dependantCode: '00', planOption: 'BonComprehensive', balance: -250, lastVisit: '2024-06-12' },
-  { id: 'PAT-004', title: 'Mr', firstName: 'David', lastName: 'Mokoena', idNumber: '7808085800081', dob: '1978-08-08', gender: 'M', cellphone: '0829998877', email: 'david@email.com', balance: 1250, lastVisit: '2024-05-20' },
-  { id: 'PAT-005', title: 'Dr', firstName: 'Lisa', lastName: 'van der Berg', idNumber: '8206120800085', dob: '1982-06-12', gender: 'F', cellphone: '0845556666', email: 'lisa@email.com', medicalAid: 'Discovery Health', memberNumber: '654321987', dependantCode: '00', planOption: 'Coastal', balance: 0, lastVisit: '2024-06-11' }
-];
-
-const sampleAppointments: Appointment[] = [
-  { id: 'APT-001', patientId: 'PAT-001', patientName: 'John Smith', practitioner: 'Dr. M. Patel', date: '2024-06-15', time: '09:00', duration: 30, type: 'consultation', status: 'confirmed', reason: 'Annual checkup' },
-  { id: 'APT-002', patientId: 'PAT-002', patientName: 'Sarah Johnson', practitioner: 'Dr. M. Patel', date: '2024-06-15', time: '09:30', duration: 20, type: 'follow-up', status: 'scheduled', reason: 'BP follow-up' },
-  { id: 'APT-003', patientId: 'PAT-003', patientName: 'Thandi Nkosi', practitioner: 'Dr. M. Patel', date: '2024-06-15', time: '10:00', duration: 30, type: 'chronic', status: 'arrived', reason: 'Chronic medication' },
-  { id: 'APT-004', patientId: 'PAT-004', patientName: 'David Mokoena', practitioner: 'Dr. S. Naidoo', date: '2024-06-15', time: '10:30', duration: 45, type: 'procedure', status: 'scheduled', reason: 'Minor procedure' },
-  { id: 'APT-005', patientId: 'PAT-005', patientName: 'Lisa van der Berg', practitioner: 'Dr. M. Patel', date: '2024-06-15', time: '11:00', duration: 30, type: 'consultation', status: 'scheduled' }
-];
-
-const sampleInvoices: Invoice[] = [
-  { id: 'INV-001', invoiceNo: 'INV-2024-0001', patientId: 'PAT-001', patientName: 'John Smith', date: '2024-06-10', medicalAid: 'Discovery Health', memberNo: '123456789', grossAmount: 1850, medicalAidPortion: 1450, patientPortion: 400, status: 'submitted', icd10Codes: ['J06.9', 'R05'], tariffCodes: ['0190', '0120'] },
-  { id: 'INV-002', invoiceNo: 'INV-2024-0002', patientId: 'PAT-002', patientName: 'Sarah Johnson', date: '2024-06-08', medicalAid: 'GEMS', memberNo: '987654321', grossAmount: 950, medicalAidPortion: 750, patientPortion: 200, status: 'paid', icd10Codes: ['I10'], tariffCodes: ['0190'] },
-  { id: 'INV-003', invoiceNo: 'INV-2024-0003', patientId: 'PAT-003', patientName: 'Thandi Nkosi', date: '2024-06-12', medicalAid: 'Bonitas', memberNo: '456789123', grossAmount: 2200, medicalAidPortion: 1800, patientPortion: 400, status: 'submitted', icd10Codes: ['E11.9', 'I10'], tariffCodes: ['0190', '0145', '0167'] },
-  { id: 'INV-004', invoiceNo: 'INV-2024-0004', patientId: 'PAT-004', patientName: 'David Mokoena', date: '2024-05-20', grossAmount: 1250, medicalAidPortion: 0, patientPortion: 1250, status: 'draft', icd10Codes: ['M54.5'], tariffCodes: ['0190', '0191'] }
-];
-
-const sampleClaims: Claim[] = [
-  { id: 'CLM-001', claimNo: 'CLM-2024-0001', invoiceNo: 'INV-2024-0001', patientName: 'John Smith', medicalAid: 'Discovery Health', submittedDate: '2024-06-10', amount: 1450, status: 'processing' },
-  { id: 'CLM-002', claimNo: 'CLM-2024-0002', invoiceNo: 'INV-2024-0002', patientName: 'Sarah Johnson', medicalAid: 'GEMS', submittedDate: '2024-06-08', amount: 750, status: 'paid', paidAmount: 720, paidDate: '2024-06-12' },
-  { id: 'CLM-003', claimNo: 'CLM-2024-0003', invoiceNo: 'INV-2024-0003', patientName: 'Thandi Nkosi', medicalAid: 'Bonitas', submittedDate: '2024-06-12', amount: 1800, status: 'submitted' }
-];
-
-const sampleSchemes: MedicalAidScheme[] = [
-  { id: 'MA-001', name: 'Discovery Health', code: 'DH', administrator: 'Discovery Health', activePatients: 1250, outstandingClaims: 45000, avgPaymentDays: 14 },
-  { id: 'MA-002', name: 'GEMS', code: 'GE', administrator: 'Metropolitan Health', activePatients: 890, outstandingClaims: 28000, avgPaymentDays: 21 },
-  { id: 'MA-003', name: 'Bonitas', code: 'BO', administrator: 'Administration', activePatients: 650, outstandingClaims: 18500, avgPaymentDays: 18 },
-  { id: 'MA-004', name: 'Medshield', code: 'MS', administrator: 'Medshield', activePatients: 420, outstandingClaims: 12000, avgPaymentDays: 16 },
-  { id: 'MA-005', name: 'Momentum Health', code: 'MH', administrator: 'Momentum', activePatients: 380, outstandingClaims: 9500, avgPaymentDays: 12 }
-];
-
-const samplePractitioners: Practitioner[] = [
-  { id: 'DOC-001', name: 'Dr. Mahesh Patel', hpcsaNumber: 'MP 0123456', specialty: 'General Practitioner', practiceNumber: 'PR0001234', status: 'active', appointmentsToday: 12 },
-  { id: 'DOC-002', name: 'Dr. Sipho Naidoo', hpcsaNumber: 'MP 0234567', specialty: 'General Practitioner', practiceNumber: 'PR0001234', status: 'active', appointmentsToday: 8 },
-  { id: 'DOC-003', name: 'Sister Jane Mbeki', hpcsaNumber: 'SN 0345678', specialty: 'Nursing Practitioner', practiceNumber: 'PR0001234', status: 'active', appointmentsToday: 15 }
-];
-
 const HealthcareHub: React.FC = () => {
+  const { currentClient } = useClient();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [patientModalVisible, setPatientModalVisible] = useState(false);
   const [appointmentModalVisible, setAppointmentModalVisible] = useState(false);
   const [invoiceModalVisible, setInvoiceModalVisible] = useState(false);
-  const [patients] = useState<Patient[]>(samplePatients);
-  const [appointments] = useState<Appointment[]>(sampleAppointments);
-  const [invoices] = useState<Invoice[]>(sampleInvoices);
-  const [claims] = useState<Claim[]>(sampleClaims);
-  const [schemes] = useState<MedicalAidScheme[]>(sampleSchemes);
-  const [practitioners] = useState<Practitioner[]>(samplePractitioners);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [claims, setClaims] = useState<Claim[]>([]);
+  const [schemes, setSchemes] = useState<MedicalAidScheme[]>([]);
+  const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
   const [form] = Form.useForm();
+  
+  // Get company name from client context
+  const companyName = currentClient?.name || currentClient?.company_name || 'Healthcare Practice';
+
+  // Fetch healthcare data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const headers = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+        const [patientsRes, appointmentsRes, invoicesRes, claimsRes, schemesRes, practitionersRes] = await Promise.all([
+          fetch('/api/healthcare/patients', { headers }),
+          fetch('/api/healthcare/appointments', { headers }),
+          fetch('/api/healthcare/invoices', { headers }),
+          fetch('/api/healthcare/claims', { headers }),
+          fetch('/api/healthcare/schemes', { headers }),
+          fetch('/api/healthcare/practitioners', { headers })
+        ]);
+        if (patientsRes.ok) setPatients((await patientsRes.json()).data || []);
+        if (appointmentsRes.ok) setAppointments((await appointmentsRes.json()).data || []);
+        if (invoicesRes.ok) setInvoices((await invoicesRes.json()).data || []);
+        if (claimsRes.ok) setClaims((await claimsRes.json()).data || []);
+        if (schemesRes.ok) setSchemes((await schemesRes.json()).data || []);
+        if (practitionersRes.ok) setPractitioners((await practitionersRes.json()).data || []);
+      } catch (error) {
+        console.error('Failed to fetch healthcare data:', error);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Calculate stats
   const healthcareStats = {
@@ -815,16 +803,16 @@ const HealthcareHub: React.FC = () => {
           <Card title={<><SafetyCertificateOutlined /> Practice Details</>}>
             <Form layout="vertical">
               <Form.Item label="Practice Name">
-                <Input defaultValue="Dr M Patel & Associates" />
+                <Input defaultValue={companyName} />
               </Form.Item>
               <Form.Item label="Practice Number">
-                <Input defaultValue="PR0001234" />
+                <Input placeholder="Enter practice number" />
               </Form.Item>
               <Form.Item label="VAT Number">
-                <Input defaultValue="4123456789" />
+                <Input placeholder="Enter VAT number" />
               </Form.Item>
               <Form.Item label="BHF Practice Code">
-                <Input defaultValue="8900001" />
+                <Input placeholder="Enter BHF practice code" />
               </Form.Item>
               <Button type="primary">Save Details</Button>
             </Form>

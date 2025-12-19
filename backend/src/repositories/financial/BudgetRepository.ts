@@ -122,8 +122,8 @@ export class BudgetRepository extends BaseRepository<Budget> {
         END as variance_percent
       FROM financial.accounts a
       LEFT JOIN financial.budget_lines bl ON bl.account_id = a.id AND bl.budget_id = $2
-      LEFT JOIN financial.journal_entry_lines jel ON jel.account_id = a.id AND jel.tenant_id = $1
-      LEFT JOIN financial.journal_entries je ON je.id = jel.journal_entry_id 
+      LEFT JOIN journal_entry_lines jel ON jel.account_id = a.id AND jel.tenant_id = $1
+      LEFT JOIN journal_entries je ON je.entry_id = jel.journal_entry_id 
         AND je.status = 'posted' 
         AND je.posting_date BETWEEN $3 AND $4
       WHERE a.tenant_id = $1 

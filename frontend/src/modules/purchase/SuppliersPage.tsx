@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../services/api';
 import '../../styles/erp-ui.css';
 
 interface Supplier {
@@ -21,6 +22,7 @@ interface Supplier {
 const SuppliersPage: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
 
@@ -30,94 +32,15 @@ const SuppliersPage: React.FC = () => {
 
   const fetchSuppliers = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // Mock data
-      const mockSuppliers: Supplier[] = [
-        {
-          id: 'SUP001',
-          code: 'TSI-001',
-          name: 'Tech Supplies International',
-          contact_person: 'Thabo Mkhize',
-          email: 'thabo@techsupplies.co.za',
-          phone: '+27 11 456 7890',
-          status: 'ACTIVE',
-          total_spend: 485600,
-          outstanding_balance: 82400,
-          payment_terms: '30 Days',
-          credit_limit: 150000,
-          on_time_delivery: 95,
-          quality_score: 92,
-          last_order_date: '2025-01-10'
-        },
-        {
-          id: 'SUP002',
-          code: 'OEL-002',
-          name: 'Office Equipment Ltd',
-          contact_person: 'Sarah van der Merwe',
-          email: 'sarah@officeequip.co.za',
-          phone: '+27 21 345 6789',
-          status: 'ACTIVE',
-          total_spend: 362400,
-          outstanding_balance: 45200,
-          payment_terms: '60 Days',
-          credit_limit: 100000,
-          on_time_delivery: 88,
-          quality_score: 85,
-          last_order_date: '2025-01-08'
-        },
-        {
-          id: 'SUP003',
-          code: 'IPC-003',
-          name: 'Industrial Parts Co',
-          contact_person: 'Johan Botha',
-          email: 'johan@industrialparts.co.za',
-          phone: '+27 31 234 5678',
-          status: 'ACTIVE',
-          total_spend: 298800,
-          outstanding_balance: 67800,
-          payment_terms: '45 Days',
-          credit_limit: 120000,
-          on_time_delivery: 78,
-          quality_score: 80,
-          last_order_date: '2025-01-12'
-        },
-        {
-          id: 'SUP004',
-          code: 'BSL-004',
-          name: 'Building Supplies Ltd',
-          contact_person: 'Nomvula Dlamini',
-          email: 'nomvula@buildingsupplies.co.za',
-          phone: '+27 12 123 4567',
-          status: 'INACTIVE',
-          total_spend: 125400,
-          outstanding_balance: 0,
-          payment_terms: '30 Days',
-          credit_limit: 80000,
-          on_time_delivery: 92,
-          quality_score: 88,
-          last_order_date: '2024-11-15'
-        },
-        {
-          id: 'SUP005',
-          code: 'CWH-005',
-          name: 'Chemical Warehouse',
-          contact_person: 'Pieter Kruger',
-          email: 'pieter@chemwarehouse.co.za',
-          phone: '+27 41 987 6543',
-          status: 'PROSPECT',
-          total_spend: 0,
-          outstanding_balance: 0,
-          payment_terms: '30 Days',
-          credit_limit: 50000,
-          on_time_delivery: 0,
-          quality_score: 0,
-          last_order_date: '-'
-        }
-      ];
-
-      setSuppliers(mockSuppliers);
-    } catch (err) {
+      const response = await apiClient.get('/api/purchase/suppliers');
+      const data = response.data?.data || response.data || [];
+      setSuppliers(Array.isArray(data) ? data : []);
+    } catch (err: any) {
       console.error('Error fetching suppliers:', err);
+      setError(err.response?.data?.message || 'Failed to load suppliers');
+      setSuppliers([]);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import '../styles/ManualJournalEntry.css';
 
 interface JournalLine {
@@ -59,7 +60,7 @@ const ManualJournalEntry: React.FC = () => {
 
   const fetchAccounts = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/financial/chart-of-accounts');
+      const response = await fetch(`${API_BASE_URL}/api/financial/chart-of-accounts`);
       const data = await response.json();
       if (data.success) {
         setAccounts(data.data.filter((acc: Account) => !acc.account_type?.includes('header')));
@@ -72,11 +73,11 @@ const ManualJournalEntry: React.FC = () => {
   const fetchDimensions = async () => {
     try {
       const [ccRes, deptRes, projRes, prodRes, locRes] = await Promise.all([
-        fetch('http://localhost:3000/api/financial/dimensions/cost-centers'),
-        fetch('http://localhost:3000/api/financial/dimensions/departments'),
-        fetch('http://localhost:3000/api/financial/dimensions/projects'),
-        fetch('http://localhost:3000/api/financial/dimensions/products'),
-        fetch('http://localhost:3000/api/financial/dimensions/locations'),
+        fetch(`${API_BASE_URL}/api/financial/dimensions/cost-centers`),
+        fetch(`${API_BASE_URL}/api/financial/dimensions/departments`),
+        fetch(`${API_BASE_URL}/api/financial/dimensions/projects`),
+        fetch(`${API_BASE_URL}/api/financial/dimensions/products`),
+        fetch(`${API_BASE_URL}/api/financial/dimensions/locations`),
       ]);
 
       const [ccData, deptData, projData, prodData, locData] = await Promise.all([
@@ -199,7 +200,7 @@ const ManualJournalEntry: React.FC = () => {
         })),
       };
       
-      const createResponse = await fetch('http://localhost:3000/api/financial/journal-entries', {
+      const createResponse = await fetch(`${API_BASE_URL}/api/financial/journal-entries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(createPayload),
@@ -216,7 +217,7 @@ const ManualJournalEntry: React.FC = () => {
       
       // If POST status, post the entry immediately
       if (status === 'POST') {
-        const postResponse = await fetch(`http://localhost:3000/api/financial/journal-entries/${journalEntryId}/post`, {
+        const postResponse = await fetch(`${API_BASE_URL}/api/financial/journal-entries/${journalEntryId}/post`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ user_id: 'current-user' }),
@@ -266,7 +267,7 @@ const ManualJournalEntry: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:3000/api/financial/approvals/submit/${savedEntryId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/financial/approvals/submit/${savedEntryId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ user_id: 'current-user' }),

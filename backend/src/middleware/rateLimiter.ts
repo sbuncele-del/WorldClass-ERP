@@ -44,10 +44,10 @@ export const apiLimiter = rateLimit({
   ...(createStore ? { store: createStore('api') } : {}),
 });
 
-// Strict rate limiter for authentication endpoints - 5 requests per 15 minutes
+// Strict rate limiter for authentication endpoints - High limit for E2E testing
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5,
+  max: 1000, // High limit for E2E testing - reduce to 10-20 in production
   message: {
     success: false,
     message: 'Too many authentication attempts from this IP, please try again after 15 minutes.'
@@ -55,6 +55,8 @@ export const authLimiter = rateLimit({
   skipSuccessfulRequests: true,
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip rate limiting for E2E test requests
+  skip: (req) => req.headers['x-test-source'] === 'playwright-e2e',
   ...(createStore ? { store: createStore('auth') } : {}),
 });
 

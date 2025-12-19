@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '../../../services/api.service';
 import './IncomeStatement.css';
 
 interface AccountBalance {
@@ -68,7 +69,7 @@ const IncomeStatement: React.FC = () => {
     setError(null);
 
     try {
-      let url = `http://localhost:3000/api/financial/reports/income-statement?period=${periodType}&compare_prior=${showComparison}`;
+      let url = `${API_BASE_URL}/api/financial/reports/income-statement?period=${periodType}&compare_prior=${showComparison}`;
       
       if (periodType === 'custom' && customStartDate && customEndDate) {
         url += `&start_date=${customStartDate}&end_date=${customEndDate}`;

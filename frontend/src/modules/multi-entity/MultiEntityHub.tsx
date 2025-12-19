@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Row,
@@ -21,7 +21,10 @@ import {
   message,
   Divider,
   Avatar,
+  Spin,
 } from 'antd';
+import apiClient from '../../services/api';
+import { useClient } from '../../contexts/ClientContext';
 import {
   BankOutlined,
   GlobalOutlined,
@@ -44,133 +47,42 @@ import './MultiEntityHub.css';
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
-// Entity hierarchy data
-const entityHierarchy = [
-  {
-    key: 'holding',
-    title: 'WorldClass Holdings Ltd',
-    icon: <BankOutlined />,
-    type: 'Holding Company',
-    country: 'ZA',
-    currency: 'ZAR',
-    status: 'active',
-    children: [
-      {
-        key: 'trading-za',
-        title: 'WorldClass Trading SA (Pty) Ltd',
-        icon: <GlobalOutlined />,
-        type: 'Operating',
-        country: 'ZA',
-        currency: 'ZAR',
-        status: 'active',
-        children: [
-          {
-            key: 'branch-jhb',
-            title: 'Johannesburg Branch',
-            icon: <TeamOutlined />,
-            type: 'Branch',
-            country: 'ZA',
-            currency: 'ZAR',
-            status: 'active',
-          },
-          {
-            key: 'branch-cpt',
-            title: 'Cape Town Branch',
-            icon: <TeamOutlined />,
-            type: 'Branch',
-            country: 'ZA',
-            currency: 'ZAR',
-            status: 'active',
-          },
-        ],
-      },
-      {
-        key: 'trading-uk',
-        title: 'WorldClass UK Ltd',
-        icon: <GlobalOutlined />,
-        type: 'Subsidiary',
-        country: 'GB',
-        currency: 'GBP',
-        status: 'active',
-      },
-      {
-        key: 'trading-us',
-        title: 'WorldClass Inc.',
-        icon: <GlobalOutlined />,
-        type: 'Subsidiary',
-        country: 'US',
-        currency: 'USD',
-        status: 'pending',
-      },
-      {
-        key: 'investments',
-        title: 'WorldClass Investments (Pty) Ltd',
-        icon: <PieChartOutlined />,
-        type: 'Investment',
-        country: 'ZA',
-        currency: 'ZAR',
-        status: 'active',
-      },
-    ],
-  },
-];
-
-// Inter-company transactions
-const interCompanyTransactions = [
-  {
-    id: 'ICT-2025-001',
-    from: 'WorldClass Holdings Ltd',
-    to: 'WorldClass Trading SA (Pty) Ltd',
-    type: 'Management Fee',
-    amount: 450000,
-    currency: 'ZAR',
-    period: 'Nov 2025',
-    status: 'posted',
-  },
-  {
-    id: 'ICT-2025-002',
-    from: 'WorldClass Trading SA (Pty) Ltd',
-    to: 'WorldClass UK Ltd',
-    type: 'Royalty',
-    amount: 125000,
-    currency: 'GBP',
-    period: 'Nov 2025',
-    status: 'pending',
-  },
-  {
-    id: 'ICT-2025-003',
-    from: 'WorldClass Holdings Ltd',
-    to: 'WorldClass Inc.',
-    type: 'Intercompany Loan',
-    amount: 500000,
-    currency: 'USD',
-    period: 'Nov 2025',
-    status: 'draft',
-  },
-  {
-    id: 'ICT-2025-004',
-    from: 'WorldClass UK Ltd',
-    to: 'WorldClass Holdings Ltd',
-    type: 'Dividend',
-    amount: 200000,
-    currency: 'GBP',
-    period: 'Q3 2025',
-    status: 'posted',
-  },
-];
-
-// Consolidation rules
-const consolidationRules = [
-  { entity: 'WorldClass Trading SA', ownership: 100, method: 'Full Consolidation', eliminateIC: true },
-  { entity: 'WorldClass UK Ltd', ownership: 100, method: 'Full Consolidation', eliminateIC: true },
-  { entity: 'WorldClass Inc.', ownership: 75, method: 'Full Consolidation', eliminateIC: true },
-  { entity: 'WorldClass Investments', ownership: 100, method: 'Equity Method', eliminateIC: false },
-];
-
 const MultiEntityHub: React.FC = () => {
+  const { currentClient } = useClient();
+  const companyName = currentClient?.name || 'Your Company';
+  
   const [activeTab, setActiveTab] = useState('overview');
   const [showEntityModal, setShowEntityModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Data state
+  const [entityHierarchy, setEntityHierarchy] = useState<any[]>([]);
+  const [interCompanyTransactions, setInterCompanyTransactions] = useState<any[]>([]);
+  const [consolidationRules, setConsolidationRules] = useState<any[]>([]);
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [hierarchyRes, transactionsRes, rulesRes] = await Promise.all([
+          apiClient.get('/api/multi-entity/hierarchy'),
+          apiClient.get('/api/multi-entity/transactions'),
+          apiClient.get('/api/multi-entity/consolidation-rules')
+        ]);
+        setEntityHierarchy(hierarchyRes.data || []);
+        setInterCompanyTransactions(transactionsRes.data || []);
+        setConsolidationRules(rulesRes.data || []);
+      } catch (error) {
+        console.error('Failed to fetch multi-entity data:', error);
+        message.error('Failed to load multi-entity data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleConsolidate = async () => {
     setSyncing(true);
@@ -308,7 +220,7 @@ const MultiEntityHub: React.FC = () => {
               <BankOutlined className="group-icon" />
               <div>
                 <Text strong style={{ fontSize: '16px', display: 'block', color: 'white' }}>Group Structure</Text>
-                <Text style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>WorldClass Holdings Ltd</Text>
+                <Text style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)' }}>{companyName}</Text>
               </div>
             </div>
           </Col>
@@ -577,8 +489,7 @@ const MultiEntityHub: React.FC = () => {
           </Form.Item>
           <Form.Item label="Parent Entity">
             <Select defaultValue="holding">
-              <Select.Option value="holding">WorldClass Holdings Ltd</Select.Option>
-              <Select.Option value="trading-za">WorldClass Trading SA (Pty) Ltd</Select.Option>
+              <Select.Option value="holding">{companyName}</Select.Option>
             </Select>
           </Form.Item>
           <Row gutter={16}>

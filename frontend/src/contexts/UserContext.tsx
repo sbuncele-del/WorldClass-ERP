@@ -5,6 +5,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { API_BASE_URL } from '../services/api.service';
 import type {
   User,
   Permission,
@@ -16,7 +17,7 @@ import type {
 const MOCK_USER: User = {
   id: 'user-001',
   username: 'john.doe',
-  email: 'john.doe@aetheros.com',
+  email: 'john.doe@siyabusa.co.za',
   firstName: 'John',
   lastName: 'Doe',
   fullName: 'John Doe',
@@ -92,7 +93,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       setIsLoading(true);
       
       try {
-        const token = localStorage.getItem('authToken');
+        // Accept either key for compatibility
+        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
         
         if (!token) {
           // NO MOCK DATA - User must authenticate
@@ -102,16 +104,56 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         }
 
         // Validate token with backend
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-        const response = await fetch(`${apiUrl}/api/auth/me`, {
+                const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
         });
 
         if (response.ok) {
-          const user = await response.json();
-          setCurrentUser(user);
+          const result = await response.json();
+          // API returns { success: true, data: { first_name, last_name, ... } }
+          const userData = result.data || result;
+          
+          // Map API field names to frontend User type
+          const mappedUser: User = {
+            id: userData.id,
+            username: userData.username || userData.email,
+            email: userData.email,
+            firstName: userData.first_name || userData.firstName,
+            lastName: userData.last_name || userData.lastName,
+            fullName: userData.first_name && userData.last_name 
+              ? `${userData.first_name} ${userData.last_name}` 
+              : userData.fullName || userData.email,
+            avatar: userData.avatar,
+            status: userData.status || 'ACTIVE',
+            lastLogin: userData.last_login || userData.lastLogin,
+            passwordLastChanged: userData.password_last_changed || userData.passwordLastChanged,
+            mfaEnabled: userData.mfa_enabled || userData.mfaEnabled || false,
+            role: {
+              id: userData.role_id || 'role-001',
+              name: userData.role || 'admin',
+              displayName: userData.role === 'admin' ? 'Administrator' : userData.role || 'User',
+              level: userData.role === 'admin' ? 'SYSTEM_ADMIN' : 'STAFF',
+              description: '',
+            },
+            tenantId: userData.tenant_id || userData.tenantId,
+            tenantName: userData.tenant_name || userData.tenantName,
+            companyName: userData.tenant_name || userData.tenantName || userData.companyName,
+            permissions: userData.permissions || [],
+          };
+          
+          // Store tenant info for other components
+          if (userData.tenant_name || userData.tenant_id) {
+            localStorage.setItem('tenant', JSON.stringify({
+              id: userData.tenant_id,
+              name: userData.tenant_name,
+              slug: userData.tenant_slug,
+              subscriptionPlan: userData.subscription_plan,
+            }));
+          }
+          
+          setCurrentUser(mappedUser);
           setIsAuthenticated(true);
         } else {
           // Token invalid - clear it and require re-login
@@ -136,8 +178,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const response = await fetch(`${apiUrl}/api/auth/login`, {
+            const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -148,6 +189,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       if (response.ok) {
         const data = await response.json();
         localStorage.setItem('authToken', data.token);
+        localStorage.setItem('token', data.token);
         setCurrentUser(data.user);
         setIsAuthenticated(true);
       } else {
@@ -170,11 +212,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setIsLoading(true);
     
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const token = localStorage.getItem('authToken');
+            const token = localStorage.getItem('authToken') || localStorage.getItem('token');
       
       if (token) {
-        await fetch(`${apiUrl}/api/auth/logout`, {
+        await fetch(`${API_BASE_URL}/api/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -185,6 +226,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       console.error('Logout error:', err);
     } finally {
       localStorage.removeItem('authToken');
+      localStorage.removeItem('token');
       localStorage.removeItem('currentClientId');
       setCurrentUser(null);
       setIsAuthenticated(false);
@@ -199,10 +241,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const token = localStorage.getItem('authToken');
+            const token = localStorage.getItem('authToken');
       
-      const response = await fetch(`${apiUrl}/api/users/${currentUser.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${currentUser.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

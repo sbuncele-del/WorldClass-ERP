@@ -105,7 +105,7 @@ async function getRecentTransactions(tenantId: string) {
       jel.credit,
       je.description
     FROM journal_entry_lines jel
-    JOIN journal_entries je ON jel.journal_entry_id = je.id
+    JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     JOIN chart_of_accounts coa ON jel.account_code = coa.account_code AND coa.tenant_id = $1
     WHERE je.tenant_id = $1 AND je.status = 'posted'
     ORDER BY je.journal_date DESC, je.created_at DESC
@@ -133,7 +133,7 @@ async function getCashFlowData(tenantId: string) {
       SUM(CASE WHEN coa.account_type = 'Liability' OR coa.account_type = 'Equity' 
            THEN jel.credit - jel.debit ELSE 0 END) as cash_outflow
     FROM journal_entry_lines jel
-    JOIN journal_entries je ON jel.journal_entry_id = je.id
+    JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
     JOIN chart_of_accounts coa ON jel.account_code = coa.account_code AND coa.tenant_id = $1
     WHERE je.tenant_id = $1 
       AND je.status = 'posted'
@@ -165,7 +165,7 @@ async function getPendingReconciliations(tenantId: string) {
         account_code,
         ABS(SUM(debit - credit)) as unreconciled_amount
       FROM journal_entry_lines jel
-      JOIN journal_entries je ON jel.journal_entry_id = je.id
+      JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       WHERE je.tenant_id = $1 
         AND je.status = 'posted'
         AND jel.reconciled = false

@@ -1,5 +1,5 @@
 import express from 'express';
-import * as healthcareController from '../controllers/healthcare.controller';
+import HealthcareControllerV2 from '../controllers/healthcare.controller.v2';
 import { authenticateToken } from '../middleware/auth';
 import { tenantMiddleware } from '../middleware/tenant';
 
@@ -11,130 +11,43 @@ router.use(tenantMiddleware);
 
 /**
  * ================================================
- * OPERATIONS DASHBOARD ROUTES
+ * HEALTHCARE V2 ROUTES (Tenant-secure)
  * ================================================
  */
-router.get('/facilities/:facilityId/operations/status', healthcareController.getFacilityOperationsStatus);
-router.get('/facilities/:facilityId/operations/kpis', healthcareController.getFacilityKPIs);
+// Facilities & Operations
+router.get('/facilities', HealthcareControllerV2.getFacilities);
+router.get('/facilities/:facilityId/operations', HealthcareControllerV2.getFacilityOperationsStatus);
+router.get('/facilities/:facilityId/kpis', HealthcareControllerV2.getFacilityKPIs);
+router.get('/facilities/:facilityId/appointments/today', HealthcareControllerV2.getTodayAppointments);
 
-/**
- * ================================================
- * DASHBOARD & WORKSPACE ROUTES
- * ================================================
- */
-router.get('/facilities/:facilityId/dashboard/command-center', healthcareController.getOperationsCommandCenterDashboard);
-router.get('/facilities/:facilityId/workspace/patients', healthcareController.getPatientWorkspace);
-router.get('/facilities/:facilityId/workspace/clinical', healthcareController.getClinicalWorkspace);
-router.get('/facilities/:facilityId/workspace/resources', healthcareController.getResourceWorkspace);
-router.get('/facilities/:facilityId/workspace/analytics', healthcareController.getAnalyticsWorkspace);
-router.get('/facilities/:facilityId/stats/quick', healthcareController.getQuickStats);
+// Patient Management
+router.get('/facilities/:facilityId/patients', HealthcareControllerV2.getPatients);
+router.get('/patients/:patientId', HealthcareControllerV2.getPatient);
+router.post('/patients', HealthcareControllerV2.createPatient);
+router.put('/patients/:patientId', HealthcareControllerV2.updatePatient);
 
-/**
- * ================================================
- * PATIENT JOURNEY ROUTES
- * ================================================
- */
-router.get('/facilities/:facilityId/appointments/today', healthcareController.getTodayAppointments);
-router.get('/facilities/:facilityId/patients/active', healthcareController.getActivePatientsInFacility);
-router.get('/facilities/:facilityId/patient-flow/bottlenecks', healthcareController.getPatientFlowBottlenecks);
-router.post('/facilities/:facilityId/patients/:patientId/check-in', healthcareController.checkInPatient);
-router.put('/facilities/:facilityId/visits/:visitId/stage', healthcareController.updatePatientJourneyStage);
+// Patient Journey
+router.get('/facilities/:facilityId/active-patients', HealthcareControllerV2.getActivePatientsInFacility);
+router.post('/facilities/:facilityId/check-in', HealthcareControllerV2.checkInPatient);
+router.put('/visits/:visitId/journey', HealthcareControllerV2.updatePatientJourneyStage);
 
-/**
- * ================================================
- * PATIENT MANAGEMENT ROUTES
- * ================================================
- */
-router.get('/facilities/:facilityId/patients', healthcareController.getPatients);
-router.get('/patients/:patientId', healthcareController.getPatient);
-router.post('/patients', healthcareController.createPatient);
-router.put('/patients/:patientId', healthcareController.updatePatient);
+// Staff & Equipment
+router.get('/facilities/:facilityId/staff/schedule', HealthcareControllerV2.getTodayStaffSchedule);
+router.get('/facilities/:facilityId/staff/utilization', HealthcareControllerV2.getStaffUtilization);
+router.get('/facilities/:facilityId/equipment', HealthcareControllerV2.getMedicalEquipmentStatus);
 
-/**
- * ================================================
- * CLINICAL WORKFLOWS ROUTES
- * ================================================
- */
-// Vitals
-router.post('/patients/:patientId/vitals', healthcareController.recordVitals);
+// Inventory
+router.get('/facilities/:facilityId/inventory', HealthcareControllerV2.getInventoryStatus);
+router.get('/facilities/:facilityId/inventory/alerts', HealthcareControllerV2.getInventoryAlerts);
+router.post('/facilities/:facilityId/inventory/reorder', HealthcareControllerV2.createReorderRequest);
 
-// Triage
-router.post('/patients/:patientId/triage', healthcareController.createTriage);
+// Clinical Workflows
+router.post('/patients/:patientId/vitals', HealthcareControllerV2.recordVitals);
+router.post('/patients/:patientId/triage', HealthcareControllerV2.createTriage);
+router.post('/patients/:patientId/lab-orders', HealthcareControllerV2.createLabOrder);
 
-// Lab Orders
-router.post('/patients/:patientId/lab-orders', healthcareController.createLabOrder);
-router.get('/patients/:patientId/lab-orders', healthcareController.getPatientLabOrders);
-router.put('/lab-orders/:orderId/results', healthcareController.updateLabResults);
-
-// Prescriptions
-router.post('/patients/:patientId/prescriptions', healthcareController.createPrescription);
-router.get('/patients/:patientId/prescriptions', healthcareController.getPatientPrescriptions);
-
-/**
- * ================================================
- * BED MANAGEMENT ROUTES
- * ================================================
- */
-router.get('/facilities/:facilityId/beds', healthcareController.getBedStatus);
-router.post('/beds/:bedId/assign', healthcareController.assignBed);
-router.post('/beds/:bedId/release', healthcareController.releaseBed);
-
-/**
- * ================================================
- * APPOINTMENTS ROUTES
- * ================================================
- */
-router.post('/appointments', healthcareController.createAppointment);
-router.put('/appointments/:appointmentId/status', healthcareController.updateAppointmentStatus);
-
-/**
- * ================================================
- * STAFF MANAGEMENT ROUTES (Integration with HR Module)
- * ================================================
- */
-router.get('/facilities/:facilityId/staff/schedule', healthcareController.getTodayStaffSchedule);
-router.get('/facilities/:facilityId/staff/utilization', healthcareController.getStaffUtilization);
-
-/**
- * ================================================
- * EQUIPMENT ROUTES (Integration with Asset Management)
- * ================================================
- */
-router.get('/facilities/:facilityId/equipment/status', healthcareController.getMedicalEquipmentStatus);
-
-/**
- * ================================================
- * COMMUNICATIONS ROUTES
- * ================================================
- */
-router.get('/facilities/:facilityId/communications', healthcareController.getFacilityCommunications);
-router.get('/facilities/:facilityId/service-requests', healthcareController.getServiceRequests);
-router.post('/facilities/:facilityId/service-requests', healthcareController.createServiceRequest);
-
-/**
- * ================================================
- * GOODX INTEGRATION ROUTES
- * ================================================
- */
-router.get('/facilities/:facilityId/goodx/revenue', healthcareController.getGoodXRevenue);
-router.get('/facilities/:facilityId/goodx/sync-status', healthcareController.getGoodXSyncStatus);
-
-/**
- * ================================================
- * INVENTORY ROUTES (Integration with Inventory Module)
- * ================================================
- */
-router.get('/facilities/:facilityId/inventory/status', healthcareController.getInventoryStatus);
-router.get('/facilities/:facilityId/inventory/alerts', healthcareController.getInventoryAlerts);
-router.get('/facilities/:facilityId/inventory/reorders', healthcareController.getPendingReorders);
-router.post('/facilities/:facilityId/inventory/reorders', healthcareController.createReorderRequest);
-
-/**
- * ================================================
- * FACILITIES ROUTES
- * ================================================
- */
-router.get('/facilities', healthcareController.getFacilities);
-router.get('/facilities/:facilityId/locations', healthcareController.getFacilityLocations);
+// GoodX Integration
+router.get('/facilities/:facilityId/goodx/revenue', HealthcareControllerV2.getGoodXRevenue);
+router.get('/facilities/:facilityId/goodx/sync-status', HealthcareControllerV2.getGoodXSyncStatus);
 
 export default router;

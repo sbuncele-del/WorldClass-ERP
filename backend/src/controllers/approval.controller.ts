@@ -451,7 +451,7 @@ export const getPendingApprovals = async (req: Request, res: Response): Promise<
     
     const query = `
       SELECT 
-        je.id,
+        je.entry_id,
         je.journal_number,
         je.posting_date,
         je.description,
@@ -462,7 +462,7 @@ export const getPendingApprovals = async (req: Request, res: Response): Promise<
         je.created_at,
         al.level_name as current_level_name,
         al.level_number,
-        (SELECT SUM(debit_amount) FROM journal_entry_lines WHERE journal_entry_id = je.id) as total_amount,
+        (SELECT SUM(debit_amount) FROM journal_entry_lines WHERE journal_entry_id = je.entry_id) as total_amount,
         EXTRACT(EPOCH FROM (NOW() - je.submitted_for_approval_at)) / 3600 as hours_pending
       FROM journal_entries je
       LEFT JOIN approval_levels al ON je.workflow_id = al.workflow_id 

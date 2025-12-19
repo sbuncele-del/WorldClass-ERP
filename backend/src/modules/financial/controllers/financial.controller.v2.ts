@@ -200,7 +200,7 @@ export const applyCOATemplate = async (req: TenantRequest, res: Response) => {
 
     // Prevent template apply if posted entries exist for tenant
     const postedResult = await client.query(
-      `SELECT COUNT(*) AS count FROM financial.journal_entries WHERE tenant_id = $1 AND status = 'posted'`,
+      `SELECT COUNT(*) AS count FROM journal_entries WHERE tenant_id = $1 AND status = 'posted'`,
       [ctx.tenantId]
     );
     const postedCount = parseInt(postedResult.rows[0]?.count || '0', 10);
@@ -300,8 +300,8 @@ export const getGeneralLedger = async (req: TenantRequest, res: Response) => {
         jel.debit_amount,
         jel.credit_amount,
         jel.description AS line_description
-      FROM financial.journal_entries je
-      INNER JOIN financial.journal_entry_lines jel ON je.id = jel.journal_entry_id
+      FROM journal_entries je
+      INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
       INNER JOIN financial.accounts coa ON jel.account_id = coa.id
       WHERE ${conditions.join(' AND ')}
       ORDER BY je.entry_date DESC, je.entry_number, jel.line_number
@@ -351,8 +351,8 @@ export const getAccountLedgerByCode = async (req: TenantRequest, res: Response) 
         SUM(jel.debit_amount - jel.credit_amount) OVER (
           ORDER BY je.entry_date, je.entry_number, jel.line_number
         ) AS running_balance
-      FROM financial.journal_entries je
-      INNER JOIN financial.journal_entry_lines jel ON je.id = jel.journal_entry_id
+      FROM journal_entries je
+      INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
       INNER JOIN financial.accounts coa ON jel.account_id = coa.id
       WHERE ${conditions.join(' AND ')}
       ORDER BY je.entry_date, je.entry_number, jel.line_number
@@ -379,7 +379,7 @@ export const getFiscalYears = async (req: TenantRequest, res: Response) => {
         MAX(entry_date) AS end_date,
         COUNT(*) AS entry_count,
         CASE WHEN EXTRACT(YEAR FROM entry_date) = EXTRACT(YEAR FROM CURRENT_DATE) THEN true ELSE false END AS is_current
-      FROM financial.journal_entries
+      FROM journal_entries
       WHERE tenant_id = $1 AND status = 'posted'
       GROUP BY EXTRACT(YEAR FROM entry_date)
       ORDER BY fiscal_year DESC
@@ -409,7 +409,7 @@ export const getFiscalPeriods = async (req: TenantRequest, res: Response) => {
         MAX(entry_date) AS end_date,
         COUNT(*) AS entry_count,
         'OPEN' AS status
-      FROM financial.journal_entries
+      FROM journal_entries
       WHERE tenant_id = $1 AND status = 'posted'
     `;
 
@@ -450,8 +450,8 @@ export const getCashFlowStatement = async (req: TenantRequest, res: Response) =>
         SUM(jel.debit_amount) AS debit_amount,
         SUM(jel.credit_amount) AS credit_amount,
         SUM(jel.credit_amount - jel.debit_amount) AS net_amount
-      FROM financial.journal_entries je
-      INNER JOIN financial.journal_entry_lines jel ON je.id = jel.journal_entry_id
+      FROM journal_entries je
+      INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
       INNER JOIN financial.accounts coa ON jel.account_id = coa.id
       WHERE je.tenant_id = $1
         AND je.status = 'posted'
@@ -467,8 +467,8 @@ export const getCashFlowStatement = async (req: TenantRequest, res: Response) =>
         SUM(jel.debit_amount) AS debit_amount,
         SUM(jel.credit_amount) AS credit_amount,
         SUM(jel.debit_amount - jel.credit_amount) AS net_amount
-      FROM financial.journal_entries je
-      INNER JOIN financial.journal_entry_lines jel ON je.id = jel.journal_entry_id
+      FROM journal_entries je
+      INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
       INNER JOIN financial.accounts coa ON jel.account_id = coa.id
       WHERE je.tenant_id = $1
         AND je.status = 'posted'
@@ -485,8 +485,8 @@ export const getCashFlowStatement = async (req: TenantRequest, res: Response) =>
         SUM(jel.debit_amount) AS debit_amount,
         SUM(jel.credit_amount) AS credit_amount,
         SUM(jel.credit_amount - jel.debit_amount) AS net_amount
-      FROM financial.journal_entries je
-      INNER JOIN financial.journal_entry_lines jel ON je.id = jel.journal_entry_id
+      FROM journal_entries je
+      INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
       INNER JOIN financial.accounts coa ON jel.account_id = coa.id
       WHERE je.tenant_id = $1
         AND je.status = 'posted'
@@ -704,8 +704,8 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
     // Basic aggregates to provide non-static dashboard values
     const cashResult = await query(
       `SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) AS cash_balance
-       FROM financial.journal_entry_lines jel
-       JOIN financial.journal_entries je ON je.id = jel.journal_entry_id
+       FROM journal_entry_lines jel
+       JOIN journal_entries je ON je.entry_id = jel.journal_entry_id
        JOIN financial.accounts a ON a.id = jel.account_id
        WHERE je.tenant_id = $1 AND je.status = 'posted' AND UPPER(a.account_type) = 'ASSET'
          AND (a.account_number LIKE '1%' OR a.account_number LIKE '10%')`,
@@ -714,8 +714,8 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
 
     const receivableResult = await query(
       `SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) AS ar_balance
-       FROM financial.journal_entry_lines jel
-       JOIN financial.journal_entries je ON je.id = jel.journal_entry_id
+       FROM journal_entry_lines jel
+       JOIN journal_entries je ON je.entry_id = jel.journal_entry_id
        JOIN financial.accounts a ON a.id = jel.account_id
        WHERE je.tenant_id = $1 AND je.status = 'posted' AND UPPER(a.account_type) = 'ASSET' AND a.account_number LIKE '12%'`,
       [ctx.tenantId]
@@ -723,8 +723,8 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
 
     const payableResult = await query(
       `SELECT COALESCE(SUM(jel.credit_amount - jel.debit_amount), 0) AS ap_balance
-       FROM financial.journal_entry_lines jel
-       JOIN financial.journal_entries je ON je.id = jel.journal_entry_id
+       FROM journal_entry_lines jel
+       JOIN journal_entries je ON je.entry_id = jel.journal_entry_id
        JOIN financial.accounts a ON a.id = jel.account_id
        WHERE je.tenant_id = $1 AND je.status = 'posted' AND UPPER(a.account_type) = 'LIABILITY' AND a.account_number LIKE '21%'`,
       [ctx.tenantId]

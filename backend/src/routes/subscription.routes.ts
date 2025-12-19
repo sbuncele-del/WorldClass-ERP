@@ -1,35 +1,26 @@
-import { Router, RequestHandler } from 'express';
-import SubscriptionController from '../controllers/subscription.controller';
+/**
+ * Subscription Routes (V2, tenant-aware)
+ * Delegates to tenant-hardened V2 controller.
+ */
+import { Router } from 'express';
+import { authenticateToken } from '../middleware/auth';
 import { tenantMiddleware } from '../middleware/tenant';
+import SubscriptionControllerV2 from '../controllers/subscription.controller.v2';
 
 const router = Router();
 
-/**
- * Subscription Routes (all require authentication)
- */
+// All routes require authentication and tenant context
+router.use(authenticateToken);
+router.use(tenantMiddleware);
 
-// Get current subscription details
-router.get('/', tenantMiddleware as RequestHandler, SubscriptionController.getCurrentSubscription as RequestHandler);
-
-// Get usage statistics
-router.get('/usage', tenantMiddleware as RequestHandler, SubscriptionController.getUsageStatistics as RequestHandler);
-
-// Check subscription status
-router.get('/status', tenantMiddleware as RequestHandler, SubscriptionController.checkSubscriptionStatus as RequestHandler);
-
-// Upgrade to higher plan
-router.post('/upgrade', tenantMiddleware as RequestHandler, SubscriptionController.upgradePlan as RequestHandler);
-
-// Schedule downgrade to lower plan
-router.post('/downgrade', tenantMiddleware as RequestHandler, SubscriptionController.downgradePlan as RequestHandler);
-
-// Cancel subscription (effective at period end)
-router.post('/cancel', tenantMiddleware as RequestHandler, SubscriptionController.cancelSubscription as RequestHandler);
-
-// Reactivate cancelled subscription
-router.post('/reactivate', tenantMiddleware as RequestHandler, SubscriptionController.reactivateSubscription as RequestHandler);
-
-// Update payment method
-router.put('/payment-method', tenantMiddleware as RequestHandler, SubscriptionController.updatePaymentMethod as RequestHandler);
+router.get('/', SubscriptionControllerV2.getCurrentSubscription);
+router.get('/status', SubscriptionControllerV2.getSubscriptionStatus);
+router.get('/plans', SubscriptionControllerV2.getAvailablePlans);
+router.get('/billing-history', SubscriptionControllerV2.getBillingHistory);
+router.post('/upgrade', SubscriptionControllerV2.upgradePlan);
+router.post('/downgrade', SubscriptionControllerV2.downgradePlan);
+router.post('/cancel', SubscriptionControllerV2.cancelSubscription);
+router.post('/reactivate', SubscriptionControllerV2.reactivateSubscription);
+router.put('/payment-method', SubscriptionControllerV2.updatePaymentMethod);
 
 export default router;

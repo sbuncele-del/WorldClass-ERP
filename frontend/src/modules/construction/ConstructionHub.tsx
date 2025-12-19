@@ -14,7 +14,7 @@
  * - Financial Integration (Contract Revenue IAS 15)
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
   Input, Select, DatePicker, Modal, Form, Typography, Avatar,
@@ -35,6 +35,7 @@ import {
   CalculatorOutlined
 } from '@ant-design/icons';
 import { HubLayout, HubHeader, StatusBanner, HubTabs } from '../../components/hub';
+import apiClient from '../../services/api';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -121,145 +122,72 @@ interface VariationOrder {
   instructedBy: string;
 }
 
-// Sample Data
-const sampleProjects: ConstructionProject[] = [
-  {
-    id: 'CON-001',
-    name: 'Mall of Africa Extension Phase 2',
-    code: 'MOA-EXT-P2',
-    client: 'Attacq Limited',
-    site: 'Waterfall City, Midrand',
-    status: 'active',
-    cidbGrade: '9CE',
-    contractType: 'JBCC',
-    contractValue: 250000000,
-    currentValue: 268500000,
-    certified: 134250000,
-    retention: 13425000,
-    startDate: '2024-01-15',
-    practicalCompletion: '2025-06-30',
-    finalCompletion: '2025-12-31',
-    progress: 52,
-    principalAgent: 'MDS Architecture',
-    siteAgent: 'Michael Ndlovu'
-  },
-  {
-    id: 'CON-002',
-    name: 'N1 Highway Upgrade - Polokwane',
-    code: 'N1-POL-UPG',
-    client: 'SANRAL',
-    site: 'N1 Highway, Limpopo',
-    status: 'active',
-    cidbGrade: '9CE',
-    contractType: 'GCC',
-    contractValue: 480000000,
-    currentValue: 495000000,
-    certified: 297000000,
-    retention: 29700000,
-    startDate: '2023-06-01',
-    practicalCompletion: '2025-12-31',
-    finalCompletion: '2026-06-30',
-    progress: 62,
-    principalAgent: 'SANRAL Engineering',
-    siteAgent: 'Thabo Mthembu'
-  },
-  {
-    id: 'CON-003',
-    name: 'Cape Town Convention Centre Expansion',
-    code: 'CTICC-EXP',
-    client: 'City of Cape Town',
-    site: 'Foreshore, Cape Town',
-    status: 'tender',
-    cidbGrade: '9GB',
-    contractType: 'FIDIC',
-    contractValue: 180000000,
-    currentValue: 180000000,
-    certified: 0,
-    retention: 0,
-    startDate: '2024-09-01',
-    practicalCompletion: '2026-03-31',
-    finalCompletion: '2026-09-30',
-    progress: 0,
-    principalAgent: 'dhk Architects',
-    siteAgent: 'TBA'
-  },
-  {
-    id: 'CON-004',
-    name: 'Sandton Office Tower',
-    code: 'SDT-OFC-01',
-    client: 'Growthpoint Properties',
-    site: 'Sandton CBD',
-    status: 'practical-completion',
-    cidbGrade: '9GB',
-    contractType: 'JBCC',
-    contractValue: 320000000,
-    currentValue: 335000000,
-    certified: 318250000,
-    retention: 31825000,
-    startDate: '2022-03-01',
-    practicalCompletion: '2024-06-15',
-    finalCompletion: '2024-12-15',
-    progress: 98,
-    principalAgent: 'Paragon Architects',
-    siteAgent: 'David Mokoena'
-  }
-];
-
-const sampleBOQ: BOQItem[] = [
-  { id: 'BOQ-001', section: 'Preliminaries', itemNo: '1.1', description: 'Site establishment', unit: 'Item', quantity: 1, rate: 2500000, amount: 2500000, completed: 1, percentComplete: 100 },
-  { id: 'BOQ-002', section: 'Preliminaries', itemNo: '1.2', description: 'Site management', unit: 'Month', quantity: 18, rate: 450000, amount: 8100000, completed: 9, percentComplete: 50 },
-  { id: 'BOQ-003', section: 'Earthworks', itemNo: '2.1', description: 'Bulk excavation', unit: 'm³', quantity: 45000, rate: 85, amount: 3825000, completed: 45000, percentComplete: 100 },
-  { id: 'BOQ-004', section: 'Earthworks', itemNo: '2.2', description: 'Fill and compaction', unit: 'm³', quantity: 12000, rate: 120, amount: 1440000, completed: 10800, percentComplete: 90 },
-  { id: 'BOQ-005', section: 'Concrete', itemNo: '3.1', description: 'Foundations - 35MPa concrete', unit: 'm³', quantity: 2500, rate: 2800, amount: 7000000, completed: 2500, percentComplete: 100 },
-  { id: 'BOQ-006', section: 'Concrete', itemNo: '3.2', description: 'Suspended slabs - 30MPa concrete', unit: 'm³', quantity: 8500, rate: 3200, amount: 27200000, completed: 5100, percentComplete: 60 },
-  { id: 'BOQ-007', section: 'Steel', itemNo: '4.1', description: 'Structural steel', unit: 'Ton', quantity: 1200, rate: 28000, amount: 33600000, completed: 720, percentComplete: 60 },
-  { id: 'BOQ-008', section: 'Brickwork', itemNo: '5.1', description: 'Face brick walls', unit: 'm²', quantity: 15000, rate: 850, amount: 12750000, completed: 6000, percentComplete: 40 }
-];
-
-const sampleSubcontractors: Subcontractor[] = [
-  { id: 'SUB-001', name: 'Concrete Solutions SA', cidbGrade: '7CE', trade: 'Concrete Works', bbbeeLevel: 1, contractValue: 35000000, certified: 21000000, retentionHeld: 2100000, status: 'active', contact: 'James Botha', email: 'james@concretesa.co.za' },
-  { id: 'SUB-002', name: 'Steelcraft Engineering', cidbGrade: '6ME', trade: 'Structural Steel', bbbeeLevel: 2, contractValue: 28000000, certified: 16800000, retentionHeld: 1680000, status: 'active', contact: 'Peter Steyn', email: 'peter@steelcraft.co.za' },
-  { id: 'SUB-003', name: 'Electrical Installations (Pty) Ltd', cidbGrade: '6EB', trade: 'Electrical', bbbeeLevel: 1, contractValue: 22000000, certified: 8800000, retentionHeld: 880000, status: 'active', contact: 'Johan Meyer', email: 'johan@elecinstall.co.za' },
-  { id: 'SUB-004', name: 'Plumbing Masters', cidbGrade: '5EP', trade: 'Plumbing', bbbeeLevel: 3, contractValue: 12000000, certified: 4800000, retentionHeld: 480000, status: 'active', contact: 'David Nkosi', email: 'david@plumbingmasters.co.za' },
-  { id: 'SUB-005', name: 'Brick & Block Contractors', cidbGrade: '6GB', trade: 'Masonry', bbbeeLevel: 1, contractValue: 18000000, certified: 7200000, retentionHeld: 720000, status: 'active', contact: 'Sipho Dlamini', email: 'sipho@brickblock.co.za' }
-];
-
-const sampleCertificates: PaymentCertificate[] = [
-  { id: 'CERT-001', project: 'CON-001', certNo: 12, period: 'May 2024', grossAmount: 18500000, retention: 1850000, previousCertified: 115750000, thisCertificate: 16650000, vatAmount: 2497500, totalDue: 19147500, status: 'approved', submittedDate: '2024-06-05', approvedDate: '2024-06-12' },
-  { id: 'CERT-002', project: 'CON-001', certNo: 13, period: 'June 2024', grossAmount: 15200000, retention: 1520000, previousCertified: 132400000, thisCertificate: 13680000, vatAmount: 2052000, totalDue: 15732000, status: 'submitted', submittedDate: '2024-07-05' },
-  { id: 'CERT-003', project: 'CON-002', certNo: 18, period: 'June 2024', grossAmount: 22000000, retention: 2200000, previousCertified: 275000000, thisCertificate: 19800000, vatAmount: 2970000, totalDue: 22770000, status: 'draft' }
-];
-
-const sampleVariations: VariationOrder[] = [
-  { id: 'VO-001', project: 'CON-001', voNumber: 'VO-001', description: 'Additional parking basement level', type: 'addition', amount: 12500000, status: 'approved', submittedDate: '2024-03-15', approvedDate: '2024-04-01', instructedBy: 'Principal Agent' },
-  { id: 'VO-002', project: 'CON-001', voNumber: 'VO-002', description: 'Upgraded facade cladding', type: 'addition', amount: 6000000, status: 'approved', submittedDate: '2024-05-10', approvedDate: '2024-05-25', instructedBy: 'Client' },
-  { id: 'VO-003', project: 'CON-002', voNumber: 'VO-001', description: 'Additional lane widening', type: 'addition', amount: 15000000, status: 'pending', submittedDate: '2024-06-01', instructedBy: 'Engineer' },
-  { id: 'VO-004', project: 'CON-001', voNumber: 'VO-003', description: 'Omission of water feature', type: 'omission', amount: -2500000, status: 'approved', submittedDate: '2024-04-20', approvedDate: '2024-05-05', instructedBy: 'Client' }
-];
-
 const ConstructionHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [projectModalVisible, setProjectModalVisible] = useState(false);
   const [certificateModalVisible, setCertificateModalVisible] = useState(false);
   const [variationModalVisible, setVariationModalVisible] = useState(false);
-  const [projects] = useState<ConstructionProject[]>(sampleProjects);
-  const [boqItems] = useState<BOQItem[]>(sampleBOQ);
-  const [subcontractors] = useState<Subcontractor[]>(sampleSubcontractors);
-  const [certificates] = useState<PaymentCertificate[]>(sampleCertificates);
-  const [variations] = useState<VariationOrder[]>(sampleVariations);
+  const [loading, setLoading] = useState(true);
+  const [projects, setProjects] = useState<ConstructionProject[]>([]);
+  const [boqItems, setBoqItems] = useState<BOQItem[]>([]);
+  const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([]);
+  const [certificates, setCertificates] = useState<PaymentCertificate[]>([]);
+  const [variations, setVariations] = useState<VariationOrder[]>([]);
+  const [constructionStats, setConstructionStats] = useState({
+    totalProjects: 0,
+    activeProjects: 0,
+    totalContractValue: 0,
+    totalCurrentValue: 0,
+    totalCertified: 0,
+    totalRetention: 0,
+    pendingCertificates: 0,
+    pendingVariations: 0
+  });
   const [form] = Form.useForm();
 
-  // Calculate stats
-  const constructionStats = {
-    totalProjects: projects.length,
-    activeProjects: projects.filter(p => p.status === 'active').length,
-    totalContractValue: projects.reduce((sum, p) => sum + p.contractValue, 0),
-    totalCurrentValue: projects.reduce((sum, p) => sum + p.currentValue, 0),
-    totalCertified: projects.reduce((sum, p) => sum + p.certified, 0),
-    totalRetention: projects.reduce((sum, p) => sum + p.retention, 0),
-    pendingCertificates: certificates.filter(c => c.status === 'submitted').length,
-    pendingVariations: variations.filter(v => v.status === 'pending').length
-  };
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, projectsRes, subcontractorsRes, equipmentRes] = await Promise.all([
+          apiClient.get('/api/construction/stats'),
+          apiClient.get('/api/construction/projects'),
+          apiClient.get('/api/construction/subcontractors'),
+          apiClient.get('/api/construction/equipment')
+        ]);
+
+        if (statsRes.data) {
+          setConstructionStats(statsRes.data);
+        }
+        if (projectsRes.data) {
+          setProjects(Array.isArray(projectsRes.data) ? projectsRes.data : projectsRes.data.projects || []);
+          // Extract BOQ items, certificates, and variations from projects if available
+          const allCertificates: PaymentCertificate[] = [];
+          const allVariations: VariationOrder[] = [];
+          const allBoqItems: BOQItem[] = [];
+          (Array.isArray(projectsRes.data) ? projectsRes.data : projectsRes.data.projects || []).forEach((p: any) => {
+            if (p.certificates) allCertificates.push(...p.certificates);
+            if (p.variations) allVariations.push(...p.variations);
+            if (p.boqItems) allBoqItems.push(...p.boqItems);
+          });
+          if (allCertificates.length > 0) setCertificates(allCertificates);
+          if (allVariations.length > 0) setVariations(allVariations);
+          if (allBoqItems.length > 0) setBoqItems(allBoqItems);
+        }
+        if (subcontractorsRes.data) {
+          setSubcontractors(Array.isArray(subcontractorsRes.data) ? subcontractorsRes.data : subcontractorsRes.data.subcontractors || []);
+        }
+      } catch (error) {
+        console.error('Error fetching construction data:', error);
+        message.error('Failed to load construction data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {

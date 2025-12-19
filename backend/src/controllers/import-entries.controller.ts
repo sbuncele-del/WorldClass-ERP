@@ -176,7 +176,7 @@ export class ImportEntriesController {
         // Create journal entry
         const jeResult = await client.query(
           `INSERT INTO journal_entries 
-           (journal_number, journal_date, posting_date, source_type, description, 
+           (entry_number, journal_date, posting_date, source_type, description, 
             status, fiscal_year, fiscal_period, total_debit, total_credit, created_by)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
            RETURNING *`,
@@ -195,7 +195,7 @@ export class ImportEntriesController {
           ]
         );
 
-        const journalEntryId = jeResult.rows[0].id;
+        const journalEntryId = jeResult.rows[0].entry_id;
 
         // Create journal entry lines
         for (let i = 0; i < entry.lines.length; i++) {
@@ -300,7 +300,7 @@ export class ImportEntriesController {
     try {
       const result = await pool.query(
         `SELECT 
-          je.id,
+          je.entry_id,
           je.journal_number,
           je.journal_date,
           je.description,
@@ -309,11 +309,11 @@ export class ImportEntriesController {
           je.status,
           je.created_at,
           je.created_by,
-          COUNT(jel.id) as line_count
+          COUNT(jel.line_id) as line_count
          FROM journal_entries je
-         LEFT JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+         LEFT JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
          WHERE je.source_type = 'IMPORT'
-         GROUP BY je.id
+         GROUP BY je.entry_id
          ORDER BY je.created_at DESC
          LIMIT 50`
       );

@@ -42,12 +42,25 @@ const PremiumTopBar: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Mock entity - in production from context
+  // Get tenant info from localStorage (set during login)
+  const getTenantInfo = () => {
+    try {
+      const tenantStr = localStorage.getItem('tenant');
+      if (tenantStr) {
+        return JSON.parse(tenantStr);
+      }
+    } catch (e) {
+      console.error('Failed to parse tenant info', e);
+    }
+    return null;
+  };
+
+  const tenant = getTenantInfo();
   const currentEntity = {
-    name: 'ABC Trading (Pty) Ltd',
+    name: tenant?.name || currentUser?.companyName || 'Your Company',
     type: 'company',
-    registrationNo: '2020/123456/07',
-    taxNo: '9876543210'
+    registrationNo: tenant?.registrationNumber || '',
+    taxNo: tenant?.taxNumber || ''
   };
 
   // User role display

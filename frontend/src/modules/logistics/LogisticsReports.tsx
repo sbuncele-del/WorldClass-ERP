@@ -1,5 +1,5 @@
-import React from 'react';
-import { Card, Row, Col, Statistic, Button, Tag, List, Space } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { Card, Row, Col, Statistic, Button, Tag, List, Space, Spin } from 'antd';
 import {
   DownloadOutlined,
   SyncOutlined,
@@ -11,6 +11,7 @@ import {
   CarOutlined
 } from '@ant-design/icons';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
+import apiClient from '../../services/api';
 import './logistics-enterprise.css';
 
 interface Report {
@@ -22,7 +23,51 @@ interface Report {
   color: string;
 }
 
+interface Insight {
+  text: string;
+  type: 'success' | 'warning' | 'error';
+  icon: React.ReactNode;
+}
+
+const iconMap: Record<string, React.ReactNode> = {
+  car: <CarOutlined style={{ fontSize: 24 }} />,
+  'bar-chart': <BarChartOutlined style={{ fontSize: 24 }} />,
+  rise: <RiseOutlined style={{ fontSize: 24 }} />,
+  'file-text': <FileTextOutlined style={{ fontSize: 24 }} />,
+  tool: <ToolOutlined style={{ fontSize: 24 }} />,
+  calendar: <CalendarOutlined style={{ fontSize: 24 }} />
+};
+
 const LogisticsReports: React.FC = () => {
+  const [loading, setLoading] = useState(true);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [insights, setInsights] = useState<Insight[]>([]);
+
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const response = await apiClient.get('/api/logistics/reports');
+        const data = response.data?.data || response.data || {};
+        if (data.reports) {
+          setReports(data.reports.map((r: any) => ({
+            ...r,
+            icon: iconMap[r.iconKey] || <FileTextOutlined style={{ fontSize: 24 }} />
+          })));
+        }
+        if (data.insights) {
+          setInsights(data.insights.map((i: any) => ({
+            ...i,
+            icon: iconMap[i.iconKey] || <RiseOutlined />
+          })));
+        }
+      } catch (error) {
+        console.error('Error fetching reports:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReports();
+  }, []);
   const tabs = [
     { id: 'command', label: '🎯 Command Center', path: '/logistics/dashboard' },
     { id: 'planner', label: '📋 Load Planner', path: '/logistics/planner' },
@@ -41,63 +86,7 @@ const LogisticsReports: React.FC = () => {
     { label: 'Reports & Analytics' }
   ];
 
-  const reports: Report[] = [
-    {
-      title: 'Fleet Performance Report',
-      description: 'Comprehensive analysis of vehicle utilization, maintenance costs, and downtime',
-      icon: <CarOutlined style={{ fontSize: 24 }} />,
-      frequency: 'Monthly',
-      lastGenerated: '2025-11-01',
-      color: '#667eea'
-    },
-    {
-      title: 'Driver Performance Scorecard',
-      description: 'On-time delivery rates, incidents, and efficiency metrics by driver',
-      icon: <BarChartOutlined style={{ fontSize: 24 }} />,
-      frequency: 'Weekly',
-      lastGenerated: '2025-11-07',
-      color: '#10b981'
-    },
-    {
-      title: 'Fuel Consumption Analysis',
-      description: 'Fuel costs, efficiency trends, and anomaly detection across the fleet',
-      icon: <RiseOutlined style={{ fontSize: 24 }} />,
-      frequency: 'Monthly',
-      lastGenerated: '2025-11-01',
-      color: '#f59e0b'
-    },
-    {
-      title: 'Trip Summary Report',
-      description: 'Completed trips, POD status, delivery performance, and customer satisfaction',
-      icon: <FileTextOutlined style={{ fontSize: 24 }} />,
-      frequency: 'Daily',
-      lastGenerated: '2025-11-10',
-      color: '#8b5cf6'
-    },
-    {
-      title: 'Maintenance Schedule',
-      description: 'Upcoming services, overdue maintenance, and license renewals',
-      icon: <ToolOutlined style={{ fontSize: 24 }} />,
-      frequency: 'Weekly',
-      lastGenerated: '2025-11-07',
-      color: '#ef4444'
-    },
-    {
-      title: 'Cost Analysis',
-      description: 'Total cost of ownership, cost per km, and budget variance analysis',
-      icon: <BarChartOutlined style={{ fontSize: 24 }} />,
-      frequency: 'Monthly',
-      lastGenerated: '2025-11-01',
-      color: '#06b6d4'
-    },
-  ];
-
-  const insights = [
-    { text: 'Fleet utilization increased by 12% this month', type: 'success' as const, icon: <RiseOutlined /> },
-    { text: 'Average fuel efficiency improved to 3.8 km/L (+0.2)', type: 'success' as const, icon: <RiseOutlined /> },
-    { text: '2 vehicles require maintenance this week', type: 'warning' as const, icon: <ToolOutlined /> },
-    { text: 'On-time delivery rate: 92.5% (target: 95%)', type: 'warning' as const, icon: <CalendarOutlined /> },
-  ];
+  // Reports and insights loaded from API
 
   const getFrequencyColor = (frequency: string) => {
     switch (frequency) {

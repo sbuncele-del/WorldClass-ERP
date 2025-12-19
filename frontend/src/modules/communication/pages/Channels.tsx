@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Card, List, Button, Space, Input, Tag, Avatar, Modal, Form, 
   Select, Switch, message, Typography, Row, Col, Badge
@@ -9,6 +9,7 @@ import {
   FolderOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '../../../services/api';
 
 const { Title, Text } = Typography;
 
@@ -23,15 +24,6 @@ interface Channel {
   createdAt: string;
 }
 
-const sampleChannels: Channel[] = [
-  { id: '1', name: 'general', description: 'Company-wide announcements and discussions', type: 'public', members: 45, unread: 3, createdBy: 'System', createdAt: '2024-01-01' },
-  { id: '2', name: 'website-redesign', description: 'Project channel for website redesign', type: 'project', members: 8, unread: 12, createdBy: 'Sarah Johnson', createdAt: '2024-01-15' },
-  { id: '3', name: 'mobile-app', description: 'Mobile app development team', type: 'project', members: 6, unread: 0, createdBy: 'Mike Wilson', createdAt: '2024-02-01' },
-  { id: '4', name: 'engineering', description: 'Engineering team discussions', type: 'private', members: 15, unread: 5, createdBy: 'David Lee', createdAt: '2024-01-10' },
-  { id: '5', name: 'sales-team', description: 'Sales team coordination', type: 'private', members: 12, unread: 0, createdBy: 'Alex Turner', createdAt: '2024-01-05' },
-  { id: '6', name: 'random', description: 'Non-work banter and fun', type: 'public', members: 45, unread: 0, createdBy: 'System', createdAt: '2024-01-01' }
-];
-
 const typeConfig = {
   public: { icon: <GlobalOutlined />, color: 'blue', label: 'Public' },
   private: { icon: <LockOutlined />, color: 'orange', label: 'Private' },
@@ -40,10 +32,25 @@ const typeConfig = {
 
 const Channels: React.FC = () => {
   const navigate = useNavigate();
-  const [channels, setChannels] = useState<Channel[]>(sampleChannels);
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [form] = Form.useForm();
+
+  useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        const response = await apiClient.get('/api/communications/channels');
+        setChannels(response.data?.data || response.data || []);
+      } catch (err) {
+        console.error('Error fetching channels:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchChannels();
+  }, []);
 
   const filteredChannels = channels.filter(c => 
     c.name.toLowerCase().includes(searchText.toLowerCase()) ||

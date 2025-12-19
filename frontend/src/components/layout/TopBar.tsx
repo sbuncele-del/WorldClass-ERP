@@ -68,7 +68,7 @@ const TopBar: React.FC = () => {
         <div className="topbar-left">
           <div className="topbar-logo" onClick={() => navigate('/')}>
             <span className="logo-icon">⚡</span>
-            <span className="logo-text">AetherOS</span>
+            <span className="logo-text">SiyaBusa</span>
           </div>
 
           <form className="topbar-search" onSubmit={handleSearch}>

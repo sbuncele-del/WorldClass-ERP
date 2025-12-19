@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import apiClient from '../../services/api';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
 import type { SecondaryNavSection } from '../../components/layout/SecondaryNav';
 import { Boxes, Truck, Barcode, FileText, TrendingUp, Plus, PackageSearch } from 'lucide-react';
@@ -38,29 +39,32 @@ const WarehouseDashboardEnhanced: React.FC = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
+      const response = await apiClient.get('/api/warehouse/dashboard');
+      setStats(response.data);
+    } catch (err) {
+      console.error('Error fetching warehouse dashboard data:', err);
+      // Fallback to default data if API fails
       setStats({
         current_period: {
           fiscal_year: 2025,
-          period_number: 11,
-          period_name: 'November 2025',
+          period_number: 12,
+          period_name: 'December 2025',
           status: 'OPEN'
         },
         warehouse_summary: {
-          total_locations: 12,
-          total_bins: 487,
-          total_stock_value: 8945600,
-          pending_picks: 24,
-          pending_putaways: 18,
-          cycle_counts_due: 8
+          total_locations: 0,
+          total_bins: 0,
+          total_stock_value: 0,
+          pending_picks: 0,
+          pending_putaways: 0,
+          cycle_counts_due: 0
         },
         top_locations: {
-          loc_1: { name: 'Warehouse A - Main', utilization: 87 },
-          loc_2: { name: 'Warehouse B - Overflow', utilization: 72 },
-          loc_3: { name: 'Warehouse C - Raw Materials', utilization: 65 }
+          loc_1: { name: 'No data', utilization: 0 },
+          loc_2: { name: 'No data', utilization: 0 },
+          loc_3: { name: 'No data', utilization: 0 }
         }
       });
-    } catch (err) {
-      console.error('Error fetching warehouse dashboard data:', err);
     } finally {
       setLoading(false);
     }

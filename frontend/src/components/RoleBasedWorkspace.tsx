@@ -48,12 +48,35 @@ const RoleBasedWorkspace: React.FC = () => {
   // Default to director for demo - in production, get from currentUser.role
   const [userRole, setUserRole] = useState<UserRole>('director');
   const [greeting, setGreeting] = useState('Good morning');
+  const [isNewTenant, setIsNewTenant] = useState(false);
+  const [tenantName, setTenantName] = useState('');
 
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour < 12) setGreeting('Good morning');
     else if (hour < 17) setGreeting('Good afternoon');
     else setGreeting('Good evening');
+    
+    // Check if this is a new tenant (created in last 24 hours)
+    try {
+      const tenantStr = localStorage.getItem('tenant');
+      if (tenantStr) {
+        const tenant = JSON.parse(tenantStr);
+        setTenantName(tenant.name || '');
+        // Check if trial just started (within last day)
+        if (tenant.trialEndsAt) {
+          const trialEnd = new Date(tenant.trialEndsAt);
+          const trialStart = new Date(trialEnd.getTime() - (14 * 24 * 60 * 60 * 1000)); // 14 days before
+          const now = new Date();
+          const hoursSinceCreation = (now.getTime() - trialStart.getTime()) / (1000 * 60 * 60);
+          if (hoursSinceCreation < 24) {
+            setIsNewTenant(true);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Failed to check tenant status', e);
+    }
   }, []);
 
   // Quick actions based on role
@@ -611,12 +634,103 @@ const RoleBasedWorkspace: React.FC = () => {
         ))}
       </div>
 
-      {/* Role-specific Dashboard */}
+      {/* Role-specific Dashboard or New Tenant Welcome */}
       <div className="workspace-content">
-        {renderDashboard()}
+        {isNewTenant ? renderNewTenantWelcome() : renderDashboard()}
       </div>
     </div>
   );
+
+  // New Tenant Welcome Screen
+  function renderNewTenantWelcome() {
+    return (
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <Alert
+          message={`Welcome to SiyaBusa ERP, ${tenantName}!`}
+          description="Your account is ready. Let's get you set up with the essentials to start managing your business."
+          type="success"
+          showIcon
+          style={{ marginBottom: 24 }}
+        />
+        
+        <Row gutter={[16, 16]}>
+          <Col xs={24} sm={12} lg={6}>
+            <Card className="kpi-card gradient-blue" hoverable onClick={() => navigate('/app/tenant-settings')}>
+              <div className="kpi-content">
+                <div className="kpi-icon"><SettingOutlined /></div>
+                <div className="kpi-data">
+                  <Text className="kpi-label">Company Setup</Text>
+                  <div className="kpi-value" style={{ fontSize: '1rem' }}>Configure your company details</div>
+                </div>
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card className="kpi-card gradient-green" hoverable onClick={() => navigate('/app/user-management')}>
+              <div className="kpi-content">
+                <div className="kpi-icon"><TeamOutlined /></div>
+                <div className="kpi-data">
+                  <Text className="kpi-label">Invite Team</Text>
+                  <div className="kpi-value" style={{ fontSize: '1rem' }}>Add users to your workspace</div>
+                </div>
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card className="kpi-card gradient-purple" hoverable onClick={() => navigate('/app/financial-hub')}>
+              <div className="kpi-content">
+                <div className="kpi-icon"><BankOutlined /></div>
+                <div className="kpi-data">
+                  <Text className="kpi-label">Chart of Accounts</Text>
+                  <div className="kpi-value" style={{ fontSize: '1rem' }}>Set up your financials</div>
+                </div>
+              </div>
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card className="kpi-card gradient-amber" hoverable onClick={() => navigate('/app/inventory-hub')}>
+              <div className="kpi-content">
+                <div className="kpi-icon"><FileTextOutlined /></div>
+                <div className="kpi-data">
+                  <Text className="kpi-label">Products & Services</Text>
+                  <div className="kpi-value" style={{ fontSize: '1rem' }}>Add your inventory</div>
+                </div>
+              </div>
+            </Card>
+          </Col>
+        </Row>
+
+        <Card title="Getting Started Checklist" style={{ marginTop: 24 }}>
+          <List
+            dataSource={[
+              { title: 'Complete company profile', path: '/app/tenant-settings', done: false },
+              { title: 'Set up chart of accounts', path: '/app/financial-hub', done: false },
+              { title: 'Add your first customer', path: '/app/sales-hub', done: false },
+              { title: 'Add your first supplier', path: '/app/purchase-hub', done: false },
+              { title: 'Create your first invoice', path: '/app/sales-hub', done: false },
+              { title: 'Invite team members', path: '/app/user-management', done: false },
+            ]}
+            renderItem={(item) => (
+              <List.Item 
+                actions={[<Button type="link" onClick={() => navigate(item.path)}>Start →</Button>]}
+              >
+                <List.Item.Meta
+                  avatar={item.done ? <CheckCircleOutlined style={{ color: '#10b981', fontSize: 20 }} /> : <ClockCircleOutlined style={{ color: '#94a3b8', fontSize: 20 }} />}
+                  title={item.title}
+                />
+              </List.Item>
+            )}
+          />
+        </Card>
+
+        <div style={{ textAlign: 'center', marginTop: 24 }}>
+          <Button type="primary" size="large" onClick={() => setIsNewTenant(false)}>
+            Skip Setup - Go to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default RoleBasedWorkspace;

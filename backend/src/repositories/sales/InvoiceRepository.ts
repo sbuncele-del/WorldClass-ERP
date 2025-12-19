@@ -57,6 +57,7 @@ export interface Invoice {
 export class InvoiceRepository extends BaseRepository<Invoice> {
   protected tableName = 'invoices';
   protected schema = 'sales';
+  protected softDelete = false;  // Table doesn't have deleted_at column
 
   /**
    * Get invoices by status
