@@ -495,7 +495,8 @@ const EnterpriseDashboard: React.FC = () => {
                 )}
               </div>
               <div className="card-footer-workspace">
-                <span>Open {card.module.toLowerCase()}</span>
+                {/* Some cards may not have module set; guard to avoid runtime errors */}
+                <span>Open {(card.module || '').toLowerCase()}</span>
                 <ArrowRight size={16} />
               </div>
             </Link>

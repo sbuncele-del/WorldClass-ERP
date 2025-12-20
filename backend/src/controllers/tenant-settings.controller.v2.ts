@@ -40,7 +40,7 @@ export const getTenantSettings = async (req: TenantRequest, res: Response) => {
       `SELECT 
         t.id,
         t.name,
-        t.subdomain,
+        t.domain as subdomain,
         t.status,
         t.created_at,
         t.updated_at,

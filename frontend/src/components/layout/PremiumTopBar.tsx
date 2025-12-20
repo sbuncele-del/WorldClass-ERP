@@ -63,8 +63,8 @@ const PremiumTopBar: React.FC = () => {
     taxNo: tenant?.taxNumber || ''
   };
 
-  // User role display
-  const userRole = currentUser?.role || 'Director';
+  // User role display - ensure string type and lowercase for color lookup
+  const userRole: string = String(currentUser?.role || 'Director');
   const roleColors: Record<string, string> = {
     director: '#667eea',
     executive: '#10b981',
@@ -203,8 +203,8 @@ const PremiumTopBar: React.FC = () => {
             <br />
             <Text type="secondary" style={{ fontSize: 12 }}>{currentUser?.email}</Text>
             <br />
-            <Tag color={roleColors[userRole.toLowerCase()] || '#667eea'} style={{ marginTop: 4 }}>
-              {userRole}
+            <Tag color={roleColors[(userRole || '').toLowerCase()] || '#667eea'} style={{ marginTop: 4 }}>
+              {userRole || 'User'}
             </Tag>
           </div>
         ),
@@ -322,7 +322,7 @@ const PremiumTopBar: React.FC = () => {
             <Avatar 
               size={36}
               style={{ 
-                background: `linear-gradient(135deg, ${roleColors[userRole.toLowerCase()] || '#667eea'} 0%, #764ba2 100%)`,
+                background: `linear-gradient(135deg, ${roleColors[(userRole || '').toLowerCase()] || '#667eea'} 0%, #764ba2 100%)`,
                 cursor: 'pointer'
               }}
             >

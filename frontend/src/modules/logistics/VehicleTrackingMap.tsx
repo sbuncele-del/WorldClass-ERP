@@ -60,7 +60,7 @@ const createVehicleIcon = (status: string, heading: number = 0) => {
     'offline': '#94a3b8'
   };
 
-  const color = colors[status.toLowerCase()] || '#667eea';
+  const color = colors[(status || '').toLowerCase()] || '#667eea';
 
   return L.divIcon({
     html: `

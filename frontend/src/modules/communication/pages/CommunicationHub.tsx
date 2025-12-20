@@ -256,11 +256,11 @@ const CommunicationHub: React.FC = () => {
                     >
                       <List.Item.Meta
                         avatar={
-                          <Badge dot color={statusColors[dm.user.status]} offset={[-4, 28]}>
-                            <Avatar size="large">{dm.user.name[0]}</Avatar>
+                          <Badge dot color={statusColors[dm.user?.status || 'offline']} offset={[-4, 28]}>
+                            <Avatar size="large">{dm.user?.name?.[0] || 'U'}</Avatar>
                           </Badge>
                         }
-                        title={dm.user.name}
+                        title={dm.user?.name || 'Unknown'}
                         description={dm.lastMessage}
                       />
                       <span className="activity-time">{dm.lastActivity}</span>
@@ -317,16 +317,16 @@ const CommunicationHub: React.FC = () => {
           <Card title="Team Status" style={{ marginTop: 16 }}>
             <List
               size="small"
-              dataSource={dms.filter(d => d.user.status === 'online').slice(0, 5)}
+              dataSource={(dms || []).filter(d => d?.user?.status === 'online').slice(0, 5)}
               renderItem={dm => (
                 <List.Item>
                   <List.Item.Meta
                     avatar={
-                      <Badge dot color={statusColors[dm.user.status]}>
-                        <Avatar size="small">{dm.user.name[0]}</Avatar>
+                      <Badge dot color={statusColors[dm.user?.status || 'offline']}>
+                        <Avatar size="small">{dm.user?.name?.[0] || 'U'}</Avatar>
                       </Badge>
                     }
-                    title={<span style={{ fontSize: 13 }}>{dm.user.name}</span>}
+                    title={<span style={{ fontSize: 13 }}>{dm.user?.name || 'Unknown'}</span>}
                   />
                 </List.Item>
               )}

@@ -355,17 +355,17 @@ const CommunicationsHub: React.FC = () => {
     }
   };
 
-  // Calculate stats
+  // Calculate stats - with defensive null checks
   const commsStats = {
-    totalMessages: messages.length,
-    unreadMessages: messages.filter(m => !m.isRead).length,
-    sentToday: messages.filter(m => m.timestamp.includes('2024-06-15')).length,
-    totalContacts: contacts.length,
-    emailsSent: messages.filter(m => m.type === 'email').length,
-    smsSent: messages.filter(m => m.type === 'sms').length,
-    whatsappSent: messages.filter(m => m.type === 'whatsapp').length,
-    activeCampaigns: campaigns.filter(c => c.status === 'running').length,
-    templateCount: templates.length
+    totalMessages: (messages || []).length,
+    unreadMessages: (messages || []).filter(m => m && !m.isRead).length,
+    sentToday: (messages || []).filter(m => m?.timestamp?.includes('2024-06-15')).length,
+    totalContacts: (contacts || []).length,
+    emailsSent: (messages || []).filter(m => m?.type === 'email').length,
+    smsSent: (messages || []).filter(m => m?.type === 'sms').length,
+    whatsappSent: (messages || []).filter(m => m?.type === 'whatsapp').length,
+    activeCampaigns: (campaigns || []).filter(c => c?.status === 'running').length,
+    templateCount: (templates || []).length
   };
 
   const getTypeIcon = (type: string) => {
@@ -437,7 +437,7 @@ const CommunicationsHub: React.FC = () => {
               prefix={<ContactsOutlined />}
               valueStyle={{ color: '#52c41a' }}
             />
-            <Text type="secondary">{contacts.filter(c => c.optInEmail).length} email opted-in</Text>
+            <Text type="secondary">{(contacts || []).filter(c => c?.optInEmail).length} email opted-in</Text>
           </Card>
         </Col>
       </Row>
@@ -502,7 +502,7 @@ const CommunicationsHub: React.FC = () => {
           <Card title={<><SoundOutlined /> Announcements</>}>
             <List
               size="small"
-              dataSource={announcements.filter(a => a.status === 'published').slice(0, 4)}
+              dataSource={(announcements || []).filter(a => a?.status === 'published').slice(0, 4)}
               renderItem={item => (
                 <List.Item>
                   <div style={{ width: '100%' }}>
@@ -573,10 +573,10 @@ const CommunicationsHub: React.FC = () => {
               size="small"
               dataSource={[
                 { key: 'inbox', icon: <InboxOutlined />, label: 'Inbox', count: commsStats.unreadMessages },
-                { key: 'starred', icon: <StarOutlined />, label: 'Starred', count: messages.filter(m => m.isStarred).length },
+                { key: 'starred', icon: <StarOutlined />, label: 'Starred', count: (messages || []).filter(m => m?.isStarred).length },
                 { key: 'sent', icon: <SendOutlined />, label: 'Sent', count: 0 },
-                { key: 'drafts', icon: <FileTextOutlined />, label: 'Drafts', count: messages.filter(m => m.status === 'draft').length },
-                { key: 'scheduled', icon: <ClockCircleOutlined />, label: 'Scheduled', count: messages.filter(m => m.status === 'scheduled').length }
+                { key: 'drafts', icon: <FileTextOutlined />, label: 'Drafts', count: (messages || []).filter(m => m?.status === 'draft').length },
+                { key: 'scheduled', icon: <ClockCircleOutlined />, label: 'Scheduled', count: (messages || []).filter(m => m?.status === 'scheduled').length }
               ]}
               renderItem={item => (
                 <List.Item 
@@ -1111,12 +1111,12 @@ const CommunicationsHub: React.FC = () => {
       <Row gutter={[16, 16]}>
         <Col xs={24} md={6}>
           <Card>
-            <Statistic title="Scheduled Meetings" value={meetings.filter(m => m.status === 'scheduled').length} prefix={<CalendarOutlined />} />
+            <Statistic title="Scheduled Meetings" value={(meetings || []).filter(m => m?.status === 'scheduled').length} prefix={<CalendarOutlined />} />
           </Card>
         </Col>
         <Col xs={24} md={6}>
           <Card>
-            <Statistic title="Live Now" value={meetings.filter(m => m.status === 'live').length} valueStyle={{ color: '#52c41a' }} prefix={<PlayCircleOutlined />} />
+            <Statistic title="Live Now" value={(meetings || []).filter(m => m?.status === 'live').length} valueStyle={{ color: '#52c41a' }} prefix={<PlayCircleOutlined />} />
           </Card>
         </Col>
         <Col xs={24} md={6}>
@@ -1126,7 +1126,7 @@ const CommunicationsHub: React.FC = () => {
         </Col>
         <Col xs={24} md={6}>
           <Card>
-            <Statistic title="Recordings" value={meetings.filter(m => m.recordingUrl).length} prefix={<VideoCameraOutlined />} />
+            <Statistic title="Recordings" value={(meetings || []).filter(m => m?.recordingUrl).length} prefix={<VideoCameraOutlined />} />
           </Card>
         </Col>
       </Row>
@@ -1324,22 +1324,22 @@ const CommunicationsHub: React.FC = () => {
       <Row gutter={[16, 16]}>
         <Col xs={24} md={6}>
           <Card>
-            <Statistic title="Unread" value={notifications.filter(n => !n.isRead).length} valueStyle={{ color: '#ff4d4f' }} prefix={<BellOutlined />} />
+            <Statistic title="Unread" value={(notifications || []).filter(n => n && !n.isRead).length} valueStyle={{ color: '#ff4d4f' }} prefix={<BellOutlined />} />
           </Card>
         </Col>
         <Col xs={24} md={6}>
           <Card>
-            <Statistic title="High Priority" value={notifications.filter(n => n.priority === 'high' || n.priority === 'urgent').length} prefix={<WarningOutlined />} />
+            <Statistic title="High Priority" value={(notifications || []).filter(n => n?.priority === 'high' || n?.priority === 'urgent').length} prefix={<WarningOutlined />} />
           </Card>
         </Col>
         <Col xs={24} md={6}>
           <Card>
-            <Statistic title="Today" value={notifications.filter(n => n.timestamp.includes('2024-06-15')).length} prefix={<CalendarOutlined />} />
+            <Statistic title="Today" value={(notifications || []).filter(n => n?.timestamp?.includes('2024-06-15')).length} prefix={<CalendarOutlined />} />
           </Card>
         </Col>
         <Col xs={24} md={6}>
           <Card>
-            <Statistic title="Pending Actions" value={notifications.filter(n => n.actionUrl && !n.isRead).length} prefix={<CheckCircleOutlined />} />
+            <Statistic title="Pending Actions" value={(notifications || []).filter(n => n?.actionUrl && !n?.isRead).length} prefix={<CheckCircleOutlined />} />
           </Card>
         </Col>
       </Row>
@@ -1775,7 +1775,7 @@ const CommunicationsHub: React.FC = () => {
           
           <Form.Item label="Internal Participants" name="participants">
             <Select mode="multiple" placeholder="Select team members">
-              {contacts.filter(c => c.type === 'employee').map(c => (
+              {(contacts || []).filter(c => c?.type === 'employee').map(c => (
                 <Option key={c.id} value={c.name}>{c.name} ({c.company})</Option>
               ))}
             </Select>
@@ -1783,7 +1783,7 @@ const CommunicationsHub: React.FC = () => {
           
           <Form.Item label="External Guests (Clients)" name="externalGuests">
             <Select mode="tags" placeholder="Enter client email addresses">
-              {contacts.filter(c => c.type === 'customer').map(c => (
+              {(contacts || []).filter(c => c?.type === 'customer').map(c => (
                 <Option key={c.email} value={c.email}>{c.name} - {c.email}</Option>
               ))}
             </Select>
