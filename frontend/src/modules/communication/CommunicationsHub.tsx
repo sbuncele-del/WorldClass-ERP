@@ -170,21 +170,22 @@ const CommunicationsHub: React.FC = () => {
     const fetchData = async () => {
       try {
         const [messagesRes, contactsRes, templatesRes, campaignsRes, announcementsRes, meetingsRes, notificationsRes] = await Promise.all([
-          apiClient.get('/api/communications/messages').catch(() => ({ data: [] })),
-          apiClient.get('/api/communications/contacts').catch(() => ({ data: [] })),
-          apiClient.get('/api/communications/templates').catch(() => ({ data: [] })),
-          apiClient.get('/api/communications/campaigns').catch(() => ({ data: [] })),
-          apiClient.get('/api/communications/announcements').catch(() => ({ data: [] })),
-          apiClient.get('/api/meetings').catch(() => ({ data: [] })),
-          apiClient.get('/api/notifications').catch(() => ({ data: [] }))
+          apiClient.get('/api/v2/communications/messages').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/communications/contacts').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/communications/templates').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/communications/campaigns').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/communications/announcements').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/communications/meetings').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/communications/notifications').catch(() => ({ data: { data: [] } }))
         ]);
-        setMessages(messagesRes.data?.messages || messagesRes.data || []);
-        setContacts(contactsRes.data?.contacts || contactsRes.data || []);
-        setTemplates(templatesRes.data?.templates || templatesRes.data || []);
-        setCampaigns(campaignsRes.data?.campaigns || campaignsRes.data || []);
-        setAnnouncements(announcementsRes.data?.announcements || announcementsRes.data || []);
-        setMeetings(meetingsRes.data?.meetings || meetingsRes.data || []);
-        setNotifications(notificationsRes.data?.notifications || notificationsRes.data || []);
+        // V2 API returns { success: true, data: [...] }
+        setMessages(Array.isArray(messagesRes.data?.data) ? messagesRes.data.data : messagesRes.data?.messages || []);
+        setContacts(Array.isArray(contactsRes.data?.data) ? contactsRes.data.data : contactsRes.data?.contacts || []);
+        setTemplates(Array.isArray(templatesRes.data?.data) ? templatesRes.data.data : templatesRes.data?.templates || []);
+        setCampaigns(Array.isArray(campaignsRes.data?.data) ? campaignsRes.data.data : campaignsRes.data?.campaigns || []);
+        setAnnouncements(Array.isArray(announcementsRes.data?.data) ? announcementsRes.data.data : announcementsRes.data?.announcements || []);
+        setMeetings(Array.isArray(meetingsRes.data?.data) ? meetingsRes.data.data : meetingsRes.data?.meetings || []);
+        setNotifications(Array.isArray(notificationsRes.data?.data) ? notificationsRes.data.data : notificationsRes.data?.notifications || []);
       } catch (error) {
         console.error('Failed to fetch communications data:', error);
       } finally {

@@ -576,6 +576,17 @@ router.get('/communications/meetings', CommunicationsControllerV2.getMeetings);
 router.post('/communications/meetings', CommunicationsControllerV2.createMeeting);
 router.put('/communications/meetings/:id', CommunicationsControllerV2.updateMeeting);
 router.delete('/communications/meetings/:id', CommunicationsControllerV2.cancelMeeting);
+// Messages (inbox-style)
+router.get('/communications/messages', CommunicationsControllerV2.getMessages);
+router.post('/communications/messages', CommunicationsControllerV2.sendMessage);
+// Contacts
+router.get('/communications/contacts', CommunicationsControllerV2.getContacts);
+// Templates
+router.get('/communications/templates', CommunicationsControllerV2.getTemplates);
+router.post('/communications/templates', CommunicationsControllerV2.createTemplate);
+// Campaigns
+router.get('/communications/campaigns', CommunicationsControllerV2.getCampaigns);
+router.post('/communications/campaigns', CommunicationsControllerV2.createCampaign);
 
 // ============================================================================
 // PROPOSALS

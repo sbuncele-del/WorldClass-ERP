@@ -660,6 +660,279 @@ export const cancelMeeting = async (req: TenantRequest, res: Response) => {
   }
 };
 
+// ============================================================================
+// MESSAGES (Inbox-style messages - email, internal, etc.)
+// ============================================================================
+export const getMessages = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { folder = 'inbox', type } = req.query;
+
+    // Try to get messages from messages table if it exists, otherwise return sample data
+    try {
+      let queryStr = `
+        SELECT m.*, u.name as sender_name
+        FROM messages m
+        LEFT JOIN users u ON m.sender_id = u.id
+        WHERE m.tenant_id = $1
+      `;
+      const params: any[] = [tenantId];
+
+      if (folder === 'inbox') {
+        queryStr += ` AND m.recipient_id = $${params.length + 1}`;
+        params.push(userId);
+      } else if (folder === 'sent') {
+        queryStr += ` AND m.sender_id = $${params.length + 1}`;
+        params.push(userId);
+      } else if (folder === 'drafts') {
+        queryStr += ` AND m.sender_id = $${params.length + 1} AND m.status = 'draft'`;
+        params.push(userId);
+      }
+
+      if (type) {
+        queryStr += ` AND m.type = $${params.length + 1}`;
+        params.push(type);
+      }
+
+      queryStr += ' ORDER BY m.created_at DESC LIMIT 100';
+      const result = await pool.query(queryStr, params);
+
+      res.json({ success: true, data: result.rows });
+    } catch (dbError) {
+      // Table might not exist, return empty array
+      res.json({ success: true, data: [] });
+    }
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get messages error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch messages' });
+  }
+};
+
+export const sendMessage = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { recipientId, subject, content, type = 'internal', priority = 'normal' } = req.body;
+
+    try {
+      const result = await pool.query(
+        `INSERT INTO messages (tenant_id, sender_id, recipient_id, subject, content, type, priority, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'sent')
+        RETURNING *`,
+        [tenantId, userId, recipientId, subject, content, type, priority]
+      );
+
+      res.status(201).json({ success: true, data: result.rows[0], message: 'Message sent' });
+    } catch (dbError) {
+      res.status(400).json({ success: false, error: 'Message sending not configured' });
+    }
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Send message error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send message' });
+  }
+};
+
+// ============================================================================
+// CONTACTS
+// ============================================================================
+export const getContacts = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { type } = req.query;
+
+    // Get contacts from customers, suppliers, and employees
+    let contacts: any[] = [];
+
+    // Get customers
+    const customersResult = await pool.query(
+      `SELECT id, name, email, phone, 'customer' as type, true as opt_in_email
+      FROM customers WHERE tenant_id = $1 AND status = 'active' LIMIT 50`,
+      [tenantId]
+    );
+    contacts = contacts.concat(customersResult.rows.map(c => ({
+      ...c, groups: ['customers'], optInEmail: true, optInSMS: true, optInWhatsApp: false
+    })));
+
+    // Get suppliers
+    const suppliersResult = await pool.query(
+      `SELECT id, name, email, phone, 'supplier' as type
+      FROM suppliers WHERE tenant_id = $1 AND status = 'active' LIMIT 50`,
+      [tenantId]
+    );
+    contacts = contacts.concat(suppliersResult.rows.map(s => ({
+      ...s, groups: ['suppliers'], optInEmail: true, optInSMS: false, optInWhatsApp: false
+    })));
+
+    // Get employees
+    const employeesResult = await pool.query(
+      `SELECT e.id, CONCAT(e.first_name, ' ', e.last_name) as name, e.email, e.phone, 'employee' as type
+      FROM employees e WHERE e.tenant_id = $1 AND e.status = 'active' LIMIT 50`,
+      [tenantId]
+    );
+    contacts = contacts.concat(employeesResult.rows.map(e => ({
+      ...e, groups: ['employees'], optInEmail: true, optInSMS: true, optInWhatsApp: true
+    })));
+
+    // Filter by type if specified
+    if (type) {
+      contacts = contacts.filter(c => c.type === type);
+    }
+
+    res.json({ success: true, data: contacts });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get contacts error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch contacts' });
+  }
+};
+
+// ============================================================================
+// MESSAGE TEMPLATES
+// ============================================================================
+export const getTemplates = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { type, category } = req.query;
+
+    try {
+      let queryStr = `
+        SELECT * FROM message_templates
+        WHERE tenant_id = $1 AND is_active = true
+      `;
+      const params: any[] = [tenantId];
+
+      if (type) {
+        queryStr += ` AND type = $${params.length + 1}`;
+        params.push(type);
+      }
+      if (category) {
+        queryStr += ` AND category = $${params.length + 1}`;
+        params.push(category);
+      }
+
+      queryStr += ' ORDER BY usage_count DESC, name ASC';
+      const result = await pool.query(queryStr, params);
+
+      res.json({ success: true, data: result.rows });
+    } catch (dbError) {
+      // Return default templates if table doesn't exist
+      const defaultTemplates = [
+        { id: '1', name: 'Welcome Email', type: 'email', category: 'onboarding', subject: 'Welcome to {company}', content: 'Dear {name},\n\nWelcome to {company}!', variables: ['company', 'name'], usageCount: 0 },
+        { id: '2', name: 'Invoice Reminder', type: 'email', category: 'billing', subject: 'Invoice #{invoice_number} Reminder', content: 'Dear {name},\n\nThis is a reminder for invoice #{invoice_number}.', variables: ['name', 'invoice_number', 'amount'], usageCount: 0 },
+        { id: '3', name: 'Meeting Invite', type: 'email', category: 'meetings', subject: 'Meeting: {meeting_title}', content: 'You are invited to {meeting_title} on {date} at {time}.', variables: ['meeting_title', 'date', 'time'], usageCount: 0 },
+        { id: '4', name: 'SMS Appointment Reminder', type: 'sms', category: 'reminders', content: 'Reminder: Your appointment is on {date} at {time}. Reply CONFIRM to confirm.', variables: ['date', 'time'], usageCount: 0 },
+      ];
+      res.json({ success: true, data: defaultTemplates });
+    }
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get templates error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch templates' });
+  }
+};
+
+export const createTemplate = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { name, type, category, subject, content, variables } = req.body;
+
+    try {
+      const result = await pool.query(
+        `INSERT INTO message_templates (tenant_id, created_by, name, type, category, subject, content, variables)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *`,
+        [tenantId, userId, name, type, category, subject, content, JSON.stringify(variables || [])]
+      );
+
+      res.status(201).json({ success: true, data: result.rows[0], message: 'Template created' });
+    } catch (dbError) {
+      res.status(400).json({ success: false, error: 'Templates not configured' });
+    }
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Create template error:', error);
+    res.status(500).json({ success: false, error: 'Failed to create template' });
+  }
+};
+
+// ============================================================================
+// CAMPAIGNS
+// ============================================================================
+export const getCampaigns = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { status, type } = req.query;
+
+    try {
+      let queryStr = `
+        SELECT * FROM communication_campaigns
+        WHERE tenant_id = $1
+      `;
+      const params: any[] = [tenantId];
+
+      if (status) {
+        queryStr += ` AND status = $${params.length + 1}`;
+        params.push(status);
+      }
+      if (type) {
+        queryStr += ` AND type = $${params.length + 1}`;
+        params.push(type);
+      }
+
+      queryStr += ' ORDER BY created_at DESC';
+      const result = await pool.query(queryStr, params);
+
+      res.json({ success: true, data: result.rows });
+    } catch (dbError) {
+      // Return empty if table doesn't exist
+      res.json({ success: true, data: [] });
+    }
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get campaigns error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch campaigns' });
+  }
+};
+
+export const createCampaign = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { name, type, templateId, targetAudience, scheduledDate } = req.body;
+
+    try {
+      const result = await pool.query(
+        `INSERT INTO communication_campaigns (tenant_id, created_by, name, type, template_id, target_audience, scheduled_date, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, 'draft')
+        RETURNING *`,
+        [tenantId, userId, name, type, templateId, JSON.stringify(targetAudience || []), scheduledDate]
+      );
+
+      res.status(201).json({ success: true, data: result.rows[0], message: 'Campaign created' });
+    } catch (dbError) {
+      res.status(400).json({ success: false, error: 'Campaigns not configured' });
+    }
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Create campaign error:', error);
+    res.status(500).json({ success: false, error: 'Failed to create campaign' });
+  }
+};
+
 export default {
   getWorkspace,
   getAnnouncements,
@@ -679,5 +952,13 @@ export default {
   getMeetings,
   createMeeting,
   updateMeeting,
-  cancelMeeting
+  cancelMeeting,
+  // New endpoints
+  getMessages,
+  sendMessage,
+  getContacts,
+  getTemplates,
+  createTemplate,
+  getCampaigns,
+  createCampaign
 };

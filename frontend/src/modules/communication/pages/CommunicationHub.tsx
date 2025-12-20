@@ -61,13 +61,17 @@ const CommunicationHub: React.FC = () => {
       setLoading(true);
       try {
         const [channelsRes, dmsRes, callsRes] = await Promise.all([
-          apiClient.get('/api/communication/channels').catch(() => ({ data: [] })),
-          apiClient.get('/api/communication/messages').catch(() => ({ data: [] })),
-          apiClient.get('/api/communication/calls').catch(() => ({ data: [] })),
+          apiClient.get('/api/v2/communications/channels').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/communications/dm/conversations').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/communications/meetings').catch(() => ({ data: { data: [] } })),
         ]);
-        if (channelsRes.data?.length) setChannels(channelsRes.data);
-        if (dmsRes.data?.length) setDms(dmsRes.data);
-        if (callsRes.data?.length) setCalls(callsRes.data);
+        // V2 API returns { success: true, data: [...] }
+        const channelsData = Array.isArray(channelsRes.data?.data) ? channelsRes.data.data : channelsRes.data || [];
+        const dmsData = Array.isArray(dmsRes.data?.data) ? dmsRes.data.data : dmsRes.data || [];
+        const callsData = Array.isArray(callsRes.data?.data) ? callsRes.data.data : callsRes.data || [];
+        if (channelsData.length) setChannels(channelsData);
+        if (dmsData.length) setDms(dmsData);
+        if (callsData.length) setCalls(callsData);
       } catch (err) {
         console.error('Error fetching communication data:', err);
       } finally {
