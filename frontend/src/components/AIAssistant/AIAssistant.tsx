@@ -179,37 +179,87 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
 
     try {
       const token = localStorage.getItem('token');
-      // Use the new agent endpoint that can execute actions
-      const endpoint = token ? '/api/v1/agent/chat' : '/api/v1/agent/demo';
+      // Use the new V2 execute-command endpoint for actionable AI
+      const endpoint = '/api/v2/ai/execute-command';
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
+      // Check if this is a confirmation message
+      const isConfirmation = text.toLowerCase().includes('yes') || 
+                            text.toLowerCase().includes('confirm') ||
+                            text.toLowerCase().includes('proceed');
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ message: text, sessionId })
+        body: JSON.stringify({ 
+          command: text, 
+          confirm: isConfirmation,
+          sessionId 
+        })
       });
 
       const data = await response.json();
 
-      if (data.success && data.message) {
-        const agentMessage = data.message;
-        setMessages(prev => [...prev, {
-          id: agentMessage.id || `ai_${Date.now()}`,
-          role: 'assistant',
-          content: agentMessage.content,
-          timestamp: new Date(agentMessage.timestamp),
-          action: agentMessage.actionRequired ? {
-            type: agentMessage.actionRequired.type,
-            status: agentMessage.actionRequired.status === 'ready_to_execute' ? 'pending' : agentMessage.actionRequired.status,
-            data: agentMessage.actionRequired.data,
-            description: agentMessage.actionRequired.description,
-            requiresConfirmation: agentMessage.actionRequired.status === 'ready_to_execute'
-          } : undefined,
-          confirmationRequired: agentMessage.actionRequired?.status === 'ready_to_execute'
-        }]);
+      if (data.success && data.data) {
+        const result = data.data;
+        
+        // Handle different response statuses
+        if (result.status === 'clarification_needed') {
+          setMessages(prev => [...prev, {
+            id: `ai_${Date.now()}`,
+            role: 'assistant',
+            content: `${result.message}\n\n${result.suggestions?.map((s: string) => `• ${s}`).join('\n') || ''}`,
+            timestamp: new Date()
+          }]);
+        } else if (result.status === 'pending_confirmation') {
+          // Show confirmation dialog
+          setMessages(prev => [...prev, {
+            id: `ai_${Date.now()}`,
+            role: 'assistant',
+            content: result.message,
+            timestamp: new Date(),
+            confirmationRequired: true,
+            action: {
+              type: result.intent,
+              status: 'pending',
+              data: result.entities,
+              description: result.message,
+              requiresConfirmation: true,
+              validations: Object.entries(result.entities || {})
+                .filter(([_, v]) => v !== undefined)
+                .map(([key, value]) => ({
+                  field: key.charAt(0).toUpperCase() + key.slice(1),
+                  status: 'pass' as const,
+                  message: String(value)
+                }))
+            }
+          }]);
+        } else if (result.status === 'executed') {
+          setMessages(prev => [...prev, {
+            id: `ai_${Date.now()}`,
+            role: 'assistant',
+            content: result.message,
+            timestamp: new Date(),
+            action: {
+              type: 'executed',
+              status: 'executed',
+              data: result.result || {},
+              description: result.message,
+              requiresConfirmation: false
+            }
+          }]);
+        } else {
+          // Generic response
+          setMessages(prev => [...prev, {
+            id: `ai_${Date.now()}`,
+            role: 'assistant',
+            content: result.message || 'Command processed.',
+            timestamp: new Date()
+          }]);
+        }
         
         if (data.sessionId) {
           setSessionId(data.sessionId);
@@ -229,7 +279,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
     }
   };
 
-  // Handle action confirmation - send "yes" to the agent
+  // Handle action confirmation - execute the pending action
   const handleConfirm = async () => {
     if (isDemo) {
       setMessages(prev => [...prev, DEMO_SUCCESS]);
@@ -237,8 +287,11 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       return;
     }
 
-    // Send confirmation message to agent
-    await sendMessage('Yes, confirm and proceed');
+    // Find the pending action and re-send with confirm flag
+    const pendingMsg = messages.find(m => m.action?.status === 'pending');
+    if (pendingMsg?.action) {
+      await sendMessage('Yes, confirm and proceed');
+    }
   };
 
   // Handle action cancellation
@@ -253,8 +306,18 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       return;
     }
 
-    // Send cancel message to agent
-    await sendMessage('Cancel');
+    // Mark action as cancelled and notify user
+    setMessages(prev => prev.map(m => 
+      m.action?.status === 'pending' 
+        ? { ...m, action: { ...m.action, status: 'cancelled' as const }, confirmationRequired: false }
+        : m
+    ));
+    setMessages(prev => [...prev, {
+      id: `cancel_${Date.now()}`,
+      role: 'assistant',
+      content: 'Action cancelled. How else can I help you?',
+      timestamp: new Date()
+    }]);
   };
 
   // Check if there's a pending action

@@ -1569,6 +1569,23 @@ const CommunicationsHub: React.FC = () => {
     </div>
   );
 
+  // Show loading spinner while data loads
+  if (loading) {
+    return (
+      <HubLayout>
+        <HubHeader
+          title="Communications Hub"
+          subtitle="Email, SMS, WhatsApp & Internal Messaging"
+          icon={<MessageOutlined />}
+          gradient="blue"
+        />
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+          <Spin size="large" tip="Loading communications..." />
+        </div>
+      </HubLayout>
+    );
+  }
+
   return (
     <HubLayout>
       <HubHeader
