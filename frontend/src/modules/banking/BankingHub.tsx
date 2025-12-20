@@ -75,12 +75,12 @@ const BankingHub: React.FC = () => {
   useEffect(() => {
     const fetchBankingData = async () => {
       try {
-        // Fetch from workspaceApi and apiClient in parallel
-        const [workspaceResult, connectionsRes, transactionsRes, forecastRes] = await Promise.all([
+        // Fetch from V2 treasury endpoints
+        const [workspaceResult, dashboardRes, positionsRes, forecastRes] = await Promise.all([
           workspaceApi.cashManagement.getWorkspace().catch(() => null),
-          apiClient.get('/api/banking/connections').catch(() => ({ data: [] })),
-          apiClient.get('/api/banking/transactions').catch(() => ({ data: [] })),
-          apiClient.get('/api/banking/cash-flow-forecast').catch(() => ({ data: [] })),
+          apiClient.get('/api/v2/treasury/dashboard').catch(() => ({ data: { data: {} } })),
+          apiClient.get('/api/v2/treasury/cash-positions').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/treasury/forecasts').catch(() => ({ data: { data: [] } })),
         ]);
         
         // Handle workspace data
@@ -92,10 +92,41 @@ const BankingHub: React.FC = () => {
           }
         }
         
-        // Handle bank connections
-        if (connectionsRes.data?.length) setBankConnections(connectionsRes.data);
-        if (transactionsRes.data?.length) setRecentTransactions(transactionsRes.data);
-        if (forecastRes.data?.length) setCashFlowForecast(forecastRes.data);
+        // Handle treasury dashboard - extract bank accounts as connections
+        const dashboardData = dashboardRes.data?.data || dashboardRes.data || {};
+        const positionsData = Array.isArray(positionsRes.data?.data) ? positionsRes.data.data : 
+                             Array.isArray(positionsRes.data) ? positionsRes.data : [];
+        const forecastData = Array.isArray(forecastRes.data?.data) ? forecastRes.data.data : 
+                            Array.isArray(forecastRes.data) ? forecastRes.data : [];
+        
+        // Map cash positions to bank connection format for display
+        if (positionsData.length > 0) {
+          const bankConnectionsFromAPI = positionsData.map((pos: any) => ({
+            id: pos.id || pos.account_id,
+            bank: pos.bank_name || 'Bank Account',
+            accountName: pos.account_name || 'Account',
+            accountNumber: pos.account_number ? `****${pos.account_number.slice(-4)}` : '****0000',
+            balance: pos.balance || pos.current_balance || 0,
+            available: pos.available_balance || pos.balance || 0,
+            currency: pos.currency || 'ZAR',
+            status: 'connected',
+            type: pos.account_type || 'Current',
+            logo: '🏦',
+            feedType: 'Manual',
+            lastSync: pos.last_updated || new Date().toISOString(),
+          }));
+          setBankConnections(bankConnectionsFromAPI);
+        }
+        
+        // Map forecasts for cash flow
+        if (forecastData.length > 0) {
+          setCashFlowForecast(forecastData);
+        }
+        
+        // Extract recent transactions if available in dashboard
+        if (dashboardData.recentTransactions) {
+          setRecentTransactions(dashboardData.recentTransactions);
+        }
       } catch (err) {
         console.log('Using local mock data for banking');
       } finally {

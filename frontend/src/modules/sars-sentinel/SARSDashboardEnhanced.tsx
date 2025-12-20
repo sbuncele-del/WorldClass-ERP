@@ -75,38 +75,60 @@ const SARSDashboardEnhanced: React.FC = () => {
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      // Mock data - replace with actual API call
-      setStats({
-        correspondence: {
-          critical: 8,
-          high: 15,
-          medium: 23,
-          low: 12,
-          overdue: 3,
-          due_this_week: 18,
-          total_active: 58
-        },
-        tax_submissions: {
-          emp201_pending: 42,
-          emp501_due: 5,
-          vat201_pending: 38,
-          it14_pending: 12
-        },
-        client_compliance: {
-          total_clients: 247,
-          fully_compliant: 198,
-          at_risk: 35,
-          non_compliant: 14
-        },
-        upcoming_deadlines: [
-          { type: 'EMP201', due_date: '2025-11-07', days_remaining: -1, client_count: 42 },
-          { type: 'VAT201', due_date: '2025-11-25', days_remaining: 17, client_count: 38 },
-          { type: 'PAYE Monthly', due_date: '2025-11-07', days_remaining: -1, client_count: 42 },
-          { type: 'IRP5/IT3(a)', due_date: '2026-05-31', days_remaining: 204, client_count: 127 }
-        ]
+      const token = localStorage.getItem('token');
+      
+      // Fetch real data from SARS dashboard API
+      const response = await fetch('/api/v2/sars/dashboard', {
+        headers: { 'Authorization': `Bearer ${token}` }
       });
+      
+      if (response.ok) {
+        const result = await response.json();
+        const data = result.data || result;
+        
+        // Map API response to stats format
+        setStats({
+          correspondence: {
+            critical: data.correspondence?.critical || data.criticalItems || 0,
+            high: data.correspondence?.high || data.highPriorityItems || 0,
+            medium: data.correspondence?.medium || 0,
+            low: data.correspondence?.low || 0,
+            overdue: data.correspondence?.overdue || data.overdueItems || 0,
+            due_this_week: data.correspondence?.due_this_week || data.dueThisWeek || 0,
+            total_active: data.correspondence?.total_active || data.activeCorrespondence || 0
+          },
+          tax_submissions: {
+            emp201_pending: data.tax_submissions?.emp201_pending || data.emp201Pending || 0,
+            emp501_due: data.tax_submissions?.emp501_due || data.emp501Due || 0,
+            vat201_pending: data.tax_submissions?.vat201_pending || data.vat201Pending || 0,
+            it14_pending: data.tax_submissions?.it14_pending || data.it14Pending || 0
+          },
+          client_compliance: {
+            total_clients: data.client_compliance?.total_clients || data.totalClients || 1,
+            fully_compliant: data.client_compliance?.fully_compliant || data.compliantClients || 1,
+            at_risk: data.client_compliance?.at_risk || data.atRiskClients || 0,
+            non_compliant: data.client_compliance?.non_compliant || data.nonCompliantClients || 0
+          },
+          upcoming_deadlines: data.upcoming_deadlines || data.upcomingDeadlines || []
+        });
+      } else {
+        // API failed - set empty/default stats (no mock data)
+        setStats({
+          correspondence: { critical: 0, high: 0, medium: 0, low: 0, overdue: 0, due_this_week: 0, total_active: 0 },
+          tax_submissions: { emp201_pending: 0, emp501_due: 0, vat201_pending: 0, it14_pending: 0 },
+          client_compliance: { total_clients: 0, fully_compliant: 0, at_risk: 0, non_compliant: 0 },
+          upcoming_deadlines: []
+        });
+      }
     } catch (error) {
       console.error('Error fetching SARS dashboard data:', error);
+      // On error - show empty state, not mock data
+      setStats({
+        correspondence: { critical: 0, high: 0, medium: 0, low: 0, overdue: 0, due_this_week: 0, total_active: 0 },
+        tax_submissions: { emp201_pending: 0, emp501_due: 0, vat201_pending: 0, it14_pending: 0 },
+        client_compliance: { total_clients: 0, fully_compliant: 0, at_risk: 0, non_compliant: 0 },
+        upcoming_deadlines: []
+      });
     } finally {
       setLoading(false);
     }
