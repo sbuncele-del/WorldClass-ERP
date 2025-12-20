@@ -467,7 +467,7 @@ const CommunicationsHub: React.FC = () => {
             extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setComposeModalVisible(true)}>Compose</Button>}
           >
             <List
-              dataSource={messages.slice(0, 5)}
+              dataSource={(messages || []).slice(0, 5)}
               renderItem={item => (
                 <List.Item
                   actions={[
@@ -633,7 +633,7 @@ const CommunicationsHub: React.FC = () => {
             }
           >
             <Table
-              dataSource={messages}
+              dataSource={messages || []}
               rowKey="id"
               size="small"
               columns={[
@@ -729,7 +729,7 @@ const CommunicationsHub: React.FC = () => {
         }
       >
         <Table
-          dataSource={contacts}
+          dataSource={contacts || []}
           rowKey="id"
           columns={[
             {
@@ -916,7 +916,7 @@ const CommunicationsHub: React.FC = () => {
         }
       >
         <Table
-          dataSource={campaigns}
+          dataSource={campaigns || []}
           rowKey="id"
           columns={[
             {
@@ -1039,7 +1039,7 @@ const CommunicationsHub: React.FC = () => {
         }
       >
         <List
-          dataSource={announcements}
+          dataSource={announcements || []}
           renderItem={item => (
             <List.Item
               actions={[
@@ -1159,7 +1159,7 @@ const CommunicationsHub: React.FC = () => {
         />
 
         <Table
-          dataSource={meetings}
+          dataSource={meetings || []}
           rowKey="id"
           columns={[
             {
@@ -1365,7 +1365,7 @@ const CommunicationsHub: React.FC = () => {
         }
       >
         <List
-          dataSource={notifications}
+          dataSource={notifications || []}
           renderItem={notification => (
             <List.Item
               style={{ 

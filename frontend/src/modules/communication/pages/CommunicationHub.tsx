@@ -85,9 +85,9 @@ const CommunicationHub: React.FC = () => {
     );
   }
 
-  // Stats
-  const totalUnread = channels.reduce((sum, c) => sum + c.unread, 0) + dms.reduce((sum, d) => sum + d.unread, 0);
-  const onlineUsers = dms.filter(d => d.user.status === 'online').length;
+  // Stats - with defensive guards for null/undefined arrays
+  const totalUnread = (channels || []).reduce((sum, c) => sum + (c?.unread || 0), 0) + (dms || []).reduce((sum, d) => sum + (d?.unread || 0), 0);
+  const onlineUsers = (dms || []).filter(d => d?.user?.status === 'online').length;
 
   return (
     <div className="communication-hub">
@@ -151,7 +151,7 @@ const CommunicationHub: React.FC = () => {
           <Card className="stat-card">
             <Statistic
               title="Calls Today"
-              value={calls.length}
+              value={(calls || []).length}
               prefix={<PhoneOutlined />}
             />
           </Card>
@@ -164,15 +164,15 @@ const CommunicationHub: React.FC = () => {
         <Col xs={24} lg={16}>
           <Card className="main-card">
             <Tabs defaultActiveKey="channels">
-              <TabPane tab={<><TeamOutlined /> Channels ({channels.length})</>} key="channels">
+              <TabPane tab={<><TeamOutlined /> Channels ({(channels || []).length})</>} key="channels">
                 {/* Pinned */}
-                {channels.filter(c => c.pinned).length > 0 && (
+                {(channels || []).filter(c => c.pinned).length > 0 && (
                   <div className="pinned-section">
                     <Text type="secondary" className="section-label">
                       <PushpinOutlined /> Pinned
                     </Text>
                     <List
-                      dataSource={channels.filter(c => c.pinned)}
+                      dataSource={(channels || []).filter(c => c.pinned)}
                       renderItem={channel => (
                         <List.Item
                           className="channel-item"
@@ -213,7 +213,7 @@ const CommunicationHub: React.FC = () => {
                     </Button>
                   </div>
                   <List
-                    dataSource={channels.filter(c => !c.pinned)}
+                    dataSource={(channels || []).filter(c => !c.pinned)}
                     renderItem={channel => (
                       <List.Item
                         className="channel-item"
@@ -243,9 +243,9 @@ const CommunicationHub: React.FC = () => {
                 </div>
               </TabPane>
 
-              <TabPane tab={<><UserOutlined /> Direct Messages ({dms.length})</>} key="messages">
+              <TabPane tab={<><UserOutlined /> Direct Messages ({(dms || []).length})</>} key="messages">
                 <List
-                  dataSource={dms}
+                  dataSource={dms || []}
                   renderItem={dm => (
                     <List.Item
                       className="dm-item"
@@ -295,7 +295,7 @@ const CommunicationHub: React.FC = () => {
           {/* Recent Calls */}
           <Card title="Recent Calls" extra={<Button type="link" size="small">View All</Button>}>
             <List
-              dataSource={calls}
+              dataSource={calls || []}
               renderItem={call => (
                 <List.Item className="call-item">
                   <List.Item.Meta
