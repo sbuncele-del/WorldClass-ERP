@@ -90,6 +90,7 @@ import assetManagementRoutes from './modules/assets/routes';
 import projectsRoutes from './routes/projects.routes';
 import proposalsRoutes from './routes/proposals.routes';
 import communicationsRoutes from './routes/communications.routes';
+import calendarRoutes from './routes/calendar.routes';
 import miningRoutes from './routes/mining.routes';
 import agricultureRoutes from './routes/agriculture.routes';
 import constructionRoutes from './routes/construction.routes';
@@ -335,6 +336,7 @@ v1Router.use('/meetings', apiLimiter, meetingsRoutes); // Video Conferencing (Da
 v1Router.use('/projects', apiLimiter, projectsRoutes); // Project Management API
 v1Router.use('/proposals', apiLimiter, proposalsRoutes); // Proposals & Quotes API
 v1Router.use('/communications', apiLimiter, communicationsRoutes); // Communications Hub API
+v1Router.use('/calendar', apiLimiter, calendarRoutes); // Calendar & Events API
 v1Router.use('/mining', apiLimiter, miningRoutes); // Mining Industry API
 v1Router.use('/agriculture', apiLimiter, agricultureRoutes); // Agriculture Industry API
 v1Router.use('/construction', apiLimiter, constructionRoutes); // Construction Industry API
