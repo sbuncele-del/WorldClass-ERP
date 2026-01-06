@@ -101,6 +101,12 @@ export async function sendEmail(options: {
       variables.unsubscribeUrl = unsubscribeUrl;
     }
 
+    // Check if email is enabled
+    if (!EMAIL_ENABLED || !transporter) {
+      console.log(`⚠️ Email service disabled - would have sent to: ${to}, subject: ${subject}`);
+      return; // Silently return if email is not configured
+    }
+
     // Load and process template
     const html = await loadTemplate(template, variables);
 

@@ -56,7 +56,7 @@
 ✅ **Affordable** – Transparent pricing designed for growing businesses
 ✅ **Fast** – Live in days, not months
 
-*"SiyaBusa" means "We are managing/governing" in isiZulu*
+
 
 ---
 

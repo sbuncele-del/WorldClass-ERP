@@ -117,7 +117,7 @@ export class CashFlowControllerV2 {
           FROM journal_entry_lines jel
           JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
             AND je.tenant_id = $1
-          JOIN chart_of_accounts coa ON jel.account_id = coa.id
+          JOIN chart_of_accounts coa ON jel.account_id = coa.account_id
             AND coa.tenant_id = $1
           WHERE jel.tenant_id = $1
             AND je.status = 'POSTED'
@@ -143,7 +143,7 @@ export class CashFlowControllerV2 {
         FROM journal_entry_lines jel
         JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
-        JOIN chart_of_accounts coa ON jel.account_id = coa.id
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id
           AND coa.tenant_id = $1
         WHERE jel.tenant_id = $1
           AND je.status = 'POSTED'
@@ -262,7 +262,7 @@ async function generateIndirectMethod(tenantId: string, dateRange: any): Promise
     SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as amount
     FROM journal_entry_lines jel
     JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
     WHERE jel.tenant_id = $1
       AND je.status = 'POSTED'
       AND je.journal_date >= $2 AND je.journal_date <= $3
@@ -337,7 +337,7 @@ async function generateDirectMethod(tenantId: string, dateRange: any): Promise<C
     SELECT COALESCE(SUM(jel.debit_amount), 0) as amount
     FROM journal_entry_lines jel
     JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
     WHERE jel.tenant_id = $1
       AND je.status = 'POSTED'
       AND je.journal_date >= $2 AND je.journal_date <= $3
@@ -356,7 +356,7 @@ async function generateDirectMethod(tenantId: string, dateRange: any): Promise<C
     SELECT COALESCE(SUM(jel.credit_amount), 0) as amount
     FROM journal_entry_lines jel
     JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
     WHERE jel.tenant_id = $1
       AND je.status = 'POSTED'
       AND je.journal_date >= $2 AND je.journal_date <= $3
@@ -428,7 +428,7 @@ async function calculateNetIncome(tenantId: string, startDate: string, endDate: 
         END
       ), 0) as net_income
     FROM journal_entry_lines jel
-    JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
     JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
     WHERE jel.tenant_id = $1
       AND je.status = 'POSTED'
@@ -449,7 +449,7 @@ async function calculateWorkingCapitalChanges(tenantId: string, dateRange: any):
       COALESCE(SUM(CASE WHEN je.journal_date <= $3 THEN jel.debit_amount - jel.credit_amount ELSE 0 END), 0) as ending
     FROM journal_entry_lines jel
     JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
     WHERE jel.tenant_id = $1
       AND je.status = 'POSTED'
       AND coa.account_name ILIKE '%receivable%'
@@ -467,7 +467,7 @@ async function calculateWorkingCapitalChanges(tenantId: string, dateRange: any):
       COALESCE(SUM(CASE WHEN je.journal_date <= $3 THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) as ending
     FROM journal_entry_lines jel
     JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
     WHERE jel.tenant_id = $1
       AND je.status = 'POSTED'
       AND coa.account_name ILIKE '%payable%'
@@ -489,7 +489,7 @@ async function calculateInvestingActivities(tenantId: string, dateRange: any): P
     SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as amount
     FROM journal_entry_lines jel
     JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
     WHERE jel.tenant_id = $1
       AND je.status = 'POSTED'
       AND je.journal_date >= $2 AND je.journal_date <= $3
@@ -512,7 +512,7 @@ async function calculateFinancingActivities(tenantId: string, dateRange: any): P
     SELECT COALESCE(SUM(jel.credit_amount - jel.debit_amount), 0) as amount
     FROM journal_entry_lines jel
     JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
     WHERE jel.tenant_id = $1
       AND je.status = 'POSTED'
       AND je.journal_date >= $2 AND je.journal_date <= $3
@@ -533,7 +533,7 @@ async function getCashBalance(tenantId: string, asOfDate: string, beforeDate: bo
     SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as balance
     FROM journal_entry_lines jel
     JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
     WHERE jel.tenant_id = $1
       AND je.status = 'POSTED'
       AND je.journal_date ${operator} $2

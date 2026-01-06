@@ -198,6 +198,7 @@ export interface AuthResponse {
     name: string;
     status: string;
     trialEndsAt?: Date;
+    onboarding_data?: Record<string, unknown>;
   };
   user: {
     id: string;

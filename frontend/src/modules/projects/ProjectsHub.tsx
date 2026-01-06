@@ -98,6 +98,19 @@ interface GanttTask {
   status: 'not-started' | 'in-progress' | 'at-risk' | 'done';
 }
 
+// Helpers to keep UI math resilient when APIs return empty or partial data
+const safePercent = (numerator: number, denominator: number): number => {
+  if (!denominator || !Number.isFinite(numerator) || !Number.isFinite(denominator)) return 0;
+  return Math.round((numerator / denominator) * 100);
+};
+
+const safeRatioString = (numerator: number, denominator: number, precision = 1): string => {
+  if (!denominator || !Number.isFinite(numerator) || !Number.isFinite(denominator)) return (0).toFixed(precision);
+  return ((numerator / denominator) * 100).toFixed(precision);
+};
+
+const toNumber = (value: any): number => (Number.isFinite(Number(value)) ? Number(value) : 0);
+
 const ProjectsHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [projectModalVisible, setProjectModalVisible] = useState(false);
@@ -114,53 +127,132 @@ const ProjectsHub: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [apiStats, setApiStats] = useState<any>(null);
   const [apiLoading, setApiLoading] = useState(true);
+  const [resources, setResources] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [teamCount, setTeamCount] = useState(0);
+  const [weeklySummary, setWeeklySummary] = useState({ totalHours: 0, billableHours: 0, billableAmount: 0 });
   
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch stats
-        const statsResponse = await apiClient.get('/api/projects/stats');
-        if (statsResponse.data) {
-          setApiStats(statsResponse.data);
+        // Fetch workspace/stats - this is the main data endpoint
+        const workspaceResponse = await apiClient.get('/api/v2/projects/workspace').catch((error) => {
+          console.error('Workspace fetch failed', error);
+          return { data: null };
+        });
+        if (workspaceResponse.data?.data) {
+          setApiStats(workspaceResponse.data.data.summary || workspaceResponse.data.data);
         }
         
-        // Fetch projects list
-        const projectsResponse = await apiClient.get('/api/projects/list');
-        if (projectsResponse.data && Array.isArray(projectsResponse.data)) {
-          setProjects(projectsResponse.data);
-        } else if (projectsResponse.data?.projects) {
-          setProjects(projectsResponse.data.projects);
+        // Fetch projects list from practice/projects endpoint
+        const projectsResponse = await apiClient.get('/api/v2/practice/projects').catch((error) => {
+          console.error('Projects fetch failed', error);
+          return { data: { data: [] } };
+        });
+        const projectsData = Array.isArray(projectsResponse?.data?.data) ? projectsResponse.data.data : [];
+        if (projectsData.length > 0) {
+          // Transform to expected format
+          const transformedProjects = projectsData.map((p: any) => ({
+            id: p.project_id,
+            name: p.project_name,
+            code: p.project_number,
+            client: p.customer_name || 'Internal',
+            status: (p.status || 'planning').toLowerCase().replace(' ', '-'),
+            priority: (p.priority || 'medium').toLowerCase(),
+            progress: toNumber(p.progress_percentage) || safePercent(toNumber(p.completed_tasks), toNumber(p.total_tasks) || 1),
+            startDate: p.start_date ? new Date(p.start_date).toLocaleDateString() : '-',
+            endDate: p.end_date ? new Date(p.end_date).toLocaleDateString() : '-',
+            budget: toNumber(p.budget),
+            spent: toNumber(p.actual_cost),
+            manager: p.manager_name || 'Unassigned',
+            team: p.team_size || 0,
+            tasks: { total: p.total_tasks || 0, completed: p.completed_tasks || 0 },
+            milestones: { total: 0, completed: 0 },
+            type: p.project_type || 'internal'
+          }));
+          setProjects(transformedProjects);
         } else {
-          // Empty array if no data returned
           setProjects([]);
         }
         
         // Fetch tasks
-        const tasksResponse = await apiClient.get('/api/projects/tasks');
-        if (tasksResponse.data && Array.isArray(tasksResponse.data)) {
-          setTasks(tasksResponse.data);
-        } else if (tasksResponse.data?.tasks) {
-          setTasks(tasksResponse.data.tasks);
-        } else {
-          // Empty array if no data returned
-          setTasks([]);
+        const tasksResponse = await apiClient.get('/api/v2/practice/tasks').catch((error) => {
+          console.error('Tasks fetch failed', error);
+          return { data: [] };
+        });
+        const taskData = Array.isArray(tasksResponse?.data?.data)
+          ? tasksResponse.data.data
+          : Array.isArray(tasksResponse?.data)
+            ? tasksResponse.data
+            : [];
+        setTasks(taskData);
+        
+        // Fetch team resources (users in tenant)
+        const usersResponse = await apiClient.get('/api/v2/admin/users').catch((error) => {
+          console.error('Users fetch failed', error);
+          return { data: { users: [] } };
+        });
+        const userData = Array.isArray(usersResponse?.data?.users) ? usersResponse.data.users : [];
+        if (userData.length > 0) {
+          const teamResources = userData.map((u: any) => ({
+            id: u.id,
+            name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email,
+            role: u.role || 'Team Member',
+            projects: 0, // Would need join with project_team_members
+            utilization: 0,
+            availability: u.status === 'active' ? 'Available' : 'Unavailable'
+          }));
+          setResources(teamResources);
+          setTeamCount(teamResources.length);
         }
         
-        // Fetch gantt tasks and time entries
-        const [ganttRes, timeRes] = await Promise.all([
-          apiClient.get('/api/projects/gantt').catch(() => ({ data: [] })),
-          apiClient.get('/api/projects/time-entries').catch(() => ({ data: [] }))
-        ]);
-        setGanttTasks(ganttRes.data?.tasks || ganttRes.data || []);
-        setTimeEntries(timeRes.data?.entries || timeRes.data || []);
+        // Fetch time entries
+        const timeRes = await apiClient.get('/api/v2/practice/time-entries').catch((error) => {
+          console.error('Time entries fetch failed', error);
+          return { data: [] };
+        });
+        const entries = Array.isArray(timeRes?.data?.entries)
+          ? timeRes.data.entries
+          : Array.isArray(timeRes?.data?.data)
+            ? timeRes.data.data
+            : Array.isArray(timeRes?.data)
+              ? timeRes.data
+              : [];
+        setTimeEntries(entries);
+        
+        // Calculate weekly summary from time entries
+        if (Array.isArray(entries) && entries.length > 0) {
+          const totalHours = entries.reduce((sum: number, t: any) => sum + (parseFloat(t.hours) || 0), 0);
+          const billableHours = entries.filter((t: any) => t.billable).reduce((sum: number, t: any) => sum + (parseFloat(t.hours) || 0), 0);
+          const billableAmount = entries.filter((t: any) => t.billable).reduce((sum: number, t: any) => sum + ((parseFloat(t.hours) || 0) * (parseFloat(t.rate) || 0)), 0);
+          setWeeklySummary({ totalHours, billableHours, billableAmount });
+        }
+        
+        // Build gantt tasks from projects
+        const ganttFromProjects = projectsResponse.data?.data?.map((p: any) => ({
+          id: p.project_id,
+          projectId: p.project_id,
+          name: p.project_name,
+          owner: p.manager_name || 'Unassigned',
+          start: p.start_date || new Date().toISOString().split('T')[0],
+          end: p.end_date || new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+          progress: p.progress_percentage || 0,
+          status: p.status === 'Completed' ? 'done' : p.status === 'Active' ? 'in-progress' : 'not-started'
+        })) || [];
+        setGanttTasks(ganttFromProjects);
+        
+        // Recent activity would come from audit logs or activity table
+        // For now, set empty until we have that endpoint
+        setRecentActivity([]);
+        
       } catch (err) {
         console.error('Failed to fetch projects data:', err);
-        // Empty arrays on error - no mock data
         setProjects([]);
         setTasks([]);
         setGanttTasks([]);
         setTimeEntries([]);
+        setResources([]);
       } finally {
         setLoading(false);
         setApiLoading(false);
@@ -171,14 +263,16 @@ const ProjectsHub: React.FC = () => {
 
   // Calculate stats - use API data if available, otherwise fall back to mock data
   const projectStats = apiStats ? {
-    total: apiStats.totalProjects || projects.length,
-    active: apiStats.activeProjects || projects.filter(p => p.status === 'active').length,
+    total: toNumber(apiStats.totalProjects) || projects.length,
+    active: toNumber(apiStats.activeProjects) || projects.filter(p => p.status === 'active').length,
     onTrack: projects.filter(p => p.progress >= 40).length,
-    atRisk: apiStats.onHoldProjects || projects.filter(p => p.priority === 'critical' && p.progress < 50).length,
-    totalBudget: apiStats.totalBudget || projects.reduce((sum, p) => sum + p.budget, 0),
-    totalSpent: apiStats.totalSpent || projects.reduce((sum, p) => sum + p.spent, 0),
-    totalTasks: apiStats.totalTasks || projects.reduce((sum, p) => sum + p.tasks.total, 0),
-    completedTasks: (apiStats.totalTasks - apiStats.openTasks) || projects.reduce((sum, p) => sum + p.tasks.completed, 0)
+    atRisk: toNumber(apiStats.onHoldProjects) || projects.filter(p => p.priority === 'critical' && p.progress < 50).length,
+    totalBudget: toNumber(apiStats.totalBudget) || projects.reduce((sum, p) => sum + p.budget, 0),
+    totalSpent: toNumber(apiStats.totalSpent) || projects.reduce((sum, p) => sum + p.spent, 0),
+    totalTasks: toNumber(apiStats.totalTasks) || projects.reduce((sum, p) => sum + p.tasks.total, 0),
+    completedTasks: toNumber(apiStats.totalTasks) && toNumber(apiStats.openTasks) >= 0
+      ? toNumber(apiStats.totalTasks) - toNumber(apiStats.openTasks)
+      : projects.reduce((sum, p) => sum + p.tasks.completed, 0)
   } : {
     total: projects.length,
     active: projects.filter(p => p.status === 'active').length,
@@ -257,7 +351,7 @@ const ProjectsHub: React.FC = () => {
               prefix={<ProjectOutlined />}
               valueStyle={{ color: '#1890ff' }}
             />
-            <Progress percent={Math.round((projectStats.active / projectStats.total) * 100)} showInfo={false} />
+            <Progress percent={safePercent(projectStats.active, projectStats.total)} showInfo={false} />
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
@@ -270,7 +364,7 @@ const ProjectsHub: React.FC = () => {
               valueStyle={{ color: '#52c41a' }}
             />
             <Progress 
-              percent={Math.round((projectStats.completedTasks / projectStats.totalTasks) * 100)} 
+              percent={safePercent(projectStats.completedTasks, projectStats.totalTasks)} 
               showInfo={false}
               status="success"
             />
@@ -280,7 +374,7 @@ const ProjectsHub: React.FC = () => {
           <Card>
             <Statistic
               title="Budget Utilized"
-              value={(projectStats.totalSpent / projectStats.totalBudget * 100).toFixed(1)}
+              value={safeRatioString(projectStats.totalSpent, projectStats.totalBudget)}
               suffix="%"
               prefix={<DollarOutlined />}
               valueStyle={{ color: '#722ed1' }}
@@ -377,58 +471,30 @@ const ProjectsHub: React.FC = () => {
 
         <Col xs={24} lg={8}>
           <Card title={<><ClockCircleOutlined /> Recent Activity</>}>
-            <Timeline
-              items={[
-                {
-                  color: 'green',
+            {recentActivity.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                <ClockCircleOutlined style={{ fontSize: 32, color: '#d9d9d9' }} />
+                <br /><br />
+                <Text type="secondary">No recent activity</Text>
+                <br />
+                <Text type="secondary" style={{ fontSize: 12 }}>Activity will appear here as you work on projects</Text>
+              </div>
+            ) : (
+              <Timeline
+                items={recentActivity.map((activity: any) => ({
+                  color: activity.type === 'completed' ? 'green' : activity.type === 'milestone' ? 'blue' : 'orange',
                   children: (
                     <>
-                      <Text strong>Task Completed</Text>
+                      <Text strong>{activity.title}</Text>
                       <br />
-                      <Text type="secondary">Foundation pour - Block A</Text>
+                      <Text type="secondary">{activity.description}</Text>
                       <br />
-                      <Text type="secondary" style={{ fontSize: 11 }}>2 hours ago</Text>
+                      <Text type="secondary" style={{ fontSize: 11 }}>{activity.time}</Text>
                     </>
                   )
-                },
-                {
-                  color: 'blue',
-                  children: (
-                    <>
-                      <Text strong>Milestone Reached</Text>
-                      <br />
-                      <Text type="secondary">API Development Phase 1</Text>
-                      <br />
-                      <Text type="secondary" style={{ fontSize: 11 }}>5 hours ago</Text>
-                    </>
-                  )
-                },
-                {
-                  color: 'orange',
-                  children: (
-                    <>
-                      <Text strong>Budget Alert</Text>
-                      <br />
-                      <Text type="secondary">PRJ-003 at 78% budget utilized</Text>
-                      <br />
-                      <Text type="secondary" style={{ fontSize: 11 }}>Yesterday</Text>
-                    </>
-                  )
-                },
-                {
-                  color: 'green',
-                  children: (
-                    <>
-                      <Text strong>New Team Member</Text>
-                      <br />
-                      <Text type="secondary">Alex joined PRJ-001</Text>
-                      <br />
-                      <Text type="secondary" style={{ fontSize: 11 }}>2 days ago</Text>
-                    </>
-                  )
-                }
-              ]}
-            />
+                }))}
+              />
+            )}
           </Card>
         </Col>
       </Row>
@@ -556,10 +622,10 @@ const ProjectsHub: React.FC = () => {
                 <div>
                   <Text>R{(record.budget / 1000000).toFixed(1)}M</Text>
                   <Progress 
-                    percent={Math.round((record.spent / record.budget) * 100)} 
+                    percent={safePercent(record.spent, record.budget)} 
                     size="small" 
                     showInfo={false}
-                    status={(record.spent / record.budget) > 0.9 ? 'exception' : 'active'}
+                    status={record.budget && record.spent / record.budget > 0.9 ? 'exception' : 'active'}
                   />
                 </div>
               )
@@ -685,76 +751,96 @@ const ProjectsHub: React.FC = () => {
     );
   };
 
-  // Gantt Chart (placeholder)
+  // Gantt Chart (real data)
   const renderGantt = () => (
     <div style={{ padding: '24px' }}>
       <Card title={<><BarChartOutlined /> Gantt Chart</>}>
-        <Alert
-          message="Interactive Gantt Chart"
-          description="The Gantt chart provides a visual timeline of all project tasks, dependencies, and milestones. Drag and drop to reschedule tasks."
-          type="info"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
-        
-        {/* Simplified Gantt representation */}
-        <div style={{ overflowX: 'auto' }}>
-          <div style={{ minWidth: 1200, padding: '16px 0' }}>
-            {projects.slice(0, 3).map(project => (
-              <div key={project.id} style={{ marginBottom: 24 }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
-                  <div style={{ width: 250 }}>
-                    <Text strong>{project.name}</Text>
-                  </div>
-                  <div style={{ flex: 1, height: 30, background: '#f0f0f0', borderRadius: 4, position: 'relative' }}>
-                    <div 
-                      style={{ 
-                        position: 'absolute',
-                        left: '10%',
-                        width: `${project.progress}%`,
-                        height: '100%',
-                        background: project.progress >= 80 ? '#52c41a' : project.progress >= 50 ? '#1890ff' : '#faad14',
-                        borderRadius: 4,
-                        display: 'flex',
-                        alignItems: 'center',
-                        paddingLeft: 8
-                      }}
-                    >
-                      <Text style={{ color: 'white', fontSize: 11 }}>{project.progress}%</Text>
-                    </div>
+        {ganttTasks.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '60px' }}>
+            <BarChartOutlined style={{ fontSize: 48, color: '#d9d9d9' }} />
+            <Title level={4} type="secondary">No Projects to Display</Title>
+            <Text type="secondary">Create a project with start and end dates to see the Gantt chart.</Text>
+            <br /><br />
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setProjectModalVisible(true)}>
+              Create Project
+            </Button>
+          </div>
+        ) : (
+          <>
+            <Alert
+              message="Project Timeline"
+              description="Visual timeline of all projects. Progress bars show completion status."
+              type="info"
+              showIcon
+              style={{ marginBottom: 16 }}
+            />
+            
+            {/* Gantt Chart */}
+            <div style={{ overflowX: 'auto' }}>
+              <div style={{ minWidth: 1200, padding: '16px 0' }}>
+                {/* Header with dates */}
+                <div style={{ display: 'flex', marginBottom: 16, borderBottom: '1px solid #f0f0f0', paddingBottom: 8 }}>
+                  <div style={{ width: 250, fontWeight: 'bold' }}>Project</div>
+                  <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between', paddingRight: 20 }}>
+                    <Text type="secondary">{ganttBounds.minStart.format('MMM DD')}</Text>
+                    <Text type="secondary">{ganttBounds.minStart.add(Math.floor(ganttBounds.totalDays/4), 'day').format('MMM DD')}</Text>
+                    <Text type="secondary">{ganttBounds.minStart.add(Math.floor(ganttBounds.totalDays/2), 'day').format('MMM DD')}</Text>
+                    <Text type="secondary">{ganttBounds.minStart.add(Math.floor(3*ganttBounds.totalDays/4), 'day').format('MMM DD')}</Text>
+                    <Text type="secondary">{ganttBounds.maxEnd.format('MMM DD')}</Text>
                   </div>
                 </div>
-                {/* Sub-tasks */}
-                {tasks.filter(t => t.project === project.id).slice(0, 3).map(task => (
-                  <div key={task.id} style={{ display: 'flex', alignItems: 'center', marginBottom: 4, paddingLeft: 20 }}>
-                    <div style={{ width: 230 }}>
-                      <Text type="secondary" style={{ fontSize: 12 }}>↳ {task.title}</Text>
+                
+                {ganttTasks.map(task => {
+                  const taskStart = dayjs(task.start);
+                  const taskEnd = dayjs(task.end);
+                  const startOffset = Math.max(0, taskStart.diff(ganttBounds.minStart, 'day') / ganttBounds.totalDays * 100);
+                  const duration = Math.max(5, taskEnd.diff(taskStart, 'day') / ganttBounds.totalDays * 100);
+                  
+                  return (
+                    <div key={task.id} style={{ marginBottom: 16 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                        <div style={{ width: 250 }}>
+                          <Text strong>{task.name}</Text>
+                          <br />
+                          <Text type="secondary" style={{ fontSize: 11 }}>{task.owner}</Text>
+                        </div>
+                        <div style={{ flex: 1, height: 30, background: '#f5f5f5', borderRadius: 4, position: 'relative' }}>
+                          <Tooltip title={`${task.name}: ${task.progress}% complete (${taskStart.format('MMM DD')} - ${taskEnd.format('MMM DD')})`}>
+                            <div 
+                              style={{ 
+                                position: 'absolute',
+                                left: `${startOffset}%`,
+                                width: `${duration}%`,
+                                height: '100%',
+                                background: task.progress >= 80 ? '#52c41a' : task.progress >= 50 ? '#1890ff' : task.progress > 0 ? '#faad14' : '#d9d9d9',
+                                borderRadius: 4,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s'
+                              }}
+                            >
+                              <Text style={{ color: 'white', fontSize: 11, fontWeight: 500 }}>{task.progress}%</Text>
+                            </div>
+                          </Tooltip>
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ flex: 1, height: 20, background: '#fafafa', borderRadius: 2, position: 'relative' }}>
-                      <div 
-                        style={{ 
-                          position: 'absolute',
-                          left: '15%',
-                          width: task.status === 'done' ? '40%' : task.status === 'in-progress' ? '25%' : '20%',
-                          height: '100%',
-                          background: task.status === 'done' ? '#95de64' : task.status === 'in-progress' ? '#69c0ff' : '#d9d9d9',
-                          borderRadius: 2
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        </div>
-        
-        {/* Timeline Legend */}
-        <div style={{ marginTop: 16, display: 'flex', gap: 24 }}>
-          <Space><div style={{ width: 16, height: 16, background: '#52c41a', borderRadius: 2 }} /> Completed (&gt;80%)</Space>
-          <Space><div style={{ width: 16, height: 16, background: '#1890ff', borderRadius: 2 }} /> On Track (50-80%)</Space>
-          <Space><div style={{ width: 16, height: 16, background: '#faad14', borderRadius: 2 }} /> At Risk (&lt;50%)</Space>
-        </div>
+            </div>
+            
+            {/* Timeline Legend */}
+            <div style={{ marginTop: 16, display: 'flex', gap: 24 }}>
+              <Space><div style={{ width: 16, height: 16, background: '#52c41a', borderRadius: 2 }} /> Completed (&gt;80%)</Space>
+              <Space><div style={{ width: 16, height: 16, background: '#1890ff', borderRadius: 2 }} /> On Track (50-80%)</Space>
+              <Space><div style={{ width: 16, height: 16, background: '#faad14', borderRadius: 2 }} /> At Risk (1-50%)</Space>
+              <Space><div style={{ width: 16, height: 16, background: '#d9d9d9', borderRadius: 2 }} /> Not Started (0%)</Space>
+            </div>
+          </>
+        )}
       </Card>
     </div>
   );
@@ -815,12 +901,12 @@ const ProjectsHub: React.FC = () => {
         </Col>
         <Col span={8}>
           <Card title="Weekly Summary">
-            <Statistic title="Total Hours" value={33.5} suffix="hrs" />
+            <Statistic title="Total Hours" value={weeklySummary.totalHours.toFixed(1)} suffix="hrs" />
             <Divider />
-            <Statistic title="Billable Hours" value={23.5} suffix="hrs" valueStyle={{ color: '#52c41a' }} />
-            <Progress percent={70} />
+            <Statistic title="Billable Hours" value={weeklySummary.billableHours.toFixed(1)} suffix="hrs" valueStyle={{ color: '#52c41a' }} />
+            <Progress percent={weeklySummary.totalHours > 0 ? Math.round((weeklySummary.billableHours / weeklySummary.totalHours) * 100) : 0} />
             <Divider />
-            <Statistic title="Billable Amount" value={19975} prefix="R" valueStyle={{ color: '#722ed1' }} />
+            <Statistic title="Billable Amount" value={weeklySummary.billableAmount} prefix="R" valueStyle={{ color: '#722ed1' }} />
           </Card>
         </Col>
       </Row>
@@ -830,62 +916,75 @@ const ProjectsHub: React.FC = () => {
   // Resources
   const renderResources = () => (
     <div style={{ padding: '24px' }}>
-      <Card title={<><TeamOutlined /> Team Resources</>}>
-        <Table
-          dataSource={[
-            { id: 1, name: 'Sarah Johnson', role: 'Project Manager', projects: 3, utilization: 85, availability: 'Available' },
-            { id: 2, name: 'Mike Wilson', role: 'Senior Developer', projects: 2, utilization: 95, availability: 'Fully Booked' },
-            { id: 3, name: 'Emily Chen', role: 'UI/UX Designer', projects: 4, utilization: 78, availability: 'Available' },
-            { id: 4, name: 'David Mokoena', role: 'Site Engineer', projects: 2, utilization: 100, availability: 'On Leave' },
-            { id: 5, name: 'Alex Turner', role: 'QA Engineer', projects: 3, utilization: 65, availability: 'Available' }
-          ]}
-          rowKey="id"
-          columns={[
-            {
-              title: 'Team Member',
-              key: 'member',
-              render: (_, record) => (
-                <Space>
-                  <Avatar icon={<UserOutlined />} />
-                  <div>
-                    <Text strong>{record.name}</Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: 12 }}>{record.role}</Text>
-                  </div>
-                </Space>
-              )
-            },
-            { title: 'Projects', dataIndex: 'projects', key: 'projects' },
-            {
-              title: 'Utilization',
-              dataIndex: 'utilization',
-              key: 'utilization',
-              render: (util: number) => (
-                <Progress 
-                  percent={util} 
-                  size="small" 
-                  status={util >= 90 ? 'exception' : util >= 70 ? 'active' : 'success'}
-                  style={{ width: 100 }}
-                />
-              )
-            },
-            {
-              title: 'Availability',
-              dataIndex: 'availability',
-              key: 'availability',
-              render: (status: string) => (
-                <Tag color={status === 'Available' ? 'green' : status === 'Fully Booked' ? 'orange' : 'red'}>
-                  {status}
-                </Tag>
-              )
-            },
-            {
-              title: 'Actions',
-              key: 'actions',
-              render: () => <Button size="small">View Schedule</Button>
-            }
-          ]}
-        />
+      <Card 
+        title={<><TeamOutlined /> Team Resources</>}
+        extra={
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => message.info('Add team member - connect to HR module')}>
+            Add Resource
+          </Button>
+        }
+      >
+        {resources.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <TeamOutlined style={{ fontSize: 48, color: '#d9d9d9' }} />
+            <Title level={4} type="secondary">No Team Resources</Title>
+            <Text type="secondary">Add team members to your organization to assign them to projects.</Text>
+            <br /><br />
+            <Button type="primary" onClick={() => window.location.href = '/settings/users'}>
+              Go to User Management
+            </Button>
+          </div>
+        ) : (
+          <Table
+            dataSource={resources}
+            rowKey="id"
+            columns={[
+              {
+                title: 'Team Member',
+                key: 'member',
+                render: (_, record) => (
+                  <Space>
+                    <Avatar icon={<UserOutlined />} />
+                    <div>
+                      <Text strong>{record.name}</Text>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: 12 }}>{record.role}</Text>
+                    </div>
+                  </Space>
+                )
+              },
+              { title: 'Projects', dataIndex: 'projects', key: 'projects' },
+              {
+                title: 'Utilization',
+                dataIndex: 'utilization',
+                key: 'utilization',
+                render: (util: number) => (
+                  <Progress 
+                    percent={util} 
+                    size="small" 
+                    status={util >= 90 ? 'exception' : util >= 70 ? 'active' : 'success'}
+                    style={{ width: 100 }}
+                  />
+                )
+              },
+              {
+                title: 'Availability',
+                dataIndex: 'availability',
+                key: 'availability',
+                render: (status: string) => (
+                  <Tag color={status === 'Available' ? 'green' : status === 'Fully Booked' ? 'orange' : 'red'}>
+                    {status}
+                  </Tag>
+                )
+              },
+              {
+                title: 'Actions',
+                key: 'actions',
+                render: () => <Button size="small">View Schedule</Button>
+              }
+            ]}
+          />
+        )}
       </Card>
     </div>
   );
@@ -963,9 +1062,9 @@ const ProjectsHub: React.FC = () => {
               key: 'utilization',
               render: (_, record) => (
                 <Progress 
-                  percent={Math.round((record.spent / record.budget) * 100)} 
+                  percent={safePercent(record.spent, record.budget)} 
                   size="small"
-                  status={(record.spent / record.budget) > 0.9 ? 'exception' : 'active'}
+                  status={record.budget && record.spent / record.budget > 0.9 ? 'exception' : 'active'}
                 />
               )
             },
@@ -1100,8 +1199,8 @@ const ProjectsHub: React.FC = () => {
         stats={[
           { title: 'Active Projects', value: projectStats.active, span: 4 },
           { title: 'Tasks Completed', value: `${projectStats.completedTasks}/${projectStats.totalTasks}`, span: 4 },
-          { title: 'Team Members', value: 45, span: 4 },
-          { title: 'Budget Utilized', value: `${((projectStats.totalSpent / projectStats.totalBudget) * 100).toFixed(0)}%`, span: 4 },
+          { title: 'Team Members', value: teamCount, span: 4 },
+          { title: 'Budget Utilized', value: `${safeRatioString(projectStats.totalSpent, projectStats.totalBudget, 0)}%`, span: 4 },
           { title: 'On Track', value: `${projectStats.onTrack}/${projectStats.total}`, valueStyle: { color: '#86efac' }, span: 4 },
         ]}
       />
@@ -1126,10 +1225,54 @@ const ProjectsHub: React.FC = () => {
       <Modal
         title="Create New Project"
         open={projectModalVisible}
-        onCancel={() => setProjectModalVisible(false)}
+        onCancel={() => { setProjectModalVisible(false); form.resetFields(); }}
         footer={[
-          <Button key="cancel" onClick={() => setProjectModalVisible(false)}>Cancel</Button>,
-          <Button key="create" type="primary">Create Project</Button>
+          <Button key="cancel" onClick={() => { setProjectModalVisible(false); form.resetFields(); }}>Cancel</Button>,
+          <Button key="create" type="primary" onClick={async () => {
+            try {
+              const values = await form.validateFields();
+              const projectData = {
+                project_name: values.name,
+                project_type: values.type || 'Internal',
+                customer_id: values.client !== 'internal' ? values.client : null,
+                start_date: values.startDate?.format('YYYY-MM-DD'),
+                end_date: values.endDate?.format('YYYY-MM-DD'),
+                budget: values.budget,
+                priority: values.priority || 'Medium',
+                description: values.description,
+                status: 'Planning'
+              };
+              await apiClient.post('/api/v2/practice/projects', projectData);
+              message.success('Project created successfully!');
+              setProjectModalVisible(false);
+              form.resetFields();
+              // Refresh projects list
+              const projectsResponse = await apiClient.get('/api/v2/practice/projects');
+              if (projectsResponse.data?.data) {
+                const transformedProjects = projectsResponse.data.data.map((p: any) => ({
+                  id: p.project_id,
+                  name: p.project_name,
+                  code: p.project_number,
+                  client: p.customer_name || 'Internal',
+                  status: (p.status || 'planning').toLowerCase().replace(' ', '-'),
+                  priority: (p.priority || 'medium').toLowerCase(),
+                  progress: p.progress_percentage || 0,
+                  startDate: p.start_date ? new Date(p.start_date).toLocaleDateString() : '-',
+                  endDate: p.end_date ? new Date(p.end_date).toLocaleDateString() : '-',
+                  budget: parseFloat(p.budget) || 0,
+                  spent: parseFloat(p.actual_cost) || 0,
+                  manager: p.manager_name || 'Unassigned',
+                  team: p.team_size || 0,
+                  tasks: { total: p.total_tasks || 0, completed: p.completed_tasks || 0 },
+                  milestones: { total: 0, completed: 0 },
+                  type: p.project_type || 'internal'
+                }));
+                setProjects(transformedProjects);
+              }
+            } catch (error: any) {
+              message.error(error.response?.data?.message || 'Failed to create project');
+            }
+          }}>Create Project</Button>
         ]}
         width={700}
       >
@@ -1202,6 +1345,65 @@ const ProjectsHub: React.FC = () => {
           </Row>
           <Form.Item label="Description" name="description">
             <TextArea rows={3} placeholder="Project description..." />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Add Task Modal */}
+      <Modal
+        title="Add Task"
+        open={taskModalVisible}
+        onCancel={() => setTaskModalVisible(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setTaskModalVisible(false)}>Cancel</Button>,
+          <Button key="create" type="primary" onClick={async () => {
+            message.info('Task creation - connect to project tasks API');
+            setTaskModalVisible(false);
+          }}>Add Task</Button>
+        ]}
+      >
+        <Form layout="vertical">
+          <Form.Item label="Task Title" name="title" rules={[{ required: true }]}>
+            <Input placeholder="Enter task title" />
+          </Form.Item>
+          <Form.Item label="Project" name="projectId" rules={[{ required: true }]}>
+            <Select placeholder="Select project">
+              {projects.map(p => <Option key={p.id} value={p.id}>{p.name}</Option>)}
+            </Select>
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Assignee" name="assignee">
+                <Select placeholder="Select team member">
+                  {resources.map(r => <Option key={r.id} value={r.id}>{r.name}</Option>)}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Priority" name="priority">
+                <Select defaultValue="medium">
+                  <Option value="low">Low</Option>
+                  <Option value="medium">Medium</Option>
+                  <Option value="high">High</Option>
+                  <Option value="critical">Critical</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Due Date" name="dueDate">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Estimated Hours" name="estimatedHours">
+                <InputNumber min={0.5} step={0.5} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="Description" name="description">
+            <TextArea rows={2} placeholder="Task description..." />
           </Form.Item>
         </Form>
       </Modal>

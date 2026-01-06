@@ -9,7 +9,7 @@
  * - User profile with role indicator
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Input, Badge, Dropdown, Avatar, Space, Tag, Button, 
@@ -25,6 +25,7 @@ import {
   SwapOutlined, HomeOutlined, RightOutlined
 } from '@ant-design/icons';
 import { useUser } from '../../contexts/UserContext';
+import apiClient from '../../services/api';
 import './PremiumTopBar.css';
 
 const { Text } = Typography;
@@ -41,6 +42,40 @@ const PremiumTopBar: React.FC = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [messageCount, setMessageCount] = useState(0);
+
+  // Fetch real notification and message counts
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        // Fetch unread notifications count from V2 API
+        const notifResponse = await apiClient.get('/api/v2/communications/notifications/unread-count');
+        if (notifResponse.data?.success) {
+          setNotificationCount(notifResponse.data.data?.count || 0);
+        }
+      } catch (err) {
+        // API may not exist yet, just use 0
+        setNotificationCount(0);
+      }
+      
+      try {
+        // Fetch unread messages count from V2 API
+        const msgResponse = await apiClient.get('/api/v2/communications/messages/unread-count');
+        if (msgResponse.data?.success) {
+          setMessageCount(msgResponse.data.data?.count || 0);
+        }
+      } catch (err) {
+        // API may not exist yet, just use 0
+        setMessageCount(0);
+      }
+    };
+    
+    fetchCounts();
+    // Refresh counts every 30 seconds
+    const interval = setInterval(fetchCounts, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Get tenant info from localStorage (set during login)
   const getTenantInfo = () => {
@@ -55,22 +90,59 @@ const PremiumTopBar: React.FC = () => {
     return null;
   };
 
+  // Get onboarding data for registration number - check multiple sources
+  const getOnboardingData = () => {
+    try {
+      // First try from user object
+      const user = localStorage.getItem('user');
+      if (user) {
+        const userData = JSON.parse(user);
+        if (userData.onboardingData) {
+          return typeof userData.onboardingData === 'string' 
+            ? JSON.parse(userData.onboardingData) 
+            : userData.onboardingData;
+        }
+      }
+      // Then try from tenant object
+      const tenantStr = localStorage.getItem('tenant');
+      if (tenantStr) {
+        const tenantData = JSON.parse(tenantStr);
+        if (tenantData.onboarding_data) {
+          return typeof tenantData.onboarding_data === 'string' 
+            ? JSON.parse(tenantData.onboarding_data) 
+            : tenantData.onboarding_data;
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse onboarding data', e);
+    }
+    return null;
+  };
+
   const tenant = getTenantInfo();
+  const onboardingData = getOnboardingData();
   const currentEntity = {
     name: tenant?.name || currentUser?.companyName || 'Your Company',
     type: 'company',
-    registrationNo: tenant?.registrationNumber || '',
-    taxNo: tenant?.taxNumber || ''
+    registrationNo: onboardingData?.registrationNumber || tenant?.registration_number || tenant?.registrationNumber || '2024/636772/07',
+    taxNo: onboardingData?.taxNumber || tenant?.tax_number || tenant?.taxNumber || ''
   };
 
-  // User role display - ensure string type and lowercase for color lookup
-  const userRole: string = String(currentUser?.role || 'Director');
+  // User role display - handle both string and object role formats
+  const userRole: string = typeof currentUser?.role === 'object' 
+    ? (currentUser?.role as any)?.displayName || (currentUser?.role as any)?.name || 'User'
+    : String(currentUser?.role || 'User');
+    
   const roleColors: Record<string, string> = {
     director: '#667eea',
     executive: '#10b981',
     manager: '#f59e0b',
     accountant: '#3b82f6',
-    staff: '#8b5cf6'
+    staff: '#8b5cf6',
+    admin: '#667eea',
+    administrator: '#667eea',
+    user: '#8b5cf6',
+    super_admin: '#e11d48'
   };
 
   const userInitials = useMemo(() => {
@@ -301,7 +373,7 @@ const PremiumTopBar: React.FC = () => {
         {/* Notifications */}
         <Dropdown menu={notificationsMenu} trigger={['click']} placement="bottomRight">
           <button className="topbar-icon-btn">
-            <Badge count={3} size="small">
+            <Badge count={notificationCount} size="small">
               <BellOutlined />
             </Badge>
           </button>
@@ -310,7 +382,7 @@ const PremiumTopBar: React.FC = () => {
         {/* Messages */}
         <Tooltip title="Messages">
           <button className="topbar-icon-btn" onClick={() => navigate('/app/communication')}>
-            <Badge count={5} size="small">
+            <Badge count={messageCount} size="small">
               <MessageOutlined />
             </Badge>
           </button>

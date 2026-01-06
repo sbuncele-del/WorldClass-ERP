@@ -29,6 +29,7 @@ export const tenantMiddleware = async (
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log(`[TenantMiddleware] 401 - No token provided for ${req.method} ${req.originalUrl}`);
       throw new UnauthorizedError('No token provided');
     }
 
@@ -40,13 +41,16 @@ export const tenantMiddleware = async (
       decoded = jwt.verify(token, JWT_SECRET) as JWTPayload;
     } catch (error: any) {
       if (error.name === 'TokenExpiredError') {
+        console.log(`[TenantMiddleware] 401 - Token expired for ${req.method} ${req.originalUrl}`);
         throw new UnauthorizedError('Token expired');
       }
+      console.log(`[TenantMiddleware] 401 - Invalid token for ${req.method} ${req.originalUrl}: ${error.message}`);
       throw new UnauthorizedError('Invalid token');
     }
 
     // Validate token type
     if (decoded.type !== 'access') {
+      console.log(`[TenantMiddleware] 401 - Invalid token type '${decoded.type}' for ${req.method} ${req.originalUrl}`);
       throw new UnauthorizedError('Invalid token type');
     }
 

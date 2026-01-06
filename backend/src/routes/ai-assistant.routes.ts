@@ -106,6 +106,174 @@ router.get('/suggestions', getSuggestions);
 router.patch('/suggestions/:suggestionId', updateSuggestionStatus);
 
 // ================================================
+// MACHINE LEARNING & KNOWLEDGE BASE
+// ================================================
+
+/**
+ * POST /api/ai/feedback/:conversationId
+ * Record feedback on an AI response (for learning)
+ * Body: { wasHelpful: boolean, feedback?: string }
+ */
+router.post('/feedback/:conversationId', async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const { wasHelpful, feedback } = req.body;
+        const tenantId = (req as any).tenant?.id;
+        
+        if (typeof wasHelpful !== 'boolean') {
+            return res.status(400).json({ success: false, error: 'wasHelpful (boolean) is required' });
+        }
+        
+        const { pool } = require('../config/database');
+        await pool.query(
+            `UPDATE ai_conversations SET was_helpful = $1, feedback = $2 WHERE id = $3 AND tenant_id = $4`,
+            [wasHelpful, feedback || null, conversationId, tenantId]
+        );
+        
+        res.json({ success: true, message: 'Thank you for your feedback! This helps me improve.' });
+    } catch (error) {
+        console.error('Feedback error:', error);
+        res.status(500).json({ success: false, error: 'Failed to record feedback' });
+    }
+});
+
+/**
+ * GET /api/ai/faq
+ * Get frequently asked questions (learned from conversations)
+ * Query: ?category=sales|hr|financial|etc
+ */
+router.get('/faq', async (req, res) => {
+    try {
+        const tenantId = (req as any).tenant?.id;
+        const category = req.query.category as string | undefined;
+        
+        const { pool } = require('../config/database');
+        const result = await pool.query(
+            `SELECT id, question, answer, category, helpful_count, is_featured
+             FROM ai_faq
+             WHERE (tenant_id = $1 OR tenant_id IS NULL)
+             ${category ? 'AND category = $2' : ''}
+             ORDER BY is_featured DESC, helpful_count DESC
+             LIMIT 20`,
+            category ? [tenantId, category] : [tenantId]
+        );
+        
+        res.json({ success: true, data: result.rows });
+    } catch (error) {
+        console.error('FAQ error:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch FAQs' });
+    }
+});
+
+/**
+ * GET /api/ai/analytics
+ * Get AI usage analytics (for admin dashboard)
+ */
+router.get('/analytics', async (req, res) => {
+    try {
+        const tenantId = (req as any).tenant?.id;
+        const { pool } = require('../config/database');
+        
+        const [total, helpful, categories] = await Promise.all([
+            pool.query(`SELECT COUNT(*) FROM ai_conversations WHERE tenant_id = $1`, [tenantId]),
+            pool.query(
+                `SELECT COUNT(*) FILTER (WHERE was_helpful = true) as helpful,
+                        COUNT(*) FILTER (WHERE was_helpful IS NOT NULL) as rated
+                 FROM ai_conversations WHERE tenant_id = $1`,
+                [tenantId]
+            ),
+            pool.query(
+                `SELECT topic_category, COUNT(*) as count 
+                 FROM ai_conversations WHERE tenant_id = $1 AND topic_category IS NOT NULL
+                 GROUP BY topic_category ORDER BY count DESC LIMIT 5`,
+                [tenantId]
+            )
+        ]);
+        
+        const rated = parseInt(helpful.rows[0]?.rated || '0');
+        const helpfulCount = parseInt(helpful.rows[0]?.helpful || '0');
+        
+        res.json({
+            success: true,
+            data: {
+                totalConversations: parseInt(total.rows[0]?.count || '0'),
+                helpfulRate: rated > 0 ? `${(helpfulCount / rated * 100).toFixed(1)}%` : 'N/A',
+                topCategories: categories.rows,
+                learningStatus: 'Active - Improving with every conversation'
+            }
+        });
+    } catch (error) {
+        console.error('Analytics error:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch analytics' });
+    }
+});
+
+/**
+ * GET /api/ai/knowledge
+ * Get ERP knowledge base for help center
+ * Query: ?module=sales|hr|financial|etc
+ */
+router.get('/knowledge', async (req, res) => {
+    try {
+        const module = req.query.module as string | undefined;
+        const { ERP_KNOWLEDGE } = await import('../services/ai/ERPKnowledgeBase');
+        
+        if (module && (ERP_KNOWLEDGE.modules as any)[module]) {
+            res.json({
+                success: true,
+                data: {
+                    module: (ERP_KNOWLEDGE.modules as any)[module],
+                    glossary: ERP_KNOWLEDGE.glossary
+                }
+            });
+        } else {
+            res.json({
+                success: true,
+                data: {
+                    systemOverview: ERP_KNOWLEDGE.systemOverview,
+                    modules: Object.entries(ERP_KNOWLEDGE.modules).map(([key, m]: [string, any]) => ({
+                        key,
+                        name: m.name,
+                        description: m.description,
+                        navigation: m.navigation
+                    })),
+                    glossary: ERP_KNOWLEDGE.glossary,
+                    compliance: ERP_KNOWLEDGE.compliance
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Knowledge error:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch knowledge base' });
+    }
+});
+
+/**
+ * GET /api/ai/knowledge/search
+ * Search the ERP knowledge base
+ * Query: ?q=search+term
+ */
+router.get('/knowledge/search', async (req, res) => {
+    try {
+        const query = req.query.q as string;
+        if (!query) {
+            return res.status(400).json({ success: false, error: 'Search query (q) is required' });
+        }
+        
+        const { searchKnowledge } = await import('../services/ai/ERPKnowledgeBase');
+        const results = searchKnowledge(query);
+        
+        res.json({
+            success: true,
+            data: { query, results, resultsCount: results.length }
+        });
+    } catch (error) {
+        console.error('Knowledge search error:', error);
+        res.status(500).json({ success: false, error: 'Failed to search knowledge base' });
+    }
+});
+
+// ================================================
 // SALES ASSISTANT - SPECIFIC ENDPOINTS
 // ================================================
 

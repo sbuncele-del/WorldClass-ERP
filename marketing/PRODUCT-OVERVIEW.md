@@ -1,354 +1,468 @@
-# Worldclass ERP Software - Product Overview
+# SiyaBusa ERP - Product Overview
 
-## 🚀 Tagline
-**"Enterprise Excellence, South African Innovation"**
+## Enterprise Excellence. South African Innovation.
 
-## 📋 Executive Summary
-
-Worldclass ERP Software is a comprehensive, cloud-native Enterprise Resource Planning system specifically designed for South African businesses. Built with modern technologies and deep understanding of local compliance requirements, it provides a complete suite of business management tools that integrate seamlessly to drive operational excellence.
+**"We Rule. We Govern. We Empower."**
 
 ---
 
-## 🎯 Value Proposition
+## Executive Summary
+
+SiyaBusa ERP is a comprehensive, cloud-native Enterprise Resource Planning system specifically designed for South African mid-market businesses. Built with modern technologies and deep understanding of local compliance requirements, it provides a complete suite of business management tools at 40% of competitor cost.
+
+**Key Facts:**
+- **25+ Complete Modules** — Production-ready
+- **400+ API Endpoints** — Fully documented
+- **228+ Database Tables** — Enterprise-grade
+- **RSA Compliance** — SARS, BCEA, LRA, B-BBEE built-in
+- **Cloud-Hosted** — AWS Cape Town (local data residency)
+
+---
+
+## Value Proposition
 
 ### For CFOs & Financial Controllers
-"**Real-time financial visibility with built-in RSA compliance**"
+**"Real-time financial visibility with built-in RSA compliance"**
 - IFRS-compliant financial accounting
 - Automated SARS submissions (EMP201, VAT201, IT14, IRP5)
 - Multi-dimensional reporting (Department, Project, Cost Center)
 - Bank reconciliation and cash flow forecasting
 
 ### For Operations Managers
-"**End-to-end operational control from quote to delivery**"
-- Integrated Sales, Purchase, Inventory, Manufacturing, and Warehouse
+**"End-to-end operational control from quote to delivery"**
+- Integrated Sales, Purchase, Inventory, Manufacturing, Warehouse
 - Real-time stock tracking across multiple locations
 - Production planning with BOM and routing management
 - Automated procurement workflows
 
 ### For HR Managers
-"**Simplified payroll with complete BCEA compliance**"
+**"Simplified payroll with complete BCEA compliance"**
 - Automated PAYE, UIF, and SDL calculations
 - Leave management per Basic Conditions of Employment Act
 - Employment Equity and Skills Development tracking
 - EMP201, IRP5, EMP501 submission management
 
 ### For Business Owners
-"**One system, complete business visibility**"
+**"One system, complete business visibility"**
 - Executive dashboard with company health KPIs
-- 10 integrated business modules
-- No data silos - everything connects
-- Cloud-hosted on AWS (99.9% uptime SLA)
+- All modules integrated — no data silos
+- Cloud-hosted with 99.9% uptime SLA
+- 40% of competitor cost
 
 ---
 
-## 🏆 Key Differentiators
+## Key Differentiators
 
-### 1. **Built for South Africa**
-- Full RSA labor law compliance (BCEA, LRA, Employment Equity Act)
-- SARS eFiling integration ready
+### 1. Built for South Africa
+- Full RSA labour law compliance (BCEA, LRA, Employment Equity Act)
+- Native SARS eFiling integration
 - ZAR currency and SA tax calculations throughout
 - South African ID number validation
 - Local phone number formats (+27)
+- SA public holidays and tax years
 
-### 2. **Modern Technology Stack**
-- Cloud-native architecture (AWS hosted)
+### 2. 40% of Competitor Cost
+- SAP/Oracle/Microsoft: R50,000-R200,000/month
+- **SiyaBusa: R3,500-R25,000/month**
+- All modules included (no extra charges)
+- No per-user fees (Professional and above)
+- All-inclusive support and updates
+
+### 3. Modern Technology Stack
+- Cloud-native architecture (AWS Cape Town)
 - React 18 + TypeScript frontend
 - Node.js + PostgreSQL backend
 - Mobile-responsive design
 - Real-time data synchronization
 
-### 3. **Enterprise-Grade Features**
-- Multi-company support
-- Role-based access control (RBAC)
-- Comprehensive audit trails
-- Double-entry accounting engine
-- Advanced approval workflows
+### 4. Rapid Implementation
+- 4-8 weeks vs 6-18 months for competitors
+- Proven implementation methodology
+- Parallel running support
+- Change management training
 
-### 4. **Intuitive User Experience**
-- SAP-inspired horizontal navigation
-- Oracle-inspired vertical sub-navigation
-- Glass morphism design system
-- Color-coded health indicators
-- Plain-English AI co-pilot assistance
-
----
-
-## 📊 Complete Module Suite
-
-### **Core Business Modules**
-1. **Sales & CRM** - Lead to cash management
-2. **Purchase Management** - Requisition to payment
-3. **Inventory Management** - Stock control and valuation
-4. **HR & Payroll** - Employee lifecycle and payroll processing
-5. **Practice Management** - Professional services billing
-6. **Asset Management** - Fixed asset register and depreciation
-
-### **Financial Management**
-7. **General Ledger** - Chart of accounts and journal entries
-8. **Financial Statements** - P&L, Balance Sheet, Cash Flow
-9. **Cash Management** - Bank reconciliation and cash forecasting
-10. **Multi-Currency** - Foreign exchange management
-
-### **Operations**
-11. **Manufacturing** - Production orders and BOM management
-12. **Warehouse Management** - Multi-location inventory with bin tracking
-13. **Quality Control** - Inspection and defect tracking
-
-### **Compliance & Reporting**
-14. **SARS Sentinel** - Tax compliance command center
-15. **Audit Trail** - Complete transaction history
-16. **Custom Reports** - Ad-hoc report builder
+### 5. All-Inclusive Pricing
+- One price includes everything
+- No module fees
+- No per-user charges (Pro+)
+- Support and updates included
+- Predictable, budgetable costs
 
 ---
 
-## 💼 Target Market
+## Complete Module Suite
 
-### Primary Segments
-- **Small to Medium Enterprises (10-500 employees)**
-- **Manufacturing companies** needing production planning
-- **Wholesale and distribution businesses** with complex inventory
-- **Professional services firms** (legal, accounting, consulting)
-- **Import/Export businesses** needing multi-currency
+### Core Business Modules
+
+**Sales & CRM**
+- Lead and opportunity management
+- Quote and proposal generation
+- Sales order processing
+- Customer portal and self-service
+- Pipeline analytics and forecasting
+
+**Purchase Management**
+- Supplier management and evaluation
+- Purchase requisitions and approvals
+- Purchase order processing
+- Goods receipt and inspection
+- 3-way matching (PO, Receipt, Invoice)
+
+**Inventory Management**
+- Multi-warehouse, multi-location
+- Bin location tracking
+- Stock valuation (FIFO, LIFO, Weighted Average)
+- Reorder point and safety stock
+- Batch and serial number tracking
+
+**Financial Accounting**
+- General ledger (double-entry)
+- Accounts payable and receivable
+- Multi-currency support
+- IFRS-compliant reporting
+- Financial dimensions (unlimited)
+
+### HR & Payroll
+
+**HR & Payroll**
+- Employee lifecycle management
+- RSA payroll processing
+- PAYE, UIF, SDL auto-calculation
+- IRP5 certificate generation
+- EMP201/EMP501 submissions
+
+**Leave Management**
+- BCEA-compliant leave rules
+- Annual, sick, family responsibility
+- Maternity/paternity leave
+- Leave accrual and balances
+- Manager approval workflows
+
+**Performance Management**
+- Goal setting and tracking
+- Performance reviews
+- 360-degree feedback
+- Competency assessments
+- Training and development
+
+### Operations
+
+**Manufacturing**
+- Bill of materials (multi-level)
+- Production orders
+- Work centers and routings
+- MRP planning
+- Shop floor control
+- Quality management
+
+**Warehouse Management**
+- Bin management
+- Picking strategies (FIFO, FEFO)
+- Packing and shipping
+- Barcode scanning
+- Cycle counting
+- Wave management
+
+**Asset Management**
+- Fixed asset register
+- IAS 16 compliant depreciation
+- Multiple depreciation methods
+- Maintenance scheduling
+- Asset disposal and transfer
+
+**Cash Management**
+- Bank reconciliation (auto-matching)
+- Cash flow forecasting
+- Payment processing
+- Bank statement import
+- Treasury management
+
+### Compliance & Governance
+
+**SARS Sentinel**
+- Compliance deadline tracking
+- Automated submission preparation
+- Direct eFiling integration
+- Audit trail documentation
+- AI-powered compliance alerts
+
+**Audit Hub**
+- Complete transaction audit trail
+- Audit readiness reports
+- Controls testing
+- Exception monitoring
+- Regulatory documentation
+
+**Compliance Hub**
+- B-BBEE scorecard tracking
+- Employment equity (EEA2, EEA4)
+- Skills development reporting
+- Regulatory calendar
+- Policy management
+
+**Multi-Entity**
+- Group company management
+- Intercompany transactions
+- Consolidation reporting
+- Transfer pricing
+- Shared services allocation
 
 ### Industry Verticals
-✅ Manufacturing & Industrial  
-✅ Wholesale & Distribution  
-✅ Professional Services  
-✅ Import/Export Trading  
-✅ Retail (Multi-location)  
-✅ Construction & Engineering  
-✅ Healthcare & Pharmaceuticals  
+
+**Healthcare**
+- Patient management
+- Medical inventory
+- HPCSA compliance
+- Clinical workflows
+- Healthcare billing
+
+**Mining**
+- Mineral tracking
+- Safety compliance
+- DMRE reporting
+- Equipment management
+- Environmental monitoring
+
+**Construction**
+- Project costing
+- Progress billing
+- Subcontractor management
+- CIDB compliance
+- Retention tracking
+
+**Property Management**
+- Lease management
+- Tenant billing
+- Maintenance requests
+- Utility recovery
+- Vacancy tracking
+
+**Agriculture**
+- Crop management
+- Farm operations
+- Traceability
+- Weather integration
+- Harvest planning
+
+### Platform Features
+
+**AI Business Assistant**
+- Natural language queries
+- Actionable insights
+- Process automation
+- Anomaly detection
+- Predictive analytics
+
+**Communications Hub**
+- Video meetings (Daily.co)
+- Internal messaging
+- Notifications
+- Document sharing
+- Collaboration tools
+
+**Dashboard & Reports**
+- Real-time KPIs
+- Custom report builder
+- Scheduled reports
+- Export capabilities
+- Data visualization
+
+**Proposals & Pitch**
+- Business proposals
+- Presentation builder
+- Template library
+- Client collaboration
+
+---
+
+## Target Market
+
+### Primary Segments
+
+**Growing SMEs (R10M-R100M revenue)**
+- 10-100 employees
+- Currently using QuickBooks/Sage + Excel
+- Struggling with SARS compliance
+- Need integrated operations
+
+**Mid-Market Enterprises (R100M-R500M revenue)**
+- 100-500 employees
+- Need enterprise features without enterprise cost
+- Multiple departments/locations
+- Complex compliance requirements
+
+**Professional Services Firms**
+- Accounting, legal, consulting
+- Need practice management + compliance
+- Time tracking and billing
+- Multi-client management
+
+### Industry Focus
+
+✅ Manufacturing & Industrial
+✅ Wholesale & Distribution
+✅ Professional Services
+✅ Import/Export Trading
+✅ Retail (Multi-location)
+✅ Construction & Engineering
+✅ Healthcare & Pharmaceuticals
 
 ### Geographic Focus
-🇿🇦 **South Africa** (Primary market)
+
+**South Africa (Primary)**
 - Gauteng (Johannesburg, Pretoria)
 - Western Cape (Cape Town)
 - KwaZulu-Natal (Durban)
 - Eastern Cape (Port Elizabeth, East London)
 
----
-
-## 💰 Pricing Strategy
-
-### Subscription Tiers
-
-**Starter** - R 2,500/month
-- Up to 10 users
-- Core modules (Sales, Purchase, Inventory, Financial)
-- 50GB storage
-- Email support
-
-**Professional** - R 5,500/month
-- Up to 50 users
-- All modules including Manufacturing & Warehouse
-- 200GB storage
-- Phone + email support
-- Advanced reporting
-
-**Enterprise** - R 12,000/month
-- Unlimited users
-- All modules + custom development
-- 1TB storage
-- Dedicated account manager
-- 24/7 priority support
-- On-premise deployment option
-
-**Custom Pricing** for:
-- Multi-company groups
-- High transaction volumes (>10,000/month)
-- Custom integrations
-- White-label partnerships
+**Expansion Markets**
+- SADC Region (Botswana, Namibia, Zimbabwe)
+- East Africa (Kenya, Tanzania)
+- West Africa (Nigeria, Ghana)
 
 ---
 
-## 🎁 Implementation Packages
+## Pricing
 
-### Quick Start (R 15,000)
-- 2-week implementation
-- Data migration (up to 5,000 records)
-- 2 days on-site training
-- Basic configuration
+### Subscription Plans
 
-### Professional Setup (R 45,000)
-- 6-week implementation
-- Full data migration
-- 5 days on-site training
-- Custom chart of accounts
-- Workflow configuration
-- Integration setup (1 system)
+| Plan | Monthly | Annual | Users | Best For |
+|:-----|:--------|:-------|:------|:---------|
+| **Starter** | R3,500 | R35,000 | 10 | Small business (10-25 staff) |
+| **Professional** | R8,000 | R80,000 | 50 | Growing SME (25-100 staff) |
+| **Enterprise** | R18,000 | R180,000 | 200 | Established (100-500 staff) |
+| **Corporate** | R25,000 | R250,000 | Unlimited | Large enterprise (500+) |
 
-### Enterprise Rollout (R 150,000+)
-- 12+ week implementation
-- Complex data migration
-- 15 days training (multiple locations)
-- Custom development (up to 40 hours)
-- Multiple integrations
-- Change management support
+### What's Included
+
+**All Plans:**
+- All modules relevant to plan level
+- Software updates and new features
+- Basic support
+- Security patches
+- Documentation access
+
+**Professional and Above:**
+- No per-user fees
+- Priority support
+- API access
+- Advanced analytics
+
+### Implementation Services
+
+| Service | Price | Duration |
+|:--------|:------|:---------|
+| Self-Service | Free | As needed |
+| Guided Implementation | R25,000 | 4 weeks |
+| Full Implementation | R75,000-R200,000 | 8-12 weeks |
 
 ---
 
-## 🔧 Technical Specifications
+## Technology
 
-### System Requirements (Cloud)
-- Modern web browser (Chrome, Edge, Safari, Firefox)
-- Stable internet connection (2+ Mbps recommended)
-- No local installation required
+### Architecture
 
-### Hosting & Infrastructure
-- **Cloud Provider:** Amazon Web Services (AWS)
-- **Region:** EU-North-1 (Stockholm) with SA data residency option
-- **Uptime SLA:** 99.9%
-- **Backup Frequency:** Daily (30-day retention)
-- **Disaster Recovery:** RTO 4 hours, RPO 1 hour
+**Frontend:**
+- React 18 with TypeScript
+- Responsive design (mobile-ready)
+- Progressive Web App capable
+- Modern UI/UX patterns
 
-### Security Features
-- 256-bit SSL/TLS encryption
-- SOC 2 Type II certified data centers
-- Multi-factor authentication (MFA)
+**Backend:**
+- Node.js with Express
+- PostgreSQL database
+- Redis caching
+- RESTful API design
+
+**Infrastructure:**
+- AWS Cape Town region (af-south-1)
+- Auto-scaling
+- Load balancing
+- CDN distribution
+
+### Security
+
+- 256-bit AES encryption (at rest and in transit)
+- SOC 2 Type II compliant
+- POPIA compliant
 - Role-based access control
-- IP whitelisting option
-- POPIA compliance
+- Multi-factor authentication
+- Complete audit trails
+- Regular penetration testing
 
-### Integration Capabilities
-- REST API (JSON)
+### Performance
+
+- 99.9% uptime SLA (Enterprise+)
+- Sub-second response times
+- Real-time data sync
+- Horizontal scaling
+- Geographic redundancy
+
+### Integration
+
+- 400+ REST API endpoints
+- Comprehensive documentation
 - Webhook support
-- CSV/Excel import/export
-- SARS eFiling integration (planned)
-- Bank feed integration (planned)
-- Email integration (SMTP/IMAP)
+- OAuth 2.0 authentication
+- Pre-built integrations
+- Custom integration capability
 
 ---
 
-## 📈 Competitive Analysis
+## Support
 
-### vs SAP Business One
-| Feature | Worldclass ERP | SAP B1 |
-|---------|---------------|--------|
-| **Pricing** | R 2,500 - R 12,000/mo | R 15,000 - R 50,000/mo |
-| **Implementation** | 2-12 weeks | 3-6 months |
-| **RSA Compliance** | Built-in | Add-on required |
-| **User Interface** | Modern, intuitive | Complex, dated |
-| **Cloud-native** | Yes | Hybrid (legacy) |
-| **Support** | Local SA team | Global (slow) |
+### Support Levels
 
-### vs Sage Business Cloud
-| Feature | Worldclass ERP | Sage |
-|---------|---------------|------|
-| **Manufacturing** | Full MRP | Basic |
-| **Warehouse** | Bin-level tracking | Location only |
-| **SARS Sentinel** | Dedicated module | Basic tax |
-| **API Access** | Full REST API | Limited |
-| **Customization** | Highly flexible | Restricted |
+| Level | Response Time | Availability | Channels |
+|:------|:--------------|:-------------|:---------|
+| Standard | 48 hours | Business hours | Email |
+| Priority | 4 hours | Extended hours | Email, Phone |
+| Premium | 1 hour | 24/7 | Email, Phone, Chat |
+| Enterprise | 30 minutes | 24/7 | Dedicated team |
 
-### vs Odoo
-| Feature | Worldclass ERP | Odoo |
-|---------|---------------|------|
-| **RSA Specific** | Yes | Generic |
-| **Support** | Dedicated SA team | Community/partners |
-| **SARS Integration** | Deep integration | Manual |
-| **Pricing Model** | Transparent flat fee | Per-app charges |
-| **UI/UX** | Premium design | Functional |
+### Training
+
+| Package | Duration | Price | Attendees |
+|:--------|:---------|:------|:----------|
+| Basic | 1 day | R3,500 | Up to 10 |
+| Advanced | 2 days | R6,500 | Up to 10 |
+| Admin | 1 day | R4,500 | Up to 5 |
+| Train-the-Trainer | 5 days | R25,000 | Up to 5 |
 
 ---
 
-## 🎯 Go-to-Market Strategy
+## Getting Started
 
-### Phase 1: Beta Launch (Q4 2025)
-- Target: 10 beta customers
-- Offer: 50% discount for 12 months
-- Verticals: Manufacturing, Wholesale, Professional Services
-- Objective: Case studies and testimonials
+### Step 1: Discovery
+Book a 30-minute demo to see SiyaBusa in action
 
-### Phase 2: Public Launch (Q1 2026)
-- Official launch event in Johannesburg & Cape Town
-- Digital marketing campaign
-- Partner recruitment (accountants, consultants)
-- Target: 50 paying customers
+### Step 2: Trial
+Start a 14-day free trial with full system access
 
-### Phase 3: Scale (Q2-Q4 2026)
-- Expand to other provinces
-- Launch channel partner program
-- Industry-specific versions
-- Target: 200 customers, R 1M MRR
+### Step 3: Plan
+Choose the plan that fits your business
+
+### Step 4: Implement
+We help you go live in 4-8 weeks
+
+### Step 5: Grow
+Scale your business with confidence
 
 ---
 
-## 🤝 Partnership Opportunities
+## Contact
 
-### Accounting Firms
-- White-label option for client base
-- Revenue share: 20% recurring commission
-- Co-branded marketing materials
-- Priority support for firm's clients
+**Sibusiso Mavuso**
+CEO & Founder
 
-### Business Consultants
-- Implementation partner program
-- Certified consultant training
-- Lead referral fees: R 5,000 per customer
-- Access to professional services margin
-
-### Software Resellers
-- Volume discounts (10+ licenses)
-- Deal registration program
-- Sales enablement materials
-- Joint marketing campaigns
-
-### Industry Associations
-- Member discount program (15% off)
-- Sponsored webinars
-- Trade show presence
-- Newsletter advertising
+📧 sibusiso@sgbsgroup.co.za
+📞 +27 74 012 6873
+🌐 www.siyabusa.co.za
 
 ---
 
-## 📞 Contact Information
 
-**Head Office:**  
-123 Sandton Drive  
-Sandton, Johannesburg  
-Gauteng, 2196  
-South Africa  
 
-**Sales Inquiries:**  
-📧 sales@worldclasserp.co.za  
-📱 +27 11 123 4567  
-🌐 www.worldclasserp.co.za  
+**We Rule. We Govern. We Empower.**
 
-**Support:**  
-📧 support@worldclasserp.co.za  
-📱 +27 11 123 4568  
-💬 Live chat on website  
-
-**Demo Booking:**  
-🔗 www.worldclasserp.co.za/demo  
-📅 Schedule 30-min personalized demo  
-
----
-
-## 📚 Additional Resources
-
-- **Product Demo:** 15-minute video walkthrough
-- **Customer Case Studies:** 3 detailed success stories
-- **ROI Calculator:** Interactive tool showing cost savings
-- **Comparison Guide:** Side-by-side with SAP, Sage, Odoo
-- **Implementation Checklist:** Step-by-step rollout guide
-- **API Documentation:** Developer resources
-- **Training Videos:** 50+ module tutorials
-- **Webinar Series:** Monthly product deep-dives
-
----
-
-## 🎖️ Certifications & Compliance
-
-✅ POPIA Compliant (Protection of Personal Information Act)  
-✅ IFRS Accounting Standards  
-✅ SARS Tax Compliance  
-✅ ISO 27001 Security Standards (In progress)  
-✅ AWS SOC 2 Type II Certified Infrastructure  
-✅ BCEA Labor Law Compliant  
-
----
-
-**Last Updated:** November 2025  
-**Version:** 1.0  
-**Document Owner:** Sales & Marketing Team
+© 2026 SiyaBusa ERP. All rights reserved.

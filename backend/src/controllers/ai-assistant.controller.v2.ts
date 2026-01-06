@@ -803,6 +803,222 @@ async function executeIntent(
   }
 }
 
+// ============================================================================
+// LEARNING & FEEDBACK (Machine Learning)
+// ============================================================================
+
+/**
+ * Record feedback on an AI response
+ */
+export const recordFeedback = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { conversationId } = req.params;
+    const { wasHelpful, feedback } = req.body;
+
+    if (typeof wasHelpful !== 'boolean') {
+      return res.status(400).json({ success: false, error: 'wasHelpful (boolean) is required' });
+    }
+
+    // Update the conversation feedback in database
+    const result = await pool.query(
+      `UPDATE ai_conversations 
+       SET was_helpful = $1, feedback = $2
+       WHERE id = $3 AND tenant_id = $4
+       RETURNING id`,
+      [wasHelpful, feedback || null, conversationId, tenantId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Conversation not found' });
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Thank you for your feedback! This helps me improve.' 
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Record feedback error:', error);
+    res.status(500).json({ success: false, error: 'Failed to record feedback' });
+  }
+};
+
+/**
+ * Get FAQs - frequently asked questions learned from conversations
+ */
+export const getFAQs = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const category = req.query.category as string | undefined;
+
+    const result = await pool.query(
+      `SELECT id, question, answer, category, helpful_count, is_featured
+       FROM ai_faq
+       WHERE (tenant_id = $1 OR tenant_id IS NULL)
+       ${category ? 'AND category = $2' : ''}
+       ORDER BY is_featured DESC, helpful_count DESC
+       LIMIT 20`,
+      category ? [tenantId, category] : [tenantId]
+    );
+
+    res.json({ success: true, data: result.rows });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get FAQs error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch FAQs' });
+  }
+};
+
+/**
+ * Get AI analytics for admin dashboard
+ */
+export const getAIAnalytics = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+
+    // Total conversations
+    const totalConvResult = await pool.query(
+      `SELECT COUNT(*) as count FROM ai_conversations WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Helpful rate
+    const helpfulResult = await pool.query(
+      `SELECT 
+         COUNT(*) FILTER (WHERE was_helpful = true) as helpful,
+         COUNT(*) FILTER (WHERE was_helpful IS NOT NULL) as rated
+       FROM ai_conversations WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Top categories
+    const categoriesResult = await pool.query(
+      `SELECT topic_category as category, COUNT(*) as count 
+       FROM ai_conversations 
+       WHERE tenant_id = $1 AND topic_category IS NOT NULL
+       GROUP BY topic_category 
+       ORDER BY count DESC 
+       LIMIT 5`,
+      [tenantId]
+    );
+
+    // Recent activity
+    const activityResult = await pool.query(
+      `SELECT DATE(created_at) as date, COUNT(*) as count
+       FROM ai_conversations
+       WHERE tenant_id = $1 AND created_at > NOW() - INTERVAL '7 days'
+       GROUP BY DATE(created_at)
+       ORDER BY date`,
+      [tenantId]
+    );
+
+    const rated = parseInt(helpfulResult.rows[0]?.rated || '0');
+    const helpful = parseInt(helpfulResult.rows[0]?.helpful || '0');
+
+    res.json({
+      success: true,
+      data: {
+        totalConversations: parseInt(totalConvResult.rows[0]?.count || '0'),
+        helpfulRate: rated > 0 ? (helpful / rated * 100).toFixed(1) + '%' : 'N/A',
+        topCategories: categoriesResult.rows,
+        activityLastWeek: activityResult.rows,
+        learningStatus: 'Active - Improving with every conversation'
+      }
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get AI analytics error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch analytics' });
+  }
+};
+
+/**
+ * Get ERP knowledge base for help center
+ */
+export const getKnowledgeBase = async (req: TenantRequest, res: Response) => {
+  try {
+    getTenantContext(req);
+    const module = req.query.module as string | undefined;
+
+    // Import ERP knowledge dynamically
+    const { ERP_KNOWLEDGE } = await import('../services/ai/ERPKnowledgeBase');
+    
+    if (module && ERP_KNOWLEDGE.modules[module]) {
+      res.json({ 
+        success: true, 
+        data: {
+          module: ERP_KNOWLEDGE.modules[module],
+          glossary: ERP_KNOWLEDGE.glossary,
+          workflows: ERP_KNOWLEDGE.workflows
+        }
+      });
+    } else {
+      // Return overview
+      res.json({ 
+        success: true, 
+        data: {
+          systemOverview: ERP_KNOWLEDGE.systemOverview,
+          modules: Object.entries(ERP_KNOWLEDGE.modules).map(([key, m]) => ({
+            key,
+            name: m.name,
+            description: m.description,
+            navigation: m.navigation
+          })),
+          glossary: ERP_KNOWLEDGE.glossary,
+          compliance: ERP_KNOWLEDGE.compliance
+        }
+      });
+    }
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get knowledge base error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch knowledge base' });
+  }
+};
+
+/**
+ * Search the knowledge base
+ */
+export const searchKnowledgeBase = async (req: TenantRequest, res: Response) => {
+  try {
+    getTenantContext(req);
+    const query = req.query.q as string;
+
+    if (!query) {
+      return res.status(400).json({ success: false, error: 'Search query (q) is required' });
+    }
+
+    // Import search function
+    const { searchKnowledge } = await import('../services/ai/ERPKnowledgeBase');
+    
+    const results = searchKnowledge(query);
+    
+    res.json({ 
+      success: true, 
+      data: {
+        query,
+        results,
+        resultsCount: results.length
+      }
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Search knowledge base error:', error);
+    res.status(500).json({ success: false, error: 'Failed to search knowledge base' });
+  }
+};
+
 export default {
   getAgents,
   getAgent,
@@ -821,5 +1037,11 @@ export default {
   complianceRiskAssess,
   financeExplainVariance,
   financeReconcile,
-  executeCommand
+  executeCommand,
+  // Machine Learning & Knowledge
+  recordFeedback,
+  getFAQs,
+  getAIAnalytics,
+  getKnowledgeBase,
+  searchKnowledgeBase
 };

@@ -611,7 +611,7 @@ export async function getDeliveryEvents(req: AuthenticatedRequest, res: Response
     }
 
     const events = await pool.query(`
-      SELECT e.*, u.name as created_by_name
+      SELECT e.*, u.full_name as created_by_name
       FROM delivery_events e
       LEFT JOIN users u ON e.created_by::uuid = u.id
       WHERE e.trip_id = $1 AND e.tenant_id = $2

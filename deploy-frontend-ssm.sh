@@ -59,16 +59,21 @@ aws ssm send-command \
         "cd /tmp",
         "aws s3 cp s3://'"$BUCKET_NAME"'/frontend-dist.tar.gz . --region eu-north-1",
         "echo \"Extracting frontend...\"",
+        "rm -rf dist/",
         "tar -xzf frontend-dist.tar.gz",
-        "echo \"Installing to Nginx...\"",
+        "echo \"Installing to Nginx (both locations)...\"",
         "sudo rm -rf /var/www/html/*",
+        "sudo rm -rf /var/www/aetheros-erp/*",
         "sudo cp -r dist/* /var/www/html/",
-        "sudo chown -R nginx:nginx /var/www/html",
-        "echo \"Restarting Nginx...\"",
+        "sudo cp -r dist/* /var/www/aetheros-erp/",
+        "sudo chown -R nginx:nginx /var/www/html /var/www/aetheros-erp",
+        "echo \"Clearing nginx cache and restarting...\"",
+        "sudo rm -rf /var/cache/nginx/*",
         "sudo systemctl restart nginx",
         "echo \"✓ Frontend deployed successfully!\"",
-        "echo \"Visit: http://'"$EC2_IP"'/\"",
-        "rm -f /tmp/frontend-dist.tar.gz"
+        "echo \"Visit: http://primesources.site/\"",
+        "rm -f /tmp/frontend-dist.tar.gz",
+        "rm -rf /tmp/dist/"
     ]' \
     --output text \
     --region eu-north-1

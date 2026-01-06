@@ -306,7 +306,7 @@ async function calculateRetainedEarnings(tenantId: string, asOfDate: string): Pr
         END
       ), 0) as net_income
     FROM journal_entry_lines jel
-    JOIN chart_of_accounts coa ON jel.account_id = coa.id
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id
       AND coa.tenant_id = $1
     JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       AND je.tenant_id = $1

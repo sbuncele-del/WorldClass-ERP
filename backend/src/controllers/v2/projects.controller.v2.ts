@@ -80,7 +80,7 @@ export async function getWorkspace(req: AuthenticatedRequest, res: Response): Pr
     // Get recent projects
     const recentProjects = await query(`
       SELECT p.id, p.code, p.name, p.status, p.progress, p.end_date,
-             u.name as manager_name
+             u.full_name as manager_name
       FROM projects p
       LEFT JOIN users u ON p.manager_id = u.id
       WHERE p.tenant_id = $1 AND p.is_active = true
@@ -183,7 +183,7 @@ export async function listProjects(req: AuthenticatedRequest, res: Response): Pr
     const total = parseInt(countResult.rows[0].count);
 
     const result = await query(`
-      SELECT p.*, u.name as manager_name,
+      SELECT p.*, u.full_name as manager_name,
         (SELECT COUNT(*) FROM project_tasks WHERE project_id = p.id AND tenant_id = $1) as task_count,
         (SELECT COUNT(*) FROM project_tasks WHERE project_id = p.id AND tenant_id = $1 AND status = 'done') as completed_tasks
       FROM projects p
@@ -226,7 +226,7 @@ export async function getProject(req: AuthenticatedRequest, res: Response): Prom
 
   try {
     const result = await query(`
-      SELECT p.*, u.name as manager_name
+      SELECT p.*, u.full_name as manager_name
       FROM projects p
       LEFT JOIN users u ON p.manager_id = u.id
       WHERE p.id = $1 AND p.tenant_id = $2
@@ -239,7 +239,7 @@ export async function getProject(req: AuthenticatedRequest, res: Response): Prom
 
     // Get tasks for this project
     const tasksResult = await query(`
-      SELECT t.*, u.name as assignee_name
+      SELECT t.*, u.full_name as assignee_name
       FROM project_tasks t
       LEFT JOIN users u ON t.assignee_id = u.id
       WHERE t.project_id = $1 AND t.tenant_id = $2
@@ -437,7 +437,7 @@ export async function listTasks(req: AuthenticatedRequest, res: Response): Promi
     }
 
     const result = await query(`
-      SELECT t.*, u.name as assignee_name
+      SELECT t.*, u.full_name as assignee_name
       FROM project_tasks t
       LEFT JOIN users u ON t.assignee_id = u.id
       ${whereClause}
@@ -596,7 +596,7 @@ export async function getTask(req: AuthenticatedRequest, res: Response): Promise
   try {
     const result = await query(`
       SELECT t.*, 
-             u.name as assignee_name,
+             u.full_name as assignee_name,
              p.name as project_name,
              p.code as project_code
       FROM project_tasks t

@@ -47,7 +47,7 @@ export const getWorkspace = async (req: TenantRequest, res: Response) => {
       ),
       pool.query(
         `SELECT COUNT(*) as unread_notifications
-        FROM notifications WHERE tenant_id = $1 AND user_id = $2 AND is_read = false`,
+        FROM user_notifications WHERE tenant_id = $1 AND user_id = $2 AND is_read = false`,
         [tenantId, userId]
       ),
       pool.query(
@@ -88,7 +88,7 @@ export const getAnnouncements = async (req: TenantRequest, res: Response) => {
     const { priority, includeExpired } = req.query;
 
     let queryStr = `
-      SELECT a.*, u.name as author_name
+      SELECT a.*, u.full_name as author_name
       FROM announcements a
       LEFT JOIN users u ON a.created_by_user_id = u.id
       WHERE a.tenant_id = $1 AND a.is_active = true
@@ -291,7 +291,7 @@ export const getChannelMessages = async (req: TenantRequest, res: Response) => {
     const { limit = 50, before } = req.query;
 
     let queryStr = `
-      SELECT m.*, u.name as author_name, u.email as author_email
+      SELECT m.*, u.full_name as author_name, u.email as author_email
       FROM chat_messages m
       LEFT JOIN users u ON m.user_id = u.id
       WHERE m.tenant_id = $1 AND m.channel_id = $2
@@ -351,7 +351,7 @@ export const getDirectConversations = async (req: TenantRequest, res: Response) 
     const result = await pool.query(
       `SELECT DISTINCT ON (other_user_id)
         CASE WHEN sender_id = $2 THEN recipient_id ELSE sender_id END as other_user_id,
-        u.name as other_user_name,
+        u.full_name as other_user_name,
         dm.content as last_message,
         dm.created_at as last_message_at
       FROM direct_messages dm
@@ -440,7 +440,7 @@ export const getNotifications = async (req: TenantRequest, res: Response) => {
     const { unreadOnly, limit = 50 } = req.query;
 
     let queryStr = `
-      SELECT * FROM notifications
+      SELECT * FROM user_notifications
       WHERE tenant_id = $1 AND user_id = $2
     `;
     const params: any[] = [tenantId, userId];
@@ -470,7 +470,7 @@ export const markNotificationRead = async (req: TenantRequest, res: Response) =>
     const { id } = req.params;
 
     const result = await pool.query(
-      `UPDATE notifications SET is_read = true, read_at = CURRENT_TIMESTAMP
+      `UPDATE user_notifications SET is_read = true, read_at = CURRENT_TIMESTAMP
       WHERE id = $1 AND tenant_id = $2 AND user_id = $3
       RETURNING *`,
       [id, tenantId, userId]
@@ -495,7 +495,7 @@ export const markAllNotificationsRead = async (req: TenantRequest, res: Response
     const { tenantId, userId } = getTenantContext(req);
 
     await pool.query(
-      `UPDATE notifications SET is_read = true, read_at = CURRENT_TIMESTAMP
+      `UPDATE user_notifications SET is_read = true, read_at = CURRENT_TIMESTAMP
       WHERE tenant_id = $1 AND user_id = $2 AND is_read = false`,
       [tenantId, userId]
     );
@@ -510,6 +510,48 @@ export const markAllNotificationsRead = async (req: TenantRequest, res: Response
   }
 };
 
+// Get unread notification count
+export const getNotificationUnreadCount = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+
+    const result = await pool.query(
+      `SELECT COUNT(*) as count FROM user_notifications
+      WHERE tenant_id = $1 AND user_id = $2 AND is_read = false`,
+      [tenantId, userId]
+    );
+
+    res.json({ success: true, data: { count: parseInt(result.rows[0]?.count || '0') } });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get notification count error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch notification count' });
+  }
+};
+
+// Get unread messages count (direct messages)
+export const getMessageUnreadCount = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+
+    const result = await pool.query(
+      `SELECT COUNT(*) as count FROM direct_messages
+      WHERE tenant_id = $1 AND recipient_id = $2 AND is_read = false`,
+      [tenantId, userId]
+    );
+
+    res.json({ success: true, data: { count: parseInt(result.rows[0]?.count || '0') } });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get message count error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch message count' });
+  }
+};
+
 // ============================================================================
 // VIDEO MEETINGS
 // ============================================================================
@@ -519,7 +561,7 @@ export const getMeetings = async (req: TenantRequest, res: Response) => {
     const { upcoming, past } = req.query;
 
     let queryStr = `
-      SELECT m.*, u.name as organizer_name
+      SELECT m.*, u.full_name as organizer_name
       FROM video_meetings m
       LEFT JOIN users u ON m.organizer_user_id = u.id
       WHERE m.tenant_id = $1
@@ -671,7 +713,7 @@ export const getMessages = async (req: TenantRequest, res: Response) => {
     // Try to get messages from messages table if it exists, otherwise return sample data
     try {
       let queryStr = `
-        SELECT m.*, u.name as sender_name
+        SELECT m.*, u.full_name as sender_name
         FROM messages m
         LEFT JOIN users u ON m.sender_id = u.id
         WHERE m.tenant_id = $1
@@ -949,6 +991,8 @@ export default {
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
+  getNotificationUnreadCount,
+  getMessageUnreadCount,
   getMeetings,
   createMeeting,
   updateMeeting,

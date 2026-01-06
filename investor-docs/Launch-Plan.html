@@ -1,0 +1,740 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiyaBusa ERP - Launch Plan</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 25mm 20mm 25mm 20mm;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .cover-page {
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%);
+            color: white;
+            text-align: center;
+            padding: 60px 40px;
+            box-sizing: border-box;
+        }
+        
+        .cover-logo {
+            font-size: 52px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 2px;
+        }
+        
+        .cover-subtitle {
+            font-size: 22px;
+            margin-bottom: 50px;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+        
+        .cover-category {
+            font-size: 36px;
+            font-weight: 600;
+            margin: 40px 0;
+            padding: 20px 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .cover-badges {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            backdrop-filter: blur(5px);
+        }
+        
+        .cover-date {
+            margin-top: 40px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .toc-page {
+            page-break-after: always;
+            padding: 40px 0;
+        }
+        
+        .toc-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #0ea5e9;
+            padding-bottom: 15px;
+        }
+        
+        .toc-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .toc-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+        
+        .toc-number {
+            color: #0ea5e9;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .content-section {
+            page-break-before: always;
+            padding: 20px 0;
+        }
+        
+        h1 {
+            color: #1e40af;
+            font-size: 26px;
+            font-weight: 700;
+            margin: 40px 0 20px 0;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #0ea5e9;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+        }
+        
+        h2 {
+            color: #1e40af;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 30px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+        }
+        
+        h3 {
+            color: #334155;
+            font-size: 17px;
+            font-weight: 600;
+            margin: 25px 0 12px 0;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+        }
+        
+        h4 {
+            color: #475569;
+            font-size: 15px;
+            font-weight: 600;
+            margin: 20px 0 10px 0;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+        }
+        
+        p {
+            margin: 12px 0;
+            text-align: justify;
+            orphans: 3;
+            widows: 3;
+        }
+        
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+            page-break-inside: avoid;
+        }
+        
+        li {
+            margin: 8px 0;
+            page-break-inside: avoid;
+        }
+        
+        code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #dc2626;
+        }
+        
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #0ea5e9;
+            page-break-inside: avoid;
+        }
+        
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+        
+        blockquote {
+            border-left: 4px solid #0ea5e9;
+            margin: 20px 0;
+            padding: 15px 20px;
+            background: #f8fafc;
+            font-style: italic;
+            color: #475569;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 13px;
+            page-break-inside: avoid;
+        }
+        
+        th {
+            background: #1e40af;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        
+        .header-footer {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 30px;
+            font-size: 10px;
+            color: #64748b;
+        }
+        
+        .page-header {
+            position: running(header);
+            text-align: center;
+            font-size: 10px;
+            color: #64748b;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .page-footer {
+            position: running(footer);
+            text-align: center;
+            font-size: 10px;
+            color: #64748b;
+            padding: 10px 0;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 5px 5px 5px 0;
+        }
+        
+        .status-complete {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-progress {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-planned {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .highlight-box {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .warning-box {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .success-box {
+            background: #dcfce7;
+            border: 2px solid #10b981;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        a {
+            color: #0ea5e9;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+    
+      <div class="cover-page">
+        <div class="cover-logo">SiyaBusa ERP</div>
+        <div class="cover-subtitle">Enterprise Resource Planning System</div>
+        <div class="cover-category">Launch Plan</div>
+        <div class="cover-badges">
+          <span class="badge">✓ Production Ready</span>
+          <span class="badge">✓ 25+ Modules</span>
+          <span class="badge">✓ AWS Deployed</span>
+          <span class="badge">✓ 400+ APIs</span>
+          <span class="badge">✓ Multi-Tenant</span>
+          <span class="badge">✓ AI-Powered</span>
+        </div>
+        <div class="cover-date">Generated: January 2, 2026</div>
+        <div class="cover-date" style="margin-top: 20px; font-size: 12px;">
+          Confidential & Proprietary
+        </div>
+      </div>
+    
+      <div class="toc-page">
+        <h1 class="toc-title">Table of Contents</h1>
+        <ul class="toc-list">
+          <li class="toc-item"><span class="toc-number">1.</span> docs/ACTION PLAN AND CHECKLIST</li>
+        </ul>
+      </div>
+    
+          <div class="content-section">
+            <h1>docs/ACTION PLAN AND CHECKLIST</h1>
+            <h1>SiyaBusa ERP - Master Action Plan &amp; Checklist</h1>
+<div align="center">
+
+<h2><strong>Launch Execution Plan</strong></h2>
+<h3>January - April 2026</h3>
+<hr>
+<p><em>Start Date: January 2, 2026</em></p>
+</div>
+
+<hr>
+<h1>📋 MASTER CHECKLIST (Sequential Order)</h1>
+<h2>Phase 1: IMMEDIATE (This Week - Jan 2-8, 2026)</h2>
+<h3>Day 1-2 (Jan 2-3): Foundation Setup</h3>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h3>Day 3-4 (Jan 4-5): Outreach Preparation</h3>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h3>Day 5-7 (Jan 6-8): First Outreach Wave</h3>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<hr>
+<h2>Phase 2: WEEK 2 (Jan 9-15, 2026)</h2>
+<h3>Investor Pipeline</h3>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h3>Beta Partner Pipeline</h3>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h3>Content &amp; Marketing</h3>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<hr>
+<h2>Phase 3: WEEK 3-4 (Jan 16-31, 2026)</h2>
+<h3>Investor Progress</h3>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h3>Beta Partner Progress</h3>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h3>Content &amp; Marketing</h3>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<hr>
+<h2>Phase 4: FEBRUARY 2026</h2>
+<h3>Week 1-2 (Feb 1-14)</h3>
+<h4>Funding</h4>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h4>Beta Program</h4>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h4>Content</h4>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h3>Week 3-4 (Feb 15-28)</h3>
+<h4>Funding</h4>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h4>Beta Program</h4>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h4>Content</h4>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<hr>
+<h2>Phase 5: MARCH 2026</h2>
+<h3>Week 1-2 (Mar 1-14)</h3>
+<h4>Funding</h4>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h4>Beta Program</h4>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h4>Content</h4>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h3>Week 3-4 (Mar 15-31)</h3>
+<h4>Pre-Launch</h4>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<hr>
+<h2>Phase 6: APRIL 2026 (LAUNCH)</h2>
+<h3>Week 1 (Apr 1-7) - LAUNCH WEEK</h3>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h3>Week 2-4 (Apr 8-30)</h3>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<hr>
+<h1>📅 DETAILED TIMELINE</h1>
+<h2>January 2026</h2>
+<pre><code>WEEK 1 (Jan 2-8)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Mon 2   │ Review materials, update contact info, prep LinkedIn
+Tue 3   │ Set up email, domain check, landing page
+Wed 4   │ Build investor list (10), beta partner list (30)
+Thu 5   │ Message friend, customize templates, set up Calendly
+Fri 6   │ Send first 5 investor messages
+Sat 7   │ Send first 10 beta partner messages
+Sun 8   │ First LinkedIn post, connect with 20 people
+
+WEEK 2 (Jan 9-15)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Mon 9   │ Follow up Week 1 outreach
+Tue 10  │ Send 5 more investor messages
+Wed 11  │ Schedule demos, prepare scripts
+Thu 12  │ Practice pitch, record yourself
+Fri 13  │ Send 10 more beta partner messages
+Sat 14  │ Second LinkedIn post
+Sun 15  │ Review week, plan adjustments
+
+WEEK 3 (Jan 16-22)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Mon 16  │ First investor demo(s)
+Tue 17  │ First beta partner demo(s)
+Wed 18  │ Send SAFE to interested investors
+Thu 19  │ Follow up all conversations
+Fri 20  │ Onboard first beta partner
+Sat 21  │ LinkedIn post
+Sun 22  │ Review, plan content
+
+WEEK 4 (Jan 23-31)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Mon 23  │ Continue demos
+Tue 24  │ More beta partner onboarding
+Wed 25  │ Record first demo video
+Thu 26  │ Address investor due diligence
+Fri 27  │ Weekly feedback call with beta partners
+Sat 28  │ LinkedIn post
+Sun 29  │ Month review, plan February
+Mon 30  │ Publish demo video
+Tue 31  │ Monthly summary, adjust strategy
+</code></pre>
+<h2>February 2026</h2>
+<pre><code>WEEK 1 (Feb 1-7)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Focus: Close first investor, reach 10 beta partners
+- Daily: Follow up all leads
+- Mon/Wed/Fri: New outreach
+- Tue/Thu: Demos
+- Weekend: Content creation
+
+WEEK 2 (Feb 8-14)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Focus: R500K+ committed, formal beta feedback
+- Investor negotiation/closing
+- Beta partner feedback sessions
+- Content: 2 LinkedIn posts, 1 video
+
+WEEK 3 (Feb 15-21)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Focus: R1.5M target, 15 beta partners
+- Continue closing investors
+- Expand beta program
+- Hire CSM (interviews)
+
+WEEK 4 (Feb 22-28)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Focus: Funding nearly complete, testimonials
+- First testimonial video
+- Press/media outreach begins
+- CSM onboarding
+</code></pre>
+<h2>March 2026</h2>
+<pre><code>WEEK 1-2 (Mar 1-14)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Focus: Close funding, 20+ beta partners
+- Final investor closing
+- Funds transfer
+- Begin paid ads (small test budget)
+- Team fully onboarded
+
+WEEK 3-4 (Mar 15-31)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Focus: Launch preparation
+- Final beta feedback
+- Conversion offers sent
+- Launch materials finalized
+- Press release ready
+- Systems tested for scale
+</code></pre>
+<h2>April 2026</h2>
+<pre><code>WEEK 1 (Apr 1-7) - LAUNCH
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Public launch announcement
+- All marketing channels active
+- First paid conversions
+- Media coverage
+
+WEEK 2-4 (Apr 8-30)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Customer acquisition mode
+- Optimize based on early results
+- Scale what works
+- Target: 5+ paying customers, R50K+ MRR
+</code></pre>
+<hr>
+<h1>🎯 KEY MILESTONES</h1>
+<table>
+<thead>
+<tr>
+<th align="left">Date</th>
+<th align="left">Milestone</th>
+<th align="left">Success Metric</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><strong>Jan 8</strong></td>
+<td align="left">First outreach wave complete</td>
+<td align="left">15+ messages sent</td>
+</tr>
+<tr>
+<td align="left"><strong>Jan 15</strong></td>
+<td align="left">First demos scheduled</td>
+<td align="left">3+ demos booked</td>
+</tr>
+<tr>
+<td align="left"><strong>Jan 22</strong></td>
+<td align="left">First beta partner onboarded</td>
+<td align="left">1+ active user</td>
+</tr>
+<tr>
+<td align="left"><strong>Jan 31</strong></td>
+<td align="left">Beta program traction</td>
+<td align="left">5+ beta partners</td>
+</tr>
+<tr>
+<td align="left"><strong>Feb 14</strong></td>
+<td align="left">First investor committed</td>
+<td align="left">R500K+ committed</td>
+</tr>
+<tr>
+<td align="left"><strong>Feb 28</strong></td>
+<td align="left">Funding momentum</td>
+<td align="left">R1.5M+ committed</td>
+</tr>
+<tr>
+<td align="left"><strong>Mar 15</strong></td>
+<td align="left">Funding complete</td>
+<td align="left">R2.85M secured</td>
+</tr>
+<tr>
+<td align="left"><strong>Mar 31</strong></td>
+<td align="left">Launch ready</td>
+<td align="left">20+ beta partners, all systems go</td>
+</tr>
+<tr>
+<td align="left"><strong>Apr 7</strong></td>
+<td align="left">PUBLIC LAUNCH</td>
+<td align="left">Live and taking customers</td>
+</tr>
+<tr>
+<td align="left"><strong>Apr 30</strong></td>
+<td align="left">First revenue</td>
+<td align="left">5+ paying customers</td>
+</tr>
+</tbody></table>
+<hr>
+<h1>📊 WEEKLY TRACKING TEMPLATE</h1>
+<h2>Week of: ______________</h2>
+<h3>Metrics</h3>
+<table>
+<thead>
+<tr>
+<th align="left">Metric</th>
+<th align="left">Target</th>
+<th align="left">Actual</th>
+<th align="left">Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left">Investor messages sent</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">Investor demos conducted</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">Investor commitments</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">Beta partner messages sent</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">Beta partner demos</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">Beta partners onboarded</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">LinkedIn posts published</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">LinkedIn connections added</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+<tr>
+<td align="left">Videos created</td>
+<td align="left"></td>
+<td align="left"></td>
+<td align="left"></td>
+</tr>
+</tbody></table>
+<h3>Top 3 Priorities This Week</h3>
+<p>1.<br>2.<br>3. </p>
+<h3>Blockers/Issues</h3>
+<h3>Wins</h3>
+<h3>Next Week Focus</h3>
+<hr>
+<h1>⚡ QUICK START (Do These First)</h1>
+<h2>Today (January 2, 2026)</h2>
+<ol>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ol>
+<h2>Tomorrow (January 3, 2026)</h2>
+<ol start="5">
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ol>
+<h2>Day 3 (January 4, 2026)</h2>
+<ol start="9">
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ol>
+<h2>Day 4-5 (January 5-6, 2026)</h2>
+<ol start="12">
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ol>
+<hr>
+<h1>📞 DAILY HABITS (Once You&#39;re Rolling)</h1>
+<h2>Every Morning (30 min)</h2>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h2>Every Day (1-2 hours)</h2>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h2>Every Week</h2>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h2>Every Month</h2>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<hr>
+<h1>🚨 IF YOU FALL BEHIND</h1>
+<h2>Priority Order (If Time is Limited)</h2>
+<ol>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ol>
+<h2>Minimum Viable Week</h2>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<hr>
+<div align="center">
+
+<hr>
+<h2>Start Now. Adjust as You Go.</h2>
+<p><strong>The perfect plan executed poorly beats the imperfect plan never started.</strong></p>
+<hr>
+<p><em>Last Updated: January 2, 2026</em></p>
+</div>
+
+          </div>
+        
+</body>
+</html>

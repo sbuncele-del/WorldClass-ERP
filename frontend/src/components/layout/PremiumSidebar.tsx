@@ -9,7 +9,7 @@
  * - Modern premium design
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Tooltip, Badge, Dropdown, Space, Avatar
@@ -30,6 +30,7 @@ import {
   MenuUnfoldOutlined, PlusOutlined, SearchOutlined,
   BellOutlined
 } from '@ant-design/icons';
+import { useUser } from '../../contexts/UserContext';
 import './PremiumSidebar.css';
 
 interface Entity {
@@ -42,16 +43,33 @@ interface Entity {
 interface SidebarProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
-  userRole?: 'director' | 'executive' | 'manager' | 'staff' | 'accountant';
 }
 
 const PremiumSidebar: React.FC<SidebarProps> = ({ 
   isCollapsed = false, 
-  onToggleCollapse,
-  userRole = 'director'
+  onToggleCollapse
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { currentUser } = useUser();
+  
+  // Get user role from context - map admin to director for permissions
+  const userRole = useMemo(() => {
+    if (!currentUser?.role) return 'director';
+    const roleName = typeof currentUser.role === 'object' 
+      ? (currentUser.role as any)?.name 
+      : String(currentUser.role);
+    // Map backend roles to sidebar roles
+    const roleMap: Record<string, string> = {
+      'admin': 'director',
+      'super_admin': 'director',
+      'manager': 'manager',
+      'user': 'staff',
+      'viewer': 'staff',
+      'accountant': 'accountant'
+    };
+    return roleMap[roleName?.toLowerCase()] || 'director';
+  }, [currentUser]);
   
   // Expanded sections state
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
@@ -232,8 +250,8 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
             <div className="sidebar-section-content">
               {renderNavItem('/app/dashboard', <DashboardOutlined />, 'Dashboard')}
               {renderNavItem('/app/workspace', <HomeOutlined />, 'My Workspace')}
-              {renderNavItem('/app/calendar', <CalendarOutlined />, 'Calendar', 3)}
-              {renderNavItem('/app/communication', <MessageOutlined />, 'Communications', 5)}
+              {renderNavItem('/app/calendar', <CalendarOutlined />, 'Calendar')}
+              {renderNavItem('/app/communication', <MessageOutlined />, 'Communications')}
             </div>
           )}
         </div>

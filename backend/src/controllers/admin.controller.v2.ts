@@ -560,6 +560,293 @@ export class AdminControllerV2 {
       res.status(500).json({ success: false, message: 'Failed to update settings' });
     }
   }
+
+  /**
+   * Invite a new user via email
+   * POST /api/v2/admin/users/invite
+   */
+  static async inviteUser(req: TenantRequest, res: Response): Promise<void> {
+    const client = await pool.connect();
+    try {
+      const { tenantId, userId } = getTenantContext(req);
+      const { email, first_name, last_name, role_id, message } = req.body;
+
+      if (!email) {
+        res.status(400).json({ success: false, message: 'Email is required' });
+        return;
+      }
+
+      await client.query('BEGIN');
+
+      // Check if email exists in this tenant
+      const existsResult = await client.query(
+        'SELECT user_id FROM users WHERE email = $1 AND tenant_id = $2',
+        [email, tenantId]
+      );
+
+      if (existsResult.rows.length > 0) {
+        await client.query('ROLLBACK');
+        res.status(400).json({ success: false, message: 'User already exists in your organization' });
+        return;
+      }
+
+      // Get tenant name for email
+      const tenantResult = await client.query(
+        'SELECT name FROM tenants WHERE id = $1',
+        [tenantId]
+      );
+      const tenantName = tenantResult.rows[0]?.name || 'Your Organization';
+
+      // Get inviter's name
+      const inviterResult = await client.query(
+        'SELECT first_name, last_name, email FROM users WHERE id = $1 OR user_id = $1',
+        [userId]
+      );
+      const inviter = inviterResult.rows[0];
+      const inviterName = inviter ? `${inviter.first_name || ''} ${inviter.last_name || ''}`.trim() || inviter.email : 'Administrator';
+
+      // Generate invitation token (valid for 7 days)
+      const crypto = require('crypto');
+      const invitationToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      // Create user in pending/invited status
+      const displayName = `${first_name || ''} ${last_name || ''}`.trim() || email.split('@')[0];
+      const userQuery = `
+        INSERT INTO users (
+          tenant_id, email, first_name, last_name, display_name,
+          status, invitation_token, invitation_expires_at, created_by, is_active
+        )
+        VALUES ($1, $2, $3, $4, $5, 'invited', $6, $7, $8, false)
+        RETURNING user_id, email, first_name, last_name, display_name, status, created_at
+      `;
+
+      const userResult = await client.query(userQuery, [
+        tenantId,
+        email,
+        first_name || null,
+        last_name || null,
+        displayName,
+        invitationToken,
+        expiresAt,
+        userId
+      ]);
+
+      const newUserId = userResult.rows[0].user_id;
+
+      // Assign role if provided
+      if (role_id) {
+        await client.query(`
+          INSERT INTO user_roles (user_id, role_id, assigned_by, is_active)
+          VALUES ($1, $2, $3, true)
+        `, [newUserId, role_id, userId]);
+      }
+
+      // Get role name for email
+      let roleName = 'Team Member';
+      if (role_id) {
+        const roleResult = await client.query(
+          'SELECT role_name FROM roles WHERE role_id = $1',
+          [role_id]
+        );
+        roleName = roleResult.rows[0]?.role_name || 'Team Member';
+      }
+
+      await client.query('COMMIT');
+
+      // Send invitation email
+      const frontendUrl = process.env.FRONTEND_URL || 'http://primesources.site';
+      const acceptUrl = `${frontendUrl}/accept-invite?token=${invitationToken}`;
+      
+      try {
+        const { sendEmail } = require('../services/email.service');
+        await sendEmail({
+          to: email,
+          subject: `You've been invited to join ${tenantName}`,
+          template: 'team-invitation',
+          variables: {
+            recipientName: displayName,
+            companyName: tenantName,
+            inviterName: inviterName,
+            roleName: roleName,
+            personalMessage: message || '',
+            acceptUrl: acceptUrl,
+            expiryDate: expiresAt.toLocaleDateString('en-ZA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+          }
+        });
+        console.log(`✅ Invitation email sent to ${email}`);
+      } catch (emailError) {
+        console.error('Failed to send invitation email:', emailError);
+        // Don't fail the request if email fails - user was created
+      }
+
+      res.status(201).json({
+        success: true,
+        message: `Invitation sent to ${email}`,
+        user: userResult.rows[0],
+        inviteUrl: acceptUrl // Also return URL in case email fails
+      });
+
+    } catch (error: any) {
+      await client.query('ROLLBACK');
+      if (error.message === 'Tenant context required') {
+        res.status(401).json({ success: false, message: 'Unauthorized: Tenant context required' });
+        return;
+      }
+      console.error('[Admin] Invite user error:', error);
+      res.status(500).json({ success: false, message: 'Failed to invite user' });
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Accept invitation and set password
+   * POST /api/v2/admin/users/accept-invite
+   */
+  static async acceptInvitation(req: TenantRequest, res: Response): Promise<void> {
+    try {
+      const { token, password } = req.body;
+
+      if (!token || !password) {
+        res.status(400).json({ success: false, message: 'Token and password are required' });
+        return;
+      }
+
+      // Find user by invitation token
+      const userResult = await pool.query(`
+        SELECT u.*, t.name as tenant_name, t.slug as tenant_slug
+        FROM users u
+        JOIN tenants t ON u.tenant_id = t.id
+        WHERE u.invitation_token = $1 AND u.status = 'invited'
+      `, [token]);
+
+      if (userResult.rows.length === 0) {
+        res.status(400).json({ success: false, message: 'Invalid or expired invitation' });
+        return;
+      }
+
+      const user = userResult.rows[0];
+
+      // Check if token expired
+      if (new Date(user.invitation_expires_at) < new Date()) {
+        res.status(400).json({ success: false, message: 'Invitation has expired. Please request a new one.' });
+        return;
+      }
+
+      // Hash password
+      const passwordHash = await bcrypt.hash(password, 12);
+
+      // Activate user
+      await pool.query(`
+        UPDATE users 
+        SET password_hash = $1, 
+            status = 'active', 
+            is_active = true,
+            invitation_token = NULL,
+            invitation_expires_at = NULL,
+            email_verified = true,
+            updated_at = NOW()
+        WHERE user_id = $2
+      `, [passwordHash, user.user_id]);
+
+      res.json({
+        success: true,
+        message: 'Account activated successfully',
+        tenant: {
+          name: user.tenant_name,
+          slug: user.tenant_slug
+        }
+      });
+
+    } catch (error: any) {
+      console.error('[Admin] Accept invitation error:', error);
+      res.status(500).json({ success: false, message: 'Failed to accept invitation' });
+    }
+  }
+
+  /**
+   * Resend invitation email
+   * POST /api/v2/admin/users/:id/resend-invite
+   */
+  static async resendInvitation(req: TenantRequest, res: Response): Promise<void> {
+    try {
+      const { tenantId, userId } = getTenantContext(req);
+      const { id } = req.params;
+
+      // Get user
+      const userResult = await pool.query(`
+        SELECT u.*, t.name as tenant_name
+        FROM users u
+        JOIN tenants t ON u.tenant_id = t.id
+        WHERE u.user_id = $1 AND u.tenant_id = $2 AND u.status = 'invited'
+      `, [id, tenantId]);
+
+      if (userResult.rows.length === 0) {
+        res.status(404).json({ success: false, message: 'Invited user not found' });
+        return;
+      }
+
+      const user = userResult.rows[0];
+
+      // Generate new token
+      const crypto = require('crypto');
+      const invitationToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      // Update token
+      await pool.query(`
+        UPDATE users SET invitation_token = $1, invitation_expires_at = $2
+        WHERE user_id = $3
+      `, [invitationToken, expiresAt, id]);
+
+      // Get inviter name
+      const inviterResult = await pool.query(
+        'SELECT first_name, last_name, email FROM users WHERE id = $1 OR user_id = $1',
+        [userId]
+      );
+      const inviter = inviterResult.rows[0];
+      const inviterName = inviter ? `${inviter.first_name || ''} ${inviter.last_name || ''}`.trim() || inviter.email : 'Administrator';
+
+      // Send email
+      const frontendUrl = process.env.FRONTEND_URL || 'http://primesources.site';
+      const acceptUrl = `${frontendUrl}/accept-invite?token=${invitationToken}`;
+
+      try {
+        const { sendEmail } = require('../services/email.service');
+        await sendEmail({
+          to: user.email,
+          subject: `Reminder: You've been invited to join ${user.tenant_name}`,
+          template: 'team-invitation',
+          variables: {
+            recipientName: user.display_name || user.email,
+            companyName: user.tenant_name,
+            inviterName: inviterName,
+            roleName: 'Team Member',
+            personalMessage: '',
+            acceptUrl: acceptUrl,
+            expiryDate: expiresAt.toLocaleDateString('en-ZA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+          }
+        });
+      } catch (emailError) {
+        console.error('Failed to resend invitation email:', emailError);
+      }
+
+      res.json({
+        success: true,
+        message: `Invitation resent to ${user.email}`,
+        inviteUrl: acceptUrl
+      });
+
+    } catch (error: any) {
+      if (error.message === 'Tenant context required') {
+        res.status(401).json({ success: false, message: 'Unauthorized: Tenant context required' });
+        return;
+      }
+      console.error('[Admin] Resend invitation error:', error);
+      res.status(500).json({ success: false, message: 'Failed to resend invitation' });
+    }
+  }
 }
 
 export default AdminControllerV2;

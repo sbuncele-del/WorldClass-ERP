@@ -1,8 +1,16 @@
 /**
- * AetherOS AI Assistant Service
+ * SiyaBusa ERP AI Assistant Service
+ * 
+ * THE SMARTEST THING EVER - Your first point of contact before asking a human.
  * 
  * Converts natural language into accounting and business operations.
  * This is the core differentiator - making ERP accessible to business owners.
+ * 
+ * Features:
+ * - Complete ERP knowledge base - knows every module, feature, and workflow
+ * - Machine learning - improves from every conversation
+ * - Context-aware - remembers your preferences and history
+ * - South African compliance aware - VAT, SARS, PAYE, POPIA
  * 
  * Model: OpenAI GPT-4o-mini (best balance of cost/quality for structured tasks)
  * Estimated cost: ~R0.50-2 per customer per month at typical usage
@@ -10,6 +18,8 @@
 
 import OpenAI from 'openai';
 import { EventEmitter } from 'events';
+import { generateERPContext, searchKnowledge, ERP_KNOWLEDGE } from './ERPKnowledgeBase';
+import { getAILearningService, AILearningService } from './AILearningService';
 
 // Types
 export interface AIMessage {
@@ -77,26 +87,53 @@ export interface AIAssistantConfig {
   temperature?: number;
 }
 
-// System prompt that defines the AI's behavior
-const SYSTEM_PROMPT = `You are the AetherOS AI Assistant - an intelligent business operations assistant that helps business owners manage their company through natural language.
+// System prompt that defines the AI's behavior - NOW WITH COMPLETE ERP KNOWLEDGE
+const SYSTEM_PROMPT = `You are SiyaBusa - the intelligent AI assistant for SiyaBusa ERP, a comprehensive Enterprise Resource Planning system for South African businesses.
 
-YOUR ROLE:
-- Convert natural language requests into structured business operations
-- Always verify critical information before executing actions
-- Explain what you're doing in simple, non-accounting terms
-- Protect the business from errors (credit limits, stock availability, compliance)
+YOUR MISSION:
+You are THE FIRST POINT OF CONTACT for all questions. Users should come to you BEFORE asking a human.
+You know EVERYTHING about the ERP system and can help with ANY question about business operations.
 
-CAPABILITIES:
-1. Sales & Invoicing: Create invoices, quotes, record payments, process refunds
-2. Purchasing: Create purchase orders, record supplier invoices
-3. Inventory: Check stock levels, update quantities, transfer between locations
-4. Customers: Check balances, credit limits, payment history
-5. Finance: Create journal entries, run reports, check cash position
-6. HR: Process payroll, manage leave, update employee info
-7. Logistics: Schedule deliveries, track shipments
+${generateERPContext()}
+
+YOUR CAPABILITIES:
+1. Answer ANY question about the ERP system - modules, features, workflows, navigation
+2. Guide users step-by-step through any process
+3. Perform actions: Create invoices, quotes, payments, orders, journal entries
+4. Run reports and provide analytics
+5. Explain accounting concepts in simple business terms
+6. Troubleshoot issues and errors
+7. Provide South African compliance guidance (VAT, SARS, PAYE, UIF, POPIA)
+
+PERSONALITY:
+- Friendly, professional, and patient
+- Explain things simply - avoid accounting jargon unless asked
+- Proactive - suggest related features the user might find useful
+- Always offer to help with next steps
+- If you don't know something specific to their data, explain how to find it in the system
+
+RESPONSE STYLE:
+- For questions: Give clear, helpful answers with navigation instructions
+- For actions: Explain what you'll do, validate, then execute (with confirmation if needed)
+- For troubleshooting: Diagnose, explain, and provide solution steps
+- Always be conversational and human - not robotic
+
+WHEN TO ASK FOR CONFIRMATION:
+- Creating invoices over R10,000
+- Recording payments or refunds
+- Posting journal entries
+- Processing payroll
+- Deleting or voiding documents
+
+IMPORTANT RULES:
+1. You can access real data from the system through function calls
+2. Always validate before executing financial transactions
+3. Mention compliance requirements when relevant
+4. If user seems frustrated, be extra patient and offer alternatives
+5. Learn from the conversation - adapt to the user's knowledge level
 
 RESPONSE FORMAT:
-Always respond with a JSON object:
+Respond with JSON:
 {
   "message": "Your conversational response to the user",
   "action": {
@@ -220,6 +257,7 @@ export class AIAssistantService extends EventEmitter {
   private temperature: number;
   private dataService: MockDataService;
   private conversations: Map<string, ConversationContext> = new Map();
+  private learningService: AILearningService;
 
   constructor(config: AIAssistantConfig) {
     super();
@@ -229,9 +267,15 @@ export class AIAssistantService extends EventEmitter {
     });
     
     this.model = config.model || 'gpt-4o-mini';
-    this.maxTokens = config.maxTokens || 1000;
-    this.temperature = config.temperature || 0.3; // Lower for more consistent outputs
+    this.maxTokens = config.maxTokens || 2000; // Increased for more detailed responses
+    this.temperature = config.temperature || 0.4; // Slightly higher for more natural responses
     this.dataService = new MockDataService();
+    this.learningService = getAILearningService();
+    
+    // Initialize learning tables
+    this.learningService.initializeTables().catch(err => {
+      console.warn('Could not initialize AI learning tables:', err.message);
+    });
   }
 
   /**
@@ -267,13 +311,44 @@ export class AIAssistantService extends EventEmitter {
     conversation.messages.push(userMessage);
 
     try {
+      // Search knowledge base for relevant information
+      const knowledgeResults = searchKnowledge(message);
+      const knowledgeContext = knowledgeResults.length > 0 
+        ? `\n\nRELEVANT KNOWLEDGE FROM ERP SYSTEM:\n${knowledgeResults.map(r => `[${r.category}] ${r.content}`).join('\n\n')}`
+        : '';
+      
+      // Get learned patterns that might help
+      const learnedPatterns = await this.learningService.findMatchingPatterns(
+        context.tenantId, 
+        message
+      );
+      const patternsContext = learnedPatterns.length > 0
+        ? `\n\nLEARNED FROM PAST SUCCESSFUL RESPONSES:\n${learnedPatterns.map(p => p.response_template).join('\n')}`
+        : '';
+      
+      // Get user's recent context for continuity
+      const recentHistory = await this.learningService.getRecentContext(
+        context.tenantId,
+        context.userId,
+        3
+      );
+      
+      // Get user preferences
+      const userPrefs = await this.learningService.getUserPreferences(
+        context.tenantId,
+        context.userId
+      );
+
       // Enrich the message with relevant data
       const enrichedContext = await this.enrichContext(message);
+      
+      // Determine the category of this question
+      const topicCategory = this.categorizeQuestion(message);
       
       // Build messages for OpenAI
       const messages: OpenAI.ChatCompletionMessageParam[] = [
         { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'system', content: `CURRENT CONTEXT:\n${JSON.stringify(enrichedContext, null, 2)}` },
+        { role: 'system', content: `CURRENT CONTEXT:\n${JSON.stringify(enrichedContext, null, 2)}${knowledgeContext}${patternsContext}\n\nUSER PREFERENCES:\nResponse style: ${userPrefs.preferred_response_style}` },
         ...conversation.messages.slice(-10).map(m => ({
           role: m.role as 'user' | 'assistant',
           content: m.content
@@ -336,6 +411,17 @@ export class AIAssistantService extends EventEmitter {
       if (aiMessage.action) {
         conversation.currentAction = aiMessage.action;
       }
+      
+      // Store conversation for machine learning (non-blocking)
+      this.learningService.storeConversation({
+        tenant_id: context.tenantId,
+        user_id: context.userId,
+        session_id: context.sessionId,
+        user_message: message,
+        ai_response: aiMessage.content,
+        topic_category: topicCategory,
+        action_taken: aiMessage.action?.type
+      }).catch(err => console.warn('Could not store conversation for learning:', err.message));
 
       // Emit event for tracking
       this.emit('message_processed', {
@@ -359,6 +445,54 @@ export class AIAssistantService extends EventEmitter {
       conversation.messages.push(errorMessage);
       return errorMessage;
     }
+  }
+  
+  /**
+   * Categorize the question for learning and analytics
+   */
+  private categorizeQuestion(message: string): string {
+    const lower = message.toLowerCase();
+    
+    // Module-specific categories
+    if (/invoice|bill|quote|sales/i.test(lower)) return 'sales';
+    if (/purchase|supplier|vendor|po\b/i.test(lower)) return 'purchase';
+    if (/inventory|stock|product|sku/i.test(lower)) return 'inventory';
+    if (/employee|payroll|salary|leave|hr/i.test(lower)) return 'hr';
+    if (/bank|reconcil|cash|payment|money/i.test(lower)) return 'banking';
+    if (/journal|ledger|account|gl|debit|credit/i.test(lower)) return 'financial';
+    if (/vat|sars|tax|paye|uif/i.test(lower)) return 'compliance';
+    if (/asset|depreciat/i.test(lower)) return 'assets';
+    if (/project|task|time/i.test(lower)) return 'projects';
+    if (/report|balance|statement/i.test(lower)) return 'reports';
+    if (/how|what|where|when|why|can i|help/i.test(lower)) return 'help';
+    if (/error|problem|issue|wrong|fix/i.test(lower)) return 'troubleshooting';
+    
+    return 'general';
+  }
+  
+  /**
+   * Record user feedback on a response
+   */
+  async recordFeedback(
+    conversationId: number,
+    wasHelpful: boolean,
+    feedback?: string
+  ): Promise<boolean> {
+    return this.learningService.recordFeedback(conversationId, wasHelpful, feedback);
+  }
+  
+  /**
+   * Get FAQs for display
+   */
+  async getFAQs(tenantId: string, category?: string) {
+    return this.learningService.getFAQs(tenantId, category);
+  }
+  
+  /**
+   * Get AI analytics for admin dashboard
+   */
+  async getAnalytics(tenantId: string) {
+    return this.learningService.getAnalytics(tenantId);
   }
 
   /**

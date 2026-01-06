@@ -85,7 +85,7 @@ export const getProposals = async (req: TenantRequest, res: Response) => {
     const { status, customerId, startDate, endDate } = req.query;
 
     let queryStr = `
-      SELECT p.*, c.name as customer_name, u.name as created_by_name
+      SELECT p.*, c.name as customer_name, u.full_name as created_by_name
       FROM proposals p
       LEFT JOIN customers c ON p.customer_id = c.id
       LEFT JOIN users u ON p.created_by_user_id = u.id

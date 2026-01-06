@@ -178,13 +178,14 @@ export class AuthService {
   static async login(credentials: LoginCredentials, deviceInfo?: any): Promise<AuthResponse> {
     const { email, password, tenantSlug } = credentials;
 
-    // Find user by email
+    // Find user by email - include onboarding_data for registration number
     let query = `
-      SELECT u.*, t.id as tenant_id, t.slug as tenant_slug, t.name as tenant_name, 
-             t.status as tenant_status, t.trial_ends_at, t.subscription_plan
+      SELECT u.*, t.tenant_id as tenant_id, t.slug as tenant_slug, t.tenant_name as tenant_name, 
+             t.is_active as tenant_status, t.created_at as trial_ends_at, 'enterprise' as subscription_plan,
+             t.settings as onboarding_data
       FROM users u
-      JOIN tenants t ON u.tenant_id = t.id
-      WHERE u.email = $1 AND u.deleted_at IS NULL AND t.deleted_at IS NULL
+      JOIN tenants t ON u.tenant_id = t.tenant_id
+      WHERE u.email = $1 AND u.deleted_at IS NULL
     `;
     const params: any[] = [email];
 
@@ -286,7 +287,8 @@ export class AuthService {
         slug: user.tenant_slug,
         name: user.tenant_name,
         status: user.tenant_status,
-        trialEndsAt: user.trial_ends_at
+        trialEndsAt: user.trial_ends_at,
+        onboarding_data: user.onboarding_data || {}
       },
       user: {
         id: user.id,

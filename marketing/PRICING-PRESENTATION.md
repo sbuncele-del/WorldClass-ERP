@@ -1,593 +1,283 @@
-# AetherOS ERP - Pricing Presentation
+# SiyaBusa ERP - Pricing Presentation
 
-## 💰 Transparent, All-Inclusive Pricing
+## Industry-Standard Pricing | 40-50% Savings
 
-**No Hidden Fees | No Per-User Charges (Pro & Enterprise) | No Surprise Bills**
-
----
-
-## 📊 Standard Pricing Plans
-
-### Starter Plan
-**R499 per month** (R4,990 annually - save 17%)
-
-**Perfect for:**
-- Small businesses (5-20 employees)
-- Single-location operations
-- Getting started with ERP
-
-**Includes:**
-- ✅ Up to 5 users
-- ✅ Core modules:
-  - Sales & CRM
-  - Purchase Management
-  - Inventory Management
-  - Financial Accounting (Basic)
-- ✅ 5GB cloud storage
-- ✅ Email support (48-hour response)
-- ✅ Monthly backups
-- ✅ Standard reports
-- ✅ All software updates included
-- ✅ Mobile access (web-based)
-
-**What's NOT included:**
-- ❌ Advanced modules (Manufacturing, Warehouse, SARS Sentinel)
-- ❌ Phone/priority support
-- ❌ Custom reports
-- ❌ API access
-- ❌ Multi-location support
-
-**Best for:** Startups and small businesses testing ERP for the first time
+**"We Rule. We Govern. We Empower."**
 
 ---
 
-### Professional Plan ⭐ **MOST POPULAR**
-**R1,999 per month** (R19,990 annually - save 17%)
+## Our Pricing Philosophy
 
-**Perfect for:**
-- Growing SMEs (20-150 employees)
-- Multi-location businesses
-- Companies needing full compliance
+**Fair. Transparent. Competitive.**
 
-**Includes:**
-- ✅ Up to 25 users (NO additional per-user fees)
-- ✅ ALL 10 modules:
-  - Sales & CRM
-  - Purchase Management
-  - Inventory Management
-  - Financial Accounting (Advanced)
-  - HR & Payroll (PAYE, UIF, SDL)
-  - Cash Management
-  - Asset Management
-  - Manufacturing
-  - Warehouse Management
-  - SARS Sentinel (AI compliance)
-- ✅ 50GB cloud storage
-- ✅ Priority email & phone support (4-hour response)
-- ✅ Daily automated backups
-- ✅ Custom report builder
-- ✅ API access (for integrations)
-- ✅ Multi-location support
-- ✅ SARS eFiling integration
-- ✅ 5 hours of free training
-- ✅ Mobile apps (iOS & Android)
-- ✅ Approval workflows
-- ✅ Advanced analytics
-
-**What's NOT included:**
-- ❌ Dedicated account manager
-- ❌ Custom development
-- ❌ On-site support
-- ❌ 24/7 support
-
-**Best for:** Most businesses—the "Goldilocks" plan with everything you need
+We use the same per-user pricing model as SAP, Oracle, Microsoft, and Sage — the industry standard. The difference? We deliver **40-50% savings** with full South African compliance built-in.
 
 ---
 
-### Enterprise Plan
-**R4,999 per month** (R49,990 annually - save 17%)
+## How ERP Pricing Works
 
-**Perfect for:**
-- Established enterprises (150+ employees)
-- Complex operations
-- Mission-critical deployments
+### Industry Standard: Platform + Per-User
 
-**Includes:**
-- ✅ **UNLIMITED users** (add as many as you need)
-- ✅ ALL 10 modules (same as Professional)
-- ✅ **PLUS**:
-  - Unlimited cloud storage
-  - Dedicated account manager
-  - 24/7 priority support (1-hour response)
-  - Real-time phone support
-  - 20 hours of free training
-  - Quarterly business reviews
-  - On-site support visits (up to 4/year)
-  - Custom development (up to 40 hours/year)
-  - 99.9% uptime SLA (contractual guarantee)
-  - Advanced security features (SSO, IP whitelisting)
-  - Custom integrations
-  - White-label options
-  - Data residency choice
-  - Dedicated database instance
+Most enterprise ERP vendors charge:
+1. **Platform Fee** — Base cost for the software
+2. **Per-User Fee** — Additional cost per active user
+3. **Module Fees** — Extra for specific functionality
+4. **Implementation** — One-time setup costs
 
-**Best for:** Large organizations with complex needs and mission-critical requirements
+**SiyaBusa simplifies this:**
+- ✅ Platform fee (transparent)
+- ✅ Per-user fee (competitive)
+- ✅ All modules included per tier
+- ✅ Training included
 
 ---
 
-## 🏢 Custom Enterprise Pricing (For Large Organizations)
+## Market Rate Comparison
 
-**For companies needing:**
-- 500+ users
-- Multi-tenant architecture (separate environments per division)
-- Complex custom workflows
-- Extensive integrations
-- Dedicated infrastructure
-- Regional deployments
-- 24/7 on-site support
+### Per-User Rates (Monthly)
 
-**Pricing:** R15,000 - R50,000/month
+| Vendor | Entry | Professional | Enterprise |
+|:-------|:------|:-------------|:-----------|
+| SAP Business One | R1,800 | R2,500 | R3,500 |
+| Oracle NetSuite | R1,500 | R2,200 | R2,800 |
+| Microsoft Dynamics | R1,600 | R2,400 | R3,200 |
+| Sage X3 | R1,200 | R1,800 | R2,500 |
+| **SiyaBusa ERP** | **R650** | **R950** | **R1,200** |
 
-**Process:**
-1. **Discovery call** (30 min) - Understand your needs
-2. **Scoping session** (2 hours) - Document requirements
-3. **Custom proposal** (3 business days) - Detailed quote with SOW
-4. **Negotiation** (as needed) - Finalize terms
-5. **Contract** - Sign and kickoff
-
-**Contact:** enterprise@aetheros.co.za
+**SiyaBusa Savings:** 40-50% lower per-user costs
 
 ---
 
-## 💎 Add-Ons & Optional Services
+## SiyaBusa Pricing Plans
 
-### Implementation Services
+### 🌱 Starter Plan
 
-**Self-Service** (Starter plan only)
-- **Cost:** FREE
-- Online onboarding wizard
-- Video tutorials
-- Documentation
-- Email support
+**For small businesses getting started with ERP**
 
-**Guided Implementation** (All plans)
-- **Cost:** R15,000
-- 2-week implementation
-- Data migration (up to 10,000 records)
-- Configuration assistance
-- 2 hours of training
-- Go-live support
+| Component | Cost |
+|:----------|:-----|
+| Platform Fee | R8,000/month |
+| Per User | R650/user/month |
+| Minimum Users | 5 |
 
-**Full Implementation** (Professional & Enterprise)
-- **Cost:** R50,000 - R150,000 (based on complexity)
-- 4-8 week full project
-- Complete data migration (unlimited records)
-- Custom configuration
-- Integration setup
-- Process optimization
-- 10-20 hours of training
-- 2 weeks on-site support
-- 6 weeks hyper-care
+**Example Totals:**
+- 5 users: R8,000 + R3,250 = **R11,250/month**
+- 10 users: R8,000 + R6,500 = **R14,500/month**
+- 15 users: R8,000 + R9,750 = **R17,750/month**
 
-### Training Packages
-
-**Basic Training** (All plans)
-- **Cost:** R2,500/day (up to 10 people)
-- On-site or virtual
-- Covers core modules
-- Includes materials
-
-**Advanced Training** (Professional & Enterprise)
-- **Cost:** R3,500/day
-- Specialized modules (Manufacturing, Warehouse)
-- Admin & configuration training
-- Reporting & analytics
-
-**Train-the-Trainer** (Enterprise)
-- **Cost:** R25,000 (5 days)
-- Certifies your internal team
-- Includes certification exam
-- Annual recertification (free)
-
-### Support Upgrades
-
-**Enhanced Support** (Starter → Professional level)
-- **Cost:** +R500/month
-- Priority email & phone
-- 4-hour response time
-- Daily backups
-
-**Premium Support** (Professional → Enterprise level)
-- **Cost:** +R1,500/month
-- 24/7 availability
-- 1-hour response time
-- Dedicated Slack channel
-
-### Storage Upgrades
-
-**Additional Storage**
-- **Cost:** R100/month per 10GB
-- (Usually only needed for Starter plan)
-
-### Custom Development
-
-**Ad-Hoc Development**
-- **Cost:** R1,500/hour
-- Minimum 4 hours
-- Custom reports, integrations, workflows
-
-**Development Retainer**
-- **Cost:** R12,000/month (10 hours)
-- 20% discount on hourly rate
-- Rollover unused hours (up to 20)
+**Includes:** 8 core modules, 50GB storage, business hours support, 5 hours training
 
 ---
 
-## 🆚 Comparison: AetherOS vs. Competitors
+### ⭐ Professional Plan (Most Popular)
 
-| Feature | AetherOS Professional | SAP Business One | Sage X3 | NetSuite |
-|---------|----------------------|------------------|---------|----------|
-| **Monthly Cost (25 users)** | **R1,999** | ~R50,000 | ~R35,000 | ~R40,000 |
-| **Annual Cost** | **R23,988** | ~R600,000 | ~R420,000 | ~R480,000 |
-| **3-Year Total Cost** | **R71,964** | ~R1,800,000 | ~R1,260,000 | ~R1,440,000 |
-| **Savings vs. Cheapest Competitor** | **Baseline** | R1,728,036 | R1,188,036 | R1,368,036 |
-| **Implementation Cost** | R50,000 | R500K-R2M | R300K-R1M | R400K-R1.5M |
-| **Implementation Time** | 4-8 weeks | 6-12 months | 4-9 months | 6-12 months |
-| **All Modules Included** | ✅ Yes | ❌ Separate licensing | ❌ Module-based | ❌ Per-module |
-| **Unlimited Users** | ✅ Enterprise | ❌ Per-user pricing | ❌ Per-user | ❌ Per-user |
-| **SARS eFiling** | ✅ Built-in | ⚠️ 3rd-party add-on | ⚠️ Custom | ❌ None |
-| **RSA Compliance** | ✅ Native | ⚠️ Requires customization | ⚠️ Requires setup | ❌ Manual |
-| **Local Support** | ✅ SA-based team | ⚠️ Reseller network | ⚠️ Reseller | ❌ Offshore |
-| **Modern UI** | ✅ 2025 React | ❌ 1990s interface | ⚠️ Dated | ⚠️ Average |
+**For growing businesses needing full functionality**
 
----
+| Component | Cost |
+|:----------|:-----|
+| Platform Fee | R15,000/month |
+| Per User | R950/user/month |
+| Minimum Users | 10 |
 
-## 💡 Pricing FAQs
+**Example Totals:**
+- 10 users: R15,000 + R9,500 = **R24,500/month**
+- 25 users: R15,000 + R23,750 = **R38,750/month**
+- 50 users: R15,000 + R47,500 = **R62,500/month**
 
-### Q: Are there setup fees?
-**A:** No. Setup and onboarding are included in all plans. Optional paid implementation services are available if you want hands-on help.
+**Includes:** 18 modules, 200GB storage, priority support, 15 hours training, SARS eFiling
 
 ---
 
-### Q: What happens if I exceed my user limit?
-**A:** 
-- **Starter plan**: You'll need to upgrade to Professional
-- **Professional plan**: You can add users at R100/user/month, or upgrade to Enterprise for unlimited users
-- **Enterprise plan**: Truly unlimited—add 1,000 users if you want
+### 🏢 Enterprise Plan
+
+**For established businesses with complex requirements**
+
+| Component | Cost |
+|:----------|:-----|
+| Platform Fee | R25,000/month |
+| Per User | R1,200/user/month |
+| Minimum Users | 25 |
+
+**Example Totals:**
+- 25 users: R25,000 + R30,000 = **R55,000/month**
+- 50 users: R25,000 + R60,000 = **R85,000/month**
+- 100 users: R25,000 + R120,000 = **R145,000/month**
+
+**Includes:** All 25+ modules, 1TB storage, 24/7 support, 30 hours training, dedicated account manager
 
 ---
 
-### Q: Can I change plans mid-month?
-**A:** Yes. Upgrades are effective immediately. Downgrades take effect at next billing cycle.
+### 🌍 Corporate Plan
+
+**For large enterprises and multi-site operations**
+
+| Component | Cost |
+|:----------|:-----|
+| Platform Fee | R45,000/month |
+| Per User | R1,500/user/month |
+| Minimum Users | 50 |
+
+**Example Totals:**
+- 50 users: R45,000 + R75,000 = **R120,000/month**
+- 100 users: R45,000 + R150,000 = **R195,000/month**
+- 200 users: R45,000 + R270,000* = **R315,000/month**
+
+*10% volume discount applied for 150+ users
+
+**Includes:** Everything, unlimited storage, dedicated support team, on-site visits, SLA guarantee
 
 ---
 
-### Q: What payment methods do you accept?
-**A:** 
-- **South African customers**: Ozow, EFT, Credit Card, Debit Order
-- **International customers**: Stripe (Credit Card, Apple Pay, Google Pay)
+## Volume Discounts
+
+We reward scale:
+
+| User Count | Per-User Discount |
+|:-----------|:------------------|
+| 1-50 users | Standard rate |
+| 51-100 users | 5% off |
+| 101-150 users | 8% off |
+| 151-250 users | 10% off |
+| 251-500 users | 15% off |
+| 500+ users | Custom pricing |
 
 ---
 
-### Q: Do you offer monthly or annual billing?
-**A:** Both. Annual billing saves 17% (essentially 2 months free).
+## Annual Commitment Discounts
+
+Commit annually and save even more:
+
+| Plan | Monthly Billing | Annual Billing | Savings |
+|:-----|:----------------|:---------------|:--------|
+| Starter | Standard | -10% | R13,500/year |
+| Professional | Standard | -12% | R35,280/year |
+| Enterprise | Standard | -15% | R99,000/year |
+| Corporate | Standard | -18% | R259,200/year |
 
 ---
 
-### Q: What's included in "all software updates"?
-**A:** Everything:
-- Bug fixes (obviously)
-- Security patches (critical)
-- New features (automatically)
-- UI improvements
-- Performance enhancements
-- Module updates
+## Real-World Cost Comparisons
 
-**Zero extra cost. Forever.**
+### Scenario 1: 25-User Professional Services Firm
 
----
+| Vendor | Monthly Cost | Annual Cost |
+|:-------|:-------------|:------------|
+| SAP Business One | R87,500 | R1,050,000 |
+| Oracle NetSuite | R67,500 | R810,000 |
+| Microsoft Dynamics | R72,000 | R864,000 |
+| **SiyaBusa Professional** | **R38,750** | **R465,000** |
 
-### Q: Can I cancel anytime?
-**A:** 
-- **Monthly plans**: Yes, cancel anytime (30-day notice)
-- **Annual plans**: You're committed for the year, but we'll refund unused months if you're not satisfied (90-day money-back guarantee)
+**Annual Savings with SiyaBusa:** R345,000 - R585,000
 
 ---
 
-### Q: What happens to my data if I cancel?
-**A:** 
-1. You can export everything (CSV, Excel, SQL dump)
-2. We retain your data for 90 days (in case you change your mind)
-3. After 90 days, we securely delete everything
+### Scenario 2: 50-User Manufacturing Company
 
-**You own your data. Period.**
+| Vendor | Monthly Cost | Annual Cost |
+|:-------|:-------------|:------------|
+| SAP Business One | R175,000 | R2,100,000 |
+| Oracle NetSuite | R130,000 | R1,560,000 |
+| Microsoft Dynamics | R142,000 | R1,704,000 |
+| **SiyaBusa Enterprise** | **R85,000** | **R1,020,000** |
 
----
-
-### Q: Do you offer discounts?
-**A:** Yes:
-
-- **Annual billing**: 17% discount (automatic)
-- **Non-profits**: 30% off (verification required)
-- **Education**: 40% off (schools, universities)
-- **Startups**: 50% off Year 1 (if <2 years old, <R5M revenue, venture-backed)
-- **Referrals**: R5,000 credit per referral who signs up (unlimited)
+**Annual Savings with SiyaBusa:** R540,000 - R1,080,000
 
 ---
 
-### Q: Can we trial before buying?
-**A:** Absolutely:
+### Scenario 3: 100-User Distribution Business
 
-**Option 1: Free Demo Account**
-- Instant access (no credit card)
-- Pre-loaded sample data
-- Full feature access
-- Limited to 7 days
+| Vendor | Monthly Cost | Annual Cost |
+|:-------|:-------------|:------------|
+| SAP Business One | R375,000 | R4,500,000 |
+| Oracle NetSuite | R300,000 | R3,600,000 |
+| Microsoft Dynamics | R342,000 | R4,104,000 |
+| **SiyaBusa Corporate** | **R195,000** | **R2,340,000** |
 
-**Option 2: 14-Day Free Trial**
-- Full account (credit card required, not charged)
-- Load your own data
-- Unlimited testing
-- Cancel anytime
-
-**Option 3: Paid Pilot (Enterprise customers)**
-- 90-day pilot at 50% cost
-- Full implementation in 5-10 locations
-- Success criteria defined upfront
-- Full refund if you're not satisfied
+**Annual Savings with SiyaBusa:** R1,260,000 - R2,160,000
 
 ---
 
-## 📈 ROI Calculator
+## Implementation Costs
 
-**Calculate your savings:**
+**One-time setup — much lower than competitors**
 
-### Example: 50-employee company
+| Package | SiyaBusa | Competitors |
+|:--------|:---------|:------------|
+| QuickStart (5-20 users) | R35,000 | R150,000-R250,000 |
+| Standard (20-75 users) | R75,000 | R250,000-R400,000 |
+| Enterprise (75+ users) | R150,000-R350,000 | R400,000-R800,000 |
 
-**Current Setup:**
-- QuickBooks: R800/month
-- Payroll service: R2,000/month
-- Excel + manual SARS: ~R5,000/month (staff time)
-- **Total: R7,800/month**
-
-**AetherOS Professional:**
-- All-in-one: R1,999/month
-- **Savings: R5,801/month = R69,612/year**
-
-**Plus Operational Benefits:**
-- Reduce month-end close from 10 days to 2 days
-  - Finance team (3 people) × 8 days × R600/day = R14,400/month saved
-- Eliminate SARS penalties (avg R50K/year)
-- Reduce data entry errors by 90% (~R10K/month saved)
-
-**Total Annual Benefit: R285,000+**
-**ROI: 1,091%**
-**Payback Period: 33 days**
+**Implementation includes:** Discovery, configuration, data migration, training, go-live support
 
 ---
 
-## 🎁 Limited-Time Promotion
+## What's Included (No Hidden Fees)
 
-### Sign Up Before December 31, 2025
+### ✅ Always Included
+- All modules for your plan tier
+- Software updates and new features
+- Security patches and maintenance
+- Standard support
+- Training hours (varies by plan)
+- Data backups
+- SARS compliance updates
 
-**Get 3 Months FREE**
-
-- Applies to Professional & Enterprise plans
-- Worth up to R14,997
-- Must sign annual contract
-- Code: LAUNCH2025
-
-**Plus:**
-- Free implementation (worth R15,000)
-- Free 5 hours of training (worth R12,500)
-- **Total Value: R42,497**
-
----
-
-## 📞 Ready to Get Started?
-
-### Step 1: Choose Your Plan
-→ Contact sales@aetheros.co.za
-
-### Step 2: Free Demo (Optional)
-→ See it in action: http://aetheros-erp-frontend-483636500494.s3-website.eu-north-1.amazonaws.com
-
-### Step 3: Sign Up
-→ Online signup or custom contract (Enterprise)
-
-### Step 4: Onboard
-→ 2-8 weeks depending on plan
-
-### Step 5: Go Live
-→ Start saving immediately
+### 💳 Optional Add-Ons
+- Premium support: +R8,500/month
+- Enterprise support: +R18,000/month
+- Additional storage (500GB): +R2,500/month
+- Custom development: R5,500/hour
+- Integration development: R15,000-R65,000
 
 ---
 
-## 🤝 Enterprise Sales Process
+## Payment Terms
 
-For organizations considering Professional or Enterprise plans:
-
-**Week 1: Discovery**
-- 30-minute intro call
-- Demo (if interested)
-- Needs assessment
-
-**Week 2: Proposal**
-- Custom pricing (if needed)
-- Implementation plan
-- ROI analysis
-
-**Week 3: Technical Review**
-- Security documentation
-- Integration assessment
-- Infrastructure requirements
-
-**Week 4: Contract**
-- Negotiate terms
-- Sign contract
-- Schedule kickoff
-
-**Week 5-12: Implementation**
-- Project kickoff
-- Data migration
-- Configuration
-- Training
-- Go-live
+- **Monthly billing:** Invoice on the 1st, due in 7 days
+- **Annual billing:** Invoice annually, due in 30 days
+- **Implementation:** 50% upfront, 50% on go-live
+- **Payment methods:** EFT, credit card, debit order
 
 ---
 
-## 📋 Pricing Summary Table
+## ROI Analysis
 
-| Plan | Monthly | Annual | Users | Modules | Support | Best For |
-|------|---------|--------|-------|---------|---------|----------|
-| **Starter** | R499 | R4,990 | 5 | Core | Email | Small businesses |
-| **Professional** | R1,999 | R19,990 | 25 | All 10 | Priority | Growing SMEs |
-| **Enterprise** | R4,999 | R49,990 | Unlimited | All 10+ | 24/7 | Large orgs |
-| **Custom** | R15K-R50K | Custom | Unlimited | Custom | Dedicated | Very large orgs |
+### Typical 50-User Business
 
----
+| Metric | Year 1 | Year 2 | Year 3 |
+|:-------|:-------|:-------|:-------|
+| **SiyaBusa Cost** | R1,020,000 | R1,020,000 | R1,020,000 |
+| **Competitor Cost** | R1,704,000 | R1,704,000 | R1,704,000 |
+| **Annual Savings** | R684,000 | R684,000 | R684,000 |
+| **Cumulative Savings** | R684,000 | R1,368,000 | **R2,052,000** |
 
-## 💼 Corporate Licensing Options
-
-### Multi-Subsidiary Licensing
-**Scenario:** Parent company with multiple subsidiaries
-
-**Option 1: Per-Entity Pricing**
-- Each subsidiary pays separately
-- No volume discount
-
-**Option 2: Consolidated Licensing (10% discount)**
-- Parent company pays for all
-- Single invoice
-- Centralized management
-- Requires 3+ subsidiaries
-
-**Option 3: Enterprise Agreement (20% discount)**
-- Custom contract for 10+ entities
-- Volume pricing
-- Dedicated account team
+Plus operational savings from automation: **+R200,000-R400,000/year**
 
 ---
 
-### Partner/Reseller Pricing
-**For accounting firms, consultants, and resellers:**
+## Next Steps
 
-**White-Label Program:**
-- 30% margin on monthly fees
-- Your branding
-- Your client relationship
-- We handle support & infrastructure
+### 1. Book a Demo
+See SiyaBusa in action with your use cases.
 
-**Referral Program:**
-- R5,000 per signed customer
-- 10% recurring commission (first year)
-- No limit on referrals
+### 2. Get a Custom Quote
+Receive pricing specific to your user count and requirements.
 
-**Contact:** partners@aetheros.co.za
+### 3. Start Your Trial
+14-day free trial, no credit card required.
 
 ---
 
-## 🛡️ Price Lock Guarantee
+## Contact
 
-**Your price will NEVER increase as long as you remain a customer.**
+**Sibusiso Mavuso**  
+CEO & Founder, SiyaBusa ERP
 
-**Example:**
-- Sign up today at R1,999/month Professional
-- In 2 years, we raise prices to R2,999/month
-- You still pay R1,999/month (forever)
+📧 sibusiso@sgbsgroup.co.za  
+📱 +27 74 012 6873
 
-**Only exception:** Adding users beyond your plan limit
-
-**This is our commitment to loyal customers.**
+**"We Rule. We Govern. We Empower."**
 
 ---
 
-## ✅ What's Included in ALL Plans
-
-No matter which plan you choose, you get:
-
-- ✅ Cloud hosting (AWS, SA data centers)
-- ✅ Daily automated backups
-- ✅ 256-bit encryption
-- ✅ POPIA compliance
-- ✅ All software updates & new features
-- ✅ Mobile web access
-- ✅ Role-based access control
-- ✅ Audit trails
-- ✅ Standard reports
-- ✅ Data export anytime
-- ✅ Onboarding wizard
-- ✅ Knowledge base access
-- ✅ 90-day money-back guarantee
-
----
-
-## 📊 Total Cost of Ownership (3 Years)
-
-**Starter:**
-- Monthly: R499 × 36 = R17,964
-- Annual: R4,990 × 3 = R14,970 ✅ (Save R2,994)
-
-**Professional:**
-- Monthly: R1,999 × 36 = R71,964
-- Annual: R19,990 × 3 = R59,970 ✅ (Save R11,994)
-
-**Enterprise:**
-- Monthly: R4,999 × 36 = R179,964
-- Annual: R49,990 × 3 = R149,970 ✅ (Save R29,994)
-
-**Pro Tip:** Annual billing saves you one month free every year = 17% discount
-
----
-
-## 🎯 Pricing Philosophy
-
-At AetherOS, we believe:
-
-1. **Transparent pricing** = No surprises, no hidden fees
-2. **All-inclusive** = No nickel-and-diming for basic features
-3. **Fair value** = Enterprise quality at SME prices
-4. **Customer loyalty** = Price lock guarantee
-5. **Affordable growth** = Don't penalize success (unlimited users in Enterprise)
-
-**We make money when you succeed, not when we upsell you.**
-
----
-
-## 📞 Contact Sales
-
-**General Inquiries:**
-sales@aetheros.co.za
-+27 (0)11 123 4567
-
-**Enterprise Sales:**
-enterprise@aetheros.co.za
-+27 (0)11 123 4568
-
-**Partner Inquiries:**
-partners@aetheros.co.za
-
-**Billing Questions:**
-billing@aetheros.co.za
-
-**Website:**
-www.aetheros-erp.co.za
-
----
-
-*Pricing effective: November 2025*  
-*Subject to change for new customers (existing customers grandfathered)*  
-*All prices in South African Rands (ZAR)*  
-*Excludes VAT where applicable*
-
----
-
-**Ready to transform your business?**
-
-**[Book a Free Demo]** | **[Start 14-Day Trial]** | **[Talk to Sales]**
-
----
-
-*"Enterprise features. Startup pricing. Built for South Africa."*
-
-**AetherOS ERP** | Proudly South African 🇿🇦
+*Pricing effective January 2026. All prices in ZAR, excluding VAT.*

@@ -309,12 +309,16 @@ export const workspaceApi = {
 
   // Admin Workspace
   admin: {
-    getDashboard: () => apiGet('/api/admin/dashboard'),
-    getUsers: (params?: any) => apiGet('/api/admin/users', params),
-    getRoles: () => apiGet('/api/admin/roles'),
-    getPermissions: () => apiGet('/api/admin/permissions'),
-    createUser: (data: any) => apiPost('/api/admin/users', data),
-    getAuditLogs: (params?: any) => apiGet('/api/admin/audit-logs', params),
+    getDashboard: () => apiGet('/api/v2/admin/dashboard'),
+    getUsers: (params?: any) => apiGet('/api/v2/admin/users', params),
+    getRoles: () => apiGet('/api/v2/admin/roles'),
+    getPermissions: () => apiGet('/api/v2/admin/permissions'),
+    createUser: (data: any) => apiPost('/api/v2/admin/users', data),
+    inviteUser: (data: any) => apiPost('/api/v2/admin/users/invite', data),
+    resendInvite: (userId: string) => apiPost(`/api/v2/admin/users/${userId}/resend-invite`, {}),
+    updateUser: (id: string, data: any) => apiPut(`/api/v2/admin/users/${id}`, data),
+    deleteUser: (id: string) => apiDelete(`/api/v2/admin/users/${id}`),
+    getAuditLogs: (params?: any) => apiGet('/api/v2/admin/audit-logs', params),
   },
 
   // Cash Management Workspace

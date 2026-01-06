@@ -256,5 +256,6 @@ Final deliverables:
 
 ---
 
-**Document Owner:** Masaphokati Technologies (Pty) Ltd
-**Contact:** sibusiso@sgbsgroup.co.za
+**Document Owner:** Masaphokati Technologies (Pty) Ltd  
+**Contact:** support@siyabusa.co.za  
+**Website:** https://siyabusa.co.za

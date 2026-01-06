@@ -45,7 +45,7 @@ export class DashboardControllerV2 {
           SUM(CASE WHEN coa.account_type = 'REVENUE' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as total_revenue,
           SUM(CASE WHEN coa.account_type = 'EXPENSE' THEN jel.debit_amount - jel.credit_amount ELSE 0 END) as total_expenses
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
         JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
         WHERE jel.tenant_id = $1
           AND je.status = 'POSTED'
@@ -69,7 +69,7 @@ export class DashboardControllerV2 {
           SUM(CASE WHEN coa.account_type = 'LIABILITY' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as total_liabilities,
           SUM(CASE WHEN coa.account_type = 'EQUITY' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as total_equity
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
         JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
         WHERE jel.tenant_id = $1 AND je.status = 'POSTED'
       `;
@@ -135,7 +135,7 @@ export class DashboardControllerV2 {
           DATE_TRUNC('month', je.journal_date) as month,
           SUM(jel.credit_amount - jel.debit_amount) as revenue
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
         JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
         WHERE jel.tenant_id = $1
           AND je.status = 'POSTED'
@@ -187,7 +187,7 @@ export class DashboardControllerV2 {
           coa.account_name,
           SUM(jel.debit_amount - jel.credit_amount) as amount
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
         JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
         WHERE jel.tenant_id = $1
           AND je.status = 'POSTED'
@@ -278,7 +278,7 @@ export class DashboardControllerV2 {
           coa.account_name,
           SUM(jel.debit_amount - jel.credit_amount) as balance
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
         JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
         WHERE jel.tenant_id = $1
           AND je.status = 'POSTED'
@@ -326,7 +326,7 @@ export class DashboardControllerV2 {
         SELECT 
           SUM(CASE WHEN jel.debit_amount - jel.credit_amount > 0 THEN jel.debit_amount - jel.credit_amount ELSE 0 END) as total
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
         JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
         WHERE jel.tenant_id = $1
           AND je.status = 'POSTED'
@@ -338,7 +338,7 @@ export class DashboardControllerV2 {
         SELECT 
           SUM(CASE WHEN jel.credit_amount - jel.debit_amount > 0 THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as total
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
         JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
         WHERE jel.tenant_id = $1
           AND je.status = 'POSTED'
@@ -392,7 +392,7 @@ export class DashboardControllerV2 {
             SUM(CASE WHEN coa.account_type = 'ASSET' THEN jel.debit_amount - jel.credit_amount ELSE 0 END) as assets,
             SUM(CASE WHEN coa.account_type = 'LIABILITY' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as liabilities
           FROM journal_entry_lines jel
-          JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+          JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
           JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
           WHERE jel.tenant_id = $1 AND je.status = 'POSTED'
         )

@@ -38,6 +38,7 @@ const Partners = lazy(() => import('./pages/Partners'));
 const Blog = lazy(() => import('./pages/Blog'));
 const CaseStudies = lazy(() => import('./pages/CaseStudies'));
 const Pricing = lazy(() => import('./pages/Pricing'));
+const ConceptDocument = lazy(() => import('./pages/public/ConceptDocument'));
 
 // Lazy-loaded Authentication Pages
 const Signup = lazy(() => import('./pages/Signup'));
@@ -45,6 +46,7 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const ResendVerification = lazy(() => import('./pages/ResendVerification'));
+const AcceptInvite = lazy(() => import('./pages/AcceptInvite'));
 
 // Lazy-loaded Main Pages
 const EnterpriseDashboard = lazy(() => import('./pages/EnterpriseDashboard'));
@@ -115,6 +117,8 @@ const CommunicationsHub = lazy(() => import('./modules/communication/Communicati
 const AuditReadyHub = lazy(() => import('./modules/compliance/AuditReadyHub'));
 const RegulatoryHub = lazy(() => import('./modules/compliance/RegulatoryHub'));
 const AdminHub = lazy(() => import('./modules/admin/AdminHub'));
+const SuperAdminPanel = lazy(() => import('./modules/super-admin/SuperAdminPanel'));
+const PlatformLogin = lazy(() => import('./modules/super-admin/PlatformLogin'));
 const AuditorPortalPreview = lazy(() => import('./modules/compliance/AuditorPortalPreview'));
 
 // Lazy-loaded Industry Pages
@@ -207,6 +211,8 @@ function App() {
                       <Route path="/partners" element={<Partners />} />
                       <Route path="/blog" element={<Blog />} />
                       <Route path="/case-studies" element={<CaseStudies />} />
+                      <Route path="/concept-document" element={<ConceptDocument />} />
+                      <Route path="/stakeholders" element={<ConceptDocument />} />
                       
                       {/* Public Client Portal - Access with code (no login required) */}
                       <Route path="/portal/:id" element={<PortalAccess />} />
@@ -248,6 +254,12 @@ function App() {
                       <Route path="/reset-password" element={<ResetPassword />} />
                       <Route path="/verify-email" element={<VerifyEmail />} />
                       <Route path="/resend-verification" element={<ResendVerification />} />
+                      <Route path="/accept-invite" element={<AcceptInvite />} />
+
+                      {/* Platform Admin - Hidden from regular clients */}
+                      <Route path="/platform-admin/login" element={<PlatformLogin />} />
+                      <Route path="/platform-admin/*" element={<SuperAdminPanel />} />
+                      <Route path="/platform-admin" element={<SuperAdminPanel />} />
 
                       {/* Onboarding - Protected but no sidebar/topbar */}
                       <Route

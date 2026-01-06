@@ -1,171 +1,117 @@
-# AetherOS ERP - Transform Your Business Operations
+# SiyaBusa ERP - One-Pager
 
-## South Africa's Most Advanced Cloud ERP Platform
+## The ERP Platform South African Businesses Deserve
 
-**Built for South African Businesses | Fully RSA Tax Compliant | Industry-Leading Technology**
-
----
-
-## 🚀 Why AetherOS ERP?
-
-**All-in-One Business Platform**
-Stop juggling multiple systems. AetherOS brings your entire business into one unified platform—from sales to payroll, manufacturing to compliance.
-
-**Built for South Africa**
-- ✅ SARS eFiling Integration (EMP201, VAT201, IRP5, EMP501)
-- ✅ BCEA, LRA & Employment Equity Compliance
-- ✅ B-BBEE Scorecard Tracking
-- ✅ PAYE, UIF & SDL Auto-Calculations
-- ✅ SA Banking Integration (All Major Banks)
-
-**Enterprise Features at SME Pricing**
-Fortune 500 capabilities without the Fortune 500 price tag. Start from R499/month.
+**40-50% Savings | 100% RSA Compliant | 4-10 Week Implementation**
 
 ---
 
-## 💼 Complete Business Modules
+## The Problem
 
-| Module | Key Features |
-|--------|--------------|
-| **💰 Sales & CRM** | Lead tracking, opportunity pipeline, quotations, invoicing, customer portal |
-| **🛒 Purchase** | Supplier management, PO automation, goods receipt, 3-way matching |
-| **📦 Inventory** | Real-time stock levels, multi-warehouse, bin tracking, valuation |
-| **👥 HR & Payroll** | Employee records, PAYE/UIF/SDL, leave management, RSA compliance |
-| **💵 Financial** | General ledger, double-entry, IFRS reports, multi-currency |
-| **💰 Cash Management** | Bank reconciliation, cash flow forecasting, payment processing |
-| **🏢 Asset Management** | Fixed asset register, depreciation (SA tax methods), maintenance |
-| **🏭 Manufacturing** | Production orders, BOMs, work centers, capacity planning |
-| **📍 Warehouse** | Bin management, picking/packing, cycle counts, barcode scanning |
-| **🇿🇦 SARS Sentinel** | AI-powered compliance, deadline tracking, eFiling integration |
+South African mid-market businesses (R10M-R500M revenue) are stuck:
+
+- **SAP/Oracle/Microsoft:** R1,500-R3,500/user/month — expensive
+- **QuickBooks/Xero/Sage Pastel:** Limited features — can't scale
+- **The Gap:** 60,000+ businesses need full ERP at fair prices
+
+**Result:** Manual processes, compliance risks, operational inefficiency
 
 ---
 
-## 🎯 Who Is This For?
+## The Solution: SiyaBusa ERP
 
-✅ **Growing SMEs** (10-500 employees)
-✅ **Manufacturing Companies**
-✅ **Retail & Wholesale Distributors**
-✅ **Professional Services Firms**
-✅ **Import/Export Businesses**
-✅ **Multi-Location Enterprises**
+A **complete, cloud-native ERP** built specifically for South African businesses — using industry-standard per-user pricing at **40-50% savings**.
 
----
+### How We Compare
 
-## 💡 What Makes Us Different?
-
-**1. South African DNA**
-Not a foreign system retrofitted for SA—built from the ground up for South African business realities.
-
-**2. Modern Technology Stack**
-React + TypeScript frontend, Node.js backend, PostgreSQL database. Cloud-native, mobile-ready, API-first.
-
-**3. Implementation in Weeks, Not Months**
-Our proven methodology gets you live in 4-8 weeks. No 12-month nightmares.
-
-**4. All-Inclusive Pricing**
-One price. Unlimited users. All modules. No hidden fees. No per-user charges.
-
-**5. White-Glove Support**
-Dedicated account manager, priority support, free training, quarterly business reviews.
+| | SiyaBusa | SAP/Oracle/Dynamics |
+|:--------|:---------|:------------|
+| **Per-User Rate** | R650-R1,500/user | R1,500-R3,500/user |
+| **Platform Fee** | R8,000-R45,000/mo | R20,000-R50,000/mo |
+| **25-User Example** | ~R39,000/mo | ~R70,000/mo |
+| **Your Savings** | **44%** | — |
+| **SARS Integration** | Built-in | R100K+ addon |
+| **Implementation** | 4-10 weeks | 6-18 months |
+| **Local Support** | SA-based team | Reseller network |
 
 ---
 
-## 📊 ROI You Can Measure
+## Complete Module Suite
 
-| Metric | Average Result |
-|--------|----------------|
-| **Time Saved** | 20-30 hours/week on admin tasks |
-| **Accuracy** | 95%+ reduction in data entry errors |
-| **Compliance** | 100% SARS deadline adherence |
-| **Visibility** | Real-time dashboards (not month-old data) |
-| **Cash Flow** | 15-25% improvement in working capital |
+**25+ Integrated Modules:**
 
----
-
-## 💰 Transparent Pricing
-
-### Starter Plan - R499/month
-- Up to 5 users
-- Core modules (Sales, Purchase, Inventory)
-- Email support
-- Perfect for: Startups & Small Businesses
-
-### Professional Plan - R1,999/month
-- Up to 25 users
-- All modules included
-- Priority support
-- Free training (5 hours)
-- Perfect for: Growing SMEs
-
-### Enterprise Plan - R4,999/month
-- Unlimited users
-- All modules + customizations
-- Dedicated account manager
-- Free training (20 hours)
-- SLA guarantee
-- Perfect for: Established Enterprises
-
-**🎁 Limited Time Offer:** 3 months free when you sign up before December 31, 2025!
+| Category | Modules |
+|:---------|:--------|
+| **Core Business** | Sales & CRM, Purchase, Inventory, Financial Accounting |
+| **HR & Payroll** | PAYE, UIF, SDL, Leave (BCEA compliant) |
+| **Operations** | Manufacturing, Warehouse, Project Management |
+| **Compliance** | SARS Sentinel, Audit Hub, Compliance Hub |
+| **Industry** | Healthcare, Mining, Construction, Property, Agriculture |
+| **Platform** | AI Assistant, Dashboard, Communications Hub |
 
 ---
 
-## 🏆 Trusted By South African Businesses
+## RSA Compliance Built-In
 
-> "We replaced 7 different systems with AetherOS. Our finance close time went from 15 days to 3 days."
-> **— CFO, Manufacturing Company (150 employees)**
-
-> "The SARS Sentinel feature alone is worth the price. We've never missed a deadline since implementation."
-> **— Practice Manager, Accounting Firm (40 staff)**
-
-> "Finally, an ERP that understands South African payroll. PAYE, UIF, SDL—everything just works."
-> **— HR Director, Retail Group (200+ employees)**
+✅ **SARS eFiling:** EMP201, EMP501, VAT201, IRP5, IT14  
+✅ **Labour Law:** BCEA, LRA, Employment Equity Act  
+✅ **B-BBEE:** Scorecard tracking and reporting  
+✅ **Financial:** IFRS-compliant accounting  
+✅ **Industry:** HPCSA, DMRE, CIDB (where applicable)
 
 ---
 
-## 🚀 Get Started in 3 Easy Steps
+## Pricing Structure
 
-**1. Free Demo (30 minutes)**
-See the system in action with your own data
+**Industry-Standard Per-User Model | 40-50% Lower Than Competitors**
 
-**2. Proof of Concept (2 weeks)**
-Test drive with your team—no commitment
+| Plan | Platform Fee | Per User | Minimum |
+|:-----|:-------------|:---------|:--------|
+| **Starter** | R8,000/mo | R650/user | 5 users |
+| **Professional** | R15,000/mo | R950/user | 10 users |
+| **Enterprise** | R25,000/mo | R1,200/user | 25 users |
+| **Corporate** | R45,000/mo | R1,500/user | 50 users |
 
-**3. Go Live (4-8 weeks)**
-Full implementation with training & support
+### Quick Examples
 
----
+| Size | Plan | Monthly Cost |
+|:-----|:-----|:-------------|
+| 10 users | Starter | R14,500/mo |
+| 25 users | Professional | R38,750/mo |
+| 50 users | Enterprise | R85,000/mo |
+| 100 users | Corporate | R195,000/mo |
 
-## 📞 Contact Us Today
-
-**Website:** www.aetheros-erp.co.za
-**Email:** sales@aetheros-erp.co.za
-**Phone:** +27 (0)11 123 4567
-**WhatsApp:** +27 82 123 4567
-
-**Book Your Free Demo:** https://calendly.com/aetheros-erp/demo
-
----
-
-## 🔒 Enterprise-Grade Security
-
-- ✅ ISO 27001 Certified Data Centers (South Africa)
-- ✅ POPIA Compliant
-- ✅ 256-bit Encryption
-- ✅ Daily Automated Backups
-- ✅ 99.9% Uptime SLA
-- ✅ Multi-Factor Authentication
-- ✅ Role-Based Access Control
+**Volume discounts available for 50+ users (up to 15% off)**
 
 ---
 
-## 🌟 Join South Africa's Fastest-Growing ERP Platform
+## ROI You Can Measure
 
-**500+ businesses** have already made the switch to AetherOS.
-
-**Don't let outdated systems hold you back.**
-
-Schedule your free demo today and see why AetherOS is the #1 choice for forward-thinking South African businesses.
+| Metric | Result |
+|:-------|:-------|
+| **Time Saved** | 20-30 hours/week on admin |
+| **Error Reduction** | 95% fewer data entry errors |
+| **Compliance** | 100% SARS submission accuracy |
+| **Payback Period** | 4-6 months |
+| **3-Year Savings** | R1M-R3M vs competitors |
 
 ---
 
-*AetherOS ERP | Proudly South African | Built for Growth*
+## Getting Started
+
+1. **Discovery Call** (30 min) — We understand your needs
+2. **Demo** (60 min) — See SiyaBusa in action
+3. **Proposal** — Custom pricing for your requirements
+4. **Implementation** (4-10 weeks) — We handle everything
+5. **Go-Live** — You're running on SiyaBusa!
+
+---
+
+## Contact
+
+**Sibusiso Mavuso**  
+CEO & Founder  
+📧 sibusiso@sgbsgroup.co.za  
+📱 +27 74 012 6873
+
+**"We Rule. We Govern. We Empower."**

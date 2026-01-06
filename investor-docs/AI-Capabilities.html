@@ -1,0 +1,696 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiyaBusa ERP - AI Capabilities</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 25mm 20mm 25mm 20mm;
+        }
+        
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .cover-page {
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%);
+            color: white;
+            text-align: center;
+            padding: 60px 40px;
+            box-sizing: border-box;
+        }
+        
+        .cover-logo {
+            font-size: 52px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            letter-spacing: 2px;
+        }
+        
+        .cover-subtitle {
+            font-size: 22px;
+            margin-bottom: 50px;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+        
+        .cover-category {
+            font-size: 36px;
+            font-weight: 600;
+            margin: 40px 0;
+            padding: 20px 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .cover-badges {
+            display: flex;
+            gap: 15px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .badge {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            backdrop-filter: blur(5px);
+        }
+        
+        .cover-date {
+            margin-top: 40px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+        
+        .toc-page {
+            page-break-after: always;
+            padding: 40px 0;
+        }
+        
+        .toc-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #0ea5e9;
+            padding-bottom: 15px;
+        }
+        
+        .toc-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .toc-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+        
+        .toc-number {
+            color: #0ea5e9;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        .content-section {
+            page-break-before: always;
+            padding: 20px 0;
+        }
+        
+        h1 {
+            color: #1e40af;
+            font-size: 26px;
+            font-weight: 700;
+            margin: 40px 0 20px 0;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #0ea5e9;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+        }
+        
+        h2 {
+            color: #1e40af;
+            font-size: 20px;
+            font-weight: 600;
+            margin: 30px 0 15px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e2e8f0;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+        }
+        
+        h3 {
+            color: #334155;
+            font-size: 17px;
+            font-weight: 600;
+            margin: 25px 0 12px 0;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+        }
+        
+        h4 {
+            color: #475569;
+            font-size: 15px;
+            font-weight: 600;
+            margin: 20px 0 10px 0;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+        }
+        
+        p {
+            margin: 12px 0;
+            text-align: justify;
+            orphans: 3;
+            widows: 3;
+        }
+        
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 30px;
+            page-break-inside: avoid;
+        }
+        
+        li {
+            margin: 8px 0;
+            page-break-inside: avoid;
+        }
+        
+        code {
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #dc2626;
+        }
+        
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+            border-left: 4px solid #0ea5e9;
+            page-break-inside: avoid;
+        }
+        
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+        
+        blockquote {
+            border-left: 4px solid #0ea5e9;
+            margin: 20px 0;
+            padding: 15px 20px;
+            background: #f8fafc;
+            font-style: italic;
+            color: #475569;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 13px;
+            page-break-inside: avoid;
+        }
+        
+        th {
+            background: #1e40af;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        tr:nth-child(even) {
+            background: #f8fafc;
+        }
+        
+        .header-footer {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-top: 1px solid #e2e8f0;
+            margin-top: 30px;
+            font-size: 10px;
+            color: #64748b;
+        }
+        
+        .page-header {
+            position: running(header);
+            text-align: center;
+            font-size: 10px;
+            color: #64748b;
+            padding: 10px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .page-footer {
+            position: running(footer);
+            text-align: center;
+            font-size: 10px;
+            color: #64748b;
+            padding: 10px 0;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 5px 5px 5px 0;
+        }
+        
+        .status-complete {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status-progress {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-planned {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .highlight-box {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .warning-box {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .success-box {
+            background: #dcfce7;
+            border: 2px solid #10b981;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        a {
+            color: #0ea5e9;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+    
+      <div class="cover-page">
+        <div class="cover-logo">SiyaBusa ERP</div>
+        <div class="cover-subtitle">Enterprise Resource Planning System</div>
+        <div class="cover-category">AI Capabilities</div>
+        <div class="cover-badges">
+          <span class="badge">✓ Production Ready</span>
+          <span class="badge">✓ 25+ Modules</span>
+          <span class="badge">✓ AWS Deployed</span>
+          <span class="badge">✓ 400+ APIs</span>
+          <span class="badge">✓ Multi-Tenant</span>
+          <span class="badge">✓ AI-Powered</span>
+        </div>
+        <div class="cover-date">Generated: January 2, 2026</div>
+        <div class="cover-date" style="margin-top: 20px; font-size: 12px;">
+          Confidential & Proprietary
+        </div>
+      </div>
+    
+      <div class="toc-page">
+        <h1 class="toc-title">Table of Contents</h1>
+        <ul class="toc-list">
+          <li class="toc-item"><span class="toc-number">1.</span> AI ASSISTANT ENHANCEMENT</li><li class="toc-item"><span class="toc-number">2.</span> AI AGENTS QUICK START</li>
+        </ul>
+      </div>
+    
+          <div class="content-section">
+            <h1>AI ASSISTANT ENHANCEMENT</h1>
+            <h1>AI Assistant Enhancement - SiyaBusa ERP</h1>
+<h2>&quot;The Smartest Thing Ever&quot; - Your First Point of Contact</h2>
+<p><strong>Deployed:</strong> December 21, 2025<br><strong>Status:</strong> ✅ Live in Production</p>
+<hr>
+<h2>What Was Built</h2>
+<h3>1. Comprehensive ERP Knowledge Base (<code>ERPKnowledgeBase.ts</code>)</h3>
+<p>The AI now knows EVERYTHING about the ERP system:</p>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h3>2. Machine Learning System (<code>AILearningService.ts</code>)</h3>
+<p>The AI learns and improves from every conversation:</p>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h3>3. Database Tables (PostgreSQL)</h3>
+<p>New tables created for AI learning:</p>
+<pre><code class="language-sql">ai_conversations      -- Stores all conversations for learning
+ai_learned_patterns   -- Successful response patterns
+ai_faq               -- Frequently asked questions
+ai_user_preferences  -- Personalization per user
+</code></pre>
+<p>Pre-seeded with <strong>15 common FAQs</strong> about invoices, reconciliation, payroll, VAT, etc.</p>
+<h3>4. New API Endpoints</h3>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Method</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/api/ai/feedback/:id</code></td>
+<td>POST</td>
+<td>Record feedback (helpful/unhelpful)</td>
+</tr>
+<tr>
+<td><code>/api/ai/faq</code></td>
+<td>GET</td>
+<td>Get FAQs for help center</td>
+</tr>
+<tr>
+<td><code>/api/ai/analytics</code></td>
+<td>GET</td>
+<td>AI usage analytics</td>
+</tr>
+<tr>
+<td><code>/api/ai/knowledge</code></td>
+<td>GET</td>
+<td>Full ERP knowledge base</td>
+</tr>
+<tr>
+<td><code>/api/ai/knowledge/search</code></td>
+<td>GET</td>
+<td>Search knowledge base</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>How The AI Works Now</h2>
+<h3>When User Asks a Question:</h3>
+<ol>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ol>
+<h3>System Prompt Features:</h3>
+<p>The AI has been upgraded with:</p>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<hr>
+<h2>Example Interactions</h2>
+<p><strong>User:</strong> &quot;How do I create an invoice?&quot;<br><strong>AI:</strong> &quot;Go to Sales Hub → New Invoice. Select your customer, add line items with quantities and prices, review the totals including VAT, then click Save or Save &amp; Send to email it directly. Would you like me to walk you through it step by step?&quot;</p>
+<p><strong>User:</strong> &quot;When is VAT due?&quot;<br><strong>AI:</strong> &quot;VAT returns are due by the 25th of the month following your VAT period. For example, if your period ends on 30 November, your return is due by 25 December. Go to SARS Sentinel to see your upcoming deadlines and prepare your return.&quot;</p>
+<p><strong>User:</strong> &quot;My trial balance doesn&#39;t balance&quot;<br><strong>AI:</strong> &quot;Let&#39;s troubleshoot this. Check for: 1) Unposted journal entries, 2) Suspended transactions, 3) Opening balance errors, 4) Rounding issues. Go to Financial Hub → Reports → Trial Balance and look at any accounts with unusual balances. Would you like help identifying the discrepancy?&quot;</p>
+<hr>
+<h2>Configuration Required</h2>
+<p>For the AI to work, ensure these environment variables are set:</p>
+<pre><code class="language-env">OPENAI_API_KEY=sk-your-key-here
+</code></pre>
+<p>The AI uses GPT-4o-mini which costs approximately <strong>R0.50-2 per customer per month</strong> at typical usage.</p>
+<hr>
+<h2>Files Created/Modified</h2>
+<h3>New Files:</h3>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h3>Modified Files:</h3>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<hr>
+<h2>Analytics Available</h2>
+<p>Admins can see:</p>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<p>Access via: <code>/api/ai/analytics</code></p>
+<hr>
+<h2>Next Steps (Optional Enhancements)</h2>
+<ol>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ol>
+<hr>
+<h2>Support</h2>
+<p>The AI is designed to be THE FIRST POINT OF CONTACT. Users should:</p>
+<ol>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ol>
+<p>This reduces support load and provides instant, 24/7 assistance.</p>
+<p><strong>Live at:</strong> <a href="https://primesources.site">https://primesources.site</a></p>
+
+          </div>
+        
+          <div class="content-section">
+            <h1>AI AGENTS QUICK START</h1>
+            <h1>AI Agents Module - Quick Start Guide</h1>
+<h2>Installation (Complete ✅)</h2>
+<p>The AI Agents module is already installed and integrated. All you need to do is configure your API keys.</p>
+<h2>1. Get API Keys</h2>
+<h3>Option A: OpenAI (Recommended)</h3>
+<ol>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ol>
+<h3>Option B: Anthropic (Alternative)</h3>
+<ol>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ol>
+<h3>Option C: Both (Fallback support)</h3>
+<p>You can configure both. OpenAI will be used first, Anthropic as fallback.</p>
+<h2>2. Configure Environment</h2>
+<p>Add to your <code>.env</code> file:</p>
+<pre><code class="language-bash"># Required: At least one API key
+OPENAI_API_KEY=sk-your-openai-key-here
+# OR
+ANTHROPIC_API_KEY=sk-ant-your-anthropic-key-here
+
+# Optional: Configuration
+AI_DEFAULT_MODEL=gpt-4
+AI_MAX_TOKENS=2000
+AI_TEMPERATURE=0.7
+</code></pre>
+<h2>3. Deploy Database Schema</h2>
+<pre><code class="language-bash"># SSH into your server
+ssh ec2-user@51.21.219.35
+
+# Navigate to backend
+cd /home/ec2-user/backend
+
+# Run migration
+psql $DATABASE_URL -f database/migrations/018_ai_agents_module.sql
+
+# Verify
+psql $DATABASE_URL -c &quot;SELECT agent_name FROM ai_agents;&quot;
+</code></pre>
+<p>Expected output:</p>
+<pre><code>         agent_name
+----------------------------
+ Sales Assistant
+ Procurement Assistant
+ Finance Assistant
+ HR Assistant
+ Compliance Assistant
+ Analytics Assistant
+ Treasury Assistant
+ Inventory Assistant
+ Logistics Assistant
+(9 rows)
+</code></pre>
+<h2>4. Restart Backend</h2>
+<pre><code class="language-bash">pm2 restart aetheros-erp-backend
+pm2 logs aetheros-erp-backend
+</code></pre>
+<p>Look for:</p>
+<pre><code>🚀 Server running on port 3000
+📊 ERP System initialized
+</code></pre>
+<h2>5. Test AI Agents</h2>
+<h3>Test 1: List Agents</h3>
+<pre><code class="language-bash">curl -X GET http://51.21.219.35:3000/api/ai/agents \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot;
+</code></pre>
+<p>Should return 9 agents.</p>
+<h3>Test 2: Chat with Sales Assistant</h3>
+<pre><code class="language-bash">curl -X POST http://51.21.219.35:3000/api/ai/agents/SALES_ASSISTANT/chat \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;message&quot;: &quot;What are the top 3 tips for closing deals?&quot;
+  }&#39;
+</code></pre>
+<p>Should return AI response with conversation ID.</p>
+<h3>Test 3: Get Suggestions</h3>
+<pre><code class="language-bash">curl -X GET http://51.21.219.35:3000/api/ai/suggestions \
+  -H &quot;Authorization: Bearer YOUR_JWT_TOKEN&quot;
+</code></pre>
+<h2>6. Frontend Integration</h2>
+<p>Add AI chat component to your frontend:</p>
+<pre><code class="language-typescript">// Example: Chat with any agent
+async function chatWithAgent(agentCode: string, message: string) {
+  const response = await fetch(`/api/ai/agents/${agentCode}/chat`, {
+    method: &#39;POST&#39;,
+    headers: {
+      &#39;Authorization&#39;: `Bearer ${token}`,
+      &#39;Content-Type&#39;: &#39;application/json&#39;
+    },
+    body: JSON.stringify({ message })
+  });
+  
+  return await response.json();
+}
+
+// Usage
+const result = await chatWithAgent(&#39;SALES_ASSISTANT&#39;, &#39;Help me create a quotation&#39;);
+console.log(result.response);
+</code></pre>
+<h2>Available Agents</h2>
+<table>
+<thead>
+<tr>
+<th>Agent Code</th>
+<th>Module</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SALES_ASSISTANT</code></td>
+<td>Sales</td>
+<td>Quotations, forecasting, customer insights</td>
+</tr>
+<tr>
+<td><code>PROCUREMENT_ASSISTANT</code></td>
+<td>Purchase</td>
+<td>PO optimization, supplier analysis</td>
+</tr>
+<tr>
+<td><code>FINANCE_ASSISTANT</code></td>
+<td>Financial</td>
+<td>Reconciliation, variance analysis</td>
+</tr>
+<tr>
+<td><code>HR_ASSISTANT</code></td>
+<td>HR</td>
+<td>Onboarding, payroll, policies</td>
+</tr>
+<tr>
+<td><code>COMPLIANCE_ASSISTANT</code></td>
+<td>Compliance</td>
+<td>Risk assessment, deadlines</td>
+</tr>
+<tr>
+<td><code>ANALYTICS_ASSISTANT</code></td>
+<td>Reports</td>
+<td>Data insights, trends</td>
+</tr>
+<tr>
+<td><code>TREASURY_ASSISTANT</code></td>
+<td>Treasury</td>
+<td>Cash flow, FX, investments</td>
+</tr>
+<tr>
+<td><code>INVENTORY_ASSISTANT</code></td>
+<td>Inventory</td>
+<td>Stock optimization, demand forecasting</td>
+</tr>
+<tr>
+<td><code>LOGISTICS_ASSISTANT</code></td>
+<td>Logistics</td>
+<td>Route optimization, fleet tracking</td>
+</tr>
+</tbody></table>
+<h2>Common Use Cases</h2>
+<h3>Sales: Generate Quotation</h3>
+<pre><code class="language-bash">POST /api/ai/sales/generate-quotation
+{
+  &quot;customerId&quot;: &quot;cust-123&quot;,
+  &quot;items&quot;: [{&quot;productId&quot;: &quot;prod-456&quot;, &quot;quantity&quot;: 10}]
+}
+</code></pre>
+<h3>Compliance: Check Status</h3>
+<pre><code class="language-bash">GET /api/ai/compliance/check
+</code></pre>
+<h3>Finance: Explain Variance</h3>
+<pre><code class="language-bash">GET /api/ai/finance/explain-variance?accountCode=4000&amp;period=2024-01
+</code></pre>
+<h3>Sales: Forecast</h3>
+<pre><code class="language-bash">GET /api/ai/sales/forecast?period=quarter
+</code></pre>
+<h2>Monitoring</h2>
+<h3>Check Usage</h3>
+<pre><code class="language-sql">SELECT 
+  a.agent_name,
+  SUM(ua.total_messages) as messages,
+  SUM(ua.total_tokens) as tokens
+FROM ai_usage_analytics ua
+JOIN ai_agents a ON ua.agent_id = a.agent_id
+WHERE ua.usage_date &gt;= CURRENT_DATE - INTERVAL &#39;7 days&#39;
+GROUP BY a.agent_name;
+</code></pre>
+<h3>View Recent Conversations</h3>
+<pre><code class="language-sql">SELECT 
+  a.agent_name,
+  c.conversation_title,
+  c.last_message_at,
+  (SELECT COUNT(*) FROM ai_messages WHERE conversation_id = c.conversation_id) as message_count
+FROM ai_conversations c
+JOIN ai_agents a ON c.agent_id = a.agent_id
+ORDER BY c.last_message_at DESC
+LIMIT 10;
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>Error: &quot;No AI provider configured&quot;</h3>
+<p><strong>Solution</strong>: Add <code>OPENAI_API_KEY</code> or <code>ANTHROPIC_API_KEY</code> to <code>.env</code> and restart backend</p>
+<h3>Error: &quot;Agent not found&quot;</h3>
+<p><strong>Solution</strong>: </p>
+<pre><code class="language-bash"># Check if agents exist
+psql $DATABASE_URL -c &quot;SELECT * FROM ai_agents WHERE is_active = true;&quot;
+
+# If empty, re-run migration
+psql $DATABASE_URL -f database/migrations/018_ai_agents_module.sql
+</code></pre>
+<h3>Slow responses</h3>
+<p><strong>Solution</strong>: </p>
+<ul>
+<li>[object Object]</li><li>[object Object]</li></ul>
+<h3>High costs</h3>
+<p><strong>Solution</strong>:</p>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h2>Next Steps</h2>
+<ol>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ol>
+<h2>Cost Estimation</h2>
+<p><strong>OpenAI GPT-4 Pricing</strong> (as of Nov 2024):</p>
+<ul>
+<li>[object Object]</li><li>[object Object]</li></ul>
+<p><strong>Example</strong>: 100 conversations/day with 500 tokens each = $3/day = $90/month</p>
+<p><strong>Optimization</strong>:</p>
+<ul>
+<li>[object Object]</li><li>[object Object]</li><li>[object Object]</li></ul>
+<h2>Support</h2>
+<p>Full documentation: <code>/backend/AI-AGENTS-DOCUMENTATION.md</code></p>
+<hr>
+<p><strong>Status</strong>: ✅ READY FOR DEPLOYMENT<br><strong>Version</strong>: 1.0.0<br><strong>Date</strong>: November 2024</p>
+
+          </div>
+        
+</body>
+</html>

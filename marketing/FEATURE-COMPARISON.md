@@ -1,25 +1,49 @@
-# AetherOS ERP vs Competitors - Feature Comparison
+# SiyaBusa ERP - Feature & Value Comparison
 
-## How We Stack Up Against the Competition
+## How We Deliver Superior Value
 
 ---
 
 ## 🏆 At-a-Glance Comparison
 
-| Feature | AetherOS ERP | SAP Business One | NetSuite | Sage X3 | Odoo |
-|---------|--------------|------------------|----------|---------|------|
-| **Starting Price** | R499/month | ~R15,000/month | ~R10,000/month | ~R12,000/month | R0 (self-hosted) |
-| **Implementation Time** | 4-8 weeks | 6-12 months | 4-6 months | 6-9 months | 2-4 months |
-| **RSA Tax Compliance** | ✅ Built-in | ⚠️ Requires customization | ⚠️ Localization needed | ⚠️ Local partner required | ⚠️ Add-ons needed |
-| **SARS eFiling Integration** | ✅ Direct | ❌ No | ❌ No | ⚠️ Third-party | ⚠️ Community plugins |
-| **Unlimited Users** | ✅ Yes (Pro & Enterprise) | ❌ Per-user pricing | ❌ Per-user pricing | ❌ Per-user pricing | ✅ Yes (Enterprise) |
-| **All Modules Included** | ✅ Yes | ⚠️ Separate licensing | ⚠️ Module-based pricing | ⚠️ Module-based pricing | ⚠️ Apps marketplace |
-| **Cloud-Native** | ✅ Yes | ⚠️ Hybrid | ✅ Yes | ⚠️ Hybrid | ⚠️ Both options |
-| **Mobile App** | ✅ Responsive web | ⚠️ Limited | ✅ Native apps | ⚠️ Limited | ⚠️ Basic |
-| **API-First Design** | ✅ Yes | ⚠️ Limited | ✅ Yes | ⚠️ Limited | ✅ Yes |
-| **Local Support** | ✅ SA-based team | ⚠️ Partner network | ⚠️ Resellers only | ⚠️ Partner network | ⚠️ Community |
-| **Training Included** | ✅ Up to 20 hours | ❌ Extra cost | ❌ Extra cost | ❌ Extra cost | ⚠️ Depends |
-| **Customization** | ✅ Flexible | ⚠️ Complex & costly | ⚠️ Requires experts | ⚠️ Vendor-dependent | ✅ Open source |
+| Feature | SiyaBusa ERP | Global Tier 1 ERPs | Mid-Market ERPs | Regional Solutions |
+|:--------|:-------------|:-------------------|:----------------|:-------------------|
+| **Per-User Pricing** | **R650-R1,500** | R1,800-R3,500 | R1,500-R2,800 | R1,200-R2,500 |
+| **Platform Fee** | **R8,000-R45,000** | R25,000+ | R20,000+ | R18,000+ |
+| **25-User Example** | **~R39,000/mo** | ~R70,000/mo | ~R57,500/mo | ~R48,000/mo |
+| **Your Savings** | **—** | Up to 44% | Up to 32% | Up to 19% |
+| **Implementation** | **4-10 weeks** | 6-18 months | 4-6 months | 6-9 months |
+| **Implementation Cost** | **R35K-R150K** | R300K-R800K | R250K-R500K | R200K-R450K |
+| **RSA Tax Compliance** | ✅ Built-in | ❌ Expensive add-on | ❌ Custom dev | ⚠️ Partner required |
+| **SARS eFiling** | ✅ Direct | ❌ No | ❌ No | ⚠️ Third-party |
+| **All Modules Included** | ✅ Per tier | ⚠️ Separate | ⚠️ Module-based | ⚠️ Module-based |
+| **Cloud-Native** | ✅ Yes | ⚠️ Hybrid | ✅ Yes | ⚠️ Hybrid |
+| **Mobile App** | ✅ Full | ⚠️ Limited | ✅ Native | ⚠️ Limited |
+| **API-First Design** | ✅ Yes | ⚠️ Limited | ✅ Yes | ⚠️ Limited |
+| **Local SA Support** | ✅ Direct | ⚠️ Partners only | ⚠️ Resellers | ⚠️ Partners |
+| **Training Included** | ✅ Up to 30hrs | ❌ Extra cost | ❌ Extra cost | ❌ Extra cost |
+| **AI Features** | ✅ Built-in | ❌ None/Add-on | ⚠️ Add-on | ❌ None |
+| **Volume Discounts** | ✅ Up to 15% | ⚠️ Negotiable | ⚠️ Negotiable | ⚠️ Negotiable |
+
+---
+
+## 💰 Total Cost of Ownership (3-Year Analysis)
+
+### Scenario: 50-User Mid-Market Manufacturing Company
+
+| Cost Element | SiyaBusa | Global Tier 1 | Mid-Market Cloud | Regional ERP |
+|:-------------|:---------|:--------------|:-----------------|:-------------|
+| **Year 1 Licensing** | R750,000 | R1,680,000 | R1,380,000 | R1,080,000 |
+| **Implementation** | R75,000 | R450,000 | R350,000 | R300,000 |
+| **Customization** | R50,000 | R200,000 | R150,000 | R125,000 |
+| **Training** | Included | R80,000 | R60,000 | R55,000 |
+| **Year 1 Total** | **R875,000** | **R2,410,000** | **R1,940,000** | **R1,560,000** |
+| | | | | |
+| **3-Year Licensing** | R2,250,000 | R5,040,000 | R4,140,000 | R3,240,000 |
+| **3-Year Total** | **R2,375,000** | **R5,770,000** | **R4,700,000** | **R3,720,000** |
+| | | | | |
+| **3-Year Savings** | — | **R3,395,000** | **R2,325,000** | **R1,345,000** |
+| **% Savings** | — | **59%** | **49%** | **36%** |
 
 ---
 
@@ -27,190 +51,162 @@
 
 ### Financial Management
 
-| Feature | AetherOS | SAP B1 | NetSuite | Sage X3 | Odoo |
-|---------|----------|--------|----------|---------|------|
-| General Ledger | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Multi-Currency | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Double-Entry Accounting | ✅ | ✅ | ✅ | ✅ | ✅ |
-| IFRS Compliance | ✅ | ✅ | ✅ | ✅ | ⚠️ |
-| Bank Reconciliation | ✅ Auto | ⚠️ Manual | ✅ Auto | ⚠️ Semi-auto | ⚠️ Basic |
-| Cash Flow Forecasting | ✅ AI-powered | ⚠️ Basic | ✅ Advanced | ⚠️ Basic | ⚠️ Manual |
-| Financial Dimensions | ✅ Unlimited | ⚠️ Limited | ✅ Flexible | ✅ Advanced | ⚠️ Basic |
-| Approval Workflows | ✅ Built-in | ⚠️ Custom | ✅ Built-in | ✅ Built-in | ⚠️ Add-on |
+| Feature | SiyaBusa | Global Tier 1 | Mid-Market Cloud | Regional ERP |
+|:--------|:---------|:--------------|:-----------------|:-------------|
+| General Ledger | ✅ | ✅ | ✅ | ✅ |
+| Multi-Currency | ✅ | ✅ | ✅ | ✅ |
+| Double-Entry Accounting | ✅ | ✅ | ✅ | ✅ |
+| IFRS Compliance | ✅ | ✅ | ✅ | ✅ |
+| Bank Reconciliation | ✅ Auto | ⚠️ Manual | ✅ Auto | ⚠️ Semi-auto |
+| Cash Flow Forecasting | ✅ AI-powered | ⚠️ Basic | ✅ Advanced | ⚠️ Basic |
+| Financial Dimensions | ✅ Unlimited | ⚠️ Limited | ✅ Flexible | ✅ Advanced |
+| Approval Workflows | ✅ Built-in | ⚠️ Custom | ✅ Built-in | ✅ Built-in |
+| Intercompany | ✅ Built-in | ⚠️ Add-on | ✅ Built-in | ✅ Built-in |
 
 ### South African Tax & Compliance
 
-| Feature | AetherOS | SAP B1 | NetSuite | Sage X3 | Odoo |
-|---------|----------|--------|----------|---------|------|
-| PAYE Calculations | ✅ SARS Tables | ⚠️ Customization | ❌ Manual | ⚠️ Customization | ⚠️ Plugin |
-| UIF Auto-Calculate | ✅ 2% (1%+1%) | ⚠️ Manual setup | ❌ No | ⚠️ Manual setup | ⚠️ Manual |
-| SDL (Skills Dev Levy) | ✅ 1% auto | ⚠️ Manual setup | ❌ No | ⚠️ Manual setup | ⚠️ Manual |
-| EMP201 Submissions | ✅ Direct eFiling | ❌ Export only | ❌ Export only | ❌ Export only | ❌ Export only |
-| IRP5/IT3(a) Certificates | ✅ Auto-generate | ⚠️ Customization | ❌ Manual | ⚠️ Customization | ❌ Manual |
-| EMP501 Annual Recon | ✅ Built-in | ⚠️ Add-on | ❌ No | ⚠️ Add-on | ❌ No |
-| VAT201 Returns | ✅ SARS format | ⚠️ Customization | ⚠️ Customization | ⚠️ Customization | ⚠️ Plugin |
-| BCEA Leave Compliance | ✅ Built-in | ❌ Manual | ❌ Manual | ❌ Manual | ⚠️ Basic |
-| B-BBEE Tracking | ✅ Scorecard | ❌ No | ❌ No | ❌ No | ❌ No |
-| Employment Equity Reporting | ✅ EEA2/EEA4 | ❌ Manual | ❌ Manual | ❌ Manual | ❌ Manual |
+| Feature | SiyaBusa | Global Tier 1 | Mid-Market Cloud | Regional ERP |
+|:--------|:---------|:--------------|:-----------------|:-------------|
+| **PAYE Calculations** | ✅ Auto SARS Tables | ⚠️ Customization | ❌ Manual | ⚠️ Customization |
+| **UIF Auto-Calculate** | ✅ 2% (1%+1%) | ⚠️ Manual setup | ❌ No | ⚠️ Manual setup |
+| **SDL (1%)** | ✅ Automatic | ⚠️ Manual | ❌ No | ⚠️ Manual |
+| **EMP201 Submissions** | ✅ Direct eFiling | ❌ Export only | ❌ Export only | ❌ Export only |
+| **IRP5/IT3(a)** | ✅ Auto-generate | ⚠️ Customization | ❌ Manual | ⚠️ Customization |
+| **EMP501 Annual** | ✅ Built-in | ⚠️ Add-on | ❌ No | ⚠️ Add-on |
+| **VAT201 Returns** | ✅ SARS format | ⚠️ Custom | ⚠️ Custom | ⚠️ Custom |
+| **BCEA Leave** | ✅ Built-in | ❌ Manual | ❌ Manual | ❌ Manual |
+| **B-BBEE Tracking** | ✅ Scorecard | ❌ No | ❌ No | ❌ No |
+| **Employment Equity** | ✅ EEA2/EEA4 | ❌ Manual | ❌ Manual | ❌ Manual |
 
 ### HR & Payroll
 
-| Feature | AetherOS | SAP B1 | NetSuite | Sage X3 | Odoo |
-|---------|----------|--------|----------|---------|------|
-| Employee Management | ✅ | ⚠️ Basic | ✅ | ⚠️ Basic | ✅ |
-| Payroll Processing | ✅ RSA-compliant | ⚠️ Third-party | ⚠️ Third-party | ⚠️ Third-party | ⚠️ Add-on |
-| Leave Management | ✅ BCEA-compliant | ⚠️ Basic | ✅ | ⚠️ Basic | ✅ |
-| Time & Attendance | ✅ | ❌ Add-on | ✅ | ❌ Add-on | ✅ |
-| Performance Reviews | ✅ | ❌ No | ✅ | ❌ No | ⚠️ Basic |
-| Recruitment | ✅ | ❌ No | ✅ | ❌ No | ✅ |
-| Training Management | ✅ Skills Dev | ❌ No | ⚠️ Basic | ❌ No | ⚠️ Basic |
+| Feature | SiyaBusa | Global Tier 1 | Mid-Market Cloud | Regional ERP |
+|:--------|:---------|:--------------|:-----------------|:-------------|
+| Employee Management | ✅ | ⚠️ Basic | ✅ | ⚠️ Basic |
+| Payroll (RSA) | ✅ Complete | ⚠️ Third-party | ⚠️ Third-party | ⚠️ Third-party |
+| Leave Management | ✅ BCEA | ⚠️ Basic | ✅ | ⚠️ Basic |
+| Time & Attendance | ✅ | ❌ Add-on | ✅ | ❌ Add-on |
+| Performance Reviews | ✅ | ❌ No | ✅ | ❌ No |
+| Recruitment | ✅ | ❌ No | ✅ | ❌ No |
+| Skills Development | ✅ SDL Tracking | ❌ No | ❌ No | ❌ No |
 
 ### Manufacturing
 
-| Feature | AetherOS | SAP B1 | NetSuite | Sage X3 | Odoo |
-|---------|----------|--------|----------|---------|------|
-| Production Orders | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Bill of Materials (BOM) | ✅ Multi-level | ✅ Advanced | ✅ Multi-level | ✅ Advanced | ✅ |
-| Work Centers | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Capacity Planning | ✅ AI-assisted | ⚠️ Basic | ✅ Advanced | ✅ Advanced | ⚠️ Basic |
-| Shop Floor Control | ✅ | ⚠️ Add-on | ✅ | ✅ | ⚠️ Add-on |
-| Quality Management | ✅ | ⚠️ Add-on | ✅ | ✅ | ⚠️ Add-on |
-| Batch/Serial Tracking | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Feature | SiyaBusa | Global Tier 1 | Mid-Market Cloud | Regional ERP |
+|:--------|:---------|:--------------|:-----------------|:-------------|
+| Production Orders | ✅ | ✅ | ✅ | ✅ |
+| Bill of Materials | ✅ Multi-level | ✅ Advanced | ✅ Multi-level | ✅ Advanced |
+| Work Centers | ✅ | ✅ | ✅ | ✅ |
+| Capacity Planning | ✅ AI-assisted | ⚠️ Basic | ✅ Advanced | ✅ Advanced |
+| Shop Floor Control | ✅ | ⚠️ Add-on | ✅ | ✅ |
+| Quality Management | ✅ | ⚠️ Add-on | ✅ | ✅ |
+| Batch/Serial Tracking | ✅ | ✅ | ✅ | ✅ |
 
 ### Warehouse Management
 
-| Feature | AetherOS | SAP B1 | NetSuite | Sage X3 | Odoo |
-|---------|----------|--------|----------|---------|------|
-| Multi-Warehouse | ✅ Unlimited | ✅ | ✅ | ✅ | ✅ |
-| Bin Management | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Barcode Scanning | ✅ | ⚠️ Add-on | ✅ | ⚠️ Add-on | ✅ |
-| Cycle Counting | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Picking/Packing | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Wave Management | ✅ | ❌ | ✅ | ✅ | ⚠️ Basic |
-| Crossdocking | ✅ | ❌ | ✅ | ✅ | ⚠️ Add-on |
+| Feature | SiyaBusa | Global Tier 1 | Mid-Market Cloud | Regional ERP |
+|:--------|:---------|:--------------|:-----------------|:-------------|
+| Multi-Warehouse | ✅ Unlimited | ✅ | ✅ | ✅ |
+| Bin Management | ✅ | ✅ | ✅ | ✅ |
+| Barcode Scanning | ✅ | ⚠️ Add-on | ✅ | ⚠️ Add-on |
+| Cycle Counting | ✅ | ✅ | ✅ | ✅ |
+| Picking/Packing | ✅ | ✅ | ✅ | ✅ |
+| Wave Management | ✅ | ❌ | ✅ | ✅ |
+| Crossdocking | ✅ | ❌ | ✅ | ✅ |
 
 ### Sales & CRM
 
-| Feature | AetherOS | SAP B1 | NetSuite | Sage X3 | Odoo |
-|---------|----------|--------|----------|---------|------|
-| Lead Management | ✅ | ⚠️ Basic | ✅ | ⚠️ Basic | ✅ |
-| Opportunity Pipeline | ✅ Visual | ⚠️ List view | ✅ Visual | ⚠️ List view | ✅ Visual |
-| Quotations | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Sales Orders | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Customer Portal | ✅ Self-service | ❌ No | ✅ | ❌ No | ⚠️ Basic |
-| Email Integration | ✅ | ⚠️ Limited | ✅ | ⚠️ Limited | ✅ |
-| Marketing Automation | ✅ | ❌ No | ⚠️ Separate | ❌ No | ✅ |
+| Feature | SiyaBusa | Global Tier 1 | Mid-Market Cloud | Regional ERP |
+|:--------|:---------|:--------------|:-----------------|:-------------|
+| Lead Management | ✅ | ⚠️ Basic | ✅ | ⚠️ Basic |
+| Opportunity Pipeline | ✅ Visual | ⚠️ List | ✅ Visual | ⚠️ List |
+| Quotations | ✅ | ✅ | ✅ | ✅ |
+| Sales Orders | ✅ | ✅ | ✅ | ✅ |
+| Invoicing | ✅ | ✅ | ✅ | ✅ |
+| Customer Portal | ✅ | ❌ | ✅ | ❌ |
+| Email Integration | ✅ | ⚠️ Basic | ✅ | ⚠️ Basic |
+
+### Purchasing & Procurement
+
+| Feature | SiyaBusa | Global Tier 1 | Mid-Market Cloud | Regional ERP |
+|:--------|:---------|:--------------|:-----------------|:-------------|
+| Purchase Orders | ✅ | ✅ | ✅ | ✅ |
+| Vendor Management | ✅ | ✅ | ✅ | ✅ |
+| 3-Way Matching | ✅ Auto | ⚠️ Manual | ✅ Auto | ⚠️ Semi |
+| Requisitions | ✅ | ⚠️ Basic | ✅ | ✅ |
+| Blanket Orders | ✅ | ✅ | ✅ | ✅ |
+| Vendor Portal | ✅ | ❌ | ✅ | ❌ |
 
 ---
 
-## 💰 Total Cost of Ownership (TCO) - 3 Year Comparison
+## 🏭 Industry Verticals
 
-**Scenario:** 25 users, all modules, training & support
-
-| System | Year 1 | Year 2 | Year 3 | **3-Year Total** |
-|--------|--------|--------|--------|------------------|
-| **AetherOS ERP** | R47,976 | R23,988 | R23,988 | **R95,952** |
-| SAP Business One | R485,000 | R215,000 | R215,000 | **R915,000** |
-| NetSuite | R420,000 | R180,000 | R180,000 | **R780,000** |
-| Sage X3 | R550,000 | R240,000 | R240,000 | **R1,030,000** |
-| Odoo Enterprise | R280,000 | R120,000 | R120,000 | **R520,000** |
-
-**AetherOS saves you R424,048+ over 3 years vs. the cheapest competitor!**
-
-### Cost Breakdown Notes:
-
-**AetherOS ERP:**
-- Professional Plan: R1,999/month × 12 = R23,988/year
-- Implementation: R15,000 (Year 1 only)
-- Training: Included (up to 20 hours)
-- Support: Included
-
-**Competitors (Average):**
-- Software licenses: R8,000-15,000/user/year
-- Implementation: R150,000-500,000
-- Training: R50,000-150,000
-- Annual support: 18-22% of license cost
-- Customizations: R100,000-300,000
+| Industry | SiyaBusa | Global Tier 1 | Mid-Market Cloud | Regional ERP |
+|:---------|:---------|:--------------|:-----------------|:-------------|
+| **Manufacturing** | ✅ Included | ✅ | ✅ | ✅ |
+| **Distribution** | ✅ Included | ✅ | ✅ | ✅ |
+| **Retail** | ✅ Included | ⚠️ Add-on | ✅ | ⚠️ Limited |
+| **Healthcare** | ✅ Included | ❌ Partner | ⚠️ Add-on | ❌ |
+| **Mining** | ✅ Included | ❌ Partner | ❌ | ⚠️ Limited |
+| **Construction** | ✅ Included | ❌ Partner | ⚠️ Add-on | ⚠️ Limited |
+| **Property** | ✅ Included | ❌ | ⚠️ Add-on | ❌ |
+| **Agriculture** | ✅ Included | ❌ | ❌ | ❌ |
+| **Professional Services** | ✅ Included | ⚠️ Limited | ✅ | ⚠️ Limited |
 
 ---
 
-## 🎯 Why Businesses Choose AetherOS Over Competitors
+## 🚀 Technology & Innovation
+
+| Feature | SiyaBusa | Global Tier 1 | Mid-Market Cloud | Regional ERP |
+|:--------|:---------|:--------------|:-----------------|:-------------|
+| Cloud Architecture | Modern SaaS | Legacy/Cloud | Cloud | Legacy/Cloud |
+| Mobile-First | ✅ Yes | ⚠️ Partial | ✅ Yes | ❌ No |
+| AI/ML Features | ✅ Built-in | ❌ None | ⚠️ Limited | ❌ None |
+| REST API | ✅ Complete | ⚠️ Limited | ✅ Complete | ⚠️ Limited |
+| Webhooks | ✅ Yes | ❌ No | ✅ Yes | ❌ No |
+| Real-time Data | ✅ Yes | ⚠️ Batched | ✅ Yes | ⚠️ Batched |
+| Update Frequency | Monthly | Quarterly | Monthly | Quarterly |
+
+---
+
+## 📍 Why South African Businesses Choose SiyaBusa
 
 ### 1. **Built for South Africa**
-Unlike global systems that require expensive localization, AetherOS is designed from day one for South African tax, payroll, and compliance requirements.
+While global vendors require expensive customization for SA compliance, SiyaBusa has it built-in from day one.
 
-### 2. **All-Inclusive Pricing**
-No surprises. One price includes all modules, unlimited users (Pro/Enterprise plans), training, and support. Competitors nickel-and-dime you for everything.
+### 2. **40-50% Lower Cost**
+Same per-user model, better pricing. Direct comparison shows consistent savings.
 
-### 3. **Rapid Implementation**
-4-8 weeks vs. 6-12 months for competitors. Get value faster with less business disruption.
+### 3. **Faster Implementation**
+Modern architecture means weeks, not months. Get value faster.
 
-### 4. **Modern Technology**
-Built with latest web technologies. Competitors are built on 20-30 year old platforms with modern UIs bolted on.
+### 4. **Local Support**
+Direct support from our Centurion headquarters. No overseas call centers.
 
-### 5. **True Cloud-Native**
-Designed for the cloud from the start. Competitors are retrofitted client-server apps in the cloud.
-
-### 6. **Exceptional Support**
-Direct access to our SA-based team. No layers of resellers and partners between you and help.
-
-### 7. **Continuous Innovation**
-Monthly updates with new features. Competitors release major updates every 1-2 years.
+### 5. **All-Inclusive Pricing**
+No surprises. Training, updates, and compliance features included.
 
 ---
 
-## 🚀 Migration Made Easy
+## 📊 Pricing Quick Reference
 
-Switching from your current system? We make it painless:
+### Per-User Comparison
 
-✅ **Free Data Migration** (up to 100,000 records)
-✅ **Parallel Running Support** (30 days overlap)
-✅ **Change Management Training**
-✅ **No Downtime Migration** (phased approach)
-
-### We've Successfully Migrated Clients From:
-- Sage Pastel Evolution
-- SAP Business One
-- QuickBooks
-- Xero
-- Custom Access/Excel Systems
-- And many more...
+| Vendor Category | Entry Level | Mid-Tier | Enterprise |
+|:----------------|:------------|:---------|:-----------|
+| **SiyaBusa** | **R650/user** | **R950/user** | **R1,200/user** |
+| Global Tier 1 ERPs | R1,800/user | R2,500/user | R3,500/user |
+| Mid-Market Cloud | R1,500/user | R2,200/user | R2,800/user |
+| Regional Solutions | R1,200/user | R1,800/user | R2,500/user |
 
 ---
 
-## 📊 Feature Request Comparison
+## Ready to Compare?
 
-| Aspect | AetherOS | Competitors |
-|--------|----------|-------------|
-| Feature Request Response | 24-48 hours | 2-4 weeks |
-| Feature Implementation | 1-3 months | 12-24 months (if ever) |
-| Customization Turnaround | 1-2 weeks | 3-6 months |
-| Customer Input | Direct to dev team | Through layers of partners |
+Get a personalized comparison based on your specific requirements.
 
----
+**Masaphokati Technologies (Pty) Ltd**
+Centurion, South Africa
 
-## 🏆 Awards & Recognition
-
-- **2025 Best Cloud ERP for SMEs** - TechCentral SA
-- **2024 Innovation Award** - IT Web Africa
-- **Top 50 SaaS Startups** - Ventureburn
-- **4.9/5 Stars** - Capterra (250+ reviews)
-- **Best Value for Money** - GetApp
-- **Easiest to Use ERP** - G2 Crowd
-
----
-
-## 📞 Ready to Make the Switch?
-
-**Don't overpay for outdated technology.**
-
-See for yourself why South African businesses are choosing AetherOS over expensive legacy systems.
-
-**Book your free demo:** sales@aetheros-erp.co.za | +27 (0)11 123 4567
-
-**Visit:** www.aetheros-erp.co.za
-
----
-
-*Last Updated: November 2025*
-*Competitor information based on publicly available data and customer reports*
+📧 info@masaphokati.co.za
+📞 Contact our sales team for a custom TCO analysis

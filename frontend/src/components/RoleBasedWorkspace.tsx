@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Avatar, Space,
   Typography, Button, Tabs, List, Timeline, Alert, Badge, Tooltip,
-  Select, DatePicker, Dropdown, Segmented
+  Select, DatePicker, Dropdown, Segmented, Spin
 } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -25,9 +25,10 @@ import {
   PieChartOutlined, BarChartOutlined, LineChartOutlined,
   SafetyCertificateOutlined, AuditOutlined, SyncOutlined,
   ThunderboltOutlined, StarOutlined, EyeOutlined, PlusOutlined,
-  ArrowUpOutlined, ArrowDownOutlined, EditOutlined
+  ArrowUpOutlined, ArrowDownOutlined, EditOutlined, LoadingOutlined
 } from '@ant-design/icons';
 import { useUser } from '../contexts/UserContext';
+import apiClient from '../services/api';
 import './RoleBasedWorkspace.css';
 
 const { Title, Text, Paragraph } = Typography;
@@ -41,6 +42,20 @@ interface QuickAction {
   color: string;
 }
 
+interface DashboardData {
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfit: number;
+  profitMargin: number;
+  cashPosition: number;
+  totalAssets: number;
+  totalLiabilities: number;
+  draftEntries: number;
+  pendingEntries: number;
+  isLoading: boolean;
+  hasData: boolean;
+}
+
 const RoleBasedWorkspace: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useUser();
@@ -50,6 +65,21 @@ const RoleBasedWorkspace: React.FC = () => {
   const [greeting, setGreeting] = useState('Good morning');
   const [isNewTenant, setIsNewTenant] = useState(false);
   const [tenantName, setTenantName] = useState('');
+  
+  // Real dashboard data from API
+  const [dashboardData, setDashboardData] = useState<DashboardData>({
+    totalRevenue: 0,
+    totalExpenses: 0,
+    netProfit: 0,
+    profitMargin: 0,
+    cashPosition: 0,
+    totalAssets: 0,
+    totalLiabilities: 0,
+    draftEntries: 0,
+    pendingEntries: 0,
+    isLoading: true,
+    hasData: false,
+  });
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -77,7 +107,59 @@ const RoleBasedWorkspace: React.FC = () => {
     } catch (e) {
       console.error('Failed to check tenant status', e);
     }
+    
+    // Fetch real dashboard data
+    fetchDashboardData();
   }, []);
+  
+  const fetchDashboardData = async () => {
+    try {
+      setDashboardData(prev => ({ ...prev, isLoading: true }));
+      
+      // Fetch dashboard stats
+      const statsResponse = await apiClient.get('/api/v1/financial/dashboard/stats').catch(() => null);
+      const cashResponse = await apiClient.get('/api/v1/financial/dashboard/cash-position').catch(() => null);
+      
+      if (statsResponse?.data?.success) {
+        const stats = statsResponse.data.data;
+        setDashboardData(prev => ({
+          ...prev,
+          totalRevenue: stats.financial_summary?.total_revenue || 0,
+          totalExpenses: stats.financial_summary?.total_expenses || 0,
+          netProfit: stats.financial_summary?.net_profit || 0,
+          profitMargin: stats.financial_summary?.profit_margin || 0,
+          totalAssets: stats.balances?.total_assets || 0,
+          totalLiabilities: stats.balances?.total_liabilities || 0,
+          draftEntries: stats.activity?.draft_entries || 0,
+          pendingEntries: stats.activity?.pending_entries || 0,
+          hasData: stats.financial_summary?.total_revenue > 0 || stats.activity?.recent_entries > 0,
+          isLoading: false,
+        }));
+      } else {
+        setDashboardData(prev => ({ ...prev, isLoading: false, hasData: false }));
+      }
+      
+      if (cashResponse?.data?.success) {
+        setDashboardData(prev => ({
+          ...prev,
+          cashPosition: cashResponse.data.data?.total_cash || 0,
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+      setDashboardData(prev => ({ ...prev, isLoading: false, hasData: false }));
+    }
+  };
+  
+  // Format currency
+  const formatCurrency = (amount: number): string => {
+    if (amount >= 1000000) {
+      return `R ${(amount / 1000000).toFixed(1)}M`;
+    } else if (amount >= 1000) {
+      return `R ${(amount / 1000).toFixed(0)}K`;
+    }
+    return `R ${amount.toFixed(0)}`;
+  };
 
   // Quick actions based on role
   const getQuickActions = (): QuickAction[] => {
@@ -137,10 +219,15 @@ const RoleBasedWorkspace: React.FC = () => {
               <div className="kpi-icon"><DollarOutlined /></div>
               <div className="kpi-data">
                 <Text className="kpi-label">Annual Revenue</Text>
-                <div className="kpi-value">R 47.8M</div>
-                <div className="kpi-change positive">
-                  <ArrowUpOutlined /> 12.5% YoY
+                <div className="kpi-value">
+                  {dashboardData.isLoading ? <Spin indicator={<LoadingOutlined />} /> : 
+                   dashboardData.hasData ? formatCurrency(dashboardData.totalRevenue) : 'No data yet'}
                 </div>
+                {dashboardData.hasData && (
+                  <div className="kpi-change neutral">
+                    <SyncOutlined /> Current period
+                  </div>
+                )}
               </div>
             </div>
           </Card>
@@ -151,10 +238,15 @@ const RoleBasedWorkspace: React.FC = () => {
               <div className="kpi-icon"><RiseOutlined /></div>
               <div className="kpi-data">
                 <Text className="kpi-label">Net Profit Margin</Text>
-                <div className="kpi-value">18.4%</div>
-                <div className="kpi-change positive">
-                  <ArrowUpOutlined /> 2.1% vs Budget
+                <div className="kpi-value">
+                  {dashboardData.isLoading ? <Spin indicator={<LoadingOutlined />} /> : 
+                   dashboardData.hasData ? `${dashboardData.profitMargin.toFixed(1)}%` : 'No data yet'}
                 </div>
+                {dashboardData.hasData && dashboardData.netProfit > 0 && (
+                  <div className="kpi-change positive">
+                    <ArrowUpOutlined /> Profitable
+                  </div>
+                )}
               </div>
             </div>
           </Card>
@@ -165,10 +257,15 @@ const RoleBasedWorkspace: React.FC = () => {
               <div className="kpi-icon"><BankOutlined /></div>
               <div className="kpi-data">
                 <Text className="kpi-label">Cash Position</Text>
-                <div className="kpi-value">R 8.2M</div>
-                <div className="kpi-change neutral">
-                  <SyncOutlined /> 3.2 months runway
+                <div className="kpi-value">
+                  {dashboardData.isLoading ? <Spin indicator={<LoadingOutlined />} /> : 
+                   dashboardData.hasData ? formatCurrency(dashboardData.cashPosition) : 'No data yet'}
                 </div>
+                {dashboardData.hasData && (
+                  <div className="kpi-change neutral">
+                    <SyncOutlined /> Available cash
+                  </div>
+                )}
               </div>
             </div>
           </Card>
@@ -176,12 +273,15 @@ const RoleBasedWorkspace: React.FC = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card className="kpi-card gradient-amber">
             <div className="kpi-content">
-              <div className="kpi-icon"><TeamOutlined /></div>
+              <div className="kpi-icon"><FileTextOutlined /></div>
               <div className="kpi-data">
-                <Text className="kpi-label">Headcount</Text>
-                <div className="kpi-value">142</div>
-                <div className="kpi-change positive">
-                  <ArrowUpOutlined /> 8 new hires Q4
+                <Text className="kpi-label">Pending Entries</Text>
+                <div className="kpi-value">
+                  {dashboardData.isLoading ? <Spin indicator={<LoadingOutlined />} /> : 
+                   `${dashboardData.pendingEntries + dashboardData.draftEntries}`}
+                </div>
+                <div className="kpi-change neutral">
+                  <ClockCircleOutlined /> {dashboardData.draftEntries} draft, {dashboardData.pendingEntries} pending
                 </div>
               </div>
             </div>
@@ -193,46 +293,58 @@ const RoleBasedWorkspace: React.FC = () => {
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={16}>
           <Card 
-            title={<><PieChartOutlined /> Strategic Performance</>}
+            title={<><PieChartOutlined /> Financial Summary</>}
             extra={<Button type="link" onClick={() => navigate('/app/financial-hub')}>Full Report →</Button>}
             className="workspace-card"
           >
-            <Row gutter={16}>
-              <Col span={8}>
-                <div className="metric-block">
-                  <Text type="secondary">Revenue vs Target</Text>
-                  <Progress percent={94} strokeColor="#667eea" />
-                  <Text>R 47.8M / R 51M</Text>
-                </div>
-              </Col>
-              <Col span={8}>
-                <div className="metric-block">
-                  <Text type="secondary">EBITDA Margin</Text>
-                  <Progress percent={78} strokeColor="#10b981" />
-                  <Text>23.4% (Target: 30%)</Text>
-                </div>
-              </Col>
-              <Col span={8}>
-                <div className="metric-block">
-                  <Text type="secondary">Return on Equity</Text>
-                  <Progress percent={85} strokeColor="#8b5cf6" />
-                  <Text>17.2% (Industry: 14%)</Text>
-                </div>
-              </Col>
-            </Row>
+            {dashboardData.isLoading ? (
+              <div style={{ textAlign: 'center', padding: 40 }}><Spin /></div>
+            ) : dashboardData.hasData ? (
+              <Row gutter={16}>
+                <Col span={8}>
+                  <div className="metric-block">
+                    <Text type="secondary">Total Revenue</Text>
+                    <Progress percent={100} strokeColor="#667eea" />
+                    <Text>{formatCurrency(dashboardData.totalRevenue)}</Text>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div className="metric-block">
+                    <Text type="secondary">Total Expenses</Text>
+                    <Progress percent={dashboardData.totalRevenue > 0 ? Math.min(100, (dashboardData.totalExpenses / dashboardData.totalRevenue) * 100) : 0} strokeColor="#ef4444" />
+                    <Text>{formatCurrency(dashboardData.totalExpenses)}</Text>
+                  </div>
+                </Col>
+                <Col span={8}>
+                  <div className="metric-block">
+                    <Text type="secondary">Net Profit</Text>
+                    <Progress percent={dashboardData.netProfit > 0 ? 100 : 0} strokeColor="#10b981" />
+                    <Text>{formatCurrency(dashboardData.netProfit)}</Text>
+                  </div>
+                </Col>
+              </Row>
+            ) : (
+              <div style={{ textAlign: 'center', padding: 40 }}>
+                <Text type="secondary">No financial data yet. Start by creating journal entries in the Financial Hub.</Text>
+                <br /><br />
+                <Button type="primary" onClick={() => navigate('/app/financial-hub')}>
+                  Go to Financial Hub
+                </Button>
+              </div>
+            )}
           </Card>
         </Col>
         <Col xs={24} lg={8}>
           <Card 
-            title={<><WarningOutlined style={{ color: '#ef4444' }} /> Risk Alerts</>}
+            title={<><WarningOutlined style={{ color: '#ef4444' }} /> Action Items</>}
             className="workspace-card"
           >
             <List
               size="small"
               dataSource={[
-                { level: 'high', text: 'VAT filing deadline in 5 days', module: 'Tax' },
-                { level: 'medium', text: 'Audit committee meeting pending', module: 'Compliance' },
-                { level: 'low', text: 'Annual review scheduled', module: 'HR' }
+                ...(dashboardData.draftEntries > 0 ? [{ level: 'medium', text: `${dashboardData.draftEntries} draft journal entries`, module: 'GL' }] : []),
+                ...(dashboardData.pendingEntries > 0 ? [{ level: 'high', text: `${dashboardData.pendingEntries} entries pending approval`, module: 'Approval' }] : []),
+                { level: 'low', text: 'Set up your chart of accounts', module: 'Setup' }
               ]}
               renderItem={(item) => (
                 <List.Item>

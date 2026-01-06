@@ -50,7 +50,7 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
           ELSE 0 
         END) as net_profit
       FROM journal_entry_lines jel
-      JOIN chart_of_accounts coa ON jel.account_id = coa.id
+      JOIN chart_of_accounts coa ON jel.account_id = coa.account_id
       JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       WHERE je.status = 'POSTED'
         ${currentPeriod ? `AND je.posting_date >= $1 AND je.posting_date <= $2` : ''}
@@ -81,7 +81,7 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
           ELSE 0 
         END) as total_equity
       FROM journal_entry_lines jel
-      JOIN chart_of_accounts coa ON jel.account_id = coa.id
+      JOIN chart_of_accounts coa ON jel.account_id = coa.account_id
       JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       WHERE je.status = 'POSTED'
     `;
@@ -172,7 +172,7 @@ export const getDimensionBreakdown = async (req: Request, res: Response): Promis
         COUNT(DISTINCT jel.journal_entry_id) as entry_count
       FROM journal_entry_lines jel
       JOIN ${dimension.table} d ON jel.${dimension.idColumn} = d.id
-      JOIN chart_of_accounts coa ON jel.account_id = coa.id
+      JOIN chart_of_accounts coa ON jel.account_id = coa.account_id
       JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
       WHERE coa.account_type = $1
         AND je.status = 'POSTED'

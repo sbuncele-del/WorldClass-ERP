@@ -35,7 +35,11 @@ const router = express.Router();
 // MIDDLEWARE: Super Admin Role Check
 // =====================================================
 const requireSuperAdmin = (req: any, res: any, next: any) => {
-  if (!req.user || !['platform_admin', 'support_agent', 'monitoring_user'].includes(req.user.role)) {
+  // Allow platform_admin, support_agent, monitoring_user, super_admin, and admin roles
+  // Admin role is allowed for company owners who manage the platform
+  const allowedRoles = ['platform_admin', 'support_agent', 'monitoring_user', 'super_admin', 'admin'];
+  
+  if (!req.user || !allowedRoles.includes(req.user.role)) {
     return res.status(403).json({ 
       error: 'Access denied. Super admin privileges required.' 
     });

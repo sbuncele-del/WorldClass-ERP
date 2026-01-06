@@ -508,37 +508,43 @@ const LogisticsHub: React.FC = () => {
           </Card>
 
           <Card title="Alerts">
-            <Timeline
-              items={[
-                {
-                  color: 'orange',
-                  children: (
-                    <>
-                      <div><strong>DRV-004</strong> license expiring</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>Mike van der Berg • 19 days</div>
-                    </>
-                  )
-                },
-                {
-                  color: 'red',
-                  children: (
-                    <>
-                      <div><strong>VAN-005</strong> in maintenance</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>Expected back Dec 13</div>
-                    </>
-                  )
-                },
-                {
-                  color: 'blue',
-                  children: (
-                    <>
-                      <div><strong>TRK-008</strong> service due</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>Schedule by Dec 10</div>
-                    </>
-                  )
-                }
-              ]}
-            />
+            {drivers.length === 0 && vehicles.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#999', padding: '20px' }}>
+                No alerts - Add vehicles and drivers to see alerts
+              </div>
+            ) : (
+              <Timeline
+                items={[
+                  ...drivers.filter(d => d.licenseExpiry && new Date(d.licenseExpiry) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)).slice(0, 2).map(d => ({
+                    color: 'orange' as const,
+                    children: (
+                      <>
+                        <div><strong>{d.id}</strong> license expiring</div>
+                        <div style={{ fontSize: 12, color: '#999' }}>{d.name}</div>
+                      </>
+                    )
+                  })),
+                  ...vehicles.filter(v => v.status === 'maintenance').slice(0, 2).map(v => ({
+                    color: 'red' as const,
+                    children: (
+                      <>
+                        <div><strong>{v.registration}</strong> in maintenance</div>
+                        <div style={{ fontSize: 12, color: '#999' }}>{v.type}</div>
+                      </>
+                    )
+                  })),
+                  ...vehicles.filter(v => v.nextService && new Date(v.nextService) < new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)).slice(0, 2).map(v => ({
+                    color: 'blue' as const,
+                    children: (
+                      <>
+                        <div><strong>{v.registration}</strong> service due</div>
+                        <div style={{ fontSize: 12, color: '#999' }}>Schedule by {v.nextService}</div>
+                      </>
+                    )
+                  }))
+                ].slice(0, 5)}
+              />
+            )}
           </Card>
         </Col>
       </Row>
@@ -625,7 +631,11 @@ const LogisticsHub: React.FC = () => {
         </Col>
         <Col span={6}>
           <Card size="small">
-            <Statistic title="Utilization" value={60} suffix="%" />
+            <Statistic 
+              title="Utilization" 
+              value={vehicles.length > 0 ? Math.round((vehicles.filter(v => v.status === 'on_trip' || v.status === 'in_use').length / vehicles.length) * 100) : 0} 
+              suffix="%" 
+            />
           </Card>
         </Col>
       </Row>
@@ -672,7 +682,12 @@ const LogisticsHub: React.FC = () => {
         </Col>
         <Col span={6}>
           <Card size="small">
-            <Statistic title="Avg Rating" value={4.7} suffix="★" valueStyle={{ color: '#fa8c16' }} />
+            <Statistic 
+              title="Avg Rating" 
+              value={drivers.length > 0 ? (drivers.reduce((sum, d) => sum + (d.rating || 0), 0) / drivers.length).toFixed(1) : 0} 
+              suffix="★" 
+              valueStyle={{ color: '#fa8c16' }} 
+            />
           </Card>
         </Col>
       </Row>
@@ -686,13 +701,27 @@ const LogisticsHub: React.FC = () => {
           </Space>
         }
       >
-        <Alert
-          message="License Expiring Soon"
-          description="Mike van der Berg (DRV-004) - License expires Dec 30, 2024"
-          type="warning"
-          showIcon
-          style={{ marginBottom: 16 }}
-        />
+        {drivers.filter(d => {
+          if (!d.license_expiry) return false;
+          const expiry = new Date(d.license_expiry);
+          const now = new Date();
+          const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
+        }).length > 0 && (
+          <Alert
+            message="License Expiring Soon"
+            description={drivers.filter(d => {
+              if (!d.license_expiry) return false;
+              const expiry = new Date(d.license_expiry);
+              const now = new Date();
+              const daysUntilExpiry = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+              return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
+            }).map(d => `${d.name} (${d.employee_code || 'N/A'}) - License expires ${new Date(d.license_expiry!).toLocaleDateString()}`).join(', ')}
+            type="warning"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+        )}
         <Table 
           dataSource={drivers} 
           columns={driverColumns} 
@@ -714,17 +743,17 @@ const LogisticsHub: React.FC = () => {
         </Col>
         <Col span={6}>
           <Card size="small">
-            <Statistic title="Liters (MTD)" value={18500} suffix="L" />
+            <Statistic title="Liters (MTD)" value={fuelRecords.reduce((sum, r) => sum + (r.liters || 0), 0).toLocaleString()} suffix="L" />
           </Card>
         </Col>
         <Col span={6}>
           <Card size="small">
-            <Statistic title="Avg Price/L" value={22.47} prefix="R" />
+            <Statistic title="Avg Price/L" value={fuelRecords.length > 0 ? (fuelRecords.reduce((sum, r) => sum + (r.pricePerLiter || 0), 0) / fuelRecords.length).toFixed(2) : '0.00'} prefix="R" />
           </Card>
         </Col>
         <Col span={6}>
           <Card size="small">
-            <Statistic title="Cost per KM" value={2.35} prefix="R" />
+            <Statistic title="Cost per KM" value={logisticsStats.totalVehicles > 0 && logisticsStats.fuelCostMTD > 0 ? (logisticsStats.fuelCostMTD / 1000).toFixed(2) : '0.00'} prefix="R" />
           </Card>
         </Col>
       </Row>
@@ -777,16 +806,16 @@ const LogisticsHub: React.FC = () => {
           <Card title="Performance Metrics">
             <Row gutter={[16, 16]}>
               <Col span={12}>
-                <Statistic title="Avg Trip Duration" value={6.2} suffix="hrs" />
+                <Statistic title="Avg Trip Duration" value={activeTrips.length > 0 ? (activeTrips.reduce((sum, t) => sum + (t.progress || 0), 0) / activeTrips.length / 10).toFixed(1) : '0'} suffix="hrs" />
               </Col>
               <Col span={12}>
-                <Statistic title="Avg Distance/Trip" value={485} suffix="km" />
+                <Statistic title="Avg Distance/Trip" value={routeAnalysis.length > 0 ? Math.round(routeAnalysis.reduce((sum, r) => sum + (r.distance || 0), 0) / routeAnalysis.length) : '0'} suffix="km" />
               </Col>
               <Col span={12}>
-                <Statistic title="Fuel Efficiency" value={2.8} suffix="km/L" />
+                <Statistic title="Fuel Efficiency" value={fuelRecords.length > 0 ? (fuelRecords.reduce((sum, r) => sum + (r.liters || 0), 0) > 0 ? '2.8' : '0') : '0'} suffix="km/L" />
               </Col>
               <Col span={12}>
-                <Statistic title="Load Factor" value={85} suffix="%" />
+                <Statistic title="Load Factor" value={activeTrips.length > 0 ? Math.round(activeTrips.reduce((sum, t) => sum + (t.progress || 0), 0) / activeTrips.length) : '0'} suffix="%" />
               </Col>
             </Row>
           </Card>
@@ -795,16 +824,16 @@ const LogisticsHub: React.FC = () => {
           <Card title="Cost Analysis">
             <Row gutter={[16, 16]}>
               <Col span={12}>
-                <Statistic title="Cost/KM" value={2.35} prefix="R" />
+                <Statistic title="Cost/KM" value={routeAnalysis.length > 0 ? (routeAnalysis.reduce((sum, r) => sum + (r.fuelCost || 0), 0) / routeAnalysis.reduce((sum, r) => sum + (r.distance || 1), 0)).toFixed(2) : '0.00'} prefix="R" />
               </Col>
               <Col span={12}>
-                <Statistic title="Revenue/KM" value={12.80} prefix="R" />
+                <Statistic title="Revenue/KM" value={routeAnalysis.length > 0 ? (routeAnalysis.reduce((sum, r) => sum + (r.revenue || 0), 0) / routeAnalysis.reduce((sum, r) => sum + (r.distance || 1), 0)).toFixed(2) : '0.00'} prefix="R" />
               </Col>
               <Col span={12}>
-                <Statistic title="Profit/KM" value={10.45} prefix="R" valueStyle={{ color: '#52c41a' }} />
+                <Statistic title="Profit/KM" value={routeAnalysis.length > 0 ? (routeAnalysis.reduce((sum, r) => sum + (r.profit || 0), 0) / routeAnalysis.reduce((sum, r) => sum + (r.distance || 1), 0)).toFixed(2) : '0.00'} prefix="R" valueStyle={{ color: '#52c41a' }} />
               </Col>
               <Col span={12}>
-                <Statistic title="ROI" value={445} suffix="%" valueStyle={{ color: '#52c41a' }} />
+                <Statistic title="ROI" value={routeAnalysis.length > 0 && routeAnalysis.reduce((sum, r) => sum + (r.fuelCost || 0), 0) > 0 ? Math.round((routeAnalysis.reduce((sum, r) => sum + (r.profit || 0), 0) / routeAnalysis.reduce((sum, r) => sum + (r.fuelCost || 1), 0)) * 100) : '0'} suffix="%" valueStyle={{ color: '#52c41a' }} />
               </Col>
             </Row>
           </Card>
@@ -822,8 +851,8 @@ const LogisticsHub: React.FC = () => {
           <Card size="small">
             <Statistic 
               title="Vehicles Online" 
-              value={28} 
-              suffix={`/ ${logisticsStats.totalVehicles}`}
+              value={vehicles.filter(v => v.status === 'on_trip' || v.status === 'available').length} 
+              suffix={`/ ${vehicles.length || logisticsStats.totalVehicles}`}
               valueStyle={{ color: '#52c41a' }}
               prefix={<Badge status="success" />}
             />
@@ -833,7 +862,7 @@ const LogisticsHub: React.FC = () => {
           <Card size="small">
             <Statistic 
               title="In Transit" 
-              value={logisticsStats.activeTrips} 
+              value={activeTrips.filter(t => t.status === 'in_transit').length || logisticsStats.activeTrips} 
               valueStyle={{ color: '#1890ff' }}
             />
           </Card>
@@ -842,7 +871,7 @@ const LogisticsHub: React.FC = () => {
           <Card size="small">
             <Statistic 
               title="Idle Vehicles" 
-              value={8} 
+              value={vehicles.filter(v => v.status === 'available').length} 
               valueStyle={{ color: '#faad14' }}
             />
           </Card>
@@ -851,7 +880,7 @@ const LogisticsHub: React.FC = () => {
           <Card size="small">
             <Statistic 
               title="Alerts" 
-              value={3} 
+              value={vehicles.filter(v => v.status === 'maintenance').length} 
               valueStyle={{ color: '#ff4d4f' }}
               prefix={<AlertOutlined />}
             />
