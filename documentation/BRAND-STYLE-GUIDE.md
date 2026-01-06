@@ -4,6 +4,8 @@
 
 This Brand Style Guide establishes the visual and written standards for all SiyaBusa ERP documentation. Adherence to these guidelines ensures consistency, professionalism, and brand recognition across all communications.
 
+> **📋 PDF DOCUMENT STANDARD:** All PDF documents MUST comply with the official [PDF Document Design Standard](policies/PDF-DOCUMENT-DESIGN-STANDARD.md). This standard is MANDATORY and non-negotiable.
+
 ### 1.1 Purpose
 
 - Maintain consistent brand identity across all documents
@@ -46,68 +48,109 @@ This guide applies to:
 
 ## 3. Color Palette
 
-### 3.1 Primary Colors
+> **⚠️ IMPORTANT:** For PDF document colors, refer to the official [PDF Document Design Standard](policies/PDF-DOCUMENT-DESIGN-STANDARD.md)
+
+### 3.1 Primary Colors (PDF Documents)
 
 | Color Name | Hex Code | RGB | Usage |
 |------------|----------|-----|-------|
-| **Primary Blue** | `#1e3a5f` | 30, 58, 95 | Headers, primary backgrounds |
-| **Deep Navy** | `#0d1f33` | 13, 31, 51 | Cover page backgrounds |
-| **Accent Blue** | `#3b82f6` | 59, 130, 246 | Links, highlights |
-| **Sky Blue** | `#0ea5e9` | 14, 165, 233 | Secondary accents |
+| **Deep Navy** | `#1e3a8a` | 30, 58, 138 | Headers, H1, primary borders |
+| **Midnight Blue** | `#020617` | 2, 6, 23 | Cover gradient start |
+| **Navy 50** | `#172554` | 23, 37, 84 | Cover gradient end |
+| **Royal Blue** | `#1e40af` | 30, 64, 175 | H2 headings |
+| **Purple Accent** | `#3730a3` | 55, 48, 163 | H3, table headers |
 
 ### 3.2 Secondary Colors
 
 | Color Name | Hex Code | RGB | Usage |
 |------------|----------|-----|-------|
-| **Purple Accent** | `#7c3aed` | 124, 58, 237 | Premium badges, highlights |
+| **Blue Glow** | `rgba(59, 130, 246, 0.4)` | - | Cover page radial gradient |
+| **Purple Glow** | `rgba(147, 51, 234, 0.4)` | - | Cover page radial gradient |
 | **Success Green** | `#10b981` | 16, 185, 129 | Success states, checkmarks |
 | **Slate Gray** | `#64748b` | 100, 116, 139 | Body text, secondary info |
-| **Light Gray** | `#f8fafc` | 248, 250, 252 | Backgrounds, borders |
+| **Light Gray** | `#f8fafc` | 248, 250, 252 | Backgrounds, table rows |
 
 ### 3.3 Text Colors
 
 | Color Name | Hex Code | Usage |
 |------------|----------|-------|
-| **Primary Text** | `#1e293b` | Main body text |
-| **Secondary Text** | `#475569` | Captions, metadata |
-| **Muted Text** | `#94a3b8` | Placeholders, hints |
-| **White Text** | `#ffffff` | On dark backgrounds |
+| **Primary Text** | `#1f2937` | Main body text |
+| **Secondary Text** | `#4b5563` | Intro box text, captions |
+| **Muted Text** | `#9ca3af` | Footer text, hints |
+| **White Text** | `#ffffff` | Cover page, dark backgrounds |
+| **Light Blue** | `#bfdbfe` | Cover subtitle text |
+| **Sky Blue** | `#93c5fd` | Cover info labels, tagline |
 
-### 3.4 Gradient Specifications
+### 3.4 Gradient Specifications (OFFICIAL)
 
-**Cover Page Gradient:**
+**Cover Page Gradient (MANDATORY):**
 ```css
-background: linear-gradient(135deg, #1e3a5f 0%, #0d1f33 100%);
+background: 
+    radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.4) 0%, transparent 20%),
+    radial-gradient(circle at 80% 70%, rgba(147, 51, 234, 0.4) 0%, transparent 20%),
+    linear-gradient(135deg, #020617 0%, #1e3a8a 50%, #172554 100%);
 ```
 
-**Accent Gradient:**
+**Frosted Glass Box:**
 ```css
-background: linear-gradient(135deg, #3b82f6 0%, #0ea5e9 100%);
+background: rgba(15, 23, 42, 0.6);
+backdrop-filter: blur(12px);
+border-radius: 24px;
+```
+
+**Table Header Gradient:**
+```css
+background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+```
+
+**Intro Box Gradient:**
+```css
+background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
 ```
 
 ---
 
 ## 4. Typography
 
+> **⚠️ IMPORTANT:** For PDF typography specifications, refer to [PDF Document Design Standard](policies/PDF-DOCUMENT-DESIGN-STANDARD.md)
+
 ### 4.1 Font Families
 
 | Usage | Primary Font | Fallback |
 |-------|-------------|----------|
-| **Headings** | Segoe UI Bold | Arial Bold, sans-serif |
-| **Body Text** | Segoe UI | Arial, sans-serif |
+| **All Documents (PDF)** | Inter | -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif |
 | **Code/Technical** | Consolas | Courier New, monospace |
 
-### 4.2 Font Sizes
+**Google Fonts Import:**
+```css
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+```
 
-| Element | Size (pt) | Weight | Line Height |
-|---------|-----------|--------|-------------|
-| **Document Title** | 36-42 | Bold (700) | 1.2 |
-| **Section Heading (H1)** | 24-28 | Bold (700) | 1.3 |
-| **Subsection (H2)** | 18-20 | Semi-Bold (600) | 1.4 |
-| **Sub-subsection (H3)** | 14-16 | Semi-Bold (600) | 1.4 |
-| **Body Text** | 11-12 | Regular (400) | 1.6-1.8 |
-| **Captions** | 9-10 | Regular (400) | 1.4 |
-| **Footer** | 8-9 | Regular (400) | 1.2 |
+### 4.2 Font Weights (Inter)
+
+| Weight | Value | Usage |
+|--------|-------|-------|
+| **Light** | 300 | Subtle text, captions |
+| **Regular** | 400 | Body text, paragraphs |
+| **Semi-Bold** | 600 | Subheadings, emphasis |
+| **Bold** | 700 | Headings, titles |
+| **Extra Bold** | 800 | Logo on cover page |
+
+### 4.3 Font Sizes (PDF Documents)
+
+| Element | Size | Weight | Color |
+|---------|------|--------|-------|
+| **Cover Logo** | 48px | 800 | #ffffff |
+| **Cover Title** | 32px | 700 | #ffffff |
+| **Cover Subtitle** | 18px | 400 | #bfdbfe |
+| **H1 Heading** | 24px | 700 | #1e3a8a |
+| **H2 Heading** | 20px | 700 | #1e40af |
+| **H3 Heading** | 16px | 700 | #3730a3 |
+| **Body Text** | 14px | 400 | #1f2937 |
+| **Table Text** | 13px | 400 | #1f2937 |
+| **Code** | 13px | 400 | monospace |
+| **Footer** | 9px | 400 | #9ca3af |
+| **Tagline** | 12px | 400 | #93c5fd |
 
 ### 4.3 Text Formatting Rules
 
