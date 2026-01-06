@@ -1,20 +1,4 @@
-# SiyaBusa ERP - Executive One-Pager
-
-<div align="center">
-
-## **The ERP Platform African Businesses Have Been Waiting For**
-
----
-
-### Investment Opportunity Summary
-
----
-
-</div>
-
----
-
-## 🎯 THE PROBLEM
+# The Problem
 
 **60,000+ South African mid-market businesses (R10M-R500M revenue) are trapped:**
 
@@ -49,18 +33,20 @@
 
 | Item | Amount |
 |:-----|-------:|
-| **Investment Request** | R2,850,000 |
-| **Runway** | 12 months |
-| **Valuation Cap** | R15,000,000 |
+| **Investment Request** | R2,000,000 |
+| **Pre-Money Valuation** | R10,000,000 |
+| **Equity Offered** | 16.67% |
+| **Exit Strategy** | JSE AltX Listing Q2 2029 |
 
 ### Use of Funds
 
 | Category | Amount | % |
 |:---------|-------:|--:|
-| Infrastructure & Operations | R816,000 | 29% |
-| Marketing & Acquisition | R1,080,000 | 38% |
-| Team & Operations | R594,000 | 21% |
-| Reserve | R360,000 | 12% |
+| Sales & Marketing | R800,000 | 40% |
+| Team Expansion | R600,000 | 30% |
+| Operations & Infrastructure | R300,000 | 15% |
+| Product Enhancement | R200,000 | 10% |
+| Working Capital | R100,000 | 5% |
 
 ---
 
@@ -94,24 +80,27 @@
 
 ---
 
-## 📊 RETURN POTENTIAL
+## 📊 RETURN POTENTIAL (AltX Listing Path)
 
-| Scenario | 3-Year ARR | Valuation (5x) | ROI |
-|:---------|:-----------|:---------------|:----|
-| Conservative | R24M | R120M | 42x |
-| Base Case | R36M | R180M | 63x |
-| Optimistic | R60M | R300M | 105x |
+| Milestone | Timeline | Valuation |
+|:----------|:---------|:----------|
+| Seed Round | Q1 2026 | R12M post-money |
+| Series A | Q1 2028 | R75-100M |
+| AltX IPO | Q2 2029 | R250-400M |
+
+**Seed Investor at AltX (Base Case):** ~3.5x return (R7M for R2M investment)
 
 ---
 
-## ⏰ TIMELINE
+## ⏰ PATH TO LISTING
 
 | Phase | Period | Milestone |
 |:------|:-------|:----------|
-| Beta Testing | Jan-Mar 2026 | 5 partners, product validation |
-| Soft Launch | Apr-Jun 2026 | First paying customers |
-| Growth | Jul-Dec 2026 | R150K MRR target |
-| Scale | 2027 | Self-sustaining operations |
+| Seed Round | Q1 2026 | R2M raised, first customers |
+| Growth | 2026-2027 | 80 customers, R11.5M ARR |
+| Series A | Q1 2028 | R15-25M raised |
+| Pre-IPO | Q4 2028 | 100+ shareholders |
+| **AltX Listing** | **Q2 2029** | **Public market liquidity** |
 
 ---
 
@@ -119,10 +108,8 @@
 
 ## **Contact**
 
-[Your Name] | [Email] | [Phone]
+**Masaphokati Technologies (Pty) Ltd**
 
----
-
-*SiyaBusa ERP — We Rule. We Govern. We Empower.*
+investor@siyabusa.co.za | 074 012 6873 | www.siyabusa.co.za
 
 </div>

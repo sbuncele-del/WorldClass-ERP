@@ -80,26 +80,52 @@ const AdminHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [userModalVisible, setUserModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [companyForm] = Form.useForm();
   const [loading, setLoading] = useState(true);
+  const [savingCompany, setSavingCompany] = useState(false);
 
   // Data state
   const [users, setUsers] = useState<User[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
+  
+  // Company settings state
+  const [companySettings, setCompanySettings] = useState<any>(null);
 
   // Fetch data from API
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [usersRes, auditLogsRes, integrationsRes] = await Promise.all([
+        const [usersRes, auditLogsRes, integrationsRes, tenantRes] = await Promise.all([
           apiClient.get('/api/admin/users'),
           apiClient.get('/api/admin/audit-logs'),
-          apiClient.get('/api/admin/integrations')
+          apiClient.get('/api/admin/integrations'),
+          apiClient.get('/api/v2/settings/tenant')
         ]);
         setUsers(usersRes.data || []);
         setAuditLogs(auditLogsRes.data || []);
         setIntegrations(integrationsRes.data || []);
+        
+        // Load company settings
+        if (tenantRes.data?.success && tenantRes.data?.data) {
+          const tenant = tenantRes.data.data;
+          setCompanySettings(tenant);
+          // Set form values
+          companyForm.setFieldsValue({
+            companyName: tenant.business_name || tenant.name || '',
+            tradingAs: tenant.name || '',
+            registrationNumber: tenant.registration_number || '',
+            vatNumber: tenant.vat_number || '',
+            taxNumber: tenant.tax_number || '',
+            bbbeeLevel: tenant.bbbee_level || '4',
+            address: tenant.address || '',
+            postalAddress: tenant.postal_address || '',
+            phone: tenant.phone || '',
+            email: tenant.email || '',
+            website: tenant.website || ''
+          });
+        }
       } catch (error) {
         console.error('Failed to fetch admin data:', error);
         message.error('Failed to load admin data');
@@ -108,7 +134,42 @@ const AdminHub: React.FC = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [companyForm]);
+  
+  // Save company settings
+  const handleSaveCompany = async () => {
+    try {
+      setSavingCompany(true);
+      const values = companyForm.getFieldsValue();
+      
+      await apiClient.put('/api/v2/settings/tenant', {
+        businessName: values.companyName,
+        registrationNumber: values.registrationNumber,
+        vatNumber: values.vatNumber,
+        taxNumber: values.taxNumber,
+        address: values.address,
+        phone: values.phone,
+        email: values.email,
+        website: values.website
+      });
+      
+      // Update localStorage tenant info so header updates
+      const existingTenant = localStorage.getItem('tenant');
+      if (existingTenant) {
+        const tenant = JSON.parse(existingTenant);
+        tenant.name = values.companyName || values.tradingAs;
+        tenant.registration_number = values.registrationNumber;
+        localStorage.setItem('tenant', JSON.stringify(tenant));
+      }
+      
+      message.success('Company settings saved successfully');
+    } catch (error) {
+      console.error('Failed to save company settings:', error);
+      message.error('Failed to save company settings');
+    } finally {
+      setSavingCompany(false);
+    }
+  };
 
   // Calculations
   const activeUsers = users.filter(u => u.status === 'active').length;
@@ -263,44 +324,49 @@ const AdminHub: React.FC = () => {
   const renderCompanySetup = () => (
     <div style={{ padding: '24px' }}>
       <Card title={<><ShopOutlined /> Company Information</>}>
-        <Form layout="vertical">
+        <Form form={companyForm} layout="vertical" onFinish={handleSaveCompany}>
           <Row gutter={24}>
             <Col span={12}>
-              <Form.Item label="Company Name">
-                <Input defaultValue="WorldClass ERP (Pty) Ltd" />
+              <Form.Item label="Company Name" name="companyName">
+                <Input placeholder="Enter company name" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Trading As">
-                <Input defaultValue="WorldClass ERP" />
+              <Form.Item label="Trading As" name="tradingAs">
+                <Input placeholder="Trading name" />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={24}>
             <Col span={12}>
-              <Form.Item label="Registration Number (CIPC)">
-                <Input defaultValue="2020/123456/07" />
+              <Form.Item label="Registration Number (CIPC)" name="registrationNumber">
+                <Input placeholder="2024/123456/07" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="VAT Number">
-                <Input defaultValue="4123456789" />
+              <Form.Item label="VAT Number" name="vatNumber">
+                <Input placeholder="4123456789" />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={24}>
             <Col span={12}>
-              <Form.Item label="Tax Number">
-                <Input defaultValue="9123456789" />
+              <Form.Item label="Tax Number" name="taxNumber">
+                <Input placeholder="9123456789" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="B-BBEE Level">
-                <Select defaultValue="3">
+              <Form.Item label="B-BBEE Level" name="bbbeeLevel">
+                <Select placeholder="Select B-BBEE Level">
                   <Option value="1">Level 1</Option>
                   <Option value="2">Level 2</Option>
                   <Option value="3">Level 3</Option>
                   <Option value="4">Level 4</Option>
+                  <Option value="5">Level 5</Option>
+                  <Option value="6">Level 6</Option>
+                  <Option value="7">Level 7</Option>
+                  <Option value="8">Level 8</Option>
+                  <Option value="nc">Non-Compliant</Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -309,30 +375,30 @@ const AdminHub: React.FC = () => {
           <Title level={5}>Contact Details</Title>
           <Row gutter={24}>
             <Col span={12}>
-              <Form.Item label="Physical Address">
-                <TextArea rows={3} defaultValue="123 Main Street\nSandton\nJohannesburg\n2196" />
+              <Form.Item label="Physical Address" name="address">
+                <TextArea rows={3} placeholder="123 Main Street\nSandton\nJohannesburg\n2196" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Postal Address">
-                <TextArea rows={3} defaultValue="PO Box 12345\nSandton\n2146" />
+              <Form.Item label="Postal Address" name="postalAddress">
+                <TextArea rows={3} placeholder="PO Box 12345\nSandton\n2146" />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={24}>
             <Col span={8}>
-              <Form.Item label="Phone">
-                <Input defaultValue="+27 11 123 4567" />
+              <Form.Item label="Phone" name="phone">
+                <Input placeholder="+27 11 123 4567" />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label="Email">
-                <Input defaultValue="info@worldclass-erp.co.za" />
+              <Form.Item label="Email" name="email">
+                <Input placeholder="info@company.co.za" />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label="Website">
-                <Input defaultValue="www.worldclass-erp.co.za" />
+              <Form.Item label="Website" name="website">
+                <Input placeholder="www.company.co.za" />
               </Form.Item>
             </Col>
           </Row>
@@ -345,7 +411,9 @@ const AdminHub: React.FC = () => {
               </div>
             </Upload>
           </Form.Item>
-          <Button type="primary">Save Changes</Button>
+          <Button type="primary" htmlType="submit" loading={savingCompany}>
+            Save Changes
+          </Button>
         </Form>
       </Card>
     </div>

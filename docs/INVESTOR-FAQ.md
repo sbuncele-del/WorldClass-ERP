@@ -1,10 +1,4 @@
-# SiyaBusa ERP - Investor FAQ
-
-## Anticipating and Answering Investor Questions
-
----
-
-# 💼 THE BUSINESS
+# The Business
 
 ## Q: What exactly have you built?
 
@@ -62,18 +56,42 @@ Many of our target customers *can't* afford SAP. We're not stealing their market
 
 # 💰 FINANCIALS
 
-## Q: Why R2.85 million?
+## Q: Why R2 million?
 
 **A:** This provides 12 months of runway to:
 
 | Category | Amount | Purpose |
 |:---------|-------:|:--------|
-| Operations | R816K | AWS, AI, tools, security |
-| Marketing | R1.08M | LinkedIn, Google, content, PR |
-| Team | R594K | Customer success, support, admin |
-| Reserve | R360K | Emergency buffer |
+| Sales & Marketing | R800K | Customer acquisition, brand building |
+| Team Expansion | R600K | Sales, customer success, support |
+| Operations | R300K | AWS, tools, legal, office |
+| Product Enhancement | R200K | Features, integrations, UX |
+| Working Capital | R100K | Reserve for opportunities |
 
-We've calculated this conservatively based on actual AWS pricing and market rates.
+**Total:** R2,000,000
+
+This is sufficient to reach 25+ paying customers and R150K+ MRR, positioning us for Series A.
+
+---
+
+## Q: What are the investment terms?
+
+| Term | Detail |
+|:-----|:-------|
+| **Investment Amount** | R2,000,000 |
+| **Investment Type** | Ordinary Shares |
+| **Pre-Money Valuation** | R10,000,000 |
+| **Post-Money Valuation** | R12,000,000 |
+| **Equity Offered** | 16.67% |
+| **Minimum Investment** | R100,000 |
+
+### Investor Rights
+
+- Monthly financial reports
+- Board observer seat (for investors holding 5%+)
+- Pro-rata rights for future rounds
+- Anti-dilution protection
+- Tag-along rights
 
 ---
 
@@ -92,31 +110,45 @@ We need ~R225K MRR to break even. At R8K average per customer, that's 28 custome
 
 ## Q: How do I get my money back? (Exit Strategy)
 
-**Important: A SAFE is not a loan. You don't get "paid back" - you get equity that becomes valuable.**
+**Primary Exit: JSE AltX Listing (Target Q2 2029)**
 
-### Exit Scenarios (How You Make Money)
+We're building toward a public listing on the JSE AltX (Alternative Exchange), which provides:
+- Clear liquidity event for early investors
+- Public market pricing of shares
+- Path to Main Board graduation
+
+### Exit Timeline
+
+| Milestone | Timeline | What Happens |
+|:----------|:---------|:-------------|
+| Seed Round | Q1 2026 | You invest, receive 16.67% equity |
+| Series A | Q1 2028 | New investors at higher valuation |
+| Pre-IPO | Q4 2028 | Final private round, 100+ shareholders |
+| **AltX Listing** | **Q2 2029** | **Your shares become tradeable** |
+
+### Return Potential (Realistic Scenarios)
+
+```
+Investment: R2,000,000 for 16.67% equity (at R10M pre-money)
+
+AltX Listing at R250M valuation (Base Case):
+Your shares: 16.67% × R250M = ~R41.7M (before dilution)
+After 3 rounds of dilution (~50%): ~R20.8M
+Return: ~10x your investment
+
+AltX Listing at R400M valuation (Upside Case):
+Your shares: ~R33M after dilution
+Return: ~16x your investment
+```
+
+### Alternative Exit Scenarios
 
 | Exit Type | How It Works | Typical Timeline |
 |:----------|:-------------|:-----------------|
-| **Acquisition** | Larger company buys SiyaBusa | 3-7 years |
-| **IPO** | Company lists on JSE/other exchange | 5-10 years |
-| **Secondary Sale** | Sell your shares to new investors | 2-5 years |
-| **Dividends** | Share of profits if company pays dividends | Ongoing after profitability |
-
-### Realistic Example (Base Case)
-
-```
-Investment: R2,850,000 at R15M valuation cap
-Your ownership: ~19% (after conversion)
-
-Year 3-5 Exit at R150M acquisition:
-Your shares: 19% × R150M = R28.5M
-Return: 10x your investment
-
-Year 5-7 Exit at R300M IPO:
-Your shares: 19% × R300M = R57M
-Return: 20x your investment
-```
+| **Strategic Acquisition** | Larger company buys SiyaBusa | 3-5 years |
+| **AltX IPO** | Company lists on JSE AltX | Q2 2029 (target) |
+| **Secondary Sale** | Sell shares to new investors | 2-4 years |
+| **Main Board Graduation** | Move from AltX to JSE Main Board | 2030+ |
 
 ### Who Might Acquire Us?
 
@@ -137,16 +169,45 @@ Return: 20x your investment
 
 ## Q: What's your revenue model?
 
-**Per-user, per-month subscription** (same model as SAP, Oracle, Microsoft):
+**Platform + Per-User subscription with EVERYTHING INCLUDED.**
 
-| Package | Users | Price/User | Monthly Total |
-|:--------|:------|:-----------|:--------------|
-| Starter | 5-10 | R800 | R4K-R8K |
-| Professional | 11-25 | R600 | R6.6K-R15K |
-| Enterprise | 26-50 | R500 | R13K-R25K |
-| Enterprise+ | 51-100 | R400 | R20K-R40K |
+### We Serve the Ignored Middle Market
 
-Plus implementation fees (one-time) and optional modules.
+| Segment | Options | Problem |
+|:--------|:--------|:--------|
+| Small | Xero, QuickBooks | Accounting only |
+| **Mid-Market** | **NOBODY** | **60K+ businesses ignored** |
+| Enterprise | SAP, Oracle | R100K-R500K/month |
+
+### Our Competitive Advantage: BUNDLED VALUE
+
+| Feature | SAP | Sage | SiyaBusa |
+|:--------|:----|:-----|:---------|
+| SARS Integration | Extra R25K+ | ❌ | **INCLUDED** |
+| Audit Tools | Extra R20K+ | ❌ | **INCLUDED** |
+| AI Assistants | ❌ | ❌ | **INCLUDED** |
+| Video/Chat | Zoom/Slack extra | Zoom/Slack extra | **INCLUDED** |
+
+### Pricing Plans
+
+| Plan | Platform | Per User | Everything Included |
+|:-----|:---------|:---------|:--------------------|
+| **Starter** | R8,000 | R650 | Core ERP + SARS Sentinel + 3 AI Agents |
+| **Professional** | R15,000 | R950 | + Manufacturing, Audit Ready, Comms Hub, 9 AI |
+| **Enterprise** | R25,000 | R1,200 | + Multi-Entity, Payroll, Full Compliance, API |
+| **Corporate** | R45,000 | R1,500 | + Unlimited, Industry Modules |
+
+### Example: 25-User Manufacturer
+
+| | SiyaBusa | SAP B1 |
+|:--|:---------|:-------|
+| Platform + Users | R38,750 | R97,500 |
+| SARS/Compliance | **INCLUDED** | +R45,000 |
+| **TOTAL** | **R38,750/mo** | **R142,500/mo** |
+
+**SiyaBusa saves R1.25M/year** and includes MORE features.
+
+Only industry-specific modules (Healthcare, Mining, Construction) are add-ons.
 
 ---
 

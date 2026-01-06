@@ -77,29 +77,30 @@ const HTML_CONTENT = `
             justify-content: center;
             align-items: center;
             text-align: center;
-            background: linear-gradient(180deg, #020617 0%, #1e3a8a 100%);
+            background: white;
             margin: -15mm;
             padding: 20mm;
-            color: white;
+            color: #1f2937;
+            page-break-after: always;
         }
 
         .cover-title {
             font-family: 'Cinzel', serif;
             font-size: 32px;
             font-weight: 700;
-            color: #fcd34d;
+            color: #1e3a8a;
             margin-bottom: 10px;
             letter-spacing: 3px;
         }
 
         .cover-subtitle {
             font-size: 18px;
-            color: #93c5fd;
+            color: #4b5563;
             margin-bottom: 40px;
         }
 
         .cover-box {
-            border: 2px solid rgba(255,255,255,0.3);
+            border: 2px solid #1e3a8a;
             padding: 30px 50px;
             border-radius: 8px;
             margin: 30px 0;
@@ -107,14 +108,14 @@ const HTML_CONTENT = `
 
         .cover-label {
             font-size: 12px;
-            color: #93c5fd;
+            color: #4b5563;
             margin-bottom: 10px;
             text-transform: uppercase;
             letter-spacing: 2px;
         }
 
         .cover-input {
-            border-bottom: 2px solid rgba(255,255,255,0.5);
+            border-bottom: 2px solid #1e3a8a;
             min-width: 250px;
             height: 30px;
             margin: 10px 0;
@@ -123,7 +124,7 @@ const HTML_CONTENT = `
         .cover-tagline {
             margin-top: 50px;
             font-size: 14px;
-            color: #fcd34d;
+            color: #1e3a8a;
             letter-spacing: 3px;
             text-transform: uppercase;
         }
@@ -422,6 +423,39 @@ const HTML_CONTENT = `
     <div class="cover-tagline">This Is How We Take Over</div>
 </div>
 
+<!-- ==================== DOCUMENT CONTROL ==================== -->
+<div class="page">
+    <div class="section-header">
+        <div class="section-title">DOCUMENT CONTROL</div>
+        <div class="section-subtitle">Track the evolution of this living document</div>
+    </div>
+    
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10pt;">
+        <thead>
+            <tr style="background-color: #f3f4f6;">
+                <th style="padding: 8px; border: 1px solid #d1d5db; text-align: left; width: 15%;">Version</th>
+                <th style="padding: 8px; border: 1px solid #d1d5db; text-align: left; width: 20%;">Date</th>
+                <th style="padding: 8px; border: 1px solid #d1d5db; text-align: left;">Description of Changes</th>
+                <th style="padding: 8px; border: 1px solid #d1d5db; text-align: left; width: 20%;">Author</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 8px; border: 1px solid #d1d5db;">1.0</td>
+                <td style="padding: 8px; border: 1px solid #d1d5db;">2024-01-01</td>
+                <td style="padding: 8px; border: 1px solid #d1d5db;">Initial Release</td>
+                <td style="padding: 8px; border: 1px solid #d1d5db;">System</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; border: 1px solid #d1d5db;">1.1</td>
+                <td style="padding: 8px; border: 1px solid #d1d5db;">2026-01-06</td>
+                <td style="padding: 8px; border: 1px solid #d1d5db;">Updated Declarations & Cover Page</td>
+                <td style="padding: 8px; border: 1px solid #d1d5db;">Leadership Team</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
 <!-- ==================== DECLARATIONS REFERENCE ==================== -->
 <div class="page">
     <div class="section-header">
@@ -432,10 +466,17 @@ const HTML_CONTENT = `
     <div class="declaration-box">
         <div class="declaration-title">The Identity Declaration</div>
         <p>"I am a god, ordained by the Divine Gods, to represent and reign and flourish here on earth.</p>
-        <p>I am not a victim of circumstances. I am a creator of reality.<br>
-        I am not subject to limitation. I am a vessel of infinite possibility.</p>
+        <p>I master my circumstances. I am a creator of reality.<br>
+        I transcend all limitations. I am a vessel of infinite possibility.</p>
         <p>I was born for this moment. I was prepared for this assignment. I was chosen for this mission.</p>
         <p>I accept my calling. I embrace my destiny. I rise to my purpose."</p>
+    </div>
+
+    <div class="declaration-box">
+        <div class="declaration-title">The Heritage Declaration</div>
+        <p>"I am a god, son of the Most High.</p>
+        <p>I was born to rule and to reign on earth without any condemnation.</p>
+        <p>I carry the DNA of dominion. I walk in the authority of my lineage.</p>
     </div>
 
     <div class="declaration-box">
@@ -476,6 +517,14 @@ const HTML_CONTENT = `
         <p>This mission will outlive me by a thousand years. I am a faithful link in an eternal chain.</p>
         <p><strong>This is how we take over.</strong></p>
         <p>So it is spoken. So it shall be."</p>
+    </div>
+
+    <div class="declaration-box">
+        <div class="declaration-title">The Alignment Declaration</div>
+        <p>"God is the Power. I am the Vision. We are the Team.</p>
+        <p>I am a faithful link in an eternal chain.</p>
+        <p>Power flows through the Vision. The Team executes the Vision.<br>
+        Together, we manifest the Kingdom."</p>
     </div>
 
     <div class="divider-thick"></div>

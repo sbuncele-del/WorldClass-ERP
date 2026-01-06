@@ -10,11 +10,18 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 const { marked } = require('marked');
 
-// Documents from PITCH-MATERIALS-INDEX.md (Jan 2, 2026)
+// Documents from PITCH-MATERIALS-INDEX.md (Jan 2, 2026) - Updated with Legal Templates
 const INVESTOR_DOCUMENTS = [
+  'docs/SIYABUSA-ERP-BUSINESS-PLAN-2026.md',
   'docs/INVESTOR-PITCH-DECK.md',
   'docs/INVESTOR-ONE-PAGER.md',
   'docs/INVESTOR-FAQ.md',
+  'docs/FINANCIAL-MODEL-3-YEAR.md',
+  'docs/PRICING-STRATEGY.md',
+  'docs/TERM-SHEET-TEMPLATE.md',
+  'docs/SHAREHOLDERS-AGREEMENT-TEMPLATE.md',
+  'docs/SUBSCRIPTION-AGREEMENT-TEMPLATE.md',
+  'docs/COMPANY-PROFILE.md',
   'docs/MONTHLY-OPERATING-BUDGET.md',
   'docs/SAFE-EXPLAINED-SIMPLE.md',
   'docs/SAFE-AGREEMENT-TEMPLATE.md',
@@ -28,9 +35,13 @@ const INVESTOR_DOCUMENTS = [
 
 // Document Descriptions for Introductory Text
 const DOCUMENT_DESCRIPTIONS = {
+  'SIYABUSA-ERP-BUSINESS-PLAN-2026': {
+    purpose: 'Complete Business Plan',
+    background: 'A comprehensive, bankable business plan covering company overview, market analysis, financial projections, go-to-market strategy, and the path to JSE AltX listing.'
+  },
   'INVESTOR-PITCH-DECK': {
     purpose: 'Investment Opportunity Overview',
-    background: 'This document outlines the investment opportunity for SiyaBusa ERP, detailing the market gap, our solution, financial projections, and the strategic roadmap for capturing the African mid-market.'
+    background: 'This document outlines the investment opportunity for SiyaBusa ERP, detailing the market gap, our solution, financial projections, and the path to JSE AltX listing.'
   },
   'INVESTOR-ONE-PAGER': {
     purpose: 'Executive Summary',
@@ -39,6 +50,26 @@ const DOCUMENT_DESCRIPTIONS = {
   'INVESTOR-FAQ': {
     purpose: 'Anticipated Questions & Answers',
     background: 'A comprehensive collection of anticipated questions regarding the business model, technology stack, financial projections, and exit strategy.'
+  },
+  'FINANCIAL-MODEL-3-YEAR': {
+    purpose: 'Detailed Financial Projections',
+    background: 'A comprehensive 3-year financial model with monthly revenue build-up, unit economics, cash flow projections, and capitalization table evolution from seed to Series A.'
+  },
+  'TERM-SHEET-TEMPLATE': {
+    purpose: 'Seed Investment Term Sheet',
+    background: 'Non-binding term sheet for the R2M seed round at R10M pre-money valuation, outlining investment terms, investor rights, and governance structure.'
+  },
+  'SHAREHOLDERS-AGREEMENT-TEMPLATE': {
+    purpose: 'Shareholders Agreement',
+    background: 'Comprehensive shareholders agreement template governing the relationship between founders and investors, including transfer restrictions, reserved matters, and exit provisions.'
+  },
+  'SUBSCRIPTION-AGREEMENT-TEMPLATE': {
+    purpose: 'Share Subscription Agreement',
+    background: 'Legal agreement template for investors subscribing for ordinary shares, including payment terms, representations, warranties, and FICA compliance requirements.'
+  },
+  'COMPANY-PROFILE': {
+    purpose: 'Corporate Profile',
+    background: 'Comprehensive company profile for Masaphokati Technologies (Pty) Ltd, including business overview, share capital structure, market opportunity, and leadership.'
   },
   'MONTHLY-OPERATING-BUDGET': {
     purpose: 'Operational Cost Breakdown',
@@ -75,6 +106,10 @@ const DOCUMENT_DESCRIPTIONS = {
   'SIYABUSA-ERP-CONCEPT-DOCUMENT': {
     purpose: 'Product Vision & Architecture',
     background: 'The foundational document describing the SiyaBusa ERP vision, architecture, and feature set in detail.'
+  },
+  'PRICING-STRATEGY': {
+    purpose: 'Pricing Model & Market Positioning',
+    background: 'Comprehensive pricing strategy document outlining our "Everything Included" approach, competitive positioning in the ignored middle market, and detailed plan breakdowns.'
   }
 };
 
@@ -124,13 +159,11 @@ const HTML_TEMPLATE = `
             padding-bottom: 10px;
             margin-top: 40px;
             font-size: 24px;
-            page-break-before: always;
         }
         
-        /* Don't break before the first h1 */
+        /* Don't break before h1 elements - cover page handles the first break */
         h1:first-of-type {
             margin-top: 0;
-            page-break-before: avoid;
         }
         
         h2 {
@@ -435,7 +468,22 @@ async function convertToPDF(mdPath, outputPath) {
     
     // Get title from filename
     const filename = path.basename(mdPath, '.md');
-    const title = filename.replace(/-/g, ' ');
+    // Remove redundant "SIYABUSA ERP" prefix since logo already shows brand
+    let title = filename.replace(/-/g, ' ').replace(/^SIYABUSA ERP\s*/i, '').trim();
+    
+    // Get document description for intro box
+    const docDescription = DOCUMENT_DESCRIPTIONS[filename];
+    
+    // Create intro box HTML if description exists
+    let introBoxHtml = '';
+    if (docDescription) {
+      introBoxHtml = `
+      <div class="intro-box">
+          <div class="intro-title">📋 ${docDescription.purpose}</div>
+          <div class="intro-text">${docDescription.background}</div>
+      </div>
+      `;
+    }
     
     // Create Cover Page HTML
     const coverPageHtml = `
@@ -461,10 +509,10 @@ async function convertToPDF(mdPath, outputPath) {
     </div>
     `;
 
-    // Build full HTML
+    // Build full HTML - Insert intro box before main content
     const html = HTML_TEMPLATE
       .replace('{{COVER_PAGE}}', coverPageHtml)
-      .replace('{{CONTENT}}', htmlContent);
+      .replace('{{CONTENT}}', introBoxHtml + htmlContent);
     
     // Launch browser
     const browser = await puppeteer.launch({
