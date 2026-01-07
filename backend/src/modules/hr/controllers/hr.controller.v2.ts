@@ -780,9 +780,9 @@ export const getLeaveRequests = async (req: TenantRequest, res: Response) => {
       SELECT lr.*, e.employee_number, e.first_name, e.last_name, d.department_name
       FROM hr.leave_requests lr
       JOIN hr.employees e ON lr.employee_id = e.employee_id AND lr.tenant_id = e.tenant_id
-      LEFT JOIN hr.departments d ON e.department_id = d.department_id
+      LEFT JOIN hr.departments d ON e.department_id = d.department_id AND e.tenant_id = d.tenant_id
       WHERE ${conditions.join(' AND ')}
-      ORDER BY lr.request_date DESC NULLS LAST, lr.created_at DESC
+      ORDER BY lr.submitted_date DESC NULLS LAST, lr.created_at DESC
     `;
 
     const result = await query(sql, params);
@@ -1087,16 +1087,11 @@ export const getPayrollRuns = async (req: TenantRequest, res: Response) => {
     const sql = `
       SELECT 
         pr.*,
-        pp.period_name,
-        COUNT(DISTINCT ps.employee_id) AS employee_count,
-        SUM(ps.gross_salary) AS total_gross,
-        SUM(ps.net_salary) AS total_net
+        pp.period_name
       FROM hr.payroll_runs pr
       LEFT JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id AND pr.tenant_id = pp.tenant_id
-      LEFT JOIN hr.payroll_slips ps ON pr.payroll_run_id = ps.payroll_run_id AND pr.tenant_id = ps.tenant_id
       WHERE ${conditions.join(' AND ')}
-      GROUP BY pr.payroll_run_id, pp.period_name
-      ORDER BY pr.period_start DESC
+      ORDER BY pr.run_date DESC, pr.created_at DESC
     `;
 
     const result = await query(sql, params);

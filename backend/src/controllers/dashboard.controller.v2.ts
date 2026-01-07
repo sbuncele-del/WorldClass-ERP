@@ -30,7 +30,7 @@ export class DashboardControllerV2 {
 
       // Get current/active period
       const periodQuery = `
-        SELECT fiscal_year, period_number, period_name, start_date, end_date, status
+        SELECT fiscal_year_id, period_number, period_name, start_date, end_date, status
         FROM fiscal_periods
         WHERE tenant_id = $1 AND status IN ('OPEN', 'CLOSED')
         ORDER BY start_date DESC
@@ -39,16 +39,15 @@ export class DashboardControllerV2 {
       const periodResult = await client.query(periodQuery, [tenantId]);
       const currentPeriod = periodResult.rows[0] || null;
 
-      // Get financial summary
+      // Get financial summary - tenant filtering via journal_entries join
       const financialQuery = `
         SELECT 
           SUM(CASE WHEN coa.account_type = 'REVENUE' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as total_revenue,
           SUM(CASE WHEN coa.account_type = 'EXPENSE' THEN jel.debit_amount - jel.credit_amount ELSE 0 END) as total_expenses
         FROM journal_entry_lines jel
         JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
-        JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
-        WHERE jel.tenant_id = $1
-          AND je.status = 'POSTED'
+        JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1
+        WHERE je.status = 'POSTED'
           ${currentPeriod ? `AND je.posting_date >= $2 AND je.posting_date <= $3` : ''}
       `;
 
@@ -62,7 +61,7 @@ export class DashboardControllerV2 {
       const totalExpenses = parseFloat(financial?.total_expenses || '0');
       const netProfit = totalRevenue - totalExpenses;
 
-      // Get account balances
+      // Get account balances - tenant filtering via journal_entries join
       const balancesQuery = `
         SELECT 
           SUM(CASE WHEN coa.account_type = 'ASSET' THEN jel.debit_amount - jel.credit_amount ELSE 0 END) as total_assets,
@@ -70,8 +69,8 @@ export class DashboardControllerV2 {
           SUM(CASE WHEN coa.account_type = 'EQUITY' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as total_equity
         FROM journal_entry_lines jel
         JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
-        JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = $1
-        WHERE jel.tenant_id = $1 AND je.status = 'POSTED'
+        JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1
+        WHERE je.status = 'POSTED'
       `;
       const balancesResult = await client.query(balancesQuery, [tenantId]);
       const balances = balancesResult.rows[0];

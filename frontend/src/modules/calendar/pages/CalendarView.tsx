@@ -44,6 +44,7 @@ const CalendarView: React.FC = () => {
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -57,8 +58,8 @@ const CalendarView: React.FC = () => {
       // Convert date strings to Date objects
       const parsedEvents = eventsData.map((event: any) => ({
         ...event,
-        start: new Date(event.start),
-        end: new Date(event.end)
+        start: new Date(event.start || event.start_date),
+        end: new Date(event.end || event.end_date)
       }));
       setEvents(parsedEvents);
     } catch (error) {
@@ -66,6 +67,38 @@ const CalendarView: React.FC = () => {
       setEvents([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateEvent = async (values: any) => {
+    try {
+      setSaving(true);
+      const [startDate, endDate] = values.dateRange;
+      
+      const eventData = {
+        title: values.title,
+        description: values.description || '',
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        location: values.location || '',
+        eventType: values.type,
+        attendees: values.attendees || [],
+        reminders: values.reminder ? [{ minutesBefore: parseInt(values.reminder) }] : [],
+        isAllDay: false
+      };
+
+      await apiClient.post('/api/calendar/events', eventData);
+      
+      // Refresh events list
+      await fetchEvents();
+      
+      // Close modal and reset form
+      setCreateModalVisible(false);
+      form.resetFields();
+    } catch (error) {
+      console.error('Error creating event:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -397,7 +430,7 @@ const CalendarView: React.FC = () => {
         footer={null}
         width={500}
       >
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" onFinish={handleCreateEvent}>
           <Form.Item name="title" label="Event Title" rules={[{ required: true }]}>
             <Input placeholder="Add title" />
           </Form.Item>
@@ -433,7 +466,7 @@ const CalendarView: React.FC = () => {
           <Form.Item>
             <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
               <Button onClick={() => setCreateModalVisible(false)}>Cancel</Button>
-              <Button type="primary" htmlType="submit">Create Event</Button>
+              <Button type="primary" htmlType="submit" loading={saving}>Create Event</Button>
             </Space>
           </Form.Item>
         </Form>

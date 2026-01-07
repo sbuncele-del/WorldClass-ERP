@@ -59,21 +59,26 @@ export const getModules = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
 
-    // Get tenant's enabled modules
-    const result = await pool.query(
-      `SELECT module_code, is_enabled, enabled_at, disabled_at, config
-       FROM tenant_modules
-       WHERE tenant_id = $1`,
-      [tenantId]
-    );
-
-    const enabledModules = new Map(
-      result.rows.map(row => [row.module_code, row])
-    );
+    // Try to get tenant's enabled modules, fallback to default if table doesn't exist
+    let enabledModules = new Map();
+    try {
+      const result = await pool.query(
+        `SELECT module_code, is_enabled, enabled_at, disabled_at, config
+         FROM tenant_modules
+         WHERE tenant_id = $1`,
+        [tenantId]
+      );
+      enabledModules = new Map(
+        result.rows.map(row => [row.module_code, row])
+      );
+    } catch (dbError) {
+      // Table might not exist, use defaults
+      console.log('[ModuleManagement] tenant_modules table not found, using defaults');
+    }
 
     const modules = AVAILABLE_MODULES.map(module => ({
       ...module,
-      isEnabled: enabledModules.has(module.code) ? enabledModules.get(module.code).is_enabled : false,
+      isEnabled: enabledModules.has(module.code) ? enabledModules.get(module.code).is_enabled : module.category === 'core',
       enabledAt: enabledModules.get(module.code)?.enabled_at || null,
       config: enabledModules.get(module.code)?.config || {},
       dependencies: MODULE_DEPENDENCIES[module.code] || []

@@ -425,60 +425,21 @@ export class AdminControllerV2 {
   static async getAuditLog(req: TenantRequest, res: Response): Promise<void> {
     try {
       const { tenantId } = getTenantContext(req);
-      const { user_id, action, entity_type, date_from, date_to, limit = 100, offset = 0 } = req.query;
+      const { limit = 100, offset = 0 } = req.query;
 
-      let conditions: string[] = ['tenant_id = $1'];
-      let params: any[] = [tenantId];
-      let paramIndex = 2;
-
-      if (user_id) {
-        conditions.push(`user_id = $${paramIndex}`);
-        params.push(user_id);
-        paramIndex++;
-      }
-
-      if (action) {
-        conditions.push(`action = $${paramIndex}`);
-        params.push(action);
-        paramIndex++;
-      }
-
-      if (entity_type) {
-        conditions.push(`entity_type = $${paramIndex}`);
-        params.push(entity_type);
-        paramIndex++;
-      }
-
-      if (date_from) {
-        conditions.push(`created_at >= $${paramIndex}`);
-        params.push(date_from);
-        paramIndex++;
-      }
-
-      if (date_to) {
-        conditions.push(`created_at <= $${paramIndex}`);
-        params.push(date_to);
-        paramIndex++;
-      }
-
-      const query = `
-        SELECT 
-          al.*,
-          u.email as user_email,
-          u.display_name as user_name
-        FROM audit_log al
-        LEFT JOIN users u ON al.user_id = u.id AND u.tenant_id = al.tenant_id
-        WHERE ${conditions.join(' AND ')}
-        ORDER BY al.created_at DESC
-        LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
-      `;
-
-      params.push(limit, offset);
-      const result = await pool.query(query, params);
+      // Simplified query - just get from audit_log table
+      const result = await pool.query(`
+        SELECT id, user_id, action, entity_type, entity_id, old_values, new_values, ip_address, created_at
+        FROM audit_log
+        WHERE tenant_id = $1
+        ORDER BY created_at DESC
+        LIMIT $2 OFFSET $3
+      `, [tenantId, limit, offset]);
 
       res.json({
         success: true,
-        logs: result.rows
+        data: result.rows,
+        total: result.rows.length
       });
 
     } catch (error: any) {

@@ -41,6 +41,10 @@ export default defineConfig({
       },
     },
   },
+  // Force single React instance to prevent hooks errors
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
   // Optimize dependencies
   optimizeDeps: {
     include: ['react', 'react-dom', 'antd', 'axios'],

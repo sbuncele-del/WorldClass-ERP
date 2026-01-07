@@ -38,20 +38,25 @@ export class AccountRepository extends BaseRepository<Account> {
    * Get chart of accounts tree
    */
   async getChartOfAccounts(ctx: TenantContext): Promise<Account[]> {
+    // Simplified query - no recursive tree, just flat list
     const sql = `
-      WITH RECURSIVE account_tree AS (
-        SELECT *, 0 as level
-        FROM ${this.fullTableName}
-        WHERE tenant_id = $1 AND parent_id IS NULL AND deleted_at IS NULL
-        
-        UNION ALL
-        
-        SELECT a.*, at.level + 1
-        FROM ${this.fullTableName} a
-        INNER JOIN account_tree at ON a.parent_id = at.id
-        WHERE a.tenant_id = $1 AND a.deleted_at IS NULL
-      )
-      SELECT * FROM account_tree ORDER BY account_number
+      SELECT 
+        account_id as id,
+        tenant_id,
+        code as account_number,
+        name,
+        description,
+        account_type,
+        parent_code as parent_id,
+        normal_balance,
+        is_active,
+        is_header,
+        current_balance as balance,
+        created_at,
+        updated_at
+      FROM chart_of_accounts
+      WHERE tenant_id = $1
+      ORDER BY code
     `;
 
     return this.rawQuery(ctx, sql);

@@ -38,6 +38,7 @@ import * as HRV2 from '../modules/hr/controllers/hr.controller.v2';
 import ComplianceControllerV2 from '../modules/compliance/compliance.controller.v2';
 import SARSSentinelControllerV2 from '../modules/compliance/sars-sentinel.controller.v2';
 import TreasuryControllerV2 from '../modules/financial/treasury.controller.v2';
+import * as FinancialV2 from '../modules/financial/controllers/financial.controller.v2';
 
 // Practice Controllers (use named exports)
 import * as ProjectsV2 from '../controllers/practice/projects.controller.v2';
@@ -156,6 +157,17 @@ router.get('/financial/import-entries/history', ImportEntriesControllerV2.getImp
 router.get('/financial/import-entries/sample', ImportEntriesControllerV2.downloadSample);
 
 // ============================================================================
+// FINANCIAL CORE (Chart of Accounts, Journal Entries, Fiscal Periods)
+// ============================================================================
+router.get('/financial/dashboard', FinancialV2.getDashboard);
+router.get('/financial/chart-of-accounts', FinancialV2.getChartOfAccounts);
+router.get('/financial/journal-entries', FinancialV2.listJournalEntries);
+router.get('/financial/fiscal-periods', FinancialV2.getFiscalPeriods);
+router.get('/reports/balance-sheet', BalanceSheetControllerV2.generateBalanceSheet);
+router.get('/reports/income-statement', IncomeStatementControllerV2.generateIncomeStatement);
+router.get('/reports/cash-flow', CashFlowControllerV2.generateCashFlowStatement);
+
+// ============================================================================
 // REPORTS
 // ============================================================================
 router.get('/reports/definitions', ReportsControllerV2.getReportDefinitions);
@@ -204,6 +216,7 @@ router.post('/admin/roles', AdminControllerV2.createRole);
 router.get('/admin/audit-log', AdminControllerV2.getAuditLog);
 router.get('/admin/settings', AdminControllerV2.getSettings);
 router.put('/admin/settings', AdminControllerV2.updateSettings);
+router.get('/admin/modules', ModuleManagementControllerV2.getModules);
 
 // ============================================================================
 // PROFILE

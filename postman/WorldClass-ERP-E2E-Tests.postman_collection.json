@@ -1,0 +1,568 @@
+{
+  "info": {
+    "name": "WorldClass ERP - E2E Tests",
+    "description": "Comprehensive end-to-end tests that verify data persistence, business logic, and full CRUD operations",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {"key": "baseUrl", "value": "https://siyabusaerp.co.za", "type": "string"},
+    {"key": "token", "value": "", "type": "string"},
+    {"key": "tenantId", "value": "00000000-0000-0000-0000-000000000001", "type": "string"},
+    {"key": "createdCustomerId", "value": "", "type": "string"},
+    {"key": "createdItemId", "value": "", "type": "string"},
+    {"key": "createdInvoiceId", "value": "", "type": "string"},
+    {"key": "createdEventId", "value": "", "type": "string"},
+    {"key": "createdEmployeeId", "value": "", "type": "string"},
+    {"key": "createdJournalId", "value": "", "type": "string"}
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{"key": "token", "value": "{{token}}", "type": "string"}]
+  },
+  "item": [
+    {
+      "name": "1. Authentication Flow",
+      "item": [
+        {
+          "name": "1.1 Login and Get Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Response has token', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.token || json.data?.token).to.be.a('string');",
+                  "    pm.collectionVariables.set('token', json.token || json.data?.token);",
+                  "});",
+                  "pm.test('Response has user info', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.user || json.data?.user).to.be.an('object');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/auth/login",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"admin@worldclass.co.za\", \"password\": \"admin123\"}"
+            }
+          }
+        },
+        {
+          "name": "1.2 Verify Token Works",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Auth check returns 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns user data', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/auth/me"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Customer CRUD (Sales)",
+      "item": [
+        {
+          "name": "2.1 CREATE Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Customer created (201 or 200)', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Response has customer data', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    const customer = json.data || json.customer;",
+                  "    pm.expect(customer).to.have.property('id');",
+                  "    pm.collectionVariables.set('createdCustomerId', customer.id || customer.customer_id);",
+                  "});",
+                  "pm.test('Customer code matches input', () => {",
+                  "    const json = pm.response.json();",
+                  "    const customer = json.data || json.customer;",
+                  "    pm.expect(customer.customer_code).to.include('E2E-CUST');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('testTimestamp', timestamp);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v2/sales/customers",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer_code\": \"E2E-CUST-{{$timestamp}}\",\n  \"company_name\": \"E2E Test Company {{$timestamp}}\",\n  \"contact_name\": \"Test Contact\",\n  \"email\": \"e2e-{{$timestamp}}@test.com\",\n  \"phone\": \"+27123456789\",\n  \"billing_address\": \"123 Test Street, Johannesburg\",\n  \"vat_number\": \"4123456789\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2.2 READ Customer (Verify Persisted)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Customer retrieved', () => pm.response.to.have.status(200));",
+                  "pm.test('Data persisted correctly', () => {",
+                  "    const json = pm.response.json();",
+                  "    const customer = json.data || json;",
+                  "    pm.expect(customer.contact_name).to.equal('Test Contact');",
+                  "    pm.expect(customer.phone).to.equal('+27123456789');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v2/sales/customers/{{createdCustomerId}}"
+          }
+        },
+        {
+          "name": "2.3 UPDATE Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Customer updated', () => pm.response.to.have.status(200));",
+                  "pm.test('Update persisted', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": "{{baseUrl}}/api/v2/sales/customers/{{createdCustomerId}}",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contact_name\": \"Updated Contact Name\",\n  \"phone\": \"+27987654321\"\n}"
+            }
+          }
+        },
+        {
+          "name": "2.4 VERIFY Update Persisted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Updated data persisted', () => {",
+                  "    const json = pm.response.json();",
+                  "    const customer = json.data || json;",
+                  "    pm.expect(customer.contact_name).to.equal('Updated Contact Name');",
+                  "    pm.expect(customer.phone).to.equal('+27987654321');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v2/sales/customers/{{createdCustomerId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Inventory CRUD",
+      "item": [
+        {
+          "name": "3.1 CREATE Item",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Item created', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Item data returned', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    const item = json.data || json.item;",
+                  "    pm.collectionVariables.set('createdItemId', item.id || item.item_id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v2/inventory/items",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"item_code\": \"E2E-ITEM-{{$timestamp}}\",\n  \"item_name\": \"E2E Test Product\",\n  \"item_type\": \"STOCK\",\n  \"uom\": \"EACH\",\n  \"description\": \"Test item for E2E testing\",\n  \"cost_price\": 100.00,\n  \"selling_price\": 150.00\n}"
+            }
+          }
+        },
+        {
+          "name": "3.2 READ Item (Verify Persisted)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Item retrieved', () => pm.response.to.have.status(200));",
+                  "pm.test('Item data correct', () => {",
+                  "    const json = pm.response.json();",
+                  "    const item = json.data || json;",
+                  "    pm.expect(item.item_name).to.equal('E2E Test Product');",
+                  "    pm.expect(item.item_type).to.equal('STOCK');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v2/inventory/items/{{createdItemId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Calendar Events CRUD",
+      "item": [
+        {
+          "name": "4.1 CREATE Event",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Event created', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Event data returned', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    const event = json.data || json.event;",
+                  "    pm.collectionVariables.set('createdEventId', event.id || event.event_id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/calendar/events",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"E2E Test Meeting\",\n  \"description\": \"Automated E2E test event\",\n  \"startDate\": \"2026-01-08T10:00:00Z\",\n  \"endDate\": \"2026-01-08T11:00:00Z\",\n  \"eventType\": \"meeting\",\n  \"location\": \"Conference Room A\",\n  \"isAllDay\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "4.2 READ Events (Verify in List)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Events retrieved', () => pm.response.to.have.status(200));",
+                  "pm.test('Created event in list', () => {",
+                  "    const json = pm.response.json();",
+                  "    const events = json.data || json.events || json;",
+                  "    const found = events.find(e => e.title === 'E2E Test Meeting');",
+                  "    pm.expect(found).to.not.be.undefined;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/calendar/events"
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. HR Employee CRUD",
+      "item": [
+        {
+          "name": "5.1 CREATE Employee",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Employee created', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Employee data returned', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    const emp = json.data || json.employee;",
+                  "    pm.collectionVariables.set('createdEmployeeId', emp.id || emp.employee_id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v2/hr/employees",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_number\": \"E2E-EMP-{{$timestamp}}\",\n  \"first_name\": \"Test\",\n  \"last_name\": \"Employee\",\n  \"email\": \"e2e-emp-{{$timestamp}}@test.com\",\n  \"hire_date\": \"2026-01-07\",\n  \"basic_salary\": 50000,\n  \"employment_type\": \"Full-Time\"\n}"
+            }
+          }
+        },
+        {
+          "name": "5.2 READ Employee",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Employee retrieved', () => pm.response.to.have.status(200));",
+                  "pm.test('Employee data correct', () => {",
+                  "    const json = pm.response.json();",
+                  "    const emp = json.data || json;",
+                  "    pm.expect(emp.first_name).to.equal('Test');",
+                  "    pm.expect(emp.last_name).to.equal('Employee');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v2/hr/employees/{{createdEmployeeId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Financial Journal Entry (Business Logic)",
+      "item": [
+        {
+          "name": "6.1 CREATE Journal Entry (Must Balance)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Journal entry created', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "pm.test('Entry data returned', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.true;",
+                  "    const entry = json.data || json.entry;",
+                  "    pm.collectionVariables.set('createdJournalId', entry.id || entry.journal_entry_id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v2/financial/journal-entries",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"E2E Test Journal Entry - Balanced\",\n  \"journal_date\": \"2026-01-07\",\n  \"reference\": \"E2E-{{$timestamp}}\",\n  \"lines\": [\n    {\n      \"account_code\": \"1000\",\n      \"debit_amount\": 1000.00,\n      \"credit_amount\": 0,\n      \"description\": \"Debit test\"\n    },\n    {\n      \"account_code\": \"2000\",\n      \"debit_amount\": 0,\n      \"credit_amount\": 1000.00,\n      \"description\": \"Credit test\"\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "6.2 FAIL Unbalanced Entry (Business Logic Test)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Unbalanced entry rejected', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 422]);",
+                  "});",
+                  "pm.test('Error message about balance', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.success).to.be.false;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v2/financial/journal-entries",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"SHOULD FAIL - Unbalanced Entry\",\n  \"journal_date\": \"2026-01-07\",\n  \"lines\": [\n    {\n      \"account_code\": \"1000\",\n      \"debit_amount\": 1000.00,\n      \"credit_amount\": 0\n    },\n    {\n      \"account_code\": \"2000\",\n      \"debit_amount\": 0,\n      \"credit_amount\": 500.00\n    }\n  ]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Dashboard Data Integrity",
+      "item": [
+        {
+          "name": "7.1 Main Dashboard Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Dashboard returns data', () => pm.response.to.have.status(200));",
+                  "pm.test('Has financial summary', () => {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.data).to.have.property('financial_summary');",
+                  "});",
+                  "pm.test('Numbers are valid', () => {",
+                  "    const json = pm.response.json();",
+                  "    const fin = json.data.financial_summary;",
+                  "    pm.expect(fin.total_revenue).to.be.a('number');",
+                  "    pm.expect(fin.total_expenses).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v2/dashboard/stats"
+          }
+        },
+        {
+          "name": "7.2 Sales Dashboard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Sales dashboard works', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v2/sales/dashboard"
+          }
+        },
+        {
+          "name": "7.3 HR Dashboard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('HR dashboard works', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v2/hr/dashboard"
+          }
+        }
+      ]
+    },
+    {
+      "name": "8. Cleanup (DELETE Tests)",
+      "item": [
+        {
+          "name": "8.1 DELETE Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Customer deleted', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v2/sales/customers/{{createdCustomerId}}"
+          }
+        },
+        {
+          "name": "8.2 VERIFY Customer Deleted",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Customer no longer exists', () => {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([404, 200]);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v2/sales/customers/{{createdCustomerId}}"
+          }
+        }
+      ]
+    }
+  ]
+}

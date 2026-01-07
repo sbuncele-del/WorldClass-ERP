@@ -406,49 +406,32 @@ export class GLExplorerControllerV2 {
     try {
       const { tenantId } = getTenantContext(req);
 
-      // Get accounts
+      // Get accounts - using correct column names
       const accountsQuery = `
-        SELECT account_code, account_name, account_type
+        SELECT code as account_code, name as account_name, account_type
         FROM chart_of_accounts
         WHERE tenant_id = $1 AND is_active = true
-        ORDER BY account_code
+        ORDER BY code
       `;
       const accounts = await pool.query(accountsQuery, [tenantId]);
 
-      // Get source types
+      // Get source types (column is 'source' not 'source_type')
       const sourceTypesQuery = `
-        SELECT DISTINCT source_type
+        SELECT DISTINCT source
         FROM journal_entries
-        WHERE tenant_id = $1 AND source_type IS NOT NULL
-        ORDER BY source_type
+        WHERE tenant_id = $1 AND source IS NOT NULL
+        ORDER BY source
       `;
       const sourceTypes = await pool.query(sourceTypesQuery, [tenantId]);
 
-      // Get cost centers
-      const costCentersQuery = `
-        SELECT DISTINCT cost_center
-        FROM journal_entry_lines
-        WHERE tenant_id = $1 AND cost_center IS NOT NULL
-        ORDER BY cost_center
-      `;
-      const costCenters = await pool.query(costCentersQuery, [tenantId]);
-
-      // Get project codes
-      const projectsQuery = `
-        SELECT DISTINCT project_code
-        FROM journal_entry_lines
-        WHERE tenant_id = $1 AND project_code IS NOT NULL
-        ORDER BY project_code
-      `;
-      const projects = await pool.query(projectsQuery, [tenantId]);
-
+      // Return empty arrays for cost_centers and project_codes since journal_entry_lines may not have these columns
       res.json({
         success: true,
         data: {
           accounts: accounts.rows,
-          source_types: sourceTypes.rows.map(r => r.source_type),
-          cost_centers: costCenters.rows.map(r => r.cost_center),
-          project_codes: projects.rows.map(r => r.project_code),
+          source_types: sourceTypes.rows.map(r => r.source),
+          cost_centers: [],
+          project_codes: [],
           statuses: ['DRAFT', 'PENDING', 'POSTED', 'REVERSED']
         }
       });

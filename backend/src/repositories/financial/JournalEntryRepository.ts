@@ -56,6 +56,7 @@ export class JournalEntryRepository extends BaseRepository<JournalEntry> {
   protected tableName = 'journal_entries';
   protected schema = 'public';
   protected primaryKey = 'entry_id';
+  protected softDelete = false;  // Table uses deleted_at now but we don't filter by it
 
   /**
    * Get entry with lines
@@ -65,9 +66,9 @@ export class JournalEntryRepository extends BaseRepository<JournalEntry> {
     if (!entry) return null;
 
     const linesSql = `
-      SELECT jel.*, a.account_number, a.name as account_name
+      SELECT jel.*, coa.account_code as account_number, coa.account_name as account_name
       FROM journal_entry_lines jel
-      JOIN financial.accounts a ON a.id = jel.account_id
+      LEFT JOIN chart_of_accounts coa ON coa.account_id = jel.account_id
       WHERE jel.journal_entry_id = $2 AND jel.tenant_id = $1
       ORDER BY jel.line_number
     `;
