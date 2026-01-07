@@ -125,13 +125,63 @@ WorldClass ERP is a comprehensive, multi-tenant Enterprise Resource Planning sys
                                          └─────────────────┘
 ```
 
-## 3.1 EC2 Instance Details
+## 3.1 PRODUCTION DEPLOYMENT LOCATIONS (LOCKED)
+
+### 🌐 FRONTEND (React)
+| Property | Value |
+|----------|-------|
+| **Platform** | Vercel |
+| **URL** | https://erp.world-class.africa |
+| **Repository** | sbuncele-del/WorldClass-ERP |
+| **Build Command** | `npm run build` |
+| **Output Dir** | `frontend/dist` |
+| **Framework** | React + Vite |
+
+### 🖥️ BACKEND (Node.js)
+| Property | Value |
+|----------|-------|
+| **Platform** | AWS EC2 |
+| **Instance ID** | `i-0b20fd06fae7e84b1` |
+| **Public IP** | `51.20.67.228` |
+| **API URL** | http://51.20.67.228:3000/api |
+| **Directory on Server** | `/home/ec2-user/erp-production` |
+| **Process Manager** | PM2 (process name: `erp-backend`) |
+| **Region** | eu-north-1 (Stockholm) |
+
+### 🗄️ DATABASE (PostgreSQL)
+| Property | Value |
+|----------|-------|
+| **Platform** | AWS RDS |
+| **Endpoint** | `aetheros-erp-db.cxoqqoowwgxt.eu-north-1.rds.amazonaws.com` |
+| **Port** | 5432 |
+| **Database** | `postgres` |
+| **Username** | `postgres` |
+| **Password** | `caxMex-0putca-dyjnah` |
+| **Engine** | PostgreSQL 15 |
+
+### 📦 DEPLOYMENT ARTIFACTS (S3)
+| Property | Value |
+|----------|-------|
+| **Bucket** | `s3://aetheros-erp-deployments` |
+| **Region** | eu-north-1 |
+| **Artifact** | `backend-dist.tar.gz` |
+
+### 📁 SOURCE CODE LOCATIONS
+| Component | Local Path | On Server |
+|-----------|------------|-----------|
+| Backend Source | `/workspaces/WorldClass-ERP/backend/src` | N/A (compiled) |
+| Backend Compiled | `/workspaces/WorldClass-ERP/backend/dist` | `/home/ec2-user/erp-production/dist` |
+| Frontend Source | `/workspaces/WorldClass-ERP/frontend/src` | N/A |
+| Frontend Built | `/workspaces/WorldClass-ERP/frontend/dist` | Vercel CDN |
+| Migrations | `/workspaces/WorldClass-ERP/migrations` | Run via SSM |
+
+## 3.2 EC2 Instance Details
 - **Instance ID**: `i-0b20fd06fae7e84b1`
 - **Type**: t3.medium (2 vCPU, 4GB RAM)
 - **OS**: Amazon Linux 2
 - **Storage**: 30GB gp3 SSD
 
-## 3.2 RDS Instance Details
+## 3.3 RDS Instance Details
 - **Identifier**: aetheros-erp-db
 - **Engine**: PostgreSQL 15
 - **Instance Class**: db.t3.micro
