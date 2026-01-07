@@ -511,6 +511,38 @@ router.get('/reports/cash-flow', ReportsControllerV2.getCashFlow);
 
 Target: 77/77 PASSING
 
+## Priority 4: Switch to Docker Deployment
+
+**AFTER all 77 endpoints pass**, switch from PM2 to Docker:
+
+### Why Docker:
+- All config baked into image (can't lose credentials)
+- Consistent environment (dev = prod)
+- Easy rollback (switch container tags)
+- Single deployment script
+
+### Docker Files Ready:
+- `backend/Dockerfile` - Has all ENV vars locked in
+- `deploy-docker-locked.sh` - Deployment script exists
+
+### Migration Steps:
+1. Build Docker image: `docker build -t worldclass-erp-backend .`
+2. Push to ECR or save as tar
+3. On EC2: Stop PM2, start Docker container
+4. Update deployment script to use Docker
+
+### Single Deployment Script (To Create):
+```bash
+#!/bin/bash
+# deploy-docker.sh - One script to deploy everything
+# 1. Build Docker image
+# 2. Push to S3 as tar
+# 3. Pull on EC2
+# 4. Stop old container
+# 5. Start new container
+# 6. Health check
+```
+
 ---
 
 # SECTION 9: COMMON ISSUES & SOLUTIONS
