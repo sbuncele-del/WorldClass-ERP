@@ -103,18 +103,18 @@ WorldClass ERP is a comprehensive, multi-tenant Enterprise Resource Planning sys
                     └────────┬────────┘
                              │
                     ┌────────▼────────┐
-                    │   CloudFlare    │
-                    │   (DNS/CDN)     │
+                    │   AWS EC2       │
+                    │  51.20.67.228   │
                     └────────┬────────┘
                              │
         ┌────────────────────┴────────────────────┐
         │                                          │
 ┌───────▼───────┐                        ┌────────▼────────┐
-│   Frontend    │                        │    Backend      │
-│   (Vercel)    │                        │    (EC2)        │
+│   nginx       │                        │   Node.js       │
+│   Port 80     │                        │   Port 3000     │
 │               │                        │                 │
-│ erp.world-    │◄──── API Calls ───────►│ 51.20.67.228   │
-│ class.africa  │                        │ Port 3000       │
+│ Frontend      │                        │ Backend API     │
+│ /var/www/html │                        │ PM2: erp-backend│
 └───────────────┘                        └────────┬────────┘
                                                   │
                                          ┌────────▼────────┐
@@ -130,12 +130,13 @@ WorldClass ERP is a comprehensive, multi-tenant Enterprise Resource Planning sys
 ### 🌐 FRONTEND (React)
 | Property | Value |
 |----------|-------|
-| **Platform** | Vercel |
-| **URL** | https://erp.world-class.africa |
-| **Repository** | sbuncele-del/WorldClass-ERP |
+| **Platform** | AWS EC2 (same server as backend) |
+| **URL** | http://51.20.67.228 (nginx serves static files) |
+| **Directory on Server** | `/var/www/html/` |
 | **Build Command** | `npm run build` |
 | **Output Dir** | `frontend/dist` |
 | **Framework** | React + Vite |
+| **Web Server** | nginx |
 
 ### 🖥️ BACKEND (Node.js)
 | Property | Value |
