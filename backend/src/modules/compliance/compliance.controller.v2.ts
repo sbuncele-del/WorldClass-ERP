@@ -353,6 +353,77 @@ export const getRegulatoryUpdates = async (req: TenantRequest, res: Response) =>
   }
 };
 
+// ============================================================================
+// SARS STATUS
+// ============================================================================
+
+export const getSarsStatus = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+
+    // Get recent SARS submissions
+    const submissionsQuery = `
+      SELECT 
+        submission_type,
+        COUNT(*) as count,
+        MAX(submission_date) as last_submission,
+        SUM(CASE WHEN status = 'accepted' THEN 1 ELSE 0 END) as accepted_count,
+        SUM(CASE WHEN status = 'rejected' THEN 1 ELSE 0 END) as rejected_count,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count
+      FROM compliance.sars_submissions
+      WHERE tenant_id = $1
+      GROUP BY submission_type
+    `;
+
+    // Get upcoming SARS deadlines
+    const deadlinesQuery = `
+      SELECT * FROM compliance.filings
+      WHERE tenant_id = $1 
+        AND filing_authority = 'SARS'
+        AND status IN ('pending', 'draft')
+        AND due_date >= CURRENT_DATE
+      ORDER BY due_date
+      LIMIT 10
+    `;
+
+    // Get compliance score
+    const scoreQuery = `
+      SELECT 
+        COUNT(*) as total_requirements,
+        SUM(CASE WHEN status = 'compliant' THEN 1 ELSE 0 END) as compliant_count
+      FROM compliance.requirements
+      WHERE tenant_id = $1 AND regulatory_body = 'SARS'
+    `;
+
+    const [submissions, deadlines, score] = await Promise.all([
+      pool.query(submissionsQuery, [tenantId]),
+      pool.query(deadlinesQuery, [tenantId]),
+      pool.query(scoreQuery, [tenantId])
+    ]);
+
+    const scoreData = score.rows[0];
+    const complianceScore = scoreData.total_requirements > 0 
+      ? Math.round((scoreData.compliant_count / scoreData.total_requirements) * 100)
+      : 100;
+
+    res.json({
+      success: true,
+      data: {
+        complianceScore,
+        submissionStats: submissions.rows,
+        upcomingDeadlines: deadlines.rows,
+        totalRequirements: parseInt(scoreData.total_requirements) || 0,
+        compliantCount: parseInt(scoreData.compliant_count) || 0
+      }
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant ID not found') {
+      return res.status(401).json({ success: false, message: 'Unauthorized - tenant not found' });
+    }
+    res.status(500).json({ success: false, message: 'Failed to fetch SARS status', error: error.message });
+  }
+};
+
 export default {
   getComplianceRequirements,
   createComplianceRequirement,
@@ -360,5 +431,6 @@ export default {
   createFiling,
   getComplianceAudits,
   getComplianceDashboard,
-  getRegulatoryUpdates
+  getRegulatoryUpdates,
+  getSarsStatus
 };

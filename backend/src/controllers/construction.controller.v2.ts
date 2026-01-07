@@ -495,6 +495,58 @@ export const updateMaterial = async (req: TenantRequest, res: Response) => {
   }
 };
 
+/**
+ * Get construction dashboard
+ */
+export const getConstructionDashboard = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+
+    // Get project stats
+    const projectStats = await pool.query(
+      `SELECT 
+         COUNT(*) as total_projects,
+         SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
+         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+         SUM(budget) as total_budget,
+         SUM(spent_amount) as total_spent
+       FROM construction_projects 
+       WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Get safety incidents
+    const safetyStats = await pool.query(
+      `SELECT COUNT(*) as total_incidents
+       FROM construction_safety_incidents 
+       WHERE tenant_id = $1 AND EXTRACT(YEAR FROM incident_date) = EXTRACT(YEAR FROM CURRENT_DATE)`,
+      [tenantId]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        totalProjects: parseInt(projectStats.rows[0]?.total_projects || '0'),
+        activeProjects: parseInt(projectStats.rows[0]?.active || '0'),
+        completedProjects: parseInt(projectStats.rows[0]?.completed || '0'),
+        totalBudget: parseFloat(projectStats.rows[0]?.total_budget || '0'),
+        totalSpent: parseFloat(projectStats.rows[0]?.total_spent || '0'),
+        yearlyIncidents: parseInt(safetyStats.rows[0]?.total_incidents || '0'),
+        summary: {
+          projects: parseInt(projectStats.rows[0]?.total_projects || '0'),
+          budget: parseFloat(projectStats.rows[0]?.total_budget || '0')
+        }
+      }
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get construction dashboard error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch construction dashboard' });
+  }
+};
+
 export default {
   getWorkspace,
   getProjects,
@@ -509,5 +561,6 @@ export default {
   updateSafetyIncident,
   getMaterials,
   addMaterial,
-  updateMaterial
+  updateMaterial,
+  getConstructionDashboard
 };

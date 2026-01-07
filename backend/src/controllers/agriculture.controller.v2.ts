@@ -546,6 +546,77 @@ export const updateTask = async (req: TenantRequest, res: Response) => {
   }
 };
 
+/**
+ * Get agriculture dashboard
+ */
+export const getAgricultureDashboard = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+
+    // Get farm stats
+    const farmStats = await pool.query(
+      `SELECT 
+         COUNT(*) as total_farms,
+         SUM(total_area) as total_area
+       FROM agriculture_farms 
+       WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Get crop stats
+    const cropStats = await pool.query(
+      `SELECT 
+         COUNT(*) as total_crops,
+         SUM(planted_area) as planted_area
+       FROM farm_crops 
+       WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Get livestock stats
+    const livestockStats = await pool.query(
+      `SELECT 
+         COUNT(DISTINCT livestock_type) as livestock_types,
+         SUM(quantity) as total_livestock
+       FROM farm_livestock 
+       WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Get pending tasks
+    const taskStats = await pool.query(
+      `SELECT COUNT(*) as pending_tasks
+       FROM farm_tasks 
+       WHERE tenant_id = $1 AND status = 'pending'`,
+      [tenantId]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        totalFarms: parseInt(farmStats.rows[0]?.total_farms || '0'),
+        totalArea: parseFloat(farmStats.rows[0]?.total_area || '0'),
+        totalCrops: parseInt(cropStats.rows[0]?.total_crops || '0'),
+        plantedArea: parseFloat(cropStats.rows[0]?.planted_area || '0'),
+        livestockTypes: parseInt(livestockStats.rows[0]?.livestock_types || '0'),
+        totalLivestock: parseInt(livestockStats.rows[0]?.total_livestock || '0'),
+        pendingTasks: parseInt(taskStats.rows[0]?.pending_tasks || '0'),
+        summary: {
+          farms: parseInt(farmStats.rows[0]?.total_farms || '0'),
+          crops: parseInt(cropStats.rows[0]?.total_crops || '0'),
+          livestock: parseInt(livestockStats.rows[0]?.total_livestock || '0')
+        }
+      }
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get agriculture dashboard error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch agriculture dashboard' });
+  }
+};
+
 export default {
   getWorkspace,
   getFarms,
@@ -562,5 +633,6 @@ export default {
   updateLivestock,
   getTasks,
   createTask,
-  updateTask
+  updateTask,
+  getAgricultureDashboard
 };

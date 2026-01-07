@@ -975,6 +975,63 @@ export const createCampaign = async (req: TenantRequest, res: Response) => {
   }
 };
 
+/**
+ * Get communications dashboard
+ */
+export const getCommunicationsDashboard = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+
+    // Get unread notifications count
+    const notificationsCount = await pool.query(
+      `SELECT COUNT(*) as count FROM notifications 
+       WHERE tenant_id = $1 AND user_id = $2 AND is_read = false`,
+      [tenantId, userId]
+    );
+
+    // Get unread messages count  
+    const messagesCount = await pool.query(
+      `SELECT COUNT(*) as count FROM messages 
+       WHERE tenant_id = $1 AND recipient_id = $2 AND is_read = false`,
+      [tenantId, userId]
+    );
+
+    // Get active announcements
+    const announcementsCount = await pool.query(
+      `SELECT COUNT(*) as count FROM announcements 
+       WHERE tenant_id = $1 AND is_active = true`,
+      [tenantId]
+    );
+
+    // Get upcoming meetings
+    const meetingsCount = await pool.query(
+      `SELECT COUNT(*) as count FROM meetings 
+       WHERE tenant_id = $1 AND start_time >= NOW()`,
+      [tenantId]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        unreadNotifications: parseInt(notificationsCount.rows[0]?.count || '0'),
+        unreadMessages: parseInt(messagesCount.rows[0]?.count || '0'),
+        activeAnnouncements: parseInt(announcementsCount.rows[0]?.count || '0'),
+        upcomingMeetings: parseInt(meetingsCount.rows[0]?.count || '0'),
+        summary: {
+          notifications: parseInt(notificationsCount.rows[0]?.count || '0'),
+          messages: parseInt(messagesCount.rows[0]?.count || '0')
+        }
+      }
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get communications dashboard error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch communications dashboard' });
+  }
+};
+
 export default {
   getWorkspace,
   getAnnouncements,
@@ -1004,5 +1061,7 @@ export default {
   getTemplates,
   createTemplate,
   getCampaigns,
-  createCampaign
+  createCampaign,
+  // Dashboard
+  getCommunicationsDashboard
 };

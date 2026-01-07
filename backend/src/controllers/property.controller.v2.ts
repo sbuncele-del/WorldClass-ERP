@@ -623,6 +623,67 @@ export const updateMaintenanceRequest = async (req: TenantRequest, res: Response
   }
 };
 
+/**
+ * Get property dashboard
+ */
+export const getPropertyDashboard = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+
+    // Get property stats
+    const propertyStats = await pool.query(
+      `SELECT COUNT(*) as total_properties FROM property_properties WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Get unit stats
+    const unitStats = await pool.query(
+      `SELECT 
+         COUNT(*) as total_units,
+         SUM(CASE WHEN status = 'occupied' THEN 1 ELSE 0 END) as occupied,
+         SUM(CASE WHEN status = 'vacant' THEN 1 ELSE 0 END) as vacant
+       FROM property_units 
+       WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Get lease stats
+    const leaseStats = await pool.query(
+      `SELECT 
+         COUNT(*) as active_leases,
+         SUM(monthly_rent) as total_monthly_rent
+       FROM property_leases 
+       WHERE tenant_id = $1 AND status = 'active'`,
+      [tenantId]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        totalProperties: parseInt(propertyStats.rows[0]?.total_properties || '0'),
+        totalUnits: parseInt(unitStats.rows[0]?.total_units || '0'),
+        occupiedUnits: parseInt(unitStats.rows[0]?.occupied || '0'),
+        vacantUnits: parseInt(unitStats.rows[0]?.vacant || '0'),
+        activeLeases: parseInt(leaseStats.rows[0]?.active_leases || '0'),
+        monthlyRentalIncome: parseFloat(leaseStats.rows[0]?.total_monthly_rent || '0'),
+        occupancyRate: parseInt(unitStats.rows[0]?.total_units || '0') > 0 
+          ? Math.round((parseInt(unitStats.rows[0]?.occupied || '0') / parseInt(unitStats.rows[0]?.total_units || '1')) * 100)
+          : 0,
+        summary: {
+          properties: parseInt(propertyStats.rows[0]?.total_properties || '0'),
+          units: parseInt(unitStats.rows[0]?.total_units || '0')
+        }
+      }
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get property dashboard error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch property dashboard' });
+  }
+};
+
 export default {
   getWorkspace,
   getProperties,
@@ -640,5 +701,6 @@ export default {
   updateLease,
   getMaintenanceRequests,
   createMaintenanceRequest,
-  updateMaintenanceRequest
+  updateMaintenanceRequest,
+  getPropertyDashboard
 };

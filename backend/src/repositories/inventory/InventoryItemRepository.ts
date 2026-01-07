@@ -69,7 +69,7 @@ export class InventoryItemRepository extends BaseRepository<InventoryItem> {
     let sql = `
       SELECT i.*, COALESCE(SUM(sl.quantity_on_hand), 0) as stock
       FROM ${this.fullTableName} i
-      LEFT JOIN inventory.stock_levels sl ON sl.item_id = i.id
+      LEFT JOIN inventory.stock_levels sl ON sl.item_id = i.item_id
       WHERE i.tenant_id = $1 AND i.deleted_at IS NULL
     `;
     const params: any[] = [];
@@ -80,14 +80,14 @@ export class InventoryItemRepository extends BaseRepository<InventoryItem> {
     }
 
     sql += `
-      GROUP BY i.id
+      GROUP BY i.item_id
       ORDER BY ${sortBy} ${sortOrder}
       LIMIT $${params.length + 2} OFFSET $${params.length + 3}
     `;
     params.push(limit, offset);
 
     const countSql = `
-      SELECT COUNT(DISTINCT i.id) FROM ${this.fullTableName} i
+      SELECT COUNT(DISTINCT i.item_id) FROM ${this.fullTableName} i
       WHERE i.tenant_id = $1 AND i.deleted_at IS NULL
     `;
 
@@ -112,12 +112,12 @@ export class InventoryItemRepository extends BaseRepository<InventoryItem> {
       SELECT 
         sl.item_id,
         sl.warehouse_id,
-        w.name as warehouse_name,
+        w.warehouse_name as warehouse_name,
         sl.quantity_on_hand,
         sl.quantity_reserved,
         (sl.quantity_on_hand - sl.quantity_reserved) as quantity_available
       FROM inventory.stock_levels sl
-      JOIN inventory.warehouses w ON w.id = sl.warehouse_id
+      JOIN inventory.warehouses w ON w.warehouse_id = sl.warehouse_id
       WHERE sl.tenant_id = $1 AND sl.item_id = $2
     `;
 
@@ -131,11 +131,11 @@ export class InventoryItemRepository extends BaseRepository<InventoryItem> {
     const sql = `
       SELECT i.*, COALESCE(SUM(sl.quantity_on_hand), 0) as current_stock
       FROM ${this.fullTableName} i
-      LEFT JOIN inventory.stock_levels sl ON sl.item_id = i.id
+      LEFT JOIN inventory.stock_levels sl ON sl.item_id = i.item_id
       WHERE i.tenant_id = $1 
         AND i.deleted_at IS NULL
         AND i.reorder_point IS NOT NULL
-      GROUP BY i.id
+      GROUP BY i.item_id
       HAVING COALESCE(SUM(sl.quantity_on_hand), 0) <= i.reorder_point
       ORDER BY (COALESCE(SUM(sl.quantity_on_hand), 0) / NULLIF(i.reorder_point, 0))
     `;

@@ -122,6 +122,7 @@ export const tenantMiddleware = async (
     }
 
     // Attach tenant and user to request
+    // Set both req.tenant and req.tenantId for backwards compatibility
     req.tenant = {
       id: tenant.id,
       slug: tenant.slug,
@@ -131,6 +132,9 @@ export const tenantMiddleware = async (
       features: tenant.features,
       settings: tenant.settings
     };
+    
+    // Also set tenantId directly for controllers that use req.tenantId
+    (req as any).tenantId = tenant.id;
 
     req.user = {
       id: user.id,
@@ -138,6 +142,9 @@ export const tenantMiddleware = async (
       role: user.role,
       permissions: user.permissions || []
     };
+    
+    // Also set userId directly for controllers that use req.userId
+    (req as any).userId = user.id;
 
     // Log audit trail for sensitive actions
     if (req.method !== 'GET') {

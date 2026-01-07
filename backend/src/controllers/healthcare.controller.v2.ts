@@ -1098,6 +1098,54 @@ export const getFacilities = async (req: TenantRequest, res: Response) => {
   }
 };
 
+/**
+ * Get healthcare dashboard
+ */
+export const getHealthcareDashboard = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+
+    // Get facility count
+    const facilitiesCount = await pool.query(
+      `SELECT COUNT(*) as count FROM healthcare_facilities WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Get patient count
+    const patientsCount = await pool.query(
+      `SELECT COUNT(*) as count FROM healthcare_patients WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Get today's appointments count
+    const appointmentsCount = await pool.query(
+      `SELECT COUNT(*) as count FROM healthcare_appointments 
+       WHERE tenant_id = $1 AND appointment_date = CURRENT_DATE`,
+      [tenantId]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        totalFacilities: parseInt(facilitiesCount.rows[0]?.count || '0'),
+        totalPatients: parseInt(patientsCount.rows[0]?.count || '0'),
+        todayAppointments: parseInt(appointmentsCount.rows[0]?.count || '0'),
+        summary: {
+          facilities: parseInt(facilitiesCount.rows[0]?.count || '0'),
+          patients: parseInt(patientsCount.rows[0]?.count || '0'),
+          appointments: parseInt(appointmentsCount.rows[0]?.count || '0')
+        }
+      }
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get healthcare dashboard error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch healthcare dashboard' });
+  }
+};
+
 export default {
   // Facility Operations
   getFacilityOperationsStatus,
@@ -1128,5 +1176,7 @@ export default {
   createLabOrder,
   // GoodX Integration
   getGoodXRevenue,
-  getGoodXSyncStatus
+  getGoodXSyncStatus,
+  // Dashboard
+  getHealthcareDashboard
 };

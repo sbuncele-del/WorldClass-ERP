@@ -245,6 +245,9 @@ router.post('/inventory/categories', InventoryV2.createItemCategory);
 router.put('/inventory/categories/:id', InventoryV2.updateItemCategory);
 router.delete('/inventory/categories/:id', InventoryV2.deleteItemCategory);
 router.get('/inventory/low-stock', InventoryV2.getLowStockItems);
+router.get('/inventory/stock-levels', InventoryV2.getStockLevels);
+router.get('/inventory/stock-movements', InventoryV2.getStockMovements);
+router.get('/inventory/dashboard', InventoryV2.getInventoryDashboard);
 router.get('/inventory/warehouses', InventoryV2.getWarehouses);
 router.get('/inventory/warehouses/:id', InventoryV2.getWarehouse);
 router.post('/inventory/warehouses', InventoryV2.createWarehouse);
@@ -271,6 +274,29 @@ router.get('/sales/invoices/:id', SalesV2.getInvoice);
 router.post('/sales/invoices/:id/post-to-gl', SalesV2.postInvoiceToGL);
 router.get('/sales/invoices/:id/gl-status', SalesV2.getInvoiceGLStatus);
 router.post('/sales/invoices/:id/record-payment', SalesV2.recordPaymentReceived);
+// Leads
+router.get('/sales/leads', SalesV2.getLeads);
+router.get('/sales/leads/:id', SalesV2.getLeadById);
+router.post('/sales/leads', SalesV2.createLead);
+router.put('/sales/leads/:id', SalesV2.updateLead);
+router.delete('/sales/leads/:id', SalesV2.deleteLead);
+router.post('/sales/leads/:id/convert', SalesV2.convertLeadToOpportunity);
+// Opportunities
+router.get('/sales/opportunities', SalesV2.getOpportunities);
+router.get('/sales/opportunities/:id', SalesV2.getOpportunityById);
+router.post('/sales/opportunities', SalesV2.createOpportunity);
+router.put('/sales/opportunities/:id', SalesV2.updateOpportunity);
+router.delete('/sales/opportunities/:id', SalesV2.deleteOpportunity);
+// Quotations
+router.get('/sales/quotations', SalesV2.getQuotations);
+router.get('/sales/quotations/:id', SalesV2.getQuotation);
+router.post('/sales/quotations', SalesV2.createQuotation);
+router.put('/sales/quotations/:id', SalesV2.updateQuotation);
+router.delete('/sales/quotations/:id', SalesV2.deleteQuotation);
+router.post('/sales/quotations/:id/convert', SalesV2.convertQuotationToOrder);
+// Dashboard & Pipeline
+router.get('/sales/dashboard', SalesV2.getSalesDashboard);
+router.get('/sales/pipeline', SalesV2.getOpportunities);
 
 // ============================================================================
 // PURCHASE
@@ -343,6 +369,8 @@ router.post('/purchase/invoices/:id/record-payment', PurchaseV2.recordPaymentMad
 router.post('/purchase/vendor-invoices/:id/post-to-gl', PurchaseV2.postBillToGL);
 router.get('/purchase/vendor-invoices/:id/gl-status', PurchaseV2.getBillGLStatus);
 router.post('/purchase/vendor-invoices/:id/record-payment', PurchaseV2.recordPaymentMade);
+// Dashboard
+router.get('/purchase/dashboard', PurchaseV2.getPurchaseDashboard);
 
 // ============================================================================
 // ASSETS
@@ -350,6 +378,7 @@ router.post('/purchase/vendor-invoices/:id/record-payment', PurchaseV2.recordPay
 router.get('/assets', AssetsControllerV2.getAllAssets);
 router.get('/assets/categories', AssetsControllerV2.getAssetCategories);
 router.post('/assets/categories', AssetsControllerV2.createAssetCategory);
+router.get('/assets/locations', AssetsControllerV2.getAssetLocations);
 router.get('/assets/dashboard', AssetsControllerV2.getAssetDashboard);
 router.get('/assets/disposals', AssetsControllerV2.getAssetDisposals);
 router.post('/assets/disposals', AssetsControllerV2.createAssetDisposal);
@@ -401,6 +430,11 @@ router.get('/hr/payroll/periods', HRV2.getPayrollPeriods);
 router.post('/hr/payroll/periods', HRV2.createPayrollPeriod);
 router.post('/hr/payroll/process', HRV2.processPayroll);
 router.get('/hr/payroll/:id', HRV2.getPayrollRunDetails);
+// Leave Types & Leave Requests
+router.get('/hr/leave-types', HRV2.getLeaveTypes);
+router.get('/hr/leave-requests', HRV2.getLeaveRequests);
+// Payroll Runs
+router.get('/hr/payroll-runs', HRV2.getPayrollRuns);
 router.get('/hr/dashboard', HRV2.getHRDashboard);
 
 // ============================================================================
@@ -411,9 +445,13 @@ router.post('/manufacturing/workcenters', ManufacturingControllerV2.createWorkCe
 router.get('/manufacturing/bom', ManufacturingControllerV2.getBOMs);
 router.get('/manufacturing/bom/:id', ManufacturingControllerV2.getBOMById);
 router.post('/manufacturing/bom', ManufacturingControllerV2.createBOM);
+// Alias for boms -> bom
+router.get('/manufacturing/boms', ManufacturingControllerV2.getBOMs);
 router.get('/manufacturing/orders', ManufacturingControllerV2.getProductionOrders);
 router.post('/manufacturing/orders', ManufacturingControllerV2.createProductionOrder);
 router.put('/manufacturing/orders/:id/status', ManufacturingControllerV2.updateProductionOrderStatus);
+// Alias for work-orders -> orders
+router.get('/manufacturing/work-orders', ManufacturingControllerV2.getProductionOrders);
 router.get('/manufacturing/dashboard', ManufacturingControllerV2.getDashboardStats);
 
 // ============================================================================
@@ -426,6 +464,8 @@ router.post('/compliance/filings', ComplianceControllerV2.createFiling);
 router.get('/compliance/audits', ComplianceControllerV2.getComplianceAudits);
 router.get('/compliance/regulatory-updates', ComplianceControllerV2.getRegulatoryUpdates);
 router.get('/compliance/dashboard', ComplianceControllerV2.getComplianceDashboard);
+// SARS Status
+router.get('/compliance/sars/status', ComplianceControllerV2.getSarsStatus);
 
 // ============================================================================
 // SARS SENTINEL
@@ -499,6 +539,8 @@ router.put('/agriculture/livestock/:id', AgricultureControllerV2.updateLivestock
 router.get('/agriculture/tasks', AgricultureControllerV2.getTasks);
 router.post('/agriculture/tasks', AgricultureControllerV2.createTask);
 router.put('/agriculture/tasks/:id', AgricultureControllerV2.updateTask);
+// Dashboard
+router.get('/agriculture/dashboard', AgricultureControllerV2.getAgricultureDashboard);
 
 // ============================================================================
 // MINING
@@ -517,6 +559,8 @@ router.put('/mining/safety-incidents/:id', MiningControllerV2.updateSafetyIncide
 router.get('/mining/equipment', MiningControllerV2.getEquipment);
 router.post('/mining/equipment', MiningControllerV2.registerEquipment);
 router.put('/mining/equipment/:id', MiningControllerV2.updateEquipment);
+// Dashboard
+router.get('/mining/dashboard', MiningControllerV2.getMiningDashboard);
 
 // ============================================================================
 // CONSTRUCTION
@@ -535,6 +579,8 @@ router.put('/construction/safety-incidents/:id', ConstructionControllerV2.update
 router.get('/construction/materials', ConstructionControllerV2.getMaterials);
 router.post('/construction/materials', ConstructionControllerV2.addMaterial);
 router.put('/construction/materials/:id', ConstructionControllerV2.updateMaterial);
+// Dashboard
+router.get('/construction/dashboard', ConstructionControllerV2.getConstructionDashboard);
 
 // ============================================================================
 // PROPERTY MANAGEMENT
@@ -556,6 +602,8 @@ router.put('/property/leases/:id', PropertyControllerV2.updateLease);
 router.get('/property/maintenance', PropertyControllerV2.getMaintenanceRequests);
 router.post('/property/maintenance', PropertyControllerV2.createMaintenanceRequest);
 router.put('/property/maintenance/:id', PropertyControllerV2.updateMaintenanceRequest);
+// Dashboard
+router.get('/property/dashboard', PropertyControllerV2.getPropertyDashboard);
 
 // ============================================================================
 // COMMUNICATIONS
@@ -592,6 +640,8 @@ router.post('/communications/templates', CommunicationsControllerV2.createTempla
 // Campaigns
 router.get('/communications/campaigns', CommunicationsControllerV2.getCampaigns);
 router.post('/communications/campaigns', CommunicationsControllerV2.createCampaign);
+// Dashboard
+router.get('/communications/dashboard', CommunicationsControllerV2.getCommunicationsDashboard);
 
 // ============================================================================
 // PROPOSALS
@@ -642,6 +692,8 @@ router.get('/settings/tax/income-brackets', TaxSettingsControllerV2.getIncomeTax
 router.put('/settings/tax/income-brackets', TaxSettingsControllerV2.updateIncomeTaxBrackets);
 router.get('/settings/tax/efiling', TaxSettingsControllerV2.getEfilingConfig);
 router.put('/settings/tax/efiling', TaxSettingsControllerV2.updateEfilingConfig);
+// Tax settings alias (for test compatibility)
+router.get('/tax-settings', TaxSettingsControllerV2.getTaxSettings);
 
 // ============================================================================
 // TENANT SETTINGS
@@ -670,6 +722,9 @@ router.get('/entities/:id/ancestors', MultiEntityControllerV2.getEntityAncestors
 router.get('/entities/:id/descendants', MultiEntityControllerV2.getEntityDescendants);
 router.get('/entities/permissions/:userId', MultiEntityControllerV2.getUserEntityPermissions);
 router.put('/entities/permissions/:userId', MultiEntityControllerV2.updateUserEntityPermissions);
+// Multi-Entity aliases (for test compatibility)
+router.get('/multi-entity/entities', MultiEntityControllerV2.getEntities);
+router.get('/multi-entity/dashboard', MultiEntityControllerV2.getMultiEntityDashboard);
 
 // ============================================================================
 // FORECASTING & BUDGETING
@@ -759,6 +814,8 @@ router.post('/healthcare/patients/:patientId/lab-orders', HealthcareControllerV2
 // GoodX Integration
 router.get('/healthcare/facilities/:facilityId/goodx/revenue', HealthcareControllerV2.getGoodXRevenue);
 router.get('/healthcare/facilities/:facilityId/goodx/sync-status', HealthcareControllerV2.getGoodXSyncStatus);
+// Dashboard
+router.get('/healthcare/dashboard', HealthcareControllerV2.getHealthcareDashboard);
 
 // ============================================================================
 // ONBOARDING
@@ -791,6 +848,8 @@ router.get('/audit-ready/checklist-items/:templateId', AuditReadyControllerV2.ge
 // Permanent Records
 router.get('/audit-ready/permanent-records', AuditReadyControllerV2.getPermanentRecords);
 router.post('/audit-ready/permanent-records', AuditReadyControllerV2.addPermanentRecord);
+// Dashboard
+router.get('/audit-ready/dashboard', AuditReadyControllerV2.getAuditReadyDashboard);
 
 // ============================================================================
 // EMAIL PREFERENCES
@@ -819,6 +878,8 @@ router.post('/admin/email-queue/resume', EmailQueueControllerV2.resume);
 // MODULE MANAGEMENT
 // ============================================================================
 router.get('/modules', ModuleManagementControllerV2.getModules);
+// Settings modules alias (for test compatibility)
+router.get('/settings/modules', ModuleManagementControllerV2.getModules);
 router.get('/modules/:code', ModuleManagementControllerV2.getModuleByCode);
 router.post('/modules/:code/enable', ModuleManagementControllerV2.enableModule);
 router.post('/modules/:code/disable', ModuleManagementControllerV2.disableModule);
@@ -915,6 +976,9 @@ router.post('/treasury-v2/payment-orders', TreasuryV2.createPaymentOrder);
 router.get('/treasury-v2/liquidity-metrics', TreasuryV2.getLiquidityMetrics);
 // Dashboard
 router.get('/treasury-v2/dashboard', TreasuryV2.getTreasuryDashboard);
+// Treasury aliases (for test compatibility)
+router.get('/treasury/accounts', TreasuryV2.getTreasuryAccounts);
+router.get('/treasury/dashboard', TreasuryV2.getTreasuryDashboard);
 
 // ============================================================================
 // AI CHAT (Natural Language Queries)

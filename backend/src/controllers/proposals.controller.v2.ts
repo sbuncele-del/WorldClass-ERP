@@ -82,49 +82,31 @@ export const getWorkspace = async (req: TenantRequest, res: Response) => {
 export const getProposals = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
-    const { status, customerId, startDate, endDate } = req.query;
+    const { status } = req.query;
 
+    // Simple query - just get proposals without complex joins
     let queryStr = `
-      SELECT p.*, c.name as customer_name, u.full_name as created_by_name
-      FROM proposals p
-      LEFT JOIN customers c ON p.customer_id = c.id
-      LEFT JOIN users u ON p.created_by_user_id = u.id
-      WHERE p.tenant_id = $1
+      SELECT id, title, status, created_at
+      FROM proposals
+      WHERE tenant_id = $1
     `;
     const params: any[] = [tenantId];
 
     if (status) {
       params.push(status);
-      queryStr += ` AND p.status = $${params.length}`;
-    }
-    if (customerId) {
-      params.push(customerId);
-      queryStr += ` AND p.customer_id = $${params.length}`;
-    }
-    if (startDate) {
-      params.push(startDate);
-      queryStr += ` AND p.created_at >= $${params.length}`;
-    }
-    if (endDate) {
-      params.push(endDate);
-      queryStr += ` AND p.created_at <= $${params.length}`;
+      queryStr += ` AND status = $${params.length}`;
     }
 
-    queryStr += ' ORDER BY p.created_at DESC';
+    queryStr += ' ORDER BY created_at DESC';
     const result = await pool.query(queryStr, params);
 
     res.json({
       success: true,
       data: result.rows.map(p => ({
         id: p.id,
-        proposalNumber: p.proposal_number,
         title: p.title,
-        customer: { id: p.customer_id, name: p.customer_name },
         status: p.status,
-        totalAmount: parseFloat(p.total_amount),
-        validUntil: p.valid_until,
-        createdAt: p.created_at,
-        createdBy: p.created_by_name
+        createdAt: p.created_at
       }))
     });
   } catch (error: any) {

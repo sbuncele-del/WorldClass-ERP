@@ -512,6 +512,62 @@ export const updateEquipment = async (req: TenantRequest, res: Response) => {
   }
 };
 
+/**
+ * Get mining dashboard
+ */
+export const getMiningDashboard = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+
+    // Get site count
+    const sitesCount = await pool.query(
+      `SELECT COUNT(*) as count FROM mining_sites WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Get production stats
+    const productionStats = await pool.query(
+      `SELECT 
+         SUM(quantity) as total_quantity,
+         COUNT(*) as records_count
+       FROM mining_production 
+       WHERE tenant_id = $1 AND EXTRACT(MONTH FROM production_date) = EXTRACT(MONTH FROM CURRENT_DATE)`,
+      [tenantId]
+    );
+
+    // Get safety incidents
+    const safetyStats = await pool.query(
+      `SELECT 
+         COUNT(*) as total_incidents,
+         SUM(CASE WHEN severity = 'critical' THEN 1 ELSE 0 END) as critical
+       FROM mining_safety_incidents 
+       WHERE tenant_id = $1 AND EXTRACT(YEAR FROM incident_date) = EXTRACT(YEAR FROM CURRENT_DATE)`,
+      [tenantId]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        totalSites: parseInt(sitesCount.rows[0]?.count || '0'),
+        monthlyProduction: parseFloat(productionStats.rows[0]?.total_quantity || '0'),
+        productionRecords: parseInt(productionStats.rows[0]?.records_count || '0'),
+        yearlyIncidents: parseInt(safetyStats.rows[0]?.total_incidents || '0'),
+        criticalIncidents: parseInt(safetyStats.rows[0]?.critical || '0'),
+        summary: {
+          sites: parseInt(sitesCount.rows[0]?.count || '0'),
+          safetyScore: 100 - parseInt(safetyStats.rows[0]?.critical || '0') * 10
+        }
+      }
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get mining dashboard error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch mining dashboard' });
+  }
+};
+
 export default {
   getWorkspace,
   getSites,
@@ -526,5 +582,6 @@ export default {
   updateSafetyIncident,
   getEquipment,
   registerEquipment,
-  updateEquipment
+  updateEquipment,
+  getMiningDashboard
 };

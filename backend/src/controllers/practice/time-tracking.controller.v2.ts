@@ -32,40 +32,23 @@ export const getAllTimeEntries = async (req: TenantRequest, res: Response) => {
     const { tenantId } = getTenantContext(req);
     const { 
       project_id,
-      employee_id,
       status,
-      billable,
       start_date,
       end_date,
       page = '1',
-      limit = '50',
-      sort_by = 'entry_date',
-      sort_order = 'DESC'
+      limit = '50'
     } = req.query;
 
-    // Validate sort columns
-    const allowedSortColumns = ['entry_date', 'hours', 'created_at'];
-    const safeSortBy = allowedSortColumns.includes(sort_by as string) ? sort_by : 'entry_date';
-    const safeSortOrder = sort_order === 'ASC' ? 'ASC' : 'DESC';
-
+    // Simple query using time_entries table
     let query = `
       SELECT 
-        te.*,
-        e.first_name || ' ' || e.last_name as employee_name,
-        cp.project_name,
-        cp.project_number,
-        c.customer_name,
-        ptm.hourly_billing_rate,
-        ptm.hourly_cost_rate,
-        (te.hours * COALESCE(ptm.hourly_billing_rate, 0)) as billing_value,
-        (te.hours * COALESCE(ptm.hourly_cost_rate, 0)) as cost_value
+        te.id,
+        te.project_id,
+        te.task_id,
+        te.hours,
+        te.entry_date,
+        te.created_at
       FROM time_entries te
-      JOIN employees e ON te.employee_id = e.employee_id
-      JOIN client_projects cp ON te.project_id = cp.project_id
-      JOIN customers c ON cp.customer_id = c.id
-      LEFT JOIN project_team_members ptm ON te.project_id = ptm.project_id 
-        AND te.employee_id = ptm.employee_id 
-        AND ptm.is_active = true
       WHERE te.tenant_id = $1
     `;
 
@@ -75,24 +58,6 @@ export const getAllTimeEntries = async (req: TenantRequest, res: Response) => {
     if (project_id) {
       query += ` AND te.project_id = $${paramCount}`;
       params.push(project_id);
-      paramCount++;
-    }
-
-    if (employee_id) {
-      query += ` AND te.employee_id = $${paramCount}`;
-      params.push(employee_id);
-      paramCount++;
-    }
-
-    if (status) {
-      query += ` AND te.status = $${paramCount}`;
-      params.push(status);
-      paramCount++;
-    }
-
-    if (billable !== undefined) {
-      query += ` AND te.billable = $${paramCount}`;
-      params.push(billable === 'true');
       paramCount++;
     }
 
@@ -108,7 +73,7 @@ export const getAllTimeEntries = async (req: TenantRequest, res: Response) => {
       paramCount++;
     }
 
-    query += ` ORDER BY te.${safeSortBy} ${safeSortOrder}`;
+    query += ` ORDER BY te.created_at DESC`;
 
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
     query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
@@ -117,16 +82,14 @@ export const getAllTimeEntries = async (req: TenantRequest, res: Response) => {
     const result = await pool.query(query, params);
 
     // Get totals
-    const totalsQuery = `
-      SELECT 
-        COUNT(*) as total_entries,
-        COALESCE(SUM(hours), 0) as total_hours,
-        COALESCE(SUM(CASE WHEN billable THEN hours ELSE 0 END), 0) as billable_hours,
-        COALESCE(SUM(CASE WHEN NOT billable THEN hours ELSE 0 END), 0) as non_billable_hours
-      FROM time_entries
-      WHERE tenant_id = $1
-    `;
-    const totalsResult = await pool.query(totalsQuery, [tenantId]);
+    const totalsResult = await pool.query(
+      `SELECT 
+         COUNT(*) as total_entries,
+         COALESCE(SUM(hours), 0) as total_hours
+       FROM time_entries
+       WHERE tenant_id = $1`,
+      [tenantId]
+    );
 
     res.json({
       success: true,

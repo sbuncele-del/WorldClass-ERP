@@ -896,6 +896,58 @@ export const getConsolidatedData = async (req: TenantRequest, res: Response) => 
   }
 };
 
+/**
+ * Get multi-entity dashboard
+ */
+export const getMultiEntityDashboard = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+
+    // Get entity stats
+    const entityStats = await pool.query(
+      `SELECT 
+         COUNT(*) as total_entities,
+         SUM(CASE WHEN is_active = true THEN 1 ELSE 0 END) as active_entities,
+         COUNT(DISTINCT parent_id) as parent_count
+       FROM entities 
+       WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Get intercompany transaction stats
+    const transactionStats = await pool.query(
+      `SELECT 
+         COUNT(*) as total_transactions,
+         SUM(amount) as total_amount,
+         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_count
+       FROM intercompany_transactions 
+       WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        totalEntities: parseInt(entityStats.rows[0]?.total_entities || '0'),
+        activeEntities: parseInt(entityStats.rows[0]?.active_entities || '0'),
+        totalTransactions: parseInt(transactionStats.rows[0]?.total_transactions || '0'),
+        totalTransactionAmount: parseFloat(transactionStats.rows[0]?.total_amount || '0'),
+        pendingTransactions: parseInt(transactionStats.rows[0]?.pending_count || '0'),
+        summary: {
+          entities: parseInt(entityStats.rows[0]?.total_entities || '0'),
+          transactions: parseInt(transactionStats.rows[0]?.total_transactions || '0')
+        }
+      }
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get multi-entity dashboard error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch multi-entity dashboard' });
+  }
+};
+
 export default {
   getEntities,
   getEntity,
@@ -912,5 +964,6 @@ export default {
   grantEntityPermission,
   getInterEntityTransactions,
   createInterEntityTransaction,
-  getConsolidatedData
+  getConsolidatedData,
+  getMultiEntityDashboard
 };

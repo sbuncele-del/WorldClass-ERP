@@ -262,8 +262,18 @@ export const getSuggestions = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId, userId } = getTenantContext(req);
 
-    const suggestions = await aiAgentService.getUserSuggestions(tenantId, userId);
-    res.json({ success: true, data: suggestions });
+    // Simple query - just return from ai_suggestions table without complex joins
+    const result = await pool.query(
+      `SELECT id, suggestion_type, suggestion_text, status, created_at
+       FROM ai_suggestions
+       WHERE tenant_id = $1 AND (user_id = $2 OR user_id IS NULL)
+       AND status = 'pending'
+       ORDER BY created_at DESC
+       LIMIT 20`,
+      [tenantId, userId]
+    );
+
+    res.json({ success: true, data: result.rows });
   } catch (error: any) {
     if (error.message === 'Tenant context required') {
       return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });

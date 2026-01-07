@@ -1032,3 +1032,77 @@ export const getAttendanceRecords = async (req: TenantRequest, res: Response) =>
     res.status(500).json({ success: false, message: 'Failed to fetch attendance records' });
   }
 };
+
+// ============================================================================
+// LEAVE TYPES (V2)
+// ============================================================================
+
+export const getLeaveTypes = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const includeInactive = req.query.include_inactive === 'true';
+
+    const sql = `
+      SELECT * FROM hr.leave_types
+      WHERE tenant_id = $1
+      ${includeInactive ? '' : 'AND is_active = true'}
+      ORDER BY leave_type_name
+    `;
+
+    const result = await query(sql, [ctx.tenantId]);
+    res.json({ success: true, data: result.rows, count: result.rowCount });
+  } catch (error) {
+    console.error('Error fetching leave types:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch leave types' });
+  }
+};
+
+// ============================================================================
+// PAYROLL RUNS (V2)
+// ============================================================================
+
+export const getPayrollRuns = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { status, year, month } = req.query;
+
+    const conditions = ['pr.tenant_id = $1'];
+    const params: any[] = [ctx.tenantId];
+
+    if (status) {
+      params.push(status);
+      conditions.push(`pr.status = $${params.length}`);
+    }
+
+    if (year) {
+      params.push(parseInt(year as string, 10));
+      conditions.push(`EXTRACT(YEAR FROM pr.period_start) = $${params.length}`);
+    }
+
+    if (month) {
+      params.push(parseInt(month as string, 10));
+      conditions.push(`EXTRACT(MONTH FROM pr.period_start) = $${params.length}`);
+    }
+
+    const sql = `
+      SELECT 
+        pr.*,
+        pp.period_name,
+        COUNT(DISTINCT ps.employee_id) AS employee_count,
+        SUM(ps.gross_salary) AS total_gross,
+        SUM(ps.net_salary) AS total_net
+      FROM hr.payroll_runs pr
+      LEFT JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id AND pr.tenant_id = pp.tenant_id
+      LEFT JOIN hr.payroll_slips ps ON pr.payroll_run_id = ps.payroll_run_id AND pr.tenant_id = ps.tenant_id
+      WHERE ${conditions.join(' AND ')}
+      GROUP BY pr.payroll_run_id, pp.period_name
+      ORDER BY pr.period_start DESC
+    `;
+
+    const result = await query(sql, params);
+    res.json({ success: true, data: result.rows, count: result.rowCount });
+  } catch (error) {
+    console.error('Error fetching payroll runs:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch payroll runs' });
+  }
+};

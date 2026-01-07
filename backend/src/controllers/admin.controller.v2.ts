@@ -47,7 +47,7 @@ export class AdminControllerV2 {
 
       const query = `
         SELECT 
-          u.user_id, u.email, u.username, u.first_name, u.last_name, u.display_name,
+          u.id as user_id, u.email, u.username, u.first_name, u.last_name, u.display_name,
           u.phone, u.avatar_url, u.email_verified, u.mfa_enabled,
           u.last_login_at, u.last_active_at, u.is_active, u.is_super_admin,
           u.account_suspended, u.created_at,
@@ -58,10 +58,10 @@ export class AdminControllerV2 {
             '[]'
           ) as roles
         FROM users u
-        LEFT JOIN user_roles ur ON u.user_id = ur.user_id AND ur.is_active = true
+        LEFT JOIN user_roles ur ON u.id = ur.user_id AND ur.is_active = true
         LEFT JOIN roles r ON ur.role_id = r.role_id
         WHERE ${conditions.join(' AND ')}
-        GROUP BY u.user_id
+        GROUP BY u.id
         ORDER BY u.created_at DESC
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
       `;
@@ -110,10 +110,10 @@ export class AdminControllerV2 {
             '[]'
           ) as roles
         FROM users u
-        LEFT JOIN user_roles ur ON u.user_id = ur.user_id AND ur.is_active = true
+        LEFT JOIN user_roles ur ON u.id = ur.user_id AND ur.is_active = true
         LEFT JOIN roles r ON ur.role_id = r.role_id
-        WHERE u.user_id = $1 AND u.tenant_id = $2
-        GROUP BY u.user_id
+        WHERE u.id = $1 AND u.tenant_id = $2
+        GROUP BY u.id
       `;
 
       const result = await pool.query(query, [id, tenantId]);
@@ -251,7 +251,7 @@ export class AdminControllerV2 {
 
       // Verify user belongs to tenant
       const checkResult = await pool.query(
-        'SELECT user_id FROM users WHERE user_id = $1 AND tenant_id = $2',
+        'SELECT id FROM users WHERE id = $1 AND tenant_id = $2',
         [id, tenantId]
       );
 
@@ -268,8 +268,8 @@ export class AdminControllerV2 {
             is_active = COALESCE($4, is_active),
             display_name = COALESCE(CONCAT($1, ' ', $2), display_name),
             updated_at = NOW()
-        WHERE user_id = $5 AND tenant_id = $6
-        RETURNING user_id, email, username, first_name, last_name, is_active
+        WHERE id = $5 AND tenant_id = $6
+        RETURNING id as user_id, email, username, first_name, last_name, is_active
       `;
 
       const result = await pool.query(updateQuery, [
@@ -316,8 +316,8 @@ export class AdminControllerV2 {
       const result = await pool.query(`
         UPDATE users
         SET is_active = false, account_suspended = true, updated_at = NOW()
-        WHERE user_id = $1 AND tenant_id = $2
-        RETURNING user_id
+        WHERE id = $1 AND tenant_id = $2
+        RETURNING id as user_id
       `, [id, tenantId]);
 
       if (result.rows.length === 0) {
@@ -467,7 +467,7 @@ export class AdminControllerV2 {
           u.email as user_email,
           u.display_name as user_name
         FROM audit_log al
-        LEFT JOIN users u ON al.user_id = u.user_id
+        LEFT JOIN users u ON al.user_id = u.id AND u.tenant_id = al.tenant_id
         WHERE ${conditions.join(' AND ')}
         ORDER BY al.created_at DESC
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -599,7 +599,7 @@ export class AdminControllerV2 {
 
       // Get inviter's name
       const inviterResult = await client.query(
-        'SELECT first_name, last_name, email FROM users WHERE id = $1 OR user_id = $1',
+        'SELECT first_name, last_name, email FROM users WHERE id = $1',
         [userId]
       );
       const inviter = inviterResult.rows[0];
@@ -747,8 +747,8 @@ export class AdminControllerV2 {
             invitation_expires_at = NULL,
             email_verified = true,
             updated_at = NOW()
-        WHERE user_id = $2
-      `, [passwordHash, user.user_id]);
+        WHERE id = $2
+      `, [passwordHash, user.id]);
 
       res.json({
         success: true,
@@ -779,7 +779,7 @@ export class AdminControllerV2 {
         SELECT u.*, t.name as tenant_name
         FROM users u
         JOIN tenants t ON u.tenant_id = t.id
-        WHERE u.user_id = $1 AND u.tenant_id = $2 AND u.status = 'invited'
+        WHERE u.id = $1 AND u.tenant_id = $2 AND u.status = 'invited'
       `, [id, tenantId]);
 
       if (userResult.rows.length === 0) {
@@ -797,12 +797,12 @@ export class AdminControllerV2 {
       // Update token
       await pool.query(`
         UPDATE users SET invitation_token = $1, invitation_expires_at = $2
-        WHERE user_id = $3
+        WHERE id = $3
       `, [invitationToken, expiresAt, id]);
 
       // Get inviter name
       const inviterResult = await pool.query(
-        'SELECT first_name, last_name, email FROM users WHERE id = $1 OR user_id = $1',
+        'SELECT first_name, last_name, email FROM users WHERE id = $1',
         [userId]
       );
       const inviter = inviterResult.rows[0];

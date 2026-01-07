@@ -119,6 +119,8 @@ export interface UserPreferences {
 // ================================================
 
 export interface TenantRequest extends Request {
+  tenantId?: string;  // Direct tenant ID for backwards compatibility
+  userId?: string;    // Direct user ID for backwards compatibility
   tenant?: {
     id: string;
     slug: string;

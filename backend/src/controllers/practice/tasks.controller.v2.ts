@@ -32,25 +32,21 @@ export const getAllTasks = async (req: TenantRequest, res: Response) => {
     const { tenantId } = getTenantContext(req);
     const { 
       project_id,
-      assigned_to,
       status,
-      priority,
       search,
       page = '1',
       limit = '50' 
     } = req.query;
 
+    // Simple query using project_tasks table
     let query = `
       SELECT 
-        pt.*,
-        cp.project_name,
-        cp.project_number,
-        c.customer_name,
-        e.first_name || ' ' || e.last_name as assigned_to_name
+        pt.id,
+        pt.task_name,
+        pt.status,
+        pt.project_id,
+        pt.created_at
       FROM project_tasks pt
-      JOIN client_projects cp ON pt.project_id = cp.project_id
-      JOIN customers c ON cp.customer_id = c.id
-      LEFT JOIN employees e ON pt.assigned_to = e.employee_id
       WHERE pt.tenant_id = $1
     `;
 
@@ -63,31 +59,19 @@ export const getAllTasks = async (req: TenantRequest, res: Response) => {
       paramCount++;
     }
 
-    if (assigned_to) {
-      query += ` AND pt.assigned_to = $${paramCount}`;
-      params.push(assigned_to);
-      paramCount++;
-    }
-
     if (status) {
       query += ` AND pt.status = $${paramCount}`;
       params.push(status);
       paramCount++;
     }
 
-    if (priority) {
-      query += ` AND pt.priority = $${paramCount}`;
-      params.push(priority);
-      paramCount++;
-    }
-
     if (search) {
-      query += ` AND (pt.task_name ILIKE $${paramCount} OR pt.description ILIKE $${paramCount})`;
+      query += ` AND pt.task_name ILIKE $${paramCount}`;
       params.push(`%${search}%`);
       paramCount++;
     }
 
-    query += ` ORDER BY pt.due_date ASC NULLS LAST, pt.priority DESC`;
+    query += ` ORDER BY pt.created_at DESC`;
 
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
     query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
@@ -96,8 +80,10 @@ export const getAllTasks = async (req: TenantRequest, res: Response) => {
     const result = await pool.query(query, params);
 
     // Get count
-    const countQuery = `SELECT COUNT(*) FROM project_tasks WHERE tenant_id = $1`;
-    const countResult = await pool.query(countQuery, [tenantId]);
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM project_tasks WHERE tenant_id = $1`,
+      [tenantId]
+    );
 
     res.json({
       success: true,

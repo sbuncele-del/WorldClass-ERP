@@ -32,86 +32,38 @@ export const getAllProjects = async (req: TenantRequest, res: Response) => {
     const { tenantId } = getTenantContext(req);
     const { 
       status, 
-      project_type, 
-      customer_id, 
-      manager_id,
-      priority,
       search,
       page = '1',
-      limit = '20',
-      sort_by = 'created_at',
-      sort_order = 'DESC'
+      limit = '20'
     } = req.query;
 
-    // Validate sort columns
-    const allowedSortColumns = ['created_at', 'project_name', 'status', 'start_date', 'end_date', 'budget'];
-    const safeSortBy = allowedSortColumns.includes(sort_by as string) ? sort_by : 'created_at';
-    const safeSortOrder = sort_order === 'ASC' ? 'ASC' : 'DESC';
-
+    // Simple query using the projects table
     let query = `
       SELECT 
-        cp.*,
-        c.customer_name,
-        c.customer_code,
-        em1.first_name || ' ' || em1.last_name as manager_name,
-        em2.first_name || ' ' || em2.last_name as partner_name,
-        COUNT(DISTINCT ptm.assignment_id) as team_size,
-        COUNT(DISTINCT pt.task_id) as total_tasks,
-        COUNT(DISTINCT CASE WHEN pt.status = 'Completed' THEN pt.task_id END) as completed_tasks,
-        COALESCE(SUM(te.hours), 0) as total_hours_logged,
-        COALESCE(SUM(CASE WHEN te.billable THEN te.hours ELSE 0 END), 0) as billable_hours_logged
-      FROM client_projects cp
-      LEFT JOIN customers c ON cp.customer_id = c.id
-      LEFT JOIN employees em1 ON cp.project_manager_id = em1.employee_id
-      LEFT JOIN employees em2 ON cp.project_partner_id = em2.employee_id
-      LEFT JOIN project_team_members ptm ON cp.project_id = ptm.project_id AND ptm.is_active = true
-      LEFT JOIN project_tasks pt ON cp.project_id = pt.project_id
-      LEFT JOIN time_entries te ON cp.project_id = te.project_id AND te.status = 'Approved'
-      WHERE cp.tenant_id = $1
+        p.id,
+        p.project_name,
+        p.status,
+        p.created_at
+      FROM projects p
+      WHERE p.tenant_id = $1
     `;
 
     const params: any[] = [tenantId];
     let paramCount = 2;
 
     if (status) {
-      query += ` AND cp.status = $${paramCount}`;
+      query += ` AND p.status = $${paramCount}`;
       params.push(status);
       paramCount++;
     }
 
-    if (project_type) {
-      query += ` AND cp.project_type = $${paramCount}`;
-      params.push(project_type);
-      paramCount++;
-    }
-
-    if (customer_id) {
-      query += ` AND cp.customer_id = $${paramCount}`;
-      params.push(customer_id);
-      paramCount++;
-    }
-
-    if (manager_id) {
-      query += ` AND cp.project_manager_id = $${paramCount}`;
-      params.push(manager_id);
-      paramCount++;
-    }
-
-    if (priority) {
-      query += ` AND cp.priority = $${paramCount}`;
-      params.push(priority);
-      paramCount++;
-    }
-
     if (search) {
-      query += ` AND (cp.project_name ILIKE $${paramCount} OR cp.project_number ILIKE $${paramCount})`;
+      query += ` AND p.project_name ILIKE $${paramCount}`;
       params.push(`%${search}%`);
       paramCount++;
     }
 
-    query += ` GROUP BY cp.project_id, c.customer_name, c.customer_code, 
-               em1.first_name, em1.last_name, em2.first_name, em2.last_name`;
-    query += ` ORDER BY cp.${safeSortBy} ${safeSortOrder}`;
+    query += ` ORDER BY p.created_at DESC`;
 
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
     query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
@@ -120,8 +72,10 @@ export const getAllProjects = async (req: TenantRequest, res: Response) => {
     const result = await pool.query(query, params);
 
     // Get total count
-    const countQuery = `SELECT COUNT(*) FROM client_projects WHERE tenant_id = $1`;
-    const countResult = await pool.query(countQuery, [tenantId]);
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM projects WHERE tenant_id = $1`,
+      [tenantId]
+    );
 
     res.json({
       success: true,

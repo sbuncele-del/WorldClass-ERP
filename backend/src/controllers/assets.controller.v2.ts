@@ -419,6 +419,38 @@ export async function deleteAsset(req: TenantRequest, res: Response) {
 // ASSET CATEGORIES
 // =====================================================
 
+/**
+ * Get all asset locations
+ * GET /api/v2/assets/locations
+ */
+export async function getAssetLocations(req: TenantRequest, res: Response) {
+  try {
+    const { tenantId } = getTenantContext(req);
+
+    const result = await pool.query(`
+      SELECT id, name, code, address, building, floor, room, is_active, created_at, updated_at
+      FROM assets.asset_locations
+      WHERE tenant_id = $1
+      ORDER BY name
+    `, [tenantId]);
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    console.error('Get asset locations error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch asset locations',
+      error: error.message
+    });
+  }
+}
+
 export async function getAssetCategories(req: TenantRequest, res: Response) {
   try {
     const { tenantId } = getTenantContext(req);
@@ -1001,6 +1033,7 @@ export default {
   createAsset,
   updateAsset,
   deleteAsset,
+  getAssetLocations,
   getAssetCategories,
   createAssetCategory,
   getAssetDisposals,

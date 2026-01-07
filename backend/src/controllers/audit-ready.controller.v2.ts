@@ -646,6 +646,81 @@ export const addPermanentRecord = async (req: TenantRequest, res: Response) => {
   }
 };
 
+/**
+ * Get audit readiness dashboard
+ */
+export const getAuditReadyDashboard = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+
+    // Get engagement stats
+    const engagementStats = await pool.query(
+      `SELECT 
+         COUNT(*) as total_engagements,
+         SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
+         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending
+       FROM audit_engagements
+       WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Get findings summary
+    const findingsStats = await pool.query(
+      `SELECT 
+         COUNT(*) as total_findings,
+         SUM(CASE WHEN severity = 'critical' THEN 1 ELSE 0 END) as critical,
+         SUM(CASE WHEN severity = 'high' THEN 1 ELSE 0 END) as high,
+         SUM(CASE WHEN severity = 'medium' THEN 1 ELSE 0 END) as medium,
+         SUM(CASE WHEN severity = 'low' THEN 1 ELSE 0 END) as low,
+         SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END) as open_findings,
+         SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as resolved_findings
+       FROM audit_findings
+       WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Get recent activity
+    const recentEngagements = await pool.query(
+      `SELECT * FROM audit_engagements
+       WHERE tenant_id = $1
+       ORDER BY created_at DESC
+       LIMIT 5`,
+      [tenantId]
+    );
+
+    // Calculate readiness score
+    const findings = findingsStats.rows[0];
+    const openCritical = parseInt(findings.critical || '0');
+    const openHigh = parseInt(findings.high || '0');
+    const totalFindings = parseInt(findings.total_findings || '0');
+    const resolvedFindings = parseInt(findings.resolved_findings || '0');
+    
+    let readinessScore = 100;
+    if (totalFindings > 0) {
+      readinessScore = Math.max(0, Math.round(
+        ((resolvedFindings / totalFindings) * 100) - (openCritical * 10) - (openHigh * 5)
+      ));
+    }
+
+    res.json({
+      success: true,
+      data: {
+        readinessScore,
+        engagements: engagementStats.rows[0],
+        findings: findingsStats.rows[0],
+        recentEngagements: recentEngagements.rows
+      }
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get audit ready dashboard error:', error);
+    res.status(500).json({ success: false, error: 'Failed to get audit readiness dashboard' });
+  }
+};
+
 export default {
   // Engagements
   getEngagements,
@@ -664,5 +739,7 @@ export default {
   getChecklistItems,
   // Permanent Records
   getPermanentRecords,
-  addPermanentRecord
+  addPermanentRecord,
+  // Dashboard
+  getAuditReadyDashboard
 };

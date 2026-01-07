@@ -20,6 +20,11 @@ interface AuthenticatedRequest extends Request {
   user?: { id: string; email: string; role: string };
 }
 
+// Helper to get tenant ID from request
+function getTenantId(req: AuthenticatedRequest): string | undefined {
+  return req.tenantId || req.tenant?.id;
+}
+
 // Query helper
 async function query(text: string, params: any[]): Promise<any> {
   return pool.query(text, params);
@@ -34,7 +39,7 @@ async function query(text: string, params: any[]): Promise<any> {
  * Get project workspace dashboard with KPIs
  */
 export async function getWorkspace(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const tenantId = req.tenantId;
+  const tenantId = getTenantId(req);
   
   if (!tenantId) {
     res.status(401).json({ success: false, error: 'Tenant context required' });
@@ -145,7 +150,7 @@ export async function getWorkspace(req: AuthenticatedRequest, res: Response): Pr
  * List all projects with filtering and pagination
  */
 export async function listProjects(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const tenantId = req.tenantId;
+  const tenantId = getTenantId(req);
   
   if (!tenantId) {
     res.status(401).json({ success: false, error: 'Tenant context required' });
@@ -215,7 +220,7 @@ export async function listProjects(req: AuthenticatedRequest, res: Response): Pr
  * Get single project with tasks
  */
 export async function getProject(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const tenantId = req.tenantId;
+  const tenantId = getTenantId(req);
   
   if (!tenantId) {
     res.status(401).json({ success: false, error: 'Tenant context required' });
@@ -265,7 +270,7 @@ export async function getProject(req: AuthenticatedRequest, res: Response): Prom
  * Create a new project
  */
 export async function createProject(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const tenantId = req.tenantId;
+  const tenantId = getTenantId(req);
   
   if (!tenantId) {
     res.status(401).json({ success: false, error: 'Tenant context required' });
@@ -317,7 +322,7 @@ export async function createProject(req: AuthenticatedRequest, res: Response): P
  * Update an existing project
  */
 export async function updateProject(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const tenantId = req.tenantId;
+  const tenantId = getTenantId(req);
   
   if (!tenantId) {
     res.status(401).json({ success: false, error: 'Tenant context required' });
@@ -369,7 +374,7 @@ export async function updateProject(req: AuthenticatedRequest, res: Response): P
  * Soft delete a project
  */
 export async function deleteProject(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const tenantId = req.tenantId;
+  const tenantId = getTenantId(req);
   
   if (!tenantId) {
     res.status(401).json({ success: false, error: 'Tenant context required' });
@@ -407,7 +412,7 @@ export async function deleteProject(req: AuthenticatedRequest, res: Response): P
  * List tasks for a project
  */
 export async function listTasks(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const tenantId = req.tenantId;
+  const tenantId = getTenantId(req);
   
   if (!tenantId) {
     res.status(401).json({ success: false, error: 'Tenant context required' });
@@ -457,7 +462,7 @@ export async function listTasks(req: AuthenticatedRequest, res: Response): Promi
  * Create a new task
  */
 export async function createTask(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const tenantId = req.tenantId;
+  const tenantId = getTenantId(req);
   
   if (!tenantId) {
     res.status(401).json({ success: false, error: 'Tenant context required' });
@@ -509,7 +514,7 @@ export async function createTask(req: AuthenticatedRequest, res: Response): Prom
  * Update a task
  */
 export async function updateTask(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const tenantId = req.tenantId;
+  const tenantId = getTenantId(req);
   
   if (!tenantId) {
     res.status(401).json({ success: false, error: 'Tenant context required' });
@@ -552,7 +557,7 @@ export async function updateTask(req: AuthenticatedRequest, res: Response): Prom
  * Delete a task
  */
 export async function deleteTask(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const tenantId = req.tenantId;
+  const tenantId = getTenantId(req);
   
   if (!tenantId) {
     res.status(401).json({ success: false, error: 'Tenant context required' });
@@ -584,7 +589,7 @@ export async function deleteTask(req: AuthenticatedRequest, res: Response): Prom
  * Get single task details
  */
 export async function getTask(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const tenantId = req.tenantId;
+  const tenantId = getTenantId(req);
   
   if (!tenantId) {
     res.status(401).json({ success: false, error: 'Tenant context required' });
@@ -627,7 +632,7 @@ export async function getTask(req: AuthenticatedRequest, res: Response): Promise
  * Get project portfolio summary report
  */
 export async function getProjectSummary(req: AuthenticatedRequest, res: Response): Promise<void> {
-  const tenantId = req.tenantId;
+  const tenantId = getTenantId(req);
   
   if (!tenantId) {
     res.status(401).json({ success: false, error: 'Tenant context required' });
