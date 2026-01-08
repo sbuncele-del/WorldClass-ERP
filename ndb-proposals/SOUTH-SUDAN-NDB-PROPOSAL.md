@@ -46,20 +46,21 @@ Modeled after successful development finance institutions such as the **Developm
 - Senior management team recruitment
 - First project pipeline development
 
-**This seed capital will enable NDB-SS to mobilize USD 2 Billion in Year 1** through deal origination, earning approximately **USD 100 Million in commission revenue**.
+**This seed capital will enable NDB-SS to mobilize USD 1.2 Billion over 3 years** (USD 400 Million annually) through deal origination, earning approximately **USD 20 Million in commission revenue per year**.
 
 ### Investment Highlights
 
 | Metric | Value |
 |--------|-------|
-| **Seed Capital Required** | **USD 10,000,000** |
-| **Year 1 Capital Mobilization Target** | **USD 2,000,000,000** |
-| **Primary Sectors** | Roads, Mining, Agriculture |
-| **Geographic Focus** | South Sudan, East Africa, Pan-African |
+| **Seed Capital Required** | **USD 5,000,000** |
+| **3-Year Capital Mobilization Target** | **USD 1,200,000,000** |
+| **Annual Capital Mobilization** | **USD 400,000,000** |
+| **Primary Sectors** | Roads, Mining, Agro-processing |
+| **Geographic Focus** | South Sudan, East Africa |
 | **Revenue Model** | Commission-based (5%) + Transaction Fees |
-| **Projected Year 1 Revenue** | USD 116,000,000 |
-| **Projected Year 1 Net Profit** | USD 75,000,000 |
-| **Year 1 Return on Seed Investment** | **750%** |
+| **Projected Year 1 Revenue** | USD 24,000,000 |
+| **Projected Year 1 Net Profit** | USD 18,000,000 |
+| **Year 1 Return on Seed Investment** | **360%** |
 
 ### Strategic Value Proposition
 
@@ -210,10 +211,10 @@ NDB-SS operates two complementary business streams:
 
 | Activity | Volume | Rate | Revenue |
 |----------|--------|------|---------|
-| Deals Closed | $2 billion | 5% | $100,000,000 |
-| Paymaster Services | $1.5 billion | 0.75% | $11,250,000 |
-| Advisory/Other | Various | - | $5,000,000 |
-| **Year 1 Total Revenue** | | | **$116,250,000** |
+| Deals Closed | $400 million | 5% | $20,000,000 |
+| Paymaster Services | $300 million | 0.75% | $2,250,000 |
+| Advisory/Other | Various | - | $2,000,000 |
+| **Year 1 Total Revenue** | | | **$24,250,000** |
 
 ### 3.3 Operational Model
 
@@ -253,64 +254,96 @@ NDB-SS Capital + Partner Capital ──► Project
 - Enables all other economic activity
 - High visibility, nation-building impact
 - Clear revenue models (tolls, fuel levies)
+- Strategic trade corridor connecting South Sudan to Uganda and East African markets
 
-**Target Projects:**
+**Priority Project: Juba-Nimule Highway**
 
-| Project | Est. Cost | Priority |
-|---------|-----------|----------|
-| Juba-Nimule Highway (Uganda border) | $400M | Critical |
-| Juba-Rumbek Road | $350M | High |
-| Juba-Bor-Malakal Road | $600M | High |
-| Juba International Airport Expansion | $200M | Medium |
-| Nile River Port Development | $150M | Medium |
-| **Roads Subtotal** | **$1.7 billion** | |
+| Project | Est. Cost | Priority | Status |
+|---------|-----------|----------|--------|
+| Juba-Nimule Highway (Uganda border) | $400M | Critical | Pipeline |
+
+**Project Overview:**
+The Juba-Nimule Highway is a 192km road connecting South Sudan's capital to the Uganda border, representing the country's most vital trade and transport corridor. This project will:
+- Reduce travel time from 8+ hours to under 3 hours
+- Enable efficient import/export of goods
+- Connect to the Northern Corridor (Mombasa-Kampala)
+- Generate toll revenue for sustainability
+
+| **Roads Subtotal** | **$400 million** | |
 
 ### 4.2 Priority Sector: Mining & Natural Resources
 
 **Rationale:**
-- Vast untapped mineral wealth (gold, copper, iron ore, uranium)
-- Diversification from oil dependence
-- High-value export potential
-- Attracts serious international investors
+- Vast untapped gold deposits in Eastern Equatoria
+- Diversification from oil dependence critical
+- High-value export potential with established global markets
+- Attracts serious international mining investors
 
-**Target Projects:**
+**Priority Project: Gold Mining Development**
 
-| Project | Est. Cost | Priority |
-|---------|-----------|----------|
-| Gold Mining Development (Kapoeta) | $300M | High |
-| Copper Exploration & Development | $250M | High |
-| Quarrying & Construction Materials | $100M | Medium |
-| Mining Infrastructure (roads, power) | $200M | High |
-| **Mining Subtotal** | **$850 million** | |
+| Project | Est. Cost | Priority | Status |
+|---------|-----------|----------|--------|
+| Gold Mining Development (Kapoeta Region) | $300M | High | Pipeline |
 
-### 4.3 Priority Sector: Agriculture & Agro-processing
+**Project Overview:**
+The Kapoeta gold mining region in Eastern Equatoria holds significant untapped gold reserves. This project encompasses:
+- Exploration and geological surveys
+- Mining infrastructure development
+- Processing facilities
+- Environmental compliance systems
+- Community development programs
+
+Estimated gold reserves and favorable geology make this a compelling investment opportunity for mining companies and development financiers.
+
+| **Mining Subtotal** | **$300 million** | |
+
+### 4.3 Priority Sector: Agro-processing
 
 **Rationale:**
-- 95% of land suitable for agriculture
-- Food security critical for stability
-- Employment generation potential
-- Export potential (regional food basket)
+- Value addition to agricultural produce critical for economic development
+- Reduces post-harvest losses (currently 40%+)
+- Creates employment in processing and packaging
+- Enables export of processed goods to regional markets
+- Foundation for food security and import substitution
 
-**Target Projects:**
+**Priority Project: Agro-processing Facilities**
 
-| Project | Est. Cost | Priority |
-|---------|-----------|----------|
-| Large-scale Irrigation Schemes | $400M | Critical |
-| Grain Storage & Silos Network | $150M | High |
-| Agro-processing Facilities | $200M | High |
-| Agricultural Input Supply Chain | $100M | Medium |
-| Livestock Development | $150M | Medium |
-| **Agriculture Subtotal** | **$1 billion** | |
+| Project | Est. Cost | Priority | Status |
+|---------|-----------|----------|--------|
+| Agro-processing Facilities | $200M | High | Pipeline |
 
-### 4.4 Year 1 Pipeline Summary
+**Project Overview:**
+Establishment of modern agro-processing facilities to add value to South Sudan's agricultural output:
+- Grain milling and flour production
+- Oilseed processing (sesame, groundnuts)
+- Fruit and vegetable processing
+- Meat processing and cold chain
+- Packaging and quality control facilities
 
-| Sector | Target Investment | NDB-SS Commission (5%) |
-|--------|-------------------|----------------------|
-| Roads & Transport | $800 million | $40 million |
-| Mining | $600 million | $30 million |
-| Agriculture | $400 million | $20 million |
-| Other (Energy, Social) | $200 million | $10 million |
-| **Total Year 1** | **$2 billion** | **$100 million** |
+These facilities will be strategically located near agricultural production zones and transport corridors.
+
+| **Agro-processing Subtotal** | **$200 million** | |
+
+### 4.4 Three-Year Pipeline Summary
+
+**Conservative Mobilization Target: $1.2 Billion over 3 Years**
+
+| Sector | 3-Year Target | Year 1 | Year 2 | Year 3 |
+|--------|---------------|--------|--------|--------|
+| Roads (Juba-Nimule) | $400M | $150M | $150M | $100M |
+| Mining (Gold) | $300M | $100M | $100M | $100M |
+| Agro-processing | $200M | $50M | $75M | $75M |
+| Other (Energy, Social) | $300M | $100M | $100M | $100M |
+| **Total** | **$1.2B** | **$400M** | **$425M** | **$375M** |
+
+**Annual Commission Revenue (5%):**
+
+| Year | Capital Mobilized | Commission (5%) |
+|------|-------------------|----------------|
+| Year 1 | $400 million | $20 million |
+| Year 2 | $425 million | $21.25 million |
+| Year 3 | $375 million | $18.75 million |
+| **3-Year Total** | **$1.2 billion** | **$60 million** |
 
 
 
@@ -363,22 +396,23 @@ NDB-SS Capital + Partner Capital ──► Project
 
 ### 5.2 Funding Mobilization Strategy
 
-**Phase 1 (Months 1-6): Foundation Building**
+**Phase 1 (Year 1): Foundation Building**
 - Establish relationships with major DFIs
-- Present pipeline of bankable projects
-- Secure anchor commitments ($200-300M)
+- Present pipeline of 3 priority bankable projects
+- Secure anchor commitments ($100-150M)
+- Target: $400 million mobilized
 
-**Phase 2 (Months 6-12): Scale-Up**
-- Close first major transactions
-- Build track record
+**Phase 2 (Year 2): Consolidation**
+- Close additional transactions
+- Build track record with successful disbursements
 - Expand funder base
-- Target: $2 billion committed
+- Target: $425 million mobilized (cumulative $825M)
 
-**Phase 3 (Year 2+): Institutionalization**
-- Launch commercial banking wing
-- Issue bonds in regional markets
-- Attract private sector capital
-- Target: $5+ billion AUM
+**Phase 3 (Year 3): Scale-Up**
+- Proven track record attracts larger commitments
+- Regional expansion consideration
+- Target: $375 million mobilized (cumulative $1.2B)
+- Evaluate commercial banking wing feasibility
 
 
 
@@ -390,13 +424,9 @@ NDB-SS Capital + Partner Capital ──► Project
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    SUPERVISORY BOARD                        │
-│   (Government + Strategic Partners + Independent Directors) │
-└─────────────────────────────────────────────────────────────┘
-                              │
-┌─────────────────────────────────────────────────────────────┐
 │                    BOARD OF DIRECTORS                       │
-│         (Executive + Non-Executive Directors)               │
+│   (Government + Strategic Partners + Independent Directors) │
+│              Chairman + Non-Executive Directors             │
 └─────────────────────────────────────────────────────────────┘
                               │
          ┌────────────────────┼────────────────────┐
@@ -409,13 +439,13 @@ NDB-SS Capital + Partner Capital ──► Project
 │                  MANAGING DIRECTOR / CEO                    │
 └─────────────────────────────────────────────────────────────┘
                               │
-    ┌─────────────┬─────────────┬─────────────┬─────────────┐
-    │             │             │             │             │
-┌───────┐   ┌───────────┐ ┌───────────┐ ┌───────────┐ ┌───────────┐
-│ CFO   │   │Development│ │ Operations│ │   Risk &  │ │Commercial │
-│Finance│   │  Finance  │ │    &      │ │Compliance │ │  Banking  │
-│       │   │           │ │  Projects │ │           │ │ (Year 2)  │
-└───────┘   └───────────┘ └───────────┘ └───────────┘ └───────────┘
+         ┌────────────────────┼────────────────────┐
+         │                    │                    │
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│      CFO        │  │  Development    │  │   Operations    │
+│    Finance &    │  │    Finance      │  │   & Projects    │
+│   Compliance    │  │                 │  │                 │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
 ```
 
 ### 6.2 Key Departments
@@ -450,14 +480,20 @@ NDB-SS Capital + Partner Capital ──► Project
 - Foreign exchange
 - Treasury products
 
-### 6.3 Staffing Plan
+### 6.3 Staffing Plan (Lean Operations)
 
 | Phase | Headcount | Key Positions |
 |-------|-----------|---------------|
-| Setup (Months 1-6) | 25 | MD, CFO, Heads of Divisions, Core team |
-| Year 1 | 50 | Full division staffing |
-| Year 2 | 100 | Commercial banking wing |
-| Year 3+ | 150+ | Regional expansion |
+| Setup (Months 1-6) | 8 | MD/CEO, CFO, Head of Development Finance, Core support |
+| Year 1 | 15 | Add Deal Origination, Operations, Compliance officers |
+| Year 2 | 30 | Scale based on deal flow |
+| Year 3+ | 45 | Gradual expansion tied to revenue |
+
+**Lean Startup Approach:**
+- Outsource non-core functions initially (legal, IT support, accounting)
+- Use consultants for specialized deal structuring
+- Focus hiring on revenue-generating roles
+- Build capacity as deal flow grows
 
 
 
@@ -465,47 +501,56 @@ NDB-SS Capital + Partner Capital ──► Project
 
 ## 7. Financial Projections
 
-### 7.1 Five-Year Revenue Projection
+### 7.1 Five-Year Revenue Projection (Conservative)
 
 | Revenue Stream | Year 1 | Year 2 | Year 3 | Year 4 | Year 5 |
 |----------------|--------|--------|--------|--------|--------|
-| Deal Commission (5%) | $100M | $175M | $250M | $350M | $500M |
-| Fund Management Fees | $5M | $20M | $50M | $80M | $120M |
-| Paymaster/Transaction | $11M | $25M | $40M | $60M | $80M |
-| Advisory Services | $5M | $10M | $15M | $20M | $25M |
-| Commercial Banking | - | $10M | $30M | $60M | $100M |
-| **Total Revenue** | **$121M** | **$240M** | **$385M** | **$570M** | **$825M** |
+| Deal Commission (5%) | $20M | $21.25M | $18.75M | $30M | $50M |
+| Fund Management Fees | $1M | $3M | $6M | $10M | $15M |
+| Paymaster/Transaction | $2.25M | $3M | $4M | $6M | $8M |
+| Advisory Services | $1M | $2M | $3M | $4M | $5M |
+| Commercial Banking | - | - | $2M | $5M | $10M |
+| **Total Revenue** | **$24.25M** | **$29.25M** | **$33.75M** | **$55M** | **$88M** |
 
-### 7.2 Capital Deployment Trajectory
+*Note: Years 4-5 assume successful track record enables larger deal flow beyond initial $1.2B target*
+
+### 7.2 Capital Deployment Trajectory (Conservative)
 
 | Metric | Year 1 | Year 2 | Year 3 | Year 4 | Year 5 |
 |--------|--------|--------|--------|--------|--------|
-| Deals Closed | $2B | $3.5B | $5B | $7B | $10B |
-| Cumulative Deployment | $2B | $5.5B | $10.5B | $17.5B | $27.5B |
-| Active Projects | 15 | 35 | 60 | 90 | 120 |
-| Jobs Created | 10,000 | 30,000 | 60,000 | 100,000 | 150,000 |
+| Deals Closed | $400M | $425M | $375M | $600M | $1B |
+| Cumulative Deployment | $400M | $825M | $1.2B | $1.8B | $2.8B |
+| Active Projects | 3 | 5 | 6 | 10 | 15 |
+| Jobs Created | 2,000 | 5,000 | 8,000 | 15,000 | 25,000 |
 
-### 7.3 Operating Expense Projection
+*Note: Years 4-5 projections assume successful execution of initial 3-year plan*
+
+### 7.3 Operating Expense Projection (Lean Operations)
 
 | Category | Year 1 | Year 2 | Year 3 | Year 4 | Year 5 |
 |----------|--------|--------|--------|--------|--------|
-| Personnel | $8M | $15M | $25M | $35M | $50M |
-| Operations | $3M | $6M | $10M | $15M | $20M |
-| Technology | $2M | $4M | $6M | $8M | $10M |
-| Marketing/BD | $2M | $4M | $6M | $8M | $10M |
-| Professional Fees | $2M | $3M | $5M | $7M | $10M |
-| Other | $1M | $3M | $5M | $7M | $10M |
-| **Total OpEx** | **$18M** | **$35M** | **$57M** | **$80M** | **$110M** |
+| Personnel | $1.8M | $3M | $4.5M | $7M | $10M |
+| Operations | $0.6M | $1M | $1.5M | $2.5M | $4M |
+| Technology | $0.4M | $0.6M | $0.8M | $1.2M | $2M |
+| Marketing/BD | $0.4M | $0.6M | $1M | $1.5M | $2M |
+| Professional Fees | $0.8M | $1M | $1.2M | $1.8M | $2.5M |
+| Other | $0.2M | $0.3M | $0.5M | $1M | $1.5M |
+| **Total OpEx** | **$4.2M** | **$6.5M** | **$9.5M** | **$15M** | **$22M** |
 
-### 7.4 Profitability Summary
+### 7.4 Profitability Summary (Conservative)
 
 | Metric | Year 1 | Year 2 | Year 3 | Year 4 | Year 5 |
 |--------|--------|--------|--------|--------|--------|
-| **Revenue** | $121M | $240M | $385M | $570M | $825M |
-| **Operating Expenses** | $18M | $35M | $57M | $80M | $110M |
-| **EBITDA** | **$103M** | **$205M** | **$328M** | **$490M** | **$715M** |
-| **EBITDA Margin** | 85% | 85% | 85% | 86% | 87% |
-| **Net Profit (Est.)** | **$75M** | **$150M** | **$245M** | **$370M** | **$540M** |
+| **Revenue** | $24.25M | $29.25M | $33.75M | $55M | $88M |
+| **Operating Expenses** | $4.2M | $6.5M | $9.5M | $15M | $22M |
+| **EBITDA** | **$20.05M** | **$22.75M** | **$24.25M** | **$40M** | **$66M** |
+| **EBITDA Margin** | 83% | 78% | 72% | 73% | 75% |
+| **Net Profit (Est.)** | **$18M** | **$20M** | **$21M** | **$35M** | **$58M** |
+
+**3-Year Cumulative Performance:**
+- Total Capital Mobilized: $1.2 billion
+- Total Commission Revenue: $60 million
+- Total Net Profit: $59 million
 
 
 
@@ -574,15 +619,15 @@ NDB-SS Capital + Partner Capital ──► Project
 |-------|------------|
 | 6-7 | First transaction closing |
 | 7-8 | Paymaster operations begin |
-| 8-10 | Scale deal flow |
-| 10-12 | Achieve $2B target |
+| 8-10 | Build deal pipeline |
+| 10-12 | Achieve Year 1 target |
 
 **Key Milestones:**
-- ✓ First $100M+ deal closed
+- ✓ First $50M+ deal closed
 - ✓ Paymaster function operational
-- ✓ 5+ funders active
-- ✓ $2 billion capital mobilized
-- ✓ 10+ projects funded
+- ✓ 2-3 funders active
+- ✓ $400 million capital mobilized
+- ✓ 3 priority projects funded
 
 ### 9.3 Phase 3: Commercial Wing (Year 2)
 
@@ -603,9 +648,9 @@ NDB-SS Capital + Partner Capital ──► Project
 
 | Metric | DBSA | NDB-SS Target |
 |--------|------|---------------|
-| Total Assets | $8 billion | $5 billion (5 years) |
-| Annual Disbursements | $1.5 billion | $2 billion (Year 1) |
-| Staff | 500+ | 150 (Year 3) |
+| Total Assets | $8 billion | $1.2 billion (3 years) |
+| Annual Disbursements | $1.5 billion | $400 million (Year 1) |
+| Staff | 500+ | 45 (Year 3) |
 | Focus | Infrastructure | Infrastructure |
 | Model | Direct lending + Advisory | Commission + Paymaster |
 
@@ -619,7 +664,7 @@ NDB-SS Capital + Partner Capital ──► Project
 
 | Metric | QDB | NDB-SS Target |
 |--------|-----|---------------|
-| Total Assets | $3 billion | $3 billion (5 years) |
+| Total Assets | $3 billion | $1.2 billion (3 years) |
 | Focus | SME, Diversification | Infrastructure, Diversification |
 | Revenue Model | Interest + Fees | Commission + Fees |
 
@@ -627,8 +672,8 @@ NDB-SS Capital + Partner Capital ──► Project
 
 | Metric | BRD | NDB-SS Target |
 |--------|-----|---------------|
-| Portfolio | $400 million | $2 billion (Year 1) |
-| Sectors | Agriculture, Housing, SME | Roads, Mining, Agriculture |
+| Portfolio | $400 million | $400 million (Year 1) |
+| Sectors | Agriculture, Housing, SME | Roads, Mining, Agro-processing |
 | Success Factor | Strong governance | Strong governance planned |
 
 
@@ -641,22 +686,24 @@ NDB-SS Capital + Partner Capital ──► Project
 
 | Category | Amount (USD) | Purpose |
 |----------|--------------|---------|
-| Working Capital | $5,000,000 | Operations, salaries (12 months) |
-| Technology & Systems | $2,000,000 | Banking systems, IT infrastructure |
-| Office & Equipment | $1,000,000 | Juba HQ setup |
-| Legal & Advisory | $1,500,000 | Structuring, licenses, compliance |
-| Contingency | $500,000 | Unforeseen expenses |
-| **Total Seed Capital** | **$10,000,000** | |
+| Working Capital | $2,500,000 | Operations, salaries (18 months lean) |
+| Technology & Systems | $800,000 | Essential banking systems, IT |
+| Office & Equipment | $400,000 | Juba HQ setup (modest) |
+| Legal & Advisory | $1,000,000 | Structuring, licenses, compliance |
+| Contingency | $300,000 | Unforeseen expenses |
+| **Total Seed Capital** | **$5,000,000** | |
 
-### 11.2 Return Profile
+### 11.2 Return Profile (Conservative)
 
 | Metric | Value |
 |--------|-------|
-| Seed Investment | $10 million |
-| Year 1 Net Profit | $75 million |
-| Year 1 ROI | **750%** |
-| 5-Year Cumulative Profit | $1.38 billion |
-| 5-Year ROI | **13,800%** |
+| Seed Investment | $5 million |
+| Year 1 Net Profit | $18 million |
+| Year 1 ROI | **360%** |
+| 3-Year Cumulative Profit | $59 million |
+| 3-Year ROI | **1,180%** |
+| 5-Year Cumulative Profit | $152 million |
+| 5-Year ROI | **3,040%** |
 
 ### 11.3 Strategic Partnership Opportunity
 
@@ -681,15 +728,15 @@ The **National Development Bank of South Sudan** represents a once-in-a-generati
 
 ✅ **Proven Model**: Commission-based revenue model de-risks operations
 
-✅ **Strong Pipeline**: $2 billion in identifiable projects ready for financing
+✅ **Focused Pipeline**: 3 priority projects ($900M) with clear development impact
 
-✅ **Diversified Revenue**: Multiple income streams from deal origination to paymaster services
+✅ **Conservative Approach**: $1.2 billion target over 3 years is achievable and credible
 
-✅ **Scalable Platform**: Can expand regionally across East Africa and beyond
+✅ **Lean Operations**: Low overhead ensures profitability from Year 1
 
 ✅ **Development Impact**: Real contribution to nation-building and poverty reduction
 
-✅ **Attractive Returns**: Exceptional ROI potential for founding partners
+✅ **Attractive Returns**: Strong ROI potential for founding partners (360% Year 1)
 
 ### Call to Action
 
