@@ -18,6 +18,33 @@ const router = express.Router();
 router.use(tenantMiddleware);
 
 // ============================================================
+// CASH POSITION (Quick access endpoint)
+// ============================================================
+router.get('/cash-position', async (req: any, res: any) => {
+  try {
+    const tenantId = req.tenant?.id;
+    if (!tenantId) {
+      return res.status(401).json({ success: false, message: 'Tenant context required' });
+    }
+    // Import query function
+    const { query } = require('../db');
+    const result = await query(
+      `SELECT 
+        COUNT(*) as total_accounts,
+        COALESCE(SUM(current_balance), 0) as total_balance,
+        COALESCE(SUM(CASE WHEN is_active = true THEN current_balance ELSE 0 END), 0) as active_balance,
+        COUNT(CASE WHEN is_active = true THEN 1 END) as active_accounts
+      FROM bank_accounts WHERE tenant_id = $1`,
+      [tenantId]
+    );
+    res.json({ success: true, data: result.rows[0] || { total_accounts: 0, total_balance: 0 } });
+  } catch (error: any) {
+    console.error('Cash position error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch cash position' });
+  }
+});
+
+// ============================================================
 // WORKSPACE
 // ============================================================
 router.get('/workspace', cashManagementWorkspaceController.getCashManagementWorkspace);

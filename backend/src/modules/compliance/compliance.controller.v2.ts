@@ -58,7 +58,7 @@ export const getComplianceRequirements = async (req: TenantRequest, res: Respons
       paramCount++;
     }
 
-    query += ` ORDER BY due_date ASC NULLS LAST, priority DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    query += ` ORDER BY due_date ASC NULLS LAST LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     values.push(parseInt(limit as string), offset);
 
     const result = await pool.query(query, values);
@@ -233,12 +233,12 @@ export const getComplianceAudits = async (req: TenantRequest, res: Response) => 
     }
 
     if (year) {
-      query += ` AND EXTRACT(YEAR FROM audit_date) = $${paramCount}`;
+      query += ` AND EXTRACT(YEAR FROM scheduled_date) = $${paramCount}`;
       values.push(year);
       paramCount++;
     }
 
-    query += ` ORDER BY audit_date DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    query += ` ORDER BY scheduled_date DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     values.push(parseInt(limit as string), offset);
 
     const result = await pool.query(query, values);

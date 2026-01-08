@@ -78,23 +78,19 @@ router.get('/workspace', async (req: Request, res: Response) => {
 router.get('/projects', async (req: Request, res: Response) => {
   try {
     const tenantId = (req as any).tenantId;
-    const { status, cidbGrade, projectType } = req.query;
+    const { status, projectType } = req.query;
 
     let query = `
-      SELECT id, code, name, client_name, location_address, province, project_type,
-        cidb_grade, contract_value, currency, status, progress_percentage,
-        start_date, target_completion, project_manager_name, safety_officer_name, created_at
-      FROM construction_projects WHERE tenant_id = $1 AND is_active = true
+      SELECT id, code, name, client_name, site_address, project_type,
+        contract_value, status, completion_percentage,
+        start_date, expected_end_date, project_manager, created_at
+      FROM construction_projects WHERE tenant_id = $1
     `;
     const params: any[] = [tenantId];
 
     if (status) {
       params.push(status);
       query += ` AND status = $${params.length}`;
-    }
-    if (cidbGrade) {
-      params.push(cidbGrade);
-      query += ` AND cidb_grade = $${params.length}`;
     }
     if (projectType) {
       params.push(projectType);
@@ -111,17 +107,14 @@ router.get('/projects', async (req: Request, res: Response) => {
         code: p.code,
         name: p.name,
         client: p.client_name,
-        location: { address: p.location_address, province: p.province },
+        location: { address: p.site_address },
         type: p.project_type,
-        cidbGrade: p.cidb_grade,
         contractValue: parseFloat(p.contract_value) || 0,
-        currency: p.currency,
         status: p.status,
-        progress: p.progress_percentage,
+        progress: p.completion_percentage,
         startDate: p.start_date,
-        targetCompletion: p.target_completion,
-        projectManager: p.project_manager_name,
-        safetyOfficer: p.safety_officer_name
+        targetCompletion: p.expected_end_date,
+        projectManager: p.project_manager
       }))
     });
   } catch (error) {

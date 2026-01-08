@@ -42,23 +42,16 @@ export class RecurringEntriesControllerV2 {
       const params: any[] = [tenantId];
 
       if (status === 'active') {
-        conditions.push('re.is_active = true');
+        conditions.push("re.status = 'active'");
       } else if (status === 'inactive') {
-        conditions.push('re.is_active = false');
+        conditions.push("re.status != 'active'");
       }
 
       const query = `
-        SELECT 
-          re.*,
-          COUNT(DISTINCT rel.id) as line_count,
-          COUNT(DISTINCT reh.id) as generation_count,
-          MAX(reh.generated_date) as last_generated
-        FROM recurring_journal_entries re
-        LEFT JOIN recurring_journal_entry_lines rel ON re.id = rel.recurring_entry_id
-        LEFT JOIN recurring_entry_history reh ON re.id = reh.recurring_entry_id
+        SELECT re.*
+        FROM recurring_entries re
         WHERE ${conditions.join(' AND ')}
-        GROUP BY re.id
-        ORDER BY re.next_occurrence ASC, re.created_at DESC
+        ORDER BY re.next_run_date ASC, re.created_at DESC
       `;
 
       const result = await pool.query(query, params);

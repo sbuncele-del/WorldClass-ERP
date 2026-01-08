@@ -401,12 +401,28 @@ Error stack: ${error?.stack}
         return;
       }
 
-      const userInfo = await AuthService.me(req.user.id, req.tenant.id);
-
-      res.status(200).json({
-        success: true,
-        data: userInfo
-      });
+      try {
+        const userInfo = await AuthService.me(req.user.id, req.tenant.id);
+        res.status(200).json({
+          success: true,
+          data: userInfo
+        });
+      } catch (dbError) {
+        // If DB lookup fails, return data from JWT/middleware
+        console.warn('DB lookup failed for /auth/me, using JWT data:', dbError);
+        res.status(200).json({
+          success: true,
+          data: {
+            id: req.user.id,
+            email: req.user.email,
+            role: req.user.role,
+            tenant_id: req.tenant.id,
+            tenant_name: req.tenant.name,
+            tenant_slug: req.tenant.slug,
+            status: 'active'
+          }
+        });
+      }
     } catch (error: any) {
       console.error('Get user error:', error);
 

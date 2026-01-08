@@ -118,11 +118,11 @@ export class AssetsService {
       `SELECT a.*, 
         c.category_name,
         l.location_name,
-        s.supplier_name
+        s.name as supplier_name
        FROM fixed_assets a
        LEFT JOIN asset_categories c ON a.category_id = c.category_id
        LEFT JOIN asset_locations l ON a.location_id = l.location_id
-       LEFT JOIN suppliers s ON a.supplier_id = s.supplier_id
+       LEFT JOIN suppliers s ON a.supplier_id = s.id
        WHERE a.asset_id = $1 AND a.tenant_id = $2`,
       [assetId, tenantId]
     );
@@ -276,6 +276,72 @@ export class AssetsService {
     );
     
     return result.rows;
+  }
+
+  /**
+   * List all depreciation schedules
+   */
+  async listDepreciationSchedules(tenantId: string, page: number = 1, limit: number = 50): Promise<any> {
+    const offset = (page - 1) * limit;
+    
+    const result = await pool.query(
+      `SELECT ads.*, fa.asset_name, fa.asset_number
+       FROM asset_depreciation_schedule ads
+       JOIN fixed_assets fa ON fa.asset_id = ads.asset_id
+       WHERE fa.tenant_id = $1
+       ORDER BY ads.depreciation_date DESC
+       LIMIT $2 OFFSET $3`,
+      [tenantId, limit, offset]
+    );
+    
+    const countResult = await pool.query(
+      `SELECT COUNT(*) as total
+       FROM asset_depreciation_schedule ads
+       JOIN fixed_assets fa ON fa.asset_id = ads.asset_id
+       WHERE fa.tenant_id = $1`,
+      [tenantId]
+    );
+    
+    return {
+      data: result.rows,
+      total: parseInt(countResult.rows[0].total),
+      page,
+      limit,
+      pages: Math.ceil(parseInt(countResult.rows[0].total) / limit)
+    };
+  }
+
+  /**
+   * List all asset disposals
+   */
+  async listDisposals(tenantId: string, page: number = 1, limit: number = 50): Promise<any> {
+    const offset = (page - 1) * limit;
+    
+    const result = await pool.query(
+      `SELECT ad.*, fa.asset_name, fa.asset_number
+       FROM asset_disposals ad
+       JOIN fixed_assets fa ON fa.asset_id = ad.asset_id
+       WHERE fa.tenant_id = $1
+       ORDER BY ad.disposal_date DESC
+       LIMIT $2 OFFSET $3`,
+      [tenantId, limit, offset]
+    );
+    
+    const countResult = await pool.query(
+      `SELECT COUNT(*) as total
+       FROM asset_disposals ad
+       JOIN fixed_assets fa ON fa.asset_id = ad.asset_id
+       WHERE fa.tenant_id = $1`,
+      [tenantId]
+    );
+    
+    return {
+      data: result.rows,
+      total: parseInt(countResult.rows[0].total),
+      page,
+      limit,
+      pages: Math.ceil(parseInt(countResult.rows[0].total) / limit)
+    };
   }
 }
 

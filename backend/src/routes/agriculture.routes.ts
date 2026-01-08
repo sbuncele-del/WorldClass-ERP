@@ -238,9 +238,9 @@ router.get('/crops', async (req: Request, res: Response) => {
     const { farmId, status } = req.query;
 
     let query = `
-      SELECT c.*, f.name as farm_name
+      SELECT c.*, f.farm_name as farm_name
       FROM crops c
-      LEFT JOIN farms f ON c.farm_id = f.id
+      LEFT JOIN farms f ON c.farm_id = f.farm_id
       WHERE c.tenant_id = $1
     `;
     const params: any[] = [tenantId];
@@ -323,9 +323,9 @@ router.get('/livestock', async (req: Request, res: Response) => {
     const { farmId, animalType, status } = req.query;
 
     let query = `
-      SELECT l.*, f.name as farm_name
+      SELECT l.*, f.farm_name as farm_name
       FROM livestock l
-      LEFT JOIN farms f ON l.farm_id = f.id
+      LEFT JOIN farms f ON l.farm_id = f.farm_id
       WHERE l.tenant_id = $1
     `;
     const params: any[] = [tenantId];

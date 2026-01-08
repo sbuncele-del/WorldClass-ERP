@@ -85,10 +85,18 @@ export const getProjects = async (req: TenantRequest, res: Response) => {
     const { status, projectType } = req.query;
 
     let queryStr = `
-      SELECT id, code, name, client_name, project_type, status, start_date, 
-        expected_end_date, contract_value, completion_percentage, site_address, 
-        project_manager, created_at
-      FROM construction_projects WHERE tenant_id = $1 AND is_active = true
+      SELECT id, code, name, 
+        COALESCE(client_name, '') as client_name, 
+        COALESCE(project_type, 'construction') as project_type, 
+        COALESCE(status, 'active') as status, 
+        start_date, 
+        COALESCE(expected_end_date, end_date) as expected_end_date, 
+        COALESCE(contract_value, budget, 0) as contract_value, 
+        COALESCE(completion_percentage, 0) as completion_percentage, 
+        COALESCE(site_address, location, '') as site_address, 
+        COALESCE(project_manager, '') as project_manager, 
+        created_at
+      FROM construction_projects WHERE tenant_id = $1 AND COALESCE(is_active, true) = true
     `;
     const params: any[] = [tenantId];
 

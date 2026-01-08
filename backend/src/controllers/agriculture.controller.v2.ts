@@ -85,9 +85,18 @@ export const getFarms = async (req: TenantRequest, res: Response) => {
     const { type, status } = req.query;
 
     let queryStr = `
-      SELECT id, code, name, location_lat, location_lng, province, address,
-        size_hectares, farm_type, status, manager_name, water_source, created_at
-      FROM farms WHERE tenant_id = $1 AND is_active = true
+      SELECT id, code, name, 
+        COALESCE(location_lat, 0) as location_lat, 
+        COALESCE(location_lng, 0) as location_lng, 
+        COALESCE(province, '') as province, 
+        COALESCE(address, location, '') as address,
+        COALESCE(size_hectares, total_hectares, 0) as size_hectares, 
+        farm_type, 
+        COALESCE(status, 'ACTIVE') as status, 
+        COALESCE(manager_name, '') as manager_name, 
+        COALESCE(water_source, '') as water_source, 
+        created_at
+      FROM farms WHERE tenant_id = $1 AND COALESCE(is_active, true) = true
     `;
     const params: any[] = [tenantId];
 
@@ -265,9 +274,9 @@ export const getCrops = async (req: TenantRequest, res: Response) => {
     const { farmId, status } = req.query;
 
     let queryStr = `
-      SELECT c.*, f.name as farm_name
+      SELECT c.*, f.farm_name as farm_name
       FROM crops c
-      LEFT JOIN farms f ON c.farm_id = f.id
+      LEFT JOIN farms f ON c.farm_id = f.farm_id
       WHERE c.tenant_id = $1
     `;
     const params: any[] = [tenantId];
@@ -359,9 +368,9 @@ export const getLivestock = async (req: TenantRequest, res: Response) => {
     const { farmId, animalType, status } = req.query;
 
     let queryStr = `
-      SELECT l.*, f.name as farm_name
+      SELECT l.*, f.farm_name as farm_name
       FROM livestock l
-      LEFT JOIN farms f ON l.farm_id = f.id
+      LEFT JOIN farms f ON l.farm_id = f.farm_id
       WHERE l.tenant_id = $1
     `;
     const params: any[] = [tenantId];

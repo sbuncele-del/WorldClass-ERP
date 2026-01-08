@@ -89,10 +89,10 @@ router.get('/properties', async (req: Request, res: Response) => {
 
     let query = `
       SELECT p.*, 
-        (SELECT COUNT(*) FROM property_units u WHERE u.property_id = p.id) as unit_count,
-        (SELECT COUNT(*) FROM property_units u WHERE u.property_id = p.id AND u.status = 'occupied') as occupied_count
+        0 as unit_count,
+        0 as occupied_count
       FROM properties p
-      WHERE p.tenant_id = $1 AND p.is_active = true
+      WHERE p.tenant_id = $1
     `;
     const params: any[] = [tenantId];
 
@@ -346,19 +346,12 @@ router.get('/leases', async (req: Request, res: Response) => {
     const { propertyId, status } = req.query;
 
     let query = `
-      SELECT l.*, p.name as property_name, u.unit_number, pt.name as tenant_name
-      FROM property_leases l
-      LEFT JOIN properties p ON l.property_id = p.id
-      LEFT JOIN property_units u ON l.unit_id = u.id
-      LEFT JOIN property_tenants pt ON l.property_tenant_id = pt.id
+      SELECT l.*
+      FROM leases l
       WHERE l.tenant_id = $1
     `;
     const params: any[] = [tenantId];
 
-    if (propertyId) {
-      params.push(propertyId);
-      query += ` AND l.property_id = $${params.length}`;
-    }
     if (status) {
       params.push(status);
       query += ` AND l.status = $${params.length}`;

@@ -86,9 +86,22 @@ export const getProperties = async (req: TenantRequest, res: Response) => {
     const { propertyType, status } = req.query;
 
     let queryStr = `
-      SELECT id, code, name, property_type, address, city, province, postal_code,
-        total_units, status, year_built, total_sqm, manager_name, created_at
-      FROM properties WHERE tenant_id = $1 AND is_active = true
+      SELECT 
+        COALESCE(id::text, property_id::text) as id, 
+        COALESCE(code, property_code) as code, 
+        COALESCE(name, property_name) as name, 
+        COALESCE(property_type, 'COMMERCIAL') as property_type, 
+        address, 
+        city, 
+        COALESCE(province, state_province) as province, 
+        postal_code,
+        COALESCE(total_units, 1) as total_units, 
+        COALESCE(status, 'ACTIVE') as status, 
+        year_built, 
+        COALESCE(total_sqm, total_area, 0) as total_sqm, 
+        manager_name, 
+        created_at
+      FROM properties WHERE tenant_id = $1 AND COALESCE(is_active, true) = true
     `;
     const params: any[] = [tenantId];
 
@@ -425,18 +438,24 @@ export const getLeases = async (req: TenantRequest, res: Response) => {
     const { propertyId, status, expiringWithinDays } = req.query;
 
     let queryStr = `
-      SELECT l.*, t.first_name, t.last_name, u.unit_number, p.name as property_name
-      FROM property_leases l
-      LEFT JOIN property_tenants t ON l.property_tenant_id = t.id
-      LEFT JOIN property_units u ON l.unit_id = u.id
-      LEFT JOIN properties p ON u.property_id = p.id
+      SELECT 
+        l.lease_id as id,
+        l.lease_number,
+        l.start_date,
+        l.end_date,
+        COALESCE(l.monthly_rent, 0) as monthly_rent,
+        l.status,
+        l.lessee_name as tenant_name,
+        p.property_name
+      FROM leases l
+      LEFT JOIN properties p ON l.property_id = p.property_id
       WHERE l.tenant_id = $1
     `;
     const params: any[] = [tenantId];
 
     if (propertyId) {
       params.push(propertyId);
-      queryStr += ` AND u.property_id = $${params.length}`;
+      queryStr += ` AND l.property_id = $${params.length}`;
     }
     if (status) {
       params.push(status);

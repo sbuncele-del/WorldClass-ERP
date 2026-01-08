@@ -184,11 +184,11 @@ async function getRecentAcquisitions(tenantId: string) {
       c.category_name as category,
       a.acquisition_date,
       a.purchase_price as acquisition_cost,
-      s.supplier_name as supplier,
+      s.name as supplier,
       l.location_name as location
     FROM fixed_assets a
     LEFT JOIN asset_categories c ON a.category_id = c.category_id
-    LEFT JOIN suppliers s ON a.supplier_id = s.supplier_id
+    LEFT JOIN suppliers s ON a.supplier_id = s.id
     LEFT JOIN asset_locations l ON a.location_id = l.location_id
     WHERE a.tenant_id = $1 
       AND a.acquisition_date >= CURRENT_DATE - INTERVAL '60 days'

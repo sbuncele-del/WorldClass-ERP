@@ -10,7 +10,11 @@ const router = Router();
 // Workspace summary endpoint (no auth required for demo data)
 router.get('/workspace', assetsController.getWorkspaceSummary.bind(assetsController));
 
-// Asset CRUD
+// Asset CRUD - explicit routes before :id param
+router.get('/assets', assetsController.listAssets.bind(assetsController));
+router.get('/depreciation', assetsController.listDepreciationSchedules.bind(assetsController));
+router.get('/disposals', assetsController.listDisposals.bind(assetsController));
+
 router.post('/', assetsController.createAsset.bind(assetsController));
 router.get('/', assetsController.listAssets.bind(assetsController));
 router.get('/:id', assetsController.getAsset.bind(assetsController));

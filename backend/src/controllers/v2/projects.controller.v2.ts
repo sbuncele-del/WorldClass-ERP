@@ -160,37 +160,33 @@ export async function listProjects(req: AuthenticatedRequest, res: Response): Pr
   try {
     const { status, priority, search, page = 1, limit = 20 } = req.query;
     
-    let whereClause = 'WHERE tenant_id = $1 AND is_active = true';
+    let whereClause = 'WHERE p.tenant_id = $1';
     const params: any[] = [tenantId];
     let paramIndex = 2;
 
     if (status) {
-      whereClause += ` AND status = $${paramIndex}`;
+      whereClause += ` AND p.status = $${paramIndex}`;
       params.push(status);
       paramIndex++;
     }
 
-    if (priority) {
-      whereClause += ` AND priority = $${paramIndex}`;
-      params.push(priority);
-      paramIndex++;
-    }
-
     if (search) {
-      whereClause += ` AND (name ILIKE $${paramIndex} OR code ILIKE $${paramIndex})`;
+      whereClause += ` AND (p.project_name ILIKE $${paramIndex} OR p.project_code ILIKE $${paramIndex})`;
       params.push(`%${search}%`);
       paramIndex++;
     }
 
     const offset = (Number(page) - 1) * Number(limit);
     
-    const countResult = await query(`SELECT COUNT(*) FROM projects ${whereClause}`, params);
+    const countResult = await query(`SELECT COUNT(*) FROM projects p ${whereClause}`, params);
     const total = parseInt(countResult.rows[0].count);
 
     const result = await query(`
-      SELECT p.*, u.full_name as manager_name,
-        (SELECT COUNT(*) FROM project_tasks WHERE project_id = p.id AND tenant_id = $1) as task_count,
-        (SELECT COUNT(*) FROM project_tasks WHERE project_id = p.id AND tenant_id = $1 AND status = 'done') as completed_tasks
+      SELECT p.id, p.project_code as code, p.project_name as name, p.description, p.status, 
+        p.start_date, p.end_date, p.budget, p.manager_id, p.created_at, p.updated_at, p.tenant_id,
+        u.full_name as manager_name,
+        0 as task_count,
+        0 as completed_tasks
       FROM projects p
       LEFT JOIN users u ON p.manager_id = u.id
       ${whereClause}

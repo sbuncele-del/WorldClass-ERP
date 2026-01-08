@@ -263,6 +263,56 @@ export class AssetsController {
       });
     }
   }
+
+  /**
+   * List all depreciation schedules
+   * GET /api/asset-management/depreciation
+   */
+  async listDepreciationSchedules(req: Request, res: Response): Promise<void> {
+    try {
+      const tenantId = req.headers['x-tenant-id'] as string || '00000000-0000-0000-0000-000000000001';
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      
+      const result = await assetsService.listDepreciationSchedules(tenantId, page, limit);
+      
+      res.json({
+        success: true,
+        ...result
+      });
+    } catch (error: any) {
+      console.error('Error listing depreciation schedules:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to list depreciation schedules'
+      });
+    }
+  }
+
+  /**
+   * List all asset disposals
+   * GET /api/asset-management/disposals
+   */
+  async listDisposals(req: Request, res: Response): Promise<void> {
+    try {
+      const tenantId = req.headers['x-tenant-id'] as string || '00000000-0000-0000-0000-000000000001';
+      const page = req.query.page ? parseInt(req.query.page as string) : 1;
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      
+      const result = await assetsService.listDisposals(tenantId, page, limit);
+      
+      res.json({
+        success: true,
+        ...result
+      });
+    } catch (error: any) {
+      console.error('Error listing disposals:', error);
+      res.status(500).json({
+        success: false,
+        error: error.message || 'Failed to list disposals'
+      });
+    }
+  }
 }
 
 export default new AssetsController();

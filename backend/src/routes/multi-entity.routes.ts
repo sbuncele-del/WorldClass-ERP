@@ -24,6 +24,9 @@ router.use(tenantMiddleware);
  */
 router.get('/', MultiEntityV2.getEntities);
 
+// Alias for intercompany - redirects to transactions/inter-entity
+router.get('/intercompany', MultiEntityV2.getInterEntityTransactions);
+
 /**
  * GET /api/entities/user
  * Get user's accessible entities

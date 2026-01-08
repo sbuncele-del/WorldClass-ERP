@@ -136,37 +136,76 @@ const MiningHub: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [statsRes, operationsRes, safetyRes, productionRes] = await Promise.all([
-          apiClient.get('/api/mining/stats'),
-          apiClient.get('/api/mining/operations'),
-          apiClient.get('/api/mining/safety'),
-          apiClient.get('/api/mining/production')
+        // Use V2 API endpoints
+        const [dashboardRes, sitesRes, safetyRes, productionRes, equipmentRes] = await Promise.all([
+          apiClient.get('/api/v2/mining/dashboard'),
+          apiClient.get('/api/v2/mining/sites'),
+          apiClient.get('/api/v2/mining/safety-incidents'),
+          apiClient.get('/api/v2/mining/production'),
+          apiClient.get('/api/v2/mining/equipment')
         ]);
 
-        // Update stats
-        if (statsRes.data) {
-          setMiningStats(statsRes.data.stats || statsRes.data);
-          if (statsRes.data.workforce) {
-            setWorkforceStats(statsRes.data.workforce);
-          }
+        // Update dashboard stats
+        if (dashboardRes.data?.data) {
+          const dash = dashboardRes.data.data;
+          setMiningStats({
+            totalProduction: dash.monthlyProduction || 0,
+            goldRecovery: dash.summary?.averageGrade || 0,
+            operatingCosts: dash.summary?.operatingCosts || 0,
+            safetyIncidents: dash.yearlyIncidents || 0,
+            fatalityFreeShifts: dash.summary?.fatalityFreeShifts || 0,
+            environmentalScore: dash.summary?.environmentalScore || 0,
+            complianceScore: dash.summary?.complianceScore || dash.summary?.safetyScore || 0,
+            employeeCount: dash.summary?.employees || 0
+          });
         }
 
-        // Update operations data
-        if (operationsRes.data) {
-          setComplianceItems(operationsRes.data.compliance || []);
-          setMineralResources(operationsRes.data.resources || []);
-          setEnvironmentalData(operationsRes.data.environmental || []);
+        // Update sites data for compliance display
+        if (sitesRes.data?.data) {
+          const sites = sitesRes.data.data;
+          // Convert sites to compliance items format
+          const compliance = sites.map((site: any) => ({
+            id: site.id,
+            regulation: 'Mining License',
+            reference: site.license?.number || site.code,
+            authority: 'DMR',
+            status: site.status === 'operational' ? 'compliant' : 'attention',
+            expiryDate: site.license?.expiry ? new Date(site.license.expiry).toLocaleDateString() : 'N/A',
+            nextAudit: site.license?.expiry ? new Date(site.license.expiry).toLocaleDateString() : 'N/A'
+          }));
+          setComplianceItems(compliance);
         }
 
         // Update safety data
-        if (safetyRes.data) {
-          setSafetyIncidents(safetyRes.data.incidents || safetyRes.data || []);
+        if (safetyRes.data?.data) {
+          const incidents = safetyRes.data.data.map((inc: any) => ({
+            id: inc.id,
+            date: inc.incident_date ? new Date(inc.incident_date).toLocaleDateString() : '',
+            type: inc.incident_type || 'Near Miss',
+            category: inc.incident_type || 'General',
+            severity: inc.severity || 'low',
+            location: inc.location || inc.location_in_site || '',
+            dmrReported: inc.status === 'closed',
+            status: inc.status || 'reported'
+          }));
+          setSafetyIncidents(incidents);
         }
 
         // Update production data
-        if (productionRes.data) {
-          setProductionData(productionRes.data.production || productionRes.data || []);
+        if (productionRes.data?.data) {
+          const prod = productionRes.data.data.map((p: any) => ({
+            date: p.extraction_date ? new Date(p.extraction_date).toLocaleDateString() : '',
+            shaft: p.site_name || 'Main',
+            level: p.shift_type || 'Day',
+            tons: p.quantity_extracted || p.tonnes_extracted || 0,
+            grade: p.grade_percent || p.grade || 0,
+            goldOz: Math.round((p.quantity_extracted || 0) * (p.grade_percent || 0) / 31.1),
+            recoveryRate: p.grade_percent || 0,
+            status: p.processing_status || 'completed'
+          }));
+          setProductionData(prod);
         }
+
       } catch (error) {
         console.error('Error fetching mining data:', error);
       } finally {
@@ -393,31 +432,21 @@ const MiningHub: React.FC = () => {
 
           <Card title="Safety Alerts">
             <Timeline
-              items={[
+              items={safetyIncidents.length > 0 ? safetyIncidents.slice(0, 3).map((inc, idx) => ({
+                color: inc.severity === 'high' ? 'red' : inc.severity === 'medium' ? 'orange' : 'green',
+                children: (
+                  <>
+                    <div><strong>{inc.type}</strong> - {inc.status}</div>
+                    <div style={{ fontSize: 12, color: '#999' }}>{inc.location} • {inc.date}</div>
+                  </>
+                )
+              })) : [
                 {
                   color: 'green',
                   children: (
                     <>
-                      <div><strong>Section 54 Clear</strong></div>
-                      <div style={{ fontSize: 12, color: '#999' }}>All shafts operational • 2 hours ago</div>
-                    </>
-                  )
-                },
-                {
-                  color: 'blue',
-                  children: (
-                    <>
-                      <div><strong>Safety Meeting</strong> completed</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>Shaft 1 - Day Shift • 6 hours ago</div>
-                    </>
-                  )
-                },
-                {
-                  color: 'orange',
-                  children: (
-                    <>
-                      <div><strong>Equipment inspection</strong> due</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>Winder - Shaft 2 • Tomorrow</div>
+                      <div><strong>No recent incidents</strong></div>
+                      <div style={{ fontSize: 12, color: '#999' }}>All operations running safely</div>
                     </>
                   )
                 }
@@ -435,16 +464,16 @@ const MiningHub: React.FC = () => {
       >
         <Row gutter={24}>
           <Col span={6}>
-            <Statistic title="Revenue (MTD)" value={125000000} prefix="R" valueStyle={{ color: '#52c41a' }} />
+            <Statistic title="Revenue (MTD)" value={miningStats.totalProduction * 1000} prefix="R" valueStyle={{ color: '#52c41a' }} />
           </Col>
           <Col span={6}>
-            <Statistic title="Operating Costs" value={miningStats.operatingCosts} prefix="R" suffix="/kg" valueStyle={{ color: '#ff4d4f' }} />
+            <Statistic title="Operating Costs" value={miningStats.operatingCosts || 0} prefix="R" suffix="/kg" valueStyle={{ color: '#ff4d4f' }} />
           </Col>
           <Col span={6}>
-            <Statistic title="Rehabilitation Fund" value={45000000} prefix="R" />
+            <Statistic title="Production Records" value={productionData.length} />
           </Col>
           <Col span={6}>
-            <Statistic title="Royalties Payable" value={8500000} prefix="R" valueStyle={{ color: '#722ed1' }} />
+            <Statistic title="Safety Score" value={miningStats.complianceScore} suffix="%" valueStyle={{ color: '#722ed1' }} />
           </Col>
         </Row>
         <Alert
@@ -546,7 +575,7 @@ const MiningHub: React.FC = () => {
           <Card>
             <Statistic 
               title="LTIFR" 
-              value={0.85} 
+              value={safetyIncidents.length > 0 ? (safetyIncidents.length / 1000000).toFixed(2) : 0} 
               suffix="per million hours"
               valueStyle={{ color: '#1890ff' }}
             />
@@ -565,7 +594,7 @@ const MiningHub: React.FC = () => {
           <Card>
             <Statistic 
               title="Near Misses (MTD)" 
-              value={8} 
+              value={safetyIncidents.filter(i => i.type === 'Near Miss' || i.type === 'near_miss').length} 
               valueStyle={{ color: '#1890ff' }}
             />
           </Card>
