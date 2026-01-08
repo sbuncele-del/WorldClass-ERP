@@ -93,6 +93,7 @@ const MiningHub: React.FC = () => {
   const [complianceModalVisible, setComplianceModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [form] = Form.useForm();
+  const [productionForm] = Form.useForm();
 
   // Mining KPIs
   const [miningStats, setMiningStats] = useState({
@@ -215,6 +216,157 @@ const MiningHub: React.FC = () => {
 
     fetchData();
   }, []);
+
+  // State for sites (for dropdown in modals)
+  const [sites, setSites] = useState<any[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Fetch sites for dropdowns
+  useEffect(() => {
+    const fetchSites = async () => {
+      try {
+        const res = await apiClient.get('/api/v2/mining/sites');
+        if (res.data?.data) {
+          setSites(res.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching sites:', error);
+      }
+    };
+    fetchSites();
+  }, []);
+
+  // Submit Incident to API
+  const handleSubmitIncident = async (values: any) => {
+    setSubmitting(true);
+    try {
+      const siteId = sites[0]?.id; // Use first site or allow selection
+      const payload = {
+        siteId,
+        incidentDate: values.datetime?.format('YYYY-MM-DD') || new Date().toISOString().split('T')[0],
+        incidentType: values.type || 'near_miss',
+        severity: values.category === 'fatality' ? 'critical' : values.category === 'lti' ? 'high' : 'minor',
+        location: values.location || 'Main Site',
+        description: values.description || 'Incident reported via dashboard',
+        injuriesCount: 0,
+        fatalitiesCount: values.type === 'fatality' ? 1 : 0,
+        correctiveActions: values.actions || ''
+      };
+      
+      await apiClient.post('/api/v2/mining/safety-incidents', payload);
+      setIncidentModalVisible(false);
+      form.resetFields();
+      // Refresh data
+      const safetyRes = await apiClient.get('/api/v2/mining/safety-incidents');
+      if (safetyRes.data?.data) {
+        const incidents = safetyRes.data.data.map((inc: any) => ({
+          id: inc.id,
+          date: inc.incident_date ? new Date(inc.incident_date).toLocaleDateString() : '',
+          type: inc.incident_type || 'Near Miss',
+          category: inc.incident_type || 'General',
+          severity: inc.severity || 'low',
+          location: inc.location || inc.location_in_site || '',
+          dmrReported: inc.status === 'closed',
+          status: inc.status || 'reported'
+        }));
+        setSafetyIncidents(incidents);
+      }
+      alert('Incident reported successfully!');
+    } catch (error) {
+      console.error('Error submitting incident:', error);
+      alert('Failed to submit incident');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Submit Production to API
+  const handleSubmitProduction = async (values: any) => {
+    setSubmitting(true);
+    try {
+      const siteId = sites[0]?.id;
+      const payload = {
+        siteId,
+        extractionDate: new Date().toISOString().split('T')[0],
+        shiftType: 'day',
+        mineralType: 'gold',
+        quantityExtracted: values.tons || 0,
+        quantityUnit: 'tonnes',
+        gradePercent: values.grade || 0,
+        processingStatus: 'unprocessed',
+        notes: `Level: ${values.level || 'N/A'}, Recovery: ${values.recovery || 0}%`
+      };
+      
+      await apiClient.post('/api/v2/mining/production', payload);
+      setProductionModalVisible(false);
+      // Refresh data
+      const productionRes = await apiClient.get('/api/v2/mining/production');
+      if (productionRes.data?.data) {
+        const prod = productionRes.data.data.map((p: any) => ({
+          date: p.extraction_date ? new Date(p.extraction_date).toLocaleDateString() : '',
+          shaft: p.site_name || 'Main',
+          level: p.shift_type || 'Day',
+          tons: p.quantity_extracted || p.tonnes_extracted || 0,
+          grade: p.grade_percent || p.grade || 0,
+          goldOz: Math.round((p.quantity_extracted || 0) * (p.grade_percent || 0) / 31.1),
+          recoveryRate: p.grade_percent || 0,
+          status: p.processing_status || 'completed'
+        }));
+        setProductionData(prod);
+      }
+      alert('Production logged successfully!');
+    } catch (error) {
+      console.error('Error submitting production:', error);
+      alert('Failed to log production');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Compliance form
+  const [complianceForm] = Form.useForm();
+
+  // Submit Compliance/Site to API
+  const handleSubmitCompliance = async (values: any) => {
+    setSubmitting(true);
+    try {
+      const payload = {
+        code: values.reference || `SITE-${Date.now()}`,
+        name: values.regulation === 'mprda' ? 'Mining Right Site' : values.regulation?.toUpperCase() || 'New Site',
+        locationLat: -26.2041,
+        locationLng: 28.0473,
+        province: 'Gauteng',
+        mineLicenseNumber: values.reference || '',
+        status: 'operational',
+        primaryMineral: 'gold'
+      };
+      
+      await apiClient.post('/api/v2/mining/sites', payload);
+      setComplianceModalVisible(false);
+      complianceForm.resetFields();
+      // Refresh sites/compliance data
+      const sitesRes = await apiClient.get('/api/v2/mining/sites');
+      if (sitesRes.data?.data) {
+        const compliance = sitesRes.data.data.map((site: any) => ({
+          id: site.id,
+          regulation: 'Mining License',
+          reference: site.license?.number || site.code,
+          authority: 'DMR',
+          status: site.status === 'operational' ? 'compliant' : 'attention',
+          expiryDate: site.license?.expiry ? new Date(site.license.expiry).toLocaleDateString() : 'N/A',
+          nextAudit: site.license?.expiry ? new Date(site.license.expiry).toLocaleDateString() : 'N/A'
+        }));
+        setComplianceItems(compliance);
+        setSites(sitesRes.data.data);
+      }
+      alert('Compliance item added successfully!');
+    } catch (error) {
+      console.error('Error submitting compliance:', error);
+      alert('Failed to add compliance item');
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Compliance columns
   const complianceColumns = [
@@ -921,8 +1073,9 @@ const MiningHub: React.FC = () => {
         onCancel={() => setIncidentModalVisible(false)}
         footer={[
           <Button key="cancel" onClick={() => setIncidentModalVisible(false)}>Cancel</Button>,
-          <Button key="draft">Save Draft</Button>,
-          <Button key="submit" type="primary" danger>Submit to DMR</Button>
+          <Button key="submit" type="primary" danger loading={submitting} onClick={() => form.validateFields().then(handleSubmitIncident)}>
+            Submit Incident
+          </Button>
         ]}
         width={700}
       >
@@ -985,11 +1138,13 @@ const MiningHub: React.FC = () => {
         onCancel={() => setProductionModalVisible(false)}
         footer={[
           <Button key="cancel" onClick={() => setProductionModalVisible(false)}>Cancel</Button>,
-          <Button key="submit" type="primary">Submit</Button>
+          <Button key="submit" type="primary" loading={submitting} onClick={() => productionForm.validateFields().then(handleSubmitProduction)}>
+            Submit Production
+          </Button>
         ]}
         width={600}
       >
-        <Form layout="vertical">
+        <Form form={productionForm} layout="vertical">
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Shaft" name="shaft" rules={[{ required: true }]}>
@@ -1032,11 +1187,11 @@ const MiningHub: React.FC = () => {
         onCancel={() => setComplianceModalVisible(false)}
         footer={[
           <Button key="cancel" onClick={() => setComplianceModalVisible(false)}>Cancel</Button>,
-          <Button key="submit" type="primary">Add Item</Button>
+          <Button key="submit" type="primary" loading={submitting} onClick={() => complianceForm.validateFields().then(handleSubmitCompliance)}>Add Item</Button>
         ]}
         width={600}
       >
-        <Form layout="vertical">
+        <Form form={complianceForm} layout="vertical">
           <Form.Item label="Regulation" name="regulation" rules={[{ required: true }]}>
             <Select placeholder="Select regulation">
               <Option value="mprda">MPRDA Mining Right</Option>
