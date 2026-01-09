@@ -14,17 +14,33 @@ router.use(tenantMiddleware);
  * HEALTHCARE V2 ROUTES (Tenant-secure)
  * ================================================
  */
+
+// Dashboard
+router.get('/dashboard', HealthcareControllerV2.getHealthcareDashboard);
+
 // Facilities & Operations
 router.get('/facilities', HealthcareControllerV2.getFacilities);
+router.post('/facilities', HealthcareControllerV2.createFacility);
 router.get('/facilities/:facilityId/operations', HealthcareControllerV2.getFacilityOperationsStatus);
 router.get('/facilities/:facilityId/kpis', HealthcareControllerV2.getFacilityKPIs);
 router.get('/facilities/:facilityId/appointments/today', HealthcareControllerV2.getTodayAppointments);
 
-// Patient Management
-router.get('/facilities/:facilityId/patients', HealthcareControllerV2.getPatients);
-router.get('/patients/:patientId', HealthcareControllerV2.getPatient);
+// Patient Management (flat routes for frontend)
+router.get('/patients', HealthcareControllerV2.getAllPatients);
 router.post('/patients', HealthcareControllerV2.createPatient);
+router.get('/patients/:patientId', HealthcareControllerV2.getPatient);
 router.put('/patients/:patientId', HealthcareControllerV2.updatePatient);
+router.get('/facilities/:facilityId/patients', HealthcareControllerV2.getPatients);
+
+// Appointments (flat routes for frontend)
+router.get('/appointments', HealthcareControllerV2.getAllAppointments);
+router.post('/appointments', HealthcareControllerV2.createAppointment);
+
+// Invoices, Claims, Schemes (flat routes for frontend)
+router.get('/invoices', HealthcareControllerV2.getInvoices);
+router.get('/claims', HealthcareControllerV2.getClaims);
+router.get('/schemes', HealthcareControllerV2.getSchemes);
+router.get('/practitioners', HealthcareControllerV2.getPractitioners);
 
 // Patient Journey
 router.get('/facilities/:facilityId/active-patients', HealthcareControllerV2.getActivePatientsInFacility);

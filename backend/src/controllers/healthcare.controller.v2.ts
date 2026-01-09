@@ -1099,6 +1099,164 @@ export const getFacilities = async (req: TenantRequest, res: Response) => {
 };
 
 /**
+ * Create a new healthcare facility
+ */
+export const createFacility = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const {
+      facility_code, facility_name, facility_type, address_line1, address_line2,
+      city, province, postal_code, phone, email, emergency_phone,
+      total_beds, total_consultation_rooms, total_theatre_rooms, total_icu_beds,
+      is_24_hour, operating_hours
+    } = req.body;
+
+    if (!facility_code || !facility_name || !facility_type) {
+      return res.status(400).json({ success: false, error: 'facility_code, facility_name and facility_type are required' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO healthcare_facilities (
+        tenant_id, facility_code, facility_name, facility_type, address_line1, address_line2,
+        city, province, postal_code, phone, email, emergency_phone,
+        total_beds, total_consultation_rooms, total_theatre_rooms, total_icu_beds,
+        is_24_hour, operating_hours
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      RETURNING *`,
+      [tenantId, facility_code, facility_name, facility_type, address_line1 || null, address_line2 || null,
+       city || null, province || null, postal_code || null, phone || null, email || null, emergency_phone || null,
+       total_beds || 0, total_consultation_rooms || 0, total_theatre_rooms || 0, total_icu_beds || 0,
+       is_24_hour || false, operating_hours ? JSON.stringify(operating_hours) : null]
+    );
+
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    if (error.code === '23505') { // Unique violation
+      return res.status(409).json({ success: false, error: 'Facility code already exists' });
+    }
+    console.error('Create facility error:', error);
+    res.status(500).json({ success: false, error: 'Failed to create facility' });
+  }
+};
+
+/**
+ * Get all patients (flat route for frontend)
+ */
+export const getAllPatients = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { search, limit = 50, offset = 0 } = req.query;
+
+    let query = `SELECT * FROM healthcare_patients WHERE tenant_id = $1`;
+    const params: any[] = [tenantId];
+    let paramIndex = 2;
+
+    if (search) {
+      query += ` AND (first_name ILIKE $${paramIndex} OR last_name ILIKE $${paramIndex} OR id_number ILIKE $${paramIndex} OR medical_record_number ILIKE $${paramIndex})`;
+      params.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    query += ` ORDER BY last_name, first_name LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+    params.push(limit, offset);
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows, total: result.rows.length });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get all patients error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch patients' });
+  }
+};
+
+/**
+ * Get all appointments (flat route for frontend)
+ */
+export const getAllAppointments = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { date, status, limit = 50 } = req.query;
+
+    let query = `
+      SELECT a.*, 
+        p.first_name as patient_first_name, 
+        p.last_name as patient_last_name,
+        f.facility_name
+      FROM healthcare_appointments a
+      LEFT JOIN healthcare_patients p ON a.patient_id = p.patient_id
+      JOIN healthcare_facilities f ON a.facility_id = f.facility_id
+      WHERE f.tenant_id = $1
+    `;
+    const params: any[] = [tenantId];
+    let paramIndex = 2;
+
+    if (date) {
+      query += ` AND a.appointment_date = $${paramIndex}`;
+      params.push(date);
+      paramIndex++;
+    }
+
+    if (status) {
+      query += ` AND a.status = $${paramIndex}`;
+      params.push(status);
+      paramIndex++;
+    }
+
+    query += ` ORDER BY a.appointment_date DESC, a.appointment_time LIMIT $${paramIndex}`;
+    params.push(limit);
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows, total: result.rows.length });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get all appointments error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch appointments' });
+  }
+};
+
+/**
+ * Create an appointment
+ */
+export const createAppointment = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const {
+      patient_id, facility_id, practitioner_id, appointment_date, appointment_time,
+      duration_minutes, appointment_type, reason, notes
+    } = req.body;
+
+    if (!patient_id || !facility_id || !appointment_date || !appointment_time) {
+      return res.status(400).json({ success: false, error: 'patient_id, facility_id, appointment_date and appointment_time are required' });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO healthcare_appointments (
+        tenant_id, patient_id, facility_id, practitioner_id, appointment_date, appointment_time,
+        duration_minutes, appointment_type, reason, notes, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'SCHEDULED')
+      RETURNING *`,
+      [tenantId, patient_id, facility_id, practitioner_id || null, appointment_date, appointment_time,
+       duration_minutes || 30, appointment_type || 'CONSULTATION', reason || null, notes || null]
+    );
+
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Create appointment error:', error);
+    res.status(500).json({ success: false, error: 'Failed to create appointment' });
+  }
+};
+
+/**
  * Get healthcare dashboard
  */
 export const getHealthcareDashboard = async (req: TenantRequest, res: Response) => {
@@ -1117,10 +1275,11 @@ export const getHealthcareDashboard = async (req: TenantRequest, res: Response) 
       [tenantId]
     );
 
-    // Get today's appointments count
+    // Get today's appointments count (join through facilities for tenant)
     const appointmentsCount = await pool.query(
-      `SELECT COUNT(*) as count FROM healthcare_appointments 
-       WHERE tenant_id = $1 AND appointment_date = CURRENT_DATE`,
+      `SELECT COUNT(*) as count FROM healthcare_appointments a
+       JOIN healthcare_facilities f ON a.facility_id = f.facility_id
+       WHERE f.tenant_id = $1 AND a.appointment_date = CURRENT_DATE`,
       [tenantId]
     );
 
@@ -1146,17 +1305,110 @@ export const getHealthcareDashboard = async (req: TenantRequest, res: Response) 
   }
 };
 
+/**
+ * Get all invoices
+ */
+export const getInvoices = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { status, limit = 50 } = req.query;
+
+    // For now return empty array - invoices table would need to be created
+    // This allows frontend to function without errors
+    res.json({ success: true, data: [], total: 0 });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get invoices error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch invoices' });
+  }
+};
+
+/**
+ * Get all claims
+ */
+export const getClaims = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    
+    // For now return empty array - claims table would need to be created
+    res.json({ success: true, data: [], total: 0 });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get claims error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch claims' });
+  }
+};
+
+/**
+ * Get medical aid schemes
+ */
+export const getSchemes = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    
+    // Return common South African medical aid schemes
+    const schemes = [
+      { id: '1', name: 'Discovery Health', code: 'DIS', administrator: 'Discovery', activePatients: 0, outstandingClaims: 0, avgPaymentDays: 14 },
+      { id: '2', name: 'Medscheme', code: 'MED', administrator: 'Medscheme', activePatients: 0, outstandingClaims: 0, avgPaymentDays: 21 },
+      { id: '3', name: 'GEMS', code: 'GEM', administrator: 'Metropolitan Health', activePatients: 0, outstandingClaims: 0, avgPaymentDays: 30 },
+      { id: '4', name: 'Bonitas', code: 'BON', administrator: 'Medscheme', activePatients: 0, outstandingClaims: 0, avgPaymentDays: 21 },
+      { id: '5', name: 'Momentum Health', code: 'MOM', administrator: 'Momentum', activePatients: 0, outstandingClaims: 0, avgPaymentDays: 18 },
+      { id: '6', name: 'Fedhealth', code: 'FED', administrator: 'Medscheme', activePatients: 0, outstandingClaims: 0, avgPaymentDays: 21 }
+    ];
+    
+    res.json({ success: true, data: schemes });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get schemes error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch schemes' });
+  }
+};
+
+/**
+ * Get practitioners
+ */
+export const getPractitioners = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    
+    // Return empty array for now - practitioners table may not exist
+    res.json({ success: true, data: [] });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get practitioners error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch practitioners' });
+  }
+};
+
 export default {
   // Facility Operations
   getFacilityOperationsStatus,
   getFacilityKPIs,
   getTodayAppointments,
   getFacilities,
+  createFacility,
   // Patient Management
   getPatients,
   getPatient,
   createPatient,
   updatePatient,
+  getAllPatients,
+  // Appointments
+  getAllAppointments,
+  createAppointment,
+  // Invoices & Claims
+  getInvoices,
+  getClaims,
+  getSchemes,
+  getPractitioners,
   // Patient Journey
   getActivePatientsInFacility,
   checkInPatient,
