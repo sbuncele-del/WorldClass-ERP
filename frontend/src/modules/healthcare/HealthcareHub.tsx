@@ -19,7 +19,7 @@ import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
   Input, Select, DatePicker, Modal, Form, Typography, Avatar,
   Timeline, Descriptions, Tooltip, Dropdown, InputNumber, Switch, Alert,
-  List, Tabs, Divider, Steps, Upload, message, Calendar, Collapse
+  List, Tabs, Divider, Steps, Upload, message, Calendar, Collapse, Checkbox, TimePicker
 } from 'antd';
 import {
   HomeOutlined, TeamOutlined, CalendarOutlined, ClockCircleOutlined,
@@ -130,43 +130,171 @@ const HealthcareHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [patientModalVisible, setPatientModalVisible] = useState(false);
   const [appointmentModalVisible, setAppointmentModalVisible] = useState(false);
+  const [facilityModalVisible, setFacilityModalVisible] = useState(false);
   const [invoiceModalVisible, setInvoiceModalVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [facilities, setFacilities] = useState<any[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [claims, setClaims] = useState<Claim[]>([]);
   const [schemes, setSchemes] = useState<MedicalAidScheme[]>([]);
   const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
-  const [form] = Form.useForm();
+  const [patientForm] = Form.useForm();
+  const [appointmentForm] = Form.useForm();
+  const [facilityForm] = Form.useForm();
   
   // Get company name from client context
   const companyName = currentClient?.name || currentClient?.company_name || 'Healthcare Practice';
 
   // Fetch healthcare data from API
+  const fetchData = async () => {
+    try {
+      const headers = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
+      const [facilitiesRes, patientsRes, appointmentsRes, invoicesRes, claimsRes, schemesRes, practitionersRes] = await Promise.all([
+        fetch('/api/healthcare/facilities', { headers }),
+        fetch('/api/healthcare/patients', { headers }),
+        fetch('/api/healthcare/appointments', { headers }),
+        fetch('/api/healthcare/invoices', { headers }),
+        fetch('/api/healthcare/claims', { headers }),
+        fetch('/api/healthcare/schemes', { headers }),
+        fetch('/api/healthcare/practitioners', { headers })
+      ]);
+      if (facilitiesRes.ok) setFacilities((await facilitiesRes.json()).data || []);
+      if (patientsRes.ok) setPatients((await patientsRes.json()).data || []);
+      if (appointmentsRes.ok) setAppointments((await appointmentsRes.json()).data || []);
+      if (invoicesRes.ok) setInvoices((await invoicesRes.json()).data || []);
+      if (claimsRes.ok) setClaims((await claimsRes.json()).data || []);
+      if (schemesRes.ok) setSchemes((await schemesRes.json()).data || []);
+      if (practitionersRes.ok) setPractitioners((await practitionersRes.json()).data || []);
+    } catch (error) {
+      console.error('Failed to fetch healthcare data:', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const headers = { 'Authorization': `Bearer ${localStorage.getItem('token')}` };
-        const [patientsRes, appointmentsRes, invoicesRes, claimsRes, schemesRes, practitionersRes] = await Promise.all([
-          fetch('/api/healthcare/patients', { headers }),
-          fetch('/api/healthcare/appointments', { headers }),
-          fetch('/api/healthcare/invoices', { headers }),
-          fetch('/api/healthcare/claims', { headers }),
-          fetch('/api/healthcare/schemes', { headers }),
-          fetch('/api/healthcare/practitioners', { headers })
-        ]);
-        if (patientsRes.ok) setPatients((await patientsRes.json()).data || []);
-        if (appointmentsRes.ok) setAppointments((await appointmentsRes.json()).data || []);
-        if (invoicesRes.ok) setInvoices((await invoicesRes.json()).data || []);
-        if (claimsRes.ok) setClaims((await claimsRes.json()).data || []);
-        if (schemesRes.ok) setSchemes((await schemesRes.json()).data || []);
-        if (practitionersRes.ok) setPractitioners((await practitionersRes.json()).data || []);
-      } catch (error) {
-        console.error('Failed to fetch healthcare data:', error);
-      }
-    };
     fetchData();
   }, []);
+
+  // CREATE FACILITY
+  const handleCreateFacility = async (values: any) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/healthcare/facilities', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          facility_code: values.facility_code,
+          facility_name: values.facility_name,
+          facility_type: values.facility_type,
+          phone: values.phone,
+          email: values.email,
+          address_line1: values.address,
+          city: values.city,
+          province: values.province,
+          total_beds: values.total_beds || 0,
+          total_consultation_rooms: values.consultation_rooms || 0,
+          is_24_hour: values.is_24_hour || false
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        message.success('Facility created successfully!');
+        setFacilityModalVisible(false);
+        facilityForm.resetFields();
+        fetchData();
+      } else {
+        message.error(data.error || 'Failed to create facility');
+      }
+    } catch (error) {
+      message.error('Failed to create facility');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // CREATE PATIENT
+  const handleCreatePatient = async (values: any) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/healthcare/patients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          firstName: values.first_name,
+          lastName: values.last_name,
+          idNumber: values.id_number,
+          dateOfBirth: values.date_of_birth?.format('YYYY-MM-DD'),
+          gender: values.gender,
+          phone: values.phone,
+          email: values.email,
+          address: values.address,
+          insuranceProvider: values.medical_aid,
+          insurancePolicyNumber: values.member_number
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        message.success('Patient registered successfully!');
+        setPatientModalVisible(false);
+        patientForm.resetFields();
+        fetchData();
+      } else {
+        message.error(data.error || 'Failed to register patient');
+      }
+    } catch (error) {
+      message.error('Failed to register patient');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // CREATE APPOINTMENT
+  const handleCreateAppointment = async (values: any) => {
+    setLoading(true);
+    try {
+      if (facilities.length === 0) {
+        message.warning('Please create a facility first before booking appointments');
+        setLoading(false);
+        return;
+      }
+      const response = await fetch('/api/healthcare/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          patient_id: values.patient_id,
+          facility_id: values.facility_id || facilities[0]?.facility_id,
+          appointment_date: values.appointment_date?.format('YYYY-MM-DD'),
+          appointment_time: values.appointment_time?.format('HH:mm'),
+          appointment_type: values.appointment_type || 'CONSULTATION',
+          duration_minutes: values.duration || 30,
+          reason: values.reason
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        message.success('Appointment booked successfully!');
+        setAppointmentModalVisible(false);
+        appointmentForm.resetFields();
+        fetchData();
+      } else {
+        message.error(data.error || 'Failed to book appointment');
+      }
+    } catch (error) {
+      message.error('Failed to book appointment');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Calculate stats
   const healthcareStats = {
@@ -872,6 +1000,32 @@ const HealthcareHub: React.FC = () => {
             </Form>
           </Card>
         </Col>
+
+        <Col xs={24}>
+          <Card 
+            title={<><MedicineBoxOutlined /> Facilities</>}
+            extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setFacilityModalVisible(true)}>Add Facility</Button>}
+          >
+            <Table
+              dataSource={facilities}
+              rowKey="facility_id"
+              columns={[
+                { title: 'Code', dataIndex: 'facility_code', key: 'facility_code' },
+                { title: 'Name', dataIndex: 'facility_name', key: 'facility_name' },
+                { title: 'Type', dataIndex: 'facility_type', key: 'facility_type', render: (t: string) => <Tag color="blue">{t}</Tag> },
+                { title: 'City', dataIndex: 'city', key: 'city' },
+                { title: 'Phone', dataIndex: 'phone', key: 'phone' },
+                { 
+                  title: 'Status', 
+                  dataIndex: 'is_active',
+                  key: 'status',
+                  render: (active: boolean) => <Tag color={active !== false ? 'green' : 'red'}>{active !== false ? 'Active' : 'Inactive'}</Tag>
+                }
+              ]}
+              locale={{ emptyText: 'No facilities registered. Click "Add Facility" to create one.' }}
+            />
+          </Card>
+        </Col>
       </Row>
     </div>
   );
@@ -885,10 +1039,10 @@ const HealthcareHub: React.FC = () => {
         gradient="pink"
         actions={
           <>
-            <Button icon={<SyncOutlined />}>Refresh</Button>
-            <Button icon={<ExportOutlined />}>Export</Button>
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setAppointmentModalVisible(true)}>
-              Book Appointment
+            <Button icon={<SyncOutlined />} onClick={fetchData}>Refresh</Button>
+            <Button icon={<MedicineBoxOutlined />} onClick={() => setFacilityModalVisible(true)}>Add Facility</Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setPatientModalVisible(true)}>
+              Register Patient
             </Button>
           </>
         }
@@ -922,6 +1076,258 @@ const HealthcareHub: React.FC = () => {
         activeKey={activeTab}
         onChange={setActiveTab}
       />
+
+      {/* Patient Registration Modal */}
+      <Modal
+        title="Register New Patient"
+        open={patientModalVisible}
+        onCancel={() => { setPatientModalVisible(false); patientForm.resetFields(); }}
+        footer={null}
+        width={700}
+      >
+        <Form form={patientForm} layout="vertical" onFinish={handleCreatePatient}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="first_name" label="First Name" rules={[{ required: true }]}>
+                <Input placeholder="Enter first name" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="last_name" label="Last Name" rules={[{ required: true }]}>
+                <Input placeholder="Enter last name" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="id_number" label="ID Number" rules={[{ required: true }]}>
+                <Input placeholder="Enter ID number" maxLength={13} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="date_of_birth" label="Date of Birth" rules={[{ required: true }]}>
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="gender" label="Gender" rules={[{ required: true }]}>
+                <Select placeholder="Select gender">
+                  <Option value="male">Male</Option>
+                  <Option value="female">Female</Option>
+                  <Option value="other">Other</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="phone" label="Phone Number">
+                <Input placeholder="Enter phone number" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="email" label="Email">
+                <Input placeholder="Enter email address" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="city" label="City">
+                <Input placeholder="Enter city" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Divider>Medical Aid Details (Optional)</Divider>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="medical_aid" label="Medical Aid">
+                <Select placeholder="Select medical aid" allowClear>
+                  {schemes.map(s => <Option key={s.id} value={s.name}>{s.name}</Option>)}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="member_number" label="Member Number">
+                <Input placeholder="Medical aid member number" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="plan_option" label="Plan/Option">
+                <Input placeholder="Plan option" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" loading={loading}>Register Patient</Button>
+              <Button onClick={() => { setPatientModalVisible(false); patientForm.resetFields(); }}>Cancel</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Appointment Booking Modal */}
+      <Modal
+        title="Book Appointment"
+        open={appointmentModalVisible}
+        onCancel={() => { setAppointmentModalVisible(false); appointmentForm.resetFields(); }}
+        footer={null}
+        width={600}
+      >
+        <Form form={appointmentForm} layout="vertical" onFinish={handleCreateAppointment}>
+          <Form.Item name="patient_id" label="Patient" rules={[{ required: true, message: 'Please select a patient' }]}>
+            <Select placeholder="Select patient" showSearch optionFilterProp="children">
+              {patients.map(p => (
+                <Option key={p.id} value={p.id}>{p.name} - {p.idNumber || 'No ID'}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+          {facilities.length > 0 && (
+            <Form.Item name="facility_id" label="Facility">
+              <Select placeholder="Select facility" defaultValue={facilities[0]?.facility_id}>
+                {facilities.map(f => (
+                  <Option key={f.facility_id} value={f.facility_id}>{f.facility_name}</Option>
+                ))}
+              </Select>
+            </Form.Item>
+          )}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="appointment_date" label="Date" rules={[{ required: true }]}>
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="appointment_time" label="Time" rules={[{ required: true }]}>
+                <TimePicker format="HH:mm" minuteStep={15} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="appointment_type" label="Appointment Type">
+                <Select defaultValue="CONSULTATION">
+                  <Option value="CONSULTATION">Consultation</Option>
+                  <Option value="FOLLOW_UP">Follow-up</Option>
+                  <Option value="PROCEDURE">Procedure</Option>
+                  <Option value="CHRONIC">Chronic Care</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="duration" label="Duration (minutes)">
+                <Select defaultValue={30}>
+                  <Option value={15}>15 minutes</Option>
+                  <Option value={30}>30 minutes</Option>
+                  <Option value={45}>45 minutes</Option>
+                  <Option value={60}>1 hour</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="reason" label="Reason for Visit">
+            <Input.TextArea rows={3} placeholder="Enter reason for appointment" />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" loading={loading}>Book Appointment</Button>
+              <Button onClick={() => { setAppointmentModalVisible(false); appointmentForm.resetFields(); }}>Cancel</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Facility Registration Modal */}
+      <Modal
+        title="Add New Facility"
+        open={facilityModalVisible}
+        onCancel={() => { setFacilityModalVisible(false); facilityForm.resetFields(); }}
+        footer={null}
+        width={600}
+      >
+        <Form form={facilityForm} layout="vertical" onFinish={handleCreateFacility}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="facility_code" label="Facility Code" rules={[{ required: true }]}>
+                <Input placeholder="e.g., FAC001" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="facility_name" label="Facility Name" rules={[{ required: true }]}>
+                <Input placeholder="Enter facility name" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="facility_type" label="Facility Type" rules={[{ required: true }]}>
+                <Select placeholder="Select type">
+                  <Option value="HOSPITAL">Hospital</Option>
+                  <Option value="CLINIC">Clinic</Option>
+                  <Option value="PHARMACY">Pharmacy</Option>
+                  <Option value="LABORATORY">Laboratory</Option>
+                  <Option value="SPECIALIST_ROOMS">Specialist Rooms</Option>
+                  <Option value="GP_PRACTICE">GP Practice</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="phone" label="Phone Number">
+                <Input placeholder="Enter phone number" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="email" label="Email">
+                <Input placeholder="Enter email address" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="city" label="City">
+                <Input placeholder="Enter city" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="province" label="Province">
+                <Select placeholder="Select province">
+                  <Option value="Gauteng">Gauteng</Option>
+                  <Option value="Western Cape">Western Cape</Option>
+                  <Option value="KwaZulu-Natal">KwaZulu-Natal</Option>
+                  <Option value="Eastern Cape">Eastern Cape</Option>
+                  <Option value="Free State">Free State</Option>
+                  <Option value="Limpopo">Limpopo</Option>
+                  <Option value="Mpumalanga">Mpumalanga</Option>
+                  <Option value="North West">North West</Option>
+                  <Option value="Northern Cape">Northern Cape</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="total_beds" label="Total Beds">
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="consultation_rooms" label="Consultation Rooms">
+                <InputNumber min={0} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="is_24_hour" valuePropName="checked">
+            <Checkbox>24-Hour Facility</Checkbox>
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" loading={loading}>Create Facility</Button>
+              <Button onClick={() => { setFacilityModalVisible(false); facilityForm.resetFields(); }}>Cancel</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
     </HubLayout>
   );
 };

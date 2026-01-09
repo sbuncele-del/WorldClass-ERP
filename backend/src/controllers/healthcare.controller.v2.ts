@@ -262,39 +262,37 @@ export const getPatient = async (req: TenantRequest, res: Response) => {
 /**
  * Create Patient
  */
+/**
+ * Create Patient
+ * DB Columns: patient_id, tenant_id, facility_id, medical_record_number, first_name, last_name,
+ * id_number, date_of_birth, gender, phone, email, address, medical_aid_name, medical_aid_number,
+ * status, created_at, updated_at, primary_facility_id
+ */
 export const createPatient = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
     const {
-      medicalRecordNumber, firstName, lastName, dateOfBirth,
-      gender, bloodType, phone, email, address,
-      emergencyContactName, emergencyContactPhone,
-      insuranceProvider, insurancePolicyNumber,
-      allergies, chronicConditions, currentMedications,
-      primaryFacilityId, goodxPatientId
+      medical_record_number, first_name, last_name, id_number,
+      date_of_birth, gender, phone, email, address,
+      medical_aid_name, medical_aid_number, facility_id, primary_facility_id
     } = req.body;
 
-    if (!firstName || !lastName) {
-      return res.status(400).json({ success: false, error: 'First name and last name are required' });
+    if (!first_name || !last_name) {
+      return res.status(400).json({ success: false, error: 'first_name and last_name are required' });
     }
 
     const result = await pool.query(
       `INSERT INTO healthcare_patients (
-        tenant_id, medical_record_number, first_name, last_name,
-        date_of_birth, gender, blood_type, phone, email, address,
-        emergency_contact_name, emergency_contact_phone,
-        insurance_provider, insurance_policy_number,
-        allergies, chronic_conditions, current_medications,
-        primary_facility_id, goodx_patient_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        tenant_id, medical_record_number, first_name, last_name, id_number,
+        date_of_birth, gender, phone, email, address,
+        medical_aid_name, medical_aid_number, facility_id, primary_facility_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING *`,
       [
-        tenantId, medicalRecordNumber, firstName, lastName,
-        dateOfBirth, gender, bloodType, phone, email, address,
-        emergencyContactName, emergencyContactPhone,
-        insuranceProvider, insurancePolicyNumber,
-        allergies, chronicConditions, currentMedications,
-        primaryFacilityId, goodxPatientId
+        tenantId, medical_record_number || null, first_name, last_name, id_number || null,
+        date_of_birth || null, gender || null, phone || null, email || null, address || null,
+        medical_aid_name || null, medical_aid_number || null, 
+        facility_id || null, primary_facility_id || null
       ]
     );
 
@@ -1100,15 +1098,15 @@ export const getFacilities = async (req: TenantRequest, res: Response) => {
 
 /**
  * Create a new healthcare facility
+ * DB Columns: facility_id, tenant_id, facility_code, facility_name, facility_type, status, 
+ * address_line1, city, province, phone, email, total_beds, is_active, created_at, updated_at
  */
 export const createFacility = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
     const {
-      facility_code, facility_name, facility_type, address_line1, address_line2,
-      city, province, postal_code, phone, email, emergency_phone,
-      total_beds, total_consultation_rooms, total_theatre_rooms, total_icu_beds,
-      is_24_hour, operating_hours
+      facility_code, facility_name, facility_type, address_line1,
+      city, province, phone, email, total_beds, status
     } = req.body;
 
     if (!facility_code || !facility_name || !facility_type) {
@@ -1117,16 +1115,12 @@ export const createFacility = async (req: TenantRequest, res: Response) => {
 
     const result = await pool.query(
       `INSERT INTO healthcare_facilities (
-        tenant_id, facility_code, facility_name, facility_type, address_line1, address_line2,
-        city, province, postal_code, phone, email, emergency_phone,
-        total_beds, total_consultation_rooms, total_theatre_rooms, total_icu_beds,
-        is_24_hour, operating_hours
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        tenant_id, facility_code, facility_name, facility_type, status, address_line1,
+        city, province, phone, email, total_beds
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING *`,
-      [tenantId, facility_code, facility_name, facility_type, address_line1 || null, address_line2 || null,
-       city || null, province || null, postal_code || null, phone || null, email || null, emergency_phone || null,
-       total_beds || 0, total_consultation_rooms || 0, total_theatre_rooms || 0, total_icu_beds || 0,
-       is_24_hour || false, operating_hours ? JSON.stringify(operating_hours) : null]
+      [tenantId, facility_code, facility_name, facility_type, status || 'ACTIVE', address_line1 || null,
+       city || null, province || null, phone || null, email || null, total_beds || 0]
     );
 
     res.status(201).json({ success: true, data: result.rows[0] });
@@ -1224,26 +1218,42 @@ export const getAllAppointments = async (req: TenantRequest, res: Response) => {
 /**
  * Create an appointment
  */
+/**
+ * Create Appointment
+ * DB Columns: appointment_id, facility_id, patient_id, goodx_appointment_id, appointment_date,
+ * appointment_time, appointment_type, duration_minutes, provider_name, provider_id, department,
+ * room_number, status, reason_for_visit, notes, created_at, updated_at
+ */
 export const createAppointment = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
     const {
-      patient_id, facility_id, practitioner_id, appointment_date, appointment_time,
-      duration_minutes, appointment_type, reason, notes
+      patient_id, facility_id, provider_id, provider_name, appointment_date, appointment_time,
+      duration_minutes, appointment_type, reason_for_visit, notes, department, room_number
     } = req.body;
 
-    if (!patient_id || !facility_id || !appointment_date || !appointment_time) {
-      return res.status(400).json({ success: false, error: 'patient_id, facility_id, appointment_date and appointment_time are required' });
+    if (!patient_id || !facility_id || !appointment_date || !appointment_time || !appointment_type) {
+      return res.status(400).json({ success: false, error: 'patient_id, facility_id, appointment_date, appointment_time and appointment_type are required' });
+    }
+
+    // Verify facility belongs to tenant
+    const facilityCheck = await pool.query(
+      `SELECT facility_id FROM healthcare_facilities WHERE facility_id = $1 AND tenant_id = $2`,
+      [facility_id, tenantId]
+    );
+    if (facilityCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Facility not found' });
     }
 
     const result = await pool.query(
       `INSERT INTO healthcare_appointments (
-        tenant_id, patient_id, facility_id, practitioner_id, appointment_date, appointment_time,
-        duration_minutes, appointment_type, reason, notes, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'SCHEDULED')
+        facility_id, patient_id, provider_id, provider_name, appointment_date, appointment_time,
+        duration_minutes, appointment_type, reason_for_visit, notes, department, room_number, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'SCHEDULED')
       RETURNING *`,
-      [tenantId, patient_id, facility_id, practitioner_id || null, appointment_date, appointment_time,
-       duration_minutes || 30, appointment_type || 'CONSULTATION', reason || null, notes || null]
+      [facility_id, patient_id, provider_id || null, provider_name || null, appointment_date, appointment_time,
+       duration_minutes || 30, appointment_type, reason_for_visit || null, notes || null, 
+       department || null, room_number || null]
     );
 
     res.status(201).json({ success: true, data: result.rows[0] });
