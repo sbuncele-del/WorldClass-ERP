@@ -136,10 +136,27 @@ export const tenantMiddleware = async (
     // Also set tenantId directly for controllers that use req.tenantId
     (req as any).tenantId = tenant.id;
 
+    // Map legacy role names to RBAC roles
+    const roleMapping: Record<string, string> = {
+      'admin': 'SYSTEM_ADMIN',
+      'super_admin': 'SYSTEM_ADMIN',
+      'logistics_admin': 'LOGISTICS_ADMIN',
+      'dispatcher': 'DISPATCHER',
+      'driver': 'DRIVER',
+      'fleet_manager': 'FLEET_MANAGER',
+      'accountant': 'ACCOUNTANT',
+      'viewer': 'VIEWER',
+      'user': 'VIEWER',
+    };
+    
+    // Determine roles array for RBAC
+    const mappedRole = roleMapping[user.role?.toLowerCase()] || 'VIEWER';
+
     req.user = {
       id: user.id,
       email: user.email,
       role: user.role,
+      roles: [mappedRole],  // Add roles array for RBAC middleware
       permissions: user.permissions || []
     };
     

@@ -2,7 +2,7 @@
 ## Investment & Development Finance Business Plan
 
 **Presented to:** Strategic Investment Partners  
-**Prepared by:** Alex Tsela Global (ATG) Holdings  
+**Prepared by:** Alex Tsela Global Finance  
 **Date:** January 2026  
 **Document Classification:** Confidential — Investment Memorandum  
 **Version:** 1.0
@@ -38,11 +38,11 @@ Modeled after successful development finance institutions such as the **Developm
 
 ### Seed Capital Request
 
-**We are seeking USD 10,000,000 (Ten Million US Dollars) in seed capital** to establish and operationalize the National Development Bank of South Sudan. This seed investment will fund:
+**We are seeking USD 5,000,000 (Five Million US Dollars) in seed capital** to establish and operationalize the National Development Bank of South Sudan. This seed investment will fund:
 
 - Legal establishment and regulatory licensing
-- Initial operations and working capital (12 months)
-- Technology infrastructure and banking systems
+- Initial operations and working capital (18 months lean)
+- Essential technology infrastructure and banking systems
 - Senior management team recruitment
 - First project pipeline development
 
@@ -747,7 +747,7 @@ We invite discussions with:
 - **Humanitarian Donors** looking for development-aligned deployment
 
 **Contact:**
-Alex Tsela Global (ATG) Holdings  
+Alex Tsela Global Finance  
 Email: [To be provided]  
 Phone: [To be provided]
 
@@ -777,10 +777,10 @@ Phone: [To be provided]
 | Version | 1.0 |
 | Date | January 2026 |
 | Classification | Confidential |
-| Prepared by | ATG Holdings |
+| Prepared by | Alex Tsela Global Finance |
 
 
 
-*© 2026 Alex Tsela Global (ATG) Holdings. All Rights Reserved.*
+*© 2026 Alex Tsela Global Finance. All Rights Reserved.*
 
 *This document contains confidential business information. Unauthorized distribution is prohibited.*

@@ -134,6 +134,7 @@ export interface TenantRequest extends Request {
     id: string;
     email: string;
     role: string;
+    roles?: string[];  // RBAC roles array
     permissions: string[];
     first_name?: string;
     last_name?: string;

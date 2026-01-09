@@ -129,45 +129,53 @@ export const createVehicle = async (req: Request, res: Response) => {
   try {
     const {
       vehicle_registration,
-      vin_number,
+      vehicle_type,
       make,
       model,
-      vehicle_type,
-      year_of_manufacture,
-      payload_capacity_kg,
-      volume_capacity_m3,
+      year,
+      capacity_kg,
+      capacity_m3,
       fuel_type,
-      fuel_tank_capacity_litres,
-      ownership_type = 'OWNED',
-      purchase_date,
-      purchase_cost,
-      asset_id,
-      service_interval_km = 10000,
-      service_interval_days = 90,
-      gps_device_id,
-      gps_provider,
-      created_by
+      fuel_tank_capacity,
+      license_expiry_date,
+      insurance_expiry_date,
+      last_service_date,
+      next_service_date,
+      current_mileage,
+      notes
     } = req.body;
+
+    // Get tenant from authenticated user
+    const tenantId = (req as any).tenantId || (req as any).user?.tenantId || (req as any).tenant?.id;
 
     await client.query('BEGIN');
 
     const result = await client.query(
       `INSERT INTO logistics.vehicles (
-        tenant_id, vehicle_registration, vehicle_registration, vin_number, make, model,
-        vehicle_type, year_of_manufacture, payload_capacity_kg, volume_capacity_m3,
-        fuel_type, fuel_tank_capacity_litres, ownership_type, purchase_date, purchase_cost,
-        asset_id, service_interval_km, service_interval_days, gps_device_id, gps_provider,
-        status, created_by
+        tenant_id, vehicle_registration, vehicle_type, make, model, year,
+        capacity_kg, capacity_m3, fuel_type, fuel_tank_capacity,
+        license_expiry_date, insurance_expiry_date, last_service_date,
+        next_service_date, current_mileage, notes, status
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, 'ACTIVE', $21
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'ACTIVE'
       ) RETURNING *`,
       [
-        req.user?.tenantId || '00000000-0000-0000-0000-000000000000',
-        vehicle_registration, vehicle_registration, vin_number, make, model, vehicle_type,
-        year_of_manufacture, payload_capacity_kg, volume_capacity_m3, fuel_type,
-        fuel_tank_capacity_litres, ownership_type, purchase_date, purchase_cost,
-        asset_id, service_interval_km, service_interval_days, gps_device_id, gps_provider,
-        created_by || req.user?.id || '00000000-0000-0000-0000-000000000000'
+        tenantId,
+        vehicle_registration,
+        vehicle_type,
+        make || null,
+        model || null,
+        year || null,
+        capacity_kg || null,
+        capacity_m3 || null,
+        fuel_type || null,
+        fuel_tank_capacity || null,
+        license_expiry_date || null,
+        insurance_expiry_date || null,
+        last_service_date || null,
+        next_service_date || null,
+        current_mileage || 0,
+        notes || null
       ]
     );
 
@@ -361,46 +369,55 @@ export const createDriver = async (req: Request, res: Response) => {
   const client = await pool.connect();
   try {
     const {
-      employee_id,
       first_name,
       last_name,
       id_number,
-      date_of_birth,
+      license_number,
+      license_expiry_date,
       phone,
       email,
-      physical_address,
-      employment_type = 'PERMANENT',
-      date_hired,
-      license_number,
-      license_type,
-      license_issue_date,
-      license_expiry_date,
-      prdp_number,
-      prdp_expiry_date,
-      mobile_app_enabled = true,
-      mobile_phone_number,
-      created_by
+      address,
+      emergency_contact_name,
+      emergency_contact_phone,
+      hire_date,
+      notes
     } = req.body;
+
+    // Get tenant from authenticated user
+    const tenantId = (req as any).tenantId || (req as any).user?.tenantId || (req as any).tenant?.id;
+
+    // Generate driver code
+    const codeResult = await client.query(
+      `SELECT 'DRV-' || LPAD((COALESCE(MAX(driver_id), 0) + 1)::text, 4, '0') as driver_code FROM logistics.drivers`
+    );
+    const driverCode = codeResult.rows[0]?.driver_code || `DRV-${Date.now()}`;
 
     await client.query('BEGIN');
 
     const result = await client.query(
       `INSERT INTO logistics.drivers (
-        tenant_id, employee_id, first_name, last_name, id_number, date_of_birth,
-        phone, email, physical_address, employment_type, date_hired,
-        license_number, license_type, license_issue_date, license_expiry_date,
-        prdp_number, prdp_expiry_date, mobile_app_enabled, mobile_phone_number,
-        status, created_by
+        tenant_id, driver_code, first_name, last_name, id_number,
+        license_number, license_expiry_date, phone, email, address,
+        emergency_contact_name, emergency_contact_phone, hire_date,
+        notes, status, employment_status
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, 'ACTIVE', $20
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'ACTIVE', 'ACTIVE'
       ) RETURNING *`,
       [
-        req.user?.tenantId || '00000000-0000-0000-0000-000000000000',
-        employee_id, first_name, last_name, id_number, date_of_birth,
-        phone, email, physical_address, employment_type, date_hired,
-        license_number, license_type, license_issue_date, license_expiry_date,
-        prdp_number, prdp_expiry_date, mobile_app_enabled, mobile_phone_number,
-        created_by || req.user?.id || '00000000-0000-0000-0000-000000000000'
+        tenantId,
+        driverCode,
+        first_name,
+        last_name,
+        id_number || null,
+        license_number || null,
+        license_expiry_date || null,
+        phone || null,
+        email || null,
+        address || null,
+        emergency_contact_name || null,
+        emergency_contact_phone || null,
+        hire_date || null,
+        notes || null
       ]
     );
 
@@ -854,27 +871,21 @@ export const getFuelTransactions = async (req: Request, res: Response) => {
       page = '1', 
       limit = '50', 
       vehicle_id,
-      driver_id,
       date_from,
-      date_to,
-      reconciled
+      date_to
     } = req.query;
 
+    // Get tenant from authenticated user
+    const tenantId = (req as any).tenantId || (req as any).user?.tenantId || (req as any).tenant?.id;
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-    const values: any[] = [];
-    let paramCount = 1;
-    const filters: string[] = ['1=1'];
+    const values: any[] = [tenantId];
+    let paramCount = 2;
+    const filters: string[] = ['f.tenant_id = $1'];
 
     if (vehicle_id) {
-      filters.push(`f.vehicle_id::text = $${paramCount}`);
-      values.push(String(vehicle_id));
-      paramCount++;
-    }
-
-    if (driver_id) {
-      filters.push(`f.driver_id::text = $${paramCount}`);
-      values.push(String(driver_id));
+      filters.push(`f.vehicle_id = $${paramCount}`);
+      values.push(parseInt(vehicle_id as string));
       paramCount++;
     }
 
@@ -890,29 +901,20 @@ export const getFuelTransactions = async (req: Request, res: Response) => {
       paramCount++;
     }
 
-    if (reconciled !== undefined) {
-      filters.push(`f.reconciled = $${paramCount}`);
-      values.push(reconciled === 'true');
-      paramCount++;
-    }
-
     const whereClause = filters.join(' AND ');
 
     const countQuery = `
       SELECT COUNT(*)
       FROM logistics.fuel_transactions f
-      LEFT JOIN logistics.vehicles v ON f.vehicle_id::text = v.vehicle_id::text
-      LEFT JOIN logistics.drivers d ON f.driver_id::text = d.driver_id::text
       WHERE ${whereClause}
     `;
     const countResult = await pool.query(countQuery, values);
     const total = parseInt(countResult?.rows?.[0]?.count ?? '0', 10);
 
     const dataQuery = `
-      SELECT f.*, v.vehicle_registration, d.first_name || ' ' || d.last_name as driver_name
+      SELECT f.*, v.vehicle_registration
       FROM logistics.fuel_transactions f
       LEFT JOIN logistics.vehicles v ON f.vehicle_id::text = v.vehicle_id::text
-      LEFT JOIN logistics.drivers d ON f.driver_id::text = d.driver_id::text
       WHERE ${whereClause}
       ORDER BY f.transaction_date DESC
       LIMIT $${paramCount} OFFSET $${paramCount + 1}

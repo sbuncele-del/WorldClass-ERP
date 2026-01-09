@@ -4,12 +4,7 @@
  */
 
 import { Request, Response } from 'express';
-import { Pool } from 'pg';
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
+import pool from '../config/database';
 
 // ============================================================================
 // ROUTES CONTROLLER
@@ -21,10 +16,13 @@ export async function getRoutes(req: Request, res: Response) {
     const pageNum = parseInt(page as string, 10);
     const limitNum = parseInt(limit as string, 10);
     const offset = (pageNum - 1) * limitNum;
+    
+    // Get tenant from authenticated user
+    const tenantId = (req as any).tenantId || (req as any).user?.tenantId || (req as any).tenant?.id;
 
-    let query = 'SELECT * FROM routes WHERE 1=1';
-    const params: any[] = [];
-    let paramIndex = 1;
+    let query = 'SELECT * FROM logistics.routes WHERE tenant_id = $1';
+    const params: any[] = [tenantId];
+    let paramIndex = 2;
 
     if (is_active !== undefined) {
       query += ` AND is_active = $${paramIndex++}`;
@@ -35,7 +33,7 @@ export async function getRoutes(req: Request, res: Response) {
       params.push(route_type);
     }
     if (search) {
-      query += ` AND (route_name ILIKE $${paramIndex} OR route_code ILIKE $${paramIndex} OR origin_address ILIKE $${paramIndex} OR destination_address ILIKE $${paramIndex})`;
+      query += ` AND (route_name ILIKE $${paramIndex} OR route_code ILIKE $${paramIndex} OR start_location ILIKE $${paramIndex} OR end_location ILIKE $${paramIndex})`;
       params.push(`%${search}%`);
       paramIndex++;
     }
