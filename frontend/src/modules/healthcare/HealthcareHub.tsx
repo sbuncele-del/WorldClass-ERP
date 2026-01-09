@@ -1176,8 +1176,8 @@ const HealthcareHub: React.FC = () => {
         <Form form={appointmentForm} layout="vertical" onFinish={handleCreateAppointment}>
           <Form.Item name="patient_id" label="Patient" rules={[{ required: true, message: 'Please select a patient' }]}>
             <Select placeholder="Select patient" showSearch optionFilterProp="children">
-              {patients.map(p => (
-                <Option key={p.id} value={p.id}>{p.name} - {p.idNumber || 'No ID'}</Option>
+              {patients.map((p: any) => (
+                <Option key={p.patient_id} value={p.patient_id}>{p.first_name} {p.last_name} - {p.id_number || 'No ID'}</Option>
               ))}
             </Select>
           </Form.Item>
@@ -1289,7 +1289,7 @@ const HealthcareHub: React.FC = () => {
             </Col>
           </Row>
           <Row gutter={16}>
-            <Col span={8}>
+            <Col span={12}>
               <Form.Item name="province" label="Province">
                 <Select placeholder="Select province">
                   <Option value="Gauteng">Gauteng</Option>
@@ -1304,19 +1304,14 @@ const HealthcareHub: React.FC = () => {
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col span={12}>
               <Form.Item name="total_beds" label="Total Beds">
-                <InputNumber min={0} style={{ width: '100%' }} />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item name="consultation_rooms" label="Consultation Rooms">
-                <InputNumber min={0} style={{ width: '100%' }} />
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="0" />
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item name="is_24_hour" valuePropName="checked">
-            <Checkbox>24-Hour Facility</Checkbox>
+          <Form.Item name="address" label="Address">
+            <Input.TextArea rows={2} placeholder="Enter facility address" />
           </Form.Item>
           <Form.Item>
             <Space>
