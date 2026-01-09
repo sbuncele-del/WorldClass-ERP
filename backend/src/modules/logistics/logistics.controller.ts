@@ -943,38 +943,35 @@ export const createFuelTransaction = async (req: Request, res: Response) => {
   try {
     const {
       vehicle_id,
-      driver_id,
-      trip_id,
       transaction_date = new Date(),
-      transaction_number,
       fuel_station,
-      location,
-      fuel_type,
+      fuel_type = 'Diesel',
       litres,
       price_per_litre,
-      odometer_reading,
-      payment_method,
-      fuel_card_number,
-      created_by
+      odometer_reading
     } = req.body;
 
     const total_amount = litres * price_per_litre;
+    const tenantId = (req as any).tenantId || (req as any).user?.tenantId || req.user?.tenantId || '00000000-0000-0000-0000-000000000001';
 
     const result = await pool.query(
       `INSERT INTO logistics.fuel_transactions (
-        tenant_id, vehicle_id, driver_id, trip_id, transaction_date,
-        transaction_number, fuel_station, location, fuel_type, litres,
-        price_per_litre, total_amount, odometer_reading, payment_method,
-        fuel_card_number, created_by
+        tenant_id, vehicle_id, transaction_date,
+        fuel_station, fuel_type, litres,
+        price_per_litre, total_amount, odometer_reading
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+        $1, $2, $3, $4, $5, $6, $7, $8, $9
       ) RETURNING *`,
       [
-        req.user?.tenantId || '00000000-0000-0000-0000-000000000000',
-        vehicle_id, driver_id, trip_id, transaction_date, transaction_number,
-        fuel_station, location, fuel_type, litres, price_per_litre, total_amount,
-        odometer_reading, payment_method, fuel_card_number,
-        created_by || req.user?.id || '00000000-0000-0000-0000-000000000000'
+        tenantId,
+        vehicle_id,
+        transaction_date,
+        fuel_station || null,
+        fuel_type,
+        litres,
+        price_per_litre,
+        total_amount,
+        odometer_reading || null
       ]
     );
 

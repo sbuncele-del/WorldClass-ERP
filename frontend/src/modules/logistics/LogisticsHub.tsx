@@ -125,12 +125,18 @@ interface Vehicle {
 interface Driver {
   id: string;
   name: string;
+  first_name?: string;
+  last_name?: string;
   license: string;
+  license_type?: string;
   licenseExpiry: string;
+  license_expiry?: string;
   status: string;
   currentTrip: string;
   hoursThisWeek: number;
   rating: number;
+  employee_code?: string;
+  contact_number?: string;
 }
 
 interface FuelRecord {
@@ -161,9 +167,18 @@ const LogisticsHub: React.FC = () => {
   const [tripModalVisible, setTripModalVisible] = useState(false);
   const [vehicleModalVisible, setVehicleModalVisible] = useState(false);
   const [fuelModalVisible, setFuelModalVisible] = useState(false);
+  const [driverModalVisible, setDriverModalVisible] = useState(false);
   const [driverAppModalVisible, setDriverAppModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [vehicleForm] = Form.useForm();
+  const [driverForm] = Form.useForm();
+  const [fuelForm] = Form.useForm();
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
+  const [viewingVehicle, setViewingVehicle] = useState<Vehicle | null>(null);
+  const [viewingDriver, setViewingDriver] = useState<Driver | null>(null);
 
   // State for data
   const [logisticsStats, setLogisticsStats] = useState<LogisticsStats>({
@@ -214,6 +229,159 @@ const LogisticsHub: React.FC = () => {
     };
     fetchLogisticsData();
   }, []);
+
+  // Refresh data after mutations
+  const refreshData = async () => {
+    try {
+      const [dashboardRes, vehiclesRes, driversRes, fuelRes, tripsRes] = await Promise.all([
+        apiClient.get('/api/logistics/dashboard'),
+        apiClient.get('/api/logistics/vehicles'),
+        apiClient.get('/api/logistics/drivers'),
+        apiClient.get('/api/logistics/fuel/records'),
+        apiClient.get('/api/logistics/trips')
+      ]);
+      if (dashboardRes.data) {
+        const data = dashboardRes.data.data || dashboardRes.data;
+        setLogisticsStats(prev => ({ ...prev, ...data }));
+      }
+      if (vehiclesRes.data) setVehicles(vehiclesRes.data.data || vehiclesRes.data || []);
+      if (driversRes.data) setDrivers(driversRes.data.data || driversRes.data || []);
+      if (fuelRes.data) setFuelRecords(fuelRes.data.data || fuelRes.data || []);
+      if (tripsRes.data) setActiveTrips(tripsRes.data.data || tripsRes.data || []);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    }
+  };
+
+  // Create Vehicle Handler
+  const handleCreateVehicle = async () => {
+    try {
+      const values = await vehicleForm.validateFields();
+      setSubmitting(true);
+      await apiClient.post('/api/logistics/vehicles', {
+        vehicle_registration: values.registration,
+        vehicle_type: values.type,
+        capacity_kg: (values.capacity || 0) * 1000, // Convert tons to kg
+        status: 'ACTIVE',
+        make: values.make || 'TBD',
+        model: values.model || 'TBD'
+      });
+      message.success('Vehicle added successfully');
+      setVehicleModalVisible(false);
+      vehicleForm.resetFields();
+      setEditingVehicle(null);
+      await refreshData();
+    } catch (error: any) {
+      console.error('Error creating vehicle:', error);
+      message.error(error.response?.data?.error || 'Failed to add vehicle');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Create Driver Handler
+  const handleCreateDriver = async () => {
+    try {
+      const values = await driverForm.validateFields();
+      setSubmitting(true);
+      await apiClient.post('/api/logistics/drivers', {
+        first_name: values.firstName,
+        last_name: values.lastName,
+        license_number: values.licenseNumber || `LIC-${Date.now()}`,
+        license_expiry_date: values.licenseExpiry?.format('YYYY-MM-DD'),
+        phone: values.phone
+      });
+      message.success('Driver added successfully');
+      setDriverModalVisible(false);
+      driverForm.resetFields();
+      setEditingDriver(null);
+      await refreshData();
+    } catch (error: any) {
+      console.error('Error creating driver:', error);
+      message.error(error.response?.data?.error || 'Failed to add driver');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Log Fuel Handler
+  const handleLogFuel = async () => {
+    try {
+      const values = await fuelForm.validateFields();
+      setSubmitting(true);
+      await apiClient.post('/api/logistics/fuel', {
+        vehicle_id: values.vehicle,
+        driver_id: values.driver,
+        fuel_type: 'diesel',
+        litres: values.liters,
+        price_per_litre: values.price,
+        odometer_reading: values.odometer,
+        fuel_station: values.station || 'N/A',
+        transaction_date: new Date().toISOString()
+      });
+      message.success('Fuel record logged successfully');
+      setFuelModalVisible(false);
+      fuelForm.resetFields();
+      await refreshData();
+    } catch (error: any) {
+      console.error('Error logging fuel:', error);
+      message.error(error.response?.data?.error || 'Failed to log fuel');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Create Trip Handler
+  const handleCreateTrip = async () => {
+    try {
+      const values = await form.validateFields();
+      setSubmitting(true);
+      await apiClient.post('/api/logistics/trips', {
+        vehicle_id: values.vehicle,
+        driver_id: values.driver,
+        origin: values.origin,
+        destination: values.destination,
+        cargo_type: values.cargo,
+        weight_tons: values.weight || 0,
+        scheduled_departure: values.departureDate?.toISOString(),
+        expected_arrival: values.arrivalDate?.toISOString(),
+        status: 'scheduled'
+      });
+      message.success('Trip created successfully');
+      setTripModalVisible(false);
+      form.resetFields();
+      await refreshData();
+    } catch (error: any) {
+      console.error('Error creating trip:', error);
+      message.error(error.response?.data?.error || 'Failed to create trip');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Delete Vehicle Handler
+  const handleDeleteVehicle = async (vehicleId: string | number) => {
+    try {
+      await apiClient.delete(`/api/logistics/vehicles/${vehicleId}`);
+      message.success('Vehicle deleted successfully');
+      await refreshData();
+    } catch (error: any) {
+      console.error('Error deleting vehicle:', error);
+      message.error(error.response?.data?.error || 'Failed to delete vehicle');
+    }
+  };
+
+  // Delete Driver Handler
+  const handleDeleteDriver = async (driverId: string | number) => {
+    try {
+      await apiClient.delete(`/api/logistics/drivers/${driverId}`);
+      message.success('Driver deleted successfully');
+      await refreshData();
+    } catch (error: any) {
+      console.error('Error deleting driver:', error);
+      message.error(error.response?.data?.error || 'Failed to delete driver');
+    }
+  };
 
   // Mobile Driver App URL
   const driverAppUrl = `${window.location.origin}/driver-app`;
@@ -303,32 +471,41 @@ const LogisticsHub: React.FC = () => {
   const vehicleColumns = [
     { title: 'Vehicle ID', dataIndex: 'id', key: 'id', render: (text: string) => <strong>{text}</strong> },
     { title: 'Registration', dataIndex: 'registration', key: 'registration' },
-    { title: 'Type', dataIndex: 'type', key: 'type', render: (type: string) => <Tag>{type}</Tag> },
-    { title: 'Capacity (t)', dataIndex: 'capacity', key: 'capacity' },
+    { title: 'Type', dataIndex: 'type', key: 'type', render: (type: string) => <Tag>{type || 'N/A'}</Tag> },
+    { title: 'Capacity (t)', dataIndex: 'capacity', key: 'capacity', render: (c: number) => c || '-' },
     { title: 'Status', dataIndex: 'status', key: 'status', render: (status: string) => {
       const config: Record<string, { color: string; label: string }> = {
         'on_trip': { color: 'processing', label: 'On Trip' },
         'available': { color: 'success', label: 'Available' },
         'loading': { color: 'warning', label: 'Loading' },
-        'maintenance': { color: 'error', label: 'Maintenance' }
+        'maintenance': { color: 'error', label: 'Maintenance' },
+        'in_use': { color: 'processing', label: 'In Use' }
       };
-      const { color, label } = config[status] || { color: 'default', label: status };
+      const { color, label } = config[status] || { color: 'default', label: status || 'Unknown' };
       return <Tag color={color}>{label}</Tag>;
     }},
-    { title: 'Driver', dataIndex: 'driver', key: 'driver' },
+    { title: 'Driver', dataIndex: 'driver', key: 'driver', render: (d: string) => d || '-' },
     { title: 'Fuel Level', key: 'fuelLevel', render: (_: unknown, record: typeof vehicles[0]) => (
       <Progress 
-        percent={record.fuelLevel} 
+        percent={record.fuelLevel || 0} 
         size="small" 
-        status={record.fuelLevel < 25 ? 'exception' : 'normal'}
-        strokeColor={record.fuelLevel < 25 ? '#ff4d4f' : record.fuelLevel < 50 ? '#faad14' : '#52c41a'}
+        status={(record.fuelLevel || 0) < 25 ? 'exception' : 'normal'}
+        strokeColor={(record.fuelLevel || 0) < 25 ? '#ff4d4f' : (record.fuelLevel || 0) < 50 ? '#faad14' : '#52c41a'}
       />
     )},
-    { title: 'Next Service', dataIndex: 'nextService', key: 'nextService' },
-    { title: 'Actions', key: 'actions', render: () => (
+    { title: 'Next Service', dataIndex: 'nextService', key: 'nextService', render: (d: string) => d || '-' },
+    { title: 'Actions', key: 'actions', render: (_: unknown, record: Vehicle) => (
       <Space>
-        <Button size="small">Details</Button>
-        <Button size="small" icon={<ToolOutlined />}>Service</Button>
+        <Button size="small" onClick={() => setViewingVehicle(record)}>View</Button>
+        <Button size="small" danger onClick={() => {
+          Modal.confirm({
+            title: 'Delete Vehicle',
+            content: `Are you sure you want to delete vehicle ${record.registration}?`,
+            okText: 'Delete',
+            okType: 'danger',
+            onOk: () => handleDeleteVehicle(record.id)
+          });
+        }}>Delete</Button>
       </Space>
     )}
   ];
@@ -336,11 +513,13 @@ const LogisticsHub: React.FC = () => {
   // Driver columns
   const driverColumns = [
     { title: 'ID', dataIndex: 'id', key: 'id' },
-    { title: 'Name', dataIndex: 'name', key: 'name', render: (name: string) => <strong>{name}</strong> },
-    { title: 'License', dataIndex: 'license', key: 'license', render: (l: string) => <Tag color="blue">{l}</Tag> },
-    { title: 'License Expiry', dataIndex: 'licenseExpiry', key: 'licenseExpiry', render: (date: string) => {
-      const isExpiringSoon = new Date(date) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-      return <span style={{ color: isExpiringSoon ? '#ff4d4f' : 'inherit' }}>{date}</span>;
+    { title: 'Name', dataIndex: 'name', key: 'name', render: (name: string, record: Driver) => <strong>{name || `${(record as any).first_name || ''} ${(record as any).last_name || ''}`.trim() || 'N/A'}</strong> },
+    { title: 'License', dataIndex: 'license', key: 'license', render: (l: string, record: Driver) => <Tag color="blue">{l || (record as any).license_type || 'N/A'}</Tag> },
+    { title: 'License Expiry', dataIndex: 'licenseExpiry', key: 'licenseExpiry', render: (date: string, record: Driver) => {
+      const expiryDate = date || (record as any).license_expiry;
+      if (!expiryDate) return '-';
+      const isExpiringSoon = new Date(expiryDate) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+      return <span style={{ color: isExpiringSoon ? '#ff4d4f' : 'inherit' }}>{new Date(expiryDate).toLocaleDateString()}</span>;
     }},
     { title: 'Status', dataIndex: 'status', key: 'status', render: (status: string) => {
       const config: Record<string, { color: string; label: string }> = {
@@ -348,20 +527,28 @@ const LogisticsHub: React.FC = () => {
         'available': { color: 'processing', label: 'Available' },
         'off_duty': { color: 'default', label: 'Off Duty' }
       };
-      const { color, label } = config[status] || { color: 'default', label: status };
+      const { color, label } = config[status] || { color: 'default', label: status || 'Unknown' };
       return <Tag color={color}>{label}</Tag>;
     }},
-    { title: 'Current Trip', dataIndex: 'currentTrip', key: 'currentTrip' },
+    { title: 'Current Trip', dataIndex: 'currentTrip', key: 'currentTrip', render: (t: string) => t || '-' },
     { title: 'Hours/Week', dataIndex: 'hoursThisWeek', key: 'hoursThisWeek', render: (hours: number) => (
-      <span style={{ color: hours > 45 ? '#ff4d4f' : 'inherit' }}>{hours}h</span>
+      <span style={{ color: (hours || 0) > 45 ? '#ff4d4f' : 'inherit' }}>{hours || 0}h</span>
     )},
     { title: 'Rating', dataIndex: 'rating', key: 'rating', render: (r: number) => (
-      <Tag color={r >= 4.5 ? 'green' : r >= 4 ? 'blue' : 'orange'}>{r.toFixed(1)} ★</Tag>
+      <Tag color={(r || 0) >= 4.5 ? 'green' : (r || 0) >= 4 ? 'blue' : 'orange'}>{(r || 0).toFixed(1)} ★</Tag>
     )},
-    { title: 'Actions', key: 'actions', render: () => (
+    { title: 'Actions', key: 'actions', render: (_: unknown, record: Driver) => (
       <Space>
-        <Button size="small">Profile</Button>
-        <Button size="small">Assign</Button>
+        <Button size="small" onClick={() => setViewingDriver(record)}>View</Button>
+        <Button size="small" danger onClick={() => {
+          Modal.confirm({
+            title: 'Delete Driver',
+            content: `Are you sure you want to delete driver ${record.name || (record as any).first_name}?`,
+            okText: 'Delete',
+            okType: 'danger',
+            onOk: () => handleDeleteDriver(record.id)
+          });
+        }}>Delete</Button>
       </Space>
     )}
   ];
@@ -697,7 +884,7 @@ const LogisticsHub: React.FC = () => {
         extra={
           <Space>
             <Button icon={<SafetyCertificateOutlined />}>License Renewals</Button>
-            <Button type="primary" icon={<PlusOutlined />}>Add Driver</Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setDriverModalVisible(true)}>Add Driver</Button>
           </Space>
         }
       >
@@ -1256,11 +1443,10 @@ const LogisticsHub: React.FC = () => {
       <Modal
         title="Create New Trip"
         open={tripModalVisible}
-        onCancel={() => setTripModalVisible(false)}
+        onCancel={() => { setTripModalVisible(false); form.resetFields(); }}
         footer={[
-          <Button key="cancel" onClick={() => setTripModalVisible(false)}>Cancel</Button>,
-          <Button key="draft">Save as Draft</Button>,
-          <Button key="create" type="primary">Create Trip</Button>
+          <Button key="cancel" onClick={() => { setTripModalVisible(false); form.resetFields(); }}>Cancel</Button>,
+          <Button key="create" type="primary" loading={submitting} onClick={handleCreateTrip}>Create Trip</Button>
         ]}
         width={700}
       >
@@ -1342,39 +1528,47 @@ const LogisticsHub: React.FC = () => {
       <Modal
         title="Add Vehicle"
         open={vehicleModalVisible}
-        onCancel={() => setVehicleModalVisible(false)}
+        onCancel={() => { setVehicleModalVisible(false); vehicleForm.resetFields(); setEditingVehicle(null); }}
         footer={[
-          <Button key="cancel" onClick={() => setVehicleModalVisible(false)}>Cancel</Button>,
-          <Button key="create" type="primary">Add Vehicle</Button>
+          <Button key="cancel" onClick={() => { setVehicleModalVisible(false); vehicleForm.resetFields(); setEditingVehicle(null); }}>Cancel</Button>,
+          <Button key="create" type="primary" loading={submitting} onClick={handleCreateVehicle}>Add Vehicle</Button>
         ]}
         width={600}
       >
-        <Form layout="vertical">
+        <Form form={vehicleForm} layout="vertical">
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Vehicle ID" name="vehicleId" rules={[{ required: true }]}>
-                <Input placeholder="e.g., TRK-050" />
+              <Form.Item label="Registration Number" name="registration" rules={[{ required: true, message: 'Registration is required' }]}>
+                <Input placeholder="e.g., GP 123 ABC" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Registration" name="registration" rules={[{ required: true }]}>
-                <Input placeholder="e.g., GP 123 456" />
+              <Form.Item label="Vehicle Type" name="type" rules={[{ required: true, message: 'Type is required' }]}>
+                <Select placeholder="Select type">
+                  <Option value="truck">Truck</Option>
+                  <Option value="van">Van</Option>
+                  <Option value="trailer">Trailer</Option>
+                  <Option value="tanker">Tanker</Option>
+                </Select>
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Vehicle Type" name="type" rules={[{ required: true }]}>
-                <Select placeholder="Select type">
-                  <Option value="truck">Truck</Option>
-                  <Option value="van">Van</Option>
-                  <Option value="trailer">Trailer</Option>
-                </Select>
+              <Form.Item label="Capacity (tons)" name="capacity" rules={[{ required: true, message: 'Capacity is required' }]}>
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="e.g., 30" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Capacity (tons)" name="capacity" rules={[{ required: true }]}>
-                <InputNumber min={0} style={{ width: '100%' }} />
+              <Form.Item label="Make" name="make">
+                <Input placeholder="e.g., Mercedes" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Model" name="model">
+                <Input placeholder="e.g., Actros" />
               </Form.Item>
             </Col>
           </Row>
@@ -1385,17 +1579,17 @@ const LogisticsHub: React.FC = () => {
       <Modal
         title="Log Fuel Purchase"
         open={fuelModalVisible}
-        onCancel={() => setFuelModalVisible(false)}
+        onCancel={() => { setFuelModalVisible(false); fuelForm.resetFields(); }}
         footer={[
-          <Button key="cancel" onClick={() => setFuelModalVisible(false)}>Cancel</Button>,
-          <Button key="create" type="primary">Log Fuel</Button>
+          <Button key="cancel" onClick={() => { setFuelModalVisible(false); fuelForm.resetFields(); }}>Cancel</Button>,
+          <Button key="create" type="primary" loading={submitting} onClick={handleLogFuel}>Log Fuel</Button>
         ]}
         width={600}
       >
-        <Form layout="vertical">
+        <Form form={fuelForm} layout="vertical">
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Vehicle" name="vehicle" rules={[{ required: true }]}>
+              <Form.Item label="Vehicle" name="vehicle" rules={[{ required: true, message: 'Vehicle is required' }]}>
                 <Select placeholder="Select vehicle">
                   {vehicles.map(v => (
                     <Option key={v.id} value={v.id}>{v.id} - {v.registration}</Option>
@@ -1404,10 +1598,10 @@ const LogisticsHub: React.FC = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Driver" name="driver" rules={[{ required: true }]}>
+              <Form.Item label="Driver" name="driver" rules={[{ required: true, message: 'Driver is required' }]}>
                 <Select placeholder="Select driver">
                   {drivers.map(d => (
-                    <Option key={d.id} value={d.name}>{d.name}</Option>
+                    <Option key={d.id} value={d.id}>{d.name || `${(d as any).first_name} ${(d as any).last_name}`}</Option>
                   ))}
                 </Select>
               </Form.Item>
@@ -1415,18 +1609,18 @@ const LogisticsHub: React.FC = () => {
           </Row>
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item label="Liters" name="liters" rules={[{ required: true }]}>
-                <InputNumber min={0} style={{ width: '100%' }} />
+              <Form.Item label="Liters" name="liters" rules={[{ required: true, message: 'Liters is required' }]}>
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="e.g., 200" />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label="Price per Liter" name="price" rules={[{ required: true }]}>
-                <InputNumber min={0} prefix="R" style={{ width: '100%' }} />
+              <Form.Item label="Price per Liter (R)" name="price" rules={[{ required: true, message: 'Price is required' }]}>
+                <InputNumber min={0} step={0.01} style={{ width: '100%' }} placeholder="e.g., 23.50" />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item label="Odometer" name="odometer" rules={[{ required: true }]}>
-                <InputNumber min={0} style={{ width: '100%' }} />
+              <Form.Item label="Odometer (km)" name="odometer" rules={[{ required: true, message: 'Odometer is required' }]}>
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="e.g., 125000" />
               </Form.Item>
             </Col>
           </Row>
@@ -1518,6 +1712,112 @@ const LogisticsHub: React.FC = () => {
           showIcon
           style={{ marginTop: 16 }}
         />
+      </Modal>
+
+      {/* Add Driver Modal */}
+      <Modal
+        title="Add Driver"
+        open={driverModalVisible}
+        onCancel={() => { setDriverModalVisible(false); driverForm.resetFields(); setEditingDriver(null); }}
+        footer={[
+          <Button key="cancel" onClick={() => { setDriverModalVisible(false); driverForm.resetFields(); setEditingDriver(null); }}>Cancel</Button>,
+          <Button key="create" type="primary" loading={submitting} onClick={handleCreateDriver}>Add Driver</Button>
+        ]}
+        width={600}
+      >
+        <Form form={driverForm} layout="vertical">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="First Name" name="firstName" rules={[{ required: true, message: 'First name is required' }]}>
+                <Input placeholder="e.g., John" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Last Name" name="lastName" rules={[{ required: true, message: 'Last name is required' }]}>
+                <Input placeholder="e.g., Smith" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="License Type" name="license" rules={[{ required: true, message: 'License type is required' }]}>
+                <Select placeholder="Select license type">
+                  <Option value="Code 10">Code 10</Option>
+                  <Option value="Code 14">Code 14</Option>
+                  <Option value="Code 08">Code 08</Option>
+                  <Option value="PrDP">PrDP</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="License Number" name="licenseNumber">
+                <Input placeholder="e.g., SMITH123456" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="License Expiry" name="licenseExpiry" rules={[{ required: true, message: 'Expiry date is required' }]}>
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Contact Number" name="phone">
+                <Input placeholder="e.g., 082 123 4567" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
+
+      {/* View Vehicle Modal */}
+      <Modal
+        title="Vehicle Details"
+        open={!!viewingVehicle}
+        onCancel={() => setViewingVehicle(null)}
+        footer={[
+          <Button key="close" onClick={() => setViewingVehicle(null)}>Close</Button>
+        ]}
+        width={500}
+      >
+        {viewingVehicle && (
+          <Descriptions column={1} bordered>
+            <Descriptions.Item label="Vehicle ID">{viewingVehicle.id}</Descriptions.Item>
+            <Descriptions.Item label="Registration">{viewingVehicle.registration}</Descriptions.Item>
+            <Descriptions.Item label="Type">{viewingVehicle.type || (viewingVehicle as any).vehicle_type || 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Capacity">{viewingVehicle.capacity || (viewingVehicle as any).capacity_tons || 'N/A'} tons</Descriptions.Item>
+            <Descriptions.Item label="Status"><Tag color={viewingVehicle.status === 'available' ? 'green' : 'blue'}>{viewingVehicle.status}</Tag></Descriptions.Item>
+            <Descriptions.Item label="Driver">{viewingVehicle.driver || 'Unassigned'}</Descriptions.Item>
+            <Descriptions.Item label="Fuel Level">{viewingVehicle.fuelLevel || 0}%</Descriptions.Item>
+            <Descriptions.Item label="Last Service">{viewingVehicle.lastService || 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Next Service">{viewingVehicle.nextService || 'N/A'}</Descriptions.Item>
+          </Descriptions>
+        )}
+      </Modal>
+
+      {/* View Driver Modal */}
+      <Modal
+        title="Driver Details"
+        open={!!viewingDriver}
+        onCancel={() => setViewingDriver(null)}
+        footer={[
+          <Button key="close" onClick={() => setViewingDriver(null)}>Close</Button>
+        ]}
+        width={500}
+      >
+        {viewingDriver && (
+          <Descriptions column={1} bordered>
+            <Descriptions.Item label="Driver ID">{viewingDriver.id}</Descriptions.Item>
+            <Descriptions.Item label="Name">{viewingDriver.name || `${(viewingDriver as any).first_name || ''} ${(viewingDriver as any).last_name || ''}`.trim()}</Descriptions.Item>
+            <Descriptions.Item label="License Type">{viewingDriver.license || (viewingDriver as any).license_type}</Descriptions.Item>
+            <Descriptions.Item label="License Expiry">{viewingDriver.licenseExpiry || (viewingDriver as any).license_expiry ? new Date(viewingDriver.licenseExpiry || (viewingDriver as any).license_expiry).toLocaleDateString() : 'N/A'}</Descriptions.Item>
+            <Descriptions.Item label="Status"><Tag color={viewingDriver.status === 'available' ? 'green' : 'blue'}>{viewingDriver.status}</Tag></Descriptions.Item>
+            <Descriptions.Item label="Current Trip">{viewingDriver.currentTrip || 'None'}</Descriptions.Item>
+            <Descriptions.Item label="Hours This Week">{viewingDriver.hoursThisWeek || 0}h</Descriptions.Item>
+            <Descriptions.Item label="Rating">{(viewingDriver.rating || 0).toFixed(1)} ★</Descriptions.Item>
+            <Descriptions.Item label="Contact">{(viewingDriver as any).contact_number || 'N/A'}</Descriptions.Item>
+          </Descriptions>
+        )}
       </Modal>
     </HubLayout>
   );
