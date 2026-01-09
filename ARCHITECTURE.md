@@ -1,5 +1,5 @@
 # WorldClass ERP - System Architecture Document
-## Version: 1.0 | Date: January 7, 2026
+## Version: 2.0 | Date: January 9, 2026
 
 ---
 
@@ -14,7 +14,8 @@
 7. [Module Structure](#7-module-structure)
 8. [Authentication & Authorization](#8-authentication--authorization)
 9. [Deployment Architecture](#9-deployment-architecture)
-10. [File Structure](#10-file-structure)
+10. [Deployment Commands Reference](#10-deployment-commands-reference)
+11. [File Structure](#11-file-structure)
 
 ---
 
@@ -85,10 +86,13 @@ WorldClass ERP is a comprehensive, multi-tenant Enterprise Resource Planning sys
 │       INFRASTRUCTURE STACK          │
 ├─────────────────────────────────────┤
 │ Compute      │ AWS EC2 (t3.medium)  │
+│ Container    │ Docker               │
 │ Database     │ AWS RDS PostgreSQL   │
 │ Storage      │ AWS S3               │
 │ Deployment   │ AWS SSM              │
-│ Process Mgr  │ PM2                  │
+│ Cache        │ Redis (Docker)       │
+│ Web Server   │ nginx                │
+│ SSL          │ Let's Encrypt        │
 │ Region       │ eu-north-1           │
 └─────────────────────────────────────┘
 ```
@@ -98,89 +102,104 @@ WorldClass ERP is a comprehensive, multi-tenant Enterprise Resource Planning sys
 # 3. INFRASTRUCTURE ARCHITECTURE
 
 ```
-                    ┌─────────────────┐
-                    │    INTERNET     │
-                    └────────┬────────┘
-                             │
-                    ┌────────▼────────┐
-                    │   AWS EC2       │
-                    │  51.20.67.228   │
-                    └────────┬────────┘
-                             │
-        ┌────────────────────┴────────────────────┐
-        │                                          │
-┌───────▼───────┐                        ┌────────▼────────┐
-│   nginx       │                        │   Node.js       │
-│   Port 80     │                        │   Port 3000     │
-│               │                        │                 │
-│ Frontend      │                        │ Backend API     │
-│ /var/www/html │                        │ PM2: erp-backend│
-└───────────────┘                        └────────┬────────┘
-                                                  │
-                                         ┌────────▼────────┐
-                                         │   AWS RDS       │
-                                         │   PostgreSQL    │
-                                         │                 │
-                                         │ aetheros-erp-db │
-                                         └─────────────────┘
+                      ┌─────────────────┐
+                      │    INTERNET     │
+                      └────────┬────────┘
+                               │
+                      ┌────────▼────────┐
+                      │  siyabusaerp.co.za  │
+                      │  (DNS → 51.20.67.228)  │
+                      └────────┬────────┘
+                               │ HTTPS :443
+                      ┌────────▼────────┐
+                      │     nginx       │
+                      │   (SSL termination)  │
+                      └────────┬────────┘
+                               │
+          ┌────────────────────┴────────────────────┐
+          │                                          │
+ ┌────────▼────────┐                      ┌─────────▼─────────┐
+ │   Static Files  │                      │  Proxy to :3000   │
+ │  /var/www/html  │                      │   /api/*          │
+ │                 │                      │                   │
+ │  React Frontend │                      │  Docker Container │
+ │  (Vite build)   │                      │  erp-backend      │
+ └─────────────────┘                      └─────────┬─────────┘
+                                                    │
+                    ┌───────────────────────────────┴──────┐
+                    │                                      │
+           ┌────────▼────────┐                   ┌─────────▼────────┐
+           │   Redis Docker  │                   │     AWS RDS      │
+           │   Port 6379     │                   │    PostgreSQL    │
+           │                 │                   │                  │
+           │  Session/Cache  │                   │  aetheros_erp    │
+           └─────────────────┘                   └──────────────────┘
 ```
 
-## 3.1 PRODUCTION DEPLOYMENT LOCATIONS (LOCKED)
+## 3.1 PRODUCTION DEPLOYMENT LOCATIONS (CURRENT - JANUARY 2026)
 
-### 🌐 FRONTEND (React)
+### 🌐 DOMAIN & SSL
 | Property | Value |
 |----------|-------|
-| **Platform** | AWS EC2 (same server as backend) |
-| **URL** | http://51.20.67.228 (nginx serves static files) |
-| **Directory on Server** | `/var/www/html/` |
-| **Build Command** | `npm run build` |
-| **Output Dir** | `frontend/dist` |
-| **Framework** | React + Vite |
-| **Web Server** | nginx |
+| **Production URL** | `https://siyabusaerp.co.za` |
+| **SSL Certificate** | Let's Encrypt (auto-renewed) |
+| **DNS Provider** | CloudFlare or registrar |
+| **IP Address** | `51.20.67.228` |
 
-### 🖥️ BACKEND (Node.js)
+### 🖥️ BACKEND (Node.js + Docker)
 | Property | Value |
 |----------|-------|
-| **Platform** | AWS EC2 |
+| **Platform** | AWS EC2 + Docker |
 | **Instance ID** | `i-0b20fd06fae7e84b1` |
 | **Public IP** | `51.20.67.228` |
-| **API URL** | http://51.20.67.228:3000/api |
-| **Directory on Server** | `/home/ec2-user/erp-production` |
-| **Process Manager** | PM2 (process name: `erp-backend`) |
+| **API URL** | `https://siyabusaerp.co.za/api` |
+| **Container Name** | `erp-backend` |
+| **Docker Image** | `erp-backend:healthcare-v7` (current) |
+| **Internal Port** | `3000` |
+| **Network** | `erp-net` (Docker bridge) |
+| **Process Manager** | Systemd (`erp-backend.service`) |
 | **Region** | eu-north-1 (Stockholm) |
+
+### 🎨 FRONTEND (React + Vite)
+| Property | Value |
+|----------|-------|
+| **Platform** | AWS S3 → EC2 (nginx serves static) |
+| **S3 Bucket** | `s3://aetheros-erp-frontend` |
+| **Server Directory** | `/var/www/html/` |
+| **Build Tool** | Vite |
+| **Build Output** | `frontend/dist/` |
+| **Web Server** | nginx (serves static files) |
 
 ### 🗄️ DATABASE (PostgreSQL)
 | Property | Value |
 |----------|-------|
 | **Platform** | AWS RDS |
 | **Endpoint** | `aetheros-erp-db.cxoqqoowwgxt.eu-north-1.rds.amazonaws.com` |
-| **Port** | 5432 |
-| **Database** | `postgres` |
+| **Port** | `5432` |
+| **Database Name** | `aetheros_erp` |
 | **Username** | `postgres` |
 | **Password** | `caxMex-0putca-dyjnah` |
 | **Engine** | PostgreSQL 15 |
 
-### 📦 DEPLOYMENT ARTIFACTS (S3)
-| Property | Value |
-|----------|-------|
-| **Bucket** | `s3://aetheros-erp-deployments` |
-| **Region** | eu-north-1 |
-| **Artifact** | `backend-dist.tar.gz` |
+### 📦 S3 BUCKETS
+| Bucket | Purpose |
+|--------|---------|
+| `s3://aetheros-erp-deployments` | Backend Docker images (tar.gz) |
+| `s3://aetheros-erp-frontend` | Frontend static files |
 
-### 📁 SOURCE CODE LOCATIONS
-| Component | Local Path | On Server |
-|-----------|------------|-----------|
-| Backend Source | `/workspaces/WorldClass-ERP/backend/src` | N/A (compiled) |
-| Backend Compiled | `/workspaces/WorldClass-ERP/backend/dist` | `/home/ec2-user/erp-production/dist` |
-| Frontend Source | `/workspaces/WorldClass-ERP/frontend/src` | N/A |
-| Frontend Built | `/workspaces/WorldClass-ERP/frontend/dist` | Vercel CDN |
-| Migrations | `/workspaces/WorldClass-ERP/migrations` | Run via SSM |
+### 🐳 DOCKER CONTAINERS ON EC2
+| Container | Image | Port | Purpose |
+|-----------|-------|------|---------|
+| `erp-backend` | `erp-backend:healthcare-v7` | 3000 | Node.js API |
+| `redis` | `redis:alpine` | 6379 | Cache/Session |
 
 ## 3.2 EC2 Instance Details
 - **Instance ID**: `i-0b20fd06fae7e84b1`
 - **Type**: t3.medium (2 vCPU, 4GB RAM)
 - **OS**: Amazon Linux 2
 - **Storage**: 30GB gp3 SSD
+- **Docker**: Installed and running
+- **nginx**: Serving frontend + reverse proxy
 
 ## 3.3 RDS Instance Details
 - **Identifier**: aetheros-erp-db
@@ -188,6 +207,27 @@ WorldClass ERP is a comprehensive, multi-tenant Enterprise Resource Planning sys
 - **Instance Class**: db.t3.micro
 - **Storage**: 20GB gp2 SSD
 - **Multi-AZ**: No (single region)
+- **Public Access**: No (private subnet)
+
+### 🗄️ DATABASE (PostgreSQL)
+| Property | Value |
+|----------|-------|
+| **Platform** | AWS RDS |
+| **Endpoint** | `aetheros-erp-db.cxoqqoowwgxt.eu-north-1.rds.amazonaws.com` |
+| **Port** | 5432 |
+| **Database** | `aetheros_erp` |
+| **Username** | `postgres` |
+| **Password** | `caxMex-0putca-dyjnah` |
+| **Engine** | PostgreSQL 15 |
+
+### 📁 SOURCE CODE LOCATIONS
+| Component | Local Path | On Server |
+|-----------|------------|-----------|
+| Backend Source | `/workspaces/WorldClass-ERP/backend/src` | Inside Docker image |
+| Backend Compiled | `/workspaces/WorldClass-ERP/backend/dist` | `/app/dist` (in container) |
+| Frontend Source | `/workspaces/WorldClass-ERP/frontend/src` | N/A |
+| Frontend Built | `/workspaces/WorldClass-ERP/frontend/dist` | `/var/www/html` |
+| Docker Images | Built locally | Loaded from S3 tar.gz |
 
 ---
 
@@ -514,71 +554,322 @@ readonly    → View only
 
 # 9. DEPLOYMENT ARCHITECTURE
 
-## 9.1 Deployment Flow
+## 9.1 Backend Deployment Flow (Docker)
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                   DEPLOYMENT PIPELINE                        │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                   BACKEND DEPLOYMENT PIPELINE                        │
+└─────────────────────────────────────────────────────────────────────┘
 
-  Developer Machine (Codespace)
+  Developer Machine (GitHub Codespace)
        │
-       │ 1. npm run build
+       │ 1. npm run build (TypeScript → JavaScript)
        ▼
   ┌──────────────┐
-  │   TypeScript │ → JavaScript (dist/)
-  │   Compile    │
+  │   backend/   │
+  │   dist/      │ ← Compiled JavaScript
   └──────┬───────┘
          │
-         │ 2. tar -czvf backend-dist.tar.gz
+         │ 2. docker build -t erp-backend:tag .
          ▼
   ┌──────────────┐
-  │   Package    │ → backend-dist.tar.gz
-  │   Artifact   │
+  │   Docker     │ ← Local Docker image
+  │   Image      │   (includes dist/, node_modules, package.json)
   └──────┬───────┘
          │
-         │ 3. aws s3 cp
+         │ 3. docker save | gzip > /tmp/erp-backend.tar.gz
          ▼
   ┌──────────────┐
-  │   AWS S3     │ → s3://aetheros-erp-deployments/
+  │   Tarball    │ ← ~98MB compressed image
+  │   (.tar.gz)  │
+  └──────┬───────┘
+         │
+         │ 4. aws s3 cp /tmp/erp-backend.tar.gz s3://aetheros-erp-deployments/docker/
+         ▼
+  ┌──────────────┐
+  │   AWS S3     │ ← Docker image stored in S3
   │   Bucket     │
   └──────┬───────┘
          │
-         │ 4. aws ssm send-command
+         │ 5. aws ssm send-command (to EC2)
          ▼
   ┌──────────────┐
-  │   EC2        │ → Download from S3
-  │   Instance   │ → Extract tarball
-  │              │ → PM2 restart
+  │   EC2        │ 
+  │   Instance   │ ← Downloads from S3
+  │              │ ← docker load < tarball
+  │              │ ← Updates systemd service
+  │              │ ← systemctl restart erp-backend
   └──────────────┘
 ```
 
-## 9.2 Deployment Commands
+## 9.2 Frontend Deployment Flow (S3 + nginx)
 
-```bash
-# Complete deployment script
-cd /workspaces/WorldClass-ERP/backend
-npm run build
-tar -czvf /tmp/backend-dist.tar.gz dist/ package.json
-aws s3 cp /tmp/backend-dist.tar.gz s3://aetheros-erp-deployments/
-aws ssm send-command --instance-ids "i-0b20fd06fae7e84b1" ...
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                  FRONTEND DEPLOYMENT PIPELINE                        │
+└─────────────────────────────────────────────────────────────────────┘
+
+  Developer Machine (GitHub Codespace)
+       │
+       │ 1. npm run build (Vite build)
+       ▼
+  ┌──────────────┐
+  │  frontend/   │
+  │  dist/       │ ← Static HTML/JS/CSS files
+  └──────┬───────┘
+         │
+         │ 2. aws s3 sync frontend/dist s3://aetheros-erp-frontend --delete
+         ▼
+  ┌──────────────┐
+  │   AWS S3     │ ← Frontend files in S3 bucket
+  │   Bucket     │
+  └──────┬───────┘
+         │
+         │ 3. aws ssm send-command (to EC2)
+         ▼
+  ┌──────────────┐
+  │   EC2        │
+  │   Instance   │ ← aws s3 sync s3://bucket /var/www/html --delete
+  │              │ ← nginx already configured to serve
+  └──────────────┘
+```
+
+## 9.3 Systemd Service Configuration
+
+The backend runs as a Docker container managed by systemd:
+
+**File: `/etc/systemd/system/erp-backend.service`**
+```ini
+[Unit]
+Description=ERP Backend Container
+After=docker.service erp-redis.service
+Requires=docker.service erp-redis.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+ExecStartPre=-/usr/bin/docker rm -f erp-backend
+ExecStart=/usr/bin/docker run --rm --name erp-backend \
+  --network erp-net \
+  -p 3000:3000 \
+  -e DATABASE_URL=postgresql://postgres:caxMex-0putca-dyjnah@aetheros-erp-db.cxoqqoowwgxt.eu-north-1.rds.amazonaws.com:5432/aetheros_erp \
+  -e DB_HOST=aetheros-erp-db.cxoqqoowwgxt.eu-north-1.rds.amazonaws.com \
+  -e DB_PORT=5432 \
+  -e DB_NAME=aetheros_erp \
+  -e DB_USER=postgres \
+  -e DB_PASSWORD=caxMex-0putca-dyjnah \
+  -e REDIS_HOST=redis \
+  -e REDIS_PORT=6379 \
+  -e REDIS_URL=redis://redis:6379 \
+  -e JWT_SECRET=worldclass-erp-jwt-secret-2024 \
+  -e NODE_ENV=production \
+  erp-backend:healthcare-v7
+ExecStop=/usr/bin/docker stop erp-backend
+
+[Install]
+WantedBy=multi-user.target
+```
+
+## 9.4 nginx Configuration
+
+**File: `/etc/nginx/conf.d/erp.conf`**
+```nginx
+server {
+    listen 443 ssl;
+    server_name siyabusaerp.co.za www.siyabusaerp.co.za;
+    
+    ssl_certificate /etc/letsencrypt/live/siyabusaerp.co.za/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/siyabusaerp.co.za/privkey.pem;
+    
+    # Frontend - serve static files
+    root /var/www/html;
+    index index.html;
+    
+    # API proxy to Docker container
+    location /api/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+    }
+    
+    # Socket.IO for real-time features
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+    
+    # SPA fallback - serve index.html for client-side routes
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+
+server {
+    listen 80;
+    server_name siyabusaerp.co.za www.siyabusaerp.co.za;
+    return 301 https://$server_name$request_uri;
+}
 ```
 
 ---
 
-# 10. FILE STRUCTURE
+# 10. DEPLOYMENT COMMANDS REFERENCE
 
-## 10.1 Repository Root
+## 10.1 Backend Deployment (Complete Process)
+
+```bash
+# Step 1: Build TypeScript
+cd /workspaces/WorldClass-ERP/backend
+npm run build
+
+# Step 2: Build Docker image (increment version tag)
+docker build -t erp-backend:healthcare-v7 .
+
+# Step 3: Save and compress Docker image
+docker save erp-backend:healthcare-v7 | gzip > /tmp/erp-backend-v7.tar.gz
+
+# Step 4: Upload to S3
+aws s3 cp /tmp/erp-backend-v7.tar.gz s3://aetheros-erp-deployments/docker/
+
+# Step 5: Deploy to EC2 (all in one SSM command)
+aws ssm send-command \
+  --instance-ids "i-0b20fd06fae7e84b1" \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=[
+    "cd /tmp",
+    "aws s3 cp s3://aetheros-erp-deployments/docker/erp-backend-v7.tar.gz .",
+    "gunzip -c erp-backend-v7.tar.gz | docker load",
+    "sudo sed -i s/healthcare-v6/healthcare-v7/g /etc/systemd/system/erp-backend.service",
+    "sudo systemctl daemon-reload",
+    "sudo systemctl restart erp-backend",
+    "sleep 8",
+    "docker ps",
+    "curl -s http://localhost:3000/health"
+  ]' \
+  --region eu-north-1
+```
+
+## 10.2 Frontend Deployment (Complete Process)
+
+```bash
+# Step 1: Build frontend
+cd /workspaces/WorldClass-ERP/frontend
+npm run build
+
+# Step 2: Sync to S3
+aws s3 sync dist s3://aetheros-erp-frontend --delete
+
+# Step 3: Sync from S3 to EC2
+aws ssm send-command \
+  --instance-ids "i-0b20fd06fae7e84b1" \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=["aws s3 sync s3://aetheros-erp-frontend /var/www/html/ --delete"]' \
+  --region eu-north-1
+```
+
+## 10.3 Check Deployment Status
+
+```bash
+# Check container status
+aws ssm send-command \
+  --instance-ids "i-0b20fd06fae7e84b1" \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=["docker ps && curl -s http://localhost:3000/health"]' \
+  --region eu-north-1
+
+# Get SSM command result
+aws ssm get-command-invocation \
+  --command-id "COMMAND_ID" \
+  --instance-id "i-0b20fd06fae7e84b1" \
+  --region eu-north-1
+```
+
+## 10.4 View Backend Logs
+
+```bash
+aws ssm send-command \
+  --instance-ids "i-0b20fd06fae7e84b1" \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=["docker logs erp-backend 2>&1 | tail -100"]' \
+  --region eu-north-1
+```
+
+## 10.5 Restart Backend Only
+
+```bash
+aws ssm send-command \
+  --instance-ids "i-0b20fd06fae7e84b1" \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=["sudo systemctl restart erp-backend && sleep 5 && docker ps"]' \
+  --region eu-north-1
+```
+
+## 10.6 Connect to Production Database
+
+```bash
+# Via SSM (RDS is in private subnet, not publicly accessible)
+aws ssm send-command \
+  --instance-ids "i-0b20fd06fae7e84b1" \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=["PGPASSWORD=caxMex-0putca-dyjnah psql -h aetheros-erp-db.cxoqqoowwgxt.eu-north-1.rds.amazonaws.com -U postgres -d aetheros_erp -c \"SELECT version();\""]' \
+  --region eu-north-1
+```
+
+## 10.7 List Docker Images on EC2
+
+```bash
+aws ssm send-command \
+  --instance-ids "i-0b20fd06fae7e84b1" \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=["docker images | grep erp-backend"]' \
+  --region eu-north-1
+```
+
+## 10.8 Update Systemd Service Image Version
+
+```bash
+# Replace old version with new version in service file
+aws ssm send-command \
+  --instance-ids "i-0b20fd06fae7e84b1" \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=[
+    "sudo sed -i s/OLD_TAG/NEW_TAG/g /etc/systemd/system/erp-backend.service",
+    "sudo systemctl daemon-reload",
+    "sudo systemctl restart erp-backend"
+  ]' \
+  --region eu-north-1
+```
+
+---
+
+# 11. FILE STRUCTURE
+
+## 11.1 Repository Root
 ```
 WorldClass-ERP/
 ├── backend/                      # Node.js backend
 │   ├── src/                     # TypeScript source
 │   ├── dist/                    # Compiled JavaScript
+│   ├── Dockerfile               # Docker build configuration
 │   ├── package.json
 │   └── tsconfig.json
 │
 ├── frontend/                    # React frontend
 │   ├── src/
+│   │   └── modules/             # Feature modules
+│   │       ├── healthcare/      # Healthcare Hub
+│   │       ├── mining/          # Mining Hub
+│   │       ├── logistics/       # Logistics Hub
+│   │       └── ...
 │   ├── public/
 │   └── package.json
 │
@@ -596,58 +887,104 @@ WorldClass-ERP/
     └── copilot-instructions.md
 ```
 
-## 10.2 Important Configuration Files
+## 11.2 Important Configuration Files
 
 | File | Purpose |
 |------|---------|
-| `backend/.env` | Environment variables (local) |
+| `backend/Dockerfile` | Docker image build instructions |
+| `backend/.env` | Environment variables (local only) |
 | `backend/tsconfig.json` | TypeScript configuration |
 | `backend/package.json` | Dependencies |
 | `.github/copilot-instructions.md` | AI assistant context |
+
+## 11.3 Key Backend Files
+
+| File | Purpose |
+|------|---------|
+| `backend/src/server.ts` | Express server entry point |
+| `backend/src/routes/v2.routes.ts` | Main API routes |
+| `backend/src/middleware/tenant.ts` | Tenant isolation middleware |
+| `backend/src/middleware/auth.ts` | JWT authentication |
+| `backend/src/config/database.ts` | PostgreSQL connection pool |
+| `backend/src/controllers/*.v2.ts` | V2 tenant-aware controllers |
 
 ---
 
 # APPENDIX A: QUICK REFERENCE
 
-## A.1 Connect to Production Database
+## A.1 Production URLs
 
+| Service | URL |
+|---------|-----|
+| **Frontend** | https://siyabusaerp.co.za |
+| **API** | https://siyabusaerp.co.za/api |
+| **Health Check** | https://siyabusaerp.co.za/api/health |
+
+## A.2 Test Credentials
+
+| Email | Password | Tenant |
+|-------|----------|--------|
+| `miningtestx@test.co.za` | `Mining@12345` | Mining Test |
+
+## A.3 Current Docker Image Tags
+
+| Module | Image Tag | Date |
+|--------|-----------|------|
+| Mining | `erp-backend:mining-v1.0.0` | Jan 2026 |
+| Logistics | `erp-backend:logistics-v1.2.0` | Jan 2026 |
+| Healthcare | `erp-backend:healthcare-v7` | Jan 9, 2026 |
+
+## A.4 AWS Resources Summary
+
+| Resource | Identifier | Region |
+|----------|------------|--------|
+| EC2 Instance | `i-0b20fd06fae7e84b1` | eu-north-1 |
+| RDS Database | `aetheros-erp-db` | eu-north-1 |
+| S3 Deployments | `aetheros-erp-deployments` | eu-north-1 |
+| S3 Frontend | `aetheros-erp-frontend` | eu-north-1 |
+
+## A.5 Troubleshooting Commands
+
+### Backend not responding
 ```bash
-# Via EC2 (RDS not publicly accessible)
-aws ssm send-command \
-  --instance-ids "i-0b20fd06fae7e84b1" \
+# Check container status
+aws ssm send-command --instance-ids "i-0b20fd06fae7e84b1" \
   --document-name "AWS-RunShellScript" \
-  --parameters 'commands=["PGPASSWORD='\''caxMex-0putca-dyjnah'\'' psql -h aetheros-erp-db.cxoqqoowwgxt.eu-north-1.rds.amazonaws.com -U postgres -d postgres"]' \
+  --parameters 'commands=["docker ps -a | grep erp-backend"]' \
+  --region eu-north-1
+
+# Check logs for errors
+aws ssm send-command --instance-ids "i-0b20fd06fae7e84b1" \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=["docker logs erp-backend 2>&1 | tail -50"]' \
+  --region eu-north-1
+
+# Restart service
+aws ssm send-command --instance-ids "i-0b20fd06fae7e84b1" \
+  --document-name "AWS-RunShellScript" \
+  --parameters 'commands=["sudo systemctl restart erp-backend"]' \
   --region eu-north-1
 ```
 
-## A.2 View Backend Logs
-
+### Database connection issues
 ```bash
-aws ssm send-command \
-  --instance-ids "i-0b20fd06fae7e84b1" \
+# Test database connectivity from EC2
+aws ssm send-command --instance-ids "i-0b20fd06fae7e84b1" \
   --document-name "AWS-RunShellScript" \
-  --parameters 'commands=["pm2 logs erp-backend --lines 100 --nostream"]' \
+  --parameters 'commands=["PGPASSWORD=caxMex-0putca-dyjnah psql -h aetheros-erp-db.cxoqqoowwgxt.eu-north-1.rds.amazonaws.com -U postgres -d aetheros_erp -c \"SELECT 1\""]' \
   --region eu-north-1
 ```
 
-## A.3 Restart Backend
-
+### Check nginx status
 ```bash
-aws ssm send-command \
-  --instance-ids "i-0b20fd06fae7e84b1" \
+aws ssm send-command --instance-ids "i-0b20fd06fae7e84b1" \
   --document-name "AWS-RunShellScript" \
-  --parameters 'commands=["pm2 restart erp-backend"]' \
+  --parameters 'commands=["sudo systemctl status nginx && sudo nginx -t"]' \
   --region eu-north-1
-```
-
-## A.4 Run Tests
-
-```bash
-API_BASE="http://51.20.67.228:3000" /workspaces/WorldClass-ERP/scripts/test-all-endpoints.sh
 ```
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: January 7, 2026
+**Document Version**: 2.0
+**Last Updated**: January 9, 2026
 **Author**: GitHub Copilot
