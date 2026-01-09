@@ -195,9 +195,7 @@ const HealthcareHub: React.FC = () => {
           address_line1: values.address,
           city: values.city,
           province: values.province,
-          total_beds: values.total_beds || 0,
-          total_consultation_rooms: values.consultation_rooms || 0,
-          is_24_hour: values.is_24_hour || false
+          total_beds: values.total_beds || 0
         })
       });
       const data = await response.json();
@@ -227,16 +225,16 @@ const HealthcareHub: React.FC = () => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
         body: JSON.stringify({
-          firstName: values.first_name,
-          lastName: values.last_name,
-          idNumber: values.id_number,
-          dateOfBirth: values.date_of_birth?.format('YYYY-MM-DD'),
+          first_name: values.first_name,
+          last_name: values.last_name,
+          id_number: values.id_number,
+          date_of_birth: values.date_of_birth?.format('YYYY-MM-DD'),
           gender: values.gender,
           phone: values.phone,
           email: values.email,
           address: values.address,
-          insuranceProvider: values.medical_aid,
-          insurancePolicyNumber: values.member_number
+          medical_aid_name: values.medical_aid,
+          medical_aid_number: values.member_number
         })
       });
       const data = await response.json();
@@ -277,7 +275,7 @@ const HealthcareHub: React.FC = () => {
           appointment_time: values.appointment_time?.format('HH:mm'),
           appointment_type: values.appointment_type || 'CONSULTATION',
           duration_minutes: values.duration || 30,
-          reason: values.reason
+          reason_for_visit: values.reason
         })
       });
       const data = await response.json();
