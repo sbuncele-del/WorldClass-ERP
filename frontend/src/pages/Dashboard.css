@@ -58,9 +58,11 @@
 /* Metrics Grid */
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .metric-card {
@@ -69,6 +71,8 @@
   padding: 1.5rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: all 0.3s ease;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .metric-card:hover {
@@ -487,6 +491,10 @@
 @media (max-width: 1200px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
+  }
+
+  .metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .quick-actions-grid {

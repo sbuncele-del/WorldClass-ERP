@@ -287,10 +287,71 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       return;
     }
 
-    // Find the pending action and re-send with confirm flag
+    // Find the pending action message
     const pendingMsg = messages.find(m => m.action?.status === 'pending');
-    if (pendingMsg?.action) {
-      await sendMessage('Yes, confirm and proceed');
+    if (!pendingMsg?.action) return;
+
+    // Mark as loading
+    setIsLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
+      // Re-send the ORIGINAL command that created this action, but with confirm: true
+      // The original text is in the user message just before this assistant message
+      const pendingMsgIndex = messages.findIndex(m => m.id === pendingMsg.id);
+      const originalUserMsg = messages.slice(0, pendingMsgIndex).reverse().find(m => m.role === 'user');
+      const originalCommand = originalUserMsg?.content || pendingMsg.action.description;
+
+      const response = await fetch('/api/v2/ai/execute-command', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ 
+          command: originalCommand, 
+          confirm: true,
+          sessionId 
+        })
+      });
+
+      const data = await response.json();
+
+      // Update the pending action status
+      setMessages(prev => prev.map(m => 
+        m.id === pendingMsg.id 
+          ? { ...m, action: { ...m.action!, status: 'executed' as const }, confirmationRequired: false }
+          : m
+      ));
+
+      if (data.success && data.data) {
+        setMessages(prev => [...prev, {
+          id: `ai_${Date.now()}`,
+          role: 'assistant',
+          content: data.data.message || 'Action completed successfully!',
+          timestamp: new Date(),
+          action: {
+            type: 'executed',
+            status: 'executed',
+            data: data.data.result || {},
+            description: data.data.message,
+            requiresConfirmation: false
+          }
+        }]);
+      } else {
+        throw new Error(data.error || 'Action failed');
+      }
+    } catch (error: any) {
+      setMessages(prev => [...prev, {
+        id: `error_${Date.now()}`,
+        role: 'assistant',
+        content: `❌ Error: ${error.message}`,
+        timestamp: new Date()
+      }]);
+    } finally {
+      setIsLoading(false);
     }
   };
 

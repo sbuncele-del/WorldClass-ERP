@@ -22,9 +22,6 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy built assets
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Add security headers
-RUN echo 'server_tokens off;' >> /etc/nginx/nginx.conf
-
 EXPOSE 80
 
 CMD ["nginx", "-g", "daemon off;"]

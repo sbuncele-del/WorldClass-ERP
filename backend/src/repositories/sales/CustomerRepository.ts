@@ -40,16 +40,17 @@ export interface CustomerBalance {
 
 export class CustomerRepository extends BaseRepository<Customer> {
   protected tableName = 'customers';
-  protected schema = 'sales';
+  protected schema = 'public';  // Table is in public schema
   protected softDelete = false;  // Table doesn't have deleted_at column
   protected primaryKey = 'customer_id';  // Use actual PK name
-  protected tenantIsolation = false;  // Table doesn't have tenant_id column
+  protected tenantIsolation = true;  // Table has tenant_id column
 
-  // Columns that actually exist on the table
+  // Columns that actually exist on the table (from \d customers)
   private readonly columns = new Set([
-    'customer_id', 'company_name', 'contact_person', 'email', 'phone', 'vat_number',
-    'customer_type', 'source', 'created_from_document', 'status', 'created_at',
-    'updated_at', 'billing_address', 'shipping_address', 'payment_terms', 'credit_limit'
+    'customer_id', 'customer_code', 'customer_name', 'email', 'phone', 
+    'address_line1', 'address_line2', 'city', 'province', 'postal_code', 
+    'country', 'vat_number', 'credit_limit', 'payment_terms', 'ar_account_id',
+    'is_active', 'tenant_id', 'created_at', 'updated_at'
   ]);
 
   /**
@@ -255,7 +256,7 @@ export class CustomerRepository extends BaseRepository<Customer> {
   }
 
   /**
-   * Search customers by company name, contact, email, or phone
+   * Search customers by customer name, email, or phone (with tenant isolation)
    */
   async search(
     ctx: TenantContext,
@@ -269,36 +270,36 @@ export class CustomerRepository extends BaseRepository<Customer> {
     const sql = `
       SELECT 
         customer_id, customer_id as id,
-        company_name, company_name as name,
-        contact_person, email, phone, vat_number,
-        customer_type, source, status, created_at, updated_at,
-        billing_address, shipping_address, payment_terms, credit_limit
+        customer_name, customer_name as name, customer_name as company_name,
+        email, phone, vat_number, customer_code,
+        is_active as status, created_at, updated_at,
+        address_line1 as billing_address, payment_terms, credit_limit
       FROM ${this.fullTableName}
-      WHERE (
-        company_name ILIKE $1 
-        OR contact_person ILIKE $1
-        OR email ILIKE $1 
-        OR phone ILIKE $1
-        OR vat_number ILIKE $1
+      WHERE tenant_id = $1 AND (
+        customer_name ILIKE $2 
+        OR email ILIKE $2 
+        OR phone ILIKE $2
+        OR vat_number ILIKE $2
+        OR customer_code ILIKE $2
       )
-      ORDER BY company_name
-      LIMIT $2 OFFSET $3
+      ORDER BY customer_name
+      LIMIT $3 OFFSET $4
     `;
 
     const countSql = `
       SELECT COUNT(*) FROM ${this.fullTableName}
-      WHERE (
-        company_name ILIKE $1 
-        OR contact_person ILIKE $1
-        OR email ILIKE $1 
-        OR phone ILIKE $1
-        OR vat_number ILIKE $1
+      WHERE tenant_id = $1 AND (
+        customer_name ILIKE $2 
+        OR email ILIKE $2 
+        OR phone ILIKE $2
+        OR vat_number ILIKE $2
+        OR customer_code ILIKE $2
       )
     `;
 
     const [data, countResult] = await Promise.all([
-      this.rawQuery<Customer>(ctx, sql, [searchPattern, limit, offset]),
-      this.rawQuery<{ count: string }>(ctx, countSql, [searchPattern])
+      this.rawQuery<Customer>(ctx, sql, [ctx.tenantId, searchPattern, limit, offset]),
+      this.rawQuery<{ count: string }>(ctx, countSql, [ctx.tenantId, searchPattern])
     ]);
 
     const total = parseInt(countResult[0]?.count || '0', 10);

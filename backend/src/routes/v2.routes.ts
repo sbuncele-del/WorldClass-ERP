@@ -138,37 +138,27 @@ router.get('/mining/production', async (req: any, res) => {
 router.get('/mining/safety', async (req: any, res) => {
   res.json({ success: true, data: [] });
 });
-router.get('/communications/channels', async (req: any, res) => {
-  res.json({ success: true, data: [] });
-});
-router.get('/communications/meetings', async (req: any, res) => {
-  res.json({ success: true, data: [] });
-});
-router.get('/communications/messages', async (req: any, res) => {
-  res.json({ success: true, data: [] });
-});
+// Communications routes moved to real controller at line ~701
 router.get('/proposals/templates', async (req: any, res) => {
   res.json({ success: true, data: [] });
 });
-router.get('/ai/status', async (req: any, res) => {
-  res.json({ success: true, data: { status: 'active', model: 'gpt-4', available: true } });
-});
-router.post('/ai/query', async (req: any, res) => {
-  const { query: userQuery, message } = req.body || {};
-  res.json({ success: true, data: { response: 'AI assistant is available', query: userQuery || message || '' } });
-});
-router.get('/ai/agents', async (req: any, res) => {
-  res.json({ success: true, data: [] });
-});
+// AI routes moved to line 1405 - using real AIAssistantControllerV2
 router.get('/reports', async (req: any, res) => {
   res.json({ success: true, data: [] });
 });
 
 // ============================================================================
-// DASHBOARD
+// EXECUTIVE DASHBOARD (Premium, Role-Based)
 // ============================================================================
+import * as ExecutiveDashboardV2 from '../controllers/v2/executive-dashboard.controller.v2';
+
+router.get('/executive-dashboard', ExecutiveDashboardV2.getExecutiveDashboard);
+router.get('/executive-dashboard/quick-stats', ExecutiveDashboardV2.getQuickStats);
+router.get('/executive-dashboard/chart/:type', ExecutiveDashboardV2.getChartData);
+
+// Legacy dashboard endpoints (fallback)
 router.get('/dashboard/stats', DashboardControllerV2.getDashboardStats);
-router.get('/dashboard/summary', DashboardControllerV2.getDashboardStats); // Alias for stats
+router.get('/dashboard/summary', DashboardControllerV2.getDashboardStats);
 router.get('/dashboard/revenue-trend', DashboardControllerV2.getRevenueTrend);
 router.get('/dashboard/expense-breakdown', DashboardControllerV2.getExpenseBreakdown);
 router.get('/dashboard/recent-entries', DashboardControllerV2.getRecentEntries);
@@ -1395,7 +1385,7 @@ router.get('/meetings', MeetingsV2.listRooms);
 
 // AI routes
 router.get('/ai/status', AIAssistantControllerV2.getAIAnalytics);
-router.post('/ai/query', AIAssistantControllerV2.chat);
+router.post('/ai/query', AIAssistantControllerV2.executeCommand);  // Main AI command endpoint
 
 // Agent routes
 router.get('/agent/status', AgentV2.getAvailableActions);
@@ -1545,22 +1535,7 @@ router.get('/proposals/templates', async (req: any, res) => {
   res.json({ success: true, data: [] });
 });
 
-// AI endpoints
-router.get('/ai/status', async (req: any, res) => {
-  res.json({ success: true, data: { status: 'active', model: 'gpt-4', available: true } });
-});
-
-router.post('/ai/query', async (req: any, res) => {
-  const { query: userQuery, message } = req.body;
-  if (!userQuery && !message) {
-    return res.status(400).json({ success: false, error: 'Query or message is required' });
-  }
-  res.json({ success: true, data: { response: 'AI assistant is available', query: userQuery || message } });
-});
-
-router.get('/ai/agents', async (req: any, res) => {
-  res.json({ success: true, data: [] });
-});
+// AI endpoints - REMOVED duplicates, real handlers at line ~1395
 
 // Reports
 router.get('/reports', async (req: any, res) => {

@@ -31,6 +31,9 @@ import { useUser } from '../contexts/UserContext';
 import apiClient from '../services/api';
 import './RoleBasedWorkspace.css';
 
+// Import Premium Executive Dashboard for Director/Executive roles
+import ExecutiveDashboard from './ExecutiveDashboard';
+
 const { Title, Text, Paragraph } = Typography;
 
 type UserRole = 'director' | 'executive' | 'manager' | 'accountant' | 'staff';
@@ -362,111 +365,9 @@ const RoleBasedWorkspace: React.FC = () => {
     </>
   );
 
-  // Render Executive Dashboard
+  // Render Executive Dashboard - Uses Premium Component
   const renderExecutiveDashboard = () => (
-    <>
-      <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="kpi-card gradient-blue">
-            <Statistic 
-              title="Monthly Revenue" 
-              value={4250000} 
-              prefix="R" 
-              valueStyle={{ color: '#667eea' }}
-            />
-            <div className="kpi-change positive"><ArrowUpOutlined /> 8.3% vs LM</div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="kpi-card gradient-green">
-            <Statistic 
-              title="Outstanding Invoices" 
-              value={1850000} 
-              prefix="R" 
-              valueStyle={{ color: '#10b981' }}
-            />
-            <div className="kpi-change">42 invoices pending</div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="kpi-card gradient-purple">
-            <Statistic 
-              title="Pending Approvals" 
-              value={12} 
-              valueStyle={{ color: '#8b5cf6' }}
-            />
-            <div className="kpi-change warning">3 urgent</div>
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="kpi-card gradient-amber">
-            <Statistic 
-              title="Team Productivity" 
-              value={94} 
-              suffix="%" 
-              valueStyle={{ color: '#f59e0b' }}
-            />
-            <div className="kpi-change positive"><ArrowUpOutlined /> 2.1% WoW</div>
-          </Card>
-        </Col>
-      </Row>
-
-      <Row gutter={[16, 16]}>
-        <Col xs={24} lg={12}>
-          <Card 
-            title={<><CheckCircleOutlined /> Pending Approvals</>}
-            extra={<Button type="primary" size="small">View All</Button>}
-            className="workspace-card"
-          >
-            <Table
-              size="small"
-              dataSource={[
-                { id: 1, type: 'Purchase Order', ref: 'PO-2025-0089', amount: 125000, requester: 'John M.' },
-                { id: 2, type: 'Leave Request', ref: 'LV-0234', amount: null, requester: 'Sarah K.' },
-                { id: 3, type: 'Expense Claim', ref: 'EXP-0156', amount: 8500, requester: 'Mike T.' },
-              ]}
-              columns={[
-                { title: 'Type', dataIndex: 'type', key: 'type', render: (t) => <Tag>{t}</Tag> },
-                { title: 'Reference', dataIndex: 'ref', key: 'ref' },
-                { title: 'Amount', dataIndex: 'amount', key: 'amount', render: (v) => v ? `R ${v.toLocaleString()}` : '-' },
-                { 
-                  title: 'Action', 
-                  key: 'action', 
-                  render: () => (
-                    <Space>
-                      <Button size="small" type="primary">Approve</Button>
-                      <Button size="small">Reject</Button>
-                    </Space>
-                  )
-                }
-              ]}
-              pagination={false}
-              rowKey="id"
-            />
-          </Card>
-        </Col>
-        <Col xs={24} lg={12}>
-          <Card 
-            title={<><TeamOutlined /> Department Performance</>}
-            className="workspace-card"
-          >
-            {['Sales', 'Operations', 'Finance', 'HR'].map((dept, idx) => (
-              <div key={dept} style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <Text>{dept}</Text>
-                  <Text type="secondary">{[92, 88, 95, 91][idx]}%</Text>
-                </div>
-                <Progress 
-                  percent={[92, 88, 95, 91][idx]} 
-                  strokeColor={['#667eea', '#10b981', '#3b82f6', '#f59e0b'][idx]}
-                  showInfo={false}
-                />
-              </div>
-            ))}
-          </Card>
-        </Col>
-      </Row>
-    </>
+    <ExecutiveDashboard />
   );
 
   // Render Accountant Dashboard

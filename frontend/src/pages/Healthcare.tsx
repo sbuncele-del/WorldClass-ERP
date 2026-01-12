@@ -2,6 +2,17 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../services/api';
 import './Healthcare.css';
 
+interface DashboardStats {
+  activePatients: number;
+  patientsChange: number;
+  todayAppointments: number;
+  completedAppointments: number;
+  pendingAppointments: number;
+  monthlyRevenue: number;
+  revenueVsTarget: number;
+  lowStockItems: number;
+}
+
 const Healthcare: React.FC = () => {
   const [activeTab, setActiveTab] = useState('patients');
   const [patients, setPatients] = useState<any[]>([]);
@@ -9,20 +20,70 @@ const Healthcare: React.FC = () => {
   const [inventory, setInventory] = useState<any[]>([]);
   const [billing, setBilling] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({
+    activePatients: 0,
+    patientsChange: 0,
+    todayAppointments: 0,
+    completedAppointments: 0,
+    pendingAppointments: 0,
+    monthlyRevenue: 0,
+    revenueVsTarget: 0,
+    lowStockItems: 0
+  });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [patientsRes, appointmentsRes, inventoryRes, billingRes] = await Promise.all([
+        const [patientsRes, appointmentsRes, inventoryRes, billingRes, dashboardRes] = await Promise.all([
           apiClient.get('/api/healthcare/patients'),
           apiClient.get('/api/healthcare/appointments'),
           apiClient.get('/api/healthcare/inventory'),
-          apiClient.get('/api/healthcare/billing')
+          apiClient.get('/api/healthcare/billing'),
+          apiClient.get('/api/v2/healthcare/dashboard')
         ]);
-        setPatients(patientsRes.data?.data || patientsRes.data || []);
-        setAppointments(appointmentsRes.data?.data || appointmentsRes.data || []);
-        setInventory(inventoryRes.data?.data || inventoryRes.data || []);
-        setBilling(billingRes.data?.data || billingRes.data || []);
+        const patientsData = patientsRes.data?.data || patientsRes.data || [];
+        const appointmentsData = appointmentsRes.data?.data || appointmentsRes.data || [];
+        const inventoryData = inventoryRes.data?.data || inventoryRes.data || [];
+        const billingData = billingRes.data?.data || billingRes.data || [];
+        
+        setPatients(patientsData);
+        setAppointments(appointmentsData);
+        setInventory(inventoryData);
+        setBilling(billingData);
+
+        // Use dashboard data if available, otherwise calculate from fetched data
+        if (dashboardRes.data?.success && dashboardRes.data?.data) {
+          const dashboard = dashboardRes.data.data;
+          setStats({
+            activePatients: dashboard.totalPatients || patientsData.length,
+            patientsChange: dashboard.patientsChange || 0,
+            todayAppointments: dashboard.todayAppointments || appointmentsData.filter((a: any) => {
+              const today = new Date().toISOString().split('T')[0];
+              return a.appointment_date?.startsWith(today) || a.date?.startsWith(today);
+            }).length,
+            completedAppointments: dashboard.completedAppointments || appointmentsData.filter((a: any) => a.status === 'COMPLETED' || a.status === 'completed').length,
+            pendingAppointments: dashboard.pendingAppointments || appointmentsData.filter((a: any) => a.status === 'SCHEDULED' || a.status === 'scheduled').length,
+            monthlyRevenue: dashboard.monthlyRevenue || billingData.reduce((sum: number, b: any) => sum + (b.total_amount || b.amount || 0), 0),
+            revenueVsTarget: dashboard.revenueVsTarget || 0,
+            lowStockItems: dashboard.lowStockItems || inventoryData.filter((i: any) => i.quantity < (i.reorder_level || 10)).length
+          });
+        } else {
+          // Calculate stats from raw data
+          const today = new Date().toISOString().split('T')[0];
+          const todaysAppts = appointmentsData.filter((a: any) => 
+            a.appointment_date?.startsWith(today) || a.date?.startsWith(today)
+          );
+          setStats({
+            activePatients: patientsData.length,
+            patientsChange: 0,
+            todayAppointments: todaysAppts.length,
+            completedAppointments: todaysAppts.filter((a: any) => a.status === 'COMPLETED' || a.status === 'completed').length,
+            pendingAppointments: todaysAppts.filter((a: any) => a.status === 'SCHEDULED' || a.status === 'scheduled').length,
+            monthlyRevenue: billingData.reduce((sum: number, b: any) => sum + (b.total_amount || b.amount || 0), 0),
+            revenueVsTarget: 0,
+            lowStockItems: inventoryData.filter((i: any) => i.quantity < (i.reorder_level || 10)).length
+          });
+        }
       } catch (err) {
         console.error('Error fetching healthcare data:', err);
       } finally {
@@ -31,6 +92,12 @@ const Healthcare: React.FC = () => {
     };
     fetchData();
   }, []);
+
+  const formatCurrency = (amount: number) => {
+    if (amount >= 1000000) return `R ${(amount / 1000000).toFixed(1)}M`;
+    if (amount >= 1000) return `R ${(amount / 1000).toFixed(0)}K`;
+    return `R ${amount.toLocaleString()}`;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -54,38 +121,44 @@ const Healthcare: React.FC = () => {
         </div>
       </div>
 
-      {/* Key Metrics */}
+      {/* Key Metrics - Now Dynamic */}
       <div className="metrics-grid">
         <div className="metric-card">
           <div className="metric-icon" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>👥</div>
           <div className="metric-details">
-            <div className="metric-value">1,247</div>
+            <div className="metric-value">{stats.activePatients.toLocaleString()}</div>
             <div className="metric-label">Active Patients</div>
-            <div className="metric-change positive">+8.2% from last month</div>
+            <div className={`metric-change ${stats.patientsChange >= 0 ? 'positive' : 'negative'}`}>
+              {stats.patientsChange >= 0 ? '+' : ''}{stats.patientsChange}% from last month
+            </div>
           </div>
         </div>
         <div className="metric-card">
           <div className="metric-icon" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>📅</div>
           <div className="metric-details">
-            <div className="metric-value">24</div>
+            <div className="metric-value">{stats.todayAppointments}</div>
             <div className="metric-label">Today's Appointments</div>
-            <div className="metric-change neutral">4 completed, 20 pending</div>
+            <div className="metric-change neutral">{stats.completedAppointments} completed, {stats.pendingAppointments} pending</div>
           </div>
         </div>
         <div className="metric-card">
           <div className="metric-icon" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>💰</div>
           <div className="metric-details">
-            <div className="metric-value">R 847K</div>
+            <div className="metric-value">{formatCurrency(stats.monthlyRevenue)}</div>
             <div className="metric-label">Revenue This Month</div>
-            <div className="metric-change positive">+12.5% vs target</div>
+            <div className={`metric-change ${stats.revenueVsTarget >= 0 ? 'positive' : 'negative'}`}>
+              {stats.revenueVsTarget >= 0 ? '+' : ''}{stats.revenueVsTarget}% vs target
+            </div>
           </div>
         </div>
         <div className="metric-card">
           <div className="metric-icon" style={{ background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' }}>📦</div>
           <div className="metric-details">
-            <div className="metric-value">8</div>
+            <div className="metric-value">{stats.lowStockItems}</div>
             <div className="metric-label">Low Stock Items</div>
-            <div className="metric-change warning">Requires attention</div>
+            <div className={`metric-change ${stats.lowStockItems > 0 ? 'warning' : 'positive'}`}>
+              {stats.lowStockItems > 0 ? 'Requires attention' : 'All stocked'}
+            </div>
           </div>
         </div>
       </div>

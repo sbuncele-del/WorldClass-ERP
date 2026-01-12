@@ -223,6 +223,39 @@ app.get('/health/redis', async (_req, res) => {
   }
 });
 
+// Migration endpoint - no auth required, protected by secret header
+app.post('/api/migrate/:module', async (req, res) => {
+  const adminSecret = req.headers['x-admin-secret'];
+  if (adminSecret !== 'worldclass-migrate-2026') {
+    return res.status(403).json({ success: false, error: 'Unauthorized' });
+  }
+  
+  const { module } = req.params;
+  try {
+    let result;
+    const pool = (await import('./config/database')).default;
+    const fs = await import('fs');
+    const path = await import('path');
+    
+    switch (module) {
+      case 'cash-management':
+        // Use the SQL migration file which has the correct table names
+        // In Docker: /app/database/migrations/...
+        const sqlPath = path.join('/app', 'database', 'migrations', '010_cash_management_module.sql');
+        const sql = fs.readFileSync(sqlPath, 'utf8');
+        await pool.query(sql);
+        result = 'Cash Management tables created successfully from SQL migration';
+        break;
+      default:
+        return res.status(400).json({ success: false, error: `Unknown module: ${module}` });
+    }
+    res.json({ success: true, message: result });
+  } catch (error: any) {
+    console.error('Migration error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Intentional error route for local testing of the error handler (disabled in production)
 if (process.env.NODE_ENV !== 'production') {
   app.get('/api/test-error', () => {

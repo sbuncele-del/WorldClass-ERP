@@ -1,5 +1,67 @@
 # WorldClass ERP - System Architecture Document
-## Version: 2.0 | Date: January 9, 2026
+## Version: 2.2 | Date: January 12, 2026 (UPDATED)
+
+> ⚠️ **PRODUCTION STATUS**: Cape Town (af-south-1) deployment  
+> ⚠️ **CRITICAL ISSUE**: Backend DATABASE_URL misconfigured - pointing to localhost instead of RDS  
+> ⚠️ **DEPENDENCY STATUS: LOCKED** - All 110 dependencies pinned to exact versions. See DEPENDENCIES-LOCKED.md
+
+---
+
+# CURRENT PRODUCTION INFRASTRUCTURE (January 12, 2026)
+
+## PRIMARY: Cape Town (af-south-1)
+
+| Component | Details | Status |
+|-----------|---------|--------|
+| **Domain** | siyabusaerp.co.za | ✅ Working |
+| **ECS Cluster** | worldclass-erp-cluster | ✅ Running |
+| **Frontend Service** | frontend-service (2 tasks) | ✅ Working |
+| **Backend Service** | worldclass-erp-backend | ⚠️ DB Connection Issue |
+| **ALB** | worldclass-erp-alb-1149802512.af-south-1.elb.amazonaws.com | ✅ Working |
+| **RDS Database** | worldclass-erp-db.c92ou2c2e43l.af-south-1.rds.amazonaws.com | ✅ Running |
+| **ECR (Frontend)** | 483636500494.dkr.ecr.af-south-1.amazonaws.com/worldclass-erp-frontend | ✅ |
+| **ECR (Backend)** | 483636500494.dkr.ecr.af-south-1.amazonaws.com/worldclass-erp-backend | ⚠️ Needs env fix |
+
+### Cape Town Database
+```
+Host: worldclass-erp-db.c92ou2c2e43l.af-south-1.rds.amazonaws.com
+Port: 5432
+Database: erp_database
+Username: erpadmin
+Password: WorldClass2024SecureDB
+```
+
+### Admin User
+```
+Email: admin@siyabusaerp.co.za
+Password: Admin123!
+Tenant ID: d0a49212-96f5-46c7-9d69-fec0f235a90c
+```
+
+## LEGACY: EU-North (eu-north-1)
+
+| Component | Details | Status |
+|-----------|---------|--------|
+| **EC2** | i-0b20fd06fae7e84b1 (51.20.67.228) | 🔶 Legacy |
+| **RDS** | aetheros-erp-db.cxoqqoowwgxt.eu-north-1.rds.amazonaws.com | 🔶 Legacy |
+
+---
+
+# CRITICAL FIX REQUIRED
+
+The backend ECS task needs DATABASE_URL environment variable updated:
+
+```bash
+# WRONG (current):
+DATABASE_URL=postgresql://postgres:password@127.0.0.1:5432/erp_database
+
+# CORRECT (needed):
+DATABASE_URL=postgresql://erpadmin:WorldClass2024SecureDB@worldclass-erp-db.c92ou2c2e43l.af-south-1.rds.amazonaws.com:5432/erp_database
+```
+
+To fix:
+1. Update ECS task definition with correct DATABASE_URL
+2. Redeploy backend service
 
 ---
 
@@ -85,15 +147,15 @@ WorldClass ERP is a comprehensive, multi-tenant Enterprise Resource Planning sys
 ┌─────────────────────────────────────┐
 │       INFRASTRUCTURE STACK          │
 ├─────────────────────────────────────┤
-│ Compute      │ AWS EC2 (t3.medium)  │
+│ Compute      │ AWS ECS Fargate      │
 │ Container    │ Docker               │
 │ Database     │ AWS RDS PostgreSQL   │
 │ Storage      │ AWS S3               │
-│ Deployment   │ AWS SSM              │
-│ Cache        │ Redis (Docker)       │
-│ Web Server   │ nginx                │
-│ SSL          │ Let's Encrypt        │
-│ Region       │ eu-north-1           │
+│ CDN          │ AWS ALB              │
+│ Cache        │ Redis (planned)      │
+│ Web Server   │ nginx (in container) │
+│ SSL          │ AWS ACM              │
+│ Region       │ af-south-1 (Cape Town)│
 └─────────────────────────────────────┘
 ```
 
@@ -154,7 +216,7 @@ WorldClass ERP is a comprehensive, multi-tenant Enterprise Resource Planning sys
 | **Public IP** | `51.20.67.228` |
 | **API URL** | `https://siyabusaerp.co.za/api` |
 | **Container Name** | `erp-backend` |
-| **Docker Image** | `erp-backend:healthcare-v7` (current) |
+| **Docker Image** | `erp-backend:dashboard-v4` (current) |
 | **Internal Port** | `3000` |
 | **Network** | `erp-net` (Docker bridge) |
 | **Process Manager** | Systemd (`erp-backend.service`) |
@@ -190,7 +252,7 @@ WorldClass ERP is a comprehensive, multi-tenant Enterprise Resource Planning sys
 ### 🐳 DOCKER CONTAINERS ON EC2
 | Container | Image | Port | Purpose |
 |-----------|-------|------|---------|
-| `erp-backend` | `erp-backend:healthcare-v7` | 3000 | Node.js API |
+| `erp-backend` | `erp-backend:dashboard-v4` | 3000 | Node.js API |
 | `redis` | `redis:alpine` | 6379 | Cache/Session |
 
 ## 3.2 EC2 Instance Details
@@ -343,14 +405,23 @@ PostgreSQL Database: postgres
 │
 ├── manufacturing (Manufacturing schema)
 │   ├── boms
-│   ├── work_orders
-│   └── work_centers
-│
+│   ├── wo│
 └── compliance (Compliance schema)
     ├── requirements
     ├── sars_submissions
     └── filings
-```
+├── sars (SARS Sentinel schema)
+    ├── tax_returns
+    ├── vat_returns
+    ├── paye_submissions
+    └── tax_certificates
+
+├── healthcare (Healthcare Hub schema)
+    ├── patients
+    ├── practitioners
+    ├── appointments
+    ├── prescriptions
+    └── medical_records```
 
 ## 5.2 Core Tables
 
@@ -933,8 +1004,23 @@ WorldClass-ERP/
 | Mining | `erp-backend:mining-v1.0.0` | Jan 2026 |
 | Logistics | `erp-backend:logistics-v1.2.0` | Jan 2026 |
 | Healthcare | `erp-backend:healthcare-v7` | Jan 9, 2026 |
+| **SARS Sentinel** | `erp-backend:healthcare-v7` (patched) | Jan 9, 2026 |
+| Dashboard | `erp-backend:dashboard-v4` | Jan 9, 2026 |
+| **AI Agent** | `erp-backend:ai-v4` | Jan 10, 2026 |
 
-## A.4 AWS Resources Summary
+## A.4 Implemented Industry Modules
+
+| Module | Status | Controllers | Notes |
+|--------|--------|-------------|-------|
+| **SARS Sentinel** | ✅ Live | `sars-sentinel.controller.v2.ts` | ISV Application Ready |
+| **Healthcare Hub** | ✅ Live | `healthcare.controller.v2.ts` | Medical Practice Management |
+| **Mining Hub** | ✅ Live | `mining.controller.v2.ts` | Mineral Tracking, Safety |
+| **Construction Hub** | ✅ Live | `construction.controller.v2.ts` | Project Costing |
+| **Property Hub** | ✅ Live | `property.controller.v2.ts` | Lease Management |
+| **Agriculture Hub** | ✅ Live | `agriculture.controller.v2.ts` | Farm Operations |
+| **Logistics Hub** | ✅ Live | `logistics.controller.v2.ts` | Fleet Management |
+
+## A.5 AWS Resources Summary
 
 | Resource | Identifier | Region |
 |----------|------------|--------|
@@ -943,7 +1029,32 @@ WorldClass-ERP/
 | S3 Deployments | `aetheros-erp-deployments` | eu-north-1 |
 | S3 Frontend | `aetheros-erp-frontend` | eu-north-1 |
 
-## A.5 Troubleshooting Commands
+## A.5 AWS Resources Summary
+
+| Resource | Identifier | Region |
+|----------|------------|--------|
+| EC2 Instance | `i-0b20fd06fae7e84b1` | eu-north-1 |
+| RDS Database | `aetheros-erp-db` | eu-north-1 |
+| S3 Deployments | `aetheros-erp-deployments` | eu-north-1 |
+| S3 Frontend | `aetheros-erp-frontend` | eu-north-1 |
+
+## A.6 SARS Sentinel Database Tables
+
+| Table | Schema | Purpose |
+|-------|--------|---------|
+| `sars_correspondence` | public | SARS letters, queries, audit notices |
+| `sars_correspondence_types` | public | 16 predefined SARS notice types |
+| `sars_workflows` | public | Workflow tracking for responses |
+| `sars_workflow_steps` | public | Individual workflow steps |
+| `sars_submission_history` | public | Response submission log |
+| `sars_deadline_calendar` | public | Statutory deadline tracking |
+| `sars_correspondence_comments` | public | Internal notes on items |
+| `sars.tax_returns` | sars | ITR12, ITA34 returns |
+| `sars.vat_returns` | sars | VAT201 returns |
+| `sars.paye_submissions` | sars | EMP201, EMP501 |
+| `sars.tax_certificates` | sars | IT3, IRP5 certificates |
+
+## A.7 Troubleshooting Commands
 
 ### Backend not responding
 ```bash
@@ -985,6 +1096,42 @@ aws ssm send-command --instance-ids "i-0b20fd06fae7e84b1" \
 
 ---
 
-**Document Version**: 2.0
-**Last Updated**: January 9, 2026
+**Document Version**: 2.1  
+**Last Updated**: January 9, 2026  
 **Author**: GitHub Copilot
+
+---
+
+# APPENDIX B: DEPENDENCY LOCK STATUS
+
+## ✅ ALL DEPENDENCIES LOCKED (January 2, 2026)
+
+### Summary
+- **Total Dependencies Locked**: 110 packages
+- **Backend**: 54 packages (exact versions)
+- **Frontend**: 43 packages (exact versions)
+- **Lock File**: 857 KB (package-lock.json)
+
+### Key Locked Versions
+```
+Node.js          >= 18.0.0
+TypeScript       5.7.3
+Express          4.18.2
+React            19.1.1
+Vite             5.x
+PostgreSQL       pg 8.x
+```
+
+### How It's Locked
+1. ✅ All `package.json` use exact versions (no `^` or `~`)
+2. ✅ `package-lock.json` present and committed
+3. ✅ `.npmrc` configured with `save-exact=true`
+4. ✅ Docker images bake dependencies at build time
+5. ✅ `npm ci` used in production (not `npm install`)
+
+### Will It Change?
+**NO** - unless you explicitly run `npm update` or modify `package.json`.
+
+The dependencies are **permanently locked** and will not auto-update.
+
+See `DEPENDENCIES-LOCKED.md` for full details.

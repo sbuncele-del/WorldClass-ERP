@@ -9,7 +9,7 @@ import {
   BulbOutlined, CheckCircleOutlined, EditOutlined,
   DownloadOutlined, SendOutlined, ArrowLeftOutlined,
   ArrowRightOutlined, ImportOutlined, EyeOutlined,
-  RobotOutlined, CoffeeOutlined, LeafOutlined,
+  RobotOutlined, CoffeeOutlined, EnvironmentOutlined,
   BgColorsOutlined, LayoutOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';

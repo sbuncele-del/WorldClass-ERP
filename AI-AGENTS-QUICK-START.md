@@ -1,5 +1,9 @@
 # AI Agents Module - Quick Start Guide
 
+**Updated:** January 12, 2026  
+**Platform:** SiyaBusa ERP (Cape Town AWS Region)  
+**Status:** ✅ Integrated
+
 ## Installation (Complete ✅)
 
 The AI Agents module is already installed and integrated. All you need to do is configure your API keys.
@@ -38,11 +42,12 @@ AI_TEMPERATURE=0.7
 ## 3. Deploy Database Schema
 
 ```bash
-# SSH into your server
-ssh ec2-user@51.21.219.35
+# For Cape Town ECS deployment, connect to RDS directly:
+# Host: worldclass-erp-db.c92ou2c2e43l.af-south-1.rds.amazonaws.com
+# Database: erp_database
 
 # Navigate to backend
-cd /home/ec2-user/backend
+cd /workspaces/WorldClass-ERP/backend
 
 # Run migration
 psql $DATABASE_URL -f database/migrations/018_ai_agents_module.sql
@@ -70,8 +75,8 @@ Expected output:
 ## 4. Restart Backend
 
 ```bash
-pm2 restart aetheros-erp-backend
-pm2 logs aetheros-erp-backend
+# For ECS deployment, redeploy the service:
+aws ecs update-service --cluster worldclass-erp-cluster --service worldclass-erp-backend --force-new-deployment --region af-south-1
 ```
 
 Look for:
@@ -84,7 +89,7 @@ Look for:
 
 ### Test 1: List Agents
 ```bash
-curl -X GET http://51.21.219.35:3000/api/ai/agents \
+curl -X GET https://siyabusaerp.co.za/api/ai/agents \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -92,7 +97,7 @@ Should return 9 agents.
 
 ### Test 2: Chat with Sales Assistant
 ```bash
-curl -X POST http://51.21.219.35:3000/api/ai/agents/SALES_ASSISTANT/chat \
+curl -X POST https://siyabusaerp.co.za/api/ai/agents/SALES_ASSISTANT/chat \
   -H "Authorization: Bearer YOUR_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -104,7 +109,7 @@ Should return AI response with conversation ID.
 
 ### Test 3: Get Suggestions
 ```bash
-curl -X GET http://51.21.219.35:3000/api/ai/suggestions \
+curl -X GET https://siyabusaerp.co.za/api/ai/suggestions \
   -H "Authorization: Bearer YOUR_JWT_TOKEN"
 ```
 
@@ -251,6 +256,7 @@ Full documentation: `/backend/AI-AGENTS-DOCUMENTATION.md`
 
 ---
 
-**Status**: ✅ READY FOR DEPLOYMENT  
+**Status**: ✅ DEPLOYED  
 **Version**: 1.0.0  
-**Date**: November 2024
+**Updated**: January 2026  
+**Live URL**: https://siyabusaerp.co.za

@@ -30,6 +30,9 @@ RUN npm install --only=production && npm cache clean --force
 # Copy built application
 COPY --from=builder /app/dist ./dist
 
+# Copy database migrations
+COPY --from=builder /app/database ./database
+
 # 🔒 LOCKED ENVIRONMENT VARIABLES - CANNOT BE LOST 🔒
 ENV NODE_ENV=production
 ENV PORT=3000

@@ -1,8 +1,9 @@
 # AI Assistant Enhancement - SiyaBusa ERP
 ## "The Smartest Thing Ever" - Your First Point of Contact
 
-**Deployed:** December 21, 2025
-**Status:** ✅ Live in Production
+**Updated:** January 12, 2026  
+**Status:** ✅ Live in Production  
+**Platform:** SiyaBusa ERP (Cape Town AWS Region)
 
 ---
 
@@ -11,7 +12,7 @@
 ### 1. Comprehensive ERP Knowledge Base (`ERPKnowledgeBase.ts`)
 The AI now knows EVERYTHING about the ERP system:
 
-- **All 25+ Modules** - Financial, Sales, Purchase, Inventory, HR, Assets, Banking, Projects, Manufacturing, Healthcare, Construction, Property, Agriculture, Mining, and more
+- **All 25 Integrated Modules** - Financial, Sales, Purchase, Inventory, HR, Assets, Banking, Treasury, Cash Management, Projects, Manufacturing, Healthcare, Construction, Property, Agriculture, Mining, Logistics, Warehouse, Compliance Hub, Audit Ready, Communications, Proposals, Admin Hub, Practice Management, and Multi-Entity
 - **Module Capabilities** - What each module can do
 - **Navigation** - How to get to each feature
 - **Common Questions** - Pre-built Q&A for each module
@@ -149,4 +150,4 @@ The AI is designed to be THE FIRST POINT OF CONTACT. Users should:
 
 This reduces support load and provides instant, 24/7 assistance.
 
-**Live at:** https://primesources.site
+**Live at:** https://siyabusaerp.co.za

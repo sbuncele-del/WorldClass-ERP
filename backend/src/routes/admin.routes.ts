@@ -220,4 +220,41 @@ router.get(
   AdminControllerV2.getAuditLog
 );
 
+// ============================================================================
+// DATABASE MIGRATION ENDPOINT (Protected - Super Admin Only)
+// ============================================================================
+
+/**
+ * @route   POST /api/admin/run-migration/:module
+ * @desc    Run database migration for a specific module
+ * @access  Super Admin only
+ */
+router.post('/run-migration/:module', async (req, res) => {
+  try {
+    const { module } = req.params;
+    const adminSecret = req.headers['x-admin-secret'];
+    
+    // Simple protection - require secret header
+    if (adminSecret !== 'worldclass-migrate-2026') {
+      return res.status(403).json({ success: false, error: 'Unauthorized' });
+    }
+    
+    let result;
+    switch (module) {
+      case 'cash-management':
+        const { migrateCashManagement } = await import('../config/cash-management-migration');
+        await migrateCashManagement();
+        result = 'Cash Management tables created';
+        break;
+      default:
+        return res.status(400).json({ success: false, error: `Unknown module: ${module}` });
+    }
+    
+    res.json({ success: true, message: result });
+  } catch (error: any) {
+    console.error('Migration error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 export default router;

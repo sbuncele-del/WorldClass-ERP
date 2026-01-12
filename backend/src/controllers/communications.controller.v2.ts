@@ -42,7 +42,7 @@ export const getWorkspace = async (req: TenantRequest, res: Response) => {
       ),
       pool.query(
         `SELECT COUNT(*) as total_channels
-        FROM chat_channels WHERE tenant_id = $1 AND is_active = true`,
+        FROM chat_channels WHERE tenant_id = $1 AND is_archived = false`,
         [tenantId]
       ),
       pool.query(
@@ -119,14 +119,14 @@ export const getAnnouncements = async (req: TenantRequest, res: Response) => {
 export const createAnnouncement = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId, userId } = getTenantContext(req);
-    const { title, content, priority, targetAudience, expiresAt, isPinned } = req.body;
+    const { title, content, priority, expiresAt, isPinned } = req.body;
 
     const result = await pool.query(
-      `INSERT INTO announcements (tenant_id, created_by_user_id, title, content, priority,
-        target_audience, expires_at, is_pinned)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO announcements (tenant_id, author_id, created_by_user_id, title, content, priority,
+        expires_at, is_pinned, status)
+      VALUES ($1, $2, $2, $3, $4, $5, $6, $7, 'published')
       RETURNING *`,
-      [tenantId, userId, title, content, priority || 'normal', targetAudience || 'all',
+      [tenantId, userId, title, content, priority || 'medium',
        expiresAt, isPinned || false]
     );
 
@@ -209,9 +209,9 @@ export const getChannels = async (req: TenantRequest, res: Response) => {
     let queryStr = `
       SELECT c.*, 
         (SELECT COUNT(*) FROM chat_messages m WHERE m.channel_id = c.id) as message_count,
-        (SELECT MAX(created_at) FROM chat_messages m WHERE m.channel_id = c.id) as last_message_at
+        (SELECT MAX(m.created_at) FROM chat_messages m WHERE m.channel_id = c.id) as latest_message_at
       FROM chat_channels c
-      WHERE c.tenant_id = $1 AND c.is_active = true
+      WHERE c.tenant_id = $1 AND c.is_archived = false
       AND (c.is_private = false OR EXISTS (
         SELECT 1 FROM chat_channel_members cm WHERE cm.channel_id = c.id AND cm.user_id = $2
       ))
@@ -223,7 +223,7 @@ export const getChannels = async (req: TenantRequest, res: Response) => {
       queryStr += ` AND c.channel_type = $${params.length}`;
     }
 
-    queryStr += ' ORDER BY last_message_at DESC NULLS LAST, c.name ASC';
+    queryStr += ' ORDER BY latest_message_at DESC NULLS LAST, c.name ASC';
     const result = await pool.query(queryStr, params);
 
     res.json({ success: true, data: result.rows });
@@ -242,11 +242,11 @@ export const createChannel = async (req: TenantRequest, res: Response) => {
     const { name, description, channelType, isPrivate, memberUserIds } = req.body;
 
     const channelResult = await pool.query(
-      `INSERT INTO chat_channels (tenant_id, created_by_user_id, name, description, 
+      `INSERT INTO chat_channels (tenant_id, created_by, name, description, 
         channel_type, is_private)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *`,
-      [tenantId, userId, name, description, channelType || 'general', isPrivate || false]
+      [tenantId, userId, name, description, channelType || 'public', isPrivate || false]
     );
 
     const channel = channelResult.rows[0];
@@ -293,7 +293,7 @@ export const getChannelMessages = async (req: TenantRequest, res: Response) => {
     let queryStr = `
       SELECT m.*, u.full_name as author_name, u.email as author_email
       FROM chat_messages m
-      LEFT JOIN users u ON m.user_id = u.id
+      LEFT JOIN users u ON m.sender_id = u.id
       WHERE m.tenant_id = $1 AND m.channel_id = $2
     `;
     const params: any[] = [tenantId, channelId];
@@ -325,7 +325,7 @@ export const sendChannelMessage = async (req: TenantRequest, res: Response) => {
     const { content, messageType, attachments } = req.body;
 
     const result = await pool.query(
-      `INSERT INTO chat_messages (tenant_id, channel_id, user_id, content, message_type, attachments)
+      `INSERT INTO chat_messages (tenant_id, channel_id, sender_id, content, message_type, attachments)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *`,
       [tenantId, channelId, userId, content, messageType || 'text', attachments]
@@ -563,9 +563,9 @@ export const getMeetings = async (req: TenantRequest, res: Response) => {
     let queryStr = `
       SELECT m.*, u.full_name as organizer_name
       FROM video_meetings m
-      LEFT JOIN users u ON m.organizer_user_id = u.id
+      LEFT JOIN users u ON m.host_id = u.id
       WHERE m.tenant_id = $1
-      AND (m.organizer_user_id = $2 OR EXISTS (
+      AND (m.host_id = $2 OR EXISTS (
         SELECT 1 FROM video_meeting_participants p WHERE p.meeting_id = m.id AND p.user_id = $2
       ))
     `;
@@ -594,29 +594,26 @@ export const getMeetings = async (req: TenantRequest, res: Response) => {
 export const createMeeting = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId, userId } = getTenantContext(req);
-    const { title, description, scheduledStart, scheduledEnd, meetingType, 
-            participantUserIds, isRecurring, recurringPattern } = req.body;
+    const { title, scheduledStart, scheduledEnd, participantUserIds } = req.body;
 
-    // Generate meeting link
-    const meetingCode = `mtg-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 9)}`;
-    const meetingLink = `/meetings/${meetingCode}`;
+    // Generate meeting room name and URL
+    const roomName = `meeting-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 9)}`;
+    const roomUrl = `https://meet.daily.co/${roomName}`; // Daily.co URL pattern
 
     const meetingResult = await pool.query(
-      `INSERT INTO video_meetings (tenant_id, organizer_user_id, title, description,
-        scheduled_start, scheduled_end, meeting_type, meeting_link, meeting_code,
-        is_recurring, recurring_pattern, status)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'scheduled')
+      `INSERT INTO video_meetings (tenant_id, host_id, title, room_name, room_url,
+        scheduled_start, scheduled_end, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'scheduled')
       RETURNING *`,
-      [tenantId, userId, title, description, scheduledStart, scheduledEnd,
-       meetingType || 'video', meetingLink, meetingCode, isRecurring || false, recurringPattern]
+      [tenantId, userId, title, roomName, roomUrl, scheduledStart, scheduledEnd]
     );
 
     const meeting = meetingResult.rows[0];
 
-    // Add organizer as participant
+    // Add host as participant
     await pool.query(
       `INSERT INTO video_meeting_participants (tenant_id, meeting_id, user_id, role, status)
-      VALUES ($1, $2, $3, 'organizer', 'accepted')`,
+      VALUES ($1, $2, $3, 'host', 'accepted')`,
       [tenantId, meeting.id, userId]
     );
 
@@ -647,19 +644,17 @@ export const updateMeeting = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
     const { id } = req.params;
-    const { title, description, scheduledStart, scheduledEnd, status } = req.body;
+    const { title, scheduledStart, scheduledEnd, status } = req.body;
 
     const result = await pool.query(
       `UPDATE video_meetings SET
         title = COALESCE($3, title),
-        description = COALESCE($4, description),
-        scheduled_start = COALESCE($5, scheduled_start),
-        scheduled_end = COALESCE($6, scheduled_end),
-        status = COALESCE($7, status),
-        updated_at = CURRENT_TIMESTAMP
+        scheduled_start = COALESCE($4, scheduled_start),
+        scheduled_end = COALESCE($5, scheduled_end),
+        status = COALESCE($6, status)
       WHERE id = $1 AND tenant_id = $2
       RETURNING *`,
-      [id, tenantId, title, description, scheduledStart, scheduledEnd, status]
+      [id, tenantId, title, scheduledStart, scheduledEnd, status]
     );
 
     if (result.rows.length === 0) {
@@ -682,7 +677,7 @@ export const cancelMeeting = async (req: TenantRequest, res: Response) => {
     const { id } = req.params;
 
     const result = await pool.query(
-      `UPDATE video_meetings SET status = 'cancelled', updated_at = CURRENT_TIMESTAMP
+      `UPDATE video_meetings SET status = 'cancelled'
       WHERE id = $1 AND tenant_id = $2
       RETURNING *`,
       [id, tenantId]

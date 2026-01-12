@@ -55,8 +55,8 @@ export interface Invoice {
 }
 
 export class InvoiceRepository extends BaseRepository<Invoice> {
-  protected tableName = 'invoices';
-  protected schema = 'sales';
+  protected tableName = 'sales_invoices';
+  protected schema = 'public';
   protected softDelete = false;  // Table doesn't have deleted_at column
 
   /**
@@ -79,8 +79,8 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
 
     const linesSql = `
       SELECT il.*, i.code as item_code, i.name as item_name
-      FROM sales.invoice_lines il
-      LEFT JOIN inventory.items i ON i.id = il.item_id
+      FROM sales_invoice_lines il
+      LEFT JOIN items i ON i.id = il.item_id
       WHERE il.invoice_id = $2 AND il.tenant_id = $1
       ORDER BY il.line_number
     `;
@@ -178,59 +178,51 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
 
       const invoiceResult = await client.query(`
         INSERT INTO ${this.fullTableName}
-        (tenant_id, invoice_number, customer_id, order_id, invoice_date, due_date, status,
-         subtotal, discount_amount, tax_amount, total_amount, amount_paid, balance_due,
-         currency_code, payment_terms, notes, created_by)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        (tenant_id, invoice_number, customer_id, invoice_date, due_date, status,
+         subtotal, vat_amount, total_amount, amount_paid, amount_due, notes, created_by)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING *
       `, [
         ctx.tenantId,
         invoiceNumber,
         invoiceData.customer_id,
-        invoiceData.order_id,
         invoiceData.invoice_date || new Date(),
         invoiceData.due_date || new Date(),
-        invoiceData.status || 'draft',
+        invoiceData.status?.toUpperCase() || 'DRAFT',
         invoiceData.subtotal || 0,
-        invoiceData.discount_amount || 0,
-        invoiceData.tax_amount || 0,
+        invoiceData.tax_amount || 0,  // Maps to vat_amount
         invoiceData.total_amount || 0,
         invoiceData.amount_paid || 0,
-        invoiceData.balance_due ?? (invoiceData.total_amount || 0),
-        invoiceData.currency_code || 'ZAR',
-        invoiceData.payment_terms,
+        invoiceData.balance_due ?? (invoiceData.total_amount || 0),  // Maps to amount_due
         invoiceData.notes,
         ctx.userId
       ]);
 
       const invoice = invoiceResult.rows[0];
 
-      // Insert lines
+      // Insert lines - matches actual sales_invoice_lines schema
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         await client.query(`
-          INSERT INTO sales.invoice_lines
-          (tenant_id, invoice_id, line_number, item_id, description, quantity, unit_price,
-           discount_percent, discount_amount, tax_rate, tax_amount, line_total)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          INSERT INTO sales_invoice_lines
+          (tenant_id, invoice_id, line_number, description, quantity, unit_price, line_total, vat_rate, vat_amount)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         `, [
           ctx.tenantId,
-          invoice.id,
+          invoice.invoice_id,  // Use invoice_id, not id
           i + 1,
-          line.item_id,
-          line.description,
-          line.quantity,
-          line.unit_price,
-          line.discount_percent || 0,
-          line.discount_amount || 0,
-          line.tax_rate || 0,
-          line.tax_amount || 0,
-          line.line_total || 0
+          line.description || 'Service',
+          line.quantity || 1,
+          line.unit_price || 0,
+          line.line_total || (line.quantity || 1) * (line.unit_price || 0),
+          line.tax_rate || 15,  // Maps to vat_rate
+          line.tax_amount || 0   // Maps to vat_amount
         ]);
       }
 
       await this.commitTransaction(client);
-      return invoice;
+      // Map invoice_id to id for interface compatibility
+      return { ...invoice, id: invoice.invoice_id };
     } catch (error) {
       await this.rollbackTransaction(client);
       throw error;
@@ -328,7 +320,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
 
       // Record payment
       await client.query(`
-        INSERT INTO sales.payments
+        INSERT INTO payments
         (tenant_id, invoice_id, customer_id, amount, payment_date, payment_method, reference, created_by)
         VALUES ($1, $2, $3, $4, CURRENT_DATE, $5, $6, $7)
       `, [ctx.tenantId, invoiceId, invoice.customer_id, amount, paymentMethod, reference, ctx.userId]);
@@ -401,7 +393,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
     try {
       // Get order with lines
       const orderResult = await client.query(`
-        SELECT * FROM sales.orders
+        SELECT * FROM sales_orders
         WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
       `, [orderId, ctx.tenantId]);
 
@@ -432,12 +424,12 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
 
       // Copy order lines to invoice lines
       await client.query(`
-        INSERT INTO sales.invoice_lines
+        INSERT INTO sales_invoice_lines
         (tenant_id, invoice_id, line_number, item_id, description, quantity, unit_price,
          discount_percent, discount_amount, tax_rate, tax_amount, line_total)
         SELECT tenant_id, $1, line_number, item_id, notes, quantity, unit_price,
                discount_percent, discount_amount, tax_rate, tax_amount, line_total
-        FROM sales.order_lines
+        FROM sales_order_lines
         WHERE order_id = $2 AND tenant_id = $3
       `, [invoice.id, orderId, ctx.tenantId]);
 

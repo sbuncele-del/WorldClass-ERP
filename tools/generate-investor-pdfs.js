@@ -44,83 +44,145 @@ const HTML_TEMPLATE = `
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{TITLE}}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
         @page {
             size: A4;
-            margin: 25mm 20mm 25mm 20mm;
+            margin: 20mm;
+        }
+        
+        * {
+            box-sizing: border-box;
         }
         
         body {
-            font-family: 'Segoe UI', 'Arial', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             line-height: 1.6;
-            color: #1e293b;
+            color: #1f2937;
             max-width: 100%;
             margin: 0;
             padding: 0;
         }
         
+        /* ===== 6.2 COVER PAGE BACKGROUND CSS (EXACT SPECIFICATION) ===== */
         .cover-page {
-            page-break-after: always;
+            height: 250mm;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #1e40af 0%, #0ea5e9 100%);
-            color: white;
             text-align: center;
-            padding: 60px 40px;
-            box-sizing: border-box;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(59, 130, 246, 0.4) 0%, transparent 20%),
+                radial-gradient(circle at 80% 70%, rgba(147, 51, 234, 0.4) 0%, transparent 20%),
+                linear-gradient(135deg, #020617 0%, #1e3a8a 50%, #172554 100%);
+            margin: -20mm -20mm 0 -20mm;
+            padding: 20mm;
+            page-break-after: always;
+            color: white;
+            position: relative;
+            overflow: hidden;
         }
         
+        /* ===== 6.3 GRID OVERLAY CSS (EXACT SPECIFICATION) ===== */
+        .cover-page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+        }
+        
+        /* ===== 6.4 FROSTED GLASS CONTENT BOX CSS (EXACT SPECIFICATION) ===== */
+        .cover-content {
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(12px);
+            padding: 60px;
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            max-width: 80%;
+            position: relative;
+            z-index: 10;
+        }
+        
+        /* ===== 6.5 COVER TYPOGRAPHY (EXACT SPECIFICATION) ===== */
+        /* Logo: 48px, weight 800, #ffffff */
         .cover-logo {
-            font-size: 52px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-            letter-spacing: 2px;
+            font-size: 48px;
+            font-weight: 800;
+            color: #ffffff;
         }
         
+        /* Title: 32px, weight 700, #ffffff */
+        .cover-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+        
+        /* Subtitle: 18px, weight 400, #bfdbfe, margin-bottom: 40px */
         .cover-subtitle {
-            font-size: 22px;
-            margin-bottom: 50px;
-            opacity: 0.95;
-            font-weight: 300;
+            font-size: 18px;
+            font-weight: 400;
+            color: #bfdbfe;
+            margin-bottom: 40px;
         }
         
-        .cover-category {
-            font-size: 36px;
+        /* Company Name: 16px, weight 600, #ffffff */
+        .cover-company {
+            font-size: 16px;
             font-weight: 600;
-            margin: 40px 0;
-            padding: 20px 40px;
-            background: rgba(255,255,255,0.1);
+            color: #ffffff;
+        }
+        
+        /* ===== 6.6 COVER METADATA BOX CSS (EXACT SPECIFICATION) ===== */
+        .cover-info {
+            margin-top: 25px;
+            padding: 20px 30px;
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            backdrop-filter: blur(10px);
+            text-align: left;
+            display: inline-block;
         }
         
-        .cover-badges {
-            display: flex;
-            gap: 15px;
-            margin: 30px 0;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .badge {
-            background: rgba(255,255,255,0.2);
-            padding: 8px 20px;
-            border-radius: 20px;
+        .cover-info .info-row {
+            margin: 8px 0;
             font-size: 14px;
+            color: #e0f2fe;
+        }
+        
+        /* Info Label: 14px, weight 600, #93c5fd */
+        .cover-info .info-label {
             font-weight: 600;
-            backdrop-filter: blur(5px);
+            color: #93c5fd;
         }
         
-        .cover-date {
+        /* Info Value: 14px, weight 400, #ffffff */
+        .cover-info .info-value {
+            color: #ffffff;
+        }
+        
+        /* ===== 6.7 TAGLINE CSS (EXACT SPECIFICATION) ===== */
+        /* Tagline: 12px, weight 400, #93c5fd, letter-spacing: 2px, UPPERCASE */
+        .cover-tagline {
             margin-top: 40px;
-            font-size: 14px;
-            opacity: 0.8;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 12px;
+            color: #93c5fd;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
         
+        /* ===== TABLE OF CONTENTS ===== */
         .toc-page {
             page-break-after: always;
             padding: 40px 0;
@@ -157,33 +219,56 @@ const HTML_TEMPLATE = `
             padding: 20px 0;
         }
         
-        h1 {
-            color: #1e40af;
-            font-size: 26px;
+        /* ===== 7.1 INTRO BOX (EXACT SPECIFICATION) ===== */
+        .intro-box {
+            background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+            border-left: 4px solid #1e3a8a;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .intro-title {
             font-weight: 700;
-            margin: 40px 0 20px 0;
-            padding-bottom: 12px;
-            border-bottom: 3px solid #0ea5e9;
+            color: #1e3a8a;
+            margin-bottom: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        
+        .intro-text {
+            color: #4b5563;
+            font-size: 14px;
+        }
+        
+        /* ===== 4.3 HEADING SPECIFICATIONS (EXACT) ===== */
+        h1 {
+            color: #1e3a8a;
+            border-bottom: 2px solid #1e3a8a;
+            padding-bottom: 10px;
+            margin-top: 40px;
+            font-size: 24px;
+            font-weight: 700;
             page-break-after: avoid;
             page-break-inside: avoid;
         }
         
         h2 {
             color: #1e40af;
-            font-size: 20px;
-            font-weight: 600;
-            margin: 30px 0 15px 0;
+            border-bottom: 1px solid #e5e7eb;
             padding-bottom: 8px;
-            border-bottom: 2px solid #e2e8f0;
+            margin-top: 30px;
+            font-size: 20px;
+            font-weight: 700;
             page-break-after: avoid;
             page-break-inside: avoid;
         }
         
         h3 {
-            color: #334155;
-            font-size: 17px;
-            font-weight: 600;
-            margin: 25px 0 12px 0;
+            color: #3730a3;
+            margin-top: 25px;
+            font-size: 16px;
+            font-weight: 700;
             page-break-after: avoid;
             page-break-inside: avoid;
         }
@@ -215,41 +300,43 @@ const HTML_TEMPLATE = `
             page-break-inside: avoid;
         }
         
+        /* ===== 7.3 CODE BLOCK STYLING (EXACT SPECIFICATION) ===== */
         code {
-            background: #f1f5f9;
+            background-color: #f1f5f9;
             padding: 2px 6px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
             font-size: 13px;
-            color: #dc2626;
         }
         
         pre {
-            background: #1e293b;
+            background-color: #1e293b;
             color: #e2e8f0;
             padding: 20px;
             border-radius: 8px;
             overflow-x: auto;
-            margin: 20px 0;
-            border-left: 4px solid #0ea5e9;
+            font-size: 13px;
+            line-height: 1.5;
             page-break-inside: avoid;
         }
         
         pre code {
             background: none;
-            color: inherit;
             padding: 0;
+            color: inherit;
         }
         
+        /* ===== 7.4 BLOCKQUOTE STYLING (EXACT SPECIFICATION) ===== */
         blockquote {
-            border-left: 4px solid #0ea5e9;
+            border-left: 4px solid #7c3aed;
             margin: 20px 0;
             padding: 15px 20px;
-            background: #f8fafc;
+            background-color: #faf5ff;
+            border-radius: 0 8px 8px 0;
             font-style: italic;
-            color: #475569;
         }
         
+        /* ===== 7.2 TABLE STYLING (EXACT SPECIFICATION) ===== */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -259,20 +346,32 @@ const HTML_TEMPLATE = `
         }
         
         th {
-            background: #1e40af;
+            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
             color: white;
-            padding: 12px;
+            padding: 12px 10px;
             text-align: left;
             font-weight: 600;
         }
         
         td {
-            padding: 10px 12px;
-            border: 1px solid #e2e8f0;
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
         }
         
         tr:nth-child(even) {
-            background: #f8fafc;
+            background-color: #f8fafc;
+        }
+        
+        /* ===== 7.5 HORIZONTAL RULE (EXACT SPECIFICATION) ===== */
+        hr {
+            border: none;
+            border-top: 2px solid #e5e7eb;
+            margin: 30px 0;
+        }
+        
+        /* ===== 7.6 STRONG/BOLD TEXT (EXACT SPECIFICATION) ===== */
+        strong {
+            color: #1e3a8a;
         }
         
         .header-footer {
@@ -390,22 +489,35 @@ class InvestorPDFGenerator {
       day: 'numeric'
     });
 
+    // Exact specification from PDF-DOCUMENT-DESIGN-STANDARD.md
     return `
       <div class="cover-page">
-        <div class="cover-logo">SiyaBusa ERP</div>
-        <div class="cover-subtitle">Enterprise Resource Planning System</div>
-        <div class="cover-category">${category.replace(/-/g, ' ')}</div>
-        <div class="cover-badges">
-          <span class="badge">✓ Production Ready</span>
-          <span class="badge">✓ 25+ Modules</span>
-          <span class="badge">✓ AWS Deployed</span>
-          <span class="badge">✓ 400+ APIs</span>
-          <span class="badge">✓ Multi-Tenant</span>
-          <span class="badge">✓ AI-Powered</span>
-        </div>
-        <div class="cover-date">Generated: ${date}</div>
-        <div class="cover-date" style="margin-top: 20px; font-size: 12px;">
-          Confidential & Proprietary
+        <div class="cover-content">
+          <div class="cover-logo">SiyaBusa ERP</div>
+          <div class="cover-title">${category.replace(/-/g, ' ')}</div>
+          <div class="cover-subtitle">Investor Documentation</div>
+          <div class="cover-company">Masaphokati Technologies (Pty) Ltd</div>
+          
+          <div class="cover-info">
+            <div class="info-row">
+              <span class="info-label">Document Version:</span>
+              <span class="info-value"> 1.0</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Effective Date:</span>
+              <span class="info-value"> ${date}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Department:</span>
+              <span class="info-value"> Executive</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Classification:</span>
+              <span class="info-value"> Confidential</span>
+            </div>
+          </div>
+          
+          <div class="cover-tagline">WE RULE. WE GOVERN. WE EMPOWER.</div>
         </div>
       </div>
     `;
@@ -431,42 +543,29 @@ class InvestorPDFGenerator {
     // Pre-process content to fix [object Object] issues
     content = content.replace(/\[object Object\]/g, '');
     
-    // Configure marked for better rendering
-    marked.setOptions({
-      breaks: true,
-      gfm: true,
-      headerIds: true,
-      mangle: false,
-      sanitize: false
-    });
+    // Simple marked parse for v17+ API
+    try {
+      // Create custom renderer for v17+
+      const renderer = {
+        listitem(token) {
+          let text = token.text || '';
+          // Handle checkboxes
+          if (/^\[x\]\s/.test(text)) {
+            return '<li style="list-style: none; margin-left: -20px;">✅ ' + text.replace(/^\[x\]\s/, '') + '</li>\n';
+          } else if (/^\[ \]\s/.test(text)) {
+            return '<li style="list-style: none; margin-left: -20px;">⬜ ' + text.replace(/^\[ \]\s/, '') + '</li>\n';
+          }
+          return '<li>' + text + '</li>\n';
+        }
+      };
 
-    // Custom renderer for checkboxes and better formatting
-    const renderer = new marked.Renderer();
-    
-    renderer.listitem = function(text) {
-      // Handle checkboxes
-      if (/^\[x\]\s/.test(text)) {
-        return '<li style="list-style: none; margin-left: -20px;">✅ ' + text.replace(/^\[x\]\s/, '') + '</li>';
-      } else if (/^\[ \]\s/.test(text)) {
-        return '<li style="list-style: none; margin-left: -20px;">⬜ ' + text.replace(/^\[ \]\s/, '') + '</li>';
-      }
-      
-      // Clean up any remaining object references
-      text = String(text).replace(/\[object Object\]/g, '');
-      
-      return '<li>' + text + '</li>';
-    };
-    
-    // Override paragraph to clean content
-    const originalParagraph = renderer.paragraph;
-    renderer.paragraph = function(text) {
-      text = String(text).replace(/\[object Object\]/g, '');
-      return originalParagraph.call(this, text);
-    };
-
-    marked.setOptions({ renderer });
-
-    return marked.parse(content);
+      marked.use({ renderer });
+      return marked.parse(content);
+    } catch (err) {
+      // Fallback to basic parsing
+      console.log('   ⚠️  Using basic markdown parsing');
+      return marked.parse(content);
+    }
   }
 
   async generatePDF(category, files) {
@@ -521,11 +620,17 @@ class InvestorPDFGenerator {
       path: pdfPath,
       format: 'A4',
       printBackground: true,
+      displayHeaderFooter: true,
+      headerTemplate: '<div></div>',
+      footerTemplate: `<div style="font-size: 9px; color: #9ca3af; width: 100%; text-align: center; padding-bottom: 10px; font-family: sans-serif;">
+        <span>Masaphokati Technologies (Pty) Ltd - Confidential</span>
+        <span style="margin-left: 20px;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
+      </div>`,
       margin: {
         top: '20mm',
-        right: '15mm',
-        bottom: '20mm',
-        left: '15mm'
+        right: '20mm',
+        bottom: '25mm',
+        left: '20mm'
       }
     });
 
@@ -641,11 +746,17 @@ class InvestorPDFGenerator {
       path: pdfPath,
       format: 'A4',
       printBackground: true,
+      displayHeaderFooter: true,
+      headerTemplate: '<div></div>',
+      footerTemplate: `<div style="font-size: 9px; color: #9ca3af; width: 100%; text-align: center; padding-bottom: 10px; font-family: sans-serif;">
+        <span>Masaphokati Technologies (Pty) Ltd - Confidential</span>
+        <span style="margin-left: 20px;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></span>
+      </div>`,
       margin: {
         top: '20mm',
-        right: '15mm',
-        bottom: '20mm',
-        left: '15mm'
+        right: '20mm',
+        bottom: '25mm',
+        left: '20mm'
       }
     });
 

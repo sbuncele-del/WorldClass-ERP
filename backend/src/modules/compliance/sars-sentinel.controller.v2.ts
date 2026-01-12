@@ -334,46 +334,107 @@ export const getTaxCertificates = async (req: TenantRequest, res: Response) => {
 export const getSARSDashboard = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
-    const currentYear = new Date().getFullYear();
 
-    // Get upcoming deadlines
-    const upcomingDeadlines = await pool.query(
-      `SELECT 'TAX' as type, return_type as name, due_date, status
-       FROM sars.tax_returns
-       WHERE tenant_id = $1 AND status NOT IN ('SUBMITTED', 'ACCEPTED') AND due_date >= CURRENT_DATE
-       UNION ALL
-       SELECT 'VAT' as type, 'VAT Return' as name, due_date, status
-       FROM sars.vat_returns
-       WHERE tenant_id = $1 AND status NOT IN ('SUBMITTED', 'ACCEPTED') AND due_date >= CURRENT_DATE
-       UNION ALL
-       SELECT 'PAYE' as type, 'PAYE ' || month || '/' || tax_year as name, due_date, status
-       FROM sars.paye_submissions
-       WHERE tenant_id = $1 AND status NOT IN ('SUBMITTED', 'ACCEPTED') AND due_date >= CURRENT_DATE
-       ORDER BY due_date ASC
-       LIMIT 10`,
+    // Get correspondence statistics from sars_correspondence table
+    const correspondenceStats = await pool.query(
+      `SELECT
+        COUNT(*) FILTER (WHERE urgency_level = 'CRITICAL') as critical,
+        COUNT(*) FILTER (WHERE urgency_level = 'HIGH') as high,
+        COUNT(*) FILTER (WHERE urgency_level = 'MEDIUM') as medium,
+        COUNT(*) FILTER (WHERE urgency_level = 'LOW') as low,
+        COUNT(*) FILTER (WHERE deadline_date < CURRENT_DATE AND status NOT IN ('COMPLETED', 'CLOSED')) as overdue,
+        COUNT(*) FILTER (WHERE (deadline_date - CURRENT_DATE) <= 7 AND status NOT IN ('COMPLETED', 'CLOSED')) as due_this_week,
+        COUNT(*) FILTER (WHERE status NOT IN ('COMPLETED', 'CLOSED')) as total_active
+       FROM sars_correspondence
+       WHERE tenant_id = $1 AND is_archived = false`,
       [tenantId]
     );
 
-    // Get filing status summary
-    const filingStatus = await pool.query(
-      `SELECT 
-        (SELECT COUNT(*) FROM sars.tax_returns WHERE tenant_id = $1 AND tax_year = $2) as tax_returns,
-        (SELECT COUNT(*) FROM sars.vat_returns WHERE tenant_id = $1 AND EXTRACT(YEAR FROM period_end) = $2) as vat_returns,
-        (SELECT COUNT(*) FROM sars.paye_submissions WHERE tenant_id = $1 AND tax_year = $2) as paye_submissions`,
-      [tenantId, currentYear]
+    // Get submission statistics
+    const submissionStats = await pool.query(
+      `SELECT
+        COUNT(*) FILTER (WHERE submission_type = 'EMP201' AND status = 'PENDING') as emp201_pending,
+        COUNT(*) FILTER (WHERE submission_type = 'EMP501' AND status = 'PENDING') as emp501_due,
+        COUNT(*) FILTER (WHERE submission_type = 'VAT201' AND status = 'PENDING') as vat201_pending,
+        COUNT(*) FILTER (WHERE submission_type = 'IT14' AND status = 'PENDING') as it14_pending
+       FROM sars_submission_history
+       WHERE tenant_id = $1`,
+      [tenantId]
     );
+
+    // Get upcoming deadlines
+    const upcomingDeadlines = await pool.query(
+      `SELECT 
+        deadline_type as type,
+        description,
+        frequency,
+        due_day_of_month,
+        CASE 
+          WHEN frequency = 'MONTHLY' AND due_day_of_month IS NOT NULL THEN
+            CASE 
+              WHEN EXTRACT(DAY FROM CURRENT_DATE) > due_day_of_month THEN
+                make_date(
+                  EXTRACT(YEAR FROM CURRENT_DATE + interval '1 month')::int,
+                  EXTRACT(MONTH FROM CURRENT_DATE + interval '1 month')::int,
+                  due_day_of_month
+                )
+              ELSE
+                make_date(
+                  EXTRACT(YEAR FROM CURRENT_DATE)::int,
+                  EXTRACT(MONTH FROM CURRENT_DATE)::int,
+                  due_day_of_month
+                )
+            END
+          ELSE NULL
+        END as next_due_date
+       FROM sars_deadline_calendar
+       WHERE is_active = true
+       ORDER BY next_due_date NULLS LAST
+       LIMIT 10`
+    );
+
+    const correspondence = correspondenceStats.rows[0] || {};
+    const submissions = submissionStats.rows[0] || {};
 
     res.json({
       success: true,
-      dashboard: {
-        upcomingDeadlines: upcomingDeadlines.rows,
-        filingStatus: filingStatus.rows[0]
+      data: {
+        correspondence: {
+          critical: parseInt(correspondence.critical) || 0,
+          high: parseInt(correspondence.high) || 0,
+          medium: parseInt(correspondence.medium) || 0,
+          low: parseInt(correspondence.low) || 0,
+          overdue: parseInt(correspondence.overdue) || 0,
+          due_this_week: parseInt(correspondence.due_this_week) || 0,
+          total_active: parseInt(correspondence.total_active) || 0
+        },
+        tax_submissions: {
+          emp201_pending: parseInt(submissions.emp201_pending) || 0,
+          emp501_due: parseInt(submissions.emp501_due) || 0,
+          vat201_pending: parseInt(submissions.vat201_pending) || 0,
+          it14_pending: parseInt(submissions.it14_pending) || 0
+        },
+        client_compliance: {
+          total_clients: 1,
+          fully_compliant: 1,
+          at_risk: 0,
+          non_compliant: 0
+        },
+        upcoming_deadlines: upcomingDeadlines.rows.map(d => ({
+          type: d.deadline_type,
+          description: d.description,
+          due_date: d.next_due_date,
+          days_remaining: d.next_due_date ? 
+            Math.ceil((new Date(d.next_due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null,
+          client_count: 1
+        }))
       }
     });
   } catch (error: any) {
     if (error.message === 'Tenant ID not found') {
       return res.status(401).json({ success: false, message: 'Unauthorized - tenant not found' });
     }
+    console.error('Error fetching SARS dashboard:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch dashboard', error: error.message });
   }
 };
