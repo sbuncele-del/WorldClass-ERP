@@ -683,6 +683,45 @@ app.post('/api/migrate/:module', async (req, res) => {
         result = `Chart of Accounts seeded successfully. Total accounts: ${countResult.rows[0].count}`;
         break;
         
+      case 'recalculate-gl-balances':
+        // Reset and recalculate account balances from journal entries
+        // Step 1: Reset all balances to zero
+        await pool.query(`
+          UPDATE chart_of_accounts 
+          SET current_balance = 0, ytd_debit = 0, ytd_credit = 0
+          WHERE tenant_id = $1
+        `, [req.body?.tenantId || 'd0a49212-96f5-46c7-9d69-fec0f235a90c']);
+        
+        // Step 2: Recalculate from journal entry lines
+        await pool.query(`
+          WITH account_totals AS (
+            SELECT 
+              jel.account_code,
+              SUM(jel.debit_amount) as total_debits,
+              SUM(jel.credit_amount) as total_credits
+            FROM journal_entry_lines jel
+            JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id
+            WHERE je.status = 'POSTED' 
+              AND je.tenant_id = $1
+            GROUP BY jel.account_code
+          )
+          UPDATE chart_of_accounts coa
+          SET 
+            ytd_debit = COALESCE(at.total_debits, 0),
+            ytd_credit = COALESCE(at.total_credits, 0),
+            current_balance = CASE 
+              WHEN coa.normal_balance = 'DEBIT' 
+                THEN COALESCE(at.total_debits, 0) - COALESCE(at.total_credits, 0)
+              ELSE COALESCE(at.total_credits, 0) - COALESCE(at.total_debits, 0)
+            END
+          FROM account_totals at
+          WHERE coa.code = at.account_code
+            AND coa.tenant_id = $1
+        `, [req.body?.tenantId || 'd0a49212-96f5-46c7-9d69-fec0f235a90c']);
+        
+        result = 'GL account balances recalculated successfully from journal entries';
+        break;
+        
       default:
         return res.status(400).json({ success: false, error: `Unknown module: ${module}` });
     }
