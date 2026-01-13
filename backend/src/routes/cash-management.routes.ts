@@ -5,6 +5,7 @@
  */
 
 import express from 'express';
+import pool from '../config/database';
 import * as cashManagementController from '../modules/cash-management/controllers/cash-management.controller';
 import * as cashManagementWorkspaceController from '../modules/cash-management/controllers/cash-management.workspace.controller';
 import * as multiLineMatchingController from '../modules/cash-management/controllers/multi-line-matching.controller';
@@ -26,15 +27,13 @@ router.get('/cash-position', async (req: any, res: any) => {
     if (!tenantId) {
       return res.status(401).json({ success: false, message: 'Tenant context required' });
     }
-    // Import query function
-    const { query } = require('../db');
-    const result = await query(
+    const result = await pool.query(
       `SELECT 
         COUNT(*) as total_accounts,
         COALESCE(SUM(current_balance), 0) as total_balance,
         COALESCE(SUM(CASE WHEN is_active = true THEN current_balance ELSE 0 END), 0) as active_balance,
         COUNT(CASE WHEN is_active = true THEN 1 END) as active_accounts
-      FROM bank_accounts WHERE tenant_id = $1`,
+      FROM cash_bank_accounts WHERE tenant_id = $1`,
       [tenantId]
     );
     res.json({ success: true, data: result.rows[0] || { total_accounts: 0, total_balance: 0 } });
@@ -74,6 +73,17 @@ router.post('/statements/parse-csv', cashManagementController.parseCSVPreview);
 // STATEMENT LINES
 // ============================================================
 router.get('/statement-lines', cashManagementController.getStatementLines);
+router.post('/statement-lines/:lineId/allocate', cashManagementController.allocateLine);
+
+// ============================================================
+// GL INTEGRATION
+// ============================================================
+router.get('/categories', cashManagementController.getCategories);
+router.get('/trial-balance', cashManagementController.getTrialBalance);
+router.get('/journal-entries', cashManagementController.getCashJournalEntries);
+router.get('/chart-of-accounts', cashManagementController.getChartOfAccounts);
+router.post('/gl/post-unposted', cashManagementController.postUnpostedToGL);
+router.post('/transactions/:transactionId/post-to-gl', cashManagementController.repostTransactionToGL);
 
 // ============================================================
 // RECONCILIATION RULES

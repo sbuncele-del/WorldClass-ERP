@@ -472,14 +472,15 @@ export interface ReconciliationWorkspaceData {
   statement: BankStatement;
   statement_lines: BankStatementLine[];
   unmatched_lines: BankStatementLine[];
-  gl_transactions: any[]; // Journal entry lines for the period
+  gl_transactions: any[]; // Cash transactions for the period
   suggested_matches: SuggestedMatch[];
   statistics: ReconciliationStatistics;
 }
 
 export interface SuggestedMatch {
   statement_line: BankStatementLine;
-  journal_entry: any;
+  transaction?: any;        // Cash transaction (new matching)
+  journal_entry?: any;      // Journal entry (legacy - optional)
   confidence_score: number;
   rule_name?: string;
   match_reasons: string[];

@@ -393,22 +393,28 @@ export class MultiLineMatchingService {
   ): Promise<void> {
     const difference = Math.abs(combination.difference);
 
-    // Get bank charges account code (configurable)
-    const settingsResult = await client.query(
-      `SELECT setting_value FROM tenant_settings
-       WHERE tenant_id = $1 AND setting_key = 'bank_charges_account_code'`,
-      [tenantId]
-    );
-
-    const bankChargesAccount = settingsResult.rows[0]?.setting_value || '5100'; // Default: Bank Charges
+    // Get bank charges account code (configurable) - with fallback if table doesn't exist
+    let bankChargesAccount = '5100'; // Default: Bank Charges
+    try {
+      const settingsResult = await client.query(
+        `SELECT setting_value FROM tenant_settings
+         WHERE tenant_id = $1 AND setting_key = 'bank_charges_account_code'`,
+        [tenantId]
+      );
+      if (settingsResult.rows[0]?.setting_value) {
+        bankChargesAccount = settingsResult.rows[0].setting_value;
+      }
+    } catch (e) {
+      // Table doesn't exist, use default
+    }
 
     // Get bank account GL code
     const bankAccountResult = await client.query(
       `SELECT ba.gl_account_code
-       FROM bank_accounts ba
-       JOIN bank_statements bs ON ba.id = bs.bank_account_id
-       JOIN bank_statement_lines bsl ON bs.id = bsl.statement_id
-       WHERE bsl.id = $1`,
+       FROM cash_bank_accounts ba
+       JOIN cash_bank_statements bs ON ba.account_id = bs.account_id
+       JOIN cash_bank_statement_lines bsl ON bs.statement_id = bsl.statement_id
+       WHERE bsl.line_id = $1`,
       [combination.bankLines[0].id]
     );
 

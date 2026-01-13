@@ -121,23 +121,23 @@ async function getCashPosition(tenantId: string) {
  * Get pending payments/receipts
  */
 async function getPendingPayments(tenantId: string) {
-  const result = await query(
-    `
-    SELECT 
-      COUNT(*) as pending_count,
-      SUM(amount) as total_amount
-    FROM (
-      SELECT amount FROM bank_statement_lines
+  try {
+    // Only count unreconciled bank statement lines - journal_entries may not exist
+    const result = await query(
+      `
+      SELECT 
+        COUNT(*) as pending_count,
+        COALESCE(SUM(amount), 0) as total_amount
+      FROM bank_statement_lines
       WHERE tenant_id = $1 AND reconciled = false
-      UNION ALL
-      SELECT total_debit as amount FROM journal_entries
-      WHERE tenant_id = $1 AND status = 'draft'
-    ) as pending_items
-    `,
-    [tenantId]
-  );
-
-  return result.rows[0] || { pending_count: 0, total_amount: 0 };
+      `,
+      [tenantId]
+    );
+    return result.rows[0] || { pending_count: 0, total_amount: 0 };
+  } catch (error) {
+    console.error('Error in getPendingPayments:', error);
+    return { pending_count: 0, total_amount: 0 };
+  }
 }
 
 /**

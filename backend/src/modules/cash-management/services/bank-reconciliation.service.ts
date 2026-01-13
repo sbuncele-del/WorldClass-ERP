@@ -435,14 +435,14 @@ export class BankReconciliationService {
       const statementResult = await client.query(statementQuery, statementValues);
       const statement = statementResult.rows[0];
       
-      // Insert lines
+      // Insert lines (tenant_id is on statement, not lines)
       for (const line of lines) {
         const lineQuery = `
           INSERT INTO cash_bank_statement_lines (
             statement_id, line_number, transaction_date, value_date,
             debit_amount, credit_amount, balance,
-            description, reference, is_matched, tenant_id
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            description, reference, is_matched
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         `;
         
         const lineValues = [
@@ -455,8 +455,7 @@ export class BankReconciliationService {
           line.balance || null,
           line.description || '',
           line.reference_number || null,
-          false,
-          tenantId
+          false
         ];
         
         await client.query(lineQuery, lineValues);

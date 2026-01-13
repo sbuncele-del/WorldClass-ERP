@@ -212,9 +212,9 @@ export async function getMultiLineMatchGroups(req: TenantRequest, res: Response)
       SELECT 
         mlmg.*,
         u.email as matched_by_email,
-        u.full_name as matched_by_name
+        COALESCE(u.first_name || ' ' || u.last_name, u.email) as matched_by_name
       FROM multi_line_match_groups mlmg
-      JOIN users u ON mlmg.matched_by = u.id
+      LEFT JOIN users u ON mlmg.matched_by = u.id
       WHERE mlmg.tenant_id = $1
     `;
 

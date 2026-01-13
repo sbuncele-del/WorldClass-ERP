@@ -560,3 +560,272 @@ export const findPotentialDuplicates = async (req: TenantRequest, res: Response)
   }
 };
 
+/**
+ * Allocate (Quick Match to New Transaction)
+ * Creates a new cash transaction from a bank statement line
+ */
+export const allocateLine = async (req: TenantRequest, res: Response) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    
+    const lineId = parseInt(req.params.lineId);
+    const { category, description, payee_payer, reference } = req.body;
+    const userId = req.user?.id;
+
+    const result = await matchingService.matchToNewTransaction(
+      lineId,
+      { category, description, payee_payer, reference },
+      userId,
+      tenantId
+    );
+
+    res.json({
+      success: true,
+      data: result,
+      message: `Line ${lineId} allocated to new transaction ${result.transaction.transaction_number}`
+    });
+  } catch (error: any) {
+    console.error('Error allocating line:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get Available Categories
+ * Returns list of categories with their GL account mappings
+ */
+export const getCategories = async (_req: TenantRequest, res: Response) => {
+  try {
+    const categories = matchingService.getAvailableCategories();
+    
+    res.json({
+      success: true,
+      data: categories,
+      total: categories.length
+    });
+  } catch (error: any) {
+    console.error('Error getting categories:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get Trial Balance
+ * Returns trial balance from GL
+ */
+export const getTrialBalance = async (req: TenantRequest, res: Response) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    
+    const glService = (await import('../services/gl-integration.service')).default;
+    const trialBalance = await glService.getTrialBalance(tenantId);
+    
+    // Calculate totals
+    const totalDebit = trialBalance.reduce((sum, acc) => sum + parseFloat(acc.debit_balance || 0), 0);
+    const totalCredit = trialBalance.reduce((sum, acc) => sum + parseFloat(acc.credit_balance || 0), 0);
+    
+    res.json({
+      success: true,
+      data: {
+        accounts: trialBalance,
+        totalDebit,
+        totalCredit,
+        balanced: Math.abs(totalDebit - totalCredit) < 0.01
+      }
+    });
+  } catch (error: any) {
+    console.error('Error getting trial balance:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get Journal Entries from Cash Management
+ * Returns journal entries from GL related to bank transactions
+ */
+export const getCashJournalEntries = async (req: TenantRequest, res: Response) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    
+    const { startDate, endDate, limit, offset } = req.query;
+    
+    const glService = (await import('../services/gl-integration.service')).default;
+    const result = await glService.getJournalEntries(tenantId, {
+      startDate: startDate as string,
+      endDate: endDate as string,
+      sourceType: 'BANK_RECON', // Filter to bank transactions only
+      status: 'POSTED',
+      limit: limit ? parseInt(limit as string) : 50,
+      offset: offset ? parseInt(offset as string) : 0
+    });
+    
+    res.json({
+      success: true,
+      data: result.entries,
+      total: result.total
+    });
+  } catch (error: any) {
+    console.error('Error getting journal entries:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Post unposted transactions to GL
+ * Backfills GL entries for transactions created before GL integration
+ */
+export const postUnpostedToGL = async (req: TenantRequest, res: Response) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    
+    const userId = req.user?.id || '00000000-0000-0000-0000-000000000000';
+    
+    const glService = (await import('../services/gl-integration.service')).default;
+    const result = await glService.postUnpostedTransactionsToGL(tenantId, userId);
+    
+    res.json({
+      success: true,
+      data: result,
+      message: `Posted ${result.posted} transactions to GL. ${result.skipped} skipped.`
+    });
+  } catch (error: any) {
+    console.error('Error posting to GL:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Repost a single transaction to GL
+ */
+export const repostTransactionToGL = async (req: TenantRequest, res: Response) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    
+    const userId = req.user?.id || '00000000-0000-0000-0000-000000000000';
+    const { transactionId } = req.params;
+    const { category } = req.body;
+    
+    if (!category) {
+      return res.status(400).json({ success: false, error: 'Category is required' });
+    }
+    
+    const glService = (await import('../services/gl-integration.service')).default;
+    const result = await glService.repostTransactionToGL(
+      parseInt(transactionId),
+      category,
+      tenantId,
+      userId
+    );
+    
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        journalEntryId: result.journalEntryId,
+        journalNumber: result.journalNumber
+      },
+      message: `Transaction posted to GL: ${result.journalNumber}`
+    });
+  } catch (error: any) {
+    console.error('Error reposting to GL:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get chart of accounts
+ */
+export const getChartOfAccounts = async (req: TenantRequest, res: Response) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    
+    const { type, active_only } = req.query;
+    
+    let query = `
+      SELECT 
+        account_id,
+        code,
+        name,
+        description,
+        account_type,
+        account_subtype,
+        normal_balance,
+        current_balance,
+        ytd_debit,
+        ytd_credit,
+        is_active,
+        is_header,
+        account_level
+      FROM chart_of_accounts
+      WHERE tenant_id = $1
+    `;
+    const params: any[] = [tenantId];
+    let paramIndex = 2;
+    
+    if (type) {
+      query += ` AND account_type = $${paramIndex}`;
+      params.push(type);
+      paramIndex++;
+    }
+    
+    if (active_only !== 'false') {
+      query += ` AND is_active = true`;
+    }
+    
+    query += ` ORDER BY code`;
+    
+    const pool = (await import('../../../config/database')).default;
+    const result = await pool.query(query, params);
+    
+    res.json({
+      success: true,
+      data: result.rows,
+      count: result.rows.length
+    });
+  } catch (error: any) {
+    console.error('Error getting chart of accounts:', error);
+  }
+};
+

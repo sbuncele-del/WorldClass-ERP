@@ -342,31 +342,40 @@ export class PartialReconciliationService {
     percentageTolerance: number;
     maxDifference: number;
   }> {
-    const result = await this.pool.query(
-      `SELECT 
-        COALESCE(amount_tolerance, 0.01) as amount_tolerance,
-        COALESCE(percentage_tolerance, 0.5) as percentage_tolerance,
-        COALESCE(max_difference, 100.00) as max_difference
-       FROM tenant_settings 
-       WHERE tenant_id = $1
-       LIMIT 1`,
-      [tenantId]
-    );
+    try {
+      const result = await this.pool.query(
+        `SELECT 
+          COALESCE(amount_tolerance, 0.01) as amount_tolerance,
+          COALESCE(percentage_tolerance, 0.5) as percentage_tolerance,
+          COALESCE(max_difference, 100.00) as max_difference
+         FROM tenant_settings 
+         WHERE tenant_id = $1
+         LIMIT 1`,
+        [tenantId]
+      );
 
-    // If no settings found, return defaults
-    if (result.rows.length === 0) {
+      // If no settings found, return defaults
+      if (result.rows.length === 0) {
+        return {
+          amountTolerance: 0.01,
+          percentageTolerance: 0.5,
+          maxDifference: 100.00
+        };
+      }
+
+      return {
+        amountTolerance: parseFloat(result.rows[0].amount_tolerance),
+        percentageTolerance: parseFloat(result.rows[0].percentage_tolerance),
+        maxDifference: parseFloat(result.rows[0].max_difference)
+      };
+    } catch (error) {
+      // Table doesn't exist, return defaults
       return {
         amountTolerance: 0.01,
         percentageTolerance: 0.5,
         maxDifference: 100.00
       };
     }
-
-    return {
-      amountTolerance: parseFloat(result.rows[0].amount_tolerance),
-      percentageTolerance: parseFloat(result.rows[0].percentage_tolerance),
-      maxDifference: parseFloat(result.rows[0].max_difference)
-    };
   }
 
   /**
