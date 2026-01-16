@@ -1,8 +1,8 @@
 # Cash Management GL Integration - Complete Status Report
 
 **Date:** January 13, 2026  
-**Current Version:** v31 (Docker), Task Definition v34+ (ECS)  
-**Status:** ✅ WORKING - 3 Journal Entries Posted Successfully  
+**Current Version:** v32 (Docker), Task Definition v36 (ECS)  
+**Status:** ✅ FULLY WORKING - Trial Balance Balanced, GL Integration Complete  
 
 ---
 
@@ -22,7 +22,7 @@ Make the Cash Management module "sellable" by adding **full General Ledger (GL) 
 
 | Item | Status | Details |
 |------|--------|---------|
-| GL Integration Service | ✅ Done | `gl-integration.service.ts` - 700+ lines |
+| GL Integration Service | ✅ Done | `gl-integration.service.ts` - 750+ lines |
 | Category-to-GL Mapping | ✅ Done | 30+ categories mapped to SA standard accounts |
 | Chart of Accounts Table | ✅ Created | 81 accounts seeded (SA standard COA) |
 | Journal Entries Table | ✅ Created | Stores journal headers |
@@ -31,22 +31,32 @@ Make the Cash Management module "sellable" by adding **full General Ledger (GL) 
 | Categories API | ✅ Working | `GET /api/cash-management/categories` |
 | Trial Balance API | ✅ Working | `GET /api/cash-management/trial-balance` |
 | Journal Entries API | ✅ Working | `GET /api/cash-management/journal-entries` |
-| Backfill Existing Transactions | ✅ Working | `POST /api/cash-management/backfill-gl` |
+| Chart of Accounts API | ✅ Working | `GET /api/cash-management/chart-of-accounts` |
+| Backfill Existing Transactions | ✅ Working | `POST /api/cash-management/gl/post-unposted` |
+| Trial Balance Calculation | ✅ Fixed | Now properly balanced (debits = credits) |
+| Account Balance Updates | ✅ Fixed | `current_balance` calculates net correctly |
+| Recalculate Migration | ✅ Added | `POST /api/migrate/recalculate-gl-balances` |
 | **3 Journal Entries Posted** | ✅ SUCCESS | JV-202501-00001, 00002, 00003 |
+| **Trial Balance Balanced** | ✅ SUCCESS | R25,000 debits = R25,000 credits |
 
-### 🔧 IN PROGRESS / NEEDS FIX
+### 🎯 READY FOR PRODUCTION
 
-| Item | Status | Issue |
-|------|--------|-------|
-| Trial Balance Calculation | ⚠️ Needs Fix | Shows `balanced: false` - debit/credit calculation logic wrong |
-| Account Balance Updates | ⚠️ Needs Fix | `current_balance` not calculating net correctly |
+**All requirements met:**
+- ✅ Full double-entry accounting
+- ✅ 30+ category mappings to GL accounts
+- ✅ Automatic journal entry creation
+- ✅ Trial balance reporting
+- ✅ Chart of accounts with 81 SA standard accounts
+- ✅ Backfill capability for existing transactions
+- ✅ Multi-tenant support
+- ✅ Audit trail (journal entries, lines)
 
 ---
 
-## 🐛 CURRENT BUG: TRIAL BALANCE NOT BALANCING
+## 🐛 RESOLVED: TRIAL BALANCE BALANCING ISSUE
 
-### The Problem
-After posting 3 journal entries, trial balance shows:
+### The Problem (FIXED)
+After posting 3 journal entries, trial balance showed:
 ```json
 {
   "totalDebit": 34350.50,
@@ -55,38 +65,41 @@ After posting 3 journal entries, trial balance shows:
 }
 ```
 
-### Expected Behavior
-Trial balance should ALWAYS balance (debits = credits) because every journal entry has equal debits and credits.
-
 ### Root Cause
-The `updateAccountBalances` function in `gl-integration.service.ts` has incorrect logic:
-- It adds to `current_balance` for both debit and credit entries
+The `updateAccountBalances` function had incorrect logic:
+- It added to `current_balance` for both debit and credit entries
 - Should calculate: `current_balance = ytd_debit - ytd_credit` (for debit-normal accounts)
 
-### The Fix Required
-In `gl-integration.service.ts`, update the `updateAccountBalances` method:
+### The Fix Applied ✅
+1. Updated `updateAccountBalances` in `gl-integration.service.ts`:
+   - For debit entries: `current_balance = ytd_debit - ytd_credit` (for DEBIT-normal accounts)
+   - For credit entries: `current_balance = ytd_credit - ytd_debit` (for CREDIT-normal accounts)
 
-```typescript
-// For debit entries
-await pool.query(`
-  UPDATE chart_of_accounts 
-  SET ytd_debit = ytd_debit + $1,
-      current_balance = ytd_debit + $1 - ytd_credit,  -- FIX: Calculate net
-      updated_at = CURRENT_TIMESTAMP
-  WHERE code = $2
-`, [amount, accountCode]);
+2. Updated `getTrialBalance` query:
+   - Calculate debit_balance: `ytd_debit - ytd_credit` (if positive)
+   - Calculate credit_balance: `ytd_credit - ytd_debit` (if positive)
 
-// For credit entries
-await pool.query(`
-  UPDATE chart_of_accounts 
-  SET ytd_credit = ytd_credit + $1,
-      current_balance = ytd_debit - (ytd_credit + $1),  -- FIX: Calculate net
-      updated_at = CURRENT_TIMESTAMP
-  WHERE code = $2
-`, [amount, accountCode]);
+3. Added `recalculate-gl-balances` migration:
+   - Resets all balances to zero
+   - Recalculates from journal entries
+   - Ensures consistency
+
+### Current Result ✅
+```json
+{
+  "totalDebit": 25000.00,
+  "totalCredit": 25000.00,
+  "balanced": true
+}
 ```
 
-Also fix the `getTrialBalance` query to calculate debit/credit columns based on net balance.
+**Accounts:**
+- Bank (1100): R15,649.50 debit (R25,000 in - R9,350.50 out)
+- Salary Income (4400): R25,000.00 credit
+- Rent Expense (6200): R8,500.00 debit
+- Utilities (6210): R850.50 debit
+
+**Total: R25,000 debits = R25,000 credits** ✅
 
 ---
 
@@ -110,7 +123,7 @@ aws ecr get-login-password --region af-south-1 | docker login --username AWS --p
 ```bash
 cd /workspaces/WorldClass-ERP/backend
 docker build --no-cache -t worldclass-erp-backend:vXX .
-# Replace XX with next version number (current: v31)
+# Replace XX with next version number (current: v32)
 ```
 
 ### Step 3: Tag and Push to ECR
@@ -232,6 +245,12 @@ curl -X POST "https://siyabusaerp.co.za/api/migrate/seed-chart-of-accounts" \
 # Add GL columns to cash_transactions
 curl -X POST "https://siyabusaerp.co.za/api/migrate/gl-integration" \
   -H "x-admin-secret: worldclass-migrate-2026"
+
+# Recalculate account balances from journal entries (use after fixing bugs)
+curl -X POST "https://siyabusaerp.co.za/api/migrate/recalculate-gl-balances" \
+  -H "x-admin-secret: worldclass-migrate-2026" \
+  -H "Content-Type: application/json" \
+  -d '{"tenantId":"d0a49212-96f5-46c7-9d69-fec0f235a90c"}'
 ```
 
 ---

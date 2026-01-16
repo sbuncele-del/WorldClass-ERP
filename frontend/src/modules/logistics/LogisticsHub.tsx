@@ -284,14 +284,63 @@ const LogisticsHub: React.FC = () => {
     try {
       const values = await driverForm.validateFields();
       setSubmitting(true);
-      await apiClient.post('/api/logistics/drivers', {
+      const response = await apiClient.post('/api/logistics/drivers', {
         first_name: values.firstName,
         last_name: values.lastName,
         license_number: values.licenseNumber || `LIC-${Date.now()}`,
         license_expiry_date: values.licenseExpiry?.format('YYYY-MM-DD'),
-        phone: values.phone
+        phone: values.phone,
+        send_app_invite: true
       });
-      message.success('Driver added successfully');
+      
+      // Show success with access code info
+      const { driver, accessCode, smsSent } = response.data;
+      
+      Modal.success({
+        title: '✅ Driver Added Successfully!',
+        width: 480,
+        content: (
+          <div style={{ marginTop: 16 }}>
+            <p><strong>{values.firstName} {values.lastName}</strong> has been added to the system.</p>
+            
+            <div style={{ 
+              background: '#f0f9ff', 
+              border: '1px solid #0ea5e9', 
+              borderRadius: 8, 
+              padding: 16, 
+              marginTop: 16 
+            }}>
+              <p style={{ margin: 0, fontWeight: 600, color: '#0369a1' }}>
+                📱 Driver App Access Code
+              </p>
+              <p style={{ 
+                fontSize: 28, 
+                fontWeight: 700, 
+                letterSpacing: 4, 
+                margin: '8px 0',
+                fontFamily: 'monospace',
+                color: '#0c4a6e'
+              }}>
+                {accessCode || driver?.access_code || 'N/A'}
+              </p>
+              {smsSent ? (
+                <p style={{ margin: 0, color: '#059669', fontSize: 13 }}>
+                  ✓ SMS sent to {values.phone}
+                </p>
+              ) : (
+                <p style={{ margin: 0, color: '#d97706', fontSize: 13 }}>
+                  ⚠️ SMS not sent - share code manually
+                </p>
+              )}
+            </div>
+            
+            <p style={{ marginTop: 16, color: '#64748b', fontSize: 13 }}>
+              Driver can download the app at <strong>siyabusaerp.co.za/driver</strong>
+            </p>
+          </div>
+        ),
+      });
+      
       setDriverModalVisible(false);
       driverForm.resetFields();
       setEditingDriver(null);

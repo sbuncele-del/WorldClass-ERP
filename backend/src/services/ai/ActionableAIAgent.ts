@@ -7,11 +7,45 @@
  * 3. Execute real business actions (create invoices, record expenses, etc.)
  * 4. Maintain conversation context
  * 
- * NOT just a chatbot - an actual business automation agent.
+ * Supports Multiple AI Providers:
+ * - Groq (FREE): GROQ_API_KEY - Llama 3.1 70B
+ * - OpenAI: OPENAI_API_KEY - GPT-4
  */
 
 import OpenAI from 'openai';
 import pool from '../../config/database';
+
+// AI Provider initialization
+type AIProvider = 'groq' | 'openai';
+
+interface AIProviderConfig {
+  provider: AIProvider;
+  client: OpenAI;
+  model: string;
+}
+
+function initializeProvider(): AIProviderConfig | null {
+  if (process.env.GROQ_API_KEY) {
+    return {
+      provider: 'groq',
+      client: new OpenAI({
+        apiKey: process.env.GROQ_API_KEY,
+        baseURL: 'https://api.groq.com/openai/v1'
+      }),
+      model: 'llama-3.3-70b-versatile'
+    };
+  }
+  
+  if (process.env.OPENAI_API_KEY) {
+    return {
+      provider: 'openai',
+      client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY }),
+      model: 'gpt-4'
+    };
+  }
+  
+  return null;
+}
 
 // ============================================
 // TYPES & INTERFACES
@@ -389,12 +423,15 @@ const ACTION_SCHEMAS: Record<AgentActionType, {
 // ============================================
 
 class ActionableAIAgent {
-  private openai: OpenAI | null = null;
+  private aiProvider: AIProviderConfig | null = null;
   private conversations: Map<string, ConversationContext> = new Map();
 
   constructor() {
-    if (process.env.OPENAI_API_KEY) {
-      this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    this.aiProvider = initializeProvider();
+    if (this.aiProvider) {
+      console.log(`✅ ActionableAIAgent initialized with ${this.aiProvider.provider} (${this.aiProvider.model})`);
+    } else {
+      console.warn('⚠️ ActionableAIAgent: No AI provider configured. Set GROQ_API_KEY (free) or OPENAI_API_KEY');
     }
   }
 
@@ -554,11 +591,11 @@ class ActionableAIAgent {
       return { actionType: 'create_purchase_order', extractedData, confidence: 0.85 };
     }
 
-    // Use OpenAI for complex queries if available
-    if (this.openai) {
+    // Use AI provider for complex queries if available
+    if (this.aiProvider) {
       try {
-        const response = await this.openai.chat.completions.create({
-          model: 'gpt-4o-mini',
+        const completionOptions: any = {
+          model: this.aiProvider.model,
           messages: [
             {
               role: 'system',
@@ -579,16 +616,33 @@ class ActionableAIAgent {
 
 Also extract any data you can find (amounts, names, dates, etc).
 
-Respond in JSON: {"action": "action_type", "data": {...extracted data...}, "confidence": 0.0-1.0}`
+Respond in JSON only: {"action": "action_type", "data": {...extracted data...}, "confidence": 0.0-1.0}`
             },
             { role: 'user', content: message }
           ],
-          response_format: { type: 'json_object' },
           max_tokens: 200,
           temperature: 0.3
-        });
+        };
 
-        const result = JSON.parse(response.choices[0].message.content || '{}');
+        // Only OpenAI supports response_format
+        if (this.aiProvider.provider === 'openai') {
+          completionOptions.response_format = { type: 'json_object' };
+        }
+
+        const response = await this.aiProvider.client.chat.completions.create(completionOptions);
+
+        const responseContent = response.choices[0].message.content || '{}';
+        // Try to parse JSON from response (Groq might include extra text)
+        let result: any = {};
+        try {
+          const jsonMatch = responseContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            result = JSON.parse(jsonMatch[0]);
+          }
+        } catch {
+          result = {};
+        }
+        
         if (result.action && result.action !== 'none') {
           return {
             actionType: result.action as AgentActionType,
@@ -597,7 +651,7 @@ Respond in JSON: {"action": "action_type", "data": {...extracted data...}, "conf
           };
         }
       } catch (error) {
-        console.error('OpenAI intent detection failed:', error);
+        console.error('AI intent detection failed:', error);
       }
     }
 
@@ -812,14 +866,14 @@ Respond in JSON: {"action": "action_type", "data": {...extracted data...}, "conf
   ): Promise<AgentMessage> {
     let content = '';
 
-    if (this.openai) {
+    if (this.aiProvider) {
       try {
-        const response = await this.openai.chat.completions.create({
-          model: 'gpt-4o-mini',
+        const response = await this.aiProvider.client.chat.completions.create({
+          model: this.aiProvider.model,
           messages: [
             {
               role: 'system',
-              content: `You are AetherOS AI, a helpful business assistant for a South African ERP system. You can help users with:
+              content: `You are SiyaBusa AI, a helpful business assistant for a South African ERP system. You can help users with:
 - Creating invoices, quotes, and purchase orders
 - Recording expenses and payments
 - Generating financial reports
@@ -841,7 +895,7 @@ Use South African Rand (R) for currency. Keep responses under 150 words.`
 
         content = response.choices[0].message.content || '';
       } catch (error) {
-        console.error('OpenAI general query failed:', error);
+        console.error('AI general query failed:', error);
         content = this.getFallbackResponse(message);
       }
     } else {

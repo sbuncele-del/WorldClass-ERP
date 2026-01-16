@@ -24,17 +24,26 @@ const CreateTrip: React.FC = () => {
 
   const loadFormData = async () => {
     try {
-      const [driversRes, vehiclesRes, customersRes] = await Promise.all([
-        driversAPI.getDrivers({ status: 'ACTIVE' }),
-        vehiclesAPI.getVehicles({ status: 'ACTIVE' }),
-        tripsAPI.getCustomers ? tripsAPI.getCustomers() : Promise.resolve({ customers: [] })
-      ]);
-      setDrivers(driversRes.drivers || []);
-      setVehicles(vehiclesRes.vehicles || []);
-      setCustomers(customersRes.customers || []);
+      // Use the optimized form-data endpoint that fetches all data in one call
+      const response = await tripsAPI.getFormData();
+      if (response.data) {
+        setCustomers(response.data.customers || []);
+        setDrivers(response.data.drivers || []);
+        setVehicles(response.data.vehicles || []);
+      } else {
+        // Fallback to individual calls if form-data endpoint fails
+        const [driversRes, vehiclesRes, customersRes] = await Promise.all([
+          driversAPI.getDrivers({ status: 'ACTIVE' }),
+          vehiclesAPI.getVehicles({ status: 'ACTIVE' }),
+          tripsAPI.getCustomers()
+        ]);
+        setDrivers(driversRes.drivers || []);
+        setVehicles(vehiclesRes.vehicles || []);
+        setCustomers(customersRes.customers || []);
+      }
     } catch (error) {
       console.error('Error loading form data:', error);
-      message.warning('Could not load drivers/vehicles. Using demo data.');
+      message.warning('Could not load form data. Please try again.');
     } finally {
       setLoadingData(false);
     }
@@ -106,11 +115,20 @@ const CreateTrip: React.FC = () => {
                   label="Customer"
                   rules={[{ required: true, message: 'Please select a customer' }]}
                 >
-                  <Select placeholder="Select customer" size="large" showSearch>
+                  <Select 
+                    placeholder="Select customer" 
+                    size="large" 
+                    showSearch
+                    filterOption={(input, option) =>
+                      (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                    }
+                  >
                     {customers.length > 0 ? customers.map((c: any) => (
-                      <Option key={c.id || c.name} value={c.name || c}>{c.name || c}</Option>
+                      <Option key={c.id} value={c.name}>
+                        {c.name}{c.city ? ` (${c.city})` : ''}
+                      </Option>
                     )) : (
-                      <Option value="">No customers available</Option>
+                      <Option value="" disabled>No customers available - add in Sales module</Option>
                     )}
                   </Select>
                 </Form.Item>
@@ -122,13 +140,20 @@ const CreateTrip: React.FC = () => {
                   label="Assign Driver"
                   rules={[{ required: true, message: 'Please select a driver' }]}
                 >
-                  <Select placeholder="Select driver" size="large" showSearch>
+                  <Select 
+                    placeholder="Select driver" 
+                    size="large" 
+                    showSearch
+                    filterOption={(input, option) =>
+                      (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                    }
+                  >
                     {drivers.length > 0 ? drivers.map(d => (
                       <Option key={d.driver_id} value={`${d.first_name} ${d.last_name}`}>
-                        {d.first_name} {d.last_name}
+                        {d.first_name} {d.last_name}{d.license_number ? ` (${d.license_number})` : ''}
                       </Option>
                     )) : (
-                      <Option value="">No drivers available</Option>
+                      <Option value="" disabled>No drivers available - add in Driver Management</Option>
                     )}
                   </Select>
                 </Form.Item>
@@ -160,17 +185,20 @@ const CreateTrip: React.FC = () => {
                   label="Vehicle"
                   rules={[{ required: true, message: 'Please select a vehicle' }]}
                 >
-                  <Select placeholder="Select vehicle" size="large" showSearch>
+                  <Select 
+                    placeholder="Select vehicle" 
+                    size="large" 
+                    showSearch
+                    filterOption={(input, option) =>
+                      (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                    }
+                  >
                     {vehicles.length > 0 ? vehicles.map(v => (
-                      <Option key={v.vehicle_id} value={v.vehicle_registration}>
-                        {v.vehicle_registration} - {v.make} {v.model}
+                      <Option key={v.vehicle_id} value={v.registration_number}>
+                        {v.registration_number} - {v.make} {v.model} ({v.vehicle_type})
                       </Option>
                     )) : (
-                      <>
-                        <Option value="ABC 123 GP">ABC 123 GP - Toyota Hilux</Option>
-                        <Option value="DEF 456 GP">DEF 456 GP - Isuzu NPR</Option>
-                        <Option value="GHI 789 GP">GHI 789 GP - Mercedes Actros</Option>
-                      </>
+                      <Option value="" disabled>No vehicles available - add in Fleet Management</Option>
                     )}
                   </Select>
                 </Form.Item>

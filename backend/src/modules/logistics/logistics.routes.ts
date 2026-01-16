@@ -81,6 +81,11 @@ router.delete('/drivers/:id',
   requirePermission(Permission.DRIVERS_DELETE, Permission.ADMIN_FULL_ACCESS),
   logisticsController.deleteDriver
 );
+// Resend app invite (regenerate access code + SMS)
+router.post('/drivers/:id/resend-app-invite', 
+  requirePermission(Permission.DRIVERS_UPDATE, Permission.ADMIN_FULL_ACCESS),
+  logisticsController.resendDriverAppInvite
+);
 
 // ============================================================================
 // DOCUMENT PROCESSING (OCR)

@@ -683,6 +683,317 @@ app.post('/api/migrate/:module', async (req, res) => {
         result = `Chart of Accounts seeded successfully. Total accounts: ${countResult.rows[0].count}`;
         break;
         
+      case 'logistics':
+        // Create logistics schema and all tables
+        await pool.query(`
+          -- Create logistics schema
+          CREATE SCHEMA IF NOT EXISTS logistics;
+
+          -- Vehicles table
+          CREATE TABLE IF NOT EXISTS logistics.vehicles (
+              vehicle_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              tenant_id UUID NOT NULL,
+              vehicle_registration VARCHAR(20) NOT NULL,
+              make VARCHAR(100),
+              model VARCHAR(100),
+              vehicle_type VARCHAR(50),
+              year INTEGER,
+              vin VARCHAR(50),
+              color VARCHAR(50),
+              fuel_type VARCHAR(20) DEFAULT 'DIESEL',
+              fuel_capacity DECIMAL(10,2),
+              payload_capacity_kg DECIMAL(10,2),
+              volume_capacity_m3 DECIMAL(10,2),
+              status VARCHAR(20) DEFAULT 'ACTIVE',
+              current_odometer INTEGER,
+              current_driver_id UUID,
+              current_location VARCHAR(255),
+              last_service_date DATE,
+              next_service_date DATE,
+              license_expiry DATE,
+              insurance_expiry DATE,
+              gps_device_id VARCHAR(100),
+              created_by UUID,
+              created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+              is_active BOOLEAN DEFAULT true
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_logistics_vehicles_tenant ON logistics.vehicles(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_logistics_vehicles_status ON logistics.vehicles(tenant_id, status);
+          CREATE INDEX IF NOT EXISTS idx_logistics_vehicles_reg ON logistics.vehicles(vehicle_registration);
+
+          -- Drivers table
+          CREATE TABLE IF NOT EXISTS logistics.drivers (
+              driver_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              tenant_id UUID NOT NULL,
+              user_id UUID,
+              first_name VARCHAR(100) NOT NULL,
+              last_name VARCHAR(100) NOT NULL,
+              id_number VARCHAR(20),
+              phone VARCHAR(20),
+              email VARCHAR(255),
+              license_number VARCHAR(50),
+              license_type VARCHAR(20),
+              license_expiry DATE,
+              pdp_expiry DATE,
+              status VARCHAR(20) DEFAULT 'AVAILABLE',
+              rating DECIMAL(3,2) DEFAULT 5.00,
+              total_trips INTEGER DEFAULT 0,
+              total_km DECIMAL(12,2) DEFAULT 0,
+              hire_date DATE,
+              emergency_contact VARCHAR(100),
+              emergency_phone VARCHAR(20),
+              notes TEXT,
+              created_by UUID,
+              created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+              is_active BOOLEAN DEFAULT true,
+              -- Driver App Authentication columns
+              access_code VARCHAR(8),
+              access_code_generated_at TIMESTAMP,
+              access_code_used_at TIMESTAMP,
+              app_approved BOOLEAN DEFAULT false,
+              app_first_login_at TIMESTAMP,
+              app_last_login_at TIMESTAMP,
+              push_notification_token TEXT
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_logistics_drivers_tenant ON logistics.drivers(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_logistics_drivers_status ON logistics.drivers(tenant_id, status);
+          CREATE INDEX IF NOT EXISTS idx_logistics_drivers_user ON logistics.drivers(user_id);
+          CREATE INDEX IF NOT EXISTS idx_logistics_drivers_access_code ON logistics.drivers(access_code) WHERE access_code IS NOT NULL;
+          CREATE INDEX IF NOT EXISTS idx_logistics_drivers_phone ON logistics.drivers(phone, tenant_id);
+
+          -- Driver Sessions table for persistent mobile app login
+          CREATE TABLE IF NOT EXISTS logistics.driver_sessions (
+              session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              tenant_id UUID NOT NULL,
+              driver_id UUID NOT NULL REFERENCES logistics.drivers(driver_id) ON DELETE CASCADE,
+              token VARCHAR(255) NOT NULL UNIQUE,
+              device_info JSONB,
+              ip_address VARCHAR(45),
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              last_active_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              expires_at TIMESTAMP NOT NULL,
+              is_active BOOLEAN DEFAULT true
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_driver_sessions_token ON logistics.driver_sessions(token) WHERE is_active = true;
+          CREATE INDEX IF NOT EXISTS idx_driver_sessions_driver ON logistics.driver_sessions(driver_id, is_active);
+
+          -- Routes table
+          CREATE TABLE IF NOT EXISTS logistics.routes (
+              route_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              tenant_id UUID NOT NULL,
+              route_name VARCHAR(255) NOT NULL,
+              origin VARCHAR(255) NOT NULL,
+              destination VARCHAR(255) NOT NULL,
+              distance_km DECIMAL(10,2),
+              estimated_duration_hours DECIMAL(5,2),
+              route_type VARCHAR(50),
+              waypoints JSONB DEFAULT '[]',
+              status VARCHAR(20) DEFAULT 'ACTIVE',
+              toll_costs DECIMAL(10,2) DEFAULT 0,
+              fuel_estimate DECIMAL(10,2),
+              notes TEXT,
+              created_by UUID,
+              created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_logistics_routes_tenant ON logistics.routes(tenant_id);
+
+          -- Trips table
+          CREATE TABLE IF NOT EXISTS logistics.trips (
+              trip_id VARCHAR(50) PRIMARY KEY,
+              tenant_id UUID NOT NULL,
+              route_id UUID REFERENCES logistics.routes(route_id),
+              vehicle_id UUID REFERENCES logistics.vehicles(vehicle_id),
+              driver_id UUID REFERENCES logistics.drivers(driver_id),
+              customer VARCHAR(255),
+              customer_id UUID,
+              origin VARCHAR(255) NOT NULL,
+              destination VARCHAR(255) NOT NULL,
+              driver VARCHAR(255),
+              vehicle_reg VARCHAR(20),
+              cargo_description TEXT,
+              weight_kg DECIMAL(10,2),
+              status VARCHAR(30) DEFAULT 'Planned',
+              pod_status VARCHAR(30) DEFAULT 'Pending',
+              scheduled_start TIMESTAMPTZ,
+              scheduled_end TIMESTAMPTZ,
+              actual_start TIMESTAMPTZ,
+              actual_end TIMESTAMPTZ,
+              eta TIMESTAMPTZ,
+              distance_km DECIMAL(10,2),
+              fuel_used DECIMAL(10,2),
+              revenue DECIMAL(15,2),
+              cost DECIMAL(15,2),
+              notes TEXT,
+              created_by UUID,
+              created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_logistics_trips_tenant ON logistics.trips(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_logistics_trips_status ON logistics.trips(tenant_id, status);
+          CREATE INDEX IF NOT EXISTS idx_logistics_trips_driver ON logistics.trips(tenant_id, driver_id);
+          CREATE INDEX IF NOT EXISTS idx_logistics_trips_vehicle ON logistics.trips(tenant_id, vehicle_id);
+
+          -- Shipments table
+          CREATE TABLE IF NOT EXISTS logistics.shipments (
+              shipment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              tenant_id UUID NOT NULL,
+              shipment_number VARCHAR(50) UNIQUE,
+              trip_id VARCHAR(50) REFERENCES logistics.trips(trip_id),
+              customer_id UUID,
+              origin_address TEXT,
+              destination_address TEXT,
+              scheduled_pickup_date DATE,
+              scheduled_delivery_date DATE,
+              actual_pickup_date DATE,
+              actual_delivery_date DATE,
+              weight DECIMAL(10,2),
+              volume DECIMAL(10,2),
+              package_count INTEGER DEFAULT 1,
+              status VARCHAR(30) DEFAULT 'PENDING',
+              priority VARCHAR(20) DEFAULT 'NORMAL',
+              special_instructions TEXT,
+              notes TEXT,
+              created_by UUID,
+              created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_logistics_shipments_tenant ON logistics.shipments(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_logistics_shipments_status ON logistics.shipments(tenant_id, status);
+
+          -- Fuel transactions table
+          CREATE TABLE IF NOT EXISTS logistics.fuel_transactions (
+              transaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              tenant_id UUID NOT NULL,
+              vehicle_id UUID REFERENCES logistics.vehicles(vehicle_id),
+              driver_id UUID REFERENCES logistics.drivers(driver_id),
+              trip_id VARCHAR(50) REFERENCES logistics.trips(trip_id),
+              transaction_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+              fuel_type VARCHAR(20) DEFAULT 'DIESEL',
+              quantity_liters DECIMAL(10,2) NOT NULL,
+              price_per_liter DECIMAL(10,2) NOT NULL,
+              total_amount DECIMAL(12,2) NOT NULL,
+              odometer_reading INTEGER,
+              station_name VARCHAR(255),
+              station_location VARCHAR(255),
+              receipt_number VARCHAR(100),
+              payment_method VARCHAR(50),
+              card_number VARCHAR(50),
+              notes TEXT,
+              reconciled BOOLEAN DEFAULT false,
+              reconciled_at TIMESTAMPTZ,
+              reconciled_by UUID,
+              created_by UUID,
+              created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_logistics_fuel_tenant ON logistics.fuel_transactions(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_logistics_fuel_vehicle ON logistics.fuel_transactions(vehicle_id);
+
+          -- Geofences table
+          CREATE TABLE IF NOT EXISTS logistics.geofences (
+              geofence_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              tenant_id UUID NOT NULL,
+              name VARCHAR(255) NOT NULL,
+              geofence_type VARCHAR(50) DEFAULT 'ZONE',
+              geometry JSONB NOT NULL,
+              center_lat DECIMAL(10,8),
+              center_lng DECIMAL(11,8),
+              radius_meters INTEGER,
+              address TEXT,
+              is_active BOOLEAN DEFAULT true,
+              alert_on_entry BOOLEAN DEFAULT true,
+              alert_on_exit BOOLEAN DEFAULT true,
+              speed_limit INTEGER,
+              dwell_time_alert_minutes INTEGER,
+              created_by UUID,
+              created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_logistics_geofences_tenant ON logistics.geofences(tenant_id);
+
+          -- Incidents table
+          CREATE TABLE IF NOT EXISTS logistics.incidents (
+              incident_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              tenant_id UUID NOT NULL,
+              trip_id VARCHAR(50) REFERENCES logistics.trips(trip_id),
+              vehicle_id UUID REFERENCES logistics.vehicles(vehicle_id),
+              driver_id UUID REFERENCES logistics.drivers(driver_id),
+              incident_type VARCHAR(50) NOT NULL,
+              severity VARCHAR(20) DEFAULT 'MEDIUM',
+              description TEXT NOT NULL,
+              location VARCHAR(255),
+              latitude DECIMAL(10,8),
+              longitude DECIMAL(11,8),
+              incident_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+              status VARCHAR(30) DEFAULT 'REPORTED',
+              resolution TEXT,
+              police_case_number VARCHAR(100),
+              insurance_claim_number VARCHAR(100),
+              estimated_cost DECIMAL(12,2),
+              actual_cost DECIMAL(12,2),
+              reported_by UUID,
+              assigned_to UUID,
+              resolved_at TIMESTAMPTZ,
+              created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_logistics_incidents_tenant ON logistics.incidents(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_logistics_incidents_status ON logistics.incidents(tenant_id, status);
+        `);
+        result = 'Logistics schema and all tables created successfully';
+        break;
+
+      case 'logistics-seed':
+        // Seed logistics sample data
+        const seedTenantId = req.body?.tenantId || 'd0a49212-96f5-46c7-9d69-fec0f235a90c';
+        
+        // Insert sample vehicles
+        await pool.query(`
+          INSERT INTO logistics.vehicles (tenant_id, vehicle_registration, make, model, vehicle_type, year, fuel_type, status, current_odometer) VALUES
+          ($1, 'ABC123GP', 'Isuzu', 'NPR 400', 'TRUCK', 2020, 'DIESEL', 'ACTIVE', 85000),
+          ($1, 'DEF456GP', 'Hino', '300 Series', 'TRUCK', 2021, 'DIESEL', 'ACTIVE', 45000),
+          ($1, 'GHI789GP', 'Toyota', 'Hilux 2.8 GD-6', 'BAKKIE', 2022, 'DIESEL', 'ACTIVE', 32000),
+          ($1, 'JKL012GP', 'UD', 'Quon', 'TRUCK', 2019, 'DIESEL', 'MAINTENANCE', 125000),
+          ($1, 'MNO345GP', 'Mercedes-Benz', 'Sprinter', 'VAN', 2023, 'DIESEL', 'ACTIVE', 15000)
+          ON CONFLICT DO NOTHING
+        `, [seedTenantId]);
+
+        // Insert sample drivers
+        await pool.query(`
+          INSERT INTO logistics.drivers (tenant_id, first_name, last_name, phone, license_number, status) VALUES
+          ($1, 'Thabo', 'Molefe', '0821234567', 'L1234567', 'AVAILABLE'),
+          ($1, 'Sipho', 'Dlamini', '0832345678', 'L2345678', 'ON_TRIP'),
+          ($1, 'John', 'van der Merwe', '0843456789', 'L3456789', 'AVAILABLE'),
+          ($1, 'Patrick', 'Nkosi', '0854567890', 'L4567890', 'OFF_DUTY'),
+          ($1, 'Michael', 'Smith', '0865678901', 'L5678901', 'AVAILABLE')
+          ON CONFLICT DO NOTHING
+        `, [seedTenantId]);
+
+        // Insert sample routes
+        await pool.query(`
+          INSERT INTO logistics.routes (tenant_id, route_name, origin, destination, distance_km, estimated_duration_hours) VALUES
+          ($1, 'JHB-DBN', 'Johannesburg', 'Durban', 575, 6.5),
+          ($1, 'JHB-CPT', 'Johannesburg', 'Cape Town', 1400, 14),
+          ($1, 'JHB-PTA', 'Johannesburg', 'Pretoria', 60, 1),
+          ($1, 'DBN-PE', 'Durban', 'Port Elizabeth', 720, 8),
+          ($1, 'JHB-BFN', 'Johannesburg', 'Bloemfontein', 400, 4.5)
+          ON CONFLICT DO NOTHING
+        `, [seedTenantId]);
+
+        result = 'Logistics sample data seeded successfully';
+        break;
+
       case 'recalculate-gl-balances':
         // Reset and recalculate account balances from journal entries
         // Step 1: Reset all balances to zero
@@ -720,6 +1031,68 @@ app.post('/api/migrate/:module', async (req, res) => {
         `, [req.body?.tenantId || 'd0a49212-96f5-46c7-9d69-fec0f235a90c']);
         
         result = 'GL account balances recalculated successfully from journal entries';
+        break;
+        
+      case 'sales':
+        // Create sales schema and customers table
+        await pool.query(`
+          -- Create sales schema
+          CREATE SCHEMA IF NOT EXISTS sales;
+
+          -- Customers Table
+          CREATE TABLE IF NOT EXISTS sales.customers (
+              customer_id SERIAL PRIMARY KEY,
+              tenant_id UUID NOT NULL,
+              customer_code VARCHAR(50),
+              name VARCHAR(255) NOT NULL,
+              company_name VARCHAR(255),
+              contact_person VARCHAR(255),
+              email VARCHAR(255),
+              phone VARCHAR(50),
+              mobile VARCHAR(50),
+              vat_number VARCHAR(50),
+              customer_type VARCHAR(50) DEFAULT 'retail',
+              source VARCHAR(100),
+              billing_address TEXT,
+              shipping_address TEXT,
+              city VARCHAR(100),
+              province VARCHAR(100),
+              postal_code VARCHAR(20),
+              country VARCHAR(100) DEFAULT 'South Africa',
+              payment_terms VARCHAR(100),
+              credit_limit DECIMAL(12,2) DEFAULT 0.00,
+              tax_id VARCHAR(50),
+              industry VARCHAR(100),
+              website VARCHAR(255),
+              notes TEXT,
+              assigned_to VARCHAR(255),
+              status VARCHAR(20) DEFAULT 'active',
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE INDEX IF NOT EXISTS idx_sales_customers_tenant ON sales.customers(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_sales_customers_status ON sales.customers(status);
+          CREATE INDEX IF NOT EXISTS idx_sales_customers_name ON sales.customers(name);
+        `);
+        
+        // Seed sample customers for the tenant
+        const salesTenantId = req.body?.tenantId || 'd0a49212-96f5-46c7-9d69-fec0f235a90c';
+        await pool.query(`
+          INSERT INTO sales.customers (tenant_id, customer_code, name, company_name, contact_person, email, phone, city, status)
+          VALUES 
+              ($1, 'CUST001', 'Pick n Pay Stores', 'Pick n Pay Holdings', 'John Smith', 'procurement@pnp.co.za', '+27 11 555 0001', 'Johannesburg', 'active'),
+              ($1, 'CUST002', 'Shoprite Checkers', 'Shoprite Holdings Ltd', 'Sarah Williams', 'orders@shoprite.co.za', '+27 21 555 0002', 'Cape Town', 'active'),
+              ($1, 'CUST003', 'Woolworths SA', 'Woolworths Holdings', 'Mike Johnson', 'supply@woolworths.co.za', '+27 11 555 0003', 'Johannesburg', 'active'),
+              ($1, 'CUST004', 'Builders Warehouse', 'Massmart Holdings', 'Lisa Davis', 'orders@builderswarehouse.co.za', '+27 11 555 0004', 'Johannesburg', 'active'),
+              ($1, 'CUST005', 'Dis-Chem Pharmacies', 'Dis-Chem Pharmacies Ltd', 'Peter Brown', 'procurement@dischem.co.za', '+27 11 555 0005', 'Midrand', 'active'),
+              ($1, 'CUST006', 'Spar Group', 'Spar Group Ltd', 'Emma Wilson', 'orders@spar.co.za', '+27 31 555 0006', 'Durban', 'active'),
+              ($1, 'CUST007', 'Game Stores', 'Massmart Holdings', 'David Taylor', 'supply@game.co.za', '+27 11 555 0007', 'Johannesburg', 'active'),
+              ($1, 'CUST008', 'Makro SA', 'Massmart Holdings', 'Rachel Green', 'orders@makro.co.za', '+27 11 555 0008', 'Johannesburg', 'active')
+          ON CONFLICT DO NOTHING
+        `, [salesTenantId]);
+        
+        result = 'Sales schema and customers table created successfully with sample data';
         break;
         
       default:

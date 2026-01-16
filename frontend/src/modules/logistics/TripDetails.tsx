@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
 import apiClient from '../../services/api';
+import { tripsAPI, podAPI } from '../../services/logistics.api';
 import '../../styles/erp-ui.css';
 
 const TripDetails: React.FC = () => {
@@ -10,6 +11,13 @@ const TripDetails: React.FC = () => {
   
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
+  const [podModalOpen, setPodModalOpen] = useState(false);
+  const [podStep, setPodStep] = useState<'ready' | 'verify' | 'upload' | 'complete'>('ready');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [podNotes, setPodNotes] = useState('');
+  const [receiverName, setReceiverName] = useState('');
   const [trip, setTrip] = useState({
     trip_id: tripId || '',
     customer: '',
@@ -86,18 +94,93 @@ const TripDetails: React.FC = () => {
     { label: trip.trip_id }
   ];
 
-  const handleSave = () => {
-    setIsEditing(false);
-    alert(`✅ Trip Updated!\n\nTrip ${trip.trip_id} has been updated successfully.`);
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await tripsAPI.updateTrip(tripId!, {
+        customer: trip.customer,
+        origin: trip.origin,
+        destination: trip.destination,
+        cargo_description: trip.cargo_description,
+        special_instructions: trip.special_instructions
+      });
+      setIsEditing(false);
+      alert(`✅ Trip Updated!\n\nTrip ${trip.trip_id} has been updated successfully.`);
+    } catch (error) {
+      console.error('Failed to update trip:', error);
+      alert('❌ Failed to update trip. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleStatusChange = (newStatus: string) => {
-    setTrip({ ...trip, status: newStatus as any });
-    alert(`✅ Status Updated!\n\nTrip ${trip.trip_id} status changed to: ${newStatus}`);
+  const handleStatusChange = async (newStatus: string) => {
+    setStatusUpdating(true);
+    try {
+      if (newStatus === 'In Transit') {
+        await tripsAPI.startTrip(tripId!);
+      } else if (newStatus === 'Delivered') {
+        await tripsAPI.completeTrip(tripId!);
+      } else {
+        await tripsAPI.updateStatus(tripId!, newStatus);
+      }
+      setTrip({ ...trip, status: newStatus as any });
+      alert(`✅ Status Updated!\n\nTrip ${trip.trip_id} status changed to: ${newStatus}`);
+    } catch (error: any) {
+      console.error('Failed to update status:', error);
+      alert(`❌ Failed to update status: ${error.message || 'Please try again.'}`);
+    } finally {
+      setStatusUpdating(false);
+    }
   };
 
   const handleCapturePOD = () => {
-    alert(`📄 POD Capture\n\nIn production:\n• Take photo of signed delivery note\n• Capture GPS coordinates\n• Add notes/exceptions\n• Upload to system\n\nStatus will change to "Delivered"`);
+    setPodModalOpen(true);
+    setPodStep('ready');
+  };
+
+  const handlePODVerify = async () => {
+    try {
+      // In production, this would send SMS to customer
+      // For now, we accept any 6-digit code
+      if (verificationCode.length === 6) {
+        await podAPI.verifyCode(tripId!, verificationCode);
+        setPodStep('upload');
+      } else {
+        alert('Please enter a 6-digit verification code');
+      }
+    } catch (error) {
+      console.error('Verification failed:', error);
+      alert('Verification failed. Please try again.');
+    }
+  };
+
+  const handlePODUpload = async () => {
+    try {
+      const result = await podAPI.uploadPOD(tripId!, {
+        receiverName,
+        notes: podNotes,
+        signature: 'captured', // In production: actual signature data
+        photos: []
+      });
+      alert(`✅ POD Uploaded!\n\nPOD Reference: ${result.podReference}`);
+      setPodStep('complete');
+    } catch (error) {
+      console.error('Upload failed:', error);
+      alert('Failed to upload POD. Please try again.');
+    }
+  };
+
+  const handleCompleteDelivery = async () => {
+    try {
+      const result = await podAPI.completeDelivery(tripId!);
+      alert(`✅ Delivery Complete!\n\nInvoice: ${result.invoiceNumber}\n\nTrip has been marked as delivered.`);
+      setTrip({ ...trip, status: 'Delivered', pod_status: 'Received' });
+      setPodModalOpen(false);
+    } catch (error) {
+      console.error('Complete delivery failed:', error);
+      alert('Failed to complete delivery. Please try again.');
+    }
   };
 
   const handleTrackVehicle = () => {
@@ -442,19 +525,19 @@ const TripDetails: React.FC = () => {
 
             <button
               onClick={handleCapturePOD}
-              disabled={trip.status !== 'Delivered'}
+              disabled={trip.status === 'Delivered' || trip.status === 'Cancelled'}
               style={{
                 padding: '1.25rem',
                 border: '2px solid #e2e8f0',
                 borderRadius: '0.75rem',
-                background: trip.status === 'Delivered' ? 'white' : '#f8fafc',
-                cursor: trip.status === 'Delivered' ? 'pointer' : 'not-allowed',
+                background: (trip.status !== 'Delivered' && trip.status !== 'Cancelled') ? 'white' : '#f8fafc',
+                cursor: (trip.status !== 'Delivered' && trip.status !== 'Cancelled') ? 'pointer' : 'not-allowed',
                 textAlign: 'center',
-                opacity: trip.status === 'Delivered' ? 1 : 0.5,
+                opacity: (trip.status !== 'Delivered' && trip.status !== 'Cancelled') ? 1 : 0.5,
                 transition: 'all 0.2s'
               }}
               onMouseEnter={(e) => {
-                if (trip.status === 'Delivered') {
+                if (trip.status !== 'Delivered' && trip.status !== 'Cancelled') {
                   e.currentTarget.style.borderColor = '#667eea';
                   e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.2)';
                 }
@@ -496,6 +579,173 @@ const TripDetails: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* POD Capture Modal */}
+      {podModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '1rem',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <h2 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: 700 }}>
+              📄 Capture POD
+            </h2>
+            
+            {podStep === 'ready' && (
+              <div>
+                <p style={{ marginBottom: '1rem', color: '#64748b' }}>
+                  Enter the 6-digit verification code from the customer
+                </p>
+                <input
+                  type="text"
+                  maxLength={6}
+                  placeholder="Enter 6-digit code"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    fontSize: '1.5rem',
+                    textAlign: 'center',
+                    letterSpacing: '0.5rem',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '0.5rem',
+                    marginBottom: '1rem'
+                  }}
+                />
+                <button
+                  onClick={handlePODVerify}
+                  disabled={verificationCode.length !== 6}
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    background: verificationCode.length === 6 ? '#667eea' : '#e2e8f0',
+                    color: verificationCode.length === 6 ? 'white' : '#94a3b8',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontWeight: 700,
+                    cursor: verificationCode.length === 6 ? 'pointer' : 'not-allowed'
+                  }}
+                >
+                  Verify Code
+                </button>
+              </div>
+            )}
+
+            {podStep === 'upload' && (
+              <div>
+                <p style={{ marginBottom: '1rem', color: '#10b981', fontWeight: 600 }}>
+                  ✓ Customer verified!
+                </p>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    Receiver Name
+                  </label>
+                  <input
+                    type="text"
+                    value={receiverName}
+                    onChange={(e) => setReceiverName(e.target.value)}
+                    placeholder="Name of person receiving goods"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '0.5rem'
+                    }}
+                  />
+                </div>
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    Delivery Notes
+                  </label>
+                  <textarea
+                    value={podNotes}
+                    onChange={(e) => setPodNotes(e.target.value)}
+                    placeholder="Any notes or exceptions..."
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '0.5rem',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={handlePODUpload}
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    background: '#667eea',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Upload POD
+                </button>
+              </div>
+            )}
+
+            {podStep === 'complete' && (
+              <div>
+                <p style={{ marginBottom: '1rem', color: '#10b981', fontWeight: 600 }}>
+                  ✓ POD uploaded successfully!
+                </p>
+                <button
+                  onClick={handleCompleteDelivery}
+                  style={{
+                    width: '100%',
+                    padding: '1rem',
+                    background: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Complete Delivery & Generate Invoice
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={() => setPodModalOpen(false)}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                background: 'transparent',
+                color: '#64748b',
+                border: 'none',
+                marginTop: '1rem',
+                cursor: 'pointer'
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </EnterpriseLayout>
   );
 };

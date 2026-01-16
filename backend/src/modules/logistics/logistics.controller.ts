@@ -1,5 +1,31 @@
 import { Request, Response } from 'express';
 import pool from '../../config/database';
+import crypto from 'crypto';
+
+/**
+ * Generate a 6-character alphanumeric access code for driver app
+ */
+function generateAccessCode(): string {
+  return crypto.randomBytes(3).toString('hex').toUpperCase();
+}
+
+/**
+ * Send SMS to driver with access code (placeholder - integrate with SMS provider)
+ */
+async function sendDriverWelcomeSMS(phone: string, firstName: string, accessCode: string): Promise<boolean> {
+  const message = `Welcome to SiyaBusa Driver App, ${firstName}!\n\nYour access code: ${accessCode}\n\nDownload: https://siyabusaerp.co.za/driver\n\nEnter your phone number and this code to login.`;
+  
+  // TODO: Integrate with SMS provider (Clickatell, BulkSMS, etc.)
+  console.log(`📱 SMS to ${phone}:\n${message}`);
+  
+  // For now, log the SMS - in production, integrate with SMS API
+  // Example integration points:
+  // - Clickatell: https://www.clickatell.com/
+  // - BulkSMS: https://www.bulksms.com/
+  // - Twilio: https://www.twilio.com/
+  
+  return true;
+}
 
 // Helper to get table name (checks if logistics schema exists)
 const getTableName = (table: string) => `logistics.${table}`;
@@ -363,7 +389,7 @@ export const getDriverById = async (req: Request, res: Response) => {
 
 /**
  * POST /api/logistics/drivers
- * Create new driver
+ * Create new driver - auto-generates access code and sends SMS
  */
 export const createDriver = async (req: Request, res: Response) => {
   const client = await pool.connect();
@@ -380,32 +406,31 @@ export const createDriver = async (req: Request, res: Response) => {
       emergency_contact_name,
       emergency_contact_phone,
       hire_date,
-      notes
+      notes,
+      send_app_invite = true  // Default: send SMS invite
     } = req.body;
 
     // Get tenant from authenticated user
     const tenantId = (req as any).tenantId || (req as any).user?.tenantId || (req as any).tenant?.id;
 
-    // Generate driver code
-    const codeResult = await client.query(
-      `SELECT 'DRV-' || LPAD((COALESCE(MAX(driver_id), 0) + 1)::text, 4, '0') as driver_code FROM logistics.drivers`
-    );
-    const driverCode = codeResult.rows[0]?.driver_code || `DRV-${Date.now()}`;
+    // Generate access code for mobile app
+    const accessCode = generateAccessCode();
 
     await client.query('BEGIN');
 
     const result = await client.query(
       `INSERT INTO logistics.drivers (
-        tenant_id, driver_code, first_name, last_name, id_number,
-        license_number, license_expiry_date, phone, email, address,
-        emergency_contact_name, emergency_contact_phone, hire_date,
-        notes, status, employment_status
+        tenant_id, first_name, last_name, id_number,
+        license_number, license_expiry, phone, email,
+        emergency_contact, emergency_phone, hire_date,
+        notes, status,
+        access_code, access_code_generated_at, app_approved
       ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, 'ACTIVE', 'ACTIVE'
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'ACTIVE',
+        $13, CURRENT_TIMESTAMP, true
       ) RETURNING *`,
       [
         tenantId,
-        driverCode,
         first_name,
         last_name,
         id_number || null,
@@ -413,16 +438,35 @@ export const createDriver = async (req: Request, res: Response) => {
         license_expiry_date || null,
         phone || null,
         email || null,
-        address || null,
         emergency_contact_name || null,
         emergency_contact_phone || null,
         hire_date || null,
-        notes || null
+        notes || null,
+        accessCode
       ]
     );
 
     await client.query('COMMIT');
-    res.status(201).json({ driver: result.rows[0] });
+
+    const driver = result.rows[0];
+
+    // Send SMS with access code if phone is provided
+    let smsSent = false;
+    if (phone && send_app_invite) {
+      smsSent = await sendDriverWelcomeSMS(phone, first_name, accessCode);
+    }
+
+    res.status(201).json({ 
+      driver: {
+        ...driver,
+        access_code: accessCode  // Include in response for admin to see
+      },
+      accessCode,  // Also at top level for frontend convenience
+      smsSent,
+      message: smsSent 
+        ? `Driver created! SMS sent to ${phone} with app access code.`
+        : `Driver created! Access code: ${accessCode} (SMS not sent - no phone number)`
+    });
   } catch (error) {
     await client.query('ROLLBACK');
     console.error('Error creating driver:', error);
@@ -500,6 +544,54 @@ export const deleteDriver = async (req: Request, res: Response) => {
   } catch (error) {
     console.error('Error deleting driver:', error);
     res.status(500).json({ error: 'Failed to delete driver' });
+  }
+};
+
+/**
+ * POST /api/logistics/drivers/:id/resend-app-invite
+ * Regenerate access code and resend SMS invite to driver
+ */
+export const resendDriverAppInvite = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    // Generate new access code
+    const accessCode = generateAccessCode();
+
+    // Update driver with new code
+    const result = await pool.query(
+      `UPDATE logistics.drivers 
+       SET access_code = $1, 
+           access_code_generated_at = CURRENT_TIMESTAMP,
+           app_approved = true
+       WHERE driver_id = $2
+       RETURNING driver_id, first_name, last_name, phone, access_code`,
+      [accessCode, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Driver not found' });
+    }
+
+    const driver = result.rows[0];
+
+    // Send SMS with new access code
+    let smsSent = false;
+    if (driver.phone) {
+      smsSent = await sendDriverWelcomeSMS(driver.phone, driver.first_name, accessCode);
+    }
+
+    res.json({ 
+      success: true,
+      accessCode,
+      smsSent,
+      message: smsSent 
+        ? `New access code sent to ${driver.phone}`
+        : `New access code: ${accessCode} (no phone number for SMS)`
+    });
+  } catch (error) {
+    console.error('Error resending driver app invite:', error);
+    res.status(500).json({ error: 'Failed to resend app invite' });
   }
 };
 

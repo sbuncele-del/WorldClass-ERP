@@ -14,6 +14,7 @@ import { runPracticeIntegrationMigration } from './practice-integration-migratio
 import { runClientPortalMigration } from './client-portal-migration';
 import { createAssetManagementTables } from './asset-management-migration';
 import { runManufacturingMigration } from './manufacturing-migration';
+import { runDriverAuthMigration } from './driver-auth-migration';
 
 /**
  * Database Migration Script
@@ -332,6 +333,11 @@ async function runMigrations() {
     console.log('🏭 Running Manufacturing Module migration...');
     await runManufacturingMigration(pool);
     console.log('✅ Manufacturing Module migration completed\n');
+
+    // 20. Run Driver Authentication Migration
+    console.log('🚗 Running Driver Authentication migration...');
+    await runDriverAuthMigration(pool);
+    console.log('✅ Driver Authentication migration completed\n');
 
     console.log('🎉 All migrations completed successfully!\n');
     

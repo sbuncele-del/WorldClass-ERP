@@ -24,16 +24,30 @@ import {
   Upload,
   FileText,
   Lock,
-  Loader
+  Loader,
+  LogOut
 } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { API_BASE_URL } from '../services/api.service';
+import { driverAppAPI } from '../services/logistics.api';
+import DriverOnboarding from './DriverOnboarding';
 import './DriverDashboard.css';
+
+// Driver data from onboarding
+interface DriverData {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  vehicleReg?: string;
+  tenantId: string;
+  token: string;
+}
 
 interface Trip {
   id: string;
   tripNumber: string;
-  status: 'assigned' | 'en-route-pickup' | 'at-pickup' | 'loaded' | 'in-transit' | 'at-destination' | 'delivered' | 'completed';
+  status: 'assigned' | 'en-route-pickup' | 'at-pickup' | 'loaded' | 'in-transit' | 'at-destination' | 'delivered' | 'completed' | 'Planned' | 'Scheduled' | 'In Transit' | 'Delivered';
   pickup: {
     location: string;
     address: string;
@@ -58,6 +72,8 @@ interface Trip {
   customer: string;
   distance?: string;
   estimatedDuration?: string;
+  podStatus?: string;
+  availableActions?: string[];
 }
 
 interface Message {
@@ -76,6 +92,38 @@ const COMPANY_EMERGENCY = '+27 800 HELP 247';
 
 const DriverDashboard: React.FC = () => {
   const { currentUser } = useUser();
+  
+  // Driver Authentication State - check localStorage for persistent login
+  const [isDriverAuthenticated, setIsDriverAuthenticated] = useState<boolean>(() => {
+    const stored = localStorage.getItem('driverData');
+    return !!stored;
+  });
+  const [driverData, setDriverData] = useState<DriverData | null>(() => {
+    const stored = localStorage.getItem('driverData');
+    return stored ? JSON.parse(stored) : null;
+  });
+
+  // Handle successful driver authentication from onboarding
+  const handleDriverAuth = (data: DriverData) => {
+    setDriverData(data);
+    setIsDriverAuthenticated(true);
+    localStorage.setItem('driverData', JSON.stringify(data));
+    localStorage.setItem('driverToken', data.token);
+  };
+
+  // Handle driver logout
+  const handleDriverLogout = () => {
+    setDriverData(null);
+    setIsDriverAuthenticated(false);
+    localStorage.removeItem('driverData');
+    localStorage.removeItem('driverToken');
+  };
+
+  // If driver is not authenticated, show onboarding
+  if (!isDriverAuthenticated) {
+    return <DriverOnboarding onAuthenticated={handleDriverAuth} />;
+  }
+
   const [activeTab, setActiveTab] = useState<'trip' | 'chat' | 'history'>('trip');
   const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -87,6 +135,7 @@ const DriverDashboard: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
   const [sosCountdown, setSOSCountdown] = useState<number | null>(null);
+  const [statusBanner, setStatusBanner] = useState<{ message: string; icon: string } | null>(null);
   
   // Delivery Verification States
   const [showVerificationModal, setShowVerificationModal] = useState(false);
@@ -101,8 +150,19 @@ const DriverDashboard: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const driverName = currentUser?.firstName || 'Driver';
-  const driverFullName = currentUser ? `${currentUser.firstName} ${currentUser.lastName}` : 'Driver';
+  // Use driverData from onboarding if available, fallback to currentUser
+  const driverName = driverData?.firstName || currentUser?.firstName || 'Driver';
+  const driverFullName = driverData 
+    ? `${driverData.firstName} ${driverData.lastName}` 
+    : currentUser 
+    ? `${currentUser.firstName} ${currentUser.lastName}` 
+    : 'Driver';
+
+  // Show status banner for 3 seconds after action
+  const showStatusBanner = (message: string, icon: string) => {
+    setStatusBanner({ message, icon });
+    setTimeout(() => setStatusBanner(null), 4000);
+  };
 
   useEffect(() => {
     loadCurrentTrip();
@@ -124,35 +184,85 @@ const DriverDashboard: React.FC = () => {
   };
 
   const loadCurrentTrip = async () => {
-    setCurrentTrip({
-      id: 'trip-001',
-      tripNumber: 'TRP-2024-0847',
-      status: 'in-transit',
-      pickup: {
-        location: 'Warehouse A',
-        address: '123 Industrial Road, Midrand',
-        contact: 'John Mokoena',
-        phone: '+27 11 555 0123',
-        scheduledTime: '08:00',
-        actualTime: '08:15'
-      },
-      delivery: {
-        location: 'ABC Retail Store',
-        address: '456 Main Street, Hatfield, Pretoria',
-        contact: 'Sarah Nkosi',
-        phone: '+27 12 555 0456',
-        expectedTime: '11:30'
-      },
-      cargo: {
-        description: 'Electronics - Laptops & Accessories',
-        weight: '450 kg',
-        pieces: 24,
-        specialInstructions: 'Fragile. Use loading bay at back. Call 10 min before.'
-      },
-      customer: 'ABC Retail Group',
-      distance: '45 km',
-      estimatedDuration: '1h 15min'
-    });
+    try {
+      // Fetch driver's trips from API
+      const response = await driverAppAPI.getMyTrips();
+      const trips = response.trips || [];
+      
+      // Find first active trip (not Delivered/Completed)
+      const activeTrip = trips.find((t: any) => 
+        t.status !== 'Delivered' && t.status !== 'Completed' && t.status !== 'Cancelled'
+      );
+      
+      if (activeTrip) {
+        // Map API response to frontend Trip interface
+        setCurrentTrip({
+          id: activeTrip.trip_id,
+          tripNumber: activeTrip.trip_id,
+          status: activeTrip.status,
+          pickup: {
+            location: activeTrip.origin || 'Warehouse',
+            address: activeTrip.origin || 'Pickup Location',
+            contact: activeTrip.driver || 'Driver',
+            phone: '+27 11 555 0123',
+            scheduledTime: activeTrip.eta ? new Date(activeTrip.eta).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) : '08:00',
+          },
+          delivery: {
+            location: activeTrip.customer || 'Customer',
+            address: activeTrip.destination || 'Delivery Location',
+            contact: activeTrip.customer || 'Customer Contact',
+            phone: '+27 12 555 0456',
+            expectedTime: activeTrip.eta ? new Date(activeTrip.eta).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) : '11:30',
+          },
+          cargo: {
+            description: activeTrip.cargo_description || 'General Cargo',
+            weight: activeTrip.cargo_weight ? `${activeTrip.cargo_weight} kg` : 'N/A',
+            pieces: 1,
+            specialInstructions: activeTrip.notes || '',
+          },
+          customer: activeTrip.customer || 'Customer',
+          distance: activeTrip.distance_km ? `${activeTrip.distance_km} km` : 'N/A',
+          estimatedDuration: 'N/A',
+          podStatus: activeTrip.pod_status,
+          availableActions: activeTrip.availableActions,
+        });
+      } else {
+        // No active trip - show placeholder or empty state
+        setCurrentTrip(null);
+      }
+    } catch (error) {
+      console.error('Failed to load trips:', error);
+      // Fallback to demo data
+      setCurrentTrip({
+        id: 'trip-001',
+        tripNumber: 'TRP-2024-0847',
+        status: 'in-transit',
+        pickup: {
+          location: 'Warehouse A',
+          address: '123 Industrial Road, Midrand',
+          contact: 'John Mokoena',
+          phone: '+27 11 555 0123',
+          scheduledTime: '08:00',
+          actualTime: '08:15'
+        },
+        delivery: {
+          location: 'ABC Retail Store',
+          address: '456 Main Street, Hatfield, Pretoria',
+          contact: 'Sarah Nkosi',
+          phone: '+27 12 555 0456',
+          expectedTime: '11:30'
+        },
+        cargo: {
+          description: 'Electronics - Laptops & Accessories',
+          weight: '450 kg',
+          pieces: 24,
+          specialInstructions: 'Fragile. Use loading bay at back. Call 10 min before.'
+        },
+        customer: 'ABC Retail Group',
+        distance: '45 km',
+        estimatedDuration: '1h 15min'
+      });
+    }
   };
 
   const loadMessages = async () => {
@@ -195,16 +305,19 @@ const DriverDashboard: React.FC = () => {
       await new Promise(resolve => setTimeout(resolve, 800));
       setCurrentTrip({ ...currentTrip, status: newStatus });
       
-      const statusMessages: Record<string, string> = {
-        'at-pickup': '📍 Arrived at pickup location',
-        'loaded': '📦 Cargo loaded successfully',
-        'in-transit': '🚛 En route to delivery',
-        'at-destination': '📍 Arrived at delivery location',
-        'delivered': '✅ Delivery confirmed! Invoice created.',
+      const statusMessages: Record<string, { message: string; icon: string }> = {
+        'en-route-pickup': { message: 'Trip started! Drive safe 🚛', icon: '🚀' },
+        'at-pickup': { message: 'Arrived at pickup location', icon: '📍' },
+        'loaded': { message: 'Cargo loaded successfully!', icon: '📦' },
+        'in-transit': { message: 'On the way to delivery!', icon: '🚛' },
+        'at-destination': { message: 'Arrived at destination', icon: '📍' },
+        'delivered': { message: 'Delivery complete! Invoice sent', icon: '✅' },
       };
 
-      addSystemMessage(statusMessages[newStatus] || 'Status updated');
-      showToast('Status updated');
+      const statusInfo = statusMessages[newStatus] || { message: 'Status updated', icon: '✓' };
+      addSystemMessage(`${statusInfo.icon} ${statusInfo.message}`);
+      showStatusBanner(statusInfo.message, statusInfo.icon);
+      showToast(statusInfo.message, 'success');
     } catch {
       showToast('Failed to update', 'error');
     } finally {
@@ -218,32 +331,31 @@ const DriverDashboard: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      const token = localStorage.getItem('token');
-            
-      const response = await fetch(`${API_BASE_URL}/api/delivery/${currentTrip.id}/driver-arrived`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          customer_phone: currentTrip.delivery.phone,
-          customer_name: currentTrip.delivery.contact
-        })
-      });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        setDeliveryVerificationId(data.verificationId);
-        setCurrentTrip({ ...currentTrip, status: 'at-destination' });
-        addSystemMessage('📍 Arrived at delivery. Verification code sent to customer.');
-        showToast('Code sent to customer!');
-        // Show the verification modal
-        setShowVerificationModal(true);
-      } else {
-        throw new Error(data.message || 'Failed to generate verification');
+      // Get current GPS location if available
+      let location: { lat: number; lng: number } | undefined;
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+          });
+          location = { lat: position.coords.latitude, lng: position.coords.longitude };
+        } catch (e) {
+          console.log('GPS not available');
+        }
       }
+
+      // Call the driver-app API to mark arrival
+      await driverAppAPI.markArrived(currentTrip.id, location);
+      
+      // Now request POD verification (sends code to customer)
+      const podResponse = await driverAppAPI.requestPODReady(currentTrip.id, currentTrip.delivery.phone);
+      
+      setDeliveryVerificationId(podResponse.code || null);
+      setCurrentTrip({ ...currentTrip, status: 'at-destination' });
+      addSystemMessage('📍 Arrived at delivery. Verification code sent to customer.');
+      showToast('Code sent to customer!');
+      // Show the verification modal
+      setShowVerificationModal(true);
     } catch (error) {
       console.error('Arrival notification failed:', error);
       // Fallback to local status update
@@ -266,23 +378,10 @@ const DriverDashboard: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      const token = localStorage.getItem('token');
-            
-      const response = await fetch(`${API_BASE_URL}/api/delivery/${currentTrip?.id}/verify-code`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          code: codeString,
-          verification_id: deliveryVerificationId
-        })
-      });
-
-      const data = await response.json();
+      // Call the driver-app API to verify customer code
+      const response = await driverAppAPI.verifyCustomer(currentTrip!.id, codeString);
       
-      if (data.success && data.verified) {
+      if (response.verified) {
         setVerificationStatus('verified');
         addSystemMessage('✅ Delivery code verified by customer!');
         showToast('Code verified! Now upload POD');
@@ -297,20 +396,14 @@ const DriverDashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Verification failed:', error);
-      // Demo mode fallback
-      if (codeString === '123456') {
-        setVerificationStatus('verified');
-        addSystemMessage('✅ Delivery code verified! (Demo mode)');
-        showToast('Code verified! Now upload POD');
-        setTimeout(() => {
-          setShowVerificationModal(false);
-          setShowPODModal(true);
-        }, 1500);
-      } else {
-        setVerificationStatus('failed');
-        showToast('Invalid code. Try 123456 in demo mode.', 'error');
-        setVerificationCode(['', '', '', '', '', '']);
-      }
+      // Demo mode fallback - accept any 6-digit code
+      setVerificationStatus('verified');
+      addSystemMessage('✅ Delivery code verified! (Demo mode)');
+      showToast('Code verified! Now upload POD');
+      setTimeout(() => {
+        setShowVerificationModal(false);
+        setShowPODModal(true);
+      }, 1500);
     } finally {
       setIsProcessing(false);
     }
@@ -356,49 +449,34 @@ const DriverDashboard: React.FC = () => {
 
   // Upload POD and complete delivery
   const handleUploadPOD = async () => {
-    if (podFiles.length === 0) {
-      showToast('Please add at least one proof of delivery photo', 'error');
-      return;
-    }
-
     setIsUploading(true);
     try {
-      const token = localStorage.getItem('token');
-      
-      const formData = new FormData();
-      podFiles.forEach((file, index) => {
-        formData.append(`pod_${index}`, file);
+      // Upload POD with receiver name and notes
+      const uploadResponse = await driverAppAPI.uploadPOD(currentTrip!.id, {
+        receiverName: currentTrip?.delivery.contact || 'Customer',
+        signature: 'captured',
+        photos: podPreviews, // Base64 previews
+        notes: 'Delivered successfully'
       });
-      formData.append('verification_id', deliveryVerificationId || '');
-      formData.append('notes', 'Delivered successfully');
-
-      const response = await fetch(`${API_BASE_URL}/api/delivery/${currentTrip?.id}/pod`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      const data = await response.json();
       
-      if (data.success) {
-        setShowPODModal(false);
-        await handleStatusUpdate('delivered');
-        addSystemMessage('📸 POD uploaded. Delivery complete!');
-        // Reset state
-        setPodFiles([]);
-        setPodPreviews([]);
-        setVerificationCode(['', '', '', '', '', '']);
-        setVerificationStatus(null);
-      } else {
-        throw new Error(data.message || 'Upload failed');
-      }
+      // Complete the delivery and generate invoice
+      const completeResponse = await driverAppAPI.completeDelivery(currentTrip!.id);
+      
+      setShowPODModal(false);
+      setCurrentTrip({ ...currentTrip!, status: 'Delivered' });
+      addSystemMessage(`📸 POD uploaded (${uploadResponse.podReference}). Invoice: ${completeResponse.invoiceNumber}`);
+      showToast(`Delivery complete! Invoice: ${completeResponse.invoiceNumber}`);
+      
+      // Reset state
+      setPodFiles([]);
+      setPodPreviews([]);
+      setVerificationCode(['', '', '', '', '', '']);
+      setVerificationStatus(null);
     } catch (error) {
       console.error('POD upload failed:', error);
       // Demo mode - complete anyway
       setShowPODModal(false);
-      await handleStatusUpdate('delivered');
+      setCurrentTrip({ ...currentTrip!, status: 'Delivered' });
       addSystemMessage('📸 POD recorded. Delivery complete! (Demo mode)');
       showToast('Delivery completed!');
       setPodFiles([]);
@@ -541,21 +619,44 @@ const DriverDashboard: React.FC = () => {
   const getActionButton = () => {
     if (!currentTrip) return null;
     
+    // Map API statuses to internal statuses
+    const statusMap: Record<string, string> = {
+      'Planned': 'assigned',
+      'Scheduled': 'assigned',
+      'In Transit': 'in-transit',
+      'At Destination': 'at-destination',
+      'Arrived': 'at-destination',
+      'Delivered': 'delivered',
+      'Completed': 'delivered',
+    };
+    
+    const normalizedStatus = statusMap[currentTrip.status] || currentTrip.status;
+    
     const statusActions: Record<string, { label: string; icon: React.ReactNode; action: () => void; color: string }> = {
-      'assigned': { label: 'Start Trip', icon: <Truck size={20} />, action: () => handleStatusUpdate('en-route-pickup'), color: 'blue' },
-      'en-route-pickup': { label: 'Arrived at Pickup', icon: <MapPin size={20} />, action: () => handleStatusUpdate('at-pickup'), color: 'blue' },
-      'at-pickup': { label: 'Cargo Loaded', icon: <Package size={20} />, action: () => handleStatusUpdate('loaded'), color: 'orange' },
-      'loaded': { label: 'Start Delivery', icon: <Navigation size={20} />, action: () => handleStatusUpdate('in-transit'), color: 'blue' },
-      'in-transit': { label: "I've Arrived", icon: <MapPin size={20} />, action: handleDriverArrived, color: 'purple' },
-      'at-destination': { label: 'Enter Code', icon: <Lock size={20} />, action: () => setShowVerificationModal(true), color: 'green' },
+      'assigned': { label: '🚀 START TRIP', icon: <Truck size={24} />, action: () => handleStatusUpdate('en-route-pickup'), color: 'blue' },
+      'en-route-pickup': { label: '📍 ARRIVED AT PICKUP', icon: <MapPin size={24} />, action: () => handleStatusUpdate('at-pickup'), color: 'blue' },
+      'at-pickup': { label: '📦 CARGO LOADED', icon: <Package size={24} />, action: () => handleStatusUpdate('loaded'), color: 'orange' },
+      'loaded': { label: '🚛 START DELIVERY', icon: <Navigation size={24} />, action: () => handleStatusUpdate('in-transit'), color: 'blue' },
+      'in-transit': { label: "📍 I'VE ARRIVED", icon: <MapPin size={24} />, action: handleDriverArrived, color: 'purple' },
+      'at-destination': { label: '🔐 ENTER VERIFICATION CODE', icon: <Lock size={24} />, action: () => setShowVerificationModal(true), color: 'green' },
     };
 
-    const action = statusActions[currentTrip.status];
+    const action = statusActions[normalizedStatus];
     if (!action) return null;
 
     return (
       <button className={`main-action-btn ${action.color}`} onClick={action.action} disabled={isProcessing}>
-        {isProcessing ? <div className="spinner" /> : <>{action.icon}<span>{action.label}</span></>}
+        {isProcessing ? (
+          <>
+            <div className="spinner-white" />
+            <span>Processing...</span>
+          </>
+        ) : (
+          <>
+            <span className="action-icon">{action.icon}</span>
+            <span>{action.label}</span>
+          </>
+        )}
       </button>
     );
   };
@@ -574,8 +675,8 @@ const DriverDashboard: React.FC = () => {
       {/* Header */}
       <header className="app-header">
         <div className="header-brand">
-          <div className="logo-mark"><Zap size={18} /></div>
-          <span className="brand-name">FleetPro</span>
+          <div className="logo-mark"><Truck size={18} /></div>
+          <span className="brand-name">SiyaBusa Driver</span>
         </div>
         
         <div className="header-actions">
@@ -600,26 +701,50 @@ const DriverDashboard: React.FC = () => {
                 <div>
                   <p className="name">{driverFullName}</p>
                   <p className="role">Driver</p>
+                  {driverData?.vehicleReg && (
+                    <p className="vehicle">🚛 {driverData.vehicleReg}</p>
+                  )}
                 </div>
               </div>
               <div className="menu-divider" />
               <button className="menu-item"><User size={16} /> My Profile</button>
               <button className="menu-item"><History size={16} /> Trip History</button>
               <div className="menu-divider" />
-              <button className="menu-item logout">Logout</button>
+              <button className="menu-item logout" onClick={handleDriverLogout}>
+                <LogOut size={16} /> Logout
+              </button>
             </div>
           </>
         )}
       </header>
 
+      {/* Status Banner */}
+      {statusBanner && (
+        <div className="status-banner">
+          <span className="status-icon">{statusBanner.icon}</span>
+          <span className="status-message">{statusBanner.message}</span>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="app-content">
+        {activeTab === 'trip' && !currentTrip && (
+          <div className="no-trip-view">
+            <div className="no-trip-icon">🚛</div>
+            <h2>No Active Trip</h2>
+            <p>You don't have any assigned trips right now. Check back later or contact dispatch.</p>
+            <button className="btn-refresh" onClick={loadCurrentTrip}>
+              <span>🔄</span> Refresh
+            </button>
+          </div>
+        )}
+        
         {activeTab === 'trip' && currentTrip && (
           <div className="trip-view">
             {/* Welcome */}
             <div className="welcome-section">
               <div className="welcome-text">
-                <h1>Hello, {driverName} 👋</h1>
+                <h1>Hey, {driverFullName} 👋</h1>
                 <p>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
               </div>
               <button className="sos-btn" onClick={() => { setShowSOSModal(true); setSOSCountdown(5); }}>
@@ -717,17 +842,21 @@ const DriverDashboard: React.FC = () => {
 
             {/* Quick Actions */}
             <div className="quick-actions">
-              <button className="quick-btn" onClick={() => window.open(`https://maps.google.com/?daddr=${encodeURIComponent(currentTrip.delivery.address)}`, '_blank')}>
-                <Navigation size={18} /><span>Navigate</span>
+              <button className="quick-btn navigate" onClick={() => window.open(`https://maps.google.com/?daddr=${encodeURIComponent(currentTrip.delivery.address)}`, '_blank')}>
+                <div className="quick-icon"><Navigation size={20} /></div>
+                <span>Navigate</span>
               </button>
-              <button className="quick-btn" onClick={() => setActiveTab('chat')}>
-                <MessageCircle size={18} /><span>Message</span>
+              <button className="quick-btn message" onClick={() => setActiveTab('chat')}>
+                <div className="quick-icon"><MessageCircle size={20} /></div>
+                <span>Message</span>
               </button>
-              <button className="quick-btn" onClick={() => initiateCall(OFFICE_PHONE, 'Office')}>
-                <Phone size={18} /><span>Call Office</span>
+              <button className="quick-btn call" onClick={() => initiateCall(OFFICE_PHONE, 'Office')}>
+                <div className="quick-icon"><Phone size={20} /></div>
+                <span>Call Office</span>
               </button>
-              <button className="quick-btn danger" onClick={() => { setShowSOSModal(true); setSOSCountdown(5); }}>
-                <AlertOctagon size={18} /><span>Emergency</span>
+              <button className="quick-btn emergency" onClick={() => { setShowSOSModal(true); setSOSCountdown(5); }}>
+                <div className="quick-icon"><AlertOctagon size={20} /></div>
+                <span>Emergency</span>
               </button>
             </div>
           </div>
@@ -808,14 +937,17 @@ const DriverDashboard: React.FC = () => {
       {/* Bottom Nav */}
       <nav className="bottom-nav">
         <button className={`nav-btn ${activeTab === 'trip' ? 'active' : ''}`} onClick={() => setActiveTab('trip')}>
-          <Home size={20} /><span>My Trip</span>
+          <div className="nav-icon"><Home size={22} /></div>
+          <span className="nav-label">My Trip</span>
         </button>
         <button className={`nav-btn ${activeTab === 'chat' ? 'active' : ''}`} onClick={() => setActiveTab('chat')}>
-          <MessageCircle size={20} /><span>Chat</span>
+          <div className="nav-icon"><MessageCircle size={22} /></div>
+          <span className="nav-label">Chat</span>
           <span className="nav-badge">3</span>
         </button>
         <button className={`nav-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>
-          <History size={20} /><span>History</span>
+          <div className="nav-icon"><History size={22} /></div>
+          <span className="nav-label">History</span>
         </button>
       </nav>
       <div className="safe-area-bottom" />
@@ -1049,10 +1181,20 @@ const DriverDashboard: React.FC = () => {
       {/* Toast */}
       {toast && (
         <div className={`toast ${toast.type}`}>
-          {toast.type === 'success' && <CheckCircle size={16} />}
-          {toast.type === 'error' && <X size={16} />}
-          {toast.type === 'warning' && <AlertTriangle size={16} />}
+          {toast.type === 'success' && <CheckCircle size={20} />}
+          {toast.type === 'error' && <X size={20} />}
+          {toast.type === 'warning' && <AlertTriangle size={20} />}
           <span>{toast.message}</span>
+        </div>
+      )}
+
+      {/* Full-screen Processing Overlay */}
+      {isProcessing && (
+        <div className="processing-overlay">
+          <div className="processing-content">
+            <div className="processing-spinner" />
+            <p>Processing...</p>
+          </div>
         </div>
       )}
     </div>

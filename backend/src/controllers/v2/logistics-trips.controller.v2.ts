@@ -347,15 +347,15 @@ export async function deleteTrip(req: TenantRequest, res: Response): Promise<voi
  */
 export async function startTrip(req: TenantRequest, res: Response): Promise<void> {
   try {
-    const { tenantId, userId } = getTenantContext(req);
+    const { tenantId } = getTenantContext(req);
     const { id } = req.params;
 
     const result = await pool.query(
       `UPDATE logistics.trips 
-       SET status = 'In Transit', started_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP, updated_by = $1
-       WHERE trip_id = $2 AND tenant_id = $3 AND status = 'Planned'
+       SET status = 'In Transit', actual_start = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+       WHERE trip_id = $1 AND tenant_id = $2 AND status = 'Planned'
        RETURNING *`,
-      [userId, id, tenantId]
+      [id, tenantId]
     );
 
     if (result.rows.length === 0) {
@@ -380,16 +380,15 @@ export async function startTrip(req: TenantRequest, res: Response): Promise<void
  */
 export async function completeTrip(req: TenantRequest, res: Response): Promise<void> {
   try {
-    const { tenantId, userId } = getTenantContext(req);
+    const { tenantId } = getTenantContext(req);
     const { id } = req.params;
-    const { pod_status = 'Received' } = req.body;
 
     const result = await pool.query(
       `UPDATE logistics.trips 
-       SET status = 'Delivered', pod_status = $1, completed_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP, updated_by = $2
-       WHERE trip_id = $3 AND tenant_id = $4 AND status = 'In Transit'
+       SET status = 'Delivered', actual_end = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+       WHERE trip_id = $1 AND tenant_id = $2 AND status = 'In Transit'
        RETURNING *`,
-      [pod_status, userId, id, tenantId]
+      [id, tenantId]
     );
 
     if (result.rows.length === 0) {
@@ -414,16 +413,16 @@ export async function completeTrip(req: TenantRequest, res: Response): Promise<v
  */
 export async function cancelTrip(req: TenantRequest, res: Response): Promise<void> {
   try {
-    const { tenantId, userId } = getTenantContext(req);
+    const { tenantId } = getTenantContext(req);
     const { id } = req.params;
     const { reason } = req.body;
 
     const result = await pool.query(
       `UPDATE logistics.trips 
-       SET status = 'Cancelled', cancellation_reason = $1, cancelled_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP, updated_by = $2
-       WHERE trip_id = $3 AND tenant_id = $4 AND status IN ('Planned', 'In Transit')
+       SET status = 'Cancelled', notes = COALESCE(notes || ' | ', '') || 'Cancelled: ' || COALESCE($1, 'No reason'), updated_at = CURRENT_TIMESTAMP
+       WHERE trip_id = $2 AND tenant_id = $3 AND status IN ('Planned', 'In Transit')
        RETURNING *`,
-      [reason, userId, id, tenantId]
+      [reason, id, tenantId]
     );
 
     if (result.rows.length === 0) {
@@ -458,7 +457,7 @@ export async function getDashboardStats(req: TenantRequest, res: Response): Prom
         COUNT(*) FILTER (WHERE status = 'Delivered') as delivered,
         COUNT(*) FILTER (WHERE status = 'Cancelled') as cancelled,
         COUNT(*) FILTER (WHERE pod_status = 'Pending' AND status NOT IN ('Cancelled', 'Delivered')) as pending_pod,
-        COUNT(*) FILTER (WHERE status = 'Delivered' AND DATE(completed_at) = CURRENT_DATE) as delivered_today,
+        COUNT(*) FILTER (WHERE status = 'Delivered' AND DATE(actual_end) = CURRENT_DATE) as delivered_today,
         COUNT(*) FILTER (WHERE DATE(eta) = CURRENT_DATE AND status IN ('Planned', 'In Transit')) as due_today
       FROM logistics.trips
       WHERE tenant_id = $1
@@ -510,5 +509,112 @@ export async function getRecentTrips(req: TenantRequest, res: Response): Promise
       return;
     }
     res.status(500).json({ success: false, error: 'Failed to fetch recent trips' });
+  }
+}
+
+/**
+ * GET /api/v2/logistics/customers
+ * Get customers from sales module for logistics integration (tenant-scoped)
+ */
+export async function getCustomers(req: TenantRequest, res: Response): Promise<void> {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { status = 'active', search, limit = 100 } = req.query;
+
+    let query = `
+      SELECT 
+        id,
+        code,
+        name,
+        contact_person,
+        email,
+        phone,
+        address,
+        city,
+        status
+      FROM customers
+      WHERE tenant_id = $1
+    `;
+
+    const params: any[] = [tenantId];
+    let paramCount = 2;
+
+    if (status && status !== 'all') {
+      query += ` AND status = $${paramCount}`;
+      params.push(status);
+      paramCount++;
+    }
+
+    if (search) {
+      query += ` AND (name ILIKE $${paramCount} OR code ILIKE $${paramCount})`;
+      params.push(`%${search}%`);
+      paramCount++;
+    }
+
+    query += ` ORDER BY name ASC LIMIT $${paramCount}`;
+    params.push(parseInt(limit as string));
+
+    const result = await pool.query(query, params);
+
+    res.json({ 
+      success: true, 
+      customers: result.rows,
+      total: result.rows.length 
+    });
+  } catch (error: any) {
+    console.error('[LogisticsV2] Get customers error:', error);
+    if (error.message === 'Tenant context required') {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
+    }
+    res.status(500).json({ success: false, error: 'Failed to fetch customers' });
+  }
+}
+
+/**
+ * GET /api/v2/logistics/form-data
+ * Get all form data needed for trip creation (customers, drivers, vehicles)
+ */
+export async function getFormData(req: TenantRequest, res: Response): Promise<void> {
+  try {
+    const { tenantId } = getTenantContext(req);
+
+    // Fetch customers, drivers, and vehicles in parallel
+    const [customersResult, driversResult, vehiclesResult] = await Promise.all([
+      pool.query(`
+        SELECT customer_id as id, customer_code as code, name, contact_person, email, phone, city
+        FROM sales.customers
+        WHERE tenant_id = $1 AND status = 'active'
+        ORDER BY name ASC LIMIT 200
+      `, [tenantId]),
+      pool.query(`
+        SELECT driver_id, first_name, last_name, license_number, phone, status
+        FROM logistics.drivers
+        WHERE tenant_id = $1 AND status IN ('ACTIVE', 'AVAILABLE', 'OFF_DUTY')
+        ORDER BY first_name, last_name
+      `, [tenantId]),
+      pool.query(`
+        SELECT vehicle_id, vehicle_registration as registration_number, make, model, vehicle_type, status
+        FROM logistics.vehicles
+        WHERE tenant_id = $1 AND status = 'ACTIVE'
+        ORDER BY vehicle_registration
+      `, [tenantId])
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        customers: customersResult.rows,
+        drivers: driversResult.rows,
+        vehicles: vehiclesResult.rows
+      }
+    });
+  } catch (error: any) {
+    console.error('[LogisticsV2] Get form data error:', error);
+    if (error.message === 'Tenant context required') {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
+    }
+    res.status(500).json({ success: false, error: 'Failed to fetch form data' });
   }
 }

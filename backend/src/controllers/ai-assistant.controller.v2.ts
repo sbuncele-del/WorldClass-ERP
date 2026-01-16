@@ -731,14 +731,89 @@ function parseNaturalLanguage(text: string): ParsedCommand {
   };
 }
 
+// Import AI services for fallback
+import { createAIAssistant, AIAssistantService } from '../services/ai/AIAssistantService';
+
+let aiAssistant: AIAssistantService | null = null;
+function getAIAssistant(): AIAssistantService | null {
+  if (!aiAssistant) {
+    try {
+      aiAssistant = createAIAssistant();
+      if (aiAssistant?.isConfigured()) {
+        console.log('✅ AI Assistant loaded:', aiAssistant.getProviderName());
+      }
+    } catch (e) {
+      console.warn('AI Assistant not available');
+    }
+  }
+  return aiAssistant;
+}
+
+/**
+ * Check if a query is conversational/general vs an actionable command
+ */
+function isConversationalQuery(text: string): boolean {
+  const lowerText = text.toLowerCase().trim();
+  
+  // Conversational patterns that should go to AI
+  const conversationalPatterns = [
+    /^(hi|hello|hey|good\s*(morning|afternoon|evening))/,
+    /^help\s*(me)?/,
+    /what\s+can\s+you\s+do/,
+    /how\s+(do|does|can|should)\s+(i|we|the)/,
+    /explain|understand|tell\s+me\s+about/,
+    /what\s+is|what\s+are|who\s+is/,
+    /why\s+(is|are|do|does|should)/,
+    /can\s+you\s+(help|explain|tell|show)/,
+    /thank|thanks/,
+    /^(please\s+)?describe/,
+    /^(please\s+)?summarize/,
+    /what\s+should\s+i/,
+    /how\s+to\s+/,
+    /best\s+way\s+to/,
+    /advice|suggestion|recommend/,
+  ];
+  
+  // Check if it matches conversational patterns
+  for (const pattern of conversationalPatterns) {
+    if (pattern.test(lowerText)) {
+      return true;
+    }
+  }
+  
+  // Actionable keywords that should NOT go to AI (these are real commands)
+  const actionableKeywords = [
+    'create invoice', 'new invoice', 'make invoice', 'generate invoice',
+    'create quote', 'new quote', 'generate quote',
+    'record payment', 'received payment', 'got paid',
+    'create purchase', 'new po', 'purchase order',
+    'record expense', 'add expense', 'log expense',
+    'create task', 'add task', 'new task',
+    'schedule meeting', 'book meeting',
+    'journal entry', 'adjustment',
+    'cash position', 'bank balance', 'outstanding invoices',
+    'overdue', 'revenue', 'profit', 'receivable', 'payable',
+  ];
+  
+  for (const keyword of actionableKeywords) {
+    if (lowerText.includes(keyword)) {
+      return false; // It's actionable, not conversational
+    }
+  }
+  
+  // If no actionable keywords found, treat as conversational
+  // This catches general questions and chit-chat
+  return true;
+}
+
 /**
  * Execute a natural language command
- * Converts text to actual ERP transactions
+ * Routes conversational queries to AI, actionable commands to regex parser
  */
 export const executeCommand = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId, userId } = getTenantContext(req);
-    const { command, confirm } = req.body;
+    const { command, confirm, sessionId } = req.body;
     
     if (!command) {
       return res.status(400).json({
@@ -747,27 +822,50 @@ export const executeCommand = async (req: TenantRequest, res: Response) => {
       });
     }
     
-    // Parse the natural language command
-    const parsed = parseNaturalLanguage(command);
-    
-    // If confidence is too low, ask for clarification
-    if (parsed.confidence < 0.7) {
+    // FIRST: Check if this is a conversational query (not an action)
+    if (isConversationalQuery(command)) {
+      const assistant = getAIAssistant();
+      if (assistant?.isConfigured()) {
+        try {
+          console.log('🤖 Routing to AI (conversational):', command.substring(0, 50));
+          const aiResponse = await assistant.processMessage(command, {
+            tenantId,
+            userId,
+            sessionId: sessionId || `session_${Date.now()}`
+          });
+          
+          return res.json({
+            success: true,
+            data: {
+              status: 'executed',
+              message: aiResponse.content,
+              action: aiResponse.action,
+              aiPowered: true,
+              provider: assistant.getProviderName()
+            }
+          });
+        } catch (aiError: any) {
+          console.error('AI processing error:', aiError.message);
+          // Fall through to regex parser
+        }
+      } else {
+        console.log('⚠️ AI not configured, using fallback');
+      }
+      
+      // AI fallback for conversational queries
       return res.json({
         success: true,
         data: {
-          status: 'clarification_needed',
-          message: "I'm not sure what you want me to do. Could you be more specific? Try phrases like:",
-          suggestions: [
-            "Show me the cash position",
-            "Create an invoice for [Customer] for R[amount]",
-            "Record a payment of R[amount] from [Customer]",
-            "What are the outstanding invoices?",
-            "Generate a profit and loss report"
-          ],
-          parsed
+          status: 'executed',
+          message: `👋 Hello! I'm your AI assistant for the WorldClass ERP system.\n\n**I can help you with:**\n\n📊 **Queries**: "Show me cash position", "What are outstanding invoices?"\n📝 **Invoices**: "Create invoice for ABC Company for R5000"\n💰 **Payments**: "Record payment of R1000 from XYZ Ltd"\n📋 **Tasks**: "Create task: Follow up with supplier"\n\nJust type what you need in plain English!`,
+          aiPowered: false
         }
       });
     }
+    
+    // Parse the actionable command using regex
+    const parsed = parseNaturalLanguage(command);
+    console.log('⚡ Actionable command detected:', parsed.intent, 'confidence:', parsed.confidence);
     
     // READ operations (QUERY_DATA, GENERATE_REPORT) execute immediately without confirmation
     const isReadOperation = parsed.intent === 'QUERY_DATA' || parsed.intent === 'GENERATE_REPORT';

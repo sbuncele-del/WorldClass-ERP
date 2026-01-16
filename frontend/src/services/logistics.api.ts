@@ -79,10 +79,42 @@ export interface DocumentExtraction {
   processedAt: string;
 }
 
+export interface Customer {
+  id: string;
+  code?: string;
+  name: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  status?: string;
+}
+
 /**
  * Trips API
  */
 export const tripsAPI = {
+  /**
+   * Get customers from sales module for trip assignment
+   */
+  async getCustomers(params?: { status?: string; search?: string }): Promise<{ customers: Customer[]; total: number }> {
+    return apiGet(`${BASE}/customers`, params);
+  },
+
+  /**
+   * Get all form data for trip creation (customers, drivers, vehicles)
+   */
+  async getFormData(): Promise<{ 
+    data: { 
+      customers: Customer[]; 
+      drivers: any[]; 
+      vehicles: any[] 
+    } 
+  }> {
+    return apiGet(`${BASE}/form-data`);
+  },
+
   /**
    * Get all trips with optional filters
    */
@@ -137,6 +169,145 @@ export const tripsAPI = {
    */
   async completeTrip(tripId: string, podData?: any): Promise<void> {
     return apiPost(`${BASE}/trips/${tripId}/complete`, podData || {});
+  },
+
+  /**
+   * Cancel trip
+   */
+  async cancelTrip(tripId: string, reason?: string): Promise<void> {
+    return apiPost(`${BASE}/trips/${tripId}/cancel`, { reason });
+  },
+
+  /**
+   * Update trip status directly
+   */
+  async updateStatus(tripId: string, status: string): Promise<void> {
+    return apiPatch(`${BASE}/trips/${tripId}`, { status });
+  },
+};
+
+/**
+ * POD (Proof of Delivery) API
+ */
+export const podAPI = {
+  /**
+   * Initiate POD verification - sends SMS code to customer
+   */
+  async initiateVerification(tripId: string, customerPhone: string): Promise<{ code: string }> {
+    return apiPost(`/api/v2/delivery/${tripId}/verify/initiate`, { customerPhone });
+  },
+
+  /**
+   * Verify customer code
+   */
+  async verifyCode(tripId: string, code: string): Promise<{ verified: boolean }> {
+    return apiPost(`/api/v2/delivery/${tripId}/verify/code`, { code });
+  },
+
+  /**
+   * Upload POD documents (signature, photos)
+   */
+  async uploadPOD(tripId: string, podData: {
+    signature?: string;
+    photos?: string[];
+    notes?: string;
+    receiverName?: string;
+  }): Promise<{ podReference: string }> {
+    return apiPost(`/api/v2/delivery/${tripId}/pod/upload`, podData);
+  },
+
+  /**
+   * Complete delivery with POD
+   */
+  async completeDelivery(tripId: string): Promise<{ invoiceNumber: string }> {
+    return apiPost(`/api/v2/delivery/${tripId}/complete`, {});
+  },
+
+  /**
+   * Get delivery status including POD info
+   */
+  async getDeliveryStatus(tripId: string): Promise<any> {
+    return apiGet(`/api/v2/delivery/${tripId}/status`);
+  },
+
+  /**
+   * Verify POD reference (for customers)
+   */
+  async verifyPODReference(podReference: string): Promise<any> {
+    return apiGet(`/api/v2/driver/verify-pod/${podReference}`);
+  },
+};
+
+/**
+ * Driver App API (Mobile/Simplified interface for drivers)
+ */
+export const driverAppAPI = {
+  /**
+   * Get driver dashboard stats
+   */
+  async getDashboard(): Promise<any> {
+    return apiGet('/api/v2/driver/dashboard');
+  },
+
+  /**
+   * Get driver's assigned trips
+   */
+  async getMyTrips(status?: string): Promise<{ trips: any[] }> {
+    return apiGet('/api/v2/driver/trips', status ? { status } : undefined);
+  },
+
+  /**
+   * Get single trip details
+   */
+  async getTripDetails(tripId: string): Promise<any> {
+    return apiGet(`/api/v2/driver/trips/${tripId}`);
+  },
+
+  /**
+   * Start a trip
+   */
+  async startTrip(tripId: string): Promise<any> {
+    return apiPost(`/api/v2/driver/trips/${tripId}/start`, {});
+  },
+
+  /**
+   * Mark arrival at destination
+   */
+  async markArrived(tripId: string, location?: { lat: number; lng: number }): Promise<any> {
+    return apiPost(`/api/v2/driver/trips/${tripId}/arrive`, { location });
+  },
+
+  /**
+   * Request POD verification (sends code to customer)
+   */
+  async requestPODReady(tripId: string, customerPhone?: string): Promise<{ code: string }> {
+    return apiPost(`/api/v2/driver/trips/${tripId}/pod-ready`, { customerPhone });
+  },
+
+  /**
+   * Verify customer code
+   */
+  async verifyCustomer(tripId: string, code: string): Promise<{ verified: boolean }> {
+    return apiPost(`/api/v2/driver/trips/${tripId}/verify-customer`, { code });
+  },
+
+  /**
+   * Upload POD documents
+   */
+  async uploadPOD(tripId: string, data: {
+    receiverName: string;
+    signature?: string;
+    photos?: string[];
+    notes?: string;
+  }): Promise<{ podReference: string }> {
+    return apiPost(`/api/v2/driver/trips/${tripId}/pod-upload`, data);
+  },
+
+  /**
+   * Complete delivery and generate invoice
+   */
+  async completeDelivery(tripId: string): Promise<{ invoiceNumber: string; podReference: string }> {
+    return apiPost(`/api/v2/driver/trips/${tripId}/complete`, {});
   },
 };
 
@@ -553,6 +724,8 @@ export const geofencesAPI = {
 
 export default {
   trips: tripsAPI,
+  pod: podAPI,
+  driverApp: driverAppAPI,
   fuel: fuelAPI,
   loads: loadsAPI,
   maintenance: maintenanceAPI,

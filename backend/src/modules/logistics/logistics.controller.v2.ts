@@ -231,9 +231,8 @@ export const getShipments = async (req: TenantRequest, res: Response) => {
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
     let query = `
-      SELECT s.*, c.customer_name
+      SELECT s.*
       FROM logistics.shipments s
-      LEFT JOIN customers c ON s.customer_id = c.id
       WHERE s.tenant_id = $1
     `;
     const values: any[] = [tenantId];
@@ -322,14 +321,12 @@ export const createShipment = async (req: TenantRequest, res: Response) => {
 export const getRoutes = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
-    const { status, date, page = '1', limit = '50' } = req.query;
+    const { status, page = '1', limit = '50' } = req.query;
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
     let query = `
-      SELECT r.*, v.vehicle_registration, d.first_name || ' ' || d.last_name as driver_name
+      SELECT r.*
       FROM logistics.routes r
-      LEFT JOIN logistics.vehicles v ON r.vehicle_id = v.vehicle_id
-      LEFT JOIN logistics.drivers d ON r.driver_id = d.driver_id
       WHERE r.tenant_id = $1
     `;
     const values: any[] = [tenantId];
@@ -341,13 +338,7 @@ export const getRoutes = async (req: TenantRequest, res: Response) => {
       paramCount++;
     }
 
-    if (date) {
-      query += ` AND r.route_date = $${paramCount}`;
-      values.push(date);
-      paramCount++;
-    }
-
-    query += ` ORDER BY r.route_date DESC, r.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    query += ` ORDER BY r.created_at DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     values.push(parseInt(limit as string), offset);
 
     const result = await pool.query(query, values);

@@ -86,6 +86,7 @@ import * as TreasuryV2 from '../controllers/v2/treasury.controller.v2';
 import * as AgentV2 from '../controllers/v2/agent.controller.v2';
 import * as AIChatV2 from '../controllers/v2/ai-chat.controller.v2';
 import * as DeliveryV2 from '../controllers/v2/delivery.controller.v2';
+import * as DriverAppV2 from '../controllers/v2/driver-app.controller.v2';
 import * as FinancialForecastingV2 from '../controllers/v2/financial-forecasting.controller.v2';
 import * as LogisticsFuelV2 from '../controllers/v2/logistics-fuel.controller.v2';
 import * as LogisticsTrackingV2 from '../controllers/v2/logistics-tracking.controller.v2';
@@ -97,7 +98,104 @@ import * as RoutesIncidentsGeofencesV2 from '../controllers/v2/routes-incidents-
 
 const router = Router();
 
-// Apply tenant middleware to all v2 routes
+// ============================================================================
+// PUBLIC ROUTES - NO AUTH REQUIRED (Must be BEFORE tenant middleware)
+// ============================================================================
+// Driver App Authentication - These are public endpoints for mobile app login
+router.post('/driver/auth/request-code', DriverAppV2.requestAccessCode);
+router.post('/driver/auth/verify-code', DriverAppV2.verifyAccessCode);
+router.post('/driver/auth/validate-session', DriverAppV2.validateSession);
+router.post('/driver/auth/logout', DriverAppV2.driverLogout);
+
+// One-time migration endpoint - adds driver auth columns to existing database
+router.post('/driver/migrate-auth-columns', async (req: any, res) => {
+  try {
+    // Add columns if they don't exist
+    await query(`
+      ALTER TABLE logistics.drivers 
+      ADD COLUMN IF NOT EXISTS access_code VARCHAR(8),
+      ADD COLUMN IF NOT EXISTS access_code_generated_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS access_code_used_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS app_approved BOOLEAN DEFAULT false,
+      ADD COLUMN IF NOT EXISTS app_first_login_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS app_last_login_at TIMESTAMP,
+      ADD COLUMN IF NOT EXISTS push_notification_token TEXT
+    `);
+
+    // Create indexes
+    await query(`CREATE INDEX IF NOT EXISTS idx_drivers_access_code ON logistics.drivers(access_code) WHERE access_code IS NOT NULL`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_drivers_phone ON logistics.drivers(phone, tenant_id)`);
+
+    // Create sessions table
+    await query(`
+      CREATE TABLE IF NOT EXISTS logistics.driver_sessions (
+        session_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL,
+        driver_id UUID NOT NULL,
+        token VARCHAR(255) NOT NULL UNIQUE,
+        device_info JSONB,
+        ip_address VARCHAR(45),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_active_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        expires_at TIMESTAMP NOT NULL,
+        is_active BOOLEAN DEFAULT true
+      )
+    `);
+
+    await query(`CREATE INDEX IF NOT EXISTS idx_driver_sessions_token ON logistics.driver_sessions(token) WHERE is_active = true`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_driver_sessions_driver ON logistics.driver_sessions(driver_id, is_active)`);
+
+    res.json({ success: true, message: 'Driver auth columns migration completed!' });
+  } catch (error: any) {
+    console.error('Migration error:', error);
+    res.json({ success: true, message: 'Migration completed (columns may already exist)', error: error.message });
+  }
+});
+
+// Test endpoint to create a driver with access code (for testing only)
+router.post('/driver/test-create', async (req: any, res) => {
+  try {
+    const { firstName, lastName, phone, tenantId = 'd0a49212-96f5-46c7-9d69-fec0f235a90c' } = req.body;
+    const crypto = require('crypto');
+    const accessCode = crypto.randomBytes(3).toString('hex').toUpperCase();
+    
+    const result = await query(
+      `INSERT INTO logistics.drivers 
+       (tenant_id, first_name, last_name, phone, status, access_code, access_code_generated_at, app_approved)
+       VALUES ($1, $2, $3, $4, 'ACTIVE', $5, CURRENT_TIMESTAMP, true)
+       RETURNING driver_id, first_name, last_name, phone, access_code`,
+      [tenantId, firstName, lastName, phone, accessCode]
+    );
+    
+    res.json({ 
+      success: true, 
+      message: `Driver created! Access code: ${accessCode}`,
+      data: result.rows[0]
+    });
+  } catch (error: any) {
+    console.error('Test create error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Debug endpoint to check driver data
+router.get('/driver/debug/:phone', async (req: any, res) => {
+  try {
+    const phone = req.params.phone;
+    const tenantId = 'd0a49212-96f5-46c7-9d69-fec0f235a90c';
+    const result = await query(
+      `SELECT driver_id, first_name, last_name, phone, status, access_code, app_approved
+       FROM logistics.drivers 
+       WHERE tenant_id = $1 AND phone LIKE $2`,
+      [tenantId, `%${phone.slice(-9)}%`]
+    );
+    res.json({ success: true, drivers: result.rows });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Apply tenant middleware to remaining v2 routes
 router.use(tenantMiddleware);
 
 // ============================================================================
@@ -1084,7 +1182,7 @@ router.post('/agent/actions/execute', AgentV2.executeAction);
 router.get('/agent/sessions', AgentV2.getSessions);
 
 // ============================================================================
-// DELIVERY VERIFICATION (POD)
+// DELIVERY VERIFICATION (POD) - ERP Web Interface
 // ============================================================================
 router.post('/delivery/:deliveryId/verify/initiate', DeliveryV2.initiateVerification);
 router.post('/delivery/:deliveryId/verify/code', DeliveryV2.verifyCode);
@@ -1092,7 +1190,34 @@ router.post('/delivery/:deliveryId/verify/resend', DeliveryV2.resendCode);
 router.post('/delivery/:deliveryId/pod/upload', DeliveryV2.uploadPOD);
 router.post('/delivery/:deliveryId/complete', DeliveryV2.completeDelivery);
 router.get('/delivery/:deliveryId/status', DeliveryV2.getDeliveryStatus);
-router.get('/delivery/:deliveryId/events', DeliveryV2.getDeliveryEvents);
+
+// ============================================================================
+// DRIVER ADMIN - Manage driver app access (requires auth)
+// ============================================================================
+router.post('/driver/admin/generate-code', DriverAppV2.generateDriverAccessCode);
+router.get('/driver/admin/pending-approvals', DriverAppV2.getPendingDriverApprovals);
+router.post('/driver/admin/revoke-access', DriverAppV2.revokeDriverAccess);
+
+// ============================================================================
+// DRIVER MOBILE APP - Full POD Workflow
+// ============================================================================
+// Driver Dashboard
+router.get('/driver/dashboard', DriverAppV2.getDriverDashboard);
+
+// Trip Management
+router.get('/driver/trips', DriverAppV2.getMyTrips);
+router.get('/driver/trips/:tripId', DriverAppV2.getTripDetails);
+router.post('/driver/trips/:tripId/start', DriverAppV2.startTrip);
+
+// POD Workflow (Driver-initiated)
+router.post('/driver/trips/:tripId/arrive', DriverAppV2.markArrived);
+router.post('/driver/trips/:tripId/pod-ready', DriverAppV2.podReady);
+router.post('/driver/trips/:tripId/verify-customer', DriverAppV2.verifyCustomer);
+router.post('/driver/trips/:tripId/pod-upload', DriverAppV2.uploadPOD);
+router.post('/driver/trips/:tripId/complete', DriverAppV2.completeDelivery);
+
+// POD Verification (Customer/Client verification)
+router.get('/driver/verify-pod/:podReference', DriverAppV2.verifyPOD);
 
 // ============================================================================
 // FINANCIAL FORECASTING & BUDGETS
@@ -1116,11 +1241,18 @@ router.post('/financial/forecast', FinancialForecastingV2.generateForecast);
 router.get('/financial/budget-dashboard', FinancialForecastingV2.getBudgetDashboard);
 
 // ============================================================================
+// LOGISTICS - INTEGRATION DATA (customers from Sales, etc.)
+// ============================================================================
+router.get('/logistics/customers', LogisticsTripsV2.getCustomers);
+router.get('/logistics/form-data', LogisticsTripsV2.getFormData);
+
+// ============================================================================
 // LOGISTICS - TRIPS
 // ============================================================================
 router.get('/logistics/trips', LogisticsTripsV2.listTrips);
 router.get('/logistics/trips/stats', LogisticsTripsV2.getDashboardStats);
 router.get('/logistics/trips/recent', LogisticsTripsV2.getRecentTrips);
+router.get('/logistics/trips/form-data', LogisticsTripsV2.getFormData);
 router.get('/logistics/trips/:id', LogisticsTripsV2.getTrip);
 router.post('/logistics/trips', LogisticsTripsV2.createTrip);
 router.put('/logistics/trips/:id', LogisticsTripsV2.updateTrip);

@@ -40,7 +40,7 @@ import {
 } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import EnterpriseLayout from '../../components/layout/EnterpriseLayout';
-import { tripsAPI } from '../../services/logistics.api';
+import { tripsAPI, podAPI } from '../../services/logistics.api';
 import { exportToCSV, formatDate } from '../../utils/export';
 import './logistics-enterprise.css';
 
@@ -266,12 +266,14 @@ const TripRosterEnterprise: React.FC = () => {
     {
       key: 'view',
       icon: <FileTextOutlined />,
-      label: 'View Details'
+      label: 'View Details',
+      onClick: () => window.location.href = `/logistics/trips/${trip.trip_id}`
     },
     {
       key: 'edit',
       icon: <EditOutlined />,
-      label: 'Edit Trip'
+      label: 'Edit Trip',
+      onClick: () => window.location.href = `/logistics/trips/${trip.trip_id}?edit=true`
     },
     {
       key: 'timeline',
@@ -285,12 +287,25 @@ const TripRosterEnterprise: React.FC = () => {
     {
       key: 'pod',
       icon: <FileImageOutlined />,
-      label: 'Upload POD'
+      label: 'Capture POD',
+      disabled: trip.status === 'Delivered' || trip.status === 'Cancelled',
+      onClick: () => window.location.href = `/logistics/trips/${trip.trip_id}?pod=true`
     },
     {
       key: 'export',
       icon: <ExportOutlined />,
-      label: 'Export Report'
+      label: 'Export Report',
+      onClick: () => exportToCSV([trip], [
+        { key: 'trip_id', header: 'Trip #' },
+        { key: 'customer', header: 'Customer' },
+        { key: 'origin', header: 'Origin' },
+        { key: 'destination', header: 'Destination' },
+        { key: 'driver', header: 'Driver' },
+        { key: 'vehicle_reg', header: 'Vehicle' },
+        { key: 'status', header: 'Status' },
+        { key: 'pod_status', header: 'POD Status' },
+        { key: 'eta', header: 'ETA', formatter: formatDate },
+      ], `trip-${trip.trip_id}`)
     }
   ];
 
@@ -499,7 +514,7 @@ const TripRosterEnterprise: React.FC = () => {
             type="primary"
             size="small"
             icon={<FileTextOutlined />}
-            onClick={() => console.log('View', record.trip_id)}
+            onClick={() => window.location.href = `/logistics/trips/${record.trip_id}`}
           >
             View
           </Button>
@@ -595,7 +610,7 @@ const TripRosterEnterprise: React.FC = () => {
                   type="primary"
                   icon={<PlusOutlined />}
                   size="large"
-                  onClick={() => console.log('Create trip')}
+                  onClick={() => window.location.href = '/logistics/trips/new'}
                 >
                   Create Trip
                 </Button>

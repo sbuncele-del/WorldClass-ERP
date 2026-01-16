@@ -1,8 +1,18 @@
 import React, { useState, useCallback } from 'react';
-import { Upload, FileText, CheckCircle, AlertCircle, Eye, Send, Download, User, Building, Package, DollarSign, Calendar, MapPin, Truck } from 'lucide-react';
+import { Upload, FileText, CheckCircle, AlertCircle, Eye, Send, Download, User, Building, Package, DollarSign, Calendar, MapPin, Truck, Clock, UserCheck, XCircle, MessageSquare } from 'lucide-react';
 import SARSInvoice from './SARSInvoice';
 import { documentsAPI } from '../../services/logistics.api';
 import '../../styles/erp-ui.css';
+
+// Approval Workflow Status
+type ApprovalStatus = 'draft' | 'pending_approval' | 'approved' | 'rejected';
+
+interface ApprovalHistory {
+  action: 'submitted' | 'approved' | 'rejected' | 'revised';
+  user: string;
+  timestamp: string;
+  comment?: string;
+}
 
 interface ExtractedData {
   // Document Metadata
@@ -65,6 +75,10 @@ interface ExtractedData {
   // Extracted Text
   raw_text?: string;
   confidence_score: number;
+  
+  // Approval Workflow
+  approval_status?: ApprovalStatus;
+  approval_history?: ApprovalHistory[];
 }
 
 interface ProcessingStep {
@@ -78,6 +92,11 @@ const DocumentProcessing: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [approvalStatus, setApprovalStatus] = useState<ApprovalStatus>('draft');
+  const [approvalComment, setApprovalComment] = useState('');
+  const [approvalHistory, setApprovalHistory] = useState<ApprovalHistory[]>([]);
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [approvalAction, setApprovalAction] = useState<'approve' | 'reject' | null>(null);
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(null);
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([]);
   const [previewInvoice, setPreviewInvoice] = useState(false);
@@ -436,7 +455,248 @@ const DocumentProcessing: React.FC = () => {
   };
 
   const handleSendInvoice = () => {
+    if (approvalStatus !== 'approved') {
+      alert('⚠️ Invoice must be approved before sending to customer.');
+      return;
+    }
     alert('📧 Invoice sent to customer via email!');
+    // Add history entry
+    setApprovalHistory(prev => [...prev, {
+      action: 'submitted',
+      user: 'Current User',
+      timestamp: new Date().toISOString(),
+      comment: 'Invoice sent to customer'
+    }]);
+  };
+
+  const handleSubmitForApproval = () => {
+    setApprovalStatus('pending_approval');
+    const historyEntry: ApprovalHistory = {
+      action: 'submitted',
+      user: 'Current User',
+      timestamp: new Date().toISOString(),
+      comment: 'Submitted for manager approval'
+    };
+    setApprovalHistory(prev => [...prev, historyEntry]);
+    alert('📋 Invoice submitted for manager approval!');
+  };
+
+  const handleApprovalAction = (action: 'approve' | 'reject') => {
+    setApprovalAction(action);
+    setShowApprovalModal(true);
+  };
+
+  const handleConfirmApproval = () => {
+    if (!approvalAction) return;
+    
+    const historyEntry: ApprovalHistory = {
+      action: approvalAction === 'approve' ? 'approved' : 'rejected',
+      user: 'Manager',
+      timestamp: new Date().toISOString(),
+      comment: approvalComment || undefined
+    };
+    
+    setApprovalHistory(prev => [...prev, historyEntry]);
+    setApprovalStatus(approvalAction === 'approve' ? 'approved' : 'rejected');
+    setShowApprovalModal(false);
+    setApprovalComment('');
+    setApprovalAction(null);
+    
+    if (approvalAction === 'approve') {
+      alert('✅ Invoice approved! You can now send it to the customer.');
+    } else {
+      alert('❌ Invoice rejected. Please revise and resubmit.');
+    }
+  };
+
+  const handleReviseInvoice = () => {
+    setApprovalStatus('draft');
+    const historyEntry: ApprovalHistory = {
+      action: 'revised',
+      user: 'Current User',
+      timestamp: new Date().toISOString(),
+      comment: 'Invoice revised for resubmission'
+    };
+    setApprovalHistory(prev => [...prev, historyEntry]);
+    setEditMode(true);
+  };
+
+  const getApprovalStatusBadge = () => {
+    const statusConfig: Record<ApprovalStatus, { bg: string; color: string; icon: React.ReactNode; label: string }> = {
+      draft: { bg: '#f1f5f9', color: '#475569', icon: <FileText size={16} />, label: 'Draft' },
+      pending_approval: { bg: '#fef3c7', color: '#92400e', icon: <Clock size={16} />, label: 'Pending Approval' },
+      approved: { bg: '#d1fae5', color: '#065f46', icon: <CheckCircle size={16} />, label: 'Approved' },
+      rejected: { bg: '#fee2e2', color: '#991b1b', icon: <XCircle size={16} />, label: 'Rejected' }
+    };
+    
+    const config = statusConfig[approvalStatus];
+    return (
+      <span style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        padding: '0.5rem 1rem',
+        background: config.bg,
+        color: config.color,
+        borderRadius: '2rem',
+        fontWeight: 600,
+        fontSize: '0.875rem'
+      }}>
+        {config.icon}
+        {config.label}
+      </span>
+    );
+  };
+
+  const renderApprovalModal = () => {
+    if (!showApprovalModal) return null;
+    
+    return (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem'
+      }}>
+        <div style={{
+          background: 'white',
+          borderRadius: '1rem',
+          maxWidth: '500px',
+          width: '100%',
+          padding: '2rem'
+        }}>
+          <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {approvalAction === 'approve' ? (
+              <>
+                <UserCheck size={24} style={{ color: '#10b981' }} />
+                Approve Invoice
+              </>
+            ) : (
+              <>
+                <XCircle size={24} style={{ color: '#ef4444' }} />
+                Reject Invoice
+              </>
+            )}
+          </h3>
+          
+          <div style={{ marginBottom: '1.5rem' }}>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+              <MessageSquare size={16} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
+              Comment (optional)
+            </label>
+            <textarea
+              value={approvalComment}
+              onChange={(e) => setApprovalComment(e.target.value)}
+              placeholder={approvalAction === 'approve' 
+                ? 'Add any notes for this approval...' 
+                : 'Please provide a reason for rejection...'}
+              style={{
+                width: '100%',
+                minHeight: '100px',
+                padding: '0.75rem',
+                border: '1px solid #e2e8f0',
+                borderRadius: '0.5rem',
+                fontSize: '1rem',
+                resize: 'vertical'
+              }}
+            />
+          </div>
+          
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+            <button
+              className="action-button"
+              onClick={() => {
+                setShowApprovalModal(false);
+                setApprovalComment('');
+                setApprovalAction(null);
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              className={`action-button ${approvalAction === 'approve' ? 'success' : ''}`}
+              onClick={handleConfirmApproval}
+              style={approvalAction === 'reject' ? {
+                background: '#ef4444',
+                color: 'white',
+                border: 'none'
+              } : {}}
+            >
+              {approvalAction === 'approve' ? (
+                <>
+                  <UserCheck size={18} />
+                  Confirm Approval
+                </>
+              ) : (
+                <>
+                  <XCircle size={18} />
+                  Confirm Rejection
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderApprovalHistory = () => {
+    if (approvalHistory.length === 0) return null;
+    
+    return (
+      <div className="content-card" style={{ marginBottom: '1.5rem' }}>
+        <div className="card-header">
+          <h2 className="card-title">
+            <Clock size={20} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+            Approval History
+          </h2>
+        </div>
+        <div className="card-content">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {approvalHistory.map((entry, index) => (
+              <div key={index} style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '1rem',
+                padding: '0.75rem',
+                background: '#f8fafc',
+                borderRadius: '0.5rem',
+                borderLeft: `3px solid ${
+                  entry.action === 'approved' ? '#10b981' :
+                  entry.action === 'rejected' ? '#ef4444' :
+                  entry.action === 'submitted' ? '#3b82f6' : '#94a3b8'
+                }`
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>
+                    {entry.action === 'approved' && '✅ Approved'}
+                    {entry.action === 'rejected' && '❌ Rejected'}
+                    {entry.action === 'submitted' && '📋 Submitted'}
+                    {entry.action === 'revised' && '✏️ Revised'}
+                    <span style={{ fontWeight: 400, color: '#64748b' }}> by {entry.user}</span>
+                  </div>
+                  {entry.comment && (
+                    <div style={{ fontSize: '0.875rem', color: '#64748b' }}>
+                      "{entry.comment}"
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                  {new Date(entry.timestamp).toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const renderUploadZone = () => (
@@ -905,6 +1165,112 @@ const DocumentProcessing: React.FC = () => {
           </div>
         </div>
 
+        {/* Approval Status & History */}
+        <div className="content-card" style={{ marginBottom: '1.5rem' }}>
+          <div className="card-header">
+            <h2 className="card-title">
+              <UserCheck size={20} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+              Approval Workflow
+            </h2>
+            {getApprovalStatusBadge()}
+          </div>
+          <div className="card-content">
+            <div style={{ 
+              padding: '1.5rem', 
+              background: approvalStatus === 'approved' ? '#f0fdf4' : 
+                         approvalStatus === 'rejected' ? '#fef2f2' :
+                         approvalStatus === 'pending_approval' ? '#fffbeb' : '#f8fafc',
+              borderRadius: '0.75rem',
+              marginBottom: '1rem'
+            }}>
+              {approvalStatus === 'draft' && (
+                <div style={{ textAlign: 'center' }}>
+                  <FileText size={48} style={{ color: '#94a3b8', marginBottom: '1rem' }} />
+                  <h4 style={{ marginBottom: '0.5rem' }}>Invoice Ready for Review</h4>
+                  <p style={{ color: '#64748b', marginBottom: '1rem' }}>
+                    Review the extracted data above, then submit for manager approval.
+                  </p>
+                  <button 
+                    className="action-button primary"
+                    onClick={handleSubmitForApproval}
+                  >
+                    <Clock size={18} />
+                    Submit for Approval
+                  </button>
+                </div>
+              )}
+              
+              {approvalStatus === 'pending_approval' && (
+                <div style={{ textAlign: 'center' }}>
+                  <Clock size={48} style={{ color: '#f59e0b', marginBottom: '1rem' }} />
+                  <h4 style={{ marginBottom: '0.5rem' }}>Awaiting Manager Approval</h4>
+                  <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>
+                    This invoice has been submitted and is waiting for manager review.
+                  </p>
+                  {/* Manager approval buttons - shown for demo */}
+                  <div style={{ 
+                    padding: '1rem', 
+                    background: 'white', 
+                    borderRadius: '0.5rem',
+                    border: '1px dashed #e2e8f0'
+                  }}>
+                    <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1rem' }}>
+                      <strong>Manager Actions:</strong>
+                    </p>
+                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                      <button 
+                        className="action-button success"
+                        onClick={() => handleApprovalAction('approve')}
+                      >
+                        <UserCheck size={18} />
+                        Approve
+                      </button>
+                      <button 
+                        className="action-button"
+                        onClick={() => handleApprovalAction('reject')}
+                        style={{ background: '#fee2e2', color: '#991b1b', border: 'none' }}
+                      >
+                        <XCircle size={18} />
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {approvalStatus === 'approved' && (
+                <div style={{ textAlign: 'center' }}>
+                  <CheckCircle size={48} style={{ color: '#10b981', marginBottom: '1rem' }} />
+                  <h4 style={{ marginBottom: '0.5rem', color: '#065f46' }}>Invoice Approved!</h4>
+                  <p style={{ color: '#64748b' }}>
+                    This invoice has been approved by the manager. You can now send it to the customer.
+                  </p>
+                </div>
+              )}
+              
+              {approvalStatus === 'rejected' && (
+                <div style={{ textAlign: 'center' }}>
+                  <XCircle size={48} style={{ color: '#ef4444', marginBottom: '1rem' }} />
+                  <h4 style={{ marginBottom: '0.5rem', color: '#991b1b' }}>Invoice Rejected</h4>
+                  <p style={{ color: '#64748b', marginBottom: '1rem' }}>
+                    Please review the feedback and revise the invoice before resubmitting.
+                  </p>
+                  <button 
+                    className="action-button primary"
+                    onClick={handleReviseInvoice}
+                  >
+                    <FileText size={18} />
+                    Revise Invoice
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Approval History */}
+        {renderApprovalHistory()}
+
         {/* Actions */}
         <div className="content-card">
           <div className="card-content">
@@ -913,6 +1279,7 @@ const DocumentProcessing: React.FC = () => {
                 className="action-button"
                 onClick={() => setEditMode(!editMode)}
                 style={{ flex: '1 1 200px' }}
+                disabled={approvalStatus === 'pending_approval'}
               >
                 <FileText size={18} />
                 {editMode ? 'Lock Editing' : 'Edit Details'}
@@ -930,7 +1297,15 @@ const DocumentProcessing: React.FC = () => {
               <button
                 className="action-button success"
                 onClick={handleSendInvoice}
-                style={{ flex: '1 1 200px', background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', color: 'white' }}
+                style={{ 
+                  flex: '1 1 200px', 
+                  background: approvalStatus === 'approved' 
+                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
+                    : '#e2e8f0',
+                  color: approvalStatus === 'approved' ? 'white' : '#94a3b8',
+                  cursor: approvalStatus === 'approved' ? 'pointer' : 'not-allowed'
+                }}
+                disabled={approvalStatus !== 'approved'}
               >
                 <Send size={18} />
                 Send to Customer
@@ -952,6 +1327,9 @@ const DocumentProcessing: React.FC = () => {
 
   return (
     <div className="dashboard-container">
+      {/* Approval Modal */}
+      {renderApprovalModal()}
+
       {/* Invoice Preview Modal */}
       {previewInvoice && extractedData && (
         <div style={{
@@ -1066,11 +1444,11 @@ const DocumentProcessing: React.FC = () => {
       <div className="content-card" style={{ marginBottom: '2rem', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' }}>
         <div className="card-content">
           <h3 style={{ marginBottom: '1rem', color: '#1e40af' }}>🤖 How It Works</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
             <div>
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>1️⃣</div>
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>Upload Document</h4>
-              <p style={{ fontSize: '0.75rem', color: '#64748b' }}>PDF or image of load confirmation</p>
+              <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>Upload COD</h4>
+              <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Upload confirmation of delivery</p>
             </div>
             <div>
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>2️⃣</div>
@@ -1079,18 +1457,18 @@ const DocumentProcessing: React.FC = () => {
             </div>
             <div>
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>3️⃣</div>
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>Auto Customer</h4>
-              <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Creates customer if new</p>
-            </div>
-            <div>
-              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>4️⃣</div>
               <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>Generate Invoice</h4>
               <p style={{ fontSize: '0.75rem', color: '#64748b' }}>SARS-compliant tax invoice</p>
             </div>
             <div>
+              <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>4️⃣</div>
+              <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>Manager Approval</h4>
+              <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Submit for manager review</p>
+            </div>
+            <div>
               <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>5️⃣</div>
-              <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>Review & Send</h4>
-              <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Preview and email to client</p>
+              <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.25rem' }}>Send Invoice</h4>
+              <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Email approved invoice to client</p>
             </div>
           </div>
         </div>

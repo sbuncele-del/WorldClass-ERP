@@ -12,14 +12,58 @@
  * - Context-aware - remembers your preferences and history
  * - South African compliance aware - VAT, SARS, PAYE, POPIA
  * 
- * Model: OpenAI GPT-4o-mini (best balance of cost/quality for structured tasks)
- * Estimated cost: ~R0.50-2 per customer per month at typical usage
+ * Supports Multiple AI Providers:
+ * - Groq (FREE - recommended): GROQ_API_KEY - Llama 3.1 70B
+ * - OpenAI: OPENAI_API_KEY - GPT-4o-mini
+ * - AWS Bedrock: Uses IAM role - Claude models
  */
 
 import OpenAI from 'openai';
 import { EventEmitter } from 'events';
 import { generateERPContext, searchKnowledge, ERP_KNOWLEDGE } from './ERPKnowledgeBase';
 import { getAILearningService, AILearningService } from './AILearningService';
+
+// AI Provider configuration
+type AIProvider = 'groq' | 'openai' | 'bedrock';
+
+interface AIProviderConfig {
+  provider: AIProvider;
+  client: OpenAI;
+  model: string;
+  name: string;
+}
+
+function initializeAIProvider(): AIProviderConfig | null {
+  // Priority: Groq (free) > OpenAI > Bedrock
+  
+  if (process.env.GROQ_API_KEY) {
+    console.log('✅ AI Provider: Groq (FREE - Llama 3.3 70B)');
+    return {
+      provider: 'groq',
+      client: new OpenAI({
+        apiKey: process.env.GROQ_API_KEY,
+        baseURL: 'https://api.groq.com/openai/v1'
+      }),
+      model: 'llama-3.3-70b-versatile',
+      name: 'Groq (Llama 3.3 70B)'
+    };
+  }
+  
+  if (process.env.OPENAI_API_KEY) {
+    console.log('✅ AI Provider: OpenAI (GPT-4o-mini)');
+    return {
+      provider: 'openai',
+      client: new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+      }),
+      model: 'gpt-4o-mini',
+      name: 'OpenAI (GPT-4o-mini)'
+    };
+  }
+  
+  console.warn('⚠️ No AI provider configured. Set GROQ_API_KEY (free) or OPENAI_API_KEY');
+  return null;
+}
 
 // Types
 export interface AIMessage {
@@ -251,8 +295,7 @@ class MockDataService {
 }
 
 export class AIAssistantService extends EventEmitter {
-  private openai: OpenAI;
-  private model: string;
+  private aiProvider: AIProviderConfig | null;
   private maxTokens: number;
   private temperature: number;
   private dataService: MockDataService;
@@ -262,11 +305,19 @@ export class AIAssistantService extends EventEmitter {
   constructor(config: AIAssistantConfig) {
     super();
     
-    this.openai = new OpenAI({
-      apiKey: config.openaiApiKey
-    });
+    // Initialize AI provider (Groq or OpenAI)
+    this.aiProvider = initializeAIProvider();
     
-    this.model = config.model || 'gpt-4o-mini';
+    // Fallback to config if env vars not set
+    if (!this.aiProvider && config.openaiApiKey) {
+      this.aiProvider = {
+        provider: 'openai',
+        client: new OpenAI({ apiKey: config.openaiApiKey }),
+        model: config.model || 'gpt-4o-mini',
+        name: 'OpenAI (config)'
+      };
+    }
+    
     this.maxTokens = config.maxTokens || 2000; // Increased for more detailed responses
     this.temperature = config.temperature || 0.4; // Slightly higher for more natural responses
     this.dataService = new MockDataService();
@@ -276,6 +327,20 @@ export class AIAssistantService extends EventEmitter {
     this.learningService.initializeTables().catch(err => {
       console.warn('Could not initialize AI learning tables:', err.message);
     });
+  }
+
+  /**
+   * Get the current AI provider name
+   */
+  getProviderName(): string {
+    return this.aiProvider?.name || 'Not configured';
+  }
+
+  /**
+   * Check if AI is configured
+   */
+  isConfigured(): boolean {
+    return this.aiProvider !== null;
   }
 
   /**
@@ -345,7 +410,7 @@ export class AIAssistantService extends EventEmitter {
       // Determine the category of this question
       const topicCategory = this.categorizeQuestion(message);
       
-      // Build messages for OpenAI
+      // Build messages for AI
       const messages: OpenAI.ChatCompletionMessageParam[] = [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'system', content: `CURRENT CONTEXT:\n${JSON.stringify(enrichedContext, null, 2)}${knowledgeContext}${patternsContext}\n\nUSER PREFERENCES:\nResponse style: ${userPrefs.preferred_response_style}` },
@@ -355,27 +420,61 @@ export class AIAssistantService extends EventEmitter {
         }))
       ];
 
-      // Call OpenAI
-      const completion = await this.openai.chat.completions.create({
-        model: this.model,
+      // Check if AI is configured
+      if (!this.aiProvider) {
+        throw new Error('AI service not configured. Set GROQ_API_KEY (free) or OPENAI_API_KEY');
+      }
+
+      // Call AI provider (Groq or OpenAI)
+      const completionOptions: any = {
+        model: this.aiProvider.model,
         messages,
         max_tokens: this.maxTokens,
-        temperature: this.temperature,
-        response_format: { type: 'json_object' }
-      });
+        temperature: this.temperature
+      };
+      
+      // JSON mode only supported by OpenAI, Groq uses instruction-following
+      if (this.aiProvider.provider === 'openai') {
+        completionOptions.response_format = { type: 'json_object' };
+      }
+      
+      const completion = await this.aiProvider.client.chat.completions.create(completionOptions);
 
       const responseText = completion.choices[0]?.message?.content || '{}';
       const usage = completion.usage;
       
-      // Parse AI response
+      // Parse AI response - handle both pure JSON and text with embedded JSON
       let parsedResponse: any;
       try {
         parsedResponse = JSON.parse(responseText);
       } catch {
-        parsedResponse = {
-          message: responseText,
-          action: null
-        };
+        // Groq may return text with JSON at the end - extract and clean
+        const jsonMatch = responseText.match(/```json\s*([\s\S]*?)```/);
+        if (jsonMatch) {
+          try {
+            const embeddedJson = JSON.parse(jsonMatch[1]);
+            // Use the text before the JSON block as the message, cleaned up
+            const textBeforeJson = responseText.substring(0, responseText.indexOf('```json')).trim();
+            parsedResponse = {
+              message: textBeforeJson || embeddedJson.message || responseText,
+              action: embeddedJson.action || null,
+              validations: embeddedJson.validations || [],
+              followUp: embeddedJson.followUp
+            };
+          } catch {
+            parsedResponse = {
+              message: responseText.replace(/```json[\s\S]*?```/g, '').trim(),
+              action: null
+            };
+          }
+        } else {
+          // No JSON block, use text as-is but strip any trailing JSON-like content
+          const cleanedText = responseText.replace(/\{[\s\S]*"message"[\s\S]*\}$/m, '').trim();
+          parsedResponse = {
+            message: cleanedText || responseText,
+            action: null
+          };
+        }
       }
 
       // Calculate token cost (GPT-4o-mini pricing)
@@ -727,20 +826,33 @@ export class AIAssistantService extends EventEmitter {
   }
 }
 
-// Factory function for easy instantiation
-export function createAIAssistant(apiKey?: string): AIAssistantService {
-  const key = apiKey || process.env.OPENAI_API_KEY;
+// Factory function for easy instantiation - supports Groq (free) or OpenAI
+export function createAIAssistant(apiKey?: string): AIAssistantService | null {
+  // Check for Groq first (free tier)
+  if (process.env.GROQ_API_KEY) {
+    console.log('🤖 Creating AI Assistant with Groq provider');
+    return new AIAssistantService({
+      openaiApiKey: 'groq-via-init', // Not used - initializeAIProvider handles this
+      model: 'llama-3.1-70b-versatile',
+      maxTokens: 1000,
+      temperature: 0.3
+    });
+  }
   
-  if (!key) {
-    throw new Error('OpenAI API key is required. Set OPENAI_API_KEY environment variable.');
+  // Fall back to OpenAI
+  const key = apiKey || process.env.OPENAI_API_KEY;
+  if (key) {
+    console.log('🤖 Creating AI Assistant with OpenAI provider');
+    return new AIAssistantService({
+      openaiApiKey: key,
+      model: 'gpt-4o-mini',
+      maxTokens: 1000,
+      temperature: 0.3
+    });
   }
 
-  return new AIAssistantService({
-    openaiApiKey: key,
-    model: 'gpt-4o-mini',
-    maxTokens: 1000,
-    temperature: 0.3
-  });
+  console.warn('⚠️ No AI provider available. Set GROQ_API_KEY (free) or OPENAI_API_KEY');
+  return null;
 }
 
 export default AIAssistantService;
