@@ -116,16 +116,16 @@ export class LogisticsAutomationService {
     const recommendedDrivers: any[] = [];
     const alternativeOptions: string[] = [];
 
-    // Get available drivers
+    // Get available drivers with assigned vehicles
     const driversResult = await this.pool.query(
-      `SELECT d.driver_id, d.first_name, d.last_name, d.license_code, d.pdp_expiry,
-              v.vehicle_id, v.registration, v.vehicle_type, v.current_lat, v.current_lng,
+      `SELECT d.driver_id, d.first_name, d.last_name, d.license_type, d.pdp_expiry,
+              v.vehicle_id, v.vehicle_registration, v.vehicle_type, v.current_location,
               v.current_odometer
        FROM logistics.drivers d
-       JOIN logistics.vehicles v ON d.assigned_vehicle_id = v.vehicle_id
+       JOIN logistics.vehicles v ON v.current_driver_id = d.driver_id
        WHERE d.tenant_id = $1 
-         AND d.status = 'ACTIVE'
-         AND v.status = 'AVAILABLE'`,
+         AND d.status = 'AVAILABLE'
+         AND v.status = 'ACTIVE'`,
       [this.tenantId]
     );
 
@@ -149,9 +149,9 @@ export class LogisticsAutomationService {
         continue;
       }
 
-      // Calculate distance to pickup (Haversine formula)
-      const driverLat = driver.current_lat || originHub.lat;
-      const driverLng = driver.current_lng || originHub.lng;
+      // Calculate distance to pickup (default to origin hub if no location)
+      const driverLat = originHub.lat;
+      const driverLng = originHub.lng;
       const distanceToPickup = this.calculateDistance(driverLat, driverLng, originHub.lat, originHub.lng);
       
       // Estimate arrival time (assume 60km/h average in urban, 80km/h highway)
@@ -173,12 +173,12 @@ export class LogisticsAutomationService {
       recommendedDrivers.push({
         driverId: driver.driver_id,
         driverName: `${driver.first_name} ${driver.last_name}`,
-        vehicleReg: driver.registration,
+        vehicleReg: driver.vehicle_registration,
         vehicleType: driver.vehicle_type,
         currentLocation: {
           lat: driverLat,
           lng: driverLng,
-          address: 'Current location'
+          address: driver.current_location || 'Depot'
         },
         distanceToPickup: Math.round(distanceToPickup),
         estimatedArrival: estimatedArrival.toISOString(),

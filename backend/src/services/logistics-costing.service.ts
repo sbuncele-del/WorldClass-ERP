@@ -218,7 +218,7 @@ export class LogisticsCostingService {
        WHERE l.trip_id = $1 AND l.tenant_id = $2`,
       [tripId, this.tenantId]
     );
-    const revenue = parseFloat(loadResult.rows[0]?.revenue) || trip.invoice_amount || totalCost * 1.25;
+    const revenue = parseFloat(loadResult.rows[0]?.revenue) || trip.revenue || totalCost * 1.25;
 
     const margin = revenue - totalCost;
     const marginPercent = revenue > 0 ? (margin / revenue) * 100 : 0;
@@ -385,11 +385,11 @@ export class LogisticsCostingService {
       );
       created = true;
 
-      // Update trip with invoice reference
+      // Update trip with revenue
       await this.pool.query(
-        `UPDATE logistics.trips SET invoice_id = $1, invoice_amount = $2 
-         WHERE trip_id = $3 AND tenant_id = $4`,
-        [invoiceId, total, tripId, this.tenantId]
+        `UPDATE logistics.trips SET revenue = $1 
+         WHERE trip_id = $2 AND tenant_id = $3`,
+        [total, tripId, this.tenantId]
       );
     } catch (e) {
       // Tables might not exist
@@ -490,13 +490,13 @@ export class LogisticsCostingService {
   }> {
     // Get completed trips in date range
     const tripsResult = await this.pool.query(
-      `SELECT t.origin_name, t.destination_name, t.distance_km,
-              t.invoice_amount, t.started_at, t.delivered_at,
+      `SELECT t.origin, t.destination, t.distance_km,
+              t.revenue, t.actual_start, t.actual_end,
               v.vehicle_type
        FROM logistics.trips t
        LEFT JOIN logistics.vehicles v ON t.vehicle_id = v.vehicle_id
        WHERE t.tenant_id = $1 AND t.status = 'COMPLETED'
-         AND t.delivered_at BETWEEN $2 AND $3`,
+         AND t.actual_end BETWEEN $2 AND $3`,
       [this.tenantId, startDate, endDate]
     );
 
@@ -504,12 +504,12 @@ export class LogisticsCostingService {
     const routeMap = new Map<string, any>();
     
     for (const trip of tripsResult.rows) {
-      const routeKey = `${trip.origin_name || 'Unknown'} → ${trip.destination_name || 'Unknown'}`;
+      const routeKey = `${trip.origin || 'Unknown'} → ${trip.destination || 'Unknown'}`;
       
       if (!routeMap.has(routeKey)) {
         routeMap.set(routeKey, {
-          origin: trip.origin_name || 'Unknown',
-          destination: trip.destination_name || 'Unknown',
+          origin: trip.origin || 'Unknown',
+          destination: trip.destination || 'Unknown',
           tripCount: 0,
           totalRevenue: 0,
           totalCost: 0,
@@ -519,7 +519,7 @@ export class LogisticsCostingService {
       
       const route = routeMap.get(routeKey)!;
       route.tripCount++;
-      route.totalRevenue += parseFloat(trip.invoice_amount) || 0;
+      route.totalRevenue += parseFloat(trip.revenue) || 0;
       
       // Estimate cost
       const distance = trip.distance_km || 500;
@@ -530,8 +530,8 @@ export class LogisticsCostingService {
       route.totalCost += fuelCost + driverCost + overhead;
       
       // Calculate turnaround time
-      if (trip.started_at && trip.delivered_at) {
-        const hours = (new Date(trip.delivered_at).getTime() - new Date(trip.started_at).getTime()) / (1000 * 60 * 60);
+      if (trip.actual_start && trip.actual_end) {
+        const hours = (new Date(trip.actual_end).getTime() - new Date(trip.actual_start).getTime()) / (1000 * 60 * 60);
         route.totalHours += hours;
       }
     }
@@ -752,7 +752,7 @@ export class LogisticsCostingService {
   }> {
     // Get vehicle details
     const vehicleResult = await this.pool.query(
-      `SELECT vehicle_id, registration, vehicle_type, odometer
+      `SELECT vehicle_id, vehicle_registration, vehicle_type, current_odometer as odometer
        FROM logistics.vehicles
        WHERE vehicle_id = $1 AND tenant_id = $2`,
       [vehicleId, this.tenantId]
@@ -856,7 +856,7 @@ export class LogisticsCostingService {
 
     return {
       vehicleId,
-      vehicleReg: vehicle.registration,
+      vehicleReg: vehicle.vehicle_registration,
       period: { start: startDate, end: endDate },
       odometer: { start: startOdometer, end: endOdometer, km: totalKm },
       fuel: {
@@ -924,11 +924,11 @@ export class LogisticsCostingService {
     // Get trip data
     const tripsResult = await this.pool.query(
       `SELECT COUNT(*) as trip_count,
-              SUM(COALESCE(invoice_amount, 0)) as total_revenue,
+              SUM(COALESCE(revenue, 0)) as total_revenue,
               SUM(COALESCE(distance_km, 0)) as total_km
        FROM logistics.trips
        WHERE tenant_id = $1 AND status = 'COMPLETED'
-         AND delivered_at BETWEEN $2 AND $3`,
+         AND actual_end BETWEEN $2 AND $3`,
       [this.tenantId, startDate.toISOString(), endDate.toISOString()]
     );
 

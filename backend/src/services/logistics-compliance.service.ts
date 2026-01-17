@@ -297,9 +297,9 @@ export class LogisticsComplianceService {
     // Check driver licenses and PDPs
     const driversResult = await this.pool.query(
       `SELECT driver_id, first_name, last_name, 
-              license_expiry, pdp_expiry, license_code
+              license_expiry, pdp_expiry, license_type
        FROM logistics.drivers
-       WHERE tenant_id = $1 AND status = 'ACTIVE'`,
+       WHERE tenant_id = $1 AND status = 'AVAILABLE'`,
       [this.tenantId]
     );
 
@@ -321,7 +321,7 @@ export class LogisticsComplianceService {
           driversExpiring.push({
             driverId: driver.driver_id,
             driverName: `${driver.first_name} ${driver.last_name}`,
-            documentType: `Driver License (Code ${driver.license_code || 'EC'})`,
+            documentType: `Driver License (Code ${driver.license_type || 'EC'})`,
             expiryDate: driver.license_expiry,
             daysUntilExpiry: daysUntil,
             severity,
@@ -360,7 +360,7 @@ export class LogisticsComplianceService {
 
     // Check vehicle licenses and COFs
     const vehiclesResult = await this.pool.query(
-      `SELECT vehicle_id, registration, license_expiry, cof_expiry
+      `SELECT vehicle_id, vehicle_registration, license_expiry, insurance_expiry as cof_expiry
        FROM logistics.vehicles
        WHERE tenant_id = $1 AND status != 'DISPOSED'`,
       [this.tenantId]
@@ -380,7 +380,7 @@ export class LogisticsComplianceService {
 
           vehiclesExpiring.push({
             vehicleId: vehicle.vehicle_id,
-            registration: vehicle.registration,
+            registration: vehicle.vehicle_registration,
             documentType: 'Vehicle License Disc',
             expiryDate: vehicle.license_expiry,
             daysUntilExpiry: daysUntil,
@@ -405,7 +405,7 @@ export class LogisticsComplianceService {
 
           vehiclesExpiring.push({
             vehicleId: vehicle.vehicle_id,
-            registration: vehicle.registration,
+            registration: vehicle.vehicle_registration,
             documentType: 'Certificate of Fitness (COF/Roadworthy)',
             expiryDate: vehicle.cof_expiry,
             daysUntilExpiry: daysUntil,
@@ -448,7 +448,7 @@ export class LogisticsComplianceService {
 
     // Get vehicle and driver info
     const vehicleResult = await this.pool.query(
-      `SELECT registration FROM logistics.vehicles WHERE vehicle_id = $1 AND tenant_id = $2`,
+      `SELECT vehicle_registration FROM logistics.vehicles WHERE vehicle_id = $1 AND tenant_id = $2`,
       [vehicleId, this.tenantId]
     );
     const driverResult = await this.pool.query(
@@ -470,7 +470,7 @@ export class LogisticsComplianceService {
 
     return {
       inspectionId,
-      vehicleReg: vehicleResult.rows[0]?.registration || vehicleId,
+      vehicleReg: vehicleResult.rows[0]?.vehicle_registration || vehicleId,
       driverName: driverResult.rows[0] ? `${driverResult.rows[0].first_name} ${driverResult.rows[0].last_name}` : 'Unknown',
       checklist: PRE_TRIP_CHECKLIST,
       createdAt: new Date().toISOString(),

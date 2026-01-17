@@ -143,9 +143,9 @@ export class LogisticsMaintenanceService {
     overdueServices: number;
   }> {
     let query = `
-      SELECT v.vehicle_id, v.registration, v.vehicle_type, v.odometer,
-             v.last_service_date, v.last_service_km, v.next_service_km,
-             v.engine_hours
+      SELECT v.vehicle_id, v.vehicle_registration, v.vehicle_type, v.current_odometer as odometer,
+             v.last_service_date, v.current_odometer as last_service_km, v.current_odometer as next_service_km,
+             0 as engine_hours
       FROM logistics.vehicles v
       WHERE v.tenant_id = $1 AND v.status NOT IN ('DISPOSED', 'SOLD')
     `;
@@ -214,7 +214,7 @@ export class LogisticsMaintenanceService {
 
         vehiclesNeedingService.push({
           vehicleId: vehicle.vehicle_id,
-          registration: vehicle.registration,
+          registration: vehicle.vehicle_registration,
           vehicleType: vehicle.vehicle_type,
           currentOdometer: currentKm,
           servicesNeeded,
@@ -265,7 +265,7 @@ export class LogisticsMaintenanceService {
 
     // Get vehicle info
     const vehicleResult = await this.pool.query(
-      `SELECT registration FROM logistics.vehicles WHERE vehicle_id = $1 AND tenant_id = $2`,
+      `SELECT vehicle_registration FROM logistics.vehicles WHERE vehicle_id = $1 AND tenant_id = $2`,
       [vehicleId, this.tenantId]
     );
 
@@ -311,7 +311,7 @@ export class LogisticsMaintenanceService {
 
     return {
       defectId,
-      vehicleReg: vehicleResult.rows[0]?.registration || vehicleId,
+      vehicleReg: vehicleResult.rows[0]?.vehicle_registration || vehicleId,
       severity: defectInfo.severity,
       vehicleCanOperate: defectInfo.vehicleCanOperate,
       maxResolutionHours: defectInfo.maxResolutionHours,
@@ -338,7 +338,7 @@ export class LogisticsMaintenanceService {
     total: number;
   }> {
     let query = `
-      SELECT d.*, v.registration, 
+      SELECT d.*, v.vehicle_registration, 
              CONCAT(dr.first_name, ' ', dr.last_name) as driver_name
       FROM logistics.vehicle_defects d
       LEFT JOIN logistics.vehicles v ON d.vehicle_id = v.vehicle_id
@@ -374,7 +374,7 @@ export class LogisticsMaintenanceService {
       return {
         defectId: d.defect_id,
         vehicleId: d.vehicle_id,
-        vehicleReg: d.registration || d.vehicle_id,
+        vehicleReg: d.vehicle_registration || d.vehicle_id,
         defectType: d.defect_type,
         description: d.description,
         severity: d.severity,
@@ -471,8 +471,8 @@ export class LogisticsMaintenanceService {
   }> {
     // Get vehicle telemetry (simulated from recent data)
     let query = `
-      SELECT v.vehicle_id, v.registration, v.odometer, v.engine_hours,
-             v.fuel_consumption, v.last_service_km
+      SELECT v.vehicle_id, v.vehicle_registration, v.current_odometer as odometer, 0 as engine_hours,
+             v.fuel_capacity as fuel_consumption, v.current_odometer as last_service_km
       FROM logistics.vehicles v
       WHERE v.tenant_id = $1 AND v.status NOT IN ('DISPOSED', 'SOLD')
     `;
@@ -497,7 +497,7 @@ export class LogisticsMaintenanceService {
       if (oilLifePct <= oilTrigger.criticalThreshold) {
         alerts.push({
           vehicleId: vehicle.vehicle_id,
-          vehicleReg: vehicle.registration,
+          vehicleReg: vehicle.vehicle_registration,
           metric: oilTrigger.metric,
           currentValue: Math.round(oilLifePct),
           threshold: oilTrigger.criticalThreshold,
@@ -510,7 +510,7 @@ export class LogisticsMaintenanceService {
       } else if (oilLifePct <= oilTrigger.warningThreshold) {
         alerts.push({
           vehicleId: vehicle.vehicle_id,
-          vehicleReg: vehicle.registration,
+          vehicleReg: vehicle.vehicle_registration,
           metric: oilTrigger.metric,
           currentValue: Math.round(oilLifePct),
           threshold: oilTrigger.warningThreshold,
@@ -529,7 +529,7 @@ export class LogisticsMaintenanceService {
       if (tyreWearPct > 85) {
         alerts.push({
           vehicleId: vehicle.vehicle_id,
-          vehicleReg: vehicle.registration,
+          vehicleReg: vehicle.vehicle_registration,
           metric: 'Estimated Tyre Wear',
           currentValue: Math.round(tyreWearPct),
           threshold: 85,
@@ -552,7 +552,7 @@ export class LogisticsMaintenanceService {
         if (efficiencyDrop >= fuelTrigger.criticalThreshold) {
           alerts.push({
             vehicleId: vehicle.vehicle_id,
-            vehicleReg: vehicle.registration,
+            vehicleReg: vehicle.vehicle_registration,
             metric: fuelTrigger.metric,
             currentValue: Math.round(efficiencyDrop),
             threshold: fuelTrigger.criticalThreshold,
@@ -565,7 +565,7 @@ export class LogisticsMaintenanceService {
         } else if (efficiencyDrop >= fuelTrigger.warningThreshold) {
           alerts.push({
             vehicleId: vehicle.vehicle_id,
-            vehicleReg: vehicle.registration,
+            vehicleReg: vehicle.vehicle_registration,
             metric: fuelTrigger.metric,
             currentValue: Math.round(efficiencyDrop),
             threshold: fuelTrigger.warningThreshold,
@@ -628,14 +628,14 @@ export class LogisticsMaintenanceService {
 
     // Get fuel transactions as proxy for maintenance (real system would have maintenance table)
     const result = await this.pool.query(
-      `SELECT v.vehicle_id, v.registration, v.odometer,
+      `SELECT v.vehicle_id, v.vehicle_registration, v.current_odometer as odometer,
               COALESCE(SUM(f.total_amount), 0) as fuel_cost,
               COUNT(f.transaction_id) as transaction_count
        FROM logistics.vehicles v
        LEFT JOIN logistics.fuel_transactions f ON v.vehicle_id = f.vehicle_id 
          AND f.transaction_date BETWEEN $2 AND $3
        WHERE v.tenant_id = $1 ${vehicleId ? 'AND v.vehicle_id = $4' : ''}
-       GROUP BY v.vehicle_id, v.registration, v.odometer`,
+       GROUP BY v.vehicle_id, v.vehicle_registration, v.current_odometer`,
       vehicleId ? [this.tenantId, startDate, endDate, vehicleId] : [this.tenantId, startDate, endDate]
     );
 
@@ -647,7 +647,7 @@ export class LogisticsMaintenanceService {
 
       costByVehicle.push({
         vehicleId: vehicle.vehicle_id,
-        registration: vehicle.registration,
+        registration: vehicle.vehicle_registration,
         totalCost: Math.round(maintenanceCost),
         serviceCount: Math.ceil(parseInt(vehicle.transaction_count) / 4),
         costPerKm: vehicle.odometer > 0 ? Math.round((maintenanceCost / vehicle.odometer) * 100) / 100 : 0,
@@ -665,10 +665,10 @@ export class LogisticsMaintenanceService {
     const avgCostPerVehicle = totalCost / Math.max(1, costByVehicle.length);
     for (const v of costByVehicle) {
       if (v.totalCost > avgCostPerVehicle * 1.5) {
-        recommendations.push(`📊 ${v.registration}: Cost 50% above fleet average - review maintenance schedule`);
+        recommendations.push(`📊 ${v.vehicle_registration}: Cost 50% above fleet average - review maintenance schedule`);
       }
       if (v.costPerKm > 2) {
-        recommendations.push(`⚠️ ${v.registration}: High cost per km (R${v.costPerKm}/km) - consider replacement`);
+        recommendations.push(`⚠️ ${v.vehicle_registration}: High cost per km (R${v.costPerKm}/km) - consider replacement`);
       }
     }
 
@@ -707,7 +707,7 @@ export class LogisticsMaintenanceService {
 
     // Get vehicle info
     const vehicleResult = await this.pool.query(
-      `SELECT registration FROM logistics.vehicles WHERE vehicle_id = $1 AND tenant_id = $2`,
+      `SELECT vehicle_registration FROM logistics.vehicles WHERE vehicle_id = $1 AND tenant_id = $2`,
       [vehicleId, this.tenantId]
     );
 
@@ -744,7 +744,7 @@ export class LogisticsMaintenanceService {
 
     return {
       bookingId,
-      vehicleReg: vehicleResult.rows[0]?.registration || vehicleId,
+      vehicleReg: vehicleResult.rows[0]?.vehicle_registration || vehicleId,
       serviceType: service?.name || serviceType,
       scheduledDate: preferredDate,
       estimatedDuration,
