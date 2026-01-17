@@ -91,6 +91,7 @@ import * as FinancialForecastingV2 from '../controllers/v2/financial-forecasting
 import * as LogisticsFuelV2 from '../controllers/v2/logistics-fuel.controller.v2';
 import * as LogisticsTrackingV2 from '../controllers/v2/logistics-tracking.controller.v2';
 import * as LogisticsTripsV2 from '../controllers/v2/logistics-trips.controller.v2';
+import { createLogisticsAutomationControllerV2 } from '../controllers/v2/logistics-automation.controller.v2';
 import * as MeetingsV2 from '../controllers/v2/meetings.controller.v2';
 import * as MessagesV2 from '../controllers/v2/messages.controller.v2';
 import * as ProjectsModuleV2 from '../controllers/v2/projects.controller.v2';
@@ -1744,6 +1745,46 @@ router.get('/logistics/shipments', LogisticsControllerV2.getShipments);
 router.post('/logistics/shipments', LogisticsControllerV2.createShipment);
 router.get('/logistics/routes', LogisticsControllerV2.getRoutes);
 router.get('/logistics/dashboard', LogisticsControllerV2.getLogisticsDashboard);
+
+// ============================================================================
+// LOGISTICS AUTOMATION
+// ============================================================================
+const logisticsAutomationController = createLogisticsAutomationControllerV2(pool);
+
+// Smart Dispatch & Route Optimization
+router.post('/logistics/automation/dispatch', logisticsAutomationController.smartDispatch);
+router.post('/logistics/automation/optimize-route', logisticsAutomationController.optimizeRoute);
+router.get('/logistics/automation/driver-scores', logisticsAutomationController.getDriverScores);
+router.get('/logistics/automation/load-balance', logisticsAutomationController.analyzeLoadBalance);
+router.post('/logistics/automation/find-backhaul', logisticsAutomationController.findBackhaulLoads);
+
+// Compliance & RTMS
+router.get('/logistics/compliance/driver-hours/:driverId', logisticsAutomationController.checkDriverHours);
+router.get('/logistics/compliance/license-expiry', logisticsAutomationController.checkLicenseExpiry);
+router.get('/logistics/compliance/pre-trip/checklist', logisticsAutomationController.getPreTripChecklist);
+router.post('/logistics/compliance/pre-trip/create', logisticsAutomationController.createPreTripInspection);
+router.post('/logistics/compliance/pre-trip/:inspectionId/submit', logisticsAutomationController.submitPreTripInspection);
+router.get('/logistics/compliance/cross-border', logisticsAutomationController.checkCrossBorder);
+router.get('/logistics/compliance/dashboard', logisticsAutomationController.getComplianceDashboard);
+
+// Maintenance & Predictive
+router.get('/logistics/maintenance/schedule', logisticsAutomationController.getServiceSchedule);
+router.post('/logistics/maintenance/defects/report', logisticsAutomationController.reportDefect);
+router.get('/logistics/maintenance/defects', logisticsAutomationController.getOpenDefects);
+router.post('/logistics/maintenance/defects/:defectId/resolve', logisticsAutomationController.resolveDefect);
+router.get('/logistics/maintenance/predictive', logisticsAutomationController.getPredictiveAlerts);
+router.post('/logistics/maintenance/schedule-service', logisticsAutomationController.scheduleService);
+router.get('/logistics/maintenance/cost-analysis', logisticsAutomationController.getMaintenanceCostAnalysis);
+router.get('/logistics/maintenance/dashboard', logisticsAutomationController.getMaintenanceDashboard);
+
+// Costing & Auto-Invoicing
+router.get('/logistics/costing/trip/:tripId', logisticsAutomationController.calculateTripCost);
+router.post('/logistics/costing/invoice/generate', logisticsAutomationController.generateInvoice);
+router.post('/logistics/costing/pod-complete', logisticsAutomationController.onPODComplete);
+router.get('/logistics/costing/route-profitability', logisticsAutomationController.analyzeRouteProfitability);
+router.get('/logistics/costing/driver-pay/:driverId', logisticsAutomationController.calculateDriverPay);
+router.get('/logistics/costing/fuel-reconciliation/:vehicleId', logisticsAutomationController.reconcileFuel);
+router.get('/logistics/costing/dashboard', logisticsAutomationController.getCostingDashboard);
 
 // ============================================================================
 // HR
