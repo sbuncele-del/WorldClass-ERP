@@ -8,11 +8,14 @@
  * - Direct messages
  * - Notifications
  * - Video meetings
+ * - Email (Resend integration)
+ * - Email inbox/sent
  */
 
 import { Response } from 'express';
 import { TenantRequest } from '../types';
 import pool from '../config/database';
+import { Resend } from 'resend';
 
 /**
  * Tenant context helper
@@ -880,18 +883,19 @@ export const getTemplates = async (req: TenantRequest, res: Response) => {
 export const createTemplate = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId, userId } = getTenantContext(req);
-    const { name, type, category, subject, content, variables } = req.body;
+    const { name, templateType, type, category, subject, content, variables } = req.body;
 
     try {
       const result = await pool.query(
-        `INSERT INTO message_templates (tenant_id, created_by, name, type, category, subject, content, variables)
+        `INSERT INTO message_templates (tenant_id, created_by, name, template_type, category, subject, content, variables)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *`,
-        [tenantId, userId, name, type, category, subject, content, JSON.stringify(variables || [])]
+        [tenantId, userId, name, templateType || type || 'email', category, subject, content, JSON.stringify(variables || [])]
       );
 
       res.status(201).json({ success: true, data: result.rows[0], message: 'Template created' });
     } catch (dbError) {
+      console.error('Template DB error:', dbError);
       res.status(400).json({ success: false, error: 'Templates not configured' });
     }
   } catch (error: any) {
@@ -979,14 +983,14 @@ export const getCommunicationsDashboard = async (req: TenantRequest, res: Respon
 
     // Get unread notifications count
     const notificationsCount = await pool.query(
-      `SELECT COUNT(*) as count FROM notifications 
+      `SELECT COUNT(*) as count FROM user_notifications 
        WHERE tenant_id = $1 AND user_id = $2 AND is_read = false`,
       [tenantId, userId]
     );
 
     // Get unread messages count  
     const messagesCount = await pool.query(
-      `SELECT COUNT(*) as count FROM messages 
+      `SELECT COUNT(*) as count FROM direct_messages 
        WHERE tenant_id = $1 AND recipient_id = $2 AND is_read = false`,
       [tenantId, userId]
     );
@@ -1000,8 +1004,8 @@ export const getCommunicationsDashboard = async (req: TenantRequest, res: Respon
 
     // Get upcoming meetings
     const meetingsCount = await pool.query(
-      `SELECT COUNT(*) as count FROM meetings 
-       WHERE tenant_id = $1 AND start_time >= NOW()`,
+      `SELECT COUNT(*) as count FROM video_meetings 
+       WHERE tenant_id = $1 AND scheduled_start >= NOW()`,
       [tenantId]
     );
 
@@ -1024,6 +1028,530 @@ export const getCommunicationsDashboard = async (req: TenantRequest, res: Respon
     }
     console.error('Get communications dashboard error:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch communications dashboard' });
+  }
+};
+
+// ============================================================================
+// EMAIL (Resend Integration)
+// ============================================================================
+
+// Initialize Resend only if API key is configured
+const resend = process.env.RESEND_API_KEY 
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
+
+/**
+ * Send email via Resend
+ */
+export const sendEmail = async (req: TenantRequest, res: Response) => {
+  try {
+    if (!resend) {
+      return res.status(503).json({ 
+        success: false, 
+        error: 'Email service not configured. Please set RESEND_API_KEY environment variable.' 
+      });
+    }
+
+    const { tenantId, userId } = getTenantContext(req);
+    const { to, cc, bcc, subject, content, htmlContent, templateId, replyTo } = req.body;
+
+    if (!to || !subject) {
+      return res.status(400).json({ success: false, error: 'Recipient (to) and subject are required' });
+    }
+
+    // Get sender info
+    const userResult = await pool.query(
+      `SELECT full_name, email FROM users WHERE id = $1`,
+      [userId]
+    );
+    const senderName = userResult.rows[0]?.full_name || 'WorldClass ERP';
+
+    // Get tenant info for from domain
+    const tenantResult = await pool.query(
+      `SELECT name, settings FROM tenants WHERE id = $1`,
+      [tenantId]
+    );
+    const tenantName = tenantResult.rows[0]?.name || 'WorldClass ERP';
+
+    const fromDomain = process.env.RESEND_FROM_DOMAIN || 'siyabusaerp.co.za';
+    const fromEmail = `${senderName.toLowerCase().replace(/\s+/g, '.')}@${fromDomain}`;
+
+    // Send via Resend
+    const emailData: any = {
+      from: `${senderName} <${fromEmail}>`,
+      to: Array.isArray(to) ? to : [to],
+      subject,
+      text: content,
+      html: htmlContent || `<div style="font-family: Arial, sans-serif; padding: 20px;">${content.replace(/\n/g, '<br>')}</div>`,
+    };
+
+    if (cc) emailData.cc = Array.isArray(cc) ? cc : [cc];
+    if (bcc) emailData.bcc = Array.isArray(bcc) ? bcc : [bcc];
+    if (replyTo) emailData.reply_to = replyTo;
+
+    const result = await resend.emails.send(emailData);
+
+    // Store in email_sent table
+    await pool.query(
+      `INSERT INTO email_sent (tenant_id, user_id, to_addresses, cc_addresses, bcc_addresses, 
+        subject, body_text, body_html, resend_id, status, sent_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'sent', NOW())`,
+      [tenantId, userId, JSON.stringify(emailData.to), JSON.stringify(emailData.cc || []), 
+       JSON.stringify(emailData.bcc || []), subject, content, emailData.html, result.data?.id]
+    );
+
+    res.json({ 
+      success: true, 
+      data: { 
+        id: result.data?.id,
+        to: emailData.to,
+        subject 
+      }, 
+      message: 'Email sent successfully' 
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Send email error:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to send email' });
+  }
+};
+
+/**
+ * Get sent emails
+ */
+export const getSentEmails = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { limit = 50, offset = 0 } = req.query;
+
+    const result = await pool.query(
+      `SELECT e.*, u.full_name as sender_name
+      FROM email_sent e
+      LEFT JOIN users u ON e.user_id = u.id
+      WHERE e.tenant_id = $1
+      ORDER BY e.sent_at DESC
+      LIMIT $2 OFFSET $3`,
+      [tenantId, limit, offset]
+    );
+
+    res.json({ success: true, data: result.rows });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get sent emails error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch sent emails' });
+  }
+};
+
+/**
+ * Get email inbox
+ */
+export const getEmailInbox = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { limit = 50, offset = 0, unreadOnly = false } = req.query;
+
+    let queryStr = `
+      SELECT * FROM email_inbox
+      WHERE tenant_id = $1
+    `;
+    const params: any[] = [tenantId];
+
+    if (unreadOnly === 'true') {
+      queryStr += ` AND is_read = false`;
+    }
+
+    queryStr += ` ORDER BY received_at DESC LIMIT $2 OFFSET $3`;
+    params.push(limit, offset);
+
+    const result = await pool.query(queryStr, params);
+
+    res.json({ success: true, data: result.rows });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get email inbox error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch inbox' });
+  }
+};
+
+/**
+ * Mark email as read
+ */
+export const markEmailRead = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { id } = req.params;
+
+    await pool.query(
+      `UPDATE email_inbox SET is_read = true, read_at = NOW() WHERE id = $1 AND tenant_id = $2`,
+      [id, tenantId]
+    );
+
+    res.json({ success: true, message: 'Email marked as read' });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Mark email read error:', error);
+    res.status(500).json({ success: false, error: 'Failed to mark email as read' });
+  }
+};
+
+/**
+ * Webhook to receive inbound emails from Resend
+ */
+export const receiveInboundEmail = async (req: TenantRequest, res: Response) => {
+  try {
+    const { from, to, subject, text, html, headers } = req.body;
+
+    // Extract tenant from recipient email (e.g., inbox@tenant.siyabusaerp.co.za)
+    const toEmail = Array.isArray(to) ? to[0] : to;
+    
+    // For now, store in a default tenant or lookup by email domain
+    // In production, you'd parse the subdomain to find the tenant
+    const tenantResult = await pool.query(
+      `SELECT id FROM tenants LIMIT 1`
+    );
+    const tenantId = tenantResult.rows[0]?.id;
+
+    if (tenantId) {
+      await pool.query(
+        `INSERT INTO email_inbox (tenant_id, from_email, from_name, to_email, subject, 
+          text_content, html_content, headers, received_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+        [tenantId, from?.email || from, from?.name || '', toEmail, subject, text, html, JSON.stringify(headers || {})]
+      );
+    }
+
+    res.json({ success: true, message: 'Email received' });
+  } catch (error: any) {
+    console.error('Receive inbound email error:', error);
+    res.status(500).json({ success: false, error: 'Failed to process inbound email' });
+  }
+};
+
+/**
+ * Reply to an email
+ */
+export const replyToEmail = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { id } = req.params;
+    const { content, htmlContent } = req.body;
+
+    // Get original email
+    const originalResult = await pool.query(
+      `SELECT * FROM email_inbox WHERE id = $1 AND tenant_id = $2`,
+      [id, tenantId]
+    );
+
+    if (originalResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Email not found' });
+    }
+
+    const original = originalResult.rows[0];
+    const replyTo = original.from_email;
+    const subject = original.subject.startsWith('Re:') ? original.subject : `Re: ${original.subject}`;
+
+    // Get sender info
+    const userResult = await pool.query(
+      `SELECT full_name FROM users WHERE id = $1`,
+      [userId]
+    );
+    const senderName = userResult.rows[0]?.full_name || 'WorldClass ERP';
+
+    const fromDomain = process.env.RESEND_FROM_DOMAIN || 'siyabusaerp.co.za';
+    const fromEmail = `${senderName.toLowerCase().replace(/\s+/g, '.')}@${fromDomain}`;
+
+    // Build reply with quoted original
+    const quotedHtml = `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        ${htmlContent || content.replace(/\n/g, '<br>')}
+        <br><br>
+        <div style="border-left: 2px solid #ccc; padding-left: 10px; color: #666;">
+          <p>On ${new Date(original.received_at).toLocaleString()}, ${original.from_name || original.from_email} wrote:</p>
+          ${original.html_content || original.text_content?.replace(/\n/g, '<br>') || ''}
+        </div>
+      </div>
+    `;
+
+    // Send via Resend
+    const result = await resend.emails.send({
+      from: `${senderName} <${fromEmail}>`,
+      to: [replyTo],
+      subject,
+      html: quotedHtml,
+    });
+
+    // Store in sent
+    await pool.query(
+      `INSERT INTO email_sent (tenant_id, user_id, to_addresses, subject, body_text, 
+        body_html, resend_id, status, sent_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'sent', NOW())`,
+      [tenantId, userId, JSON.stringify([replyTo]), subject, content, quotedHtml, result.data?.id]
+    );
+
+    res.json({ success: true, data: { id: result.data?.id }, message: 'Reply sent successfully' });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Reply to email error:', error);
+    res.status(500).json({ success: false, error: 'Failed to send reply' });
+  }
+};
+
+// ============================================================================
+// VIDEO MEETINGS (Daily.co Integration)
+// ============================================================================
+
+interface DailyRoomResponse {
+  name: string;
+  url: string;
+  privacy: string;
+}
+
+/**
+ * Create Daily.co room for meeting
+ */
+const createDailyRoom = async (roomName: string, expiryMinutes: number = 60): Promise<DailyRoomResponse> => {
+  const dailyApiKey = process.env.DAILY_API_KEY;
+  
+  if (!dailyApiKey) {
+    // Return mock data if no API key configured
+    return {
+      name: roomName,
+      url: `https://meet.daily.co/${roomName}`,
+      privacy: 'public'
+    };
+  }
+
+  const response = await fetch('https://api.daily.co/v1/rooms', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${dailyApiKey}`
+    },
+    body: JSON.stringify({
+      name: roomName,
+      privacy: 'public',
+      properties: {
+        exp: Math.floor(Date.now() / 1000) + (expiryMinutes * 60),
+        enable_chat: true,
+        enable_screenshare: true,
+        enable_recording: 'cloud',
+        start_video_off: false,
+        start_audio_off: false
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error('Daily.co room creation failed:', error);
+    // Return fallback URL
+    return {
+      name: roomName,
+      url: `https://meet.daily.co/${roomName}`,
+      privacy: 'public'
+    };
+  }
+
+  return await response.json() as DailyRoomResponse;
+};
+
+/**
+ * Start instant meeting
+ */
+export const startInstantMeeting = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { title = 'Instant Meeting', participantUserIds } = req.body;
+
+    // Generate unique room name
+    const roomName = `wc-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 6)}`;
+    
+    // Create Daily.co room
+    const roomData = await createDailyRoom(roomName, 120); // 2 hour expiry
+
+    // Store meeting
+    const meetingResult = await pool.query(
+      `INSERT INTO video_meetings (tenant_id, host_id, title, room_name, room_url,
+        meeting_type, status, actual_start)
+      VALUES ($1, $2, $3, $4, $5, 'instant', 'in_progress', NOW())
+      RETURNING *`,
+      [tenantId, userId, title, roomData.name, roomData.url]
+    );
+
+    const meeting = meetingResult.rows[0];
+
+    // Add host as participant
+    await pool.query(
+      `INSERT INTO video_meeting_participants (tenant_id, meeting_id, user_id, role, status, joined_at)
+      VALUES ($1, $2, $3, 'host', 'joined', NOW())`,
+      [tenantId, meeting.id, userId]
+    );
+
+    // Send invites to participants
+    if (participantUserIds && participantUserIds.length > 0) {
+      for (const participantId of participantUserIds) {
+        if (participantId !== userId) {
+          await pool.query(
+            `INSERT INTO video_meeting_participants (tenant_id, meeting_id, user_id, role, status)
+            VALUES ($1, $2, $3, 'participant', 'invited')`,
+            [tenantId, meeting.id, participantId]
+          );
+
+          // Create notification
+          await pool.query(
+            `INSERT INTO user_notifications (tenant_id, user_id, type, title, message, metadata)
+            VALUES ($1, $2, 'meeting_invite', $3, $4, $5)`,
+            [tenantId, participantId, 'Meeting Invite', `You're invited to: ${title}`, 
+             JSON.stringify({ meetingId: meeting.id, roomUrl: roomData.url })]
+          );
+        }
+      }
+    }
+
+    res.status(201).json({ 
+      success: true, 
+      data: { 
+        ...meeting,
+        joinUrl: roomData.url 
+      }, 
+      message: 'Meeting started' 
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Start instant meeting error:', error);
+    res.status(500).json({ success: false, error: 'Failed to start meeting' });
+  }
+};
+
+/**
+ * Join a meeting
+ */
+export const joinMeeting = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { id } = req.params;
+
+    // Get meeting
+    const meetingResult = await pool.query(
+      `SELECT * FROM video_meetings WHERE id = $1 AND tenant_id = $2`,
+      [id, tenantId]
+    );
+
+    if (meetingResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Meeting not found' });
+    }
+
+    const meeting = meetingResult.rows[0];
+
+    // Update participant status
+    await pool.query(
+      `UPDATE video_meeting_participants SET status = 'joined', joined_at = NOW()
+      WHERE meeting_id = $1 AND user_id = $2`,
+      [id, userId]
+    );
+
+    // If not already a participant, add them
+    await pool.query(
+      `INSERT INTO video_meeting_participants (tenant_id, meeting_id, user_id, role, status, joined_at)
+      VALUES ($1, $2, $3, 'participant', 'joined', NOW())
+      ON CONFLICT (meeting_id, user_id) DO UPDATE SET status = 'joined', joined_at = NOW()`,
+      [tenantId, id, userId]
+    );
+
+    res.json({ 
+      success: true, 
+      data: { 
+        meetingId: meeting.id,
+        title: meeting.title,
+        joinUrl: meeting.room_url
+      }, 
+      message: 'Joined meeting' 
+    });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Join meeting error:', error);
+    res.status(500).json({ success: false, error: 'Failed to join meeting' });
+  }
+};
+
+/**
+ * End a meeting
+ */
+export const endMeeting = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { id } = req.params;
+
+    // Check if user is host
+    const meetingResult = await pool.query(
+      `SELECT * FROM video_meetings WHERE id = $1 AND tenant_id = $2 AND host_id = $3`,
+      [id, tenantId, userId]
+    );
+
+    if (meetingResult.rows.length === 0) {
+      return res.status(403).json({ success: false, error: 'Only the host can end the meeting' });
+    }
+
+    // Update meeting status
+    await pool.query(
+      `UPDATE video_meetings SET status = 'ended', actual_end = NOW() WHERE id = $1`,
+      [id]
+    );
+
+    // Update all participants
+    await pool.query(
+      `UPDATE video_meeting_participants SET status = 'left', left_at = NOW() WHERE meeting_id = $1`,
+      [id]
+    );
+
+    res.json({ success: true, message: 'Meeting ended' });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('End meeting error:', error);
+    res.status(500).json({ success: false, error: 'Failed to end meeting' });
+  }
+};
+
+/**
+ * Get meeting participants
+ */
+export const getMeetingParticipants = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { id } = req.params;
+
+    const result = await pool.query(
+      `SELECT p.*, u.full_name, u.email
+      FROM video_meeting_participants p
+      LEFT JOIN users u ON p.user_id = u.id
+      WHERE p.meeting_id = $1 AND p.tenant_id = $2
+      ORDER BY p.joined_at`,
+      [id, tenantId]
+    );
+
+    res.json({ success: true, data: result.rows });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Get meeting participants error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch participants' });
   }
 };
 
@@ -1058,5 +1586,17 @@ export default {
   getCampaigns,
   createCampaign,
   // Dashboard
-  getCommunicationsDashboard
+  getCommunicationsDashboard,
+  // Email
+  sendEmail,
+  getSentEmails,
+  getEmailInbox,
+  markEmailRead,
+  receiveInboundEmail,
+  replyToEmail,
+  // Video Meetings Enhanced
+  startInstantMeeting,
+  joinMeeting,
+  endMeeting,
+  getMeetingParticipants
 };

@@ -829,3 +829,35 @@ export const getChartOfAccounts = async (req: TenantRequest, res: Response) => {
   }
 };
 
+/**
+ * AI Categorization Controller
+ */
+export const runAICategorization = async (req: TenantRequest, res: Response) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+    const statementId = parseInt(req.params.statementId);
+    
+    const aiCategorization = (await import('../services/ai-categorization.service')).default;
+    
+    const suggestions = await aiCategorization.categorizeStatementLines(statementId, tenantId);
+    
+    res.json({
+      success: true,
+      data: suggestions,
+      count: suggestions.length,
+      ai_available: aiCategorization.isAvailable(),
+      message: aiCategorization.isAvailable() 
+        ? `AI categorized ${suggestions.length} transactions`
+        : `Rule-based categorization applied to ${suggestions.length} transactions (AI not configured)`
+    });
+  } catch (error: any) {
+    console.error('Error running AI categorization:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+};

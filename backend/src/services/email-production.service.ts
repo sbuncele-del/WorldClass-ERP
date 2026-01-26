@@ -1,11 +1,12 @@
 /**
  * Production Email Service
- * Supports: Amazon SES, SendGrid, Generic SMTP
+ * Supports: Resend, Amazon SES, SendGrid, Generic SMTP
  * Features: Retry logic, console fallback, rate limiting
  */
 
 import nodemailer, { Transporter } from 'nodemailer';
-import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+// AWS SDK is dynamically imported only when SES is used
+// import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 import fs from 'fs';
 import path from 'path';
 
@@ -27,7 +28,7 @@ interface TemplateEmailOptions {
   from?: string;
 }
 
-type EmailProvider = 'ses' | 'sendgrid' | 'smtp' | 'console';
+type EmailProvider = 'resend' | 'ses' | 'sendgrid' | 'smtp' | 'console';
 
 // Configuration
 const EMAIL_PROVIDER: EmailProvider = (process.env.EMAIL_PROVIDER as EmailProvider) || 'smtp';
@@ -36,7 +37,8 @@ const RETRY_DELAY_MS = 1000;
 
 class ProductionEmailService {
   private transporter: Transporter | null = null;
-  private sesClient: SESClient | null = null;
+  private sesClient: any = null; // SESClient loaded dynamically
+  private resendApiKey: string | null = null;
   private initialized = false;
   private provider: EmailProvider;
 
@@ -47,6 +49,7 @@ class ProductionEmailService {
 
   private detectProvider(): EmailProvider {
     // Auto-detect based on available credentials
+    if (process.env.RESEND_API_KEY) return 'resend';
     if (process.env.SENDGRID_API_KEY) return 'sendgrid';
     if (process.env.AWS_SES_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID) return 'ses';
     if (process.env.SMTP_USER && process.env.SMTP_PASS) return 'smtp';
@@ -56,8 +59,11 @@ class ProductionEmailService {
   private initialize(): void {
     try {
       switch (this.provider) {
+        case 'resend':
+          this.initializeResend();
+          break;
         case 'ses':
-          this.initializeSES();
+          this.initializeSESAsync(); // Don't block constructor
           break;
         case 'sendgrid':
           this.initializeSendGrid();
@@ -75,15 +81,32 @@ class ProductionEmailService {
     }
   }
 
+  private initializeResend(): void {
+    this.resendApiKey = process.env.RESEND_API_KEY!;
+    const fromDomain = process.env.RESEND_FROM_DOMAIN || 'siyabusaerp.co.za';
+    console.log(`✅ Email provider: Resend (domain: ${fromDomain})`);
+  }
+
+  private async initializeSESAsync(): Promise<void> {
+    try {
+      const { SESClient } = await import('@aws-sdk/client-ses');
+      this.sesClient = new SESClient({
+        region: process.env.AWS_SES_REGION || process.env.AWS_REGION || 'eu-north-1',
+        credentials: process.env.AWS_SES_ACCESS_KEY_ID ? {
+          accessKeyId: process.env.AWS_SES_ACCESS_KEY_ID,
+          secretAccessKey: process.env.AWS_SES_SECRET_ACCESS_KEY!,
+        } : undefined,
+      });
+      console.log('✅ Email provider: Amazon SES');
+    } catch (error) {
+      console.warn('⚠️ SES SDK not available, falling back to console');
+      this.provider = 'console';
+    }
+  }
+
+  // Keep old method for backwards compatibility (calls async version)
   private initializeSES(): void {
-    this.sesClient = new SESClient({
-      region: process.env.AWS_SES_REGION || process.env.AWS_REGION || 'eu-north-1',
-      credentials: process.env.AWS_SES_ACCESS_KEY_ID ? {
-        accessKeyId: process.env.AWS_SES_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SES_SECRET_ACCESS_KEY!,
-      } : undefined, // Use IAM role if no explicit credentials
-    });
-    console.log('✅ Email provider: Amazon SES');
+    this.initializeSESAsync();
   }
 
   private initializeSendGrid(): void {
@@ -141,6 +164,9 @@ class ProductionEmailService {
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         switch (this.provider) {
+          case 'resend':
+            await this.sendViaResend(recipients, subject, html, text, from, replyTo);
+            break;
           case 'ses':
             await this.sendViaSES(recipients, subject, html, text, from);
             break;
@@ -172,6 +198,45 @@ class ProductionEmailService {
     return false;
   }
 
+  private async sendViaResend(
+    to: string[],
+    subject: string,
+    html: string,
+    text?: string,
+    from?: string,
+    replyTo?: string
+  ): Promise<void> {
+    if (!this.resendApiKey) throw new Error('Resend API key not configured');
+
+    const fromDomain = process.env.RESEND_FROM_DOMAIN || 'siyabusaerp.co.za';
+    const fromName = process.env.EMAIL_FROM_NAME || 'WorldClass ERP';
+    const fromEmail = process.env.EMAIL_FROM || `noreply@${fromDomain}`;
+    
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: from || `${fromName} <${fromEmail}>`,
+        to: to,
+        subject: subject,
+        html: html,
+        text: text || this.htmlToText(html),
+        reply_to: replyTo,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json() as { message?: string };
+      throw new Error(`Resend API error: ${error.message || response.statusText}`);
+    }
+
+    const result = await response.json() as { id: string };
+    console.log(`📧 Resend email ID: ${result.id}`);
+  }
+
   private async sendViaSES(
     to: string[],
     subject: string,
@@ -181,6 +246,9 @@ class ProductionEmailService {
   ): Promise<void> {
     if (!this.sesClient) throw new Error('SES client not initialized');
 
+    // Dynamic import for SendEmailCommand
+    const { SendEmailCommand } = await import('@aws-sdk/client-ses');
+    
     const command = new SendEmailCommand({
       Source: from || this.getFromAddress(),
       Destination: { ToAddresses: to },

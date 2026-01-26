@@ -17,15 +17,18 @@ export class ChartOfAccountsService {
   private pool: Pool;
 
   constructor() {
+    // Determine SSL config - only use SSL for AWS RDS, not for local/Docker PostgreSQL
+    const sslConfig = process.env.DB_HOST?.includes('rds.amazonaws.com') 
+      ? { rejectUnauthorized: false }
+      : (process.env.DB_SSL === 'false' ? false : undefined);
+
     this.pool = new Pool({
       host: process.env.DB_HOST,
       port: parseInt(process.env.DB_PORT || '5432'),
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      ssl: {
-        rejectUnauthorized: false,
-      },
+      ssl: sslConfig,
     });
   }
 

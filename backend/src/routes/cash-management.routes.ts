@@ -95,6 +95,7 @@ router.post('/rules', cashManagementController.createReconciliationRule);
 // MATCHING
 // ============================================================
 router.post('/statements/:statementId/auto-match', cashManagementController.runAutoMatching);
+router.post('/statements/:statementId/ai-categorize', cashManagementController.runAICategorization);
 router.post('/matches', cashManagementController.createMatch);
 router.post('/matches/unmatch', cashManagementController.unmatch);
 

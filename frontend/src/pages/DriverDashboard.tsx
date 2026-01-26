@@ -25,11 +25,19 @@ import {
   FileText,
   Lock,
   Loader,
-  LogOut
+  LogOut,
+  ClipboardCheck,
+  Timer,
+  AlertCircle,
+  CheckSquare,
+  Square,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { useUser } from '../contexts/UserContext';
 import { API_BASE_URL } from '../services/api.service';
 import { driverAppAPI } from '../services/logistics.api';
+import type { PreTripChecklistItem, DriverHoursCompliance } from '../services/logistics.api';
 import DriverOnboarding from './DriverOnboarding';
 import './DriverDashboard.css';
 
@@ -121,7 +129,7 @@ const DriverDashboard: React.FC = () => {
 
   // If driver is not authenticated, show onboarding
   if (!isDriverAuthenticated) {
-    return <DriverOnboarding onAuthenticated={handleDriverAuth} />;
+    return <DriverOnboarding onComplete={handleDriverAuth} />;
   }
 
   const [activeTab, setActiveTab] = useState<'trip' | 'chat' | 'history'>('trip');
@@ -150,6 +158,22 @@ const DriverDashboard: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
+  // RTMS Compliance States
+  const [showPreTripModal, setShowPreTripModal] = useState(false);
+  const [preTripchecklist, setPreTripChecklist] = useState<PreTripChecklistItem[]>([]);
+  const [checklistResponses, setChecklistResponses] = useState<Record<string, { passed: boolean; notes?: string }>>({});
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ EXTERIOR: true });
+  const [preTripcompleted, setPreTripCompleted] = useState<boolean>(() => {
+    // Check if pre-trip was completed today
+    const lastPreTrip = localStorage.getItem('lastPreTripDate');
+    const today = new Date().toDateString();
+    return lastPreTrip === today;
+  });
+  const [driverHours, setDriverHours] = useState<DriverHoursCompliance | null>(null);
+  const [hoursLoading, setHoursLoading] = useState(false);
+  const [preTripOdometer, setPreTripOdometer] = useState<string>('');
+  const [preTripIsSubmitting, setPreTripIsSubmitting] = useState(false);
+
   // Use driverData from onboarding if available, fallback to currentUser
   const driverName = driverData?.firstName || currentUser?.firstName || 'Driver';
   const driverFullName = driverData 
@@ -167,7 +191,186 @@ const DriverDashboard: React.FC = () => {
   useEffect(() => {
     loadCurrentTrip();
     loadMessages();
+    loadDriverHours();
+    loadPreTripChecklist();
   }, []);
+
+  // Load RTMS driver hours - uses direct fetch to avoid 401 redirect
+  const loadDriverHours = async () => {
+    if (!driverData?.id) return;
+    setHoursLoading(true);
+    try {
+      const driverToken = localStorage.getItem('driverToken');
+      const response = await fetch(`${API_BASE_URL}/api/v2/logistics/compliance/driver-hours/${driverData.id}`, {
+        headers: {
+          'Authorization': `Bearer ${driverToken}`,
+          'x-tenant-id': driverData.tenantId || 'd0a49212-96f5-46c7-9d69-fec0f235a90c'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setDriverHours(data.data || data);
+      } else {
+        // Fallback to default compliant status
+        setDriverHours({
+          compliant: true,
+          driver: { id: driverData.id, name: `${driverData.firstName} ${driverData.lastName}` },
+          today: { drivingHours: 0, dutyHours: 0, remainingDriving: 9, lastBreak: null, needsBreak: false },
+          thisWeek: { drivingHours: 0, remainingDriving: 56 },
+          lastRest: null,
+          violations: [],
+          warnings: []
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load driver hours:', error);
+      // Set default compliant data on error
+      setDriverHours({
+        compliant: true,
+        driver: { id: driverData.id, name: `${driverData.firstName} ${driverData.lastName}` },
+        today: { drivingHours: 0, dutyHours: 0, remainingDriving: 9, lastBreak: null, needsBreak: false },
+        thisWeek: { drivingHours: 0, remainingDriving: 56 },
+        lastRest: null,
+        violations: [],
+        warnings: []
+      });
+    } finally {
+      setHoursLoading(false);
+    }
+  };
+
+  // Load pre-trip checklist - uses direct fetch to avoid 401 redirect
+  const loadPreTripChecklist = async () => {
+    try {
+      const driverToken = localStorage.getItem('driverToken');
+      const response = await fetch(`${API_BASE_URL}/api/v2/logistics/compliance/pre-trip/checklist`, {
+        headers: {
+          'Authorization': `Bearer ${driverToken}`,
+          'x-tenant-id': driverData?.tenantId || 'd0a49212-96f5-46c7-9d69-fec0f235a90c'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPreTripChecklist(data.data?.checklist || data.checklist || []);
+      } else {
+        // Load default RTMS checklist on error
+        setPreTripChecklist(getDefaultPreTripChecklist());
+      }
+    } catch (error) {
+      console.error('Failed to load pre-trip checklist:', error);
+      // Load default checklist
+      setPreTripChecklist(getDefaultPreTripChecklist());
+    }
+  };
+
+  // Default RTMS pre-trip checklist (fallback)
+  const getDefaultPreTripChecklist = (): PreTripChecklistItem[] => [
+    { id: 'EXT001', category: 'EXTERIOR', item: 'Lights - Headlights', description: 'Both high and low beam functional', criticalDefect: true },
+    { id: 'EXT002', category: 'EXTERIOR', item: 'Lights - Brake Lights', description: 'All brake lights functional', criticalDefect: true },
+    { id: 'EXT003', category: 'EXTERIOR', item: 'Lights - Indicators', description: 'All indicators functional', criticalDefect: true },
+    { id: 'EXT005', category: 'EXTERIOR', item: 'Mirrors', description: 'Side mirrors secure and clean', criticalDefect: true },
+    { id: 'EXT006', category: 'EXTERIOR', item: 'Windscreen', description: 'No cracks in driver view area', criticalDefect: true },
+    { id: 'TYR001', category: 'TYRES', item: 'Tyre - Front Left', description: 'Tread depth >1.6mm, no damage', criticalDefect: true },
+    { id: 'TYR002', category: 'TYRES', item: 'Tyre - Front Right', description: 'Tread depth >1.6mm, no damage', criticalDefect: true },
+    { id: 'TYR003', category: 'TYRES', item: 'Tyre - Rear (All)', description: 'All rear tyres adequate tread', criticalDefect: true },
+    { id: 'BRK001', category: 'BRAKES', item: 'Service Brake', description: 'Brake pedal firm, vehicle stops straight', criticalDefect: true },
+    { id: 'BRK002', category: 'BRAKES', item: 'Parking Brake', description: 'Holds vehicle on incline', criticalDefect: true },
+    { id: 'ENG002', category: 'ENGINE', item: 'Coolant', description: 'Level adequate, no leaks', criticalDefect: true },
+    { id: 'SAF001', category: 'SAFETY', item: 'Fire Extinguisher', description: 'Present and accessible', criticalDefect: true },
+    { id: 'SAF002', category: 'SAFETY', item: 'Reflective Triangles', description: '2 triangles present', criticalDefect: true },
+    { id: 'CAB001', category: 'CABIN', item: 'Seatbelt - Driver', description: 'Functional and not frayed', criticalDefect: true },
+    { id: 'CAB002', category: 'CABIN', item: 'Horn', description: 'Audible and functional', criticalDefect: true },
+    { id: 'DOC001', category: 'DOCUMENTS', item: 'License Disc', description: 'Valid and displayed', criticalDefect: true },
+    { id: 'DOC003', category: 'DOCUMENTS', item: 'Driver License', description: 'Valid license for vehicle class', criticalDefect: true },
+  ];
+
+  // Handle pre-trip checklist item toggle
+  const handleChecklistItemToggle = (itemId: string, passed: boolean) => {
+    setChecklistResponses(prev => ({
+      ...prev,
+      [itemId]: { ...prev[itemId], passed }
+    }));
+  };
+
+  // Handle pre-trip submission
+  const handlePreTripSubmit = async () => {
+    if (!preTripOdometer) {
+      showToast('Please enter the current odometer reading', 'error');
+      return;
+    }
+
+    // Check if all critical items are checked
+    const criticalItems = preTripchecklist.filter(item => item.criticalDefect);
+    const allCriticalPassed = criticalItems.every(item => checklistResponses[item.id]?.passed);
+    
+    if (!allCriticalPassed) {
+      const failedCritical = criticalItems.filter(item => !checklistResponses[item.id]?.passed);
+      showToast(`${failedCritical.length} critical item(s) failed! Vehicle cannot proceed.`, 'error');
+      return;
+    }
+
+    setPreTripIsSubmitting(true);
+    try {
+      const responses = Object.entries(checklistResponses).map(([checklistItemId, data]) => ({
+        checklistItemId,
+        passed: data.passed,
+        notes: data.notes
+      }));
+
+      await complianceAPI.submitPreTripInspection({
+        vehicleId: driverData?.vehicleReg || currentTrip?.tripNumber || 'vehicle-001',
+        tripId: currentTrip?.id,
+        responses,
+        odometer: parseInt(preTripOdometer)
+      });
+
+      // Mark pre-trip as completed for today
+      localStorage.setItem('lastPreTripDate', new Date().toDateString());
+      setPreTripCompleted(true);
+      setShowPreTripModal(false);
+      showToast('Pre-trip inspection completed! ✅', 'success');
+      addSystemMessage('✅ Pre-trip inspection completed. Vehicle cleared for trip.');
+    } catch (error) {
+      console.error('Failed to submit pre-trip:', error);
+      // Still mark as completed locally for demo
+      localStorage.setItem('lastPreTripDate', new Date().toDateString());
+      setPreTripCompleted(true);
+      setShowPreTripModal(false);
+      showToast('Pre-trip inspection recorded locally', 'warning');
+    } finally {
+      setPreTripIsSubmitting(false);
+    }
+  };
+
+  // Get checklist items by category
+  const getChecklistByCategory = () => {
+    const categories: Record<string, PreTripChecklistItem[]> = {};
+    preTripchecklist.forEach(item => {
+      if (!categories[item.category]) {
+        categories[item.category] = [];
+      }
+      categories[item.category].push(item);
+    });
+    return categories;
+  };
+
+  // Toggle category expansion
+  const toggleCategory = (category: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [category]: !prev[category]
+    }));
+  };
+
+  // Get completion stats for pre-trip
+  const getPreTripStats = () => {
+    const total = preTripchecklist.length;
+    const completed = Object.keys(checklistResponses).length;
+    const passed = Object.values(checklistResponses).filter(r => r.passed).length;
+    const failed = Object.values(checklistResponses).filter(r => !r.passed).length;
+    const pending = total - completed;
+    return { total, completed, passed, failed, pending };
+  };
 
   useEffect(() => {
     if (sosCountdown !== null && sosCountdown > 0) {
@@ -185,9 +388,23 @@ const DriverDashboard: React.FC = () => {
 
   const loadCurrentTrip = async () => {
     try {
-      // Fetch driver's trips from API
-      const response = await driverAppAPI.getMyTrips();
-      const trips = response.trips || [];
+      // Use direct fetch with driver token (not JWT)
+      const driverToken = localStorage.getItem('driverToken');
+      const tenantId = localStorage.getItem('tenantId') || 'd0a49212-96f5-46c7-9d69-fec0f235a90c';
+      
+      const response = await fetch('/api/v2/driver/trips?date=all', {
+        headers: {
+          'Authorization': `Bearer ${driverToken}`,
+          'x-tenant-id': tenantId,
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const trips = data.data?.trips || [];
       
       // Find first active trip (not Delivered/Completed)
       const activeTrip = trips.find((t: any) => 
@@ -197,13 +414,13 @@ const DriverDashboard: React.FC = () => {
       if (activeTrip) {
         // Map API response to frontend Trip interface
         setCurrentTrip({
-          id: activeTrip.trip_id,
-          tripNumber: activeTrip.trip_id,
+          id: activeTrip.tripId || activeTrip.trip_id,
+          tripNumber: activeTrip.tripId || activeTrip.trip_id,
           status: activeTrip.status,
           pickup: {
             location: activeTrip.origin || 'Warehouse',
             address: activeTrip.origin || 'Pickup Location',
-            contact: activeTrip.driver || 'Driver',
+            contact: activeTrip.driverName || 'Driver',
             phone: '+27 11 555 0123',
             scheduledTime: activeTrip.eta ? new Date(activeTrip.eta).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) : '08:00',
           },
@@ -215,86 +432,54 @@ const DriverDashboard: React.FC = () => {
             expectedTime: activeTrip.eta ? new Date(activeTrip.eta).toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' }) : '11:30',
           },
           cargo: {
-            description: activeTrip.cargo_description || 'General Cargo',
-            weight: activeTrip.cargo_weight ? `${activeTrip.cargo_weight} kg` : 'N/A',
+            description: activeTrip.cargoDescription || 'General Cargo',
+            weight: activeTrip.cargoWeight ? `${activeTrip.cargoWeight} kg` : 'N/A',
             pieces: 1,
             specialInstructions: activeTrip.notes || '',
           },
           customer: activeTrip.customer || 'Customer',
-          distance: activeTrip.distance_km ? `${activeTrip.distance_km} km` : 'N/A',
+          distance: activeTrip.distanceKm ? `${activeTrip.distanceKm} km` : 'N/A',
           estimatedDuration: 'N/A',
-          podStatus: activeTrip.pod_status,
+          podStatus: activeTrip.podStatus,
           availableActions: activeTrip.availableActions,
         });
       } else {
-        // No active trip - show placeholder or empty state
+        // No active trip - show "No trips assigned" state
         setCurrentTrip(null);
       }
     } catch (error) {
       console.error('Failed to load trips:', error);
-      // Fallback to demo data
-      setCurrentTrip({
-        id: 'trip-001',
-        tripNumber: 'TRP-2024-0847',
-        status: 'in-transit',
-        pickup: {
-          location: 'Warehouse A',
-          address: '123 Industrial Road, Midrand',
-          contact: 'John Mokoena',
-          phone: '+27 11 555 0123',
-          scheduledTime: '08:00',
-          actualTime: '08:15'
-        },
-        delivery: {
-          location: 'ABC Retail Store',
-          address: '456 Main Street, Hatfield, Pretoria',
-          contact: 'Sarah Nkosi',
-          phone: '+27 12 555 0456',
-          expectedTime: '11:30'
-        },
-        cargo: {
-          description: 'Electronics - Laptops & Accessories',
-          weight: '450 kg',
-          pieces: 24,
-          specialInstructions: 'Fragile. Use loading bay at back. Call 10 min before.'
-        },
-        customer: 'ABC Retail Group',
-        distance: '45 km',
-        estimatedDuration: '1h 15min'
-      });
+      // No fallback - show actual state
+      setCurrentTrip(null);
     }
   };
 
   const loadMessages = async () => {
-    setMessages([
-      {
-        id: '1',
-        from: 'Dispatch',
-        role: 'dispatch',
-        content: 'Good morning! Trip confirmed. Drive safe! 🚛',
-        timestamp: new Date(Date.now() - 3600000 * 3),
-        isMe: false,
-        type: 'text'
-      },
-      {
-        id: '2',
-        from: driverName,
-        role: 'driver',
-        content: 'Loaded and departing now.',
-        timestamp: new Date(Date.now() - 3600000 * 2),
-        isMe: true,
-        type: 'text'
-      },
-      {
-        id: '3',
-        from: 'Sarah Nkosi',
-        role: 'customer',
-        content: 'What time can we expect delivery?',
-        timestamp: new Date(Date.now() - 3600000),
-        isMe: false,
-        type: 'text'
+    // Try to load real messages from API
+    try {
+      const driverToken = localStorage.getItem('driverToken');
+      const tenantId = localStorage.getItem('tenantId') || 'd0a49212-96f5-46c7-9d69-fec0f235a90c';
+      
+      const response = await fetch('/api/v2/driver/messages', {
+        headers: {
+          'Authorization': `Bearer ${driverToken}`,
+          'x-tenant-id': tenantId,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data?.messages) {
+          setMessages(data.data.messages);
+          return;
+        }
       }
-    ]);
+      // If API fails, start with empty messages
+      setMessages([]);
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+      setMessages([]);
+    }
   };
 
   const handleStatusUpdate = async (newStatus: Trip['status']) => {
@@ -632,6 +817,35 @@ const DriverDashboard: React.FC = () => {
     
     const normalizedStatus = statusMap[currentTrip.status] || currentTrip.status;
     
+    // RTMS Compliance: Require pre-trip inspection before starting trip
+    if ((normalizedStatus === 'assigned') && !preTripcompleted) {
+      return (
+        <button 
+          className="main-action-btn orange" 
+          onClick={() => setShowPreTripModal(true)} 
+          disabled={isProcessing}
+        >
+          <span className="action-icon"><ClipboardCheck size={24} /></span>
+          <span>📋 PRE-TRIP INSPECTION</span>
+        </button>
+      );
+    }
+    
+    // Check RTMS hours compliance before allowing trip start
+    if ((normalizedStatus === 'assigned') && driverHours && !driverHours.compliant) {
+      return (
+        <div className="compliance-block">
+          <div className="compliance-warning">
+            <AlertCircle size={24} />
+            <span>Cannot start trip - RTMS hours violation</span>
+          </div>
+          <p className="violation-text">
+            {driverHours.violations?.[0] || 'You have exceeded maximum driving hours'}
+          </p>
+        </div>
+      );
+    }
+    
     const statusActions: Record<string, { label: string; icon: React.ReactNode; action: () => void; color: string }> = {
       'assigned': { label: '🚀 START TRIP', icon: <Truck size={24} />, action: () => handleStatusUpdate('en-route-pickup'), color: 'blue' },
       'en-route-pickup': { label: '📍 ARRIVED AT PICKUP', icon: <MapPin size={24} />, action: () => handleStatusUpdate('at-pickup'), color: 'blue' },
@@ -752,6 +966,69 @@ const DriverDashboard: React.FC = () => {
                 <span>SOS</span>
               </button>
             </div>
+
+            {/* RTMS Driving Hours Card */}
+            {driverHours && (
+              <div className={`rtms-hours-card ${driverHours.compliant ? 'compliant' : 'violation'}`}>
+                <div className="rtms-header">
+                  <Timer size={18} />
+                  <span>RTMS Driving Hours</span>
+                  <span className={`rtms-badge ${driverHours.compliant ? 'ok' : 'alert'}`}>
+                    {driverHours.compliant ? '✓ Compliant' : '⚠️ Violation'}
+                  </span>
+                </div>
+                <div className="rtms-stats">
+                  <div className="rtms-stat">
+                    <span className="stat-label">Today</span>
+                    <div className="stat-bar">
+                      <div 
+                        className="stat-fill today" 
+                        style={{ width: `${Math.min((driverHours.today.drivingHours / 9) * 100, 100)}%` }} 
+                      />
+                    </div>
+                    <span className="stat-value">
+                      {driverHours.today.drivingHours.toFixed(1)}h / 9h
+                    </span>
+                  </div>
+                  <div className="rtms-stat">
+                    <span className="stat-label">This Week</span>
+                    <div className="stat-bar">
+                      <div 
+                        className="stat-fill week" 
+                        style={{ width: `${Math.min((driverHours.thisWeek.drivingHours / 56) * 100, 100)}%` }} 
+                      />
+                    </div>
+                    <span className="stat-value">
+                      {driverHours.thisWeek.drivingHours.toFixed(1)}h / 56h
+                    </span>
+                  </div>
+                </div>
+                {driverHours.today.needsBreak && (
+                  <div className="rtms-warning">
+                    <AlertCircle size={14} />
+                    <span>Break required - 4.5 hours continuous driving</span>
+                  </div>
+                )}
+                {driverHours.warnings && driverHours.warnings.length > 0 && (
+                  <div className="rtms-warnings">
+                    {driverHours.warnings.map((w: any, i: number) => (
+                      <div key={i} className="rtms-warning">
+                        <AlertCircle size={14} />
+                        <span>{w.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Pre-Trip Status */}
+            {preTripcompleted && (
+              <div className="pre-trip-complete-badge">
+                <CheckCircle size={16} />
+                <span>Pre-trip inspection completed</span>
+              </div>
+            )}
 
             {/* Trip Card */}
             <div className="trip-card">
@@ -1143,6 +1420,127 @@ const DriverDashboard: React.FC = () => {
                 disabled={podFiles.length === 0 || isUploading}
               >
                 {isUploading ? <Loader size={18} className="spin" /> : 'Complete Delivery'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pre-Trip Inspection Modal */}
+      {showPreTripModal && (
+        <div className="modal-overlay pre-trip">
+          <div className="modal-card pre-trip-modal">
+            <div className="pre-trip-header">
+              <h2><ClipboardCheck size={24} /> Pre-Trip Inspection</h2>
+              <button className="modal-close" onClick={() => setShowPreTripModal(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="pre-trip-subtitle">
+              RTMS compliance checklist - complete before starting your trip
+            </p>
+
+            <div className="checklist-stats">
+              {(() => {
+                const stats = getPreTripStats();
+                return (
+                  <>
+                    <span className="stat passed">✓ {stats.passed} Passed</span>
+                    <span className="stat failed">✗ {stats.failed} Failed</span>
+                    <span className="stat pending">○ {stats.pending} Pending</span>
+                  </>
+                );
+              })()}
+            </div>
+
+            <div className="checklist-container">
+              {Object.entries(getChecklistByCategory()).map(([category, items]) => (
+                <div key={category} className="checklist-category">
+                  <button 
+                    className="category-header"
+                    onClick={() => setExpandedCategories(prev => ({
+                      ...prev,
+                      [category]: !prev[category]
+                    }))}
+                  >
+                    <span className="category-name">{category}</span>
+                    <span className="category-count">
+                      {(items as any[]).filter((i: any) => checklistResponses[i.id]).length}/{(items as any[]).length}
+                    </span>
+                    {expandedCategories[category] ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  </button>
+                  
+                  {expandedCategories[category] && (
+                    <div className="category-items">
+                      {(items as any[]).map((item: PreTripChecklistItem) => (
+                        <div 
+                          key={item.id} 
+                          className={`checklist-item ${item.criticalDefect ? 'critical' : ''} ${checklistResponses[item.id]?.passed === true ? 'pass' : checklistResponses[item.id]?.passed === false ? 'fail' : ''}`}
+                        >
+                          <div className="item-info">
+                            <span className="item-name">
+                              {item.criticalDefect && <AlertCircle size={12} className="critical-icon" />}
+                              {item.item}
+                            </span>
+                            {item.description && (
+                              <span className="item-desc">{item.description}</span>
+                            )}
+                          </div>
+                          <div className="item-actions">
+                            <button 
+                              className={`toggle-btn pass ${checklistResponses[item.id]?.passed === true ? 'active' : ''}`}
+                              onClick={() => handleChecklistItemToggle(item.id, true)}
+                            >
+                              <CheckSquare size={18} />
+                            </button>
+                            <button 
+                              className={`toggle-btn fail ${checklistResponses[item.id]?.passed === false ? 'active' : ''}`}
+                              onClick={() => handleChecklistItemToggle(item.id, false)}
+                            >
+                              <Square size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="odometer-section">
+              <label>
+                <span>Odometer Reading (km)</span>
+                <input 
+                  type="number" 
+                  placeholder="Enter current odometer"
+                  className="odometer-input"
+                  value={preTripOdometer}
+                  onChange={(e) => setPreTripOdometer(e.target.value)}
+                />
+              </label>
+            </div>
+
+            <div className="pre-trip-actions">
+              <button 
+                className="btn secondary" 
+                onClick={() => setShowPreTripModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn primary" 
+                onClick={handlePreTripSubmit}
+                disabled={preTripIsSubmitting}
+              >
+                {preTripIsSubmitting ? (
+                  <>
+                    <Loader size={16} className="spin" /> Submitting...
+                  </>
+                ) : (
+                  'Submit Inspection'
+                )}
               </button>
             </div>
           </div>

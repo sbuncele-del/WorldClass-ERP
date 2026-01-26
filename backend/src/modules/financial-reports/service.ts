@@ -4,15 +4,18 @@ export class FinancialReportsService {
   private pool: Pool;
 
   constructor() {
+    // Determine SSL config - only use SSL for AWS RDS, not for local/Docker PostgreSQL
+    const sslConfig = process.env.DB_HOST?.includes('rds.amazonaws.com') 
+      ? { rejectUnauthorized: false }
+      : (process.env.DB_SSL === 'false' ? false : undefined);
+
     this.pool = new Pool({
       host: process.env.DB_HOST,
       port: parseInt(process.env.DB_PORT || '5432'),
       user: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      ssl: {
-        rejectUnauthorized: false
-      }
+      ssl: sslConfig
     });
   }
 
@@ -41,9 +44,9 @@ export class FinancialReportsService {
         COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as balance
       FROM chart_of_accounts coa
       LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.account_id
-      LEFT JOIN journal_entries je ON je.entry_id = jel.entry_id
+      LEFT JOIN journal_entries je ON je.id = jel.journal_entry_id
       WHERE coa.is_active = true
-        AND (je.status = 'POSTED' OR je.entry_id IS NULL)
+        AND (UPPER(je.status) = 'POSTED' OR jel.journal_entry_id IS NULL)
         ${asOfCondition}
       GROUP BY coa.account_id, coa.account_code, coa.account_name, coa.account_type, coa.parent_account_id
       ${filters.includeZeroBalances ? '' : 'HAVING COALESCE(SUM(jel.debit_amount), 0) <> 0 OR COALESCE(SUM(jel.credit_amount), 0) <> 0'}
@@ -134,10 +137,10 @@ export class FinancialReportsService {
         COALESCE(SUM(jel.credit_amount), 0) as credits
       FROM journal_entry_lines jel
       JOIN chart_of_accounts coa ON jel.account_id = coa.account_id
-      JOIN journal_entries je ON jel.entry_id = je.entry_id
-      WHERE je.status = 'POSTED'
-        AND je.entry_date BETWEEN $1 AND $2
-        AND coa.account_type IN ('REVENUE', 'EXPENSE')
+      JOIN journal_entries je ON jel.journal_entry_id = je.id
+      WHERE UPPER(je.status) = 'POSTED'
+        AND je.posting_date BETWEEN $1 AND $2
+        AND UPPER(coa.account_type) IN ('REVENUE', 'EXPENSE')
       GROUP BY coa.account_code, coa.account_name, coa.account_type
       ORDER BY coa.account_type DESC, coa.account_code
     `;
@@ -148,14 +151,14 @@ export class FinancialReportsService {
     ]);
 
     const revenue = result.rows
-      .filter((r) => r.account_type === 'REVENUE')
+      .filter((r) => r.account_type.toUpperCase() === 'REVENUE')
       .map((r) => ({
         ...r,
         amount: parseFloat(r.credits) - parseFloat(r.debits),
       }));
 
     const expenses = result.rows
-      .filter((r) => r.account_type === 'EXPENSE')
+      .filter((r) => r.account_type.toUpperCase() === 'EXPENSE')
       .map((r) => ({
         ...r,
         amount: parseFloat(r.debits) - parseFloat(r.credits),
@@ -205,11 +208,11 @@ export class FinancialReportsService {
 
     const query = `
       SELECT 
-        jel.line_id as id,
-        je.entry_date as transaction_date,
+        jel.id as id,
+        je.posting_date as transaction_date,
         je.posting_date,
-        jel.line_description as description,
-        je.reference_number,
+        jel.description as description,
+        je.reference,
         jel.debit_amount,
         jel.credit_amount,
         0 as running_balance,
@@ -218,9 +221,9 @@ export class FinancialReportsService {
         je.entry_number as journal_entry_number,
         je.posted_at
       FROM journal_entry_lines jel
-      JOIN journal_entries je ON jel.entry_id = je.entry_id
+      JOIN journal_entries je ON jel.journal_entry_id = je.id
       WHERE jel.account_id = $1 
-        AND je.status = 'POSTED'
+        AND UPPER(je.status) = 'POSTED'
         ${dateCondition}
       ORDER BY je.entry_date DESC, jel.line_id DESC
       ${filters.limit ? `LIMIT ${filters.limit}` : ''}
@@ -238,9 +241,9 @@ export class FinancialReportsService {
         COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as current_balance
       FROM chart_of_accounts coa
       LEFT JOIN journal_entry_lines jel ON coa.account_id = jel.account_id
-      LEFT JOIN journal_entries je ON jel.entry_id = je.entry_id
+      LEFT JOIN journal_entries je ON jel.journal_entry_id = je.id
       WHERE coa.account_id = $1
-        AND (je.status = 'POSTED' OR je.entry_id IS NULL)
+        AND (UPPER(je.status) = 'POSTED' OR jel.journal_entry_id IS NULL)
       GROUP BY coa.account_id, coa.account_code, coa.account_name, coa.account_type
     `;
     const accountResult = await this.pool.query(accountQuery, [
@@ -266,18 +269,18 @@ export class FinancialReportsService {
     // Get all cash/bank account transactions
     const query = `
       SELECT 
-        je.entry_date as transaction_date,
+        je.posting_date as transaction_date,
         coa.account_code,
         coa.account_name,
-        jel.line_description as description,
+        jel.description as description,
         jel.debit_amount,
         jel.credit_amount,
         je.source_type
       FROM journal_entry_lines jel
       JOIN chart_of_accounts coa ON jel.account_id = coa.account_id
-      JOIN journal_entries je ON jel.entry_id = je.entry_id
-      WHERE je.status = 'POSTED'
-        AND je.entry_date BETWEEN $1 AND $2
+      JOIN journal_entries je ON jel.journal_entry_id = je.id
+      WHERE UPPER(je.status) = 'POSTED'
+        AND je.posting_date BETWEEN $1 AND $2
         AND coa.account_type = 'ASSET'
         AND (coa.account_code LIKE '11%' OR coa.account_name ILIKE '%cash%' OR coa.account_name ILIKE '%bank%')
       ORDER BY je.entry_date, jel.line_id

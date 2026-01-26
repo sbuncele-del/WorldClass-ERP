@@ -37,7 +37,7 @@ const AcceptInvite: React.FC = () => {
     setError(null);
 
     try {
-      const response = await apiClient.post('/api/v2/admin/users/accept-invite', {
+      const response = await apiClient.post('/api/auth/accept-invite', {
         token,
         password: values.password
       });

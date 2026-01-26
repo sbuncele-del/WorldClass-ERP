@@ -3,10 +3,11 @@ import pool from '../../config/database';
 import crypto from 'crypto';
 
 /**
- * Generate a 6-character alphanumeric access code for driver app
+ * Generate a 6-digit numeric access code for driver app
+ * Numeric-only so mobile keyboards show number pad
  */
 function generateAccessCode(): string {
-  return crypto.randomBytes(3).toString('hex').toUpperCase();
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 /**

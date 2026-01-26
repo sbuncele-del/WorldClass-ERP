@@ -271,14 +271,10 @@ function App() {
                         }
                       />
 
-                      {/* Driver-first experience (no sidebar/topbar) */}
+                      {/* Driver App - Has its own authentication (driverToken), NOT JWT protected */}
                       <Route
                         path="/driver"
-                        element={
-                          <ProtectedRoute>
-                            <DriverDashboard />
-                          </ProtectedRoute>
-                        }
+                        element={<DriverDashboard />}
                       />
                       
                       {/* Protected Routes - With Premium Layout */}

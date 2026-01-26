@@ -44,7 +44,8 @@ const DriverOnboarding: React.FC<DriverOnboardingProps> = ({ onComplete }) => {
 
   // Handle phone submission
   const handlePhoneSubmit = async () => {
-    if (phoneNumber.length < 10) {
+    // Accept 9 digits (without leading 0) or 10 digits (with leading 0)
+    if (phoneNumber.length < 9) {
       setError('Please enter a valid phone number');
       return;
     }
@@ -52,11 +53,17 @@ const DriverOnboarding: React.FC<DriverOnboardingProps> = ({ onComplete }) => {
     setIsLoading(true);
     setError(null);
 
+    // Normalize: add +27 prefix if not present
+    let normalizedPhone = phoneNumber.replace(/\s+/g, '');
+    if (!normalizedPhone.startsWith('+27')) {
+      normalizedPhone = '+27' + normalizedPhone.replace(/^0/, '');
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/v2/driver/auth/request-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: phoneNumber })
+        body: JSON.stringify({ phone: normalizedPhone })
       });
 
       const data = await response.json();
@@ -274,7 +281,7 @@ const DriverOnboarding: React.FC<DriverOnboardingProps> = ({ onComplete }) => {
               <Lock size={32} />
             </div>
             <h2>Enter Access Code</h2>
-            <p>We sent a 6-digit code to <strong>+27 {phoneNumber}</strong></p>
+            <p>Enter the 6-character code provided by your fleet manager</p>
 
             <div className="code-inputs">
               {accessCode.map((digit, index) => (
@@ -282,12 +289,14 @@ const DriverOnboarding: React.FC<DriverOnboardingProps> = ({ onComplete }) => {
                   key={index}
                   ref={(el) => codeInputRefs.current[index] = el}
                   type="text"
-                  inputMode="numeric"
+                  inputMode="text"
+                  autoCapitalize="characters"
                   maxLength={1}
                   value={digit}
-                  onChange={(e) => handleCodeInput(index, e.target.value)}
+                  onChange={(e) => handleCodeInput(index, e.target.value.toUpperCase())}
                   onKeyDown={(e) => handleKeyDown(index, e)}
                   autoFocus={index === 0}
+                  style={{ textTransform: 'uppercase' }}
                 />
               ))}
             </div>

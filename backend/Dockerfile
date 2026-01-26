@@ -30,6 +30,9 @@ RUN npm install --only=production && npm cache clean --force
 # Copy built application
 COPY --from=builder /app/dist ./dist
 
+# Copy email templates to dist (they're HTML, not compiled)
+COPY --from=builder /app/src/templates ./dist/templates
+
 # Copy database migrations
 COPY --from=builder /app/database ./database
 

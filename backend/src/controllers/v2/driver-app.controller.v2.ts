@@ -48,6 +48,14 @@ function generateSessionToken(): string {
   return crypto.randomBytes(32).toString('hex');
 }
 
+/**
+ * Generate a 6-digit numeric access code for driver app
+ * Numeric-only so mobile keyboards show number pad
+ */
+function generateNumericAccessCode(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
 // =============================================================================
 // DRIVER AUTHENTICATION - PUBLIC ENDPOINTS (No auth required)
 // =============================================================================
@@ -340,8 +348,8 @@ export async function generateDriverAccessCode(req: DriverRequest, res: Response
       return;
     }
 
-    // Generate 6-character alphanumeric code
-    const accessCode = crypto.randomBytes(3).toString('hex').toUpperCase();
+    // Generate 6-digit numeric code (mobile-friendly)
+    const accessCode = generateNumericAccessCode();
 
     // Update driver with new access code
     const result = await pool.query(

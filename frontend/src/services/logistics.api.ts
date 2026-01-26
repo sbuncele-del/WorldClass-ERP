@@ -312,6 +312,101 @@ export const driverAppAPI = {
 };
 
 /**
+ * RTMS Compliance API (South African Road Transport Management System)
+ */
+export interface PreTripChecklistItem {
+  id: string;
+  category: 'EXTERIOR' | 'TYRES' | 'BRAKES' | 'ENGINE' | 'SAFETY' | 'CABIN' | 'DOCUMENTS';
+  item: string;
+  description: string;
+  criticalDefect: boolean;
+  requiresPhoto: boolean;
+}
+
+export interface DriverHoursCompliance {
+  compliant: boolean;
+  driver: { id: string; name: string };
+  today: {
+    drivingHours: number;
+    dutyHours: number;
+    remainingDriving: number;
+    lastBreak: string | null;
+    needsBreak: boolean;
+  };
+  thisWeek: {
+    drivingHours: number;
+    remainingDriving: number;
+  };
+  lastRest: {
+    startTime: string;
+    endTime: string;
+    durationHours: number;
+    compliant: boolean;
+  } | null;
+  violations: string[];
+  warnings: string[];
+}
+
+export interface PreTripInspectionResponse {
+  inspectionId: string;
+  passed: boolean;
+  criticalDefects: number;
+  totalDefects: number;
+  canProceed: boolean;
+}
+
+export const complianceAPI = {
+  /**
+   * Get pre-trip checklist items (35 RTMS standard items)
+   */
+  async getPreTripChecklist(): Promise<{ checklist: PreTripChecklistItem[] }> {
+    const response = await apiGet(`${BASE}/compliance/pre-trip/checklist`);
+    return response.data || response;
+  },
+
+  /**
+   * Start a pre-trip inspection
+   */
+  async startPreTripInspection(vehicleId: string, tripId?: string): Promise<{ inspectionId: string }> {
+    return apiPost(`${BASE}/compliance/pre-trip/start`, { vehicleId, tripId });
+  },
+
+  /**
+   * Submit pre-trip inspection results
+   */
+  async submitPreTripInspection(data: {
+    inspectionId?: string;
+    vehicleId: string;
+    tripId?: string;
+    responses: Array<{ checklistItemId: string; passed: boolean; notes?: string; photoUrl?: string }>;
+    odometer: number;
+    driverSignature?: string;
+  }): Promise<PreTripInspectionResponse> {
+    return apiPost(`${BASE}/compliance/pre-trip/submit`, data);
+  },
+
+  /**
+   * Get driver's RTMS hours compliance
+   */
+  async getDriverHours(driverId: string): Promise<DriverHoursCompliance> {
+    const response = await apiGet(`${BASE}/compliance/driver-hours/${driverId}`);
+    return response.data || response;
+  },
+
+  /**
+   * Get license expiry warnings
+   */
+  async getLicenseExpiry(daysAhead: number = 30): Promise<{
+    driversExpiring: Array<{ driverId: string; name: string; type: string; expiryDate: string; daysUntilExpiry: number }>;
+    vehiclesExpiring: Array<{ vehicleId: string; registration: string; type: string; expiryDate: string; daysUntilExpiry: number }>;
+    summary: { expired: number; critical: number; warning: number };
+  }> {
+    const response = await apiGet(`${BASE}/compliance/license-expiry`, { daysAhead });
+    return response.data || response;
+  },
+};
+
+/**
  * Fuel Management API
  */
 export const fuelAPI = {

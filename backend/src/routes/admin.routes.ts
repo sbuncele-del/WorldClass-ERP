@@ -246,6 +246,18 @@ router.post('/run-migration/:module', async (req, res) => {
         await migrateCashManagement();
         result = 'Cash Management tables created';
         break;
+      case 'user-invite':
+        // Add columns needed for user invitation feature
+        const { pool } = await import('../config/database');
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS invitation_token VARCHAR(255)`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS invitation_expires_at TIMESTAMP`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_by UUID`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name VARCHAR(255)`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'active'`);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_invitation_token ON users(invitation_token) WHERE invitation_token IS NOT NULL`);
+        result = 'User invitation columns added';
+        break;
       default:
         return res.status(400).json({ success: false, error: `Unknown module: ${module}` });
     }

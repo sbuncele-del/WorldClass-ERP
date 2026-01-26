@@ -102,11 +102,92 @@ const router = Router();
 // ============================================================================
 // PUBLIC ROUTES - NO AUTH REQUIRED (Must be BEFORE tenant middleware)
 // ============================================================================
+
+// Import Auth Controller for V2 auth routes
+import AuthController from '../auth/auth.controller';
+
+// Main Auth Routes - public access for login/signup
+router.post('/auth/signup', AuthController.signup);
+router.post('/auth/login', AuthController.login);
+router.post('/auth/refresh', AuthController.refresh);
+router.post('/auth/logout', AuthController.logout);
+router.post('/auth/forgot-password', AuthController.forgotPassword);
+router.post('/auth/reset-password', AuthController.resetPassword);
+router.get('/auth/verify-email/:token', AuthController.verifyEmail);
+router.post('/auth/resend-verification', AuthController.resendVerification);
+
 // Driver App Authentication - These are public endpoints for mobile app login
 router.post('/driver/auth/request-code', DriverAppV2.requestAccessCode);
 router.post('/driver/auth/verify-code', DriverAppV2.verifyAccessCode);
 router.post('/driver/auth/validate-session', DriverAppV2.validateSession);
 router.post('/driver/auth/logout', DriverAppV2.driverLogout);
+
+// ============================================================================
+// DRIVER SESSION MIDDLEWARE - Validates driver token for protected routes
+// ============================================================================
+async function driverSessionMiddleware(req: any, res: any, next: any) {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ success: false, error: 'No driver token provided' });
+    }
+    
+    const token = authHeader.replace('Bearer ', '');
+    const tenantId = req.headers['x-tenant-id'] || 'd0a49212-96f5-46c7-9d69-fec0f235a90c';
+    
+    // Validate session token from database
+    const sessionResult = await query(
+      `SELECT ds.*, d.first_name, d.last_name, d.phone
+       FROM logistics.driver_sessions ds
+       JOIN logistics.drivers d ON ds.driver_id = d.driver_id
+       WHERE ds.token = $1 
+         AND ds.is_active = true 
+         AND ds.expires_at > CURRENT_TIMESTAMP`,
+      [token]
+    );
+    
+    if (sessionResult.rows.length === 0) {
+      return res.status(401).json({ success: false, error: 'Invalid or expired session' });
+    }
+    
+    const session = sessionResult.rows[0];
+    
+    // Attach driver context to request
+    req.tenant = { id: session.tenant_id };
+    req.tenantId = session.tenant_id;
+    req.user = { 
+      id: session.driver_id, 
+      driverId: session.driver_id,
+      name: `${session.first_name} ${session.last_name}`,
+      role: 'driver'
+    };
+    
+    // Update last active
+    await query(
+      `UPDATE logistics.driver_sessions SET last_active_at = CURRENT_TIMESTAMP WHERE session_id = $1`,
+      [session.session_id]
+    );
+    
+    next();
+  } catch (error: any) {
+    console.error('[DriverSession] Error:', error);
+    return res.status(500).json({ success: false, error: 'Session validation failed' });
+  }
+}
+
+// ============================================================================
+// DRIVER PROTECTED ROUTES - Uses driver session token (before tenant middleware)
+// ============================================================================
+router.get('/driver/dashboard', driverSessionMiddleware, DriverAppV2.getDriverDashboard);
+router.get('/driver/trips', driverSessionMiddleware, DriverAppV2.getMyTrips);
+router.get('/driver/trips/:tripId', driverSessionMiddleware, DriverAppV2.getTripDetails);
+router.post('/driver/trips/:tripId/start', driverSessionMiddleware, DriverAppV2.startTrip);
+router.post('/driver/trips/:tripId/arrive', driverSessionMiddleware, DriverAppV2.markArrived);
+router.post('/driver/trips/:tripId/pod-ready', driverSessionMiddleware, DriverAppV2.podReady);
+router.post('/driver/trips/:tripId/verify-customer', driverSessionMiddleware, DriverAppV2.verifyCustomer);
+router.post('/driver/trips/:tripId/pod-upload', driverSessionMiddleware, DriverAppV2.uploadPOD);
+router.post('/driver/trips/:tripId/complete', driverSessionMiddleware, DriverAppV2.completeDelivery);
+router.get('/driver/verify-pod/:podReference', DriverAppV2.verifyPOD);
 
 // One-time migration endpoint - adds driver auth columns to existing database
 router.post('/driver/migrate-auth-columns', async (req: any, res) => {
@@ -1348,6 +1429,13 @@ router.post('/healthcare/automation/full-journey', async (req: any, res) => {
   }
 });
 
+// ============================================================================
+// WEBHOOK ENDPOINTS (no tenant middleware)
+// ============================================================================
+
+// Inbound email webhook from Resend
+router.post('/webhooks/email/inbound', CommunicationsControllerV2.receiveInboundEmail);
+
 // Apply tenant middleware to remaining v2 routes
 router.use(tenantMiddleware);
 
@@ -2015,6 +2103,17 @@ router.get('/communications/campaigns', CommunicationsControllerV2.getCampaigns)
 router.post('/communications/campaigns', CommunicationsControllerV2.createCampaign);
 // Dashboard
 router.get('/communications/dashboard', CommunicationsControllerV2.getCommunicationsDashboard);
+// Email
+router.post('/communications/email/send', CommunicationsControllerV2.sendEmail);
+router.get('/communications/email/sent', CommunicationsControllerV2.getSentEmails);
+router.get('/communications/email/inbox', CommunicationsControllerV2.getEmailInbox);
+router.put('/communications/email/inbox/:id/read', CommunicationsControllerV2.markEmailRead);
+router.post('/communications/email/inbox/:id/reply', CommunicationsControllerV2.replyToEmail);
+// Video Meetings Enhanced
+router.post('/communications/meetings/instant', CommunicationsControllerV2.startInstantMeeting);
+router.post('/communications/meetings/:id/join', CommunicationsControllerV2.joinMeeting);
+router.post('/communications/meetings/:id/end', CommunicationsControllerV2.endMeeting);
+router.get('/communications/meetings/:id/participants', CommunicationsControllerV2.getMeetingParticipants);
 
 // ============================================================================
 // PROPOSALS
@@ -2385,32 +2484,13 @@ router.post('/delivery/:deliveryId/complete', DeliveryV2.completeDelivery);
 router.get('/delivery/:deliveryId/status', DeliveryV2.getDeliveryStatus);
 
 // ============================================================================
-// DRIVER ADMIN - Manage driver app access (requires auth)
+// DRIVER ADMIN - Manage driver app access (requires JWT auth)
 // ============================================================================
 router.post('/driver/admin/generate-code', DriverAppV2.generateDriverAccessCode);
 router.get('/driver/admin/pending-approvals', DriverAppV2.getPendingDriverApprovals);
 router.post('/driver/admin/revoke-access', DriverAppV2.revokeDriverAccess);
 
-// ============================================================================
-// DRIVER MOBILE APP - Full POD Workflow
-// ============================================================================
-// Driver Dashboard
-router.get('/driver/dashboard', DriverAppV2.getDriverDashboard);
-
-// Trip Management
-router.get('/driver/trips', DriverAppV2.getMyTrips);
-router.get('/driver/trips/:tripId', DriverAppV2.getTripDetails);
-router.post('/driver/trips/:tripId/start', DriverAppV2.startTrip);
-
-// POD Workflow (Driver-initiated)
-router.post('/driver/trips/:tripId/arrive', DriverAppV2.markArrived);
-router.post('/driver/trips/:tripId/pod-ready', DriverAppV2.podReady);
-router.post('/driver/trips/:tripId/verify-customer', DriverAppV2.verifyCustomer);
-router.post('/driver/trips/:tripId/pod-upload', DriverAppV2.uploadPOD);
-router.post('/driver/trips/:tripId/complete', DriverAppV2.completeDelivery);
-
-// POD Verification (Customer/Client verification)
-router.get('/driver/verify-pod/:podReference', DriverAppV2.verifyPOD);
+// NOTE: Driver mobile app routes are defined BEFORE tenantMiddleware with driverSessionMiddleware
 
 // ============================================================================
 // FINANCIAL FORECASTING & BUDGETS

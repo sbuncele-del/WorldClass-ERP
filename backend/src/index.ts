@@ -1094,6 +1094,433 @@ app.post('/api/migrate/:module', async (req, res) => {
         
         result = 'Sales schema and customers table created successfully with sample data';
         break;
+      
+      case 'user-invite':
+        // Add columns needed for user invitation feature
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS invitation_token VARCHAR(255)`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS invitation_expires_at TIMESTAMP`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS created_by UUID`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS display_name VARCHAR(255)`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'active'`);
+        await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name VARCHAR(255)`);
+        await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_invitation_token ON users(invitation_token) WHERE invitation_token IS NOT NULL`);
+        // Update full_name from first_name and last_name
+        await pool.query(`UPDATE users SET full_name = TRIM(COALESCE(first_name, '') || ' ' || COALESCE(last_name, '')) WHERE full_name IS NULL`);
+        result = 'User invitation columns added successfully';
+        break;
+      
+      case 'projects':
+        // Run 031_missing_tables.sql which includes projects, tasks, messages, etc.
+        const projectSqlPath = path.join('/app', 'database', 'migrations', '031_missing_tables.sql');
+        const projectSql = fs.readFileSync(projectSqlPath, 'utf8');
+        await pool.query(projectSql);
+        
+        // Add missing columns that controllers expect
+        await pool.query(`
+          ALTER TABLE projects ADD COLUMN IF NOT EXISTS id UUID;
+          ALTER TABLE projects ADD COLUMN IF NOT EXISTS project_code VARCHAR(50);
+          ALTER TABLE projects ADD COLUMN IF NOT EXISTS project_name VARCHAR(255);
+          ALTER TABLE projects ADD COLUMN IF NOT EXISTS code VARCHAR(50);
+          ALTER TABLE projects ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+          ALTER TABLE projects ADD COLUMN IF NOT EXISTS spent DECIMAL(15,2) DEFAULT 0;
+          ALTER TABLE projects ADD COLUMN IF NOT EXISTS progress INTEGER DEFAULT 0;
+          ALTER TABLE projects ADD COLUMN IF NOT EXISTS client_name VARCHAR(255);
+          ALTER TABLE projects ADD COLUMN IF NOT EXISTS priority VARCHAR(20) DEFAULT 'medium';
+          ALTER TABLE projects ADD COLUMN IF NOT EXISTS project_type VARCHAR(50) DEFAULT 'internal';
+          
+          -- Set id = project_id for controllers that use 'id'
+          UPDATE projects SET id = project_id WHERE id IS NULL;
+          UPDATE projects SET code = project_code WHERE code IS NULL;
+          UPDATE projects SET project_name = name WHERE project_name IS NULL;
+          
+          -- Add trigger to keep id in sync
+          CREATE OR REPLACE FUNCTION sync_project_id() RETURNS TRIGGER AS $$
+          BEGIN
+            IF NEW.id IS NULL THEN
+              NEW.id := NEW.project_id;
+            END IF;
+            IF NEW.id IS NULL THEN
+              NEW.id := gen_random_uuid();
+            END IF;
+            IF NEW.project_id IS NULL THEN
+              NEW.project_id := NEW.id;
+            END IF;
+            IF NEW.code IS NOT NULL AND NEW.project_code IS NULL THEN
+              NEW.project_code := NEW.code;
+            END IF;
+            IF NEW.name IS NOT NULL AND NEW.project_name IS NULL THEN
+              NEW.project_name := NEW.name;
+            END IF;
+            RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql;
+          
+          DROP TRIGGER IF EXISTS sync_project_id_trigger ON projects;
+          CREATE TRIGGER sync_project_id_trigger BEFORE INSERT ON projects
+          FOR EACH ROW EXECUTE FUNCTION sync_project_id();
+          
+          -- Add missing columns to project_tasks
+          ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS id UUID;
+          ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS title VARCHAR(255);
+          ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS task_name VARCHAR(255);
+          ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS assignee_id UUID;
+          ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS estimated_hours DECIMAL(10,2) DEFAULT 0;
+          ALTER TABLE project_tasks ADD COLUMN IF NOT EXISTS actual_hours DECIMAL(10,2) DEFAULT 0;
+          
+          UPDATE project_tasks SET id = task_id WHERE id IS NULL;
+          UPDATE project_tasks SET title = name WHERE title IS NULL;
+          UPDATE project_tasks SET task_name = name WHERE task_name IS NULL;
+          UPDATE project_tasks SET assignee_id = assigned_to WHERE assignee_id IS NULL;
+          
+          -- Add trigger to keep task columns in sync
+          CREATE OR REPLACE FUNCTION sync_task_fields() RETURNS TRIGGER AS $$
+          BEGIN
+            IF NEW.id IS NULL THEN
+              NEW.id := NEW.task_id;
+            END IF;
+            IF NEW.id IS NULL THEN
+              NEW.id := gen_random_uuid();
+            END IF;
+            IF NEW.task_id IS NULL THEN
+              NEW.task_id := NEW.id;
+            END IF;
+            IF NEW.title IS NOT NULL AND NEW.name IS NULL THEN
+              NEW.name := NEW.title;
+            END IF;
+            IF NEW.name IS NOT NULL AND NEW.title IS NULL THEN
+              NEW.title := NEW.name;
+            END IF;
+            IF NEW.name IS NOT NULL AND NEW.task_name IS NULL THEN
+              NEW.task_name := NEW.name;
+            END IF;
+            RETURN NEW;
+          END;
+          $$ LANGUAGE plpgsql;
+          
+          DROP TRIGGER IF EXISTS sync_task_fields_trigger ON project_tasks;
+          CREATE TRIGGER sync_task_fields_trigger BEFORE INSERT ON project_tasks
+          FOR EACH ROW EXECUTE FUNCTION sync_task_fields();
+        `);
+        result = 'Projects, Messages, and related tables created successfully';
+        break;
+      
+      case 'communications':
+        // Create all communications hub tables
+        await pool.query(`
+          -- Announcements table
+          CREATE TABLE IF NOT EXISTS announcements (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            content TEXT NOT NULL,
+            author_id UUID,
+            created_by_user_id UUID,
+            department VARCHAR(100),
+            priority VARCHAR(20) DEFAULT 'normal',
+            status VARCHAR(20) DEFAULT 'draft',
+            category VARCHAR(50),
+            is_active BOOLEAN DEFAULT TRUE,
+            is_pinned BOOLEAN DEFAULT FALSE,
+            published_at TIMESTAMP,
+            expires_at TIMESTAMP,
+            view_count INTEGER DEFAULT 0,
+            target_audience JSONB DEFAULT '[]',
+            attachments JSONB DEFAULT '[]',
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          );
+          CREATE INDEX IF NOT EXISTS idx_announcements_tenant ON announcements(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_announcements_status ON announcements(status);
+          
+          -- Chat channels
+          CREATE TABLE IF NOT EXISTS chat_channels (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL,
+            name VARCHAR(100) NOT NULL,
+            description TEXT,
+            channel_type VARCHAR(20) DEFAULT 'public',
+            is_active BOOLEAN DEFAULT TRUE,
+            is_archived BOOLEAN DEFAULT FALSE,
+            is_private BOOLEAN DEFAULT FALSE,
+            created_by UUID,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          );
+          CREATE INDEX IF NOT EXISTS idx_chat_channels_tenant ON chat_channels(tenant_id);
+          ALTER TABLE chat_channels ADD COLUMN IF NOT EXISTS is_private BOOLEAN DEFAULT FALSE;
+          
+          -- Chat channel members
+          CREATE TABLE IF NOT EXISTS chat_channel_members (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL,
+            channel_id UUID NOT NULL REFERENCES chat_channels(id) ON DELETE CASCADE,
+            user_id UUID NOT NULL,
+            role VARCHAR(20) DEFAULT 'member',
+            joined_at TIMESTAMP DEFAULT NOW(),
+            last_read_at TIMESTAMP,
+            UNIQUE(channel_id, user_id)
+          );
+          ALTER TABLE chat_channel_members ADD COLUMN IF NOT EXISTS tenant_id UUID;
+          CREATE INDEX IF NOT EXISTS idx_channel_members_channel ON chat_channel_members(channel_id);
+          CREATE INDEX IF NOT EXISTS idx_channel_members_user ON chat_channel_members(user_id);
+          
+          -- Chat messages
+          CREATE TABLE IF NOT EXISTS chat_messages (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL,
+            channel_id UUID REFERENCES chat_channels(id) ON DELETE CASCADE,
+            sender_id UUID NOT NULL,
+            content TEXT NOT NULL,
+            message_type VARCHAR(20) DEFAULT 'text',
+            attachments JSONB DEFAULT '[]',
+            mentions JSONB DEFAULT '[]',
+            is_edited BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT NOW()
+          );
+          CREATE INDEX IF NOT EXISTS idx_chat_messages_channel ON chat_messages(channel_id);
+          
+          -- Direct messages
+          CREATE TABLE IF NOT EXISTS direct_messages (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL,
+            sender_id UUID NOT NULL,
+            recipient_id UUID NOT NULL,
+            content TEXT NOT NULL,
+            message_type VARCHAR(20) DEFAULT 'text',
+            attachments JSONB DEFAULT '[]',
+            is_read BOOLEAN DEFAULT FALSE,
+            read_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT NOW()
+          );
+          CREATE INDEX IF NOT EXISTS idx_dm_tenant ON direct_messages(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_dm_recipient ON direct_messages(recipient_id);
+          
+          -- User notifications
+          CREATE TABLE IF NOT EXISTS user_notifications (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL,
+            user_id UUID NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            message TEXT,
+            notification_type VARCHAR(50) DEFAULT 'info',
+            priority VARCHAR(20) DEFAULT 'normal',
+            related_type VARCHAR(50),
+            related_id UUID,
+            action_url VARCHAR(500),
+            metadata JSONB DEFAULT '{}',
+            is_read BOOLEAN DEFAULT FALSE,
+            read_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT NOW()
+          );
+          CREATE INDEX IF NOT EXISTS idx_notifications_user ON user_notifications(user_id);
+          CREATE INDEX IF NOT EXISTS idx_notifications_unread ON user_notifications(user_id, is_read) WHERE is_read = FALSE;
+          
+          -- Video meetings
+          CREATE TABLE IF NOT EXISTS video_meetings (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL,
+            room_name VARCHAR(100) NOT NULL,
+            room_url VARCHAR(500),
+            title VARCHAR(255) NOT NULL,
+            description TEXT,
+            meeting_type VARCHAR(30) DEFAULT 'instant',
+            host_id UUID NOT NULL,
+            scheduled_start TIMESTAMP,
+            scheduled_end TIMESTAMP,
+            actual_start TIMESTAMP,
+            actual_end TIMESTAMP,
+            max_participants INTEGER DEFAULT 50,
+            is_private BOOLEAN DEFAULT FALSE,
+            waiting_room BOOLEAN DEFAULT FALSE,
+            recording_enabled BOOLEAN DEFAULT FALSE,
+            status VARCHAR(20) DEFAULT 'scheduled',
+            metadata JSONB DEFAULT '{}',
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          );
+          CREATE INDEX IF NOT EXISTS idx_meetings_tenant ON video_meetings(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_meetings_host ON video_meetings(host_id);
+          CREATE INDEX IF NOT EXISTS idx_meetings_status ON video_meetings(status);
+          
+          -- Video meeting participants
+          CREATE TABLE IF NOT EXISTS video_meeting_participants (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL,
+            meeting_id UUID NOT NULL REFERENCES video_meetings(id) ON DELETE CASCADE,
+            user_id UUID NOT NULL,
+            email VARCHAR(255),
+            name VARCHAR(255),
+            role VARCHAR(30) DEFAULT 'participant',
+            status VARCHAR(20) DEFAULT 'invited',
+            joined_at TIMESTAMP,
+            left_at TIMESTAMP,
+            created_at TIMESTAMP DEFAULT NOW()
+          );
+          ALTER TABLE video_meeting_participants ADD COLUMN IF NOT EXISTS tenant_id UUID;
+          ALTER TABLE video_meeting_participants ADD COLUMN IF NOT EXISTS role VARCHAR(30) DEFAULT 'participant';
+          CREATE INDEX IF NOT EXISTS idx_meeting_participants_meeting ON video_meeting_participants(meeting_id);
+          CREATE INDEX IF NOT EXISTS idx_meeting_participants_user ON video_meeting_participants(user_id);
+          
+          -- Message templates
+          CREATE TABLE IF NOT EXISTS message_templates (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL,
+            name VARCHAR(100) NOT NULL,
+            subject VARCHAR(255),
+            content TEXT NOT NULL,
+            template_type VARCHAR(50) DEFAULT 'email',
+            category VARCHAR(50),
+            variables JSONB DEFAULT '[]',
+            is_active BOOLEAN DEFAULT TRUE,
+            usage_count INTEGER DEFAULT 0,
+            last_used_at TIMESTAMP,
+            created_by UUID,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          );
+          CREATE INDEX IF NOT EXISTS idx_templates_tenant ON message_templates(tenant_id);
+          
+          -- Communication campaigns
+          CREATE TABLE IF NOT EXISTS communication_campaigns (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            description TEXT,
+            campaign_type VARCHAR(50) DEFAULT 'email',
+            template_id UUID REFERENCES message_templates(id),
+            target_audience JSONB DEFAULT '{}',
+            recipients_count INTEGER DEFAULT 0,
+            sent_count INTEGER DEFAULT 0,
+            delivered_count INTEGER DEFAULT 0,
+            opened_count INTEGER DEFAULT 0,
+            clicked_count INTEGER DEFAULT 0,
+            scheduled_at TIMESTAMP,
+            sent_at TIMESTAMP,
+            completed_at TIMESTAMP,
+            status VARCHAR(20) DEFAULT 'draft',
+            stats JSONB DEFAULT '{}',
+            created_by UUID,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          );
+          CREATE INDEX IF NOT EXISTS idx_campaigns_tenant ON communication_campaigns(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_campaigns_status ON communication_campaigns(status);
+          
+          -- Communication contacts
+          CREATE TABLE IF NOT EXISTS communication_contacts (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            email VARCHAR(255),
+            phone VARCHAR(50),
+            company VARCHAR(255),
+            contact_type VARCHAR(50) DEFAULT 'general',
+            tags JSONB DEFAULT '[]',
+            groups JSONB DEFAULT '[]',
+            metadata JSONB DEFAULT '{}',
+            opt_in_email BOOLEAN DEFAULT TRUE,
+            opt_in_sms BOOLEAN DEFAULT TRUE,
+            opt_in_whatsapp BOOLEAN DEFAULT FALSE,
+            is_subscribed BOOLEAN DEFAULT TRUE,
+            last_contact_at TIMESTAMP,
+            created_by UUID,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+          );
+          CREATE INDEX IF NOT EXISTS idx_contacts_tenant ON communication_contacts(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_contacts_email ON communication_contacts(email);
+          
+          -- Email inbox (for receiving/storing emails)
+          CREATE TABLE IF NOT EXISTS email_inbox (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL,
+            message_id VARCHAR(255),
+            from_email VARCHAR(255) NOT NULL,
+            from_name VARCHAR(255),
+            to_email VARCHAR(255),
+            to_addresses JSONB DEFAULT '[]',
+            cc_addresses JSONB DEFAULT '[]',
+            bcc_addresses JSONB DEFAULT '[]',
+            subject VARCHAR(500),
+            text_content TEXT,
+            html_content TEXT,
+            attachments JSONB DEFAULT '[]',
+            headers JSONB DEFAULT '{}',
+            folder VARCHAR(50) DEFAULT 'inbox',
+            is_read BOOLEAN DEFAULT FALSE,
+            read_at TIMESTAMP,
+            is_starred BOOLEAN DEFAULT FALSE,
+            is_archived BOOLEAN DEFAULT FALSE,
+            is_spam BOOLEAN DEFAULT FALSE,
+            is_trash BOOLEAN DEFAULT FALSE,
+            labels JSONB DEFAULT '[]',
+            thread_id UUID,
+            in_reply_to VARCHAR(255),
+            received_at TIMESTAMP DEFAULT NOW(),
+            created_at TIMESTAMP DEFAULT NOW()
+          );
+          -- Add columns if table exists with old schema
+          ALTER TABLE email_inbox ADD COLUMN IF NOT EXISTS from_email VARCHAR(255);
+          ALTER TABLE email_inbox ADD COLUMN IF NOT EXISTS to_email VARCHAR(255);
+          ALTER TABLE email_inbox ADD COLUMN IF NOT EXISTS text_content TEXT;
+          ALTER TABLE email_inbox ADD COLUMN IF NOT EXISTS html_content TEXT;
+          ALTER TABLE email_inbox ADD COLUMN IF NOT EXISTS read_at TIMESTAMP;
+          CREATE INDEX IF NOT EXISTS idx_email_inbox_tenant ON email_inbox(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_email_inbox_folder ON email_inbox(folder);
+          CREATE INDEX IF NOT EXISTS idx_email_inbox_from ON email_inbox(from_email);
+          CREATE INDEX IF NOT EXISTS idx_email_inbox_thread ON email_inbox(thread_id);
+          
+          -- Email sent (for sent emails)
+          CREATE TABLE IF NOT EXISTS email_sent (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            tenant_id UUID NOT NULL,
+            sender_id UUID NOT NULL,
+            message_id VARCHAR(255),
+            resend_id VARCHAR(255),
+            recipient_email JSONB DEFAULT '[]',
+            cc_emails JSONB DEFAULT '[]',
+            bcc_emails JSONB DEFAULT '[]',
+            from_address VARCHAR(255),
+            subject VARCHAR(500),
+            content TEXT,
+            html_content TEXT,
+            attachments JSONB DEFAULT '[]',
+            template_id UUID,
+            campaign_id UUID,
+            reply_to_id UUID,
+            status VARCHAR(20) DEFAULT 'queued',
+            sent_at TIMESTAMP,
+            delivered_at TIMESTAMP,
+            opened_at TIMESTAMP,
+            clicked_at TIMESTAMP,
+            bounced_at TIMESTAMP,
+            error_message TEXT,
+            metadata JSONB DEFAULT '{}',
+            created_at TIMESTAMP DEFAULT NOW()
+          );
+          -- Add columns if table exists with old schema
+          ALTER TABLE email_sent ADD COLUMN IF NOT EXISTS sender_id UUID;
+          ALTER TABLE email_sent ADD COLUMN IF NOT EXISTS recipient_email JSONB DEFAULT '[]';
+          ALTER TABLE email_sent ADD COLUMN IF NOT EXISTS cc_emails JSONB DEFAULT '[]';
+          ALTER TABLE email_sent ADD COLUMN IF NOT EXISTS bcc_emails JSONB DEFAULT '[]';
+          ALTER TABLE email_sent ADD COLUMN IF NOT EXISTS content TEXT;
+          ALTER TABLE email_sent ADD COLUMN IF NOT EXISTS html_content TEXT;
+          ALTER TABLE email_sent ADD COLUMN IF NOT EXISTS reply_to_id UUID;
+          CREATE INDEX IF NOT EXISTS idx_email_sent_tenant ON email_sent(tenant_id);
+          CREATE INDEX IF NOT EXISTS idx_email_sent_sender ON email_sent(sender_id);
+          CREATE INDEX IF NOT EXISTS idx_email_sent_status ON email_sent(status);
+          
+          -- Create General channel for existing tenants
+          INSERT INTO chat_channels (tenant_id, name, description, channel_type)
+          SELECT id, 'General', 'General discussion channel', 'public'
+          FROM tenants
+          WHERE NOT EXISTS (
+            SELECT 1 FROM chat_channels cc WHERE cc.tenant_id = tenants.id AND cc.name = 'General'
+          );
+        `);
+        result = 'Communications Hub tables created successfully (announcements, channels, messages, meetings, templates, campaigns, contacts, email inbox/sent)';
+        break;
         
       default:
         return res.status(400).json({ success: false, error: `Unknown module: ${module}` });

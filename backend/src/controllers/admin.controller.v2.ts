@@ -541,7 +541,7 @@ export class AdminControllerV2 {
 
       // Check if email exists in this tenant
       const existsResult = await client.query(
-        'SELECT user_id FROM users WHERE email = $1 AND tenant_id = $2',
+        'SELECT id FROM users WHERE email = $1 AND tenant_id = $2',
         [email, tenantId]
       );
 
@@ -575,11 +575,11 @@ export class AdminControllerV2 {
       const displayName = `${first_name || ''} ${last_name || ''}`.trim() || email.split('@')[0];
       const userQuery = `
         INSERT INTO users (
-          tenant_id, email, first_name, last_name, display_name,
+          tenant_id, email, first_name, last_name, display_name, password_hash,
           status, invitation_token, invitation_expires_at, created_by, is_active
         )
-        VALUES ($1, $2, $3, $4, $5, 'invited', $6, $7, $8, false)
-        RETURNING user_id, email, first_name, last_name, display_name, status, created_at
+        VALUES ($1, $2, $3, $4, $5, 'pending_invite', 'invited', $6, $7, $8, false)
+        RETURNING id, email, first_name, last_name, display_name, status, created_at
       `;
 
       const userResult = await client.query(userQuery, [
@@ -593,7 +593,7 @@ export class AdminControllerV2 {
         userId
       ]);
 
-      const newUserId = userResult.rows[0].user_id;
+      const newUserId = userResult.rows[0].id;
 
       // Assign role if provided
       if (role_id) {

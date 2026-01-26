@@ -14,11 +14,12 @@ export async function sendWelcomeEmail(
   userId: string
 ): Promise<void> {
   try {
-    // Get user details
+    // Get user details with tenant name
     const userResult = await pool.query(
-      `SELECT first_name, last_name, email, created_at, company_name
-       FROM users
-       WHERE id = $1`,
+      `SELECT u.first_name, u.last_name, u.email, u.created_at, t.name as company_name
+       FROM users u
+       LEFT JOIN tenants t ON u.tenant_id = t.id
+       WHERE u.id = $1`,
       [userId]
     );
 
@@ -62,11 +63,12 @@ export async function sendOnboardingCompleteEmail(
   userId: string
 ): Promise<void> {
   try {
-    // Get user details
+    // Get user details with tenant name
     const userResult = await pool.query(
-      `SELECT first_name, email, company_name
-       FROM users
-       WHERE id = $1`,
+      `SELECT u.first_name, u.email, t.name as company_name
+       FROM users u
+       LEFT JOIN tenants t ON u.tenant_id = t.id
+       WHERE u.id = $1`,
       [userId]
     );
 
