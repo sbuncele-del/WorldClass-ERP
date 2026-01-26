@@ -1,6 +1,7 @@
 /**
  * AI Agent Service
  * Core service for AI-powered assistants
+ * Supports: x.ai/Grok, OpenAI, Anthropic
  */
 
 import OpenAI from 'openai';
@@ -35,21 +36,51 @@ interface ConversationContext {
 class AIAgentService {
     private openaiClient: OpenAI | null = null;
     private anthropicClient: Anthropic | null = null;
+    private xaiClient: OpenAI | null = null;  // x.ai uses OpenAI-compatible API
+    private activeProvider: 'xai' | 'openai' | 'anthropic' | null = null;
 
     constructor() {
-        // Initialize OpenAI if API key exists
-        if (process.env.OPENAI_API_KEY) {
+        // Initialize x.ai/Grok FIRST (priority)
+        if (process.env.XAI_API_KEY) {
+            this.xaiClient = new OpenAI({
+                apiKey: process.env.XAI_API_KEY,
+                baseURL: 'https://api.x.ai/v1',
+            });
+            this.activeProvider = 'xai';
+            console.log('🤖 AI Agent: Using x.ai/Grok');
+        }
+        // Then try OpenAI
+        else if (process.env.OPENAI_API_KEY) {
             this.openaiClient = new OpenAI({
                 apiKey: process.env.OPENAI_API_KEY,
             });
+            this.activeProvider = 'openai';
+            console.log('🤖 AI Agent: Using OpenAI');
         }
-
-        // Initialize Anthropic if API key exists
-        if (process.env.ANTHROPIC_API_KEY) {
+        // Finally try Anthropic
+        else if (process.env.ANTHROPIC_API_KEY) {
             this.anthropicClient = new Anthropic({
                 apiKey: process.env.ANTHROPIC_API_KEY,
             });
+            this.activeProvider = 'anthropic';
+            console.log('🤖 AI Agent: Using Anthropic');
+        } else {
+            console.warn('⚠️ AI Agent: No AI provider configured (XAI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY)');
         }
+    }
+
+    /**
+     * Check if AI is available
+     */
+    isAvailable(): boolean {
+        return this.activeProvider !== null;
+    }
+
+    /**
+     * Get active provider name
+     */
+    getProvider(): string {
+        return this.activeProvider || 'none';
     }
 
     /**
@@ -147,8 +178,8 @@ class AIAgentService {
         userMessage: string,
         contextData: any = {}
     ): Promise<{ response: string; conversationId: string }> {
-        if (!this.openaiClient && !this.anthropicClient) {
-            throw new Error('No AI provider configured. Set OPENAI_API_KEY or ANTHROPIC_API_KEY');
+        if (!this.xaiClient && !this.openaiClient && !this.anthropicClient) {
+            throw new Error('No AI provider configured. Set XAI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY');
         }
 
         const agent = await this.getAgent(agentCode);
@@ -171,8 +202,20 @@ class AIAgentService {
         let assistantResponse: string;
         let tokensUsed: number = 0;
 
+        // Use x.ai/Grok if available (priority)
+        if (this.xaiClient) {
+            const completion = await this.xaiClient.chat.completions.create({
+                model: 'grok-2-latest',
+                messages: messages as any,
+                temperature: agent.temperature || 0.7,
+                max_tokens: agent.max_tokens || 2000,
+            });
+
+            assistantResponse = completion.choices[0].message.content || '';
+            tokensUsed = completion.usage?.total_tokens || 0;
+        }
         // Use OpenAI if available
-        if (this.openaiClient) {
+        else if (this.openaiClient) {
             const completion = await this.openaiClient.chat.completions.create({
                 model: agent.model_name || 'gpt-4',
                 messages: messages as any,
@@ -219,8 +262,10 @@ class AIAgentService {
         userMessage: string,
         contextData: any = {}
     ): AsyncGenerator<string, void, unknown> {
-        if (!this.openaiClient) {
-            throw new Error('Streaming requires OpenAI API');
+        // Streaming works with x.ai/Grok or OpenAI (both use OpenAI-compatible API)
+        const client = this.xaiClient || this.openaiClient;
+        if (!client) {
+            throw new Error('Streaming requires x.ai or OpenAI API');
         }
 
         const agent = await this.getAgent(agentCode);
@@ -235,8 +280,9 @@ class AIAgentService {
             ...history.slice(-10),
         ];
 
-        const stream = await this.openaiClient.chat.completions.create({
-            model: agent.model_name || 'gpt-4',
+        const model = this.xaiClient ? 'grok-2-latest' : (agent.model_name || 'gpt-4');
+        const stream = await client.chat.completions.create({
+            model,
             messages: messages as any,
             temperature: agent.temperature || 0.7,
             max_tokens: agent.max_tokens || 2000,

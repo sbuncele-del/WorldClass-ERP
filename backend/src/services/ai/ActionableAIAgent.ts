@@ -8,6 +8,7 @@
  * 4. Maintain conversation context
  * 
  * Supports Multiple AI Providers:
+ * - x.ai/Grok (PRIORITY): XAI_API_KEY - Grok-2
  * - Groq (FREE): GROQ_API_KEY - Llama 3.1 70B
  * - OpenAI: OPENAI_API_KEY - GPT-4
  */
@@ -16,7 +17,7 @@ import OpenAI from 'openai';
 import pool from '../../config/database';
 
 // AI Provider initialization
-type AIProvider = 'groq' | 'openai';
+type AIProvider = 'xai' | 'groq' | 'openai';
 
 interface AIProviderConfig {
   provider: AIProvider;
@@ -25,7 +26,22 @@ interface AIProviderConfig {
 }
 
 function initializeProvider(): AIProviderConfig | null {
+  // x.ai/Grok FIRST (priority - user's preferred provider)
+  if (process.env.XAI_API_KEY) {
+    console.log('🤖 ActionableAIAgent: Using x.ai/Grok');
+    return {
+      provider: 'xai',
+      client: new OpenAI({
+        apiKey: process.env.XAI_API_KEY,
+        baseURL: 'https://api.x.ai/v1'
+      }),
+      model: 'grok-2-latest'
+    };
+  }
+
+  // Then try Groq (free option)
   if (process.env.GROQ_API_KEY) {
+    console.log('🤖 ActionableAIAgent: Using Groq');
     return {
       provider: 'groq',
       client: new OpenAI({
@@ -36,7 +52,9 @@ function initializeProvider(): AIProviderConfig | null {
     };
   }
   
+  // Finally OpenAI
   if (process.env.OPENAI_API_KEY) {
+    console.log('🤖 ActionableAIAgent: Using OpenAI');
     return {
       provider: 'openai',
       client: new OpenAI({ apiKey: process.env.OPENAI_API_KEY }),
@@ -431,7 +449,7 @@ class ActionableAIAgent {
     if (this.aiProvider) {
       console.log(`✅ ActionableAIAgent initialized with ${this.aiProvider.provider} (${this.aiProvider.model})`);
     } else {
-      console.warn('⚠️ ActionableAIAgent: No AI provider configured. Set GROQ_API_KEY (free) or OPENAI_API_KEY');
+      console.warn('⚠️ ActionableAIAgent: No AI provider configured. Set XAI_API_KEY (Grok), GROQ_API_KEY (free), or OPENAI_API_KEY');
     }
   }
 
