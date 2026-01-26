@@ -101,10 +101,10 @@ class AICategorizationService {
    */
   async getCategories(tenantId: string): Promise<{ category: string; description: string; type: string }[]> {
     const result = await pool.query(`
-      SELECT category, description, type 
+      SELECT category_code as category, category_name as description, category_type as type 
       FROM cash_flow_categories 
       WHERE tenant_id = $1 OR tenant_id = '00000000-0000-0000-0000-000000000000'
-      ORDER BY type, category
+      ORDER BY category_type, category_code
     `, [tenantId]);
     
     return result.rows;
