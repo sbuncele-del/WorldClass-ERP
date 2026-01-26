@@ -17,6 +17,13 @@ dist/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.docker
+*.env.docker
+CREDENTIALS.env
+CREDENTIALS.md
+
+# Docker deployment artifacts
+*.tar.gz
 
 # Logs
 npm-debug.log*
