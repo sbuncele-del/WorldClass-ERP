@@ -42,7 +42,7 @@ export class SalesController {
   async getInvoice(req: Request, res: Response): Promise<void> {
     try {
       const tenantId = req.headers['x-tenant-id'] as string || '00000000-0000-0000-0000-000000000001';
-      const invoiceId = parseInt(req.params.id);
+      const invoiceId = req.params.id;
       
       const invoice = await salesService.getInvoiceById(invoiceId, tenantId);
       
@@ -111,7 +111,7 @@ export class SalesController {
     try {
       const tenantId = req.headers['x-tenant-id'] as string || '00000000-0000-0000-0000-000000000001';
       const userId = (req as any).user?.id;
-      const invoiceId = parseInt(req.params.id);
+      const invoiceId = req.params.id;
       
       const invoice = await salesService.updateInvoice(invoiceId, req.body, tenantId, userId);
       
@@ -137,7 +137,7 @@ export class SalesController {
     try {
       const tenantId = req.headers['x-tenant-id'] as string || '00000000-0000-0000-0000-000000000001';
       const userId = (req as any).user?.id;
-      const invoiceId = parseInt(req.params.id);
+      const invoiceId = req.params.id;
       
       const invoice = await salesService.postInvoice(invoiceId, tenantId, userId);
       
@@ -164,7 +164,7 @@ export class SalesController {
     try {
       const tenantId = req.headers['x-tenant-id'] as string || '00000000-0000-0000-0000-000000000001';
       const userId = (req as any).user?.id;
-      const invoiceId = parseInt(req.params.id);
+      const invoiceId = req.params.id;
       
       await salesService.deleteInvoice(invoiceId, tenantId, userId);
       

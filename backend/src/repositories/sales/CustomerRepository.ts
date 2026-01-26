@@ -40,17 +40,17 @@ export interface CustomerBalance {
 
 export class CustomerRepository extends BaseRepository<Customer> {
   protected tableName = 'customers';
-  protected schema = 'public';  // Table is in public schema
+  protected schema = 'sales';  // Table is in sales schema
   protected softDelete = false;  // Table doesn't have deleted_at column
   protected primaryKey = 'customer_id';  // Use actual PK name
   protected tenantIsolation = true;  // Table has tenant_id column
 
   // Columns that actually exist on the table (from \d customers)
   private readonly columns = new Set([
-    'customer_id', 'customer_code', 'customer_name', 'email', 'phone', 
-    'address_line1', 'address_line2', 'city', 'province', 'postal_code', 
-    'country', 'vat_number', 'credit_limit', 'payment_terms', 'ar_account_id',
-    'is_active', 'tenant_id', 'created_at', 'updated_at'
+    'customer_id', 'customer_code', 'company_name', 'contact_person', 'email', 'phone', 
+    'mobile', 'vat_number', 'customer_type', 'source', 'billing_address', 'shipping_address',
+    'payment_terms', 'credit_limit', 'tax_id', 'industry', 'website', 'notes', 'assigned_to',
+    'status', 'tenant_id', 'created_at', 'updated_at'
   ]);
 
   /**
@@ -326,7 +326,7 @@ export class CustomerRepository extends BaseRepository<Customer> {
         COALESCE(SUM(CASE WHEN i.due_date < CURRENT_DATE AND i.status != 'paid' 
           THEN i.total_amount - i.amount_paid ELSE 0 END), 0) as overdue_amount
       FROM ${this.fullTableName} c
-      LEFT JOIN sales.invoices i ON i.customer_id = c.customer_id
+      LEFT JOIN public.sales_invoices i ON i.customer_id = c.customer_id
       WHERE c.customer_id = $1
       GROUP BY c.customer_id
     `;
@@ -351,7 +351,7 @@ export class CustomerRepository extends BaseRepository<Customer> {
         COALESCE(SUM(CASE WHEN i.due_date < CURRENT_DATE AND i.status != 'paid' 
           THEN i.total_amount - i.amount_paid ELSE 0 END), 0) as overdue_amount
       FROM ${this.fullTableName} c
-      LEFT JOIN sales.invoices i ON i.customer_id = c.customer_id
+      LEFT JOIN public.sales_invoices i ON i.customer_id = c.customer_id
       WHERE c.status = 'active'
       GROUP BY c.customer_id
       HAVING COALESCE(SUM(i.total_amount - i.amount_paid), 0) > 0
@@ -374,7 +374,7 @@ export class CustomerRepository extends BaseRepository<Customer> {
         SUM(i.total_amount - i.amount_paid) as overdue_amount,
         MIN(i.due_date) as oldest_overdue
       FROM ${this.fullTableName} c
-      INNER JOIN sales.invoices i ON i.customer_id = c.customer_id
+      INNER JOIN public.sales_invoices i ON i.customer_id = c.customer_id
       WHERE i.due_date < CURRENT_DATE 
         AND i.status != 'paid'
       GROUP BY c.customer_id
@@ -438,7 +438,7 @@ export class CustomerRepository extends BaseRepository<Customer> {
         c.customer_type, c.status, c.created_at, c.updated_at,
         COALESCE(SUM(i.total_amount), 0) AS revenue
       FROM ${this.fullTableName} c
-      LEFT JOIN sales.invoices i ON i.customer_id = c.customer_id
+      LEFT JOIN public.sales_invoices i ON i.customer_id = c.customer_id
       GROUP BY c.customer_id
       ORDER BY revenue DESC
       LIMIT $1

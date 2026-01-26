@@ -78,9 +78,8 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
     if (!invoice) return null;
 
     const linesSql = `
-      SELECT il.*, i.code as item_code, i.name as item_name
+      SELECT il.*
       FROM sales_invoice_lines il
-      LEFT JOIN items i ON i.id = il.item_id
       WHERE il.invoice_id = $2 AND il.tenant_id = $1
       ORDER BY il.line_number
     `;
@@ -179,8 +178,8 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
       const invoiceResult = await client.query(`
         INSERT INTO ${this.fullTableName}
         (tenant_id, invoice_number, customer_id, invoice_date, due_date, status,
-         subtotal, vat_amount, total_amount, amount_paid, amount_due, notes, created_by)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+         subtotal, tax_amount, total_amount, amount_paid, notes, created_by)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `, [
         ctx.tenantId,
@@ -190,10 +189,9 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
         invoiceData.due_date || new Date(),
         invoiceData.status?.toUpperCase() || 'DRAFT',
         invoiceData.subtotal || 0,
-        invoiceData.tax_amount || 0,  // Maps to vat_amount
+        invoiceData.tax_amount || 0,
         invoiceData.total_amount || 0,
         invoiceData.amount_paid || 0,
-        invoiceData.balance_due ?? (invoiceData.total_amount || 0),  // Maps to amount_due
         invoiceData.notes,
         ctx.userId
       ]);
@@ -209,7 +207,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         `, [
           ctx.tenantId,
-          invoice.invoice_id,  // Use invoice_id, not id
+          invoice.id,  // Table uses 'id' as primary key
           i + 1,
           line.description || 'Service',
           line.quantity || 1,
@@ -221,8 +219,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
       }
 
       await this.commitTransaction(client);
-      // Map invoice_id to id for interface compatibility
-      return { ...invoice, id: invoice.invoice_id };
+      return invoice;
     } catch (error) {
       await this.rollbackTransaction(client);
       throw error;
@@ -311,12 +308,12 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
         newStatus = 'partial';
       }
 
-      // Update invoice
+      // Update invoice (balance_due is generated, only update amount_paid)
       await client.query(`
         UPDATE ${this.fullTableName}
-        SET amount_paid = $1, balance_due = $2, status = $3, updated_at = NOW(), updated_by = $4
-        WHERE id = $5 AND tenant_id = $6
-      `, [newAmountPaid, Math.max(0, newBalanceDue), newStatus, ctx.userId, invoiceId, ctx.tenantId]);
+        SET amount_paid = $1, status = $2, updated_at = NOW(), updated_by = $3
+        WHERE id = $4 AND tenant_id = $5
+      `, [newAmountPaid, newStatus, ctx.userId, invoiceId, ctx.tenantId]);
 
       // Record payment
       await client.query(`

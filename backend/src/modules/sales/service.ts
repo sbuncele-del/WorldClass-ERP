@@ -70,17 +70,17 @@ export class SalesService {
       const nextNumber = invoiceNumberResult.rows[0].next_number;
       const invoiceNumber = `INV-${String(nextNumber).padStart(6, '0')}`;
       
-      // Create invoice
+      // Create invoice (balance_due is a generated column, don't insert it)
       const invoiceResult = await client.query(
         `INSERT INTO sales_invoices (
           tenant_id, customer_id, invoice_number, invoice_date, due_date,
-          subtotal, vat_total, total_amount, amount_paid, balance_due,
+          subtotal, vat_total, tax_amount, total_amount, amount_paid,
           status, reference, notes, created_by
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING *`,
         [
           tenantId, dto.customer_id, invoiceNumber, dto.invoice_date, dto.due_date,
-          subtotal, vat_total, total_amount, 0, total_amount,
+          subtotal, vat_total, vat_total, total_amount, 0,
           'DRAFT', dto.reference, dto.notes, userId
         ]
       );
@@ -95,7 +95,7 @@ export class SalesService {
             line_total, vat_rate, vat_amount, revenue_account_id
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
           [
-            invoice.invoice_id, line.line_number, line.description,
+            invoice.id, line.line_number, line.description,
             line.quantity, line.unit_price, line.line_total,
             line.vat_rate || 0, line.vat_amount || 0,
             line.revenue_account_id
@@ -106,7 +106,7 @@ export class SalesService {
       await client.query('COMMIT');
       
       // Return invoice with lines
-      return await this.getInvoiceById(invoice.invoice_id, tenantId);
+      return await this.getInvoiceById(invoice.id, tenantId);
       
     } catch (error) {
       await client.query('ROLLBACK');
@@ -119,7 +119,7 @@ export class SalesService {
   /**
    * Get invoice by ID
    */
-  async getInvoiceById(invoiceId: number, tenantId: string): Promise<any> {
+  async getInvoiceById(invoiceId: string, tenantId: string): Promise<any> {
     const client = await pool.connect();
     
     try {
@@ -128,15 +128,15 @@ export class SalesService {
         `SELECT 
           si.*,
           c.customer_code,
-          c.customer_name,
+          c.company_name as customer_name,
           c.email,
           c.phone,
           c.billing_address,
-          u.username as created_by_name
+          u.first_name || ' ' || u.last_name as created_by_name
         FROM sales_invoices si
-        LEFT JOIN customers c ON si.customer_id = c.customer_id
+        LEFT JOIN sales.customers c ON si.customer_id = c.customer_id
         LEFT JOIN users u ON si.created_by = u.id
-        WHERE si.invoice_id = $1 AND si.tenant_id = $2`,
+        WHERE si.id = $1 AND si.tenant_id = $2`,
         [invoiceId, tenantId]
       );
       
@@ -164,7 +164,7 @@ export class SalesService {
       // Get payments
       const paymentsResult = await client.query(
         `SELECT * FROM invoice_payments
-        WHERE invoice_id = $1
+        WHERE id = $1
         ORDER BY payment_date DESC`,
         [invoiceId]
       );
@@ -238,25 +238,25 @@ export class SalesService {
       const offset = (page - 1) * limit;
       const invoicesResult = await client.query(
         `SELECT 
-          si.invoice_id,
+          si.id as invoice_id,
           si.invoice_number,
           si.invoice_date,
           si.due_date,
           si.customer_id,
           c.customer_code,
-          c.customer_name,
+          c.company_name as customer_name,
           si.subtotal,
-          si.vat_amount as vat_total,
+          si.tax_amount as vat_total,
           si.total_amount,
           si.amount_paid,
-          si.amount_due as balance_due,
+          si.balance_due,
           si.status,
           si.reference,
           si.created_at
         FROM sales_invoices si
-        LEFT JOIN customers c ON si.customer_id = c.customer_id
+        LEFT JOIN sales.customers c ON si.customer_id = c.customer_id
         ${whereClause}
-        ORDER BY si.invoice_date DESC, si.invoice_id DESC
+        ORDER BY si.invoice_date DESC, si.id DESC
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
         [...params, limit, offset]
       );
@@ -279,7 +279,7 @@ export class SalesService {
   /**
    * Update invoice (only DRAFT status can be updated)
    */
-  async updateInvoice(invoiceId: number, dto: UpdateInvoiceDto, tenantId: string, userId?: number): Promise<any> {
+  async updateInvoice(invoiceId: string, dto: UpdateInvoiceDto, tenantId: string, userId?: number): Promise<any> {
     const client = await pool.connect();
     
     try {
@@ -287,7 +287,7 @@ export class SalesService {
       
       // Check if invoice is DRAFT
       const checkResult = await client.query(
-        'SELECT status FROM sales_invoices WHERE invoice_id = $1 AND tenant_id = $2',
+        'SELECT status FROM sales_invoices WHERE id = $1 AND tenant_id = $2',
         [invoiceId, tenantId]
       );
       
@@ -339,7 +339,7 @@ export class SalesService {
         
         await client.query(
           `UPDATE sales_invoices SET ${updateFields.join(', ')}
-          WHERE invoice_id = $${paramIndex} AND tenant_id = $${paramIndex + 1}`,
+          WHERE id = $${paramIndex} AND tenant_id = $${paramIndex + 1}`,
           updateParams
         );
       }
@@ -381,7 +381,7 @@ export class SalesService {
             balance_due = $3 - amount_paid,
             updated_at = NOW(),
             updated_by = $4
-          WHERE invoice_id = $5 AND tenant_id = $6`,
+          WHERE id = $5 AND tenant_id = $6`,
           [subtotal, vat_total, total_amount, userId, invoiceId, tenantId]
         );
       }
@@ -401,7 +401,7 @@ export class SalesService {
   /**
    * Post invoice to GL (change status from DRAFT to POSTED)
    */
-  async postInvoice(invoiceId: number, tenantId: string, userId?: number): Promise<any> {
+  async postInvoice(invoiceId: string, tenantId: string, userId?: number): Promise<any> {
     const client = await pool.connect();
     
     try {
@@ -409,7 +409,7 @@ export class SalesService {
       
       // Check if invoice is DRAFT
       const checkResult = await client.query(
-        'SELECT status FROM sales_invoices WHERE invoice_id = $1 AND tenant_id = $2',
+        'SELECT status FROM sales_invoices WHERE id = $1 AND tenant_id = $2',
         [invoiceId, tenantId]
       );
       
@@ -429,7 +429,7 @@ export class SalesService {
           posted_by = $1,
           updated_at = NOW(),
           updated_by = $1
-        WHERE invoice_id = $2 AND tenant_id = $3`,
+        WHERE id = $2 AND tenant_id = $3`,
         [userId, invoiceId, tenantId]
       );
       
@@ -448,7 +448,7 @@ export class SalesService {
   /**
    * Delete invoice (only DRAFT status can be deleted - soft delete)
    */
-  async deleteInvoice(invoiceId: number, tenantId: string, userId?: number): Promise<void> {
+  async deleteInvoice(invoiceId: string, tenantId: string, userId?: number): Promise<void> {
     const client = await pool.connect();
     
     try {
@@ -456,7 +456,7 @@ export class SalesService {
       
       // Check if invoice is DRAFT
       const checkResult = await client.query(
-        'SELECT status FROM sales_invoices WHERE invoice_id = $1 AND tenant_id = $2',
+        'SELECT status FROM sales_invoices WHERE id = $1 AND tenant_id = $2',
         [invoiceId, tenantId]
       );
       
@@ -474,7 +474,7 @@ export class SalesService {
           status = 'CANCELLED',
           updated_at = NOW(),
           updated_by = $1
-        WHERE invoice_id = $2 AND tenant_id = $3`,
+        WHERE id = $2 AND tenant_id = $3`,
         [userId, invoiceId, tenantId]
       );
       
