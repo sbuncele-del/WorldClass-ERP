@@ -291,8 +291,6 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
           {renderSectionTitle('OPERATIONS', 'industry', <CloudOutlined />)}
           {expandedSections.industry && (
             <div className="sidebar-section-content">
-              {renderNavItem('/app/logistics-hub', <TruckOutlined />, 'Logistics Hub')}
-              {renderNavItem('/app/manufacturing-hub', <ToolOutlined />, 'Manufacturing Hub')}
               {renderNavItem('/app/practice-hub', <SafetyCertificateOutlined />, 'Practice Hub')}
             </div>
           )}
