@@ -1,43 +1,31 @@
 # SiyaBusa ERP - Monthly Operating Budget Detail
 
 ## Purpose
-This document provides transparent breakdown of monthly costs for investor due diligence.
+This document provides transparent breakdown of monthly costs for the 4-month runway (Feb-May 2026).
 
 ---
 
-## Current State (Pre-Investment)
+## Investment Ask: R200,000 for 4 Months
 
-| Item | Current Cost | Notes |
-|:-----|-------------:|:------|
-| AWS Free Tier | R0 | Limited capacity, expires month 12 |
-| GitHub Free | R0 | Public repo only |
-| OpenAI API | ~R2,000 | Limited usage |
-| **Current Monthly Burn** | **~R2,000** | |
+| Objective | Timeline |
+|:----------|:---------|
+| First paying customer | May 2026 |
+| Break-even point | 5-6 customers |
+| Pricing model | R980/user/month |
 
-**Problem:** Free tier limitations prevent proper testing, production load, and customer onboarding.
+### 1. AWS Infrastructure (R5,500-R7,000/month)
 
----
-
-## Post-Investment Monthly Budget: R237,500/month
-
-### 1. AWS Infrastructure (R15,000/month)
-
-| Service | Instance | Monthly | Annual | Why |
-|:--------|:---------|--------:|-------:|:----|
-| **EC2 - Production** | t3.medium | R1,800 | R21,600 | Backend API server |
-| **EC2 - Staging** | t3.small | R900 | R10,800 | Testing environment |
-| **RDS PostgreSQL** | db.t3.medium | R2,400 | R28,800 | Production database |
-| **RDS - Read Replica** | db.t3.small | R1,200 | R14,400 | Performance & backup |
-| **ElastiCache Redis** | cache.t3.micro | R1,500 | R18,000 | Session & caching |
-| **S3 Storage** | 100GB | R200 | R2,400 | Files & backups |
-| **S3 Backups** | 500GB | R600 | R7,200 | Database backups |
-| **CloudFront CDN** | 500GB transfer | R1,500 | R18,000 | Global delivery |
-| **Route 53** | 3 hosted zones | R150 | R1,800 | DNS |
-| **Data Transfer** | ~500GB/month | R2,000 | R24,000 | Bandwidth |
-| **Load Balancer** | ALB | R1,500 | R18,000 | High availability |
-| **CloudWatch** | Standard | R750 | R9,000 | Monitoring |
-| **WAF** | Basic rules | R500 | R6,000 | Security |
-| **Subtotal** | | **R15,000** | **R180,000** | |
+| Service | Monthly | Notes |
+|:--------|--------:|:------|
+| ECS Fargate (Backend) | R1,200 | t3.small equivalent |
+| ECS Fargate (Frontend) | R600 | Static hosting |
+| RDS PostgreSQL | R1,800 | db.t3.micro + storage |
+| Application Load Balancer | R400 | HTTPS termination |
+| S3 Storage | R200 | Document storage |
+| CloudWatch / Monitoring | R150 | Logs and alerts |
+| Route 53 / DNS | R50 | Domain management |
+| Data Transfer | R600 | Bandwidth |
+| **Subtotal** | **R5,000-R7,000** | Scales with usage |
 
 ### 2. Third-Party Services (R13,000/month)
 

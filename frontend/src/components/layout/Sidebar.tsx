@@ -70,9 +70,9 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false }) => {
           </Link>
         </div>
 
-        {/* Industry Solutions */}
+        {/* Industry Solutions - Removed industry verticals, keeping core */}
         <div className="sidebar-section">
-          <div className="sidebar-section-title">INDUSTRY SOLUTIONS</div>
+          <div className="sidebar-section-title">OPERATIONS</div>
           <Link to="/logistics" className={`sidebar-item ${isActive('/logistics') ? 'active' : ''}`}>
             <span className="sidebar-icon">🚚</span>
             <span className="sidebar-label">Logistics & Transport</span>
@@ -80,22 +80,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false }) => {
           <Link to="/practice" className={`sidebar-item ${isActive('/practice') ? 'active' : ''}`}>
             <span className="sidebar-icon">⚖️</span>
             <span className="sidebar-label">Practice Management</span>
-          </Link>
-          <Link to="/healthcare" className={`sidebar-item ${isActive('/healthcare') ? 'active' : ''}`}>
-            <span className="sidebar-icon">🏥</span>
-            <span className="sidebar-label">Healthcare Management</span>
-          </Link>
-          <Link to="/construction" className={`sidebar-item ${isActive('/construction') ? 'active' : ''}`}>
-            <span className="sidebar-icon">🏗️</span>
-            <span className="sidebar-label">Construction & Projects</span>
-          </Link>
-          <Link to="/agriculture" className={`sidebar-item ${isActive('/agriculture') ? 'active' : ''}`}>
-            <span className="sidebar-icon">🌾</span>
-            <span className="sidebar-label">Agriculture & Farming</span>
-          </Link>
-          <Link to="/mining" className={`sidebar-item ${isActive('/mining') ? 'active' : ''}`}>
-            <span className="sidebar-icon">⛏️</span>
-            <span className="sidebar-label">Mining</span>
           </Link>
           <Link to="/wholesale" className={`sidebar-item ${isActive('/wholesale') ? 'active' : ''}`}>
             <span className="sidebar-icon">🏬</span>

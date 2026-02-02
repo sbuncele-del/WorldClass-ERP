@@ -23,8 +23,8 @@ RUN apk add --no-cache python3 make g++
 COPY package*.json ./
 
 # Install ALL dependencies (including dev for TypeScript build)
-# npm ci uses EXACT versions from package-lock.json
-RUN npm ci
+# Using npm install since this is a monorepo without local package-lock
+RUN npm install
 
 # Copy source code
 COPY tsconfig.json ./
@@ -55,8 +55,8 @@ RUN apk add --no-cache python3 make g++ wget
 # Copy package files
 COPY package*.json ./
 
-# Install ONLY production dependencies (locked from package-lock.json)
-RUN npm ci --only=production && \
+# Install ONLY production dependencies
+RUN npm install --omit=dev && \
     npm cache clean --force
 
 # Remove build tools to reduce attack surface

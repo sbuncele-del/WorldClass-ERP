@@ -20,7 +20,10 @@ export interface JournalEntryLine {
   debit_amount: number;
   credit_amount: number;
   cost_center_id?: string;
+  department_id?: string;
   project_id?: string;
+  product_id?: string;
+  location_id?: string;
 }
 
 export interface JournalEntry {
@@ -42,8 +45,9 @@ export interface JournalEntry {
   approved_at?: Date;
   posted_by?: string;
   posted_at?: Date;
-  reversal_of_id?: string;
-  reversed_by_id?: string;
+  reverses_journal_id?: string;      // ID of the entry this reverses
+  reversed_by_journal_id?: string;   // ID of the entry that reversed this
+  is_reversing?: boolean;            // True if this is a reversal entry
   lines?: JournalEntryLine[];
   created_at: Date;
   created_by?: string;
@@ -85,9 +89,9 @@ export class JournalEntryRepository extends BaseRepository<JournalEntry> {
     entryData: Partial<JournalEntry>,
     lines: Partial<JournalEntryLine>[]
   ): Promise<JournalEntry> {
-    // Validate debits = credits
-    const totalDebit = lines.reduce((sum, l) => sum + (l.debit_amount || 0), 0);
-    const totalCredit = lines.reduce((sum, l) => sum + (l.credit_amount || 0), 0);
+    // Validate debits = credits (parseFloat to handle string values from DB)
+    const totalDebit = lines.reduce((sum, l) => sum + parseFloat(String(l.debit_amount || 0)), 0);
+    const totalCredit = lines.reduce((sum, l) => sum + parseFloat(String(l.credit_amount || 0)), 0);
     
     if (Math.abs(totalDebit - totalCredit) > 0.01) {
       throw new Error(`Journal entry must balance. Debits: ${totalDebit}, Credits: ${totalCredit}`);
@@ -108,14 +112,16 @@ export class JournalEntryRepository extends BaseRepository<JournalEntry> {
       const entryResult = await client.query(`
         INSERT INTO ${this.fullTableName}
         (tenant_id, entry_number, journal_type, posting_date, description, reference,
-         status, total_debit, total_credit, source_type, source_id, created_by)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         status, total_debit, total_credit, source_type, source_id, created_by, 
+         reverses_journal_id, is_reversing)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING *
       `, [
         ctx.tenantId, entryNumber, entryData.journal_type || 'general',
         entryData.posting_date || new Date(), entryData.description,
         entryData.reference, entryData.status || 'draft',
-        totalDebit, totalCredit, entryData.source_type, entryData.source_id, ctx.userId
+        totalDebit, totalCredit, entryData.source_type || 'MANUAL', entryData.source_id, ctx.userId,
+        entryData.reverses_journal_id || null, entryData.reverses_journal_id ? true : false
       ]);
 
       const entry = entryResult.rows[0];
@@ -126,12 +132,14 @@ export class JournalEntryRepository extends BaseRepository<JournalEntry> {
         await client.query(`
           INSERT INTO journal_entry_lines
           (tenant_id, journal_entry_id, line_number, account_id, description,
-           debit_amount, credit_amount, cost_center_id, project_id)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+           debit_amount, credit_amount, cost_center_id, department_id, project_id,
+           product_id, location_id)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         `, [
           ctx.tenantId, entry.entry_id, i + 1, line.account_id, line.description,
           line.debit_amount || 0, line.credit_amount || 0,
-          line.cost_center_id, line.project_id
+          line.cost_center_id || null, line.department_id || null, line.project_id || null,
+          line.product_id || null, line.location_id || null
         ]);
       }
 
@@ -184,13 +192,13 @@ export class JournalEntryRepository extends BaseRepository<JournalEntry> {
       description: `Reversal of ${entry.entry_number}`,
       reference: entry.reference,
       status: 'posted',
-      reversal_of_id: entryId
+      reverses_journal_id: entryId
     }, reversalLines);
 
     // Mark original entry as reversed
     await this.update(ctx, entryId, { 
       status: 'reversed',
-      reversed_by_id: reversalEntry.id 
+      reversed_by_journal_id: reversalEntry.id 
     } as any);
 
     return reversalEntry;

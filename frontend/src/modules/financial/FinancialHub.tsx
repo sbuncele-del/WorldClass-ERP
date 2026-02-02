@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card,
   Row,
@@ -23,6 +24,7 @@ import {
   Alert,
   Spin,
   Empty,
+  InputNumber,
 } from 'antd';
 import {
   DollarOutlined,
@@ -48,6 +50,8 @@ import {
   GlobalOutlined,
   BookOutlined,
   LoadingOutlined,
+  DeleteOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons';
 import {
   HubLayout,
@@ -60,7 +64,8 @@ import {
   InfoListCard,
 } from '../../components/hub';
 import { financialService } from '../../services/financial.service';
-import type { FinancialStats, JournalEntry, TrialBalanceEntry } from '../../services/financial.service';
+import type { FinancialStats, JournalEntry, TrialBalanceEntry, Account, CostCenter, Department, Project, Product, Location } from '../../services/financial.service';
+import dayjs from 'dayjs';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
@@ -102,6 +107,7 @@ interface JournalItem {
 
 interface FinancialReport {
   name: string;
+  code: string;
   period: string;
   status: string;
   icon: React.ReactNode;
@@ -115,19 +121,43 @@ interface PeriodStatus {
 
 // Default financial reports (these are UI configs, not from API)
 const defaultFinancialReports: FinancialReport[] = [
-  { name: 'Income Statement', period: 'December 2025', status: 'ready', icon: <BarChartOutlined /> },
-  { name: 'Balance Sheet', period: 'December 2025', status: 'ready', icon: <PieChartOutlined /> },
-  { name: 'Cash Flow Statement', period: 'December 2025', status: 'generating', icon: <DollarOutlined /> },
-  { name: 'Trial Balance', period: 'December 2025', status: 'ready', icon: <FileTextOutlined /> },
-  { name: 'General Ledger', period: 'December 2025', status: 'ready', icon: <BookOutlined /> },
-  { name: 'Aged Receivables', period: 'December 2025', status: 'ready', icon: <CalendarOutlined /> },
-  { name: 'Aged Payables', period: 'December 2025', status: 'ready', icon: <CalendarOutlined /> },
-  { name: 'VAT Report', period: 'November 2025', status: 'submitted', icon: <SafetyCertificateOutlined /> },
+  { name: 'Income Statement', code: 'income-statement', period: 'January 2026', status: 'ready', icon: <BarChartOutlined /> },
+  { name: 'Balance Sheet', code: 'balance-sheet', period: 'January 2026', status: 'ready', icon: <PieChartOutlined /> },
+  { name: 'Cash Flow Statement', code: 'cash-flow', period: 'January 2026', status: 'ready', icon: <DollarOutlined /> },
+  { name: 'Trial Balance', code: 'trial-balance', period: 'January 2026', status: 'ready', icon: <FileTextOutlined /> },
+  { name: 'General Ledger', code: 'general-ledger', period: 'January 2026', status: 'ready', icon: <BookOutlined /> },
+  { name: 'Aged Receivables', code: 'aged-receivables', period: 'January 2026', status: 'ready', icon: <CalendarOutlined /> },
+  { name: 'Aged Payables', code: 'aged-payables', period: 'January 2026', status: 'ready', icon: <CalendarOutlined /> },
+  { name: 'VAT Report', code: 'vat-report', period: 'January 2026', status: 'ready', icon: <SafetyCertificateOutlined /> },
 ];
 
 const FinancialHub: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showJournalModal, setShowJournalModal] = useState(false);
+  const [journalForm] = Form.useForm();
+  const [journalSubmitting, setJournalSubmitting] = useState(false);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [costCenters, setCostCenters] = useState<CostCenter[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [journalLines, setJournalLines] = useState<Array<{ 
+    key: number; 
+    account: string; 
+    debit: number; 
+    credit: number;
+    costCenterId?: string;
+    departmentId?: string;
+    projectId?: string;
+    productId?: string;
+    locationId?: string;
+    description?: string;
+  }>>([
+    { key: 1, account: '', debit: 0, credit: 0 },
+    { key: 2, account: '', debit: 0, credit: 0 },
+  ]);
 
   // API State
   const [loading, setLoading] = useState(true);
@@ -243,6 +273,31 @@ const FinancialHub: React.FC = () => {
           // Keep defaults
         }
 
+        // Fetch accounts for journal entry dropdown
+        try {
+          const accountsResponse = await financialService.getChartOfAccounts({ limit: 200 });
+          if (accountsResponse.data && Array.isArray(accountsResponse.data)) {
+            // Filter out inactive accounts and those without valid IDs
+            setAccounts(accountsResponse.data.filter((a: Account) => 
+              a.is_active !== false && (a.id || a.account_id)
+            ));
+          }
+        } catch {
+          // Will use empty accounts list
+        }
+
+        // Fetch dimensions for journal entry dropdowns
+        try {
+          const dimensions = await financialService.getAllDimensions();
+          setCostCenters(dimensions.costCenters.filter(d => d.is_active !== false));
+          setDepartments(dimensions.departments.filter(d => d.is_active !== false));
+          setProjects(dimensions.projects.filter(d => d.is_active !== false));
+          setProducts(dimensions.products.filter(d => d.is_active !== false));
+          setLocations(dimensions.locations.filter(d => d.is_active !== false));
+        } catch {
+          // Will use empty dimension lists
+        }
+
       } catch (err: unknown) {
         console.error('Failed to fetch financial data:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to load financial data';
@@ -255,6 +310,97 @@ const FinancialHub: React.FC = () => {
 
     fetchFinancialData();
   }, []);
+
+  // Handle journal entry submission
+  const handleJournalSubmit = async () => {
+    try {
+      const values = await journalForm.validateFields();
+      
+      // Validate lines
+      const validLines = journalLines.filter(line => line.account && (line.debit > 0 || line.credit > 0));
+      if (validLines.length < 2) {
+        message.error('Please add at least 2 journal lines with accounts and amounts');
+        return;
+      }
+
+      // Check debits = credits
+      const totalDebit = validLines.reduce((sum, line) => sum + (line.debit || 0), 0);
+      const totalCredit = validLines.reduce((sum, line) => sum + (line.credit || 0), 0);
+      if (Math.abs(totalDebit - totalCredit) > 0.01) {
+        message.error(`Debits (R${totalDebit.toFixed(2)}) must equal Credits (R${totalCredit.toFixed(2)})`);
+        return;
+      }
+
+      setJournalSubmitting(true);
+
+      const payload = {
+        entry_date: values.entry_date.format('YYYY-MM-DD'),
+        description: values.description,
+        lines: validLines.map(line => ({
+          account_id: line.account,
+          debit_amount: line.debit || 0,
+          credit_amount: line.credit || 0,
+          cost_center_id: line.costCenterId || null,
+          department_id: line.departmentId || null,
+          project_id: line.projectId || null,
+          product_id: line.productId || null,
+          location_id: line.locationId || null,
+          description: line.description || null,
+        })),
+      };
+
+      const result = await financialService.createJournalEntry(payload);
+      
+      if (result.success) {
+        message.success(`Journal Entry ${result.data?.entry_number || ''} created successfully!`);
+        setShowJournalModal(false);
+        journalForm.resetFields();
+        setJournalLines([
+          { key: 1, account: '', debit: 0, credit: 0 },
+          { key: 2, account: '', debit: 0, credit: 0 },
+        ]);
+        // Refresh journal entries list
+        const journalsResponse = await financialService.getJournalEntries({ limit: 10 });
+        if (journalsResponse.data && Array.isArray(journalsResponse.data)) {
+          setRecentJournals(journalsResponse.data.map((j: JournalEntry) => ({
+            id: j.journal_number || j.journal_id,
+            date: j.entry_date,
+            description: j.description,
+            debit: j.total_debit,
+            credit: j.total_credit,
+            status: j.status?.toLowerCase() || 'posted',
+            createdBy: j.created_by || 'System',
+          })));
+        }
+      } else {
+        message.error(result.message || 'Failed to create journal entry');
+      }
+    } catch (err: unknown) {
+      console.error('Journal entry error:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create journal entry';
+      message.error(errorMessage);
+    } finally {
+      setJournalSubmitting(false);
+    }
+  };
+
+  // Journal line handlers
+  const addJournalLine = () => {
+    const newKey = Math.max(...journalLines.map(l => l.key)) + 1;
+    setJournalLines([...journalLines, { key: newKey, account: '', debit: 0, credit: 0 }]);
+  };
+
+  const removeJournalLine = (key: number) => {
+    if (journalLines.length > 2) {
+      setJournalLines(journalLines.filter(l => l.key !== key));
+    }
+  };
+
+  const updateJournalLine = (key: number, field: string, value: string | number) => {
+    setJournalLines(journalLines.map(l => 
+      l.key === key ? { ...l, [field]: value } : l
+    ));
+  };
 
   // Refresh data function
   const handleRefresh = () => {
@@ -274,6 +420,265 @@ const FinancialHub: React.FC = () => {
       })
       .catch(() => message.error('Failed to refresh'))
       .finally(() => setLoading(false));
+  };
+
+  // Download report as CSV
+  const handleDownloadReport = async (reportCode: string, reportName: string) => {
+    try {
+      message.loading({ content: `Generating ${reportName}...`, key: 'download' });
+      
+      const response = await financialService.downloadReport(reportCode);
+      
+      if (!response.success || !response.data) {
+        message.error({ content: `No data available for ${reportName}`, key: 'download' });
+        return;
+      }
+
+      // Generate CSV based on report type
+      let csvContent = '';
+      const dateStr = new Date().toISOString().split('T')[0];
+      
+      if (reportCode === 'balance-sheet') {
+        csvContent = generateBalanceSheetCSV(response.data);
+      } else if (reportCode === 'income-statement') {
+        csvContent = generateIncomeStatementCSV(response.data);
+      } else if (reportCode === 'trial-balance') {
+        csvContent = generateTrialBalanceCSV(response.data);
+      } else if (reportCode === 'cash-flow') {
+        csvContent = generateCashFlowCSV(response.data);
+      } else if (reportCode === 'general-ledger') {
+        csvContent = generateGeneralLedgerCSV(response.data);
+      } else if (reportCode === 'aged-receivables') {
+        csvContent = generateAgedReceivablesCSV(response.data);
+      } else if (reportCode === 'aged-payables') {
+        csvContent = generateAgedPayablesCSV(response.data);
+      } else if (reportCode === 'vat-report') {
+        csvContent = generateVATReportCSV(response.data);
+      } else {
+        csvContent = `Report: ${reportName}\nGenerated: ${dateStr}\n\nReport data not available in CSV format yet.\nPlease check back as this report is being developed.`;
+      }
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `${reportCode}_${dateStr}.csv`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      
+      message.success({ content: `${reportName} downloaded!`, key: 'download' });
+    } catch (err) {
+      console.error('Download error:', err);
+      message.error({ content: `Failed to download ${reportName}`, key: 'download' });
+    }
+  };
+
+  // Generate CSV for Balance Sheet
+  const generateBalanceSheetCSV = (data: any) => {
+    let csv = `Balance Sheet\nAs of: ${data.as_of_date || new Date().toISOString().split('T')[0]}\n\n`;
+    
+    csv += 'ASSETS\n';
+    csv += 'Account,Balance\n';
+    if (data.current_assets?.accounts?.length > 0) {
+      csv += 'Current Assets\n';
+      data.current_assets.accounts.forEach((acc: any) => {
+        csv += `"${acc.account_name || acc.name}",${acc.balance || 0}\n`;
+      });
+      csv += `Current Assets Subtotal,${data.current_assets.subtotal || 0}\n`;
+    }
+    if (data.non_current_assets?.accounts?.length > 0) {
+      csv += 'Non-Current Assets\n';
+      data.non_current_assets.accounts.forEach((acc: any) => {
+        csv += `"${acc.account_name || acc.name}",${acc.balance || 0}\n`;
+      });
+      csv += `Non-Current Assets Subtotal,${data.non_current_assets.subtotal || 0}\n`;
+    }
+    csv += `TOTAL ASSETS,${data.total_assets || 0}\n\n`;
+    
+    csv += 'LIABILITIES\n';
+    if (data.current_liabilities?.accounts?.length > 0) {
+      csv += 'Current Liabilities\n';
+      data.current_liabilities.accounts.forEach((acc: any) => {
+        csv += `"${acc.account_name || acc.name}",${acc.balance || 0}\n`;
+      });
+      csv += `Current Liabilities Subtotal,${data.current_liabilities.subtotal || 0}\n`;
+    }
+    if (data.non_current_liabilities?.accounts?.length > 0) {
+      csv += 'Non-Current Liabilities\n';
+      data.non_current_liabilities.accounts.forEach((acc: any) => {
+        csv += `"${acc.account_name || acc.name}",${acc.balance || 0}\n`;
+      });
+      csv += `Non-Current Liabilities Subtotal,${data.non_current_liabilities.subtotal || 0}\n`;
+    }
+    csv += `TOTAL LIABILITIES,${data.total_liabilities || 0}\n\n`;
+    
+    csv += 'EQUITY\n';
+    if (data.equity?.accounts?.length > 0) {
+      data.equity.accounts.forEach((acc: any) => {
+        csv += `"${acc.account_name || acc.name}",${acc.balance || 0}\n`;
+      });
+    }
+    csv += `TOTAL EQUITY,${data.total_equity || 0}\n\n`;
+    csv += `TOTAL LIABILITIES & EQUITY,${data.total_liabilities_equity || 0}\n`;
+    
+    return csv;
+  };
+
+  // Generate CSV for Income Statement
+  const generateIncomeStatementCSV = (data: any) => {
+    let csv = `Income Statement\nPeriod: ${data.period || 'Current'}\n\n`;
+    
+    csv += 'REVENUE\n';
+    csv += 'Account,Amount\n';
+    if (data.revenue?.accounts?.length > 0) {
+      data.revenue.accounts.forEach((acc: any) => {
+        csv += `"${acc.account_name || acc.name}",${acc.balance || acc.amount || 0}\n`;
+      });
+    }
+    csv += `Total Revenue,${data.total_revenue || data.revenue?.total || 0}\n\n`;
+    
+    csv += 'EXPENSES\n';
+    if (data.expenses?.accounts?.length > 0) {
+      data.expenses.accounts.forEach((acc: any) => {
+        csv += `"${acc.account_name || acc.name}",${acc.balance || acc.amount || 0}\n`;
+      });
+    }
+    csv += `Total Expenses,${data.total_expenses || data.expenses?.total || 0}\n\n`;
+    
+    csv += `NET INCOME,${data.net_income || 0}\n`;
+    
+    return csv;
+  };
+
+  // Generate CSV for Trial Balance
+  const generateTrialBalanceCSV = (data: any) => {
+    let csv = `Trial Balance\nAs of: ${new Date().toISOString().split('T')[0]}\n\n`;
+    csv += 'Account Code,Account Name,Debit,Credit\n';
+    
+    const accounts = data.accounts || data.data || data;
+    if (Array.isArray(accounts)) {
+      accounts.forEach((acc: any) => {
+        const debit = acc.debit || acc.debit_balance || 0;
+        const credit = acc.credit || acc.credit_balance || 0;
+        csv += `"${acc.account_code || acc.code}","${acc.account_name || acc.name}",${debit},${credit}\n`;
+      });
+    }
+    
+    csv += `\nTOTALS,${data.totals?.debit || ''},${data.totals?.credit || ''}\n`;
+    
+    return csv;
+  };
+
+  // Generate CSV for Cash Flow Statement
+  const generateCashFlowCSV = (data: any) => {
+    let csv = `Cash Flow Statement\nPeriod: ${data.period?.label || 'Current'}\n\n`;
+    
+    csv += 'OPERATING ACTIVITIES\n';
+    csv += 'Description,Amount\n';
+    if (data.operating?.items?.length > 0) {
+      data.operating.items.forEach((item: any) => {
+        csv += `"${item.description}",${item.amount || 0}\n`;
+      });
+    }
+    csv += `Net Cash from Operating,${data.operating?.total || 0}\n\n`;
+    
+    csv += 'INVESTING ACTIVITIES\n';
+    if (data.investing?.items?.length > 0) {
+      data.investing.items.forEach((item: any) => {
+        csv += `"${item.description}",${item.amount || 0}\n`;
+      });
+    }
+    csv += `Net Cash from Investing,${data.investing?.total || 0}\n\n`;
+    
+    csv += 'FINANCING ACTIVITIES\n';
+    if (data.financing?.items?.length > 0) {
+      data.financing.items.forEach((item: any) => {
+        csv += `"${item.description}",${item.amount || 0}\n`;
+      });
+    }
+    csv += `Net Cash from Financing,${data.financing?.total || 0}\n\n`;
+    
+    csv += `NET CHANGE IN CASH,${data.net_change || 0}\n`;
+    csv += `Beginning Cash,${data.beginning_cash || 0}\n`;
+    csv += `Ending Cash,${data.ending_cash || 0}\n`;
+    
+    return csv;
+  };
+
+  // Generate CSV for General Ledger
+  const generateGeneralLedgerCSV = (data: any) => {
+    let csv = `General Ledger\nGenerated: ${new Date().toISOString().split('T')[0]}\nPeriod: ${data.period?.fromDate || ''} to ${data.period?.toDate || ''}\n\n`;
+    csv += 'Account Code,Account Name,Date,Entry Number,Reference,Description,Debit,Credit,Running Balance\n';
+    
+    const accounts = data.accounts || data.data || [];
+    accounts.forEach((account: any) => {
+      csv += `\n${account.accountCode || account.account_code || ''} - ${account.accountName || account.account_name || ''}\n`;
+      const transactions = account.transactions || [];
+      transactions.forEach((txn: any) => {
+        csv += `"${account.accountCode || account.account_code || ''}","${account.accountName || account.account_name || ''}","${txn.date || ''}","${txn.entryNumber || txn.entry_number || ''}","${txn.reference || ''}","${txn.description || ''}",${txn.debit || 0},${txn.credit || 0},${txn.runningBalance || txn.running_balance || 0}\n`;
+      });
+      csv += `Account Closing Balance,,,,,,"",${account.closingBalance || account.closing_balance || 0}\n`;
+    });
+    
+    csv += `\nGRAND TOTALS,,,,,${data.totals?.totalDebits || 0},${data.totals?.totalCredits || 0}\n`;
+    
+    return csv;
+  };
+
+  // Generate CSV for Aged Receivables
+  const generateAgedReceivablesCSV = (data: any) => {
+    let csv = `Aged Receivables Report\nAs of: ${data.asOfDate || data.as_of_date || new Date().toISOString().split('T')[0]}\n\n`;
+    csv += 'Customer,Current (0-30),31-60 Days,61-90 Days,Over 90 Days,Total Outstanding\n';
+    
+    const customers = data.customers || data.data || [];
+    customers.forEach((customer: any) => {
+      csv += `"${customer.customerName || customer.customer_name || customer.name || ''}",${customer.current || customer.bucket_0_30 || 0},${customer.days1_30 || customer.days_31_60 || customer.bucket_31_60 || 0},${customer.days31_60 || customer.days_61_90 || customer.bucket_61_90 || 0},${customer.days61_90 || customer.over_90 || customer.bucket_90_plus || 0},${customer.over90 || 0},${customer.total || 0}\n`;
+    });
+    
+    csv += `\nTOTALS,${data.totals?.current || data.summary?.bucket_0_30 || 0},${data.totals?.days1_30 || data.totals?.days_31_60 || data.summary?.bucket_31_60 || 0},${data.totals?.days31_60 || data.totals?.days_61_90 || data.summary?.bucket_61_90 || 0},${data.totals?.days61_90 || data.totals?.over_90 || data.summary?.bucket_90_plus || 0},${data.totals?.over90 || 0},${data.totals?.total || data.summary?.total_outstanding || 0}\n`;
+    
+    return csv;
+  };
+
+  // Generate CSV for Aged Payables
+  const generateAgedPayablesCSV = (data: any) => {
+    let csv = `Aged Payables Report\nAs of: ${data.asOfDate || data.as_of_date || new Date().toISOString().split('T')[0]}\n\n`;
+    csv += 'Vendor,Current (0-30),31-60 Days,61-90 Days,Over 90 Days,Total Outstanding\n';
+    
+    const vendors = data.vendors || data.suppliers || data.data || [];
+    vendors.forEach((vendor: any) => {
+      csv += `"${vendor.vendorName || vendor.vendor_name || vendor.supplier_name || vendor.name || ''}",${vendor.current || vendor.bucket_0_30 || 0},${vendor.days1_30 || vendor.days_31_60 || vendor.bucket_31_60 || 0},${vendor.days31_60 || vendor.days_61_90 || vendor.bucket_61_90 || 0},${vendor.days61_90 || vendor.over_90 || vendor.bucket_90_plus || 0},${vendor.over90 || 0},${vendor.total || 0}\n`;
+    });
+    
+    csv += `\nTOTALS,${data.totals?.current || data.summary?.bucket_0_30 || 0},${data.totals?.days1_30 || data.totals?.days_31_60 || data.summary?.bucket_31_60 || 0},${data.totals?.days31_60 || data.totals?.days_61_90 || data.summary?.bucket_61_90 || 0},${data.totals?.days61_90 || data.totals?.over_90 || data.summary?.bucket_90_plus || 0},${data.totals?.over90 || 0},${data.totals?.total || data.summary?.total_outstanding || 0}\n`;
+    
+    return csv;
+  };
+
+  // Generate CSV for VAT Report
+  const generateVATReportCSV = (data: any) => {
+    let csv = `VAT Report\nPeriod: ${data.period?.fromDate || ''} to ${data.period?.toDate || ''}\n\n`;
+    
+    csv += 'OUTPUT VAT (Collected on Sales)\n';
+    csv += 'Date,Entry Number,Reference,Description,Amount\n';
+    const outputTxns = data.outputVat?.transactions || data.output_vat?.items || [];
+    outputTxns.forEach((item: any) => {
+      csv += `"${item.date || ''}","${item.entryNumber || item.entry_number || ''}","${item.reference || ''}","${item.description || item.name || ''}",${item.amount || item.vat_amount || 0}\n`;
+    });
+    csv += `Total Output VAT,,,,${data.outputVat?.total || data.output_vat?.total || data.total_output_vat || 0}\n\n`;
+    
+    csv += 'INPUT VAT (Paid on Purchases)\n';
+    csv += 'Date,Entry Number,Reference,Description,Amount\n';
+    const inputTxns = data.inputVat?.transactions || data.input_vat?.items || [];
+    inputTxns.forEach((item: any) => {
+      csv += `"${item.date || ''}","${item.entryNumber || item.entry_number || ''}","${item.reference || ''}","${item.description || item.name || ''}",${item.amount || item.vat_amount || 0}\n`;
+    });
+    csv += `Total Input VAT,,,,${data.inputVat?.total || data.input_vat?.total || data.total_input_vat || 0}\n\n`;
+    
+    csv += `VAT Rate:,${data.summary?.vatRate || 15}%\n`;
+    csv += `NET VAT PAYABLE/(REFUND):,R ${data.summary?.netVatPayable || data.net_vat || data.vat_payable || 0}\n`;
+    
+    return csv;
   };
 
   const formatCurrency = (amount: number) => `R ${amount.toLocaleString('en-ZA')}`;
@@ -463,7 +868,14 @@ const FinancialHub: React.FC = () => {
                 renderItem={item => (
                   <List.Item
                     actions={[
-                      <Button type="link" icon={<DownloadOutlined />} key="download">Download</Button>,
+                      <Button 
+                        type="link" 
+                        icon={<DownloadOutlined />} 
+                        key="download"
+                        onClick={() => handleDownloadReport(item.code, item.name)}
+                      >
+                        Download
+                      </Button>,
                       <Button type="link" icon={<PrinterOutlined />} key="print">Print</Button>,
                     ]}
                   >
@@ -529,9 +941,36 @@ const FinancialHub: React.FC = () => {
           <Col span={12}>
             <Card title="Chart of Accounts">
               <Paragraph>Manage your account structure and categories.</Paragraph>
-              <Button type="primary" icon={<SettingOutlined />}>Configure Accounts</Button>
+              <Button 
+                type="primary" 
+                icon={<SettingOutlined />}
+                onClick={() => navigate('/app/financial/chart-of-accounts')}
+              >
+                Configure Accounts
+              </Button>
             </Card>
           </Col>
+          <Col span={12}>
+            <Card title="Dimensions">
+              <Paragraph>Configure cost centers, departments, and tracking dimensions.</Paragraph>
+              <Button 
+                type="primary" 
+                icon={<AppstoreOutlined />}
+                onClick={() => navigate('/app/financial/dimensions')}
+              >
+                Manage Dimensions
+              </Button>
+            </Card>
+          </Col>
+        </Row>
+      ),
+    },
+    {
+      key: 'fiscal',
+      label: 'Fiscal Settings',
+      icon: <CalendarOutlined />,
+      children: (
+        <Row gutter={24}>
           <Col span={12}>
             <Card title="Fiscal Year Settings">
               <Form layout="vertical">
@@ -544,6 +983,15 @@ const FinancialHub: React.FC = () => {
                 </Form.Item>
                 <Button type="primary">Save Settings</Button>
               </Form>
+            </Card>
+          </Col>
+          <Col span={12}>
+            <Card title="Period Management">
+              <Paragraph>Manage fiscal periods, close periods, and year-end processing.</Paragraph>
+              <Space>
+                <Button>View Periods</Button>
+                <Button type="primary">Close Current Period</Button>
+              </Space>
             </Card>
           </Col>
         </Row>
@@ -594,21 +1042,37 @@ const FinancialHub: React.FC = () => {
       <Modal
         title="New Journal Entry"
         open={showJournalModal}
-        onCancel={() => setShowJournalModal(false)}
+        onCancel={() => {
+          setShowJournalModal(false);
+          journalForm.resetFields();
+          setJournalLines([
+            { key: 1, account: '', debit: 0, credit: 0 },
+            { key: 2, account: '', debit: 0, credit: 0 },
+          ]);
+        }}
         footer={[
           <Button key="cancel" onClick={() => setShowJournalModal(false)}>Cancel</Button>,
-          <Button key="draft">Save as Draft</Button>,
-          <Button key="post" type="primary" onClick={() => { message.success('Journal entry posted'); setShowJournalModal(false); }}>
+          <Button 
+            key="post" 
+            type="primary" 
+            loading={journalSubmitting}
+            onClick={handleJournalSubmit}
+          >
             Post Entry
           </Button>
         ]}
-        width={700}
+        width={900}
       >
-        <Form layout="vertical">
+        <Form form={journalForm} layout="vertical">
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Date" required>
-                <DatePicker style={{ width: '100%' }} />
+              <Form.Item 
+                name="entry_date" 
+                label="Date" 
+                rules={[{ required: true, message: 'Please select a date' }]}
+                initialValue={dayjs()}
+              >
+                <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -617,33 +1081,195 @@ const FinancialHub: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item label="Description" required>
+          <Form.Item 
+            name="description" 
+            label="Description" 
+            rules={[{ required: true, message: 'Please enter a description' }]}
+          >
             <Input placeholder="Enter journal description" />
           </Form.Item>
+          
           <Divider>Journal Lines</Divider>
-          <Row gutter={16}>
+          
+          {/* Totals Summary */}
+          <Row gutter={16} style={{ marginBottom: 16, background: '#f5f5f5', padding: '8px 16px', borderRadius: 4 }}>
             <Col span={10}>
-              <Form.Item label="Account">
-                <Select placeholder="Select account">
-                  <Select.Option value="1000">1000 - Assets</Select.Option>
-                  <Select.Option value="2000">2000 - Liabilities</Select.Option>
-                  <Select.Option value="4000">4000 - Revenue</Select.Option>
-                  <Select.Option value="5000">5000 - Expenses</Select.Option>
-                </Select>
-              </Form.Item>
+              <Text strong>Totals:</Text>
             </Col>
-            <Col span={7}>
-              <Form.Item label="Debit">
-                <Input prefix="R" placeholder="0.00" />
-              </Form.Item>
+            <Col span={6} style={{ textAlign: 'right' }}>
+              <Text strong style={{ color: '#1890ff' }}>
+                Debit: R {journalLines.reduce((sum, l) => sum + (l.debit || 0), 0).toFixed(2)}
+              </Text>
             </Col>
-            <Col span={7}>
-              <Form.Item label="Credit">
-                <Input prefix="R" placeholder="0.00" />
-              </Form.Item>
+            <Col span={6} style={{ textAlign: 'right' }}>
+              <Text strong style={{ color: '#52c41a' }}>
+                Credit: R {journalLines.reduce((sum, l) => sum + (l.credit || 0), 0).toFixed(2)}
+              </Text>
+            </Col>
+            <Col span={2}>
+              {Math.abs(journalLines.reduce((sum, l) => sum + (l.debit || 0), 0) - 
+                       journalLines.reduce((sum, l) => sum + (l.credit || 0), 0)) < 0.01 ? (
+                <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 18 }} />
+              ) : (
+                <ExclamationCircleOutlined style={{ color: '#ff4d4f', fontSize: 18 }} />
+              )}
             </Col>
           </Row>
-          <Button type="dashed" icon={<PlusOutlined />} style={{ width: '100%' }}>
+
+          {journalLines.map((line, index) => (
+            <div key={line.key} style={{ marginBottom: 16, padding: 12, background: '#fafafa', borderRadius: 4, border: '1px solid #e8e8e8' }}>
+              <Row gutter={16} style={{ marginBottom: 8 }}>
+                <Col span={10}>
+                  <Select 
+                    placeholder="Select account"
+                    style={{ width: '100%' }}
+                    showSearch
+                    optionFilterProp="children"
+                    value={line.account || undefined}
+                    onChange={(value) => updateJournalLine(line.key, 'account', value)}
+                    filterOption={(input, option) =>
+                      (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+                    }
+                  >
+                    {accounts.map(acc => (
+                      <Select.Option key={acc.id || acc.account_id} value={acc.id || acc.account_id}>
+                        {acc.account_number || acc.account_code} - {acc.name || acc.account_name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Col>
+                <Col span={6}>
+                  <InputNumber
+                    style={{ width: '100%' }}
+                    prefix="R"
+                    placeholder="Debit"
+                    min={0}
+                    precision={2}
+                    value={line.debit || undefined}
+                    onChange={(value) => updateJournalLine(line.key, 'debit', value || 0)}
+                  />
+                </Col>
+                <Col span={6}>
+                  <InputNumber
+                    style={{ width: '100%' }}
+                    prefix="R"
+                    placeholder="Credit"
+                    min={0}
+                    precision={2}
+                    value={line.credit || undefined}
+                    onChange={(value) => updateJournalLine(line.key, 'credit', value || 0)}
+                  />
+                </Col>
+                <Col span={2}>
+                  <Button 
+                    type="text" 
+                    danger 
+                    icon={<DeleteOutlined />}
+                    disabled={journalLines.length <= 2}
+                    onClick={() => removeJournalLine(line.key)}
+                  />
+                </Col>
+              </Row>
+              {/* Dimensions Row */}
+              <Row gutter={8} style={{ marginTop: 8 }}>
+                <Col span={4}>
+                  <Select
+                    placeholder="Cost Center"
+                    style={{ width: '100%' }}
+                    allowClear
+                    size="small"
+                    value={line.costCenterId || undefined}
+                    onChange={(value) => updateJournalLine(line.key, 'costCenterId', value || '')}
+                  >
+                    {costCenters.map(cc => (
+                      <Select.Option key={cc.id} value={cc.id}>
+                        {cc.code} - {cc.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Col>
+                <Col span={4}>
+                  <Select
+                    placeholder="Department"
+                    style={{ width: '100%' }}
+                    allowClear
+                    size="small"
+                    value={line.departmentId || undefined}
+                    onChange={(value) => updateJournalLine(line.key, 'departmentId', value || '')}
+                  >
+                    {departments.map(d => (
+                      <Select.Option key={d.id} value={d.id}>
+                        {d.code} - {d.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Col>
+                <Col span={4}>
+                  <Select
+                    placeholder="Project"
+                    style={{ width: '100%' }}
+                    allowClear
+                    size="small"
+                    value={line.projectId || undefined}
+                    onChange={(value) => updateJournalLine(line.key, 'projectId', value || '')}
+                  >
+                    {projects.map(p => (
+                      <Select.Option key={p.id} value={p.id}>
+                        {p.code} - {p.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Col>
+                <Col span={4}>
+                  <Select
+                    placeholder="Product"
+                    style={{ width: '100%' }}
+                    allowClear
+                    size="small"
+                    value={line.productId || undefined}
+                    onChange={(value) => updateJournalLine(line.key, 'productId', value || '')}
+                  >
+                    {products.map(pr => (
+                      <Select.Option key={pr.id} value={pr.id}>
+                        {pr.code} - {pr.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Col>
+                <Col span={4}>
+                  <Select
+                    placeholder="Location"
+                    style={{ width: '100%' }}
+                    allowClear
+                    size="small"
+                    value={line.locationId || undefined}
+                    onChange={(value) => updateJournalLine(line.key, 'locationId', value || '')}
+                  >
+                    {locations.map(loc => (
+                      <Select.Option key={loc.id} value={loc.id}>
+                        {loc.code} - {loc.name}
+                      </Select.Option>
+                    ))}
+                  </Select>
+                </Col>
+                <Col span={4}>
+                  <Input
+                    placeholder="Line description"
+                    size="small"
+                    value={line.description || ''}
+                    onChange={(e) => updateJournalLine(line.key, 'description', e.target.value)}
+                  />
+                </Col>
+              </Row>
+            </div>
+          ))}
+          
+          <Button 
+            type="dashed" 
+            icon={<PlusOutlined />} 
+            style={{ width: '100%', marginTop: 8 }}
+            onClick={addJournalLine}
+          >
             Add Line
           </Button>
         </Form>

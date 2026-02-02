@@ -127,6 +127,128 @@ export const getChartOfAccounts = async (req: TenantRequest, res: Response) => {
   }
 };
 
+export const createAccount = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { account_code, account_name, account_type, parent_id, is_header, normal_balance, description, opening_balance } = req.body;
+
+    if (!account_code || !account_name || !account_type) {
+      return res.status(400).json({ success: false, message: 'Account code, name, and type are required' });
+    }
+
+    // Check for duplicate account code
+    const existing = await query(
+      `SELECT 1 FROM chart_of_accounts WHERE tenant_id = $1 AND code = $2`,
+      [ctx.tenantId, account_code]
+    );
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ success: false, message: 'Account code already exists' });
+    }
+
+    // Determine level based on parent
+    let level = 1;
+    let parentCode = null;
+    if (parent_id) {
+      const parent = await query(
+        `SELECT code, level FROM chart_of_accounts WHERE tenant_id = $1 AND id = $2`,
+        [ctx.tenantId, parent_id]
+      );
+      if (parent.rows.length > 0) {
+        level = parent.rows[0].level + 1;
+        parentCode = parent.rows[0].code;
+      }
+    }
+
+    // Determine account category based on type
+    const accountTypeUpper = account_type.toUpperCase();
+    let accountCategory = 'Operating';
+    if (accountTypeUpper === 'ASSET') accountCategory = 'Current Assets';
+    else if (accountTypeUpper === 'LIABILITY') accountCategory = 'Current Liabilities';
+    else if (accountTypeUpper === 'EQUITY') accountCategory = 'Shareholders Equity';
+    else if (accountTypeUpper === 'REVENUE') accountCategory = 'Operating Revenue';
+    else if (accountTypeUpper === 'EXPENSE') accountCategory = 'Operating Expenses';
+
+    const normalBal = normal_balance || (['ASSET', 'EXPENSE'].includes(accountTypeUpper) ? 'DEBIT' : 'CREDIT');
+
+    // Insert the account
+    const result = await query(
+      `INSERT INTO chart_of_accounts 
+        (tenant_id, code, name, account_type, account_category, parent_code, level, is_header, 
+         normal_balance, description, current_debit_balance, current_credit_balance, is_active, created_by,
+         account_code, account_name)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 0, true, $12, $2, $3)
+       RETURNING *`,
+      [
+        ctx.tenantId,
+        account_code,
+        account_name,
+        accountTypeUpper,
+        accountCategory,
+        parentCode,
+        level,
+        is_header || false,
+        normalBal,
+        description || null,
+        opening_balance || 0,
+        ctx.userId || null
+      ]
+    );
+
+    res.status(201).json({ success: true, data: result.rows[0], message: 'Account created successfully' });
+  } catch (error) {
+    console.error('Error creating account:', error);
+    res.status(500).json({ success: false, message: 'Failed to create account', error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+};
+
+export const updateAccount = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+    const { account_name, description, is_active } = req.body;
+
+    // Build update query dynamically
+    const updates: string[] = [];
+    const values: any[] = [];
+    let paramIndex = 1;
+
+    if (account_name !== undefined) {
+      updates.push(`name = $${paramIndex++}`);
+      values.push(account_name);
+    }
+    if (description !== undefined) {
+      updates.push(`description = $${paramIndex++}`);
+      values.push(description);
+    }
+    if (is_active !== undefined) {
+      updates.push(`is_active = $${paramIndex++}`);
+      values.push(is_active);
+    }
+    updates.push(`updated_at = NOW()`);
+
+    if (updates.length === 1) { // Only updated_at
+      return res.status(400).json({ success: false, message: 'No fields to update' });
+    }
+
+    values.push(ctx.tenantId, id);
+    const result = await query(
+      `UPDATE chart_of_accounts SET ${updates.join(', ')} 
+       WHERE tenant_id = $${paramIndex++} AND account_id = $${paramIndex}
+       RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Account not found' });
+    }
+
+    res.json({ success: true, data: result.rows[0], message: 'Account updated successfully' });
+  } catch (error) {
+    console.error('Error updating account:', error);
+    res.status(500).json({ success: false, message: 'Failed to update account', error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+};
+
 export const getAccount = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
@@ -627,13 +749,33 @@ export const updateTaxSetting = async (req: TenantRequest, res: Response) => {
 export const getDimensions = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
-    const result = await query(
-      `SELECT id, dimension_code, dimension_name, dimension_type, parent_dimension_id, is_active, created_at
-       FROM financial.dimensions
-       WHERE tenant_id = $1 AND (is_active = true OR is_active IS NULL)
-       ORDER BY dimension_type, dimension_code`,
-      [ctx.tenantId]
-    );
+    const dimensionType = req.params.type; // cost-centers, departments, projects
+    
+    // Map URL type to database type
+    const typeMap: Record<string, string> = {
+      'cost-centers': 'cost-center',
+      'departments': 'department',
+      'projects': 'project',
+      'products': 'product',
+      'locations': 'location'
+    };
+    const dbType = typeMap[dimensionType] || dimensionType;
+    
+    let queryText = `SELECT id, dimension_code as code, dimension_name as name, description, 
+                            dimension_type, parent_dimension_id as parent_cost_center_id, 
+                            is_active, created_at, updated_at
+                     FROM financial.dimensions
+                     WHERE tenant_id = $1 AND (is_active = true OR is_active IS NULL)`;
+    const params: any[] = [ctx.tenantId];
+    
+    if (dimensionType && dbType) {
+      queryText += ` AND dimension_type = $2`;
+      params.push(dbType);
+    }
+    
+    queryText += ` ORDER BY dimension_code`;
+    
+    const result = await query(queryText, params);
 
     res.json({ success: true, data: result.rows, count: result.rowCount });
   } catch (error) {
@@ -642,16 +784,54 @@ export const getDimensions = async (req: TenantRequest, res: Response) => {
   }
 };
 
+export const getDimensionsSummary = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const result = await query(
+      `SELECT dimension_type, COUNT(*) as count
+       FROM financial.dimensions
+       WHERE tenant_id = $1 AND (is_active = true OR is_active IS NULL)
+       GROUP BY dimension_type`,
+      [ctx.tenantId]
+    );
+    
+    const summary: Record<string, number> = {
+      cost_centers: 0,
+      departments: 0,
+      projects: 0,
+      products: 0,
+      locations: 0
+    };
+    
+    result.rows.forEach((row: any) => {
+      const key = row.dimension_type.replace('-', '_') + 's';
+      if (key in summary) {
+        summary[key] = parseInt(row.count);
+      }
+    });
+    
+    res.json({ success: true, data: summary });
+  } catch (error) {
+    console.error('Error fetching dimensions summary:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch dimensions summary', error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+};
+
 export const createDimension = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
-    const { dimension_code, dimension_name, dimension_type, parent_dimension_id } = req.body;
+    // Accept both frontend field names (code, name) and backend field names (dimension_code, dimension_name)
+    const code = req.body.code || req.body.dimension_code;
+    const name = req.body.name || req.body.dimension_name;
+    const description = req.body.description || '';
+    const dimensionType = req.body.type || req.body.dimension_type || 'cost-center';
+    const parentId = req.body.parent_cost_center_id || req.body.parent_dimension_id || null;
 
     const result = await query(
-      `INSERT INTO financial.dimensions (tenant_id, dimension_code, dimension_name, dimension_type, parent_dimension_id, is_active, created_by)
-       VALUES ($1, $2, $3, $4, $5, true, $6)
-       RETURNING id, dimension_code, dimension_name, dimension_type`,
-      [ctx.tenantId, dimension_code, dimension_name, dimension_type, parent_dimension_id || null, ctx.userId || null]
+      `INSERT INTO financial.dimensions (tenant_id, dimension_code, dimension_name, description, dimension_type, parent_dimension_id, is_active, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, true, $7)
+       RETURNING id, dimension_code as code, dimension_name as name, description, dimension_type`,
+      [ctx.tenantId, code, name, description, dimensionType, parentId, ctx.userId || null]
     );
 
     res.status(201).json({ success: true, data: result.rows[0], message: 'Dimension created successfully' });
@@ -665,21 +845,21 @@ export const updateDimension = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
     const { id } = req.params;
-    const { dimension_code, dimension_name, dimension_type, parent_dimension_id, is_active } = req.body;
+    const { code, name, description, parent_cost_center_id, is_active } = req.body;
 
     const result = await query(
       `UPDATE financial.dimensions
        SET 
         dimension_code = COALESCE($3, dimension_code),
         dimension_name = COALESCE($4, dimension_name),
-        dimension_type = COALESCE($5, dimension_type),
+        description = COALESCE($5, description),
         parent_dimension_id = COALESCE($6, parent_dimension_id),
         is_active = COALESCE($7, is_active),
         updated_at = CURRENT_TIMESTAMP,
         updated_by = $8
        WHERE id = $1 AND tenant_id = $2
-       RETURNING id, dimension_code, dimension_name, dimension_type`,
-      [id, ctx.tenantId, dimension_code, dimension_name, dimension_type, parent_dimension_id, is_active, ctx.userId || null]
+       RETURNING id, dimension_code as code, dimension_name as name, dimension_type, description`,
+      [id, ctx.tenantId, code, name, description, parent_cost_center_id, is_active, ctx.userId || null]
     );
 
     if (result.rowCount === 0) {
@@ -690,6 +870,31 @@ export const updateDimension = async (req: TenantRequest, res: Response) => {
   } catch (error) {
     console.error('Error updating dimension:', error);
     res.status(400).json({ success: false, message: 'Failed to update dimension', error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+};
+
+export const deleteDimension = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+
+    // Soft delete by setting is_active to false
+    const result = await query(
+      `UPDATE financial.dimensions
+       SET is_active = false, updated_at = CURRENT_TIMESTAMP, updated_by = $3
+       WHERE id = $1 AND tenant_id = $2
+       RETURNING id`,
+      [id, ctx.tenantId, ctx.userId || null]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, message: 'Dimension not found' });
+    }
+
+    res.json({ success: true, message: 'Dimension deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting dimension:', error);
+    res.status(400).json({ success: false, message: 'Failed to delete dimension', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 };
 

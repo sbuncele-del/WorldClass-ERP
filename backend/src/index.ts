@@ -61,7 +61,6 @@ import treasuryRoutes from './routes/treasury.routes';
 import aiAssistantRoutes from './routes/ai-assistant.routes';
 import agentRoutes from './routes/agent.routes';
 import multiEntityRoutes from './routes/multi-entity.routes';
-import healthcareRoutes from './routes/healthcare.routes';
 import superadminRoutes from './routes/superadmin.routes';
 import modulesRoutes from './routes/modules.routes';
 import messagesRoutes from './routes/messages.routes';
@@ -91,10 +90,7 @@ import projectsRoutes from './routes/projects.routes';
 import proposalsRoutes from './routes/proposals.routes';
 import communicationsRoutes from './routes/communications.routes';
 import calendarRoutes from './routes/calendar.routes';
-import miningRoutes from './routes/mining.routes';
-import agricultureRoutes from './routes/agriculture.routes';
-import constructionRoutes from './routes/construction.routes';
-import propertyRoutes from './routes/property.routes';
+// Industry routes removed - focusing on core accounting
 
 // Validate environment variables
 validateEnv();
@@ -1586,6 +1582,7 @@ v1Router.use('/admin', adminLimiter, adminRoutes);
 // v1Router.use('/demo', demoLimiter, demoResetRoutes);
 
 // Protected module routes (with API rate limiting)
+v1Router.use('/dashboard', dashboardRoutes); // Main dashboard endpoint
 v1Router.use('/inventory', apiLimiter, inventoryRoutes);
 v1Router.use('/sales', apiLimiter, salesRoutes);
 v1Router.use('/purchase', apiLimiter, purchaseRoutes);
@@ -1629,7 +1626,6 @@ v1Router.use('/reports', apiLimiter, reportsRoutes); // Reports & Analytics
 v1Router.use('/ai', apiLimiter, aiAssistantRoutes); // AI Agents & Assistants
 v1Router.use('/agent', agentRoutes); // Actionable AI Agent (can create invoices, etc.)
 v1Router.use('/entities', apiLimiter, multiEntityRoutes); // Multi-Entity Management
-v1Router.use('/healthcare', apiLimiter, healthcareRoutes); // Healthcare Operations Intelligence
 v1Router.use('/super-admin', apiLimiter, superadminRoutes); // Super Admin & Multi-Tenant Support Portal
 v1Router.use('/chart-of-accounts', apiLimiter, chartOfAccountsRoutes); // Chart of Accounts
 // New Financial Reports Module - Trial Balance, P&L, Balance Sheet
@@ -1646,10 +1642,7 @@ v1Router.use('/projects', apiLimiter, projectsRoutes); // Project Management API
 v1Router.use('/proposals', apiLimiter, proposalsRoutes); // Proposals & Quotes API
 v1Router.use('/communications', apiLimiter, communicationsRoutes); // Communications Hub API
 v1Router.use('/calendar', apiLimiter, calendarRoutes); // Calendar & Events API
-v1Router.use('/mining', apiLimiter, miningRoutes); // Mining Industry API
-v1Router.use('/agriculture', apiLimiter, agricultureRoutes); // Agriculture Industry API
-v1Router.use('/construction', apiLimiter, constructionRoutes); // Construction Industry API
-v1Router.use('/property', apiLimiter, propertyRoutes); // Property Management API
+// Industry routes removed - focusing on core accounting
 
 // V2 Routes - Tenant-Hardened API (multi-tenant secure)
 // These routes use v2 controllers with proper tenant isolation

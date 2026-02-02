@@ -33,6 +33,7 @@
     "ioredis-mock": "8.13.1",
     "mammoth": "1.11.0",
     "marked": "17.0.1",
+    "pptxgenjs": "4.0.1",
     "puppeteer": "24.34.0"
   },
   "dependencies": {

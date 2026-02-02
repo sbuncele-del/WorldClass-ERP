@@ -13,6 +13,15 @@ const router = express.Router();
 router.use(authenticateToken);
 router.use(tenantMiddleware);
 
+// Root dashboard endpoint - returns basic info
+router.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Dashboard API',
+    endpoints: ['/stats', '/revenue-trend', '/expense-breakdown', '/recent-entries', '/cash-position', '/aging', '/kpis']
+  });
+});
+
 // Main Dashboard Endpoints
 router.get('/stats', DashboardControllerV2.getDashboardStats);
 router.get('/revenue-trend', DashboardControllerV2.getRevenueTrend);

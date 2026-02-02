@@ -125,12 +125,12 @@ export class BalanceSheetControllerV2 {
             ELSE COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0)
           END as balance
         FROM chart_of_accounts coa
-        LEFT JOIN journal_entry_lines jel ON coa.account_id = jel.account_id
+        LEFT JOIN journal_entry_lines jel ON coa.id = jel.account_id
           AND jel.tenant_id = $1
-        LEFT JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id
+        LEFT JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
-          AND je.status = 'POSTED'
-          AND je.journal_date <= $2
+          AND je.status = 'posted'
+          AND je.posting_date <= $2
         WHERE coa.tenant_id = $1
           AND coa.is_active = true
         GROUP BY coa.account_code, coa.account_name, coa.account_type

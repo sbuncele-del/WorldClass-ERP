@@ -29,6 +29,7 @@ export const apiFetch = async (
   const url = getApiUrl(endpoint);
   // Check both token keys for compatibility
   const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+  const tenantId = localStorage.getItem('tenantId') || localStorage.getItem('workspaceId');
   
   try {
     const response = await fetch(url, {
@@ -37,6 +38,7 @@ export const apiFetch = async (
       headers: {
         ...options.headers,
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        ...(tenantId ? { 'X-Tenant-ID': tenantId, 'X-Workspace-ID': tenantId } : {}),
       },
     });
 

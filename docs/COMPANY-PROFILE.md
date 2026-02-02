@@ -305,9 +305,9 @@ For investment or partnership inquiries:
 
 | | |
 |:--|:--|
-| **Email** | investor@siyabusa.co.za |
+| **Email** | investor@siyabusaerp.co.za |
 | **Phone** | 074 012 6873 |
-| **Website** | www.siyabusa.co.za |
+| **Website** | www.siyabusaerp.co.za |
 
 ## Product Demo
 

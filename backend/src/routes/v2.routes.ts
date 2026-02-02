@@ -88,6 +88,7 @@ import * as AIChatV2 from '../controllers/v2/ai-chat.controller.v2';
 import * as DeliveryV2 from '../controllers/v2/delivery.controller.v2';
 import * as DriverAppV2 from '../controllers/v2/driver-app.controller.v2';
 import * as FinancialForecastingV2 from '../controllers/v2/financial-forecasting.controller.v2';
+import * as FinancialReportsV2 from '../controllers/v2/financial-reports.controller.v2';
 import * as LogisticsFuelV2 from '../controllers/v2/logistics-fuel.controller.v2';
 import * as LogisticsTrackingV2 from '../controllers/v2/logistics-tracking.controller.v2';
 import * as LogisticsTripsV2 from '../controllers/v2/logistics-trips.controller.v2';
@@ -1521,6 +1522,12 @@ router.get('/financial/reports/cash-flow', CashFlowControllerV2.generateCashFlow
 router.get('/financial/reports/cash-position', CashFlowControllerV2.getCashPosition);
 router.post('/financial/reports/cash-flow/export', CashFlowControllerV2.exportToPDF);
 
+// Additional Financial Reports
+router.get('/financial/reports/aged-receivables', FinancialReportsV2.generateAgedReceivables);
+router.get('/financial/reports/aged-payables', FinancialReportsV2.generateAgedPayables);
+router.get('/financial/reports/vat-report', FinancialReportsV2.generateVATReport);
+router.get('/financial/reports/general-ledger', FinancialReportsV2.generateGeneralLedger);
+
 // ============================================================================
 // GL EXPLORER
 // ============================================================================
@@ -1556,14 +1563,63 @@ router.get('/financial/import-entries/sample', ImportEntriesControllerV2.downloa
 // ============================================================================
 router.get('/financial/dashboard', FinancialV2.getDashboard);
 router.get('/financial/chart-of-accounts', FinancialV2.getChartOfAccounts);
+router.post('/financial/chart-of-accounts', FinancialV2.createAccount);
+router.put('/financial/chart-of-accounts/:id', FinancialV2.updateAccount);
 router.get('/financial/accounts', FinancialV2.getChartOfAccounts); // Alias for COA
 router.get('/financial/journal-entries', FinancialV2.listJournalEntries);
+router.post('/financial/journal-entries', FinancialV2.createJournalEntry);
+router.get('/financial/journal-entries/:id', FinancialV2.getJournalEntry);
+router.post('/financial/journal-entries/:id/post', FinancialV2.postJournalEntry);
+router.post('/financial/journal-entries/:id/reverse', FinancialV2.reverseJournalEntry);
 router.get('/financial/fiscal-periods', FinancialV2.getFiscalPeriods);
+router.get('/financial/fiscal-years', FinancialV2.getFiscalYears);
 router.get('/financial/balance-sheet', BalanceSheetControllerV2.generateBalanceSheet); // Direct access
 router.get('/financial/income-statement', IncomeStatementControllerV2.generateIncomeStatement); // Direct access
 router.get('/reports/balance-sheet', BalanceSheetControllerV2.generateBalanceSheet);
 router.get('/reports/income-statement', IncomeStatementControllerV2.generateIncomeStatement);
 router.get('/reports/cash-flow', CashFlowControllerV2.generateCashFlowStatement);
+
+// COA Templates
+router.get('/financial/coa-templates', FinancialV2.getCOATemplates);
+router.post('/financial/coa-templates/:templateId/apply', FinancialV2.applyCOATemplate);
+
+// Dimensions (Cost Centers, Departments, Projects)
+router.get('/financial/dimensions/summary', FinancialV2.getDimensionsSummary);
+
+// Cost Centers
+router.get('/financial/dimensions/cost-centers', (req: any, res) => { req.params.type = 'cost-centers'; return FinancialV2.getDimensions(req, res); });
+router.post('/financial/dimensions/cost-centers', (req: any, res) => { req.body.type = 'cost-center'; return FinancialV2.createDimension(req, res); });
+router.put('/financial/dimensions/cost-centers/:id', FinancialV2.updateDimension);
+router.delete('/financial/dimensions/cost-centers/:id', FinancialV2.deleteDimension);
+
+// Departments
+router.get('/financial/dimensions/departments', (req: any, res) => { req.params.type = 'departments'; return FinancialV2.getDimensions(req, res); });
+router.post('/financial/dimensions/departments', (req: any, res) => { req.body.type = 'department'; return FinancialV2.createDimension(req, res); });
+router.put('/financial/dimensions/departments/:id', FinancialV2.updateDimension);
+router.delete('/financial/dimensions/departments/:id', FinancialV2.deleteDimension);
+
+// Projects
+router.get('/financial/dimensions/projects', (req: any, res) => { req.params.type = 'projects'; return FinancialV2.getDimensions(req, res); });
+router.post('/financial/dimensions/projects', (req: any, res) => { req.body.type = 'project'; return FinancialV2.createDimension(req, res); });
+router.put('/financial/dimensions/projects/:id', FinancialV2.updateDimension);
+router.delete('/financial/dimensions/projects/:id', FinancialV2.deleteDimension);
+
+// Products & Locations
+router.get('/financial/dimensions/products', (req: any, res) => { req.params.type = 'products'; return FinancialV2.getDimensions(req, res); });
+router.post('/financial/dimensions/products', (req: any, res) => { req.body.type = 'product'; return FinancialV2.createDimension(req, res); });
+router.get('/financial/dimensions/locations', (req: any, res) => { req.params.type = 'locations'; return FinancialV2.getDimensions(req, res); });
+router.post('/financial/dimensions/locations', (req: any, res) => { req.body.type = 'location'; return FinancialV2.createDimension(req, res); });
+
+// Generic dimension routes
+router.get('/financial/dimensions/:type', FinancialV2.getDimensions);
+router.post('/financial/dimensions', FinancialV2.createDimension);
+router.put('/financial/dimensions/:id', FinancialV2.updateDimension);
+router.delete('/financial/dimensions/:id', FinancialV2.deleteDimension);
+
+// Tax Settings
+router.get('/financial/tax-settings', FinancialV2.getTaxSettings);
+router.post('/financial/tax-settings', FinancialV2.createTaxSetting);
+router.put('/financial/tax-settings/:id', FinancialV2.updateTaxSetting);
 
 // ============================================================================
 // REPORTS
@@ -2722,6 +2778,78 @@ router.get('/warehouse/picking-lists', async (req: any, res) => {
 });
 
 // Cash management routes
+router.get('/cash-management/workspace', async (req: any, res) => {
+  const { query: dbQuery } = await import('../config/database');
+  const tenantId = req.tenant?.id || '00000000-0000-0000-0000-000000000001';
+  try {
+    // Get bank accounts
+    const bankAccountsResult = await dbQuery(
+      `SELECT * FROM cash_bank_accounts WHERE tenant_id = $1 AND is_active = true ORDER BY account_name`,
+      [tenantId]
+    );
+    
+    // Get cash position summary
+    const cashPositionResult = await dbQuery(
+      `SELECT 
+        COUNT(*) as total_accounts,
+        SUM(current_balance) as total_balance,
+        COUNT(*) FILTER (WHERE is_active = true) as active_accounts,
+        SUM(current_balance) FILTER (WHERE is_active = true) as active_balance
+       FROM cash_bank_accounts WHERE tenant_id = $1`,
+      [tenantId]
+    );
+    
+    // Get recent transactions
+    const transactionsResult = await dbQuery(
+      `SELECT * FROM bank_transactions WHERE tenant_id = $1 ORDER BY transaction_date DESC LIMIT 10`,
+      [tenantId]
+    ).catch(() => ({ rows: [] }));
+    
+    // Get pending payments (if table exists)
+    const pendingResult = await dbQuery(
+      `SELECT COUNT(*) as pending_count, COALESCE(SUM(amount), 0) as total_amount 
+       FROM payment_schedules WHERE tenant_id = $1 AND status = 'pending'`,
+      [tenantId]
+    ).catch(() => ({ rows: [{ pending_count: 0, total_amount: 0 }] }));
+    
+    const cashPosition = cashPositionResult.rows[0] || {};
+    const pending = pendingResult.rows[0] || {};
+    
+    res.json({ 
+      success: true, 
+      data: {
+        bank_accounts: bankAccountsResult.rows || [],
+        cash_position: {
+          total_accounts: parseInt(cashPosition.total_accounts) || 0,
+          total_balance: parseFloat(cashPosition.total_balance) || 0,
+          active_accounts: parseInt(cashPosition.active_accounts) || 0,
+          active_balance: parseFloat(cashPosition.active_balance) || 0
+        },
+        pending_payments: {
+          pending_count: parseInt(pending.pending_count) || 0,
+          total_amount: parseFloat(pending.total_amount) || 0
+        },
+        reconciliation_status: [],
+        recent_transactions: transactionsResult.rows || [],
+        cash_flow_trend: []
+      }
+    });
+  } catch (error) {
+    console.error('Cash management workspace error:', error);
+    res.json({ 
+      success: true, 
+      data: {
+        bank_accounts: [],
+        cash_position: { total_accounts: 0, total_balance: 0, active_accounts: 0, active_balance: 0 },
+        pending_payments: { pending_count: 0, total_amount: 0 },
+        reconciliation_status: [],
+        recent_transactions: [],
+        cash_flow_trend: []
+      }
+    });
+  }
+});
+
 router.get('/cash-management/transactions', async (req: any, res) => {
   const { query: dbQuery } = await import('../config/database');
   const tenantId = req.tenant?.id || 1;

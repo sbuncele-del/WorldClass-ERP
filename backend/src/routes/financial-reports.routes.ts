@@ -29,4 +29,24 @@ router.get('/balance-sheet/ratios', FinancialReportsV2.getFinancialRatios);
 router.get('/cash-flow', FinancialReportsV2.generateCashFlowStatement);
 router.post('/cash-flow/export', FinancialReportsV2.exportCashFlowToPDF);
 
+// ============================================================================
+// AGED RECEIVABLES (V2 - Tenant Isolated)
+// ============================================================================
+router.get('/aged-receivables', FinancialReportsV2.generateAgedReceivables);
+
+// ============================================================================
+// AGED PAYABLES (V2 - Tenant Isolated)
+// ============================================================================
+router.get('/aged-payables', FinancialReportsV2.generateAgedPayables);
+
+// ============================================================================
+// VAT REPORT (V2 - Tenant Isolated)
+// ============================================================================
+router.get('/vat-report', FinancialReportsV2.generateVATReport);
+
+// ============================================================================
+// GENERAL LEDGER (V2 - Tenant Isolated)
+// ============================================================================
+router.get('/general-ledger', FinancialReportsV2.generateGeneralLedger);
+
 export default router;

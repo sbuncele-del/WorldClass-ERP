@@ -202,9 +202,9 @@ _____________________________________________________________________________
 
 # 📞 Questions?
 
-**Email:** [beta@siyabusa.co.za]  
+**Email:** [beta@siyabusaerp.co.za]  
 **Phone:** [Contact Number]  
-**Website:** [www.siyabusa.co.za]
+**Website:** [www.siyabusaerp.co.za]
 
 ---
 

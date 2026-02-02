@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import './Dashboard.css';
 
 interface DashboardMetrics {
@@ -59,6 +59,8 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [inventoryAlerts, setInventoryAlerts] = useState<InventoryAlert[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
+  const [greeting, setGreeting] = useState('Welcome back!');
+  const [summaryDate, setSummaryDate] = useState('');
 
   useEffect(() => {
     fetchDashboardData();
@@ -66,39 +68,87 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [metricsRes, activityRes, alertsRes, productsRes] = await Promise.all([
-        fetch('/api/financial/dashboard/metrics', {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        }),
-        fetch('/api/dashboard/activity', {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        }),
-        fetch('/api/dashboard/inventory-alerts', {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        }),
-        fetch('/api/dashboard/top-products', {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        }),
-      ]);
+      // Use the working executive dashboard endpoint
+      const response = await fetch('/api/v2/executive-dashboard', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      });
 
-      if (metricsRes.ok) {
-        const data = await metricsRes.json();
-        setMetrics(data);
-      }
-
-      if (activityRes.ok) {
-        const data = await activityRes.json();
-        setRecentActivity(data);
-      }
-
-      if (alertsRes.ok) {
-        const data = await alertsRes.json();
-        setInventoryAlerts(data);
-      }
-
-      if (productsRes.ok) {
-        const data = await productsRes.json();
-        setTopProducts(data);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          const data = result.data;
+          
+          // Set greeting and date
+          setGreeting(data.summary?.greeting || 'Welcome back!');
+          setSummaryDate(data.summary?.date || '');
+          
+          // Map KPIs to metrics
+          const kpis = data.kpis || [];
+          const revenueKpi = kpis.find((k: { key: string }) => k.key === 'revenue');
+          const profitKpi = kpis.find((k: { key: string }) => k.key === 'profit');
+          const cashKpi = kpis.find((k: { key: string }) => k.key === 'cash');
+          
+          setMetrics({
+            revenue: {
+              current: revenueKpi?.value || 0,
+              previous: 0,
+              change: revenueKpi?.trend || 0,
+            },
+            sales: {
+              current: data.operational?.projects?.total || 0,
+              previous: 0,
+              change: 0,
+            },
+            expenses: {
+              current: data.financial?.expenses?.total || 0,
+              previous: 0,
+              change: data.financial?.expenses?.ytd || 0,
+            },
+            profit: {
+              current: profitKpi?.value || data.financial?.profit?.total || 0,
+              previous: 0,
+              change: profitKpi?.trend || 0,
+            },
+          });
+          
+          // Map recent activity from tasks
+          const tasks = data.tasks || [];
+          const mappedActivity: RecentActivity[] = tasks.slice(0, 5).map((task: { id?: string; entity?: string; description?: string; timestamp?: string; action?: string }, index: number) => ({
+            id: task.id || `task-${index}`,
+            type: task.entity?.toLowerCase()?.includes('invoice') ? 'invoice' : 
+                  task.entity?.toLowerCase()?.includes('payment') ? 'payment' :
+                  task.entity?.toLowerCase()?.includes('order') ? 'order' : 'expense',
+            title: task.description || task.entity || 'Activity',
+            amount: 0,
+            date: task.timestamp || new Date().toISOString(),
+            status: task.action === 'completed' ? 'completed' : 'pending',
+          }));
+          setRecentActivity(mappedActivity);
+          
+          // Map inventory/operational data
+          const operational = data.operational || {};
+          const alerts: InventoryAlert[] = [];
+          if (operational.overdue > 0) {
+            alerts.push({
+              id: 'overdue-1',
+              productName: 'Overdue Tasks',
+              currentStock: operational.overdue,
+              minStock: 0,
+              severity: 'critical',
+            });
+          }
+          setInventoryAlerts(alerts);
+          
+          // Map departments to top products
+          const departments = data.departments || [];
+          const mappedProducts: TopProduct[] = departments.slice(0, 5).map((dept: { name: string; count?: number }, index: number) => ({
+            id: `dept-${index}`,
+            name: dept.name,
+            sales: dept.count || 0,
+            revenue: 0,
+          }));
+          setTopProducts(mappedProducts);
+        }
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -162,7 +212,7 @@ export default function Dashboard() {
       <div className="dashboard-header">
         <div>
           <h1>Dashboard</h1>
-          <p>Welcome back! Here's what's happening with your business.</p>
+          <p>{greeting} {summaryDate && `- ${summaryDate}`}</p>
         </div>
         <div className="dashboard-actions">
           <button className="btn-secondary" onClick={fetchDashboardData}>

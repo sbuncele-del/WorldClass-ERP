@@ -1,17 +1,27 @@
-# WorldClass ERP - Investor Documentation Package
+# SiyaBusa ERP - Investor Documentation Package
 
 ## 📦 What's Included
 
-This folder contains **professionally formatted PDF documents** ready for sharing with investors, stakeholders, and business partners.
+This folder contains **professionally formatted documents** ready for sharing with investors, stakeholders, and business partners.
 
 ### 📄 Document Categories
 
+#### 🆕 NEW — January 2026 Investment Documents
+
+| Document | Purpose | For |
+|----------|---------|-----|
+| **INVESTMENT-BRIEF-JAN-2026.md** | One-pager investment summary | Quick investor overview |
+| **MARKET-STRATEGY-AND-PRICING-2026.md** | Full pricing & market strategy | Detailed investor review |
+| **USE-OF-FUNDS-4-MONTH-RUNWAY.md** | Detailed budget breakdown | Due diligence |
+
+#### 📊 Technical & Product Documentation
+
 1. **00-INDEX.pdf** - Master index and overview of all documents
-2. **Executive-Overview.pdf** - System status, production readiness, and capabilities
-3. **Technical-Architecture.pdf** - AWS deployment, APIs, database, and integration
-4. **Module-Implementation.pdf** - Detailed module features and implementation status
-5. **AI-Innovation.pdf** - AI assistant capabilities and intelligent agents
-6. **Deployment-Guide.pdf** - Deployment checklists and operational procedures
+2. **Executive-Summary.pdf** - System status, production readiness, and capabilities
+3. **Technical-Implementation.pdf** - AWS deployment, APIs, database, and integration
+4. **Business-Modules.pdf** - Detailed module features and implementation status
+5. **AI-Capabilities.pdf** - AI assistant capabilities and intelligent agents
+6. **Launch-Plan.pdf** - Launch timeline and action plan
 
 ## 📤 How to Share
 

@@ -21,8 +21,7 @@ import {
   TeamOutlined, UserOutlined, SafetyCertificateOutlined,
   ShoppingCartOutlined, ShoppingOutlined, InboxOutlined,
   TruckOutlined, ToolOutlined, BuildOutlined,
-  MedicineBoxOutlined, HomeOutlined as PropertyIcon,
-  CloudOutlined, GoldOutlined, ExperimentOutlined,
+  CloudOutlined,
   ProjectOutlined, FileTextOutlined, MessageOutlined,
   CalendarOutlined, AuditOutlined, FileProtectOutlined,
   SettingOutlined, SwapOutlined, BarChartOutlined,
@@ -287,18 +286,13 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        {/* Industry Solutions */}
+        {/* Operations */}
         <div className="sidebar-section">
-          {renderSectionTitle('INDUSTRY', 'industry', <CloudOutlined />)}
+          {renderSectionTitle('OPERATIONS', 'industry', <CloudOutlined />)}
           {expandedSections.industry && (
             <div className="sidebar-section-content">
               {renderNavItem('/app/logistics-hub', <TruckOutlined />, 'Logistics Hub')}
               {renderNavItem('/app/manufacturing-hub', <ToolOutlined />, 'Manufacturing Hub')}
-              {renderNavItem('/app/construction-hub', <BuildOutlined />, 'Construction Hub')}
-              {renderNavItem('/app/healthcare-hub', <MedicineBoxOutlined />, 'Healthcare Hub')}
-              {renderNavItem('/app/property-hub', <PropertyIcon />, 'Property Hub')}
-              {renderNavItem('/app/mining-hub', <GoldOutlined />, 'Mining Hub')}
-              {renderNavItem('/app/agriculture-hub', <ExperimentOutlined />, 'Agriculture Hub')}
               {renderNavItem('/app/practice-hub', <SafetyCertificateOutlined />, 'Practice Hub')}
             </div>
           )}

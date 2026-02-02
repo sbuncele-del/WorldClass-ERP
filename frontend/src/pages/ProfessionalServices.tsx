@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './Healthcare.css';
 
 const ProfessionalServices: React.FC = () => {
   const [activeTab, setActiveTab] = useState('projects');

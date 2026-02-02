@@ -572,9 +572,9 @@ Management commits to deploying funds as follows:
 
 | | |
 |:--|:--|
-| **Email** | investor@siyabusa.co.za |
+| **Email** | investor@siyabusaerp.co.za |
 | **Phone** | 074 012 6873 |
-| **Website** | www.siyabusa.co.za |
+| **Website** | www.siyabusaerp.co.za |
 | **Demo** | Available upon request |
 
 ---

@@ -179,14 +179,15 @@ export class DimensionsService {
   async getAllProjects(includeInactive = false): Promise<Project[]> {
     const whereClause = includeInactive ? '' : 'WHERE is_active = true';
     const result = await query(
-      `SELECT * FROM projects ${whereClause} ORDER BY code`
+      `SELECT id, project_code as code, project_name as name, description, status, is_active, created_at, updated_at 
+       FROM projects ${whereClause} ORDER BY project_code`
     );
     return result.rows;
   }
 
   async getProjectByCode(code: string): Promise<Project | null> {
     const result = await query(
-      'SELECT * FROM projects WHERE code = $1',
+      'SELECT id, project_code as code, project_name as name, description, status, is_active FROM projects WHERE project_code = $1',
       [code]
     );
     return result.rows[0] || null;

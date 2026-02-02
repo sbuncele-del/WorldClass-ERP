@@ -35,10 +35,9 @@ class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo });
     
-    // Log to console in development
-    if (import.meta.env.DEV) {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
-    }
+    // ALWAYS log errors (both dev and prod) for debugging
+    console.error('ErrorBoundary caught an error:', error);
+    console.error('Component stack:', errorInfo?.componentStack);
     
     // Send to Sentry
     Sentry.captureException(error, {
@@ -83,7 +82,8 @@ class ErrorBoundary extends Component<Props, State> {
               </Button>,
             ]}
           >
-            {import.meta.env.DEV && this.state.error && (
+            {/* Always show error details for debugging */}
+            {this.state.error && (
               <div style={{ 
                 textAlign: 'left', 
                 background: '#fff1f0', 
@@ -91,8 +91,10 @@ class ErrorBoundary extends Component<Props, State> {
                 borderRadius: 8,
                 marginTop: 16 
               }}>
-                <pre style={{ fontSize: 12, overflow: 'auto' }}>
-                  {this.state.error.toString()}
+                <pre style={{ fontSize: 12, overflow: 'auto', maxHeight: 300 }}>
+                  <strong>Error:</strong> {this.state.error.toString()}
+                  {'\n\n'}
+                  <strong>Stack:</strong>
                   {this.state.errorInfo?.componentStack}
                 </pre>
               </div>

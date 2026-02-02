@@ -10,8 +10,19 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 const { marked } = require('marked');
 
-// Key documents organized by category - Updated Jan 2, 2026
+// Key documents organized by category - Updated Jan 28, 2026
 const DOCUMENT_CATEGORIES = {
+  // NEW: January 2026 Investor Documents (Priority)
+  'Investment-Brief-Jan2026': [
+    'investor-docs/INVESTMENT-BRIEF-JAN-2026.md'
+  ],
+  'Market-Strategy-Pricing-2026': [
+    'investor-docs/MARKET-STRATEGY-AND-PRICING-2026.md'
+  ],
+  'Use-of-Funds-4Month': [
+    'investor-docs/USE-OF-FUNDS-4-MONTH-RUNWAY.md'
+  ],
+  // Existing documents
   'Executive-Summary': [
     'STATUS-UPDATE-DEC30-2025.md',
     'PRODUCTION-READINESS-ASSESSMENT.md',

@@ -24,9 +24,12 @@ export interface JournalEntry {
 }
 
 export interface Account {
-  account_id: string;
-  account_code: string;
-  account_name: string;
+  id: string;
+  account_id?: string; // fallback
+  account_number: string;
+  account_code?: string; // fallback
+  name: string;
+  account_name?: string; // fallback
   account_type: string;
   balance: number;
   is_active: boolean;
@@ -38,6 +41,50 @@ export interface TrialBalanceEntry {
   account_type: string;
   debit: number;
   credit: number;
+}
+
+// Dimension Types
+export interface CostCenter {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+}
+
+export interface Department {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+}
+
+export interface Project {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+}
+
+export interface Product {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+}
+
+export interface Location {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+}
+
+export interface Dimensions {
+  costCenters: CostCenter[];
+  departments: Department[];
+  projects: Project[];
+  products: Product[];
+  locations: Location[];
 }
 
 export const financialService = {
@@ -65,5 +112,123 @@ export const financialService = {
   async getPeriods(): Promise<{ data: Array<{ period: string; status: string; closed_date?: string }> }> {
     const { data } = await apiClient.get('/api/financial/periods');
     return data;
+  },
+
+  async createJournalEntry(payload: {
+    entry_date: string;
+    description: string;
+    lines: Array<{ 
+      account_id: string; 
+      debit_amount: number; 
+      credit_amount: number;
+      cost_center_id?: string | null;
+      department_id?: string | null;
+      project_id?: string | null;
+      product_id?: string | null;
+      location_id?: string | null;
+      description?: string | null;
+    }>;
+  }): Promise<{ success: boolean; data: JournalEntry; message: string }> {
+    const { data } = await apiClient.post('/api/v2/financial/journal-entries', payload);
+    return data;
+  },
+
+  async getChartOfAccounts(params?: { limit?: number }): Promise<{ data: Account[]; total: number }> {
+    const { data } = await apiClient.get('/api/v2/financial/accounts', { params: { ...params, limit: params?.limit || 100 } });
+    return data;
+  },
+
+  // Dimension APIs
+  async getCostCenters(): Promise<{ data: CostCenter[] }> {
+    const { data } = await apiClient.get('/api/financial/dimensions/cost-centers');
+    return data;
+  },
+
+  async getDepartments(): Promise<{ data: Department[] }> {
+    const { data } = await apiClient.get('/api/financial/dimensions/departments');
+    return data;
+  },
+
+  async getProjects(): Promise<{ data: Project[] }> {
+    const { data } = await apiClient.get('/api/financial/dimensions/projects');
+    return data;
+  },
+
+  async getProducts(): Promise<{ data: Product[] }> {
+    const { data } = await apiClient.get('/api/financial/dimensions/products');
+    return data;
+  },
+
+  async getLocations(): Promise<{ data: Location[] }> {
+    const { data } = await apiClient.get('/api/financial/dimensions/locations');
+    return data;
+  },
+
+  async getAllDimensions(): Promise<Dimensions> {
+    const [costCenters, departments, projects, products, locations] = await Promise.all([
+      this.getCostCenters(),
+      this.getDepartments(),
+      this.getProjects(),
+      this.getProducts(),
+      this.getLocations(),
+    ]);
+    return {
+      costCenters: costCenters.data || [],
+      departments: departments.data || [],
+      projects: projects.data || [],
+      products: products.data || [],
+      locations: locations.data || [],
+    };
+  },
+
+  // Report Downloads
+  async downloadReport(reportCode: string): Promise<{ success: boolean; data: any }> {
+    try {
+      let endpoint = '';
+      const today = new Date().toISOString().split('T')[0];
+      const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+      
+      switch (reportCode) {
+        case 'balance-sheet':
+          endpoint = `/api/financial/balance-sheet?as_of_date=${today}`;
+          break;
+        case 'income-statement':
+          endpoint = `/api/financial/profit-loss?fromDate=${startOfMonth}&toDate=${today}`;
+          break;
+        case 'trial-balance':
+          endpoint = `/api/financial/trial-balance?as_of_date=${today}`;
+          break;
+        case 'cash-flow':
+          endpoint = `/api/financial/cash-flow?fromDate=${startOfMonth}&toDate=${today}`;
+          break;
+        case 'general-ledger':
+          endpoint = `/api/financial/general-ledger?fromDate=${startOfMonth}&toDate=${today}`;
+          break;
+        case 'aged-receivables':
+          endpoint = `/api/financial/aged-receivables?as_of_date=${today}`;
+          break;
+        case 'aged-payables':
+          endpoint = `/api/financial/aged-payables?as_of_date=${today}`;
+          break;
+        case 'vat-report':
+          endpoint = `/api/financial/vat-report?fromDate=${startOfMonth}&toDate=${today}`;
+          break;
+        default:
+          // Return placeholder for unimplemented reports
+          return { 
+            success: true, 
+            data: { 
+              message: `Report "${reportCode}" is not yet implemented`,
+              placeholder: true 
+            }
+          };
+      }
+      
+      const { data } = await apiClient.get(endpoint);
+      return data;
+    } catch (error) {
+      console.error(`Error downloading report ${reportCode}:`, error);
+      return { success: false, data: null };
+    }
   },
 };

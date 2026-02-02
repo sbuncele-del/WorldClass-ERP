@@ -1,16 +1,15 @@
 # Executive Summary
 
-## Key Financial Highlights
+## Key Financial Highlights (R980/User Model)
 
 | Metric | Year 1 (2026) | Year 2 (2027) | Year 3 (2028) |
 |:-------|:--------------|:--------------|:--------------|
-| **Customers (End of Year)** | 25 | 80 | 200 |
-| **Monthly Recurring Revenue** | R150,000 | R960,000 | R2,400,000 |
-| **Annual Recurring Revenue** | R1,800,000 | R11,520,000 | R28,800,000 |
-| **Gross Margin** | 75% | 75% | 78% |
-| **EBITDA** | -R1,050,000 | R1,152,000 | R4,320,000 |
-| **EBITDA Margin** | -58% | 10% | 15% |
-| **Cash Position (End)** | R650,000 | R1,800,000 | R6,100,000 |
+| **Customers (End of Year)** | 8 | 30 | 80 |
+| **Average Users per Customer** | 10 | 12 | 15 |
+| **Monthly Recurring Revenue** | R78,400 | R352,800 | R1,176,000 |
+| **Annual Recurring Revenue** | R940,800 | R4,233,600 | R14,112,000 |
+| **Gross Margin** | 61% | 61% | 65% |
+| **Break-even Point** | 5-6 customers | - | - |
 
 ---
 
@@ -30,69 +29,69 @@
 
 ---
 
-## Pricing Philosophy: EVERYTHING INCLUDED
+## Pricing Philosophy: R980 PER USER
 
-Our competitive advantage is **what's bundled by default**:
+**Simple, transparent pricing. Every user covers their cost.**
+
+| Component | Per User/Month |
+|:----------|---------------:|
+| Cost to serve | R380 |
+| Margin | R600 (61%) |
+| **Price** | **R980** |
 
 | Feature | SAP/Oracle | Sage | SiyaBusa |
 |:--------|:-----------|:-----|:---------|
 | Core ERP | ✅ | ✅ | ✅ |
 | SA Payroll | Extra | Extra | **INCLUDED** |
 | SARS Integration | Extra R25K+ | ❌ | **INCLUDED** |
-| Audit Tools | Extra R20K+ | ❌ | **INCLUDED** |
+| Industry Modules | Extra | Extra | **Tailored to you** |
 | AI Assistants | ❌ | ❌ | **INCLUDED** |
-| Communications | Use Zoom/Slack | Use Zoom/Slack | **INCLUDED** |
 
 ---
 
 ## Pricing Structure
 
-### Platform + Per-User Model
+### Simple Per-User Model
 
-| Plan | Platform Fee | Per User | Target Users |
-|:-----|:-------------|:---------|:-------------|
-| **Starter** | R8,000/mo | R650/user | 5-20 users |
-| **Professional** | R15,000/mo | R950/user | 10-50 users |
-| **Enterprise** | R25,000/mo | R1,200/user | 25-100 users |
-| **Corporate** | R45,000/mo | R1,500/user | 50+ users |
+| Tier | Per User/Month | Min Users | Min Monthly |
+|:-----|---------------:|----------:|------------:|
+| **Starter** | R980 | 5 | R4,900 |
+| **Professional** | R931 (5% off) | 10 | R9,310 |
+| **Enterprise** | R882 (10% off) | 25 | R22,050 |
 
-### What's INCLUDED in Each Plan (No Extra Fees)
+### What's INCLUDED (Industry-Tailored)
 
-| Feature | Starter | Professional | Enterprise | Corporate |
-|:--------|:--------|:-------------|:-----------|:----------|
-| Finance, Sales, Purchase | ✅ | ✅ | ✅ | ✅ |
-| SARS Sentinel | ✅ | ✅ | ✅ | ✅ |
-| Basic AI (3 agents) | ✅ | ✅ | ✅ | ✅ |
-| Manufacturing | - | ✅ | ✅ | ✅ |
-| Warehouse | - | ✅ | ✅ | ✅ |
-| Audit Ready | - | ✅ | ✅ | ✅ |
-| Communications Hub | - | ✅ | ✅ | ✅ |
-| Full AI (9 agents) | - | ✅ | ✅ | ✅ |
-| Multi-Entity | - | - | ✅ | ✅ |
-| Full Payroll | - | - | ✅ | ✅ |
-| API Access | - | - | ✅ | ✅ |
-| Industry Modules | - | - | - | 2 included |
+Customers receive modules relevant to their industry:
+
+| Industry | Key Modules |
+|:---------|:------------|
+| Manufacturing | Production, BOM, Inventory, Costing |
+| Distribution | Inventory, Logistics, Fleet, Warehouse |
+| Construction | Project Costing, Job Management, Progress Billing |
+| Professional Services | Practice Management, Time Billing, CRM |
+| Healthcare | Patient Management, Medical Inventory |
+| Property | Lease Management, Tenant Billing |
 
 ### Pricing Examples
 
-| Company Size | Plan | Platform | Users | **Total/Month** |
-|:-------------|:-----|:---------|:------|:----------------|
-| 10 users | Starter | R8,000 | R6,500 | **R14,500** |
-| 25 users | Professional | R15,000 | R23,750 | **R38,750** |
-| 50 users | Enterprise | R25,000 | R60,000 | **R85,000** |
-| 100 users | Corporate | R45,000 | R142,500 | **R187,500** |
+| Company Size | Per User | Users | **Total/Month** |
+|:-------------|:---------|:------|:----------------|
+| Small business | R980 | 8 | **R7,840** |
+| Growing SME | R980 | 15 | **R14,700** |
+| Medium (with discount) | R931 | 30 | **R27,930** |
+| Enterprise (with discount) | R882 | 60 | **R52,920** |
 
 ---
 
-## Blended Average Revenue Per Account (ARPA)
+## Average Revenue Per Account (ARPA)
 
-| Year | Avg Package | Avg Users | Monthly ARPA | Annual ARPA |
-|:-----|:------------|:----------|:-------------|:------------|
-| 2026 | R12,000 | R8,000 | R20,000 | R240,000 |
-| 2027 | R18,000 | R12,000 | R30,000 | R360,000 |
-| 2028 | R25,000 | R18,000 | R43,000 | R516,000 |
+| Year | Avg Users | Monthly ARPA | Annual ARPA |
+|:-----|:----------|:-------------|:------------|
+| 2026 | 10 | R9,800 | R117,600 |
+| 2027 | 12 | R11,772 | R141,264 |
+| 2028 | 15 | R14,700 | R176,400 |
 
-*Higher ARPA than competitors because everything is bundled — customers use MORE features*
+*Based on R980/user with volume discounts for larger customers*
 
 ---
 

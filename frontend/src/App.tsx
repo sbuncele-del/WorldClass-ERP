@@ -101,8 +101,6 @@ const AssetsHub = lazy(() => import('./modules/assets/AssetsHub'));
 const WarehouseHub = lazy(() => import('./modules/warehouse/WarehouseHub'));
 const ManufacturingHub = lazy(() => import('./modules/manufacturing/ManufacturingHub'));
 const LogisticsHub = lazy(() => import('./modules/logistics/LogisticsHub'));
-const MiningHub = lazy(() => import('./modules/mining/MiningHub'));
-const AgricultureHub = lazy(() => import('./modules/agriculture/AgricultureHub'));
 const ProjectsHub = lazy(() => import('./modules/projects/ProjectsHub'));
 const ProposalsHub = lazy(() => import('./modules/proposals/ProposalsHub'));
 const ProposalEditor = lazy(() => import('./modules/proposals/ProposalEditor'));
@@ -110,22 +108,19 @@ const ProProposalBuilder = lazy(() => import('./modules/proposals/ProProposalBui
 const SmartProposalBuilder = lazy(() => import('./modules/proposals/SmartProposalBuilder'));
 const CoffeePitchDeck = lazy(() => import('./modules/proposals/CoffeePitchDeck'));
 const SiyaBusaPitchDeck = lazy(() => import('./modules/proposals/SiyaBusaPitchDeck'));
-const ConstructionHub = lazy(() => import('./modules/construction/ConstructionHub'));
-const HealthcareHub = lazy(() => import('./modules/healthcare/HealthcareHub'));
-const PropertyHub = lazy(() => import('./modules/property/PropertyHub'));
 const CommunicationsHub = lazy(() => import('./modules/communication/CommunicationsHub'));
 const AuditReadyHub = lazy(() => import('./modules/compliance/AuditReadyHub'));
 const RegulatoryHub = lazy(() => import('./modules/compliance/RegulatoryHub'));
 const AdminHub = lazy(() => import('./modules/admin/AdminHub'));
+
+// Financial Sub-Pages
+const Dimensions = lazy(() => import('./pages/Dimensions'));
+const ChartOfAccountsPage = lazy(() => import('./modules/financial/components/ChartOfAccountsPage'));
 const SuperAdminPanel = lazy(() => import('./modules/super-admin/SuperAdminPanel'));
 const PlatformLogin = lazy(() => import('./modules/super-admin/PlatformLogin'));
 const AuditorPortalPreview = lazy(() => import('./modules/compliance/AuditorPortalPreview'));
 
-// Lazy-loaded Industry Pages
-const Healthcare = lazy(() => import('./pages/Healthcare'));
-const Construction = lazy(() => import('./pages/Construction'));
-const Agriculture = lazy(() => import('./pages/Agriculture'));
-const Mining = lazy(() => import('./pages/Mining'));
+// Lazy-loaded Industry Pages (removed: Healthcare, Construction, Agriculture, Mining)
 const Wholesale = lazy(() => import('./pages/Wholesale'));
 const ProfessionalServices = lazy(() => import('./pages/ProfessionalServices'));
 
@@ -228,13 +223,8 @@ function App() {
                       <Route path="/preview/warehouse-hub" element={<WarehouseHub />} />
                       <Route path="/preview/manufacturing-hub" element={<ManufacturingHub />} />
                       <Route path="/preview/logistics-hub" element={<LogisticsHub />} />
-                      <Route path="/preview/mining-hub" element={<MiningHub />} />
-                      <Route path="/preview/agriculture-hub" element={<AgricultureHub />} />
                       <Route path="/preview/projects-hub" element={<ProjectsHub />} />
                       <Route path="/preview/proposals-hub" element={<ProposalsHub />} />
-                      <Route path="/preview/construction-hub" element={<ConstructionHub />} />
-                      <Route path="/preview/healthcare-hub" element={<HealthcareHub />} />
-                      <Route path="/preview/property-hub" element={<PropertyHub />} />
                       <Route path="/preview/communications-hub" element={<CommunicationsHub />} />
                       <Route path="/preview/audit-ready-hub" element={<AuditReadyHub />} />
                       <Route path="/preview/regulatory-hub" element={<RegulatoryHub />} />
@@ -304,6 +294,9 @@ function App() {
                                   <Route path="/manufacturing-hub/*" element={<ManufacturingHub />} />
                                   
                                   {/* Financial Hubs */}
+                                  <Route path="/financial" element={<FinancialHub />} />
+                                  <Route path="/financial/chart-of-accounts" element={<ChartOfAccountsPage />} />
+                                  <Route path="/financial/dimensions" element={<Dimensions />} />
                                   <Route path="/financial/*" element={<FinancialHub />} />
                                   <Route path="/financial-hub/*" element={<FinancialHub />} />
                                   <Route path="/banking/*" element={<BankingHub />} />
@@ -335,17 +328,7 @@ function App() {
                                   <Route path="/communications-hub/*" element={<CommunicationsHub />} />
                                   <Route path="/calendar/*" element={<CalendarModule />} />
                                   
-                                  {/* Industry Hubs */}
-                                  <Route path="/healthcare/*" element={<HealthcareHub />} />
-                                  <Route path="/healthcare-hub/*" element={<HealthcareHub />} />
-                                  <Route path="/construction/*" element={<ConstructionHub />} />
-                                  <Route path="/construction-hub/*" element={<ConstructionHub />} />
-                                  <Route path="/agriculture/*" element={<AgricultureHub />} />
-                                  <Route path="/agriculture-hub/*" element={<AgricultureHub />} />
-                                  <Route path="/mining/*" element={<MiningHub />} />
-                                  <Route path="/mining-hub/*" element={<MiningHub />} />
-                                  <Route path="/property/*" element={<PropertyHub />} />
-                                  <Route path="/property-hub/*" element={<PropertyHub />} />
+                                  {/* Industry modules removed - focusing on core accounting */}
                                   
                                   {/* Compliance & Admin Hubs */}
                                   <Route path="/audit-ready" element={<AuditReadyHub />} />

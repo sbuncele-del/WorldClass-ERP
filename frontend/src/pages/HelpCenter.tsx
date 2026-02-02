@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './Healthcare.css';
 
 const HelpCenter: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');

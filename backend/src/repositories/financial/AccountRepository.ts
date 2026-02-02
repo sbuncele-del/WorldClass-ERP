@@ -121,20 +121,21 @@ export class AccountRepository extends BaseRepository<Account> {
     const sql = `
       SELECT 
         a.id as account_id,
-        a.account_number,
-        a.name as account_name,
+        a.account_code as account_number,
+        a.account_name as account_name,
         a.account_type,
-        CASE WHEN SUM(jel.debit_amount - jel.credit_amount) > 0 
-          THEN SUM(jel.debit_amount - jel.credit_amount) ELSE 0 END as debit_balance,
-        CASE WHEN SUM(jel.debit_amount - jel.credit_amount) < 0 
-          THEN ABS(SUM(jel.debit_amount - jel.credit_amount)) ELSE 0 END as credit_balance
+        COALESCE(CASE WHEN SUM(COALESCE(jel.debit_amount, 0) - COALESCE(jel.credit_amount, 0)) > 0 
+          THEN SUM(COALESCE(jel.debit_amount, 0) - COALESCE(jel.credit_amount, 0)) ELSE 0 END, 0) as debit_balance,
+        COALESCE(CASE WHEN SUM(COALESCE(jel.debit_amount, 0) - COALESCE(jel.credit_amount, 0)) < 0 
+          THEN ABS(SUM(COALESCE(jel.debit_amount, 0) - COALESCE(jel.credit_amount, 0))) ELSE 0 END, 0) as credit_balance
       FROM ${this.fullTableName} a
       LEFT JOIN journal_entry_lines jel ON jel.account_id = a.id AND jel.tenant_id = a.tenant_id
-      LEFT JOIN journal_entries je ON je.entry_id = jel.journal_entry_id AND je.status = 'posted' AND je.posting_date <= $2
+      LEFT JOIN journal_entries je ON je.entry_id = jel.journal_entry_id AND je.tenant_id = a.tenant_id 
+        AND je.status = 'posted' AND je.posting_date <= $2
       WHERE a.tenant_id = $1 AND a.deleted_at IS NULL AND a.is_header = false
-      GROUP BY a.id, a.account_number, a.name, a.account_type
-      HAVING SUM(jel.debit_amount - jel.credit_amount) != 0 OR SUM(jel.debit_amount - jel.credit_amount) IS NULL
-      ORDER BY a.account_number
+      GROUP BY a.id, a.account_code, a.account_name, a.account_type
+      HAVING COALESCE(SUM(COALESCE(jel.debit_amount, 0) - COALESCE(jel.credit_amount, 0)), 0) != 0
+      ORDER BY a.account_code
     `;
 
     return this.rawQuery(ctx, sql, [asOfDate]);

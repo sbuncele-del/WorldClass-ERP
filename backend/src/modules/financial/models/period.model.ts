@@ -29,10 +29,11 @@ export interface CreateFiscalYearDTO {
   year_name: string;
   start_date: string;
   end_date: string;
-  number_of_periods: number;
-  period_type: PeriodType;
+  number_of_periods?: number;
+  period_type?: PeriodType;
   description?: string;
   user_id: string;
+  tenant_id?: string;
 }
 
 export type FiscalYearStatus = 'OPEN' | 'CLOSED' | 'LOCKED';
@@ -73,7 +74,8 @@ export interface CreatePeriodDTO {
   end_date: string;
   is_adjustment_period?: boolean;
   description?: string;
-  user_id: string;
+  user_id?: string;
+  tenant_id?: string;
 }
 
 export type PeriodStatus = 'FUTURE' | 'OPEN' | 'CLOSED' | 'LOCKED';

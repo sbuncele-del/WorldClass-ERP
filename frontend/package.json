@@ -57,6 +57,7 @@
     "jest-environment-jsdom": "30.2.0",
     "lighthouse": "13.0.1",
     "newman": "6.2.1",
+    "playwright": "1.58.1",
     "puppeteer": "24.33.1",
     "terser": "5.44.1",
     "typescript": "5.9.3",

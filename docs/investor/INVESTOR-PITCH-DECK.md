@@ -9,14 +9,14 @@
 
 **Tagline**: 10x Better Value | 10x Faster | 100% Cloud-Native
 
-**Seeking**: R5M Seed Round
+**Seeking**: R200,000 Bridge Round (4-Month Runway)
 
 **Contact**:  
 [Your Name] - Founder & CEO  
 founder@siyabusa.co.za  
 [Your LinkedIn]
 
-**Date**: January 2026
+**Date**: January 29, 2026
 
 ---
 
@@ -60,8 +60,8 @@ Production-ready, cloud-native ERP built specifically for South African business
 ✅ **Industry-Specific**: Healthcare, Mining, Construction, Property, Agriculture  
 ✅ **Compliance Built-In**: SARS, VAT, PAYE, B-BBEE, POPIA - ready from day one  
 ✅ **AI-Powered**: Natural language queries, intelligent automation  
-✅ **Fast Deployment**: 2 weeks, not 18 months  
-✅ **Fair Pricing**: R25K-R150K implementation vs R5M-R50M
+✅ **Fast Deployment**: 2-4 weeks, not 18 months  
+✅ **Fair Pricing**: R980/user/month vs R2,500-R5,000/user (SAP)
 
 **Technology:**  
 Modern, battle-tested stack (Node.js, React, PostgreSQL, AWS)
@@ -136,64 +136,65 @@ Too sophisticated for QuickBooks, too small for SAP
 
 ## SLIDE 6: BUSINESS MODEL
 
-### Recurring Revenue + High Margins
+### Per-User SaaS Pricing + Healthy Margins
 
-**SaaS Subscriptions (Monthly)**
-- **Starter**: R2,500/mo - 10 users, core modules
-- **Professional**: R6,500/mo - 50 users, all modules  
-- **Enterprise**: R15,000/mo - Unlimited users, dedicated support
+**Core Pricing: R980 per user per month**
+
+Every user pays — no free tier. Each user covers their cost + provides margin.
+
+| Tier | Per User | Min Users | Min Monthly |
+|------|----------|-----------|-------------|
+| **Starter** | R980 | 5 | R4,900 |
+| **Professional** | R931 (5% off) | 10 | R9,310 |
+| **Enterprise** | R882 (10% off) | 25 | R22,050 |
 
 **Implementation Services (One-Time)**
-- Standard: R25,000-R50,000
-- Custom: R75,000-R150,000
-- Add-ons: R1,500/hour
+- Starter: R7,500 (data migration, 4hr training)
+- Professional: R25,000 (full onboarding, 16hr training)
+- Enterprise: R75,000+ (custom implementation)
 
-**Revenue Mix Target (Year 3)**
-- Subscriptions: 75% (recurring)
-- Implementation: 20%
-- Custom dev: 5%
-
-**Unit Economics**
-- Average deal: **R75K/year** (R6,250/month)
-- LTV: **R375K** (5-year retention)
-- CAC: **R15K** (5-month payback via direct sales)
-- Gross margin: **85%+**
-- LTV/CAC ratio: **25:1** ⭐
+**Unit Economics (Per User)**
+- Cost to serve: **R380/user** (AWS, support, dev)
+- Margin: **R600/user (61%)**
+- Average customer: **10 users = R9,800/month**
+- LTV: **R235K** (2-year retention)
+- CAC: **R12K** (via direct sales)
+- LTV/CAC ratio: **20:1** ⭐
 
 ---
 
 ## SLIDE 7: TRACTION & ROADMAP
 
-### Production-Ready | Launching Beta Program Q1 2026
+### Production-Ready | First Customer Target: May 2026
 
 **Current Status (January 2026)**
 - ✅ **Product**: 100% complete, production-deployed
-- ✅ **Infrastructure**: AWS (EC2, RDS, S3), Docker
+- ✅ **Infrastructure**: AWS Cape Town (EC2, RDS, S3)
 - ✅ **Codebase**: 400+ REST APIs, 25+ modules, tested
 - ✅ **Documentation**: Complete technical & user docs
 - 🎯 **Status**: Pre-revenue, ready for launch
 
-**2026 Milestones**
+**4-Month Plan (Feb-May 2026)**
 
-**Q1**: Beta Partner Program
-- 10 companies across 6 industries
-- Free/discounted pricing for feedback
-- Case studies & testimonials
+**Feb**: Marketing Launch
+- LinkedIn + Google Ads campaigns live
+- Landing page optimized
+- 50+ leads captured
 
-**Q2**: First Paying Customers
-- 15 paying customers
-- R150K MRR
-- First channel partner (accounting firm)
+**Mar**: Beta Testing
+- 5 beta partners actively using system
+- 100+ qualified leads in pipeline
+- First demos conducted
 
-**Q3**: Scale & Iterate
-- 25 total customers
-- R250K MRR  
-- Product enhancements from beta feedback
+**Apr**: Sales Push
+- 30+ demo meetings
+- 15+ trials started
+- 5+ proposals sent
 
-**Q4**: Growth Mode
-- 30 total customers
-- R375K MRR (R2.25M ARR)
-- Expand sales team
+**May**: First Customer 🎉
+- **1-3 paying customers signed**
+- **R7,840+ MRR** (8 users @ R980)
+- Case study in production
 
 ---
 
@@ -204,12 +205,12 @@ Too sophisticated for QuickBooks, too small for SAP
 |  | **SiyaBusa** | **SAP/Oracle** | **Sage** | **Odoo** | **QuickBooks** |
 |---|-------------|---------------|----------|----------|----------------|
 | **Target Market** | Mid-market SMEs | Enterprise (R1B+) | SME/Mid | SME/Mid | Micro/Small |
-| **Implementation** | R25K-R150K | R5M-R50M | R500K-R2M | R200K-R800K | R0-R20K |
-| **Deploy Time** | 2 weeks | 18 months | 3 months | 2 months | 1 day |
+| **Per User/Month** | R980 | R2,500-R5,000 | R1,000-R2,000 | R500-R1,000 | N/A |
+| **Implementation** | R7,500-R75K | R500K-R2M | R100K-R500K | R50K-R200K | R0-R5K |
+| **Deploy Time** | 2-4 weeks | 6-18 months | 3 months | 2 months | 1 day |
 | **Modules** | 25+ | 100+ | 15+ | 30+ | 5 (accounting) |
 | **SA Compliance** | ✅ Built-in | ❌ Custom | ⚠️ Limited | ❌ Custom | ⚠️ Basic |
 | **Cloud** | ✅ Native | ⚠️ Hybrid | ❌ Desktop | ✅ Yes | ✅ Yes |
-| **UX** | ✅ Modern | ❌ Complex | ❌ Legacy | ⚠️ Older | ✅ Simple |
 | **AI Features** | ✅ Yes | ✅ Premium $$ | ❌ No | ❌ No | ❌ No |
 
 **Our Advantages:**
@@ -253,27 +254,27 @@ Too sophisticated for QuickBooks, too small for SAP
 
 ## SLIDE 10: FINANCIAL PROJECTIONS
 
-### Path to R75M ARR by Year 5
+### Conservative Growth Path (R980/User)
 
-| Year | Customers | ARR | MRR | Team | EBITDA Margin |
-|------|-----------|-----|-----|------|---------------|
-| **2026** | 30 | R2.25M | R188K | 5 | -50% |
-| **2027** | 100 | R7.5M | R625K | 12 | -15% |
-| **2028** | 250 | R18.75M | R1.56M | 25 | 15% |
-| **2029** | 500 | R37.5M | R3.13M | 45 | 25% |
-| **2030** | 1,000 | R75M | R6.25M | 80 | 30% |
+| Date | Customers | Avg Users | MRR | ARR Run Rate |
+|------|-----------|-----------|-----|---------------|
+| **May 2026** | 1 | 8 | R7,840 | R94K |
+| **Aug 2026** | 3 | 10 | R29,400 | R353K |
+| **Dec 2026** | 8 | 10 | R78,400 | R941K |
+| **Jun 2027** | 20 | 12 | R235,200 | R2.8M |
+| **Dec 2027** | 40 | 15 | R588,000 | R7.1M |
 
 **Key Metrics**
-- Breakeven: Month 18-24 (80-100 customers)
-- CAC payback: 5 months
-- Net revenue retention: 110% (expansion revenue)
-- Churn: <10% annually (enterprise software standard)
+- Monthly burn rate: ~R41,400
+- Break-even: **5-6 customers** (@ 8 users each)
+- Target break-even: **Q3 2026 (September)**
+- CAC payback: 3-4 months
+- Gross margin: 61% per user
 
-**Revenue Drivers**
-- Average deal: R75K/year (R6,250/month)
-- Upsells: 20% of customers upgrade tiers annually
-- Cross-sell: 15% add custom modules
-- Price increases: 5% annually (inflation)
+**Why This Works**
+- At R980/user, break-even requires only 5-6 small customers
+- Each user covers their R380 cost + R600 margin
+- No subsidizing free users — sustainable from day one
 
 ---
 
@@ -296,7 +297,7 @@ Too sophisticated for QuickBooks, too small for SAP
 
 **Sales Manager** (Month 1)
 - Execute go-to-market strategy
-- Build sales pipeline & close deals
+- Build sales pipeline & sign customers
 - Manage beta partner relationships
 
 **Customer Success Lead** (Month 3)
@@ -313,65 +314,77 @@ Too sophisticated for QuickBooks, too small for SAP
 
 ## SLIDE 12: USE OF FUNDS
 
-### R5M Seed Round | 18-Month Runway
+### R200,000 Bridge Round | 4-Month Runway
 
-**Team Expansion: R2M (40%)**
-- CTO/Tech Lead: R800K
-- Sales Manager: R700K
-- Customer Success: R500K
+**Development & Operations: R82,500 (41%)**
+- Technical oversight & code review: R60,000
+- Mobile & internet: R6,000
+- Client meetings & demos: R16,500
 
-**Sales & Marketing: R1.5M (30%)**
-- Digital marketing: R600K
-- Events & trade shows: R400K
-- Content marketing: R200K
-- Partner enablement: R300K
+**Marketing: R35,500 (18%)**
+- LinkedIn Ads: R14,000
+- Google Ads: R9,500
+- Content/Video: R7,500
+- Events/PR: R3,000
+- Referrals: R1,500
 
-**Infrastructure & Hosting: R1M (20%)**
-- AWS hosting (scalable): R600K
-- Tools & licenses: R200K
-- Security & compliance: R200K
+**Infrastructure: R27,500 (14%)**
+- AWS hosting (ECS, RDS, S3): R25,500
+- Domain, email, tools: R2,000
 
-**Working Capital & Legal: R500K (10%)**
-- Legal fees: R150K
-- Accounting/bookkeeping: R100K
-- Insurance: R100K
-- Buffer: R150K
+**Customer Operations: R19,500 (10%)**
+- Onboarding & training: R12,000
+- Demo environments: R4,000
+- Customer success tools: R3,500
+
+**Legal & Compliance: R14,000 (7%)**
+- Terms of service, contracts: R7,500
+- Security audit: R2,500
+- Insurance (PI, cyber): R4,000
+
+**Business Setup: R9,500 (5%)**
+- Payment gateway (Payfast/Yoco): R4,000
+- First hire preparation: R5,500
+
+**Contingency: R11,500 (6%)**
+- ~10% monthly buffer
 
 **Milestones Achieved with Funding:**
-- 30 customers by end of Year 1
-- R2.25M ARR
-- Team of 5 (from 1)
-- Product-market fit validated
-- Ready for Series A (Month 18-24)
+- **First paying customer by May 2026**
+- R7,840+ MRR (8 users @ R980)
+- Break-even path validated
+- Ready for seed round (R2M-R5M)
 
 ---
 
 ## SLIDE 13: INVESTMENT TERMS
 
-### R5M Seed Round | SAFE Agreement
+### R200,000 Bridge Round | Flexible Terms
 
-**Amount**: R5M (~$275K USD)
+**Amount**: R200,000 (~$11,000 USD)
 
-**Structure**: SAFE (Simple Agreement for Future Equity)
-- Pre-money valuation: R15M (~$825K USD)
-- Post-money valuation: R20M
-- Equity offered: 25%
+**Option A: Convertible Note**
+- Term: 12 months
+- Interest: 0%
+- Conversion: 20% discount to seed round valuation
+- Automatic conversion at qualified financing (>R2M)
 
-**Standard Terms**:
-- Most favored nation (MFN)
-- Pro-rata rights for future rounds
-- Information rights (monthly updates)
-- Board observer seat (optional)
+**Option B: SAFE Note**
+- Valuation cap: R5,000,000
+- Discount: 20% to next round
+- Pro-rata rights: Yes
+- MFN clause: Yes
 
-**Conversion Triggers**:
-- Series A round (qualified financing >R10M)
-- Acquisition
-- IPO
+**Option C: Direct Equity**
+- Amount: R200,000
+- Equity: 4%
+- Pre-money: R5,000,000
 
-**Comparable Valuations:**
-- African SaaS startups at seed: $500K-$1.5M
-- ERP/B2B software: 3-5x ARR at growth stage
-- Our valuation (pre-revenue): Conservative, room to grow
+**What Investors Get:**
+- Weekly progress updates
+- Early access to product
+- Pro-rata rights for seed round
+- Proof of market before larger commitment
 
 ---
 
@@ -462,7 +475,7 @@ Too sophisticated for QuickBooks, too small for SAP
 
 ## SLIDE 17: TRACTION METRICS (Updated Monthly)
 
-### Current Status (January 2, 2026)
+### Current Status (January 29, 2026)
 
 **Product**
 - ✅ Production-ready (AWS deployed)
@@ -472,10 +485,10 @@ Too sophisticated for QuickBooks, too small for SAP
 - ✅ Security & authentication complete
 
 **Business**
-- Pipeline: [To be filled as you progress]
-- Beta partners: [In recruitment]
+- Pipeline: Building (marketing launching Feb)
+- Beta partners: In recruitment
 - Paying customers: Pre-revenue
-- MRR: R0 (launching Q1)
+- MRR: R0 (target: first customer May 2026)
 
 **Updates** (Fill in as you progress):
 - Week of Jan 2: Raised seed round
@@ -491,7 +504,7 @@ Too sophisticated for QuickBooks, too small for SAP
 ### Join Us in Transforming African Business Software
 
 **What We're Building:**
-A R1B+ African ERP company serving 10,000+ businesses by 2030
+An African ERP company serving 1,000+ businesses by 2030
 
 **Why This Matters:**
 - African SMEs deserve world-class software at fair prices
@@ -499,20 +512,21 @@ A R1B+ African ERP company serving 10,000+ businesses by 2030
 - Local solutions for local challenges
 
 **What We Need:**
-- R5M seed capital
+- R200,000 bridge capital (4-month runway)
 - Strategic advisors with ERP/Africa expertise
 - Intros to beta partners & early customers
 
 **What You Get:**
-- 25% equity in high-growth African SaaS company
-- Exposure to underserved R180M market
-- Impact: Help African businesses compete globally
+- Early entry at R5M valuation cap
+- Proof of market before larger commitment
+- Weekly updates on progress
+- Pro-rata rights for seed round
 
 **Next Steps:**
 1. **Review**: Due diligence materials
 2. **Demo**: Live product walkthrough
 3. **Meet**: Coffee/call with founder
-4. **Decide**: 30-day close timeline
+4. **Decide**: 2-week close timeline
 
 ---
 
@@ -538,6 +552,6 @@ Website: siyabusa.co.za (launching)
 
 ---
 
-**Date**: January 2, 2026  
-**Version**: 1.0
+**Date**: January 29, 2026  
+**Version**: 2.0
 

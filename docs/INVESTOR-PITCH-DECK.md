@@ -1,494 +1,557 @@
-# Executive Summary
+# SiyaBusa ERP - Investor Pitch Deck
 
-## What We've Built
-
-**SiyaBusa ERP** is a **production-ready**, cloud-native Enterprise Resource Planning platform purpose-built for South African mid-market businesses. We have developed:
-
-| Achievement | Status |
-|:------------|:-------|
-| **25+ Complete Modules** | ✅ Deployed |
-| **400+ API Endpoints** | ✅ Live |
-| **228+ Database Tables** | ✅ Production |
-| **50,000+ Lines of Code** | ✅ Written |
-| **AWS Infrastructure** | ✅ Running |
-| **9 AI Assistants** | ✅ Functional |
-
-**Total Development Investment to Date:** ~R3,500,000 (18 months of development)
-
----
-
-## What We're Asking For
-
-| Item | Amount (ZAR) |
-|:-----|-------------:|
-| **Seed Investment Request** | **R2,000,000** |
-| **Runway** | 12 months |
-| **Use of Funds** | Operations + Marketing + Team |
-| **Exit Strategy** | JSE AltX listing by Q2 2029 |
-
----
-
-## Why This Investment is Low-Risk
-
-| Factor | Evidence |
-|:-------|:---------|
-| **Product Exists** | Not a concept — working software deployed on AWS |
-| **Market Validated** | R50K-R200K/month competitors prove demand exists |
-| **Gap is Real** | 60,000+ SA businesses need full ERP but can't afford current options |
-| **Team is Committed** | 18 months of bootstrapped development proves dedication |
-| **Clear Exit Path** | JSE AltX listing provides liquidity for investors |
-
----
-
-# 🎯 The Problem (Market Opportunity)
-
-## The Two-Tier ERP Crisis in South Africa
-
-<div align="center">
-
-```
-                        💰 MONTHLY COST
-                              │
-    R200K+ ───────────────────┼───────────────────────────────────
-                              │     ┌──────────────────────────┐
-                              │     │  ❌ TIER 1: Enterprise   │
-    R150K  ───────────────────┼─────│  SAP, Oracle, Microsoft  │───
-                              │     │  • Too Expensive         │
-                              │     │  • 6-18 month implement  │
-    R100K  ───────────────────┼─────│  • SA compliance extra   │───
-                              │     │  • R500K-R2M localisation│
-                              │     └──────────────────────────┘
-    R50K   ───────────────────┼────────────────────────────────────
-                              │
-                              │     ┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-           ═══════════════════╪═════┃  ✅ SIYABUSA ERP         ┃═══
-           THE GAP            │     ┃  R8K-R25K/month          ┃
-           60,000+ Businesses │     ┃  4-8 week implementation ┃
-           R10M-R500M Revenue │     ┃  SA compliance built-in  ┃
-           NEED FULL ERP      │     ┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-           ═══════════════════╪═════════════════════════════════════
-                              │
-    R2K    ───────────────────┼─────┌──────────────────────────┐───
-                              │     │  ❌ TIER 2: Basic        │
-    R500   ───────────────────┼─────│  Xero, QuickBooks, Sage  │───
-                              │     │  • Accounting only       │
-                              │     │  • No manufacturing      │
-                              │     │  • No warehouse          │
-                              │     │  • No HR/Payroll         │
-                              │     │  • Growth ceiling        │
-    R0     ───────────────────┼─────└──────────────────────────┘───
-                              │
-           ◀──────────── CAPABILITIES ──────────────────────▶
-                Accounting → Full ERP → Enterprise
-                   Only      Operations    Scale
-```
-
-</div>
-
----
-
-## Total Addressable Market
-
-| Segment | Size | Source |
-|:--------|:-----|:-------|
-| **SA Mid-Market Businesses** | 60,000+ companies | Stats SA Business Register (2024) |
-| **Revenue Range** | R10M - R500M annually | SARS Company Tax Statistics |
-| **Current Spend** | R500 - R200K/month on software | Gartner SA Enterprise Software Report |
-| **Growth Rate** | 18% YoY (enterprise software) | IDC South Africa IT Spending Forecast |
-
-### TAM Calculation (Verifiable)
-
-**Source: Statistics South Africa Business Register 2024**
-- Total registered businesses: 2.6 million
-- Businesses with 50-500 employees: ~62,000 (2.4%)
-- Of these, ~80% need ERP beyond basic accounting: ~50,000
-- Including businesses with 20-50 employees needing full ERP: +10,000
-- **Conservative Target: 60,000 businesses**
-
-```
-60,000 businesses × R12,000/month average × 12 months = R8.64 Billion/year
-Even 1% market share = R86.4 Million ARR
-```
-
-**Validation:** Gartner estimates SA enterprise application market at $1.2B (R22B) annually, of which ERP represents ~40% = R8.8B. Our TAM calculation aligns with independent research.
-
----
-
-# 💡 Our Solution
-
-## SiyaBusa ERP - Complete Business Management
-
-### Module Coverage
-
-| Category | Modules |
-|:---------|:--------|
-| **Core Operations** | Sales/CRM, Purchase, Inventory, Warehouse, Manufacturing |
-| **Finance** | GL, Cash Management, Multi-Entity, Treasury, Asset Management |
-| **HR** | Payroll (SARS-compliant), Leave, Recruitment, Performance |
-| **Compliance** | SARS Sentinel, Audit Ready, POPIA, B-BBEE Tracking |
-| **Industry Verticals** | Healthcare, Mining, Construction, Property, Agriculture |
-| **Platform** | AI Assistant (9 agents), Communications Hub, Analytics |
-
----
-
-## Key Differentiators
-
-### 1. Native South African Compliance
-- PAYE, UIF, SDL calculations built-in
-- SARS submission file generation
-- BCEA leave entitlements automated
-- B-BBEE scorecard tracking
-- **No R500K-R2M localization projects needed**
-
-### 2. AI-Powered Natural Language Interface
-- Ask questions in plain English
-- Get instant answers from your data
-- 9 specialized AI agents
-- 24/7 intelligent assistance
-
-### 3. "Business Actions = Accounting Done"
-- Approve a POD → Invoice + GL entries created automatically
-- Run payroll → All accounting entries generated
-- Receive goods → Inventory + accrual entries made
-- **Zero double-entry by accountants**
-
-### 4. 40% Below Competitor Pricing
-- Same functionality as SAP Business One
-- Same per-user pricing model
-- 40% lower cost
-- **Faster implementation (4-8 weeks vs 6-12 months)**
-
----
-
-# 💰 Financial Projections
-
-## Use of Funds - Detailed Breakdown
-
-### Total Investment Request: R2,850,000
-
----
-
-### 1. INFRASTRUCTURE & OPERATIONS (R816,000 / 12 months)
-
-| Item | Monthly | Annual | Notes |
-|:-----|--------:|-------:|:------|
-| **AWS Infrastructure** | | | |
-| - EC2 (Backend Servers) | R3,500 | R42,000 | t3.medium production + t3.small staging |
-| - RDS PostgreSQL | R4,200 | R50,400 | db.t3.medium (20GB + backups) |
-| - S3 Storage | R800 | R9,600 | Static assets + backups |
-| - CloudFront CDN | R1,500 | R18,000 | Global content delivery |
-| - Data Transfer | R2,000 | R24,000 | ~500GB/month expected |
-| - ElastiCache Redis | R2,800 | R33,600 | Caching layer |
-| - Route 53 | R200 | R2,400 | DNS management |
-| **AWS Subtotal** | **R15,000** | **R180,000** | |
-| | | | |
-| **Third-Party Services** | | | |
-| - OpenAI API (AI Assistant) | R8,000 | R96,000 | GPT-4 for 9 AI agents |
-| - Daily.co (Video) | R2,500 | R30,000 | Video conferencing |
-| - SendGrid (Email) | R1,500 | R18,000 | Transactional emails |
-| - Twilio (SMS) | R1,000 | R12,000 | Notifications |
-| **Third-Party Subtotal** | **R13,000** | **R156,000** | |
-| | | | |
-| **Development Tools** | | | |
-| - GitHub Enterprise | R2,500 | R30,000 | Code repository + CI/CD |
-| - Sentry (Error Tracking) | R1,500 | R18,000 | Production monitoring |
-| - LogRocket (Session Replay) | R2,000 | R24,000 | User experience monitoring |
-| - Testing Tools | R1,500 | R18,000 | Automated testing |
-| **Dev Tools Subtotal** | **R7,500** | **R90,000** | |
-| | | | |
-| **Security & Compliance** | | | |
-| - SSL Certificates | R500 | R6,000 | Wildcard SSL |
-| - Security Scanning | R2,000 | R24,000 | Vulnerability scanning |
-| - Backup & DR | R2,000 | R24,000 | Disaster recovery |
-| **Security Subtotal** | **R4,500** | **R54,000** | |
-| | | | |
-| **Domain & Hosting** | | | |
-| - Domain names | R200 | R2,400 | siyabusa.co.za + variants |
-| - DNS/CDN Extra | R300 | R3,600 | Additional services |
-| **Domain Subtotal** | **R500** | **R6,000** | |
-| | | | |
-| **Contingency (20%)** | **R27,500** | **R330,000** | Unexpected costs buffer |
-
-| **TOTAL OPERATIONS** | **R68,000/month** | **R816,000/year** | |
-
----
-
-### 2. MARKETING & CUSTOMER ACQUISITION (R1,080,000 / 12 months)
-
-| Channel | Monthly | Annual | Strategy |
-|:--------|--------:|-------:|:---------|
-| **LinkedIn Marketing** | | | Primary B2B channel |
-| - LinkedIn Ads | R25,000 | R300,000 | Targeted B2B campaigns |
-| - LinkedIn Sales Navigator | R3,500 | R42,000 | Lead generation tool |
-| - LinkedIn Premium | R1,500 | R18,000 | Content promotion |
-| **LinkedIn Subtotal** | **R30,000** | **R360,000** | |
-| | | | |
-| **Google Advertising** | | | |
-| - Google Ads (Search) | R15,000 | R180,000 | "ERP software South Africa" |
-| - Google Display | R5,000 | R60,000 | Remarketing campaigns |
-| **Google Subtotal** | **R20,000** | **R240,000** | |
-| | | | |
-| **Social Media** | | | |
-| - Facebook/Instagram Ads | R8,000 | R96,000 | Awareness campaigns |
-| - Twitter/X Ads | R3,000 | R36,000 | Tech community engagement |
-| - YouTube Ads | R4,000 | R48,000 | Demo video promotion |
-| **Social Subtotal** | **R15,000** | **R180,000** | |
-| | | | |
-| **Content Marketing** | | | |
-| - Content Creation | R8,000 | R96,000 | Blog posts, whitepapers, case studies |
-| - SEO Services | R5,000 | R60,000 | Organic search optimization |
-| - Video Production | R4,000 | R48,000 | Demo videos, testimonials |
-| **Content Subtotal** | **R17,000** | **R204,000** | |
-| | | | |
-| **Events & PR** | | | |
-| - Trade Show Attendance | R2,500 | R30,000 | 3-4 events/year |
-| - PR Agency | R4,000 | R48,000 | Media relations |
-| - Launch Event | R1,500 | R18,000 | Q2 launch event |
-| **Events Subtotal** | **R8,000** | **R96,000** | |
-
-| **TOTAL MARKETING** | **R90,000/month** | **R1,080,000/year** | |
-
----
-
-### 3. OPERATIONS & TEAM (R756,000 / 12 months)
-
-| Role | Monthly | Annual | Notes |
-|:-----|--------:|-------:|:------|
-| **Customer Success** | | | |
-| - Customer Success Manager | R25,000 | R300,000 | Contract, onboarding focus |
-| - Technical Support | R15,000 | R180,000 | Part-time support staff |
-| **Marketing & Content** | | | |
-| - Video Content Creator | R10,000 | R120,000 | Demo videos, social content |
-| - Marketing Content Writer | R5,000 | R60,000 | LinkedIn, scripts, copy |
-| **Team Subtotal** | **R55,000** | **R660,000** | |
-| | | | |
-| **Office & Admin** | | | |
-| - Co-working Space | R5,000 | R60,000 | Hot desk + meeting rooms |
-| - Legal & Accounting | R3,000 | R36,000 | Professional services |
-| **Office Subtotal** | **R8,000** | **R96,000** | |
-
-*Note: Communication tools (video, messaging) are built into SiyaBusa ERP — no Slack/Zoom costs.*
-
-| **TOTAL OPERATIONS** | **R63,000/month** | **R756,000/year** | |
-
----
-
-### 4. RESERVE & CONTINGENCY (R360,000)
-
-| Purpose | Amount | Notes |
-|:--------|-------:|:------|
-| Emergency Fund | R180,000 | 3 months core operations |
-| Opportunity Fund | R120,000 | Unexpected opportunities |
-| Legal Reserve | R60,000 | IP protection, contracts |
-| **TOTAL RESERVE** | **R360,000** | |
-
----
-
-## Investment Summary
-
-| Category | Amount | % of Total |
-|:---------|-------:|:----------:|
-| Infrastructure & Operations | R816,000 | 28.6% |
-| Marketing & Customer Acquisition | R1,080,000 | 37.9% |
-| Operations & Team | R756,000 | 26.5% |
-| Reserve & Contingency | R198,000 | 6.9% |
-| **TOTAL** | **R2,850,000** | **100%** |
-
-*Note: No external communication tools (Slack, Zoom) budgeted — SiyaBusa includes built-in Communications Hub.*
-
----
-
-## Revenue Model & Projections
-
-### We Serve the IGNORED Middle Market
-
-| Segment | Options | Problem |
-|:--------|:--------|:--------|
-| Small | Xero, QuickBooks | Accounting only |
-| **Mid-Market (60K+ businesses)** | **NOBODY** | **Gap in the market** |
-| Enterprise | SAP, Oracle | R100K-R500K/month |
-
-### EVERYTHING INCLUDED — Our Competitive Advantage
-
-| Feature | SAP | Sage | SiyaBusa |
-|:--------|:----|:-----|:---------|
-| SARS Integration | Extra R25K | ❌ | **INCLUDED** |
-| Audit Tools | Extra R20K | ❌ | **INCLUDED** |
-| AI Assistants | ❌ | ❌ | **INCLUDED** |
-| Comms Hub | Zoom/Slack extra | Zoom/Slack extra | **INCLUDED** |
-
-### Platform Pricing
-
-| Plan | Platform | Per User | What's Bundled |
-|:-----|:---------|:---------|:---------------|
-| **Starter** | R8,000 | R650 | Core ERP + SARS Sentinel + 3 AI |
-| **Professional** | R15,000 | R950 | + Manufacturing, Audit Ready, Comms, 9 AI |
-| **Enterprise** | R25,000 | R1,200 | + Multi-Entity, Payroll, Full Compliance |
-| **Corporate** | R45,000 | R1,500 | + Unlimited, Industry Modules |
-
-### Pricing Comparison: 25-User Manufacturer
-
-| | SiyaBusa | SAP B1 |
-|:--|:---------|:-------|
-| ERP Platform | R15,000 | R35,000 |
-| 25 Users | R23,750 | R62,500 |
-| SARS/Compliance | **INCLUDED** | +R45,000 |
-| AI Features | **INCLUDED** | ❌ |
-| **TOTAL** | **R38,750/mo** | **R142,500/mo** |
-
-**Annual Savings: R1.25M** — and SiyaBusa has MORE features.
-
-### 3-Year Revenue Projection
-
-| Year | Customers | Avg MRR/Customer | Annual Revenue |
-|:-----|----------:|-----------------:|---------------:|
-| **2026** | 25 | R25,000 | R3,750,000 |
-| **2027** | 80 | R35,000 | R33,600,000 |
-| **2028** | 200 | R45,000 | R108,000,000 |
-
----
-
-# 🚀 Go-To-Market Strategy
-
-## Phase 1: Beta Testing (Jan-Mar 2026)
-- 5 carefully selected beta partners
-- Free access in exchange for feedback
-- Focus on 6 industry verticals
-- Goal: Product validation + testimonials
-
-## Phase 2: Dependency Building (Apr-Sep 2026)
-- Extended trial for committed businesses
-- Heavy onboarding support
-- Data migration assistance
-- Goal: Make switching costly
-
-## Phase 3: Revenue Generation (Oct 2026+)
-- Convert beta users to paying customers
-- Launch marketing campaigns
-- Expand sales team
-- Goal: R150K+ MRR by Dec 2026
-
----
-
-# 🏆 Why Invest Now?
-
-## The Opportunity Window
-
-| Factor | Timing Advantage |
-|:-------|:-----------------|
-| **Product Complete** | Competitors need 2-3 years to build equivalent |
-| **Market Ready** | SA businesses actively seeking ERP alternatives |
-| **First Mover** | No local competitor with our feature set |
-| **Compliance Built** | SARS, BCEA, POPIA — not bolted on, built in |
-| **Team in Place** | Technical capability proven by working product |
-
-## Return Potential
-
-| Scenario | Exit | Valuation | Seed Investor Return |
-|:---------|:-----|:----------|:---------------------|
-| **Base Case** | AltX IPO (2029) | R250M (5x R50M ARR) | ~3.5x (R7M for R2M) |
-| **Upside** | AltX IPO + Growth | R400M | ~5.5x (R11M) |
-| **Strategic Sale** | Acquisition | R300M | ~4.2x (R8.4M) |
-
-## Exit Strategy: JSE AltX Listing
-
-| Milestone | Timeline | Requirement |
-|:----------|:---------|:------------|
-| Seed Round | Q1 2026 | R2M raised |
-| Series A | Q1 2028 | R15-25M raised |
-| Pre-IPO Round | Q4 2028 | 100+ shareholders |
-| AltX Listing | Q2 2029 | Public market liquidity |
-
-**Why AltX?**
-- Lower listing requirements than JSE Main Board
-- Designed for growing SMEs
-- Clear path to Main Board graduation
-- Provides liquidity for early investors
-
----
-
-# 📋 Investment Terms
-
-## Offering Structure
-
-| Term | Detail |
-|:-----|:-------|
-| **Investment Amount** | R2,000,000 |
-| **Investment Type** | Ordinary Shares (Private Placement) |
-| **Pre-Money Valuation** | R10,000,000 |
-| **Post-Money Valuation** | R12,000,000 |
-| **Equity Offered** | 16.67% |
-| **Minimum Investment** | R100,000 |
-| **Exit Strategy** | JSE AltX listing Q2 2029 |
-
-### Valuation Justification (R10,000,000 Pre-Money)
-
-**Method 1: Development Cost + Premium**
-- Development investment to date: ~R3,500,000 (18 months)
-- Working product premium: 2x = R7,000,000
-- **Conservative basis: R10,000,000**
-
-**Method 2: Comparable Transactions**
-- Pre-revenue B2B SaaS in SA typically valued at R8M-R15M
-- Functional product with 25+ modules commands premium
-- Native compliance = competitive moat
-- **Range: R8M-R15M → Conservative R10M**
-
-**Method 3: Forward Revenue Multiple**
-- Year 2 projected ARR: R11.5M
-- Conservative 0.9x forward ARR (pre-revenue discount)
-- **Implied: R10.35M → Rounded R10M**
-
-## Investor Rights
-
-- Monthly progress reports
-- Board observer seat for investors holding 5%+
-- Pro-rata rights for future rounds
-- Information rights
-- Tag-along rights on founder exit
-- Anti-dilution protection (weighted average)
-
----
-
-# 📞 Contact & Next Steps
-
-## For Investment Discussions
-
-**Company:** SiyaBusa ERP (Pty) Ltd  
-**Location:** South Africa  
-**Website:** [Coming Soon]  
-**Demo:** Available upon request
-
----
-
-## Appendix: Technical Validation
-
-| Component | Evidence | Location |
-|:----------|:---------|:---------|
-| Backend API | 400+ endpoints live | AWS EC2: 51.21.219.35:3000 |
-| Database | 228+ tables | AWS RDS: PostgreSQL |
-| Frontend | React 18 + TypeScript | AWS CloudFront |
-| AI Assistant | 9 functional agents | OpenAI GPT-4 integrated |
-| Multi-tenant | Isolation tested | Tenant-scoped queries |
-
----
-
-<div align="center">
-
----
-
-**Masaphokati Technologies (Pty) Ltd**
+## SLIDE 1: COVER
 
 **SiyaBusa ERP**  
-*The ERP Platform African Businesses Deserve*
+*Enterprise Software for Growing African Businesses*
 
 ---
 
-**Investment Contact:** investor@siyabusa.co.za | 074 012 6873  
-**Website:** www.siyabusa.co.za
+**Tagline**: 10x Better Value | 10x Faster | 100% Cloud-Native
+
+**Seeking**: R200,000 Bridge Round (4-Month Runway)
+
+**Contact**:  
+[Your Name] - Founder & CEO  
+founder@siyabusa.co.za  
+[Your LinkedIn]
+
+**Date**: January 29, 2026
 
 ---
 
-*January 2026*
+## SLIDE 2: THE PROBLEM
 
-</div>
+### African Mid-Market Companies Face an Impossible Choice
+
+**Option 1: Enterprise Giants** 🏢
+- SAP, Oracle, Microsoft Dynamics
+- R5M-R50M implementation costs
+- 18-24 month deployments  
+- Complexity overkill for most businesses
+
+**Option 2: Basic Tools** 📊
+- QuickBooks, Xero, Sage One
+- Accounting only - no ERP features
+- Limited scalability
+- Multiple disconnected tools needed
+
+**Option 3: Legacy Systems** 💾
+- Sage Desktop, Pastel
+- On-premise software
+- Limited cloud capabilities
+- High maintenance costs
+
+### The Result?
+**African SMEs pay 10-50x more than global competitors for incomplete, inflexible systems**
+
+---
+
+## SLIDE 3: THE SOLUTION
+
+### Introducing SiyaBusa ERP
+
+**What We Do:**  
+Production-ready, cloud-native ERP built specifically for South African businesses.
+
+**Key Differentiators:**
+
+✅ **Comprehensive**: 25+ integrated modules covering all business operations  
+✅ **Industry-Specific**: Healthcare, Mining, Construction, Property, Agriculture  
+✅ **Compliance Built-In**: SARS, VAT, PAYE, B-BBEE, POPIA - ready from day one  
+✅ **AI-Powered**: Natural language queries, intelligent automation  
+✅ **Fast Deployment**: 2-4 weeks, not 18 months  
+✅ **Fair Pricing**: R980/user/month vs R2,500-R5,000/user (SAP)
+
+**Technology:**  
+Modern, battle-tested stack (Node.js, React, PostgreSQL, AWS)
+
+---
+
+## SLIDE 4: PRODUCT DEMO
+
+### 25+ Modules | Single Platform | Zero Integration Headaches
+
+**Financial Management**
+- General Ledger, AP/AR
+- Cash Management
+- Asset Management (IAS 16)
+- Budget & Forecasting
+
+**Operations**
+- Inventory & Warehousing
+- Purchase Management
+- Sales & CRM
+- Manufacturing (BOM, Work Orders)
+
+**People & Projects**
+- HR & Payroll
+- Time Tracking
+- Project Management
+- Practice Management
+
+**Industry Solutions**
+- Healthcare (Patient mgmt, Medical inventory)
+- Mining (Mineral tracking, Safety compliance)
+- Construction (Project costing, Progress billing)
+- Property (Leases, Tenant billing)
+- Agriculture (Crop mgmt, Farm operations)
+
+**Platform Features**
+- Multi-tenant architecture
+- AI Assistant & Agents
+- Real-time analytics
+- Mobile-responsive
+- API access (400+ endpoints)
+
+---
+
+## SLIDE 5: MARKET OPPORTUNITY
+
+### Large, Growing, Underserved Market
+
+**Total Addressable Market**
+- South African ERP market: **$450M/year**
+- Growing at: **8.2% CAGR**
+- Mid-market segment: **$180M** (our target)
+
+**Target Customer Profile**
+- Company size: 50-500 employees
+- Revenue: R10M-R500M annually
+- Industries: Healthcare, Mining, Construction, Property, Agriculture, Services
+- Pain: Outgrowing spreadsheets, need integrated system
+- Budget: R300K-R1.5M for ERP implementation
+
+**Market Dynamics**
+- Digital transformation accelerating post-COVID
+- Cloud adoption increasing in South Africa
+- SARS e-filing mandates driving compliance software need
+- Global ERP players focused on enterprise (R1B+ companies)
+- Local players stuck with legacy desktop software
+
+**Our Wedge**: The "Goldilocks Market"  
+Too sophisticated for QuickBooks, too small for SAP
+
+---
+
+## SLIDE 6: BUSINESS MODEL
+
+### Per-User SaaS Pricing + Healthy Margins
+
+**Core Pricing: R980 per user per month**
+
+Every user pays — no free tier. Each user covers their cost + provides margin.
+
+| Tier | Per User | Min Users | Min Monthly |
+|------|----------|-----------|-------------|
+| **Starter** | R980 | 5 | R4,900 |
+| **Professional** | R931 (5% off) | 10 | R9,310 |
+| **Enterprise** | R882 (10% off) | 25 | R22,050 |
+
+**Implementation Services (One-Time)**
+- Starter: R7,500 (data migration, 4hr training)
+- Professional: R25,000 (full onboarding, 16hr training)
+- Enterprise: R75,000+ (custom implementation)
+
+**Unit Economics (Per User)**
+- Cost to serve: **R380/user** (AWS, support, dev)
+- Margin: **R600/user (61%)**
+- Average customer: **10 users = R9,800/month**
+- LTV: **R235K** (2-year retention)
+- CAC: **R12K** (via direct sales)
+- LTV/CAC ratio: **20:1** ⭐
+
+---
+
+## SLIDE 7: TRACTION & ROADMAP
+
+### Production-Ready | First Customer Target: May 2026
+
+**Current Status (January 2026)**
+- ✅ **Product**: 100% complete, production-deployed
+- ✅ **Infrastructure**: AWS Cape Town (EC2, RDS, S3)
+- ✅ **Codebase**: 400+ REST APIs, 25+ modules, tested
+- ✅ **Documentation**: Complete technical & user docs
+- 🎯 **Status**: Pre-revenue, ready for launch
+
+**4-Month Plan (Feb-May 2026)**
+
+**Feb**: Marketing Launch
+- LinkedIn + Google Ads campaigns live
+- Landing page optimized
+- 50+ leads captured
+
+**Mar**: Beta Testing
+- 5 beta partners actively using system
+- 100+ qualified leads in pipeline
+- First demos conducted
+
+**Apr**: Sales Push
+- 30+ demo meetings
+- 15+ trials started
+- 5+ proposals sent
+
+**May**: First Customer 🎉
+- **1-3 paying customers signed**
+- **R7,840+ MRR** (8 users @ R980)
+- Case study in production
+
+---
+
+## SLIDE 8: COMPETITIVE LANDSCAPE
+
+### Positioned Between Giants and Basic Tools
+
+|  | **SiyaBusa** | **SAP/Oracle** | **Sage** | **Odoo** | **QuickBooks** |
+|---|-------------|---------------|----------|----------|----------------|
+| **Target Market** | Mid-market SMEs | Enterprise (R1B+) | SME/Mid | SME/Mid | Micro/Small |
+| **Per User/Month** | R980 | R2,500-R5,000 | R1,000-R2,000 | R500-R1,000 | N/A |
+| **Implementation** | R7,500-R75K | R500K-R2M | R100K-R500K | R50K-R200K | R0-R5K |
+| **Deploy Time** | 2-4 weeks | 6-18 months | 3 months | 2 months | 1 day |
+| **Modules** | 25+ | 100+ | 15+ | 30+ | 5 (accounting) |
+| **SA Compliance** | ✅ Built-in | ❌ Custom | ⚠️ Limited | ❌ Custom | ⚠️ Basic |
+| **Cloud** | ✅ Native | ⚠️ Hybrid | ❌ Desktop | ✅ Yes | ✅ Yes |
+| **AI Features** | ✅ Yes | ✅ Premium $$ | ❌ No | ❌ No | ❌ No |
+
+**Our Advantages:**
+1. **Right-sized**: Not overkill (SAP), not limited (QuickBooks)
+2. **SA-first**: Compliance built-in, not bolt-on
+3. **Modern tech**: React UX, AI features, API-first
+4. **Fast**: 2-week deployment vs months/years
+5. **Cost**: 1/10th the price of comparable solutions
+
+---
+
+## SLIDE 9: GO-TO-MARKET STRATEGY
+
+### Land & Expand Through Industry Verticals
+
+**Phase 1 (Months 1-6): Beta Partners**
+- Target: 10 flagship companies (2 per industry)
+- Offer: Free/discounted in exchange for feedback
+- Goal: Case studies, testimonials, product-market fit
+
+**Phase 2 (Months 6-12): Direct Sales**
+- Industry associations (healthcare, mining, construction)
+- LinkedIn outreach (100 messages/week)
+- Monthly demo webinars
+- Trade shows (2 per quarter)
+- Content marketing (weekly blog, case studies)
+
+**Phase 3 (Months 12-24): Channel Partners**
+- Accounting firms (resell to clients)
+- Industry consultants (referral fees)
+- System integrators (implementation partners)
+- Target: 50% of deals through partners by Year 2
+
+**Customer Acquisition Budget (18 months): R1.5M**
+- Digital marketing: R600K
+- Events/trade shows: R400K
+- Content creation: R200K
+- Partner enablement: R300K
+
+---
+
+## SLIDE 10: FINANCIAL PROJECTIONS
+
+### Conservative Growth Path (R980/User)
+
+| Date | Customers | Avg Users | MRR | ARR Run Rate |
+|------|-----------|-----------|-----|---------------|
+| **May 2026** | 1 | 8 | R7,840 | R94K |
+| **Aug 2026** | 3 | 10 | R29,400 | R353K |
+| **Dec 2026** | 8 | 10 | R78,400 | R941K |
+| **Jun 2027** | 20 | 12 | R235,200 | R2.8M |
+| **Dec 2027** | 40 | 15 | R588,000 | R7.1M |
+
+**Key Metrics**
+- Monthly burn rate: ~R41,400
+- Break-even: **5-6 customers** (@ 8 users each)
+- Target break-even: **Q3 2026 (September)**
+- CAC payback: 3-4 months
+- Gross margin: 61% per user
+
+**Why This Works**
+- At R980/user, break-even requires only 5-6 small customers
+- Each user covers their R380 cost + R600 margin
+- No subsidizing free users — sustainable from day one
+
+---
+
+## SLIDE 11: THE TEAM
+
+### Builder + Future Leaders
+
+**Founder & CEO: [Your Name]**
+- Full-stack developer with ERP domain expertise
+- Built entire system: 400+ APIs, 25+ modules, production deployment
+- 9 months from concept to production-ready
+- Vision: Democratize enterprise software for African businesses
+
+**Immediate Hires** (Post-Funding):
+
+**CTO/Tech Lead** (Month 1)
+- Scale technical infrastructure
+- Lead engineering as team grows
+- Security & compliance oversight
+
+**Sales Manager** (Month 1)
+- Execute go-to-market strategy
+- Build sales pipeline & sign customers
+- Manage beta partner relationships
+
+**Customer Success Lead** (Month 3)
+- Onboarding & training
+- Customer retention & expansion
+- Product feedback loop
+
+**Advisory Board** (Assembling):
+- ERP industry veteran
+- African tech investor
+- SA regulatory/compliance expert
+
+---
+
+## SLIDE 12: USE OF FUNDS
+
+### R200,000 Bridge Round | 4-Month Runway
+
+**Development & Operations: R82,500 (41%)**
+- Technical oversight & code review: R60,000
+- Mobile & internet: R6,000
+- Client meetings & demos: R16,500
+
+**Marketing: R35,500 (18%)**
+- LinkedIn Ads: R14,000
+- Google Ads: R9,500
+- Content/Video: R7,500
+- Events/PR: R3,000
+- Referrals: R1,500
+
+**Infrastructure: R27,500 (14%)**
+- AWS hosting (ECS, RDS, S3): R25,500
+- Domain, email, tools: R2,000
+
+**Customer Operations: R19,500 (10%)**
+- Onboarding & training: R12,000
+- Demo environments: R4,000
+- Customer success tools: R3,500
+
+**Legal & Compliance: R14,000 (7%)**
+- Terms of service, contracts: R7,500
+- Security audit: R2,500
+- Insurance (PI, cyber): R4,000
+
+**Business Setup: R9,500 (5%)**
+- Payment gateway (Payfast/Yoco): R4,000
+- First hire preparation: R5,500
+
+**Contingency: R11,500 (6%)**
+- ~10% monthly buffer
+
+**Milestones Achieved with Funding:**
+- **First paying customer by May 2026**
+- R7,840+ MRR (8 users @ R980)
+- Break-even path validated
+- Ready for seed round (R2M-R5M)
+
+---
+
+## SLIDE 13: INVESTMENT TERMS
+
+### R200,000 Bridge Round | Flexible Terms
+
+**Amount**: R200,000 (~$11,000 USD)
+
+**Option A: Convertible Note**
+- Term: 12 months
+- Interest: 0%
+- Conversion: 20% discount to seed round valuation
+- Automatic conversion at qualified financing (>R2M)
+
+**Option B: SAFE Note**
+- Valuation cap: R5,000,000
+- Discount: 20% to next round
+- Pro-rata rights: Yes
+- MFN clause: Yes
+
+**Option C: Direct Equity**
+- Amount: R200,000
+- Equity: 4%
+- Pre-money: R5,000,000
+
+**What Investors Get:**
+- Weekly progress updates
+- Early access to product
+- Pro-rata rights for seed round
+- Proof of market before larger commitment
+
+---
+
+## SLIDE 14: EXIT OPPORTUNITIES
+
+### Multiple Paths to Liquidity
+
+**Timeline**: 3-7 years
+
+**Acquisition Scenarios (Most Likely)**
+
+**Global ERP Expansion** (Year 3-5)
+- **Acquirers**: SAP, Oracle, Microsoft, Sage, Infor
+- **Logic**: Expand African footprint without building from scratch
+- **Valuation**: 5-8x ARR (standard for B2B SaaS)
+
+**SA Tech Consolidation** (Year 4-6)
+- **Acquirers**: Naspers, Capitec, TymeBank, Discovery
+- **Logic**: Add ERP capabilities to existing offerings
+- **Valuation**: 4-6x ARR
+
+**Private Equity** (Year 5-7)
+- **Acquirers**: African tech-focused PE funds
+- **Logic**: Roll-up strategy, build African software giant
+- **Valuation**: 6-10x EBITDA
+
+**IPO on JSE** (Year 7-10)
+- If scaled to R100M+ ARR
+- Precedent: Datatec, EOH, Adapt IT (before acquisition)
+
+**Comparable African Tech Exits:**
+- **Yoco**: $83M raised (PayTech)
+- **JUMO**: $120M raised (FinTech)
+- **Aerobotics**: $17M raised (AgriTech)
+- **SweepSouth**: $7M raised (MarketPlace)
+
+---
+
+## SLIDE 15: WHY NOW?
+
+### Perfect Storm of Opportunity
+
+**Market Drivers:**
+1. **Digital Transformation**: COVID accelerated cloud adoption by 5+ years
+2. **Compliance Mandates**: SARS e-filing, POPIA driving software adoption
+3. **SME Growth**: SA mid-market growing despite macro headwinds
+4. **Global Neglect**: Big ERP players focused on enterprise, ignoring SMEs
+5. **Tech Maturity**: Modern stack (Node, React, AWS) now proven for ERPs
+
+**Competitive Timing:**
+- Sage stuck with legacy desktop
+- Odoo limited SA presence
+- SAP/Oracle too expensive for mid-market
+- QuickBooks/Xero no ERP features
+- **Gap exists - we fill it**
+
+**Team Readiness:**
+- Founder built production system in 9 months
+- No MVP - actual production-ready product
+- AWS deployed, customers can start tomorrow
+- Not "build and hope" - it's "sell what exists"
+
+---
+
+## SLIDE 16: RISKS & MITIGATION
+
+### What Could Go Wrong? (And Our Plans)
+
+**Risk 1: Customer Acquisition Cost Too High**
+- Mitigation: Niche industry focus, beta partners = case studies, channel partners lower CAC
+
+**Risk 2: Competition from Global Players**
+- Mitigation: We're faster, localized, 1/10th price. Hard for them to compete without cannibalizing.
+
+**Risk 3: Technical Complexity/Scalability**
+- Mitigation: Modern stack, battle-tested technologies, Docker/AWS proven scalable
+
+**Risk 4: Regulatory Changes (SARS, Tax Law)**
+- Mitigation: Modular compliance system, easy to update, advisory board with compliance experts
+
+**Risk 5: Key Person Risk (Founder)**
+- Mitigation: CTO hire (Month 1), documentation complete, code well-structured
+
+**Risk 6: Economic Downturn in SA**
+- Mitigation: ERP is critical infra (customers don't cut), can expand to Nigeria/Kenya
+
+---
+
+## SLIDE 17: TRACTION METRICS (Updated Monthly)
+
+### Current Status (January 29, 2026)
+
+**Product**
+- ✅ Production-ready (AWS deployed)
+- ✅ 400+ REST API endpoints
+- ✅ 25+ modules implemented
+- ✅ Full technical documentation
+- ✅ Security & authentication complete
+
+**Business**
+- Pipeline: Building (marketing launching Feb)
+- Beta partners: In recruitment
+- Paying customers: Pre-revenue
+- MRR: R0 (target: first customer May 2026)
+
+**Updates** (Fill in as you progress):
+- Week of Jan 2: Raised seed round
+- Week of Jan 9: First 5 beta partners signed
+- Week of Jan 16: First customer live
+- Week of Jan 23: Hit R10K MRR
+- ...etc
+
+---
+
+## SLIDE 18: CALL TO ACTION
+
+### Join Us in Transforming African Business Software
+
+**What We're Building:**
+An African ERP company serving 1,000+ businesses by 2030
+
+**Why This Matters:**
+- African SMEs deserve world-class software at fair prices
+- Technology should enable growth, not hold businesses back
+- Local solutions for local challenges
+
+**What We Need:**
+- R200,000 bridge capital (4-month runway)
+- Strategic advisors with ERP/Africa expertise
+- Intros to beta partners & early customers
+
+**What You Get:**
+- Early entry at R5M valuation cap
+- Proof of market before larger commitment
+- Weekly updates on progress
+- Pro-rata rights for seed round
+
+**Next Steps:**
+1. **Review**: Due diligence materials
+2. **Demo**: Live product walkthrough
+3. **Meet**: Coffee/call with founder
+4. **Decide**: 2-week close timeline
+
+---
+
+## SLIDE 19: THANK YOU
+
+**Let's Build the Future of African Business Software Together**
+
+---
+
+**Contact:**  
+**[Your Name]** - Founder & CEO  
+Email: founder@siyabusa.co.za  
+LinkedIn: [Your LinkedIn]  
+Website: siyabusa.co.za (launching)
+
+**Appendix Available:**
+- Product demo (live or video)
+- Technical architecture docs
+- Financial model (detailed)
+- Customer case studies (post-beta)
+- Team hiring roadmap
+- Compliance documentation
+
+---
+
+**Date**: January 29, 2026  
+**Version**: 2.0
+

@@ -30,13 +30,13 @@ The system is deployed on AWS infrastructure and accessible for demonstration.
 
 | Factor | Global Vendors | SiyaBusa |
 |:-------|:---------------|:---------|
-| **Pricing** | R50K-R200K/month | R8K-R25K/month (40% less) |
+| **Pricing** | R2,500-R5,000/user | R980/user (60% less) |
 | **SA Compliance** | R500K-R2M+ localization project | Native, built-in |
-| **Implementation** | 6-12 months | 4-8 weeks |
+| **Implementation** | 6-12 months | 2-4 weeks |
+| **Modules** | Pay per module | Industry-tailored suite |
 | **AI Assistant** | None or limited | 9 specialized agents |
-| **Local Support** | Via partners | Direct relationship |
 
-*Note: We do not name specific competitors in public materials to comply with Advertising Standards Authority guidelines.*
+*Note: Customers get modules relevant to their industry — logistics companies get logistics tools, manufacturers get production tools.*
 
 ---
 
@@ -56,21 +56,20 @@ Many of our target customers *can't* afford SAP. We're not stealing their market
 
 # 💰 FINANCIALS
 
-## Q: Why R2 million?
+## Q: Why R200,000?
 
-**A:** This provides 12 months of runway to:
+**A:** This provides 4 months of runway (Feb-May 2026) to:
 
 | Category | Amount | Purpose |
 |:---------|-------:|:--------|
-| Sales & Marketing | R800K | Customer acquisition, brand building |
-| Team Expansion | R600K | Sales, customer success, support |
-| Operations | R300K | AWS, tools, legal, office |
-| Product Enhancement | R200K | Features, integrations, UX |
-| Working Capital | R100K | Reserve for opportunities |
+| Development & Operations | R81,000 | Technical oversight, code reviews, client demos |
+| Marketing (Paid Ads) | R44,000 | LinkedIn + Google Ads, content |
+| Infrastructure (AWS) | R28,000 | Production hosting |
+| Contingency | R47,000 | Buffer for opportunities |
 
-**Total:** R2,000,000
+**Total:** R200,000
 
-This is sufficient to reach 25+ paying customers and R150K+ MRR, positioning us for Series A.
+**Objective:** First paying customer by May 2026. Break-even at just 5-6 customers.
 
 ---
 
@@ -78,33 +77,42 @@ This is sufficient to reach 25+ paying customers and R150K+ MRR, positioning us 
 
 | Term | Detail |
 |:-----|:-------|
-| **Investment Amount** | R2,000,000 |
-| **Investment Type** | Ordinary Shares |
-| **Pre-Money Valuation** | R10,000,000 |
-| **Post-Money Valuation** | R12,000,000 |
-| **Equity Offered** | 16.67% |
-| **Minimum Investment** | R100,000 |
+| **Investment Amount** | R200,000 |
+| **Runway** | 4 months (Feb-May 2026) |
+| **Objective** | First paying customer |
+| **Break-even** | 5-6 customers |
 
-### Investor Rights
+### Investment Structure Options
 
-- Monthly financial reports
-- Board observer seat (for investors holding 5%+)
-- Pro-rata rights for future rounds
-- Anti-dilution protection
-- Tag-along rights
+**Option A: Bridge Loan**
+- Amount: R200,000
+- Term: 12 months
+- Interest: 0% (convert to equity at next round)
+- Conversion: 20% discount to Series A valuation
+
+**Option B: SAFE Note**
+- Amount: R150,000 - R500,000
+- Valuation Cap: R5,000,000
+- Discount: 20%
+- Pro-rata rights: Yes
+
+**Option C: Equity**
+- Amount: R500,000+
+- Equity: 10-15%
+- Pre-money: R5,000,000
 
 ---
 
 ## Q: When will you be profitable?
 
 **Timeline:**
-- **Jan-Mar 2026:** Beta testing (5 partners per industry = 30 total, R0 revenue)
-- **Apr-Sep 2026:** Dependency building (15 partners, minimal revenue)
-- **Oct-Dec 2026:** First real revenue (25 paying customers, R150K MRR)
-- **Q1 2027:** Break-even (~28 customers at R8K average)
-- **Q2 2027+:** Cash positive
+- **Feb-Mar 2026:** Marketing launch, beta testing
+- **Apr 2026:** Pipeline building, demos
+- **May 2026:** First paying customer (R7,840+ MRR)
+- **Q3 2026:** Break-even (~5-6 customers)
+- **Q4 2026+:** Cash positive
 
-We need ~R225K MRR to break even. At R8K average per customer, that's 28 customers.
+**At R980/user, we only need 5-6 small customers (8 users each) to break even.**
 
 ---
 

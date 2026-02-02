@@ -18,9 +18,12 @@ We don't compete with Xero. We don't compete with SAP. We fill the gap.
 
 ## Pricing Philosophy
 
-**RELIABILITY + VALUE + EVERYTHING INCLUDED**
+**VALUE LEADERSHIP + INDUSTRY FOCUS**
 
-Our competitive advantage is **what's included by default**:
+Our approach:
+- **R980 per user per month** — simple, predictable pricing
+- **Industry-tailored modules** — customers get what's relevant to their business
+- **Every user covers their cost** — R380 cost + R600 margin = R980
 
 | Feature | SAP/Oracle | Sage | SiyaBusa |
 |:--------|:-----------|:-----|:---------|
@@ -29,7 +32,7 @@ Our competitive advantage is **what's included by default**:
 | SARS Integration | Extra R25K+ | ❌ | **INCLUDED** |
 | Audit Tools | Extra R20K+ | ❌ | **INCLUDED** |
 | AI Assistants | ❌ | ❌ | **INCLUDED** |
-| Communications Hub | Use Zoom/Slack | Use Zoom/Slack | **INCLUDED** |
+| Industry Modules | Extra | Extra | **Tailored to you** |
 
 **When customers see what's INCLUDED, the value is undeniable.**
 
@@ -37,138 +40,84 @@ Our competitive advantage is **what's included by default**:
 
 # Pricing Structure
 
-## Platform + Per-User Model
+## Simple Per-User Pricing
 
-### 🌱 Starter Plan — R8,000/month + R650/user
+### Standard Rate: R980 per user per month
 
-**For businesses ready to graduate from basic accounting (5-20 users)**
+No platform fees. No hidden costs. Every user pays the same rate.
 
-#### Everything Included:
+#### Why R980 Works (Unit Economics)
 
-| Category | What You Get |
-|:---------|:-------------|
-| **Finance** | GL, AP, AR, Bank Reconciliation, Cash Management |
-| **Operations** | Sales, Purchase, Basic Inventory, CRM |
-| **Compliance** | SARS Sentinel, VAT automation, Basic Audit Trail |
-| **AI** | 3 AI Assistants (Finance, Sales, Inventory) |
-| **Support** | Business hours, 5 training hours |
-
-**Example Pricing:**
-| Users | Platform | User Fees | **Total/Month** |
-|:------|:---------|:----------|:----------------|
-| 5 | R8,000 | R3,250 | **R11,250** |
-| 10 | R8,000 | R6,500 | **R14,500** |
-| 15 | R8,000 | R9,750 | **R17,750** |
-| 20 | R8,000 | R13,000 | **R21,000** |
+| Component | Per User/Month | Notes |
+|:----------|---------------:|:------|
+| AWS Infrastructure | R55 | Multi-tenant, shared resources |
+| Support allocation | R100 | Helpdesk, tickets, training |
+| Development/Updates | R150 | Ongoing improvements |
+| Overhead | R75 | Admin, compliance, tools |
+| **Total Cost to Serve** | **R380** | |
+| **Margin** | **R600 (61%)** | Healthy SaaS margin |
+| **Final Price** | **R980/user** | Covers cost + profit |
 
 ---
 
-### ⭐ Professional Plan — R15,000/month + R950/user
+### 🌱 Starter (5-15 users) — R980/user
 
-**For growing businesses needing full operational control (10-50 users)**
+**Minimum Monthly: R4,900** (5 users)
 
-#### Everything Included:
-
-| Category | What You Get |
-|:---------|:-------------|
-| **Everything in Starter** | + |
-| **Manufacturing** | BOM, Work Orders, Production Planning, Costing |
-| **Warehouse** | Multi-location, Bin Management, Picking, Transfers |
-| **Projects** | Job Costing, Time Tracking, Billing |
-| **HR** | Employee Records, Leave, Org Structure |
-| **Compliance** | Full SARS Sentinel, Audit Ready, B-BBEE Tracker |
-| **AI** | 6 AI Assistants (all operational areas) |
-| **Communications** | Video Meetings, Team Chat (replaces Zoom/Slack) |
-| **Support** | Priority support, 15 training hours |
-
-**Example Pricing:**
-| Users | Platform | User Fees | **Total/Month** |
-|:------|:---------|:----------|:----------------|
-| 10 | R15,000 | R9,500 | **R24,500** |
-| 25 | R15,000 | R23,750 | **R38,750** |
-| 50 | R15,000 | R47,500 | **R62,500** |
-
-<div style="page-break-before: always;"></div>
-
-### 🏢 Enterprise Plan — R25,000/month + R1,200/user
-
-**For established businesses with complex requirements (25-100+ users)**
-
-#### Everything Included:
-
-| Category | What You Get |
-|:---------|:-------------|
-| **Everything in Professional** | + |
-| **Multi-Entity** | Consolidation, Intercompany, Multiple Companies |
-| **Asset Management** | IAS 16 Compliant, Depreciation Schedules |
-| **Full Payroll** | SA Payroll, PAYE, UIF, SDL, IRP5 Generation |
-| **Treasury** | Cash Flow Forecasting, Bank Integration |
-| **Advanced Analytics** | Custom Dashboards, Predictive Insights |
-| **Compliance** | Full Suite - SARS Sentinel, Audit Ready, POPIA, B-BBEE |
-| **AI** | All 9 AI Assistants with Advanced Automation |
-| **Communications** | Full Hub with Recording, Transcription |
-| **API** | Full REST API, Webhooks, Integration Toolkit |
-| **Support** | 24/7 support, dedicated account manager, 30 training hours |
-
-**Example Pricing:**
-| Users | Platform | User Fees | **Total/Month** |
-|:------|:---------|:----------|:----------------|
-| 25 | R25,000 | R30,000 | **R55,000** |
-| 50 | R25,000 | R60,000 | **R85,000** |
-| 75 | R25,000 | R90,000 | **R115,000** |
-| 100 | R25,000 | R120,000 | **R145,000** |
-
-<div style="page-break-before: always;"></div>
-
-### 🌍 Corporate Plan — R45,000/month + R1,500/user
-
-**For large enterprises and multi-site operations (50+ users)**
-
-#### Everything Included:
-
-| Category | What You Get |
-|:---------|:-------------|
-| **Everything in Enterprise** | + |
-| **Unlimited Entities** | No limits on companies or consolidation |
-| **Industry Modules** | Any 2 industry verticals included |
-| **Unlimited Storage** | No data limits |
-| **Dedicated Team** | Named support engineers, quarterly reviews |
-| **On-Site Support** | 4 on-site visits per year |
-| **SLA Guarantee** | 99.9% uptime, 1-hour response |
-| **Custom Development** | 20 hours/year included |
-
-**Example Pricing:**
-| Users | Platform | User Fees | **Total/Month** |
-|:------|:---------|:----------|:----------------|
-| 50 | R45,000 | R75,000 | **R120,000** |
-| 100 | R45,000 | R142,500* | **R187,500** |
-| 150 | R45,000 | R202,500* | **R247,500** |
-| 200 | R45,000 | R255,000* | **R300,000** |
-
-*Volume discounts applied
+| What's Included |
+|:----------------|
+| Industry-relevant modules tailored to your business |
+| Core: Accounting, Inventory, CRM, HR |
+| 10GB storage per user |
+| Email support (24hr response) |
+| Mobile access |
 
 ---
 
-## Volume Discounts
+### ⭐ Professional (10-50 users) — R931/user (5% volume discount)
 
-| User Count | Discount on User Fees |
-|:-----------|:----------------------|
-| 1-50 | Standard rate |
-| 51-100 | 5% off |
-| 101-150 | 10% off |
-| 151-250 | 15% off |
-| 251+ | Custom pricing |
+**Minimum Monthly: R9,310** (10 users)
+
+| What's Included |
+|:----------------|
+| Everything in Starter, plus: |
+| 25GB storage per user |
+| Priority support (8hr response) |
+| Advanced reporting & dashboards |
+| API access |
+| Dedicated onboarding |
 
 ---
 
-## Annual Commitment Savings
+### 🏢 Enterprise (25+ users) — R882/user (10% volume discount)
 
-| Plan | Annual Billing Discount |
-|:-----|:------------------------|
-| Starter | 10% off |
-| Professional | 12% off |
-| Enterprise | 15% off |
-| Corporate | 18% off |
+**Minimum Monthly: R22,050** (25 users)
+
+| What's Included |
+|:----------------|
+| Everything in Professional, plus: |
+| Unlimited storage |
+| Dedicated account manager |
+| Phone support (4hr response) |
+| Custom SLA |
+| White-label option |
+
+---
+
+## Competitive Comparison
+
+| Solution | Per User/Month | 20 Users/Month | Notes |
+|:---------|---------------:|---------------:|:------|
+| SAP Business One | R2,500 - R5,000 | R50,000 - R100,000 | + R500K implementation |
+| Oracle NetSuite | R1,500 - R3,000 | R30,000 - R60,000 | + Platform fee |
+| Sage X3 | R1,000 - R2,000 | R20,000 - R40,000 | Limited modules |
+| Sage 300 | R800 - R1,200 | R16,000 - R24,000 | Basic ERP |
+| **SiyaBusa** | **R980** | **R19,600** | **Industry-tailored suite** |
+
+**Our Position:**
+- **50-60% cheaper than SAP/Oracle**
+- **Competitive with Sage** but with industry-specific depth
+- **No platform fees** — just per-user pricing
 
 ---
 
