@@ -195,14 +195,15 @@ class AICategorizationService {
       return this.ruleBasedCategorize(transactions, categories);
     }
 
-    // Get learned patterns and chart of accounts for context
-    const [learnedPatterns, chartOfAccounts] = await Promise.all([
+    // Get learned patterns, chart of accounts, and tenant AI config for context
+    const [learnedPatterns, chartOfAccounts, tenantConfig] = await Promise.all([
       this.getLearnedPatterns(tenantId),
-      this.getChartOfAccounts(tenantId)
+      this.getChartOfAccounts(tenantId),
+      this.getTenantConfig(tenantId)
     ]);
 
-    // Build prompt with full context
-    const prompt = this.buildCategorizationPrompt(transactions, categoryList, learnedPatterns, chartOfAccounts);
+    // Build prompt with full context including business context
+    const prompt = this.buildCategorizationPrompt(transactions, categoryList, learnedPatterns, chartOfAccounts, tenantConfig);
 
     try {
       let suggestions: CategorySuggestion[];
@@ -212,6 +213,11 @@ class AICategorizationService {
       } else {
         // OpenAI or x.ai (both use OpenAI-compatible API)
         suggestions = await this.categorizeWithOpenAI(prompt, transactions);
+      }
+
+      // Apply tenant default rules (these override AI suggestions)
+      if (tenantConfig?.default_rules) {
+        suggestions = this.applyDefaultRules(suggestions, transactions, tenantConfig.default_rules);
       }
 
       // Save suggestions to database
@@ -225,17 +231,79 @@ class AICategorizationService {
     }
   }
 
+  /**
+   * Get tenant-specific AI configuration
+   */
+  private async getTenantConfig(tenantId: string): Promise<any> {
+    try {
+      const result = await pool.query(
+        `SELECT * FROM ai_categorization_config WHERE tenant_id = $1`,
+        [tenantId]
+      );
+      return result.rows[0] || null;
+    } catch {
+      return null; // Table may not exist yet
+    }
+  }
+
+  /**
+   * Apply tenant's manually-defined default rules (these override AI)
+   * Rules format: [{pattern: 'VODACOM', gl_account_code: '6510', gl_account_name: 'Telephone', category: 'TELEPHONE'}]
+   */
+  private applyDefaultRules(
+    suggestions: CategorySuggestion[],
+    transactions: TransactionForCategorization[],
+    rules: any[]
+  ): CategorySuggestion[] {
+    if (!Array.isArray(rules) || rules.length === 0) return suggestions;
+
+    return suggestions.map(suggestion => {
+      const txn = transactions.find(t => t.line_id === suggestion.line_id);
+      if (!txn) return suggestion;
+
+      const desc = txn.description.toUpperCase();
+      for (const rule of rules) {
+        if (rule.pattern && desc.includes(rule.pattern.toUpperCase())) {
+          return {
+            ...suggestion,
+            suggested_category: rule.category || suggestion.suggested_category,
+            gl_account: rule.gl_account_code || suggestion.gl_account,
+            confidence: 98,
+            reasoning: `Matched tenant rule: "${rule.pattern}" → ${rule.gl_account_name || rule.gl_account_code}`
+          };
+        }
+      }
+      return suggestion;
+    });
+  }
+
   private buildCategorizationPrompt(
     transactions: TransactionForCategorization[],
     categoryList: string,
     learnedPatterns: string,
-    chartOfAccounts: string
+    chartOfAccounts: string,
+    tenantConfig?: any
   ): string {
     const transactionList = transactions.map((t, i) =>
       `${i + 1}. [ID:${t.line_id}] ${t.is_debit ? 'DEBIT (expense/payment)' : 'CREDIT (income/receipt)'} R${Math.abs(t.amount).toFixed(2)} - "${t.description}" (${t.reference || 'No ref'})`
     ).join('\n');
 
-    let prompt = `You are a South African chartered accountant categorizing bank transactions for a small/medium business.
+    let prompt = `You are a South African chartered accountant categorizing bank transactions`;
+
+    // Add business context if configured
+    if (tenantConfig?.business_type || tenantConfig?.business_description) {
+      prompt += ` for a ${tenantConfig.business_type || 'business'}`;
+      if (tenantConfig.business_description) {
+        prompt += `.\n\nBUSINESS CONTEXT: ${tenantConfig.business_description}`;
+      }
+      if (tenantConfig.industry_keywords?.length > 0) {
+        prompt += `\nINDUSTRY TERMS: ${tenantConfig.industry_keywords.join(', ')}`;
+      }
+    } else {
+      prompt += ` for a small/medium business`;
+    }
+
+    prompt += `.
 
 CRITICAL RULES:
 - DEBIT transactions are money going OUT (expenses, supplier payments, bank charges, salaries, rent)

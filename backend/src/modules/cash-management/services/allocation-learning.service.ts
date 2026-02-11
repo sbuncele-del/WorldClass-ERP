@@ -91,6 +91,157 @@ class AllocationLearningService {
       CREATE INDEX IF NOT EXISTS idx_allocation_patterns_keywords 
       ON allocation_patterns USING GIN(keywords)
     `).catch(() => {});
+
+    // Enable pg_trgm for description similarity matching (idempotent)
+    await pool.query(`CREATE EXTENSION IF NOT EXISTS pg_trgm`).catch(() => {});
+
+    // AI Configuration table — per-tenant settings for how the AI behaves
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ai_categorization_config (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL UNIQUE,
+        -- Business context that shapes the AI prompt
+        business_type VARCHAR(100),           -- e.g. 'consulting', 'retail', 'construction', 'restaurant'
+        business_description TEXT,            -- Freeform: "We are a civil engineering firm..."
+        industry_keywords TEXT[] DEFAULT '{}',-- Domain-specific terms: ['subcontractor', 'plant hire', 'BOQ']
+        -- Default GL mappings (manual overrides that ALWAYS apply)
+        default_rules JSONB DEFAULT '[]',     -- [{pattern: 'VODACOM', gl_account_code: '6510', gl_account_name: 'Telephone'}]
+        -- Behavior settings
+        auto_allocate_threshold INT DEFAULT 85,     -- Only auto-allocate if confidence >= this
+        learning_enabled BOOLEAN DEFAULT true,       -- Whether to learn from manual allocations
+        ai_provider_preference VARCHAR(20) DEFAULT 'groq', -- groq | xai | openai | anthropic | rule-based
+        -- Audit
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+  }
+
+  /**
+   * Consolidate duplicate patterns that have the same GL account and overlapping keywords.
+   * Call this periodically or after bulk imports to clean up fragmentation.
+   */
+  async consolidatePatterns(tenantId: string): Promise<{ merged: number; remaining: number }> {
+    // Find duplicate groups: same tenant + GL account + transaction type
+    const groups = await pool.query(
+      `SELECT gl_account_id, transaction_type, COUNT(*) as cnt,
+              array_agg(id ORDER BY frequency DESC) as pattern_ids
+       FROM allocation_patterns
+       WHERE tenant_id = $1
+       GROUP BY gl_account_id, transaction_type
+       HAVING COUNT(*) > 1`,
+      [tenantId]
+    );
+
+    let merged = 0;
+    for (const group of groups.rows) {
+      const ids = group.pattern_ids;
+      const keepId = ids[0]; // Keep the highest-frequency pattern
+      const removeIds = ids.slice(1);
+
+      // Merge all keywords and stats into the keeper
+      const mergeResult = await pool.query(
+        `SELECT 
+           array_agg(DISTINCT kw) as all_keywords,
+           SUM(frequency) as total_freq,
+           SUM(accepted_count) as total_accepted,
+           SUM(rejected_count) as total_rejected,
+           MIN(amount_min) as min_amt,
+           MAX(amount_max) as max_amt
+         FROM allocation_patterns, unnest(keywords) as kw
+         WHERE id = ANY($1::uuid[])`,
+        [[keepId, ...removeIds]]
+      );
+
+      const m = mergeResult.rows[0];
+      const newConfidence = Math.min(99, 40 + Math.min(50, parseInt(m.total_freq) * 8));
+
+      await pool.query(
+        `UPDATE allocation_patterns 
+         SET keywords = $2, frequency = $3, confidence_score = $4,
+             accepted_count = $5, rejected_count = $6,
+             amount_min = $7, amount_max = $8, updated_at = NOW()
+         WHERE id = $1`,
+        [keepId, m.all_keywords, parseInt(m.total_freq), newConfidence,
+         parseInt(m.total_accepted), parseInt(m.total_rejected),
+         parseFloat(m.min_amt), parseFloat(m.max_amt)]
+      );
+
+      await pool.query(
+        `DELETE FROM allocation_patterns WHERE id = ANY($1::uuid[])`,
+        [removeIds]
+      );
+
+      merged += removeIds.length;
+    }
+
+    const remaining = await pool.query(
+      `SELECT COUNT(*) FROM allocation_patterns WHERE tenant_id = $1`, [tenantId]
+    );
+
+    return { merged, remaining: parseInt(remaining.rows[0].count) };
+  }
+
+  /**
+   * Get or create AI configuration for a tenant
+   */
+  async getConfig(tenantId: string): Promise<any> {
+    await this.ensureTable();
+    const result = await pool.query(
+      `SELECT * FROM ai_categorization_config WHERE tenant_id = $1`, [tenantId]
+    );
+    if (result.rows.length > 0) return result.rows[0];
+
+    // Create default config
+    await pool.query(
+      `INSERT INTO ai_categorization_config (tenant_id) VALUES ($1) ON CONFLICT (tenant_id) DO NOTHING`,
+      [tenantId]
+    );
+    const newResult = await pool.query(
+      `SELECT * FROM ai_categorization_config WHERE tenant_id = $1`, [tenantId]
+    );
+    return newResult.rows[0];
+  }
+
+  /**
+   * Update AI configuration for a tenant
+   */
+  async updateConfig(tenantId: string, config: {
+    business_type?: string;
+    business_description?: string;
+    industry_keywords?: string[];
+    default_rules?: any[];
+    auto_allocate_threshold?: number;
+    learning_enabled?: boolean;
+    ai_provider_preference?: string;
+  }): Promise<any> {
+    await this.ensureTable();
+
+    const fields: string[] = [];
+    const values: any[] = [tenantId];
+    let idx = 2;
+
+    if (config.business_type !== undefined) { fields.push(`business_type = $${idx++}`); values.push(config.business_type); }
+    if (config.business_description !== undefined) { fields.push(`business_description = $${idx++}`); values.push(config.business_description); }
+    if (config.industry_keywords !== undefined) { fields.push(`industry_keywords = $${idx++}`); values.push(config.industry_keywords); }
+    if (config.default_rules !== undefined) { fields.push(`default_rules = $${idx++}`); values.push(JSON.stringify(config.default_rules)); }
+    if (config.auto_allocate_threshold !== undefined) { fields.push(`auto_allocate_threshold = $${idx++}`); values.push(config.auto_allocate_threshold); }
+    if (config.learning_enabled !== undefined) { fields.push(`learning_enabled = $${idx++}`); values.push(config.learning_enabled); }
+    if (config.ai_provider_preference !== undefined) { fields.push(`ai_provider_preference = $${idx++}`); values.push(config.ai_provider_preference); }
+
+    fields.push('updated_at = NOW()');
+
+    await pool.query(
+      `INSERT INTO ai_categorization_config (tenant_id) VALUES ($1) ON CONFLICT (tenant_id) DO NOTHING`,
+      [tenantId]
+    );
+
+    await pool.query(
+      `UPDATE ai_categorization_config SET ${fields.join(', ')} WHERE tenant_id = $1`,
+      values
+    );
+
+    return this.getConfig(tenantId);
   }
 
   /**
@@ -105,13 +256,15 @@ class AllocationLearningService {
     // Normalize
     const normalized = description.toUpperCase().trim();
 
-    // Only remove truly meaningless words (articles, prepositions, generic filler)
-    // Keep banking terms like EFT, PAYMENT, TRANSFER - they help identify transaction types
+    // Banking noise words: these appear in almost every transaction and carry NO
+    // identifying value. The REAL signal is the payee/vendor name.
     const noiseWords = new Set([
       'THE', 'AND', 'FOR', 'FROM', 'TO', 'OF', 'IN', 'ON', 'AT', 'BY',
-      'REF', 'REFERENCE', 'DATE', 'NO', 'NUMBER',
+      'REF', 'REFERENCE', 'DATE', 'NO', 'NUMBER', 'PAYMENT', 'PAY',
       'ZAR', 'PTY', 'LTD', 'CC', 'INC', 'CO', 'NPC', 'SOC', 'LLC',
-      'NOT', 'PROVIDED', 'UNKNOWN',
+      'NOT', 'PROVIDED', 'UNKNOWN', 'PAYSHAP',
+      // SA banking generics that don't help identify WHO/WHAT
+      'EFT', 'ACB', 'MAGTAPE', 'INSTANT', 'MONEY',
     ]);
 
     // Split on non-alpha characters, filter noise
@@ -119,15 +272,15 @@ class AllocationLearningService {
       .replace(/[^A-Z0-9\s]/g, ' ')
       .split(/\s+/)
       .filter(w => w.length >= 3 && !noiseWords.has(w))
-      .filter(w => !/^\d{6,}$/.test(w)); // Remove long number sequences (account numbers, refs) but keep short ones
+      .filter(w => !/^\d{4,}$/.test(w)); // Remove number sequences 4+ digits (refs, account numbers)
 
-    // Also extract compound terms (e.g. "DEBIT ORDER", "BANK CHARGE", "SERVICE FEE")
+    // Extract compound terms that ARE useful identifiers
     const compoundTerms: string[] = [];
-    const normalizedLower = normalized.toLowerCase();
     const compounds = [
       'DEBIT ORDER', 'BANK CHARGE', 'SERVICE FEE', 'ACCOUNT FEE',
-      'MONTHLY FEE', 'ADMIN FEE', 'DEBIT TRANSFER', 'RECURRING PAYMENT',
+      'MONTHLY FEE', 'ADMIN FEE', 'RECURRING PAYMENT',
       'SALARY PAYMENT', 'NETT PAY', 'NET PAY', 'STOP ORDER',
+      'OVERDRAFT FEE', 'MEMBERSHIP FEE', 'MANAGEMENT FEE',
     ];
     for (const term of compounds) {
       if (normalized.includes(term)) {
@@ -135,8 +288,29 @@ class AllocationLearningService {
       }
     }
 
+    // Extract the payee/vendor name from common SA bank description formats:
+    // "IB PAYMENT FROM JOHN SMITH" → extract "JOHN SMITH"
+    // "DEBIT ORDER VODACOM" → extract "VODACOM"
+    // "PAYSHAP PAYMENT FROM ENGEN" → extract "ENGEN"
+    const payeePatterns = [
+      /(?:PAYMENT|PAY|PAYSHAP)\s+(?:FROM|TO)\s+(.+?)(?:\s+REF|\s+\d{4,}|$)/i,
+      /(?:DEBIT ORDER|STOP ORDER)\s+(.+?)(?:\s+REF|\s+\d{4,}|$)/i,
+      /(?:EFT|ACB|MAGTAPE)\s+(?:FROM|TO)\s+(.+?)(?:\s+REF|\s+\d{4,}|$)/i,
+    ];
+    for (const pattern of payeePatterns) {
+      const match = normalized.match(pattern);
+      if (match && match[1]) {
+        const payeeName = match[1].trim().replace(/[^A-Z0-9\s]/g, '').trim();
+        if (payeeName.length >= 3) {
+          // Add the full payee name as a compound keyword (most valuable signal)
+          compoundTerms.push('PAYEE:' + payeeName.replace(/\s+/g, '_'));
+        }
+      }
+    }
+
     // Remove duplicates, combine single words and compound terms
-    return [...new Set([...words, ...compoundTerms])];
+    const result = [...new Set([...words, ...compoundTerms])];
+    return result.length > 0 ? result : words; // Fallback to unfiltered words if nothing left
   }
 
   /**
@@ -168,16 +342,23 @@ class AllocationLearningService {
     const glName = accountResult.rows[0]?.account_name || '';
 
     // Check if a similar pattern already exists
+    // IMPROVED: Use description_pattern similarity + GL account match, not just keyword overlap.
+    // This prevents fragmented patterns (18 separate "IB PAYMENT FROM" entries).
     const existingResult = await pool.query(
-      `SELECT id, keywords, frequency, amount_min, amount_max, confidence_score
+      `SELECT id, keywords, frequency, amount_min, amount_max, confidence_score, description_pattern
        FROM allocation_patterns
        WHERE tenant_id = $1 
          AND gl_account_id = $2 
          AND transaction_type IN ($3, 'both')
-         AND keywords && $4::text[]
+         AND (
+           -- Match on keywords overlap
+           keywords && $4::text[]
+           -- OR match on similar description pattern
+           OR similarity(COALESCE(description_pattern, ''), $5) > 0.4
+         )
        ORDER BY frequency DESC
        LIMIT 1`,
-      [tenantId, glAccountId, txnType, keywords]
+      [tenantId, glAccountId, txnType, keywords, description]
     );
 
     if (existingResult.rows.length > 0) {

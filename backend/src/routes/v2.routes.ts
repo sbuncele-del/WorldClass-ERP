@@ -4700,6 +4700,54 @@ router.get('/cash-management/reconciliation/ai-stats', async (req: any, res) => 
 });
 
 /**
+ * Get AI configuration for the tenant
+ * This controls how the AI categorizes transactions for this specific business
+ */
+router.get('/cash-management/ai-config', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  try {
+    const { allocationLearningService } = await import('../modules/cash-management/services/allocation-learning.service');
+    const config = await allocationLearningService.getConfig(tenantId);
+    res.json({ success: true, data: config });
+  } catch (err: any) {
+    console.error('AI config get error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Update AI configuration for the tenant
+ * Lets the business customize how the AI understands their transactions
+ */
+router.put('/cash-management/ai-config', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  try {
+    const { allocationLearningService } = await import('../modules/cash-management/services/allocation-learning.service');
+    const config = await allocationLearningService.updateConfig(tenantId, req.body);
+    res.json({ success: true, data: config, message: 'AI configuration updated' });
+  } catch (err: any) {
+    console.error('AI config update error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Consolidate duplicate allocation patterns
+ * Merges fragmented patterns into one per GL account + transaction type
+ */
+router.post('/cash-management/reconciliation/consolidate-patterns', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  try {
+    const { allocationLearningService } = await import('../modules/cash-management/services/allocation-learning.service');
+    const result = await allocationLearningService.consolidatePatterns(tenantId);
+    res.json({ success: true, data: result, message: `Merged ${result.merged} duplicate patterns. ${result.remaining} patterns remaining.` });
+  } catch (err: any) {
+    console.error('Pattern consolidation error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * AI-powered categorization using Groq/Grok AI
  * Accepts either:
  * - statement_line_ids/bank_account_id to fetch from DB
