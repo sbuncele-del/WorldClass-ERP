@@ -130,11 +130,12 @@ class AICategorizationService {
 
   /**
    * Get learned patterns from previous allocations to feed into AI
+   * IMPROVED: Include description_pattern for better AI context
    */
   private async getLearnedPatterns(tenantId: string): Promise<string> {
     try {
       const result = await pool.query(`
-        SELECT gl_account_code, gl_account_name, keywords, frequency, transaction_type, confidence_score
+        SELECT gl_account_code, gl_account_name, keywords, frequency, transaction_type, confidence_score, description_pattern
         FROM allocation_patterns
         WHERE tenant_id = $1 AND confidence_score >= 40
         ORDER BY frequency DESC
@@ -143,9 +144,10 @@ class AICategorizationService {
 
       if (result.rows.length === 0) return '';
 
-      return result.rows.map((p: any) =>
-        `  ${p.transaction_type.toUpperCase()}: keywords [${(p.keywords || []).join(', ')}] → ${p.gl_account_code} "${p.gl_account_name}" (used ${p.frequency}x, confidence ${p.confidence_score}%)`
-      ).join('\n');
+      return result.rows.map((p: any) => {
+        const desc = p.description_pattern ? ` example: "${p.description_pattern.substring(0, 60)}"` : '';
+        return `  ${p.transaction_type.toUpperCase()}: keywords [${(p.keywords || []).join(', ')}]${desc} → ${p.gl_account_code} "${p.gl_account_name}" (used ${p.frequency}x, confidence ${p.confidence_score}%)`;
+      }).join('\n');
     } catch {
       return ''; // Table may not exist yet
     }
@@ -340,7 +342,8 @@ Respond ONLY with a valid JSON array, no other text.`;
         suggested_category: item.suggested_category || 'UNCATEGORIZED',
         category_description: item.category_description || '',
         confidence: Math.min(100, Math.max(0, item.confidence || 50)),
-        reasoning: item.reasoning || 'AI categorization'
+        reasoning: item.reasoning || 'AI categorization',
+        gl_account: item.gl_account || undefined
       }));
     } catch (error) {
       console.error('Failed to parse AI response:', error);

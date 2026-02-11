@@ -4704,15 +4704,18 @@ router.get('/cash-management/reconciliation/ai-stats', async (req: any, res) => 
  * Accepts either:
  * - statement_line_ids/bank_account_id to fetch from DB
  * - transactions array directly for immediate categorization
+ *
+ * IMPROVED: Now injects learned allocation patterns into AI prompt
+ * and uses learned patterns as first-pass before rule-based fallback
  */
 router.post('/cash-management/reconciliation/ai-categorize', async (req: any, res) => {
   const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
-  
+
   try {
     const { statement_line_ids, bank_account_id, transactions: inputTransactions } = req.body;
-    
+
     let transactionsToProcess: any[] = [];
-    
+
     // If transactions provided directly in request, use those
     if (inputTransactions && Array.isArray(inputTransactions) && inputTransactions.length > 0) {
       transactionsToProcess = inputTransactions
@@ -4729,10 +4732,10 @@ router.post('/cash-management/reconciliation/ai-categorize', async (req: any, re
       // Otherwise fetch from database
       let linesQuery = `SELECT id as line_id, description, amount, transaction_date, reference,
                         CASE WHEN amount < 0 THEN true ELSE false END as is_debit
-                        FROM bank_statement_lines 
+                        FROM bank_statement_lines
                         WHERE tenant_id = $1`;
       let params: any[] = [tenantId];
-      
+
       if (statement_line_ids && statement_line_ids.length > 0) {
         params.push(statement_line_ids);
         linesQuery += ` AND id = ANY($2)`;
@@ -4746,11 +4749,11 @@ router.post('/cash-management/reconciliation/ai-categorize', async (req: any, re
         linesQuery += ` AND status = $2`;
       }
       linesQuery += ` LIMIT 50`; // Limit for AI processing
-      
+
       const linesResult = await query(linesQuery, params);
       transactionsToProcess = linesResult.rows;
     }
-    
+
     if (transactionsToProcess.length === 0) {
       return res.json({
         success: true,
@@ -4764,21 +4767,41 @@ router.post('/cash-management/reconciliation/ai-categorize', async (req: any, re
 
     // Get GL accounts for suggestions - use COALESCE to handle both column naming conventions
     const accountsResult = await query(
-      `SELECT id, 
-              COALESCE(NULLIF(code, ''), account_code) as code, 
-              COALESCE(NULLIF(name, ''), account_name) as name, 
+      `SELECT id,
+              COALESCE(NULLIF(code, ''), account_code) as code,
+              COALESCE(NULLIF(name, ''), account_name) as name,
               account_type as type
-       FROM chart_of_accounts 
+       FROM chart_of_accounts
        WHERE tenant_id = $1 AND is_active = true
          AND (code IS NOT NULL AND code != '' OR account_code IS NOT NULL AND account_code != '')
        ORDER BY COALESCE(NULLIF(code, ''), account_code)`,
       [tenantId]
     );
-    
+
+    // Fetch learned patterns to inject into AI prompt and for learned-first matching
+    let learnedPatternsText = '';
+    let learnedPatterns: any[] = [];
+    try {
+      const patternsResult = await query(
+        `SELECT gl_account_code, gl_account_name, keywords, frequency, transaction_type, confidence_score, description_pattern, amount_min, amount_max, gl_account_id
+         FROM allocation_patterns
+         WHERE tenant_id = $1 AND confidence_score >= 40
+         ORDER BY frequency DESC
+         LIMIT 30`,
+        [tenantId]
+      );
+      learnedPatterns = patternsResult.rows || [];
+      if (learnedPatterns.length > 0) {
+        learnedPatternsText = learnedPatterns.map((p: any) =>
+          `  ${p.transaction_type.toUpperCase()}: keywords [${(p.keywords || []).join(', ')}] → ${p.gl_account_code} "${p.gl_account_name}" (used ${p.frequency}x, confidence ${p.confidence_score}%)`
+        ).join('\n');
+      }
+    } catch { /* allocation_patterns table may not exist yet */ }
+
     // Determine which AI provider to use
     let aiProvider = 'rules';
     let suggestions: any[] = [];
-    
+
     // Try Groq first (FREE!)
     if (process.env.GROQ_API_KEY) {
       aiProvider = 'groq';
@@ -4788,16 +4811,31 @@ router.post('/cash-management/reconciliation/ai-categorize', async (req: any, re
           apiKey: process.env.GROQ_API_KEY,
           baseURL: 'https://api.groq.com/openai/v1'
         });
-        
+
         const accountList = accountsResult.rows.map((a: any) => `${a.code}: ${a.name} (${a.type})`).join('\n');
-        const transactionList = transactionsToProcess.map((t: any, i: number) => 
+        const transactionList = transactionsToProcess.map((t: any, i: number) =>
           `${i + 1}. [ID:${t.line_id}] ${t.is_debit ? 'DEBIT' : 'CREDIT'} R${Math.abs(parseFloat(t.amount)).toFixed(2)} - "${t.description}" (${t.reference || 'No ref'})`
         ).join('\n');
-        
-        const prompt = `You are a South African accounting expert helping categorize bank transactions.
+
+        let prompt = `You are a South African accounting expert helping categorize bank transactions.
+
+CRITICAL RULES:
+- DEBIT transactions are money going OUT (expenses, supplier payments, bank charges, salaries)
+- CREDIT transactions are money coming IN (customer payments, refunds, interest)
+- When a description matches a learned pattern below, ALWAYS use that pattern's GL account
+- Be specific: use the most precise GL account available, not generic ones
 
 AVAILABLE GL ACCOUNTS:
-${accountList}
+${accountList}`;
+
+        if (learnedPatternsText) {
+          prompt += `
+
+PREVIOUSLY LEARNED PATTERNS (the user has manually categorized similar transactions before - YOU MUST follow these patterns when keywords match):
+${learnedPatternsText}`;
+        }
+
+        prompt += `
 
 TRANSACTIONS TO CATEGORIZE:
 ${transactionList}
@@ -4820,8 +4858,8 @@ Categorization tips:
 
 Respond ONLY with valid JSON array, no other text.`;
 
-        console.log('🤖 Calling Groq AI with', transactionsToProcess.length, 'transactions and', accountsResult.rows.length, 'GL accounts');
-        
+        console.log('🤖 Calling Groq AI with', transactionsToProcess.length, 'transactions,', accountsResult.rows.length, 'GL accounts, and', learnedPatterns.length, 'learned patterns');
+
         const response = await groq.chat.completions.create({
           model: 'llama-3.3-70b-versatile',
           messages: [
@@ -4831,10 +4869,10 @@ Respond ONLY with valid JSON array, no other text.`;
           temperature: 0.3,
           max_tokens: 2000
         });
-        
+
         const content = response.choices[0].message.content || '[]';
         console.log('🤖 Groq response:', content.substring(0, 500));
-        
+
         // Parse AI response
         let aiSuggestions: any[] = [];
         try {
@@ -4848,16 +4886,16 @@ Respond ONLY with valid JSON array, no other text.`;
           console.warn('Failed to parse AI response, falling back to rules:', parseErr);
           aiProvider = 'rules';
         }
-        
+
         // Map AI suggestions to full format
         if (aiSuggestions.length > 0) {
           suggestions = transactionsToProcess.map((line: any) => {
             const aiSuggestion = aiSuggestions.find((s: any) => String(s.line_id) === String(line.line_id));
-            const suggestedAccount = aiSuggestion ? 
+            const suggestedAccount = aiSuggestion ?
               accountsResult.rows.find((a: any) => a.code === aiSuggestion.suggested_account_code) : null;
-            
+
             console.log(`🤖 Line ${line.line_id}: AI suggested ${aiSuggestion?.suggested_account_code}, matched account:`, suggestedAccount?.code);
-            
+
             return {
               line_id: line.line_id,
               description: line.description,
@@ -4880,23 +4918,67 @@ Respond ONLY with valid JSON array, no other text.`;
       aiProvider = 'grok';
       // Similar implementation for Grok...
     }
-    
-    // Fallback to rule-based categorization
+
+    // Fallback: First try learned patterns, then rule-based categorization
     if (aiProvider === 'rules' || suggestions.length === 0) {
       suggestions = transactionsToProcess.map((line: any) => {
         const desc = (line.description || '').toLowerCase();
         const isDebit = line.is_debit;
+        const amount = Math.abs(parseFloat(line.amount));
         let suggestedAccount = null;
         let confidence = 0;
         let reason = '';
-        
-        // Pattern matching rules - using SA chart of accounts codes (5xxx = expenses, 4xxx = revenue)
-        if (desc.includes('bank charge') || desc.includes('service fee') || desc.includes('account fee') || desc.includes('monthly fee') || desc.includes('overdraft') || desc.includes('fee-unpaid') || desc.includes('insuff fund') || desc.includes('declined insuff')) {
-          suggestedAccount = accountsResult.rows.find((a: any) => 
-            a.name.toLowerCase().includes('bank fee') || a.name.toLowerCase().includes('bank charge') || a.code === '5600');
-          confidence = 95;
-          reason = 'Bank fees/charges pattern detected';
-        } else if (desc.includes('salary') || desc.includes('payroll') || desc.includes('wages') || desc.includes('nett pay') || desc.includes('staff')) {
+
+        // === FIRST: Check learned patterns ===
+        if (learnedPatterns.length > 0) {
+          const descUpper = (line.description || '').toUpperCase();
+          let bestPattern: any = null;
+          let bestScore = 0;
+
+          for (const pattern of learnedPatterns) {
+            // Check transaction type
+            const txnType = isDebit ? 'debit' : 'credit';
+            if (pattern.transaction_type !== txnType && pattern.transaction_type !== 'both') continue;
+
+            // Check keyword overlap
+            const patternKeywords: string[] = pattern.keywords || [];
+            const matchedKws = patternKeywords.filter((kw: string) => descUpper.includes(kw));
+            if (matchedKws.length === 0) continue;
+
+            const overlapRatio = matchedKws.length / patternKeywords.length;
+
+            // Check amount in range
+            const inRange = amount >= parseFloat(pattern.amount_min) && amount <= parseFloat(pattern.amount_max);
+            const amountBonus = inRange ? 15 : 0;
+
+            // Score: keyword overlap + amount fit + frequency
+            const score = (overlapRatio * 60) + amountBonus + Math.min(15, pattern.frequency * 2);
+
+            if (score > bestScore && score >= 30) {
+              bestScore = score;
+              bestPattern = pattern;
+            }
+          }
+
+          if (bestPattern) {
+            // Found a learned pattern match
+            const matchedAccount = accountsResult.rows.find((a: any) => a.code === bestPattern.gl_account_code);
+            if (matchedAccount) {
+              suggestedAccount = matchedAccount;
+              confidence = Math.min(95, Math.round(bestScore));
+              reason = `Learned pattern: "${bestPattern.gl_account_name}" (used ${bestPattern.frequency}x)`;
+            }
+          }
+        }
+
+        // === SECOND: Rule-based pattern matching (if no learned pattern matched) ===
+        if (!suggestedAccount) {
+          if (desc.includes('bank charge') || desc.includes('service fee') || desc.includes('account fee') || desc.includes('monthly fee') || desc.includes('overdraft') || desc.includes('fee-unpaid') || desc.includes('insuff fund') || desc.includes('declined insuff')) {
+            suggestedAccount = accountsResult.rows.find((a: any) =>
+              a.name.toLowerCase().includes('bank fee') || a.name.toLowerCase().includes('bank charge') || a.code === '5600');
+            confidence = 95;
+            reason = 'Bank fees/charges pattern detected';
+          } else if (desc.includes('salary') || desc.includes('payroll') || desc.includes('wages') || desc.includes('nett pay') || desc.includes('staff')) {
           suggestedAccount = accountsResult.rows.find((a: any) => 
             a.name.toLowerCase().includes('salaries') || a.name.toLowerCase().includes('wages') || a.code === '5200');
           confidence = 90;
@@ -4985,6 +5067,7 @@ Respond ONLY with valid JSON array, no other text.`;
           confidence = 30;
           reason = 'Unrecognized debit - manual categorization recommended';
         }
+        } // End of if (!suggestedAccount)
         
         return {
           line_id: line.line_id,

@@ -774,14 +774,28 @@ const BankReconciliation: React.FC = () => {
     message.success('Match confirmed!');
   };
 
-  // Reject AI suggestion
+  // Reject AI suggestion - sends negative feedback to improve learning
   const rejectAISuggestion = (bankTxnId: string) => {
+    // Send rejection feedback to server for AI learning (non-blocking)
+    const suggestion = aiSuggestions.get(bankTxnId);
+    if (suggestion && (suggestion as any).pattern_id) {
+      apiClient.post('/api/v2/cash-management/reconciliation/ai-feedback', {
+        pattern_id: (suggestion as any).pattern_id,
+        action: 'reject'
+      }).catch(() => {}); // Non-critical
+    }
+
     setBankTransactions(prev => prev.map(txn =>
       txn.id === bankTxnId
         ? { ...txn, status: 'unmatched' as const, confidence: undefined, aiSuggestion: undefined }
         : txn
     ));
-    message.info('Suggestion dismissed');
+    setAiSuggestions(prev => {
+      const newMap = new Map(prev);
+      newMap.delete(bankTxnId);
+      return newMap;
+    });
+    message.info('Suggestion rejected — AI will learn from this');
   };
 
   // Post to GL - creates journal entries for matched/unmatched transactions

@@ -95,22 +95,23 @@ class AllocationLearningService {
 
   /**
    * Extract meaningful keywords from a bank transaction description
+   *
+   * IMPROVED: Less aggressive noise filtering - keeps banking-specific terms
+   * that are actually useful for pattern matching (e.g. EFT, SALARY, DEBIT ORDER)
    */
   extractKeywords(description: string): string[] {
     if (!description) return [];
-    
+
     // Normalize
     const normalized = description.toUpperCase().trim();
-    
-    // Remove common banking noise words
+
+    // Only remove truly meaningless words (articles, prepositions, generic filler)
+    // Keep banking terms like EFT, PAYMENT, TRANSFER - they help identify transaction types
     const noiseWords = new Set([
       'THE', 'AND', 'FOR', 'FROM', 'TO', 'OF', 'IN', 'ON', 'AT', 'BY',
-      'EFT', 'INT', 'PMT', 'PAYMENT', 'TRF', 'TRANSFER', 'CREDIT',
-      'DEBIT', 'REF', 'REFERENCE', 'DATE', 'NO', 'NUMBER', 'ACC',
-      'ACCOUNT', 'FNB', 'ABSA', 'NEDBANK', 'STANDARD', 'CAPITEC',
-      'BANK', 'BRANCH', 'POS', 'PURCHASE', 'WITHDRAWAL', 'DEPOSIT',
-      'CASH', 'CARD', 'PREPAID', 'AIRTIME', 'ZAR', 'SA', 'PTY', 'LTD',
-      'CC', 'INC', 'CO', 'NPC', 'SOC', 'LLC',
+      'REF', 'REFERENCE', 'DATE', 'NO', 'NUMBER',
+      'ZAR', 'PTY', 'LTD', 'CC', 'INC', 'CO', 'NPC', 'SOC', 'LLC',
+      'NOT', 'PROVIDED', 'UNKNOWN',
     ]);
 
     // Split on non-alpha characters, filter noise
@@ -118,10 +119,24 @@ class AllocationLearningService {
       .replace(/[^A-Z0-9\s]/g, ' ')
       .split(/\s+/)
       .filter(w => w.length >= 3 && !noiseWords.has(w))
-      .filter(w => !/^\d+$/.test(w)); // Remove pure numbers
+      .filter(w => !/^\d{6,}$/.test(w)); // Remove long number sequences (account numbers, refs) but keep short ones
 
-    // Remove duplicates
-    return [...new Set(words)];
+    // Also extract compound terms (e.g. "DEBIT ORDER", "BANK CHARGE", "SERVICE FEE")
+    const compoundTerms: string[] = [];
+    const normalizedLower = normalized.toLowerCase();
+    const compounds = [
+      'DEBIT ORDER', 'BANK CHARGE', 'SERVICE FEE', 'ACCOUNT FEE',
+      'MONTHLY FEE', 'ADMIN FEE', 'DEBIT TRANSFER', 'RECURRING PAYMENT',
+      'SALARY PAYMENT', 'NETT PAY', 'NET PAY', 'STOP ORDER',
+    ];
+    for (const term of compounds) {
+      if (normalized.includes(term)) {
+        compoundTerms.push(term.replace(/\s+/g, '_'));
+      }
+    }
+
+    // Remove duplicates, combine single words and compound terms
+    return [...new Set([...words, ...compoundTerms])];
   }
 
   /**
@@ -167,13 +182,14 @@ class AllocationLearningService {
 
     if (existingResult.rows.length > 0) {
       const existing = existingResult.rows[0];
-      // Merge keywords and widen amount range
+      // Merge keywords and gently widen amount range (tight: 0.8x-1.3x)
       const mergedKeywords = [...new Set([...existing.keywords, ...keywords])];
-      const newMin = Math.min(existing.amount_min, amount * 0.5);
-      const newMax = Math.max(existing.amount_max, amount * 2.0);
+      const newMin = Math.min(existing.amount_min, amount * 0.8);
+      const newMax = Math.max(existing.amount_max, amount * 1.3);
       const newFrequency = existing.frequency + 1;
-      // Confidence increases with frequency (asymptotic to 99)
-      const newConfidence = Math.min(99, 50 + (newFrequency * 5));
+      // Confidence increases with frequency but requires more repetitions
+      // Starts meaningful at 3+ matches, reaches 80+ at 6+ matches
+      const newConfidence = Math.min(99, 40 + Math.min(50, newFrequency * 8));
 
       await pool.query(
         `UPDATE allocation_patterns 
@@ -186,19 +202,19 @@ class AllocationLearningService {
         [existing.id, tenantId, mergedKeywords, newMin, newMax, newFrequency, newConfidence]
       );
     } else {
-      // Create new pattern
+      // Create new pattern with tight amount range
       await pool.query(
-        `INSERT INTO allocation_patterns 
-         (tenant_id, keywords, description_pattern, amount_min, amount_max, 
-          transaction_type, gl_account_id, gl_account_code, gl_account_name, 
+        `INSERT INTO allocation_patterns
+         (tenant_id, keywords, description_pattern, amount_min, amount_max,
+          transaction_type, gl_account_id, gl_account_code, gl_account_name,
           frequency, confidence_score, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1, 60, $10)`,
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1, 45, $10)`,
         [
           tenantId,
           keywords,
           description,
-          amount * 0.5,  // Allow 50% lower
-          amount * 2.0,  // Allow 200% higher
+          amount * 0.8,  // Allow 20% lower
+          amount * 1.3,  // Allow 30% higher
           txnType,
           glAccountId,
           glCode,
@@ -210,7 +226,31 @@ class AllocationLearningService {
   }
 
   /**
+   * Calculate description similarity (simple trigram-based approach)
+   */
+  private descriptionSimilarity(desc1: string, desc2: string): number {
+    if (!desc1 || !desc2) return 0;
+    const a = desc1.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const b = desc2.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (a.length < 3 || b.length < 3) return 0;
+
+    // Generate trigrams
+    const trigramsA = new Set<string>();
+    for (let i = 0; i <= a.length - 3; i++) trigramsA.add(a.substring(i, i + 3));
+    const trigramsB = new Set<string>();
+    for (let i = 0; i <= b.length - 3; i++) trigramsB.add(b.substring(i, i + 3));
+
+    let overlap = 0;
+    trigramsA.forEach(t => { if (trigramsB.has(t)) overlap++; });
+
+    return overlap / Math.max(trigramsA.size, trigramsB.size);
+  }
+
+  /**
    * Get AI suggestions for a bank transaction based on learned patterns
+   *
+   * IMPROVED: Better scoring with description similarity, stricter keyword overlap,
+   * and amount relevance weighting.
    */
   async getSuggestions(
     tenantId: string,
@@ -226,9 +266,8 @@ class AllocationLearningService {
     const txnType = isDebit ? 'debit' : 'credit';
 
     // Find patterns that match this transaction
-    // Score by: keyword overlap + amount fit + frequency
     const result = await pool.query(
-      `SELECT 
+      `SELECT
          p.*,
          -- Count how many keywords overlap
          (SELECT COUNT(*) FROM unnest(p.keywords) kw WHERE kw = ANY($3::text[])) as keyword_matches,
@@ -238,7 +277,7 @@ class AllocationLearningService {
          AND p.transaction_type IN ($2, 'both')
          AND p.keywords && $3::text[]
          AND p.confidence_score > 10
-       ORDER BY 
+       ORDER BY
          -- Prioritize: keyword match ratio, then frequency, then confidence
          (SELECT COUNT(*) FROM unnest(p.keywords) kw WHERE kw = ANY($3::text[]))::float / GREATEST(array_length(p.keywords, 1), 1) DESC,
          p.frequency DESC,
@@ -249,29 +288,51 @@ class AllocationLearningService {
 
     return result.rows.map((pattern: any) => {
       const keywordOverlap = parseInt(pattern.keyword_matches) || 0;
-      const totalKeywords = parseInt(pattern.total_keywords) || 1;
-      const matchRatio = keywordOverlap / Math.max(totalKeywords, keywords.length);
-      
-      // Amount fit bonus (0-20 points)
+      const totalPatternKeywords = parseInt(pattern.total_keywords) || 1;
+
+      // Keyword overlap ratio: how much of the pattern's keywords match the input
+      const patternCoverage = keywordOverlap / totalPatternKeywords;
+      // Also check reverse: how much of input keywords matched pattern
+      const inputCoverage = keywordOverlap / Math.max(keywords.length, 1);
+      // Use the geometric mean for balanced scoring
+      const matchRatio = Math.sqrt(patternCoverage * inputCoverage);
+
+      // Require at least 2 keyword matches or 50% overlap for decent score
+      const keywordScore = (keywordOverlap >= 2 || patternCoverage >= 0.5)
+        ? matchRatio * 50  // Max 50 from keywords
+        : matchRatio * 25; // Penalize single-keyword matches
+
+      // Amount fit (0-20 points)
       let amountFit = 0;
       if (amount >= pattern.amount_min && amount <= pattern.amount_max) {
-        amountFit = 20;
+        // Perfect if within range, bonus for being close to center
+        const center = (parseFloat(pattern.amount_min) + parseFloat(pattern.amount_max)) / 2;
+        const range = parseFloat(pattern.amount_max) - parseFloat(pattern.amount_min);
+        const distFromCenter = Math.abs(amount - center) / (range || 1);
+        amountFit = 20 - (distFromCenter * 5); // 15-20 when in range
       } else {
         const dist = Math.min(
-          Math.abs(amount - pattern.amount_min),
-          Math.abs(amount - pattern.amount_max)
+          Math.abs(amount - parseFloat(pattern.amount_min)),
+          Math.abs(amount - parseFloat(pattern.amount_max))
         );
-        amountFit = Math.max(0, 20 - (dist / amount) * 20);
+        amountFit = Math.max(0, 10 - (dist / Math.max(amount, 1)) * 20);
       }
 
+      // Description similarity (0-15 points) - trigram-based
+      const descSimilarity = this.descriptionSimilarity(description, pattern.description_pattern);
+      const descScore = descSimilarity * 15;
+
+      // Frequency bonus (0-15 points) - more generous for well-established patterns
+      const frequencyBonus = Math.min(15, Math.log2(Math.max(pattern.frequency, 1) + 1) * 5);
+
       // Calculate final confidence
-      const baseConfidence = matchRatio * 60; // Max 60 from keywords
-      const frequencyBonus = Math.min(15, pattern.frequency * 3); // Max 15 from frequency
-      const confidence = Math.min(99, Math.round(baseConfidence + amountFit + frequencyBonus));
+      const confidence = Math.min(99, Math.round(keywordScore + amountFit + descScore + frequencyBonus));
 
       // Build reason
       const matchedKws = keywords.filter((kw: string) => pattern.keywords.includes(kw));
-      const reason = `Matched keywords: ${matchedKws.join(', ')} (${keywordOverlap}/${totalKeywords}) | Used ${pattern.frequency}x before`;
+      const reason = `Matched keywords: ${matchedKws.join(', ')} (${keywordOverlap}/${totalPatternKeywords}) | ` +
+        `${descSimilarity > 0.3 ? `Similar description (${Math.round(descSimilarity * 100)}%) | ` : ''}` +
+        `Used ${pattern.frequency}x before`;
 
       return {
         gl_account_id: pattern.gl_account_id,
@@ -282,7 +343,7 @@ class AllocationLearningService {
         pattern_id: pattern.id,
         learned_from_count: pattern.frequency
       };
-    }).filter((s: AllocationSuggestion) => s.confidence >= 30); // Minimum 30% confidence
+    }).filter((s: AllocationSuggestion) => s.confidence >= 35); // Minimum 35% confidence
   }
 
   /**
