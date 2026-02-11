@@ -5,6 +5,8 @@ node_modules/
 
 # Testing
 coverage/
+frontend/test-results/
+frontend/playwright-report/
 
 # Production
 build/
@@ -21,6 +23,10 @@ dist/
 *.env.docker
 CREDENTIALS.env
 CREDENTIALS.md
+YODLEE-CREDENTIALS.md
+
+# Personal files
+personal/
 
 # Docker deployment artifacts
 *.tar.gz
