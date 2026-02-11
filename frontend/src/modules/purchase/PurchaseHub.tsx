@@ -9,9 +9,7 @@ import {
   Progress,
   Statistic,
   Table,
-  Tabs,
   Space,
-  Tooltip,
   Modal,
   Form,
   Input,
@@ -21,12 +19,9 @@ import {
   message,
   Divider,
   List,
-  Alert,
   Badge,
   Avatar,
-  Timeline,
   Spin,
-  Empty,
 } from 'antd';
 import {
   ShoppingOutlined,
@@ -40,31 +35,26 @@ import {
   ExclamationCircleOutlined,
   PlusOutlined,
   DownloadOutlined,
-  PrinterOutlined,
   SyncOutlined,
   SettingOutlined,
-  CalendarOutlined,
   UserOutlined,
-  DollarOutlined,
   TeamOutlined,
   TruckOutlined,
   AuditOutlined,
   InboxOutlined,
-  FileDoneOutlined,
   StarOutlined,
   GlobalOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import {
   HubLayout,
   HubHeader,
   StatusBanner,
   HubTabs,
-  StatCard,
   QuickActionsCard,
-  StatusIndicator,
-  InfoListCard,
 } from '../../components/hub';
 import apiClient from '../../services/api';
+import { purchaseService } from '../../services/purchase.service';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -114,12 +104,25 @@ interface SpendCategory {
   trend: string;
 }
 
+interface POLine {
+  description: string;
+  quantity: number;
+  unit: string;
+  unit_price: number;
+}
+
 const PurchaseHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [loading, setLoading] = useState(true);
-  
+  const [creatingOrder, setCreatingOrder] = useState(false);
+  const [creatingSupplier, setCreatingSupplier] = useState(false);
+
+  const [orderForm] = Form.useForm();
+  const [supplierForm] = Form.useForm();
+  const [poLines, setPoLines] = useState<POLine[]>([]);
+
   // State for API data
   const [purchaseStats, setPurchaseStats] = useState<PurchaseStats>({
     totalOrders: 0,
@@ -135,45 +138,159 @@ const PurchaseHub: React.FC = () => {
   const [recentOrders, setRecentOrders] = useState<PurchaseOrder[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>([]);
   const [spendByCategory, setSpendByCategory] = useState<SpendCategory[]>([]);
+  const [allSuppliers, setAllSuppliers] = useState<any[]>([]);
 
-  // Fetch all purchase data from API
-  useEffect(() => {
-    const fetchPurchaseData = async () => {
-      setLoading(true);
-      try {
-        const [statsRes, suppliersRes, ordersRes, approvalsRes, categoriesRes] = await Promise.all([
-          apiClient.get('/api/purchase/stats').catch(() => ({ data: null })),
-          apiClient.get('/api/purchase/suppliers/top').catch(() => ({ data: [] })),
-          apiClient.get('/api/purchase/orders/recent').catch(() => ({ data: [] })),
-          apiClient.get('/api/purchase/approvals/pending').catch(() => ({ data: [] })),
-          apiClient.get('/api/purchase/spend/categories').catch(() => ({ data: [] })),
-        ]);
+  const fetchPurchaseData = async () => {
+    setLoading(true);
+    try {
+      const [statsRes, suppliersRes, ordersRes, approvalsRes, categoriesRes, suppliersListRes] = await Promise.all([
+        apiClient.get('/api/purchase/stats').catch(() => ({ data: null })),
+        apiClient.get('/api/purchase/suppliers/top').catch(() => ({ data: [] })),
+        apiClient.get('/api/purchase/orders/recent').catch(() => ({ data: [] })),
+        apiClient.get('/api/purchase/approvals/pending').catch(() => ({ data: [] })),
+        apiClient.get('/api/purchase/spend/categories').catch(() => ({ data: [] })),
+        apiClient.get('/api/purchase/suppliers').catch(() => ({ data: [] })),
+      ]);
 
-        if (statsRes.data) {
-          setPurchaseStats(statsRes.data.data || statsRes.data);
-        }
-        
-        const suppliers = suppliersRes.data?.data || suppliersRes.data || [];
-        setTopSuppliers(suppliers.map((s: any) => ({
-          ...s,
-          avatar: s.avatar || s.name?.charAt(0) || 'S'
-        })));
-        
-        setRecentOrders(ordersRes.data?.data || ordersRes.data || []);
-        setPendingApprovals(approvalsRes.data?.data || approvalsRes.data || []);
-        setSpendByCategory(categoriesRes.data?.data || categoriesRes.data || []);
-      } catch (error) {
-        console.error('Error fetching purchase data:', error);
-        message.error('Failed to load purchase data');
-      } finally {
-        setLoading(false);
+      if (statsRes.data) {
+        setPurchaseStats(statsRes.data.data || statsRes.data);
       }
-    };
 
+      const suppliers = suppliersRes.data?.data || suppliersRes.data || [];
+      setTopSuppliers(suppliers.map((s: any) => ({
+        ...s,
+        avatar: s.avatar || s.name?.charAt(0) || 'S'
+      })));
+
+      setRecentOrders(ordersRes.data?.data || ordersRes.data || []);
+      setPendingApprovals(approvalsRes.data?.data || approvalsRes.data || []);
+      setSpendByCategory(categoriesRes.data?.data || categoriesRes.data || []);
+
+      const suppliersList = suppliersListRes.data?.data || suppliersListRes.data || [];
+      setAllSuppliers(Array.isArray(suppliersList) ? suppliersList : []);
+    } catch (error) {
+      console.error('Error fetching purchase data:', error);
+      message.error('Failed to load purchase data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchPurchaseData();
   }, []);
 
-  const formatCurrency = (amount: number) => `R ${amount.toLocaleString('en-ZA')}`;
+  const formatCurrency = (amount: number) => `R ${(amount || 0).toLocaleString('en-ZA')}`;
+
+  // ── Create Purchase Order ──────────────────────────────────────────────
+  const handleCreateOrder = async (asDraft = false) => {
+    try {
+      const values = await orderForm.validateFields();
+      setCreatingOrder(true);
+
+      const subtotal = poLines.reduce((sum, l) => sum + (l.quantity * l.unit_price), 0);
+      const vatAmount = subtotal * 0.15;
+
+      await purchaseService.createOrder({
+        supplier_id: values.supplier_id,
+        expected_date: values.expected_date?.toISOString(),
+        delivery_date: values.expected_date?.toISOString(),
+        payment_terms: values.payment_terms,
+        notes: values.notes,
+        status: asDraft ? 'draft' : 'sent',
+        subtotal,
+        vat_amount: vatAmount,
+        vat_rate: 15,
+        total: subtotal + vatAmount,
+        lines: poLines.map((line, i) => ({
+          line_number: i + 1,
+          description: line.description,
+          quantity: line.quantity,
+          unit_of_measure: line.unit,
+          unit_price: line.unit_price,
+          vat_rate: 15,
+          line_total: line.quantity * line.unit_price * 1.15,
+        })),
+      });
+
+      message.success(asDraft ? 'Purchase order saved as draft' : 'Purchase order created and sent');
+      setShowOrderModal(false);
+      orderForm.resetFields();
+      setPoLines([]);
+      fetchPurchaseData();
+    } catch (err: any) {
+      if (err?.errorFields) return;
+      message.error(err?.response?.data?.message || err?.message || 'Failed to create purchase order');
+    } finally {
+      setCreatingOrder(false);
+    }
+  };
+
+  // ── Create Supplier ────────────────────────────────────────────────────
+  const handleCreateSupplier = async () => {
+    try {
+      const values = await supplierForm.validateFields();
+      setCreatingSupplier(true);
+
+      await purchaseService.createSupplier({
+        name: values.name,
+        code: values.code || values.name.substring(0, 6).toUpperCase().replace(/\s/g, ''),
+        registration_number: values.registration_number,
+        tax_number: values.tax_number,
+        contact_person: values.contact_person,
+        email: values.email,
+        phone: values.phone,
+        supplier_type: values.supplier_type || 'company',
+        notes: values.bbee_level ? `B-BBEE Level ${values.bbee_level}` : undefined,
+      });
+
+      message.success('Supplier added successfully');
+      setShowSupplierModal(false);
+      supplierForm.resetFields();
+      fetchPurchaseData();
+    } catch (err: any) {
+      if (err?.errorFields) return;
+      message.error(err?.response?.data?.message || err?.message || 'Failed to create supplier');
+    } finally {
+      setCreatingSupplier(false);
+    }
+  };
+
+  // ── PO Line Items ──────────────────────────────────────────────────────
+  const addPoLine = () => {
+    setPoLines([...poLines, { description: '', quantity: 1, unit: 'each', unit_price: 0 }]);
+  };
+
+  const updatePoLine = (index: number, field: string, value: any) => {
+    const updated = [...poLines];
+    (updated[index] as any)[field] = value;
+    setPoLines(updated);
+  };
+
+  const removePoLine = (index: number) => {
+    setPoLines(poLines.filter((_, i) => i !== index));
+  };
+
+  // ── Approve / Reject pending approvals ─────────────────────────────────
+  const handleApproveOrder = async (orderId: string) => {
+    try {
+      await purchaseService.sendOrder(orderId);
+      message.success('Purchase order approved');
+      fetchPurchaseData();
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || 'Failed to approve order');
+    }
+  };
+
+  const handleRejectOrder = async (orderId: string) => {
+    try {
+      await purchaseService.cancelOrder(orderId);
+      message.success('Purchase order rejected');
+      fetchPurchaseData();
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || 'Failed to reject order');
+    }
+  };
 
   // Export function
   const handleExport = () => {
@@ -226,6 +343,7 @@ const PurchaseHub: React.FC = () => {
       'invoiced': { color: 'purple', text: 'Invoiced' },
       'cancelled': { color: 'red', text: 'Cancelled' },
       'preferred': { color: 'gold', text: 'Preferred' },
+      'draft': { color: 'default', text: 'Draft' },
     };
     const config = configs[status] || { color: 'default', text: status };
     return <Tag color={config.color} icon={config.icon}>{config.text}</Tag>;
@@ -278,7 +396,13 @@ const PurchaseHub: React.FC = () => {
         <Space>
           <Button type="link" size="small">View</Button>
           {record.status === 'pending_approval' && (
-            <Button type="link" size="small">Approve</Button>
+            <>
+              <Button type="link" size="small" onClick={() => handleApproveOrder(record.id)}>Approve</Button>
+              <Button type="link" size="small" danger onClick={() => handleRejectOrder(record.id)}>Reject</Button>
+            </>
+          )}
+          {record.status === 'draft' && (
+            <Button type="link" size="small" onClick={() => handleApproveOrder(record.id)}>Send</Button>
           )}
         </Space>
       ),
@@ -341,7 +465,7 @@ const PurchaseHub: React.FC = () => {
 
             {/* Pending Approvals Alert */}
             {pendingApprovals.length > 0 && (
-              <Card 
+              <Card
                 title={
                   <Space>
                     <AuditOutlined style={{ color: '#f59e0b' }} />
@@ -356,14 +480,14 @@ const PurchaseHub: React.FC = () => {
                   renderItem={item => (
                     <List.Item
                       actions={[
-                        <Button type="primary" size="small" key="approve">Approve</Button>,
-                        <Button size="small" key="reject">Reject</Button>,
+                        <Button type="primary" size="small" key="approve" onClick={() => handleApproveOrder(item.id)}>Approve</Button>,
+                        <Button size="small" danger key="reject" onClick={() => handleRejectOrder(item.id)}>Reject</Button>,
                       ]}
                     >
                       <List.Item.Meta
                         avatar={<Avatar style={{ backgroundColor: '#667eea' }}>{item.supplier.charAt(0)}</Avatar>}
                         title={<Text strong>{item.id}</Text>}
-                        description={`${item.supplier} • Requested by ${item.requestedBy}`}
+                        description={`${item.supplier} - Requested by ${item.requestedBy}`}
                       />
                       <Text strong style={{ color: '#667eea' }}>{formatCurrency(item.amount)}</Text>
                     </List.Item>
@@ -373,12 +497,12 @@ const PurchaseHub: React.FC = () => {
             )}
 
             {/* Recent Orders */}
-            <Card 
+            <Card
               title="Recent Purchase Orders"
               extra={
                 <Space>
                   <Button icon={<PlusOutlined />} onClick={() => setShowOrderModal(true)}>New Order</Button>
-                  <Button type="link">View All</Button>
+                  <Button type="link" onClick={() => setActiveTab('orders')}>View All</Button>
                 </Space>
               }
             >
@@ -415,7 +539,7 @@ const PurchaseHub: React.FC = () => {
                       description={
                         <Space>
                           <Tag>{supplier.orders} orders</Tag>
-                          <Tag color="green">★ {supplier.rating}</Tag>
+                          <Tag color="green">&#9733; {supplier.rating}</Tag>
                         </Space>
                       }
                     />
@@ -431,8 +555,8 @@ const PurchaseHub: React.FC = () => {
               actions={[
                 { icon: <PlusOutlined />, label: 'Create PO', onClick: () => setShowOrderModal(true) },
                 { icon: <UserOutlined />, label: 'Add Supplier', onClick: () => setShowSupplierModal(true) },
-                { icon: <AuditOutlined />, label: 'Approvals' },
-                { icon: <DownloadOutlined />, label: 'Reports' },
+                { icon: <AuditOutlined />, label: 'Approvals', onClick: () => setActiveTab('dashboard') },
+                { icon: <DownloadOutlined />, label: 'Reports', onClick: () => setActiveTab('reports') },
               ]}
             />
 
@@ -448,8 +572,8 @@ const PurchaseHub: React.FC = () => {
                       <Text type="secondary">{cat.percentage}%</Text>
                     </Space>
                   </div>
-                  <Progress 
-                    percent={cat.percentage} 
+                  <Progress
+                    percent={cat.percentage}
                     strokeColor="#667eea"
                     size="small"
                   />
@@ -466,9 +590,9 @@ const PurchaseHub: React.FC = () => {
       label: 'Purchase Orders',
       icon: <FileTextOutlined />,
       children: (
-        <Card 
+        <Card
           title="All Purchase Orders"
-          extra={<Button type="primary" icon={<PlusOutlined />}>Create PO</Button>}
+          extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setShowOrderModal(true)}>Create PO</Button>}
         >
           <Table
             dataSource={recentOrders}
@@ -485,14 +609,13 @@ const PurchaseHub: React.FC = () => {
       icon: <InboxOutlined />,
       children: (
         <Card title="Purchase Requisitions">
-          <Alert
-            message="Requisition Management"
-            description="Create, approve, and convert purchase requisitions to purchase orders."
-            type="info"
-            showIcon
-            style={{ marginBottom: 16 }}
+          <Table
+            dataSource={recentOrders.filter(o => o.status === 'pending_approval' || o.status === 'draft')}
+            columns={orderColumns}
+            rowKey="id"
+            pagination={{ pageSize: 10 }}
+            locale={{ emptyText: 'No requisitions found' }}
           />
-          <Button type="primary" icon={<PlusOutlined />}>New Requisition</Button>
         </Card>
       ),
     },
@@ -501,9 +624,9 @@ const PurchaseHub: React.FC = () => {
       label: 'Suppliers',
       icon: <TeamOutlined />,
       children: (
-        <Card 
+        <Card
           title="Supplier Management"
-          extra={<Button type="primary" icon={<PlusOutlined />}>Add Supplier</Button>}
+          extra={<Button type="primary" icon={<PlusOutlined />} onClick={() => setShowSupplierModal(true)}>Add Supplier</Button>}
         >
           <List
             dataSource={topSuppliers}
@@ -511,7 +634,7 @@ const PurchaseHub: React.FC = () => {
               <List.Item
                 actions={[
                   <Button type="link" key="view">View Profile</Button>,
-                  <Button type="link" key="order">Create PO</Button>,
+                  <Button type="link" key="order" onClick={() => setShowOrderModal(true)}>Create PO</Button>,
                 ]}
               >
                 <List.Item.Meta
@@ -525,7 +648,7 @@ const PurchaseHub: React.FC = () => {
                   description={
                     <Space>
                       <Tag>{supplier.orders} orders</Tag>
-                      <Tag color="green">★ {supplier.rating}</Tag>
+                      <Tag color="green">&#9733; {supplier.rating}</Tag>
                     </Space>
                   }
                 />
@@ -542,13 +665,6 @@ const PurchaseHub: React.FC = () => {
       icon: <TruckOutlined />,
       children: (
         <Card title="Goods Receipt">
-          <Alert
-            message="Receiving Queue"
-            description="Process incoming deliveries and verify goods received against purchase orders."
-            type="info"
-            showIcon
-            style={{ marginBottom: 16 }}
-          />
           <Table
             dataSource={recentOrders.filter(o => o.status === 'sent' || o.status === 'approved')}
             columns={[
@@ -609,11 +725,11 @@ const PurchaseHub: React.FC = () => {
             <Card title="Approval Workflow">
               <Form layout="vertical">
                 <Form.Item label="Approval Threshold">
-                  <InputNumber 
-                    defaultValue={100000} 
-                    style={{ width: '100%' }} 
+                  <InputNumber
+                    defaultValue={100000}
+                    style={{ width: '100%' }}
                     formatter={value => `R ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                    parser={value => Number(value!.replace(/R\s?|(,*)/g, '')) as 100000}
+                    parser={value => Number(value!.replace(/R\s?|(,*)/g, '')) as unknown as number}
                   />
                 </Form.Item>
                 <Form.Item label="Multi-Level Approval">
@@ -646,7 +762,7 @@ const PurchaseHub: React.FC = () => {
         gradient="purple"
         actions={
           <>
-            <Button icon={<SyncOutlined spin={loading} />} onClick={() => window.location.reload()}>Refresh</Button>
+            <Button icon={<SyncOutlined spin={loading} />} onClick={() => fetchPurchaseData()}>Refresh</Button>
             <Button icon={<DownloadOutlined />} onClick={handleExport}>Export</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowOrderModal(true)}>
               Create PO
@@ -675,7 +791,7 @@ const PurchaseHub: React.FC = () => {
           <div style={{ marginTop: 16 }}>Loading purchase data...</div>
         </div>
       ) : (
-        <HubTabs 
+        <HubTabs
           theme="purple"
           tabs={tabs}
           activeKey={activeTab}
@@ -687,40 +803,115 @@ const PurchaseHub: React.FC = () => {
       <Modal
         title="Create Purchase Order"
         open={showOrderModal}
-        onCancel={() => setShowOrderModal(false)}
+        onCancel={() => { setShowOrderModal(false); orderForm.resetFields(); setPoLines([]); }}
         footer={[
-          <Button key="cancel" onClick={() => setShowOrderModal(false)}>Cancel</Button>,
-          <Button key="draft">Save as Draft</Button>,
-          <Button key="submit" onClick={() => { message.success('PO submitted for approval'); setShowOrderModal(false); }}>
-            Submit for Approval
-          </Button>,
-          <Button key="create" type="primary" onClick={() => { message.success('PO created'); setShowOrderModal(false); }}>
+          <Button key="cancel" onClick={() => { setShowOrderModal(false); orderForm.resetFields(); setPoLines([]); }}>Cancel</Button>,
+          <Button key="draft" onClick={() => handleCreateOrder(true)} loading={creatingOrder}>Save as Draft</Button>,
+          <Button key="create" type="primary" onClick={() => handleCreateOrder(false)} loading={creatingOrder}>
             Create & Send
           </Button>
         ]}
-        width={700}
+        width={800}
       >
-        <Form layout="vertical">
+        <Form layout="vertical" form={orderForm}>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Supplier" required>
-                <Select placeholder="Select supplier">
-                  {topSuppliers.map(s => (
-                    <Select.Option key={s.name} value={s.name}>{s.name}</Select.Option>
+              <Form.Item label="Supplier" name="supplier_id" rules={[{ required: true, message: 'Please select a supplier' }]}>
+                <Select placeholder="Select supplier" showSearch optionFilterProp="children">
+                  {allSuppliers.map((s: any) => (
+                    <Select.Option key={s.id} value={s.id}>{s.name || s.trading_name}</Select.Option>
+                  ))}
+                  {topSuppliers.filter(ts => !allSuppliers.find(a => a.id === ts.id)).map(s => (
+                    <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
                   ))}
                 </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Expected Delivery" required>
+              <Form.Item label="Expected Delivery" name="expected_date" rules={[{ required: true, message: 'Please select delivery date' }]}>
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
           </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Payment Terms" name="payment_terms">
+                <Select placeholder="Select payment terms">
+                  <Select.Option value="COD">Cash on Delivery</Select.Option>
+                  <Select.Option value="Net 30">Net 30</Select.Option>
+                  <Select.Option value="Net 60">Net 60</Select.Option>
+                  <Select.Option value="Net 90">Net 90</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Notes" name="notes">
+                <Input placeholder="Optional notes" />
+              </Form.Item>
+            </Col>
+          </Row>
           <Divider>Line Items</Divider>
-          <Button type="dashed" icon={<PlusOutlined />} style={{ width: '100%' }}>
+          {poLines.map((line, idx) => (
+            <Row gutter={8} key={idx} align="middle" style={{ marginBottom: 8 }}>
+              <Col span={8}>
+                <Input
+                  placeholder="Description"
+                  value={line.description}
+                  onChange={e => updatePoLine(idx, 'description', e.target.value)}
+                />
+              </Col>
+              <Col span={3}>
+                <InputNumber
+                  placeholder="Qty"
+                  value={line.quantity}
+                  min={1}
+                  onChange={v => updatePoLine(idx, 'quantity', v || 1)}
+                  style={{ width: '100%' }}
+                />
+              </Col>
+              <Col span={4}>
+                <Select value={line.unit} onChange={v => updatePoLine(idx, 'unit', v)} style={{ width: '100%' }}>
+                  <Select.Option value="each">Each</Select.Option>
+                  <Select.Option value="box">Box</Select.Option>
+                  <Select.Option value="kg">Kg</Select.Option>
+                  <Select.Option value="litre">Litre</Select.Option>
+                  <Select.Option value="meter">Meter</Select.Option>
+                  <Select.Option value="pallet">Pallet</Select.Option>
+                </Select>
+              </Col>
+              <Col span={4}>
+                <InputNumber
+                  placeholder="Unit Price"
+                  value={line.unit_price}
+                  min={0}
+                  onChange={v => updatePoLine(idx, 'unit_price', v || 0)}
+                  style={{ width: '100%' }}
+                  formatter={v => `R ${v}`}
+                  parser={v => Number(v!.replace(/R\s?/g, '')) as unknown as number}
+                />
+              </Col>
+              <Col span={3}>
+                <Text strong>R {(line.quantity * line.unit_price).toLocaleString('en-ZA')}</Text>
+              </Col>
+              <Col span={2}>
+                <Button type="text" danger icon={<DeleteOutlined />} onClick={() => removePoLine(idx)} />
+              </Col>
+            </Row>
+          ))}
+          <Button type="dashed" icon={<PlusOutlined />} style={{ width: '100%' }} onClick={addPoLine}>
             Add Item
           </Button>
+          {poLines.length > 0 && (
+            <div style={{ textAlign: 'right', marginTop: 16, padding: '12px 16px', background: '#f0f5ff', borderRadius: 8 }}>
+              <Text>Subtotal: <Text strong>R {poLines.reduce((s, l) => s + l.quantity * l.unit_price, 0).toLocaleString('en-ZA')}</Text></Text>
+              <br />
+              <Text>VAT (15%): <Text strong>R {(poLines.reduce((s, l) => s + l.quantity * l.unit_price, 0) * 0.15).toLocaleString('en-ZA')}</Text></Text>
+              <br />
+              <Text style={{ fontSize: 16 }}>Total: <Text strong style={{ color: '#667eea', fontSize: 18 }}>
+                R {(poLines.reduce((s, l) => s + l.quantity * l.unit_price, 0) * 1.15).toLocaleString('en-ZA')}
+              </Text></Text>
+            </div>
+          )}
         </Form>
       </Modal>
 
@@ -728,44 +919,68 @@ const PurchaseHub: React.FC = () => {
       <Modal
         title="Add New Supplier"
         open={showSupplierModal}
-        onCancel={() => setShowSupplierModal(false)}
+        onCancel={() => { setShowSupplierModal(false); supplierForm.resetFields(); }}
         footer={[
-          <Button key="cancel" onClick={() => setShowSupplierModal(false)}>Cancel</Button>,
-          <Button key="create" type="primary" onClick={() => { message.success('Supplier created'); setShowSupplierModal(false); }}>
+          <Button key="cancel" onClick={() => { setShowSupplierModal(false); supplierForm.resetFields(); }}>Cancel</Button>,
+          <Button key="create" type="primary" onClick={handleCreateSupplier} loading={creatingSupplier}>
             Add Supplier
           </Button>
         ]}
         width={600}
       >
-        <Form layout="vertical">
-          <Form.Item label="Company Name" required>
-            <Input placeholder="Enter company name" />
-          </Form.Item>
+        <Form layout="vertical" form={supplierForm}>
+          <Row gutter={16}>
+            <Col span={16}>
+              <Form.Item label="Company Name" name="name" rules={[{ required: true, message: 'Please enter company name' }]}>
+                <Input placeholder="Enter company name" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="Supplier Code" name="code">
+                <Input placeholder="Auto-generated" />
+              </Form.Item>
+            </Col>
+          </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Registration Number">
+              <Form.Item label="Registration Number" name="registration_number">
                 <Input placeholder="e.g., 2020/123456/07" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="VAT Number">
+              <Form.Item label="VAT Number" name="tax_number">
                 <Input placeholder="e.g., 4123456789" />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Contact Person">
+              <Form.Item label="Contact Person" name="contact_person">
                 <Input placeholder="Primary contact name" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Email">
+              <Form.Item label="Email" name="email" rules={[{ type: 'email', message: 'Please enter a valid email' }]}>
                 <Input placeholder="contact@supplier.co.za" />
               </Form.Item>
             </Col>
           </Row>
-          <Form.Item label="B-BBEE Status">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Phone" name="phone">
+                <Input placeholder="Phone number" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Supplier Type" name="supplier_type">
+                <Select placeholder="Select type">
+                  <Select.Option value="company">Company</Select.Option>
+                  <Select.Option value="individual">Individual</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="B-BBEE Status" name="bbee_level">
             <Select placeholder="Select B-BBEE Level">
               <Select.Option value="1">Level 1 (135%)</Select.Option>
               <Select.Option value="2">Level 2 (125%)</Select.Option>

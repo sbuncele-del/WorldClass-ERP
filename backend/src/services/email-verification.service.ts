@@ -45,7 +45,7 @@ export async function sendVerificationEmail(
     // Send email
     await sendEmail({
       to: email,
-      subject: 'Verify Your Email - Worldclass ERP',
+      subject: 'Verify Your Email - SiyaBusa ERP',
       template: 'verify-email',
       variables: {
         verificationUrl,

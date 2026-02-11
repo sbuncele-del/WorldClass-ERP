@@ -106,17 +106,33 @@
   border: 1px solid #e2e8f0;
   margin-bottom: 4px;
   transition: all 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .entity-tree-node:hover {
   border-color: #667eea;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+  background: #f1f5f9;
 }
 
 .node-main {
   display: flex;
   align-items: flex-start;
   gap: 12px;
+  flex: 1;
+}
+
+.node-actions {
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.entity-tree-node:hover .node-actions {
+  opacity: 1;
 }
 
 .node-icon {
@@ -146,6 +162,38 @@
 .node-meta .ant-tag {
   margin: 0;
   font-size: 11px;
+}
+
+/* Parent Company Header */
+.parent-company-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.parent-icon {
+  width: 48px;
+  height: 48px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.parent-info {
+  color: white;
+}
+
+.node-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 /* Rules Card */

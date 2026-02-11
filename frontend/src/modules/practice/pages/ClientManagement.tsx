@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import apiClient from '../../../services/api';
+import { practiceService } from '../../../services/practice.service';
 import {
   Card,
   Row,
@@ -25,6 +28,7 @@ import {
   Timeline,
   Divider,
   List,
+  Spin,
 } from 'antd';
 import {
   PlusOutlined,
@@ -42,6 +46,7 @@ import {
   GlobalOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
+  DeleteOutlined,
   ExclamationCircleOutlined,
   FileProtectOutlined,
   AuditOutlined,
@@ -62,114 +67,10 @@ const { Title, Text, Paragraph } = Typography;
 const { Search } = Input;
 const { Option } = Select;
 
-// Demo data
-const clientsData = [
-  {
-    id: '1',
-    name: 'Nexus Industries Ltd',
-    type: 'Corporation',
-    industry: 'Manufacturing',
-    status: 'Active',
-    tier: 'Enterprise',
-    contactName: 'James Morrison',
-    contactEmail: 'j.morrison@nexusind.com',
-    contactPhone: '+1 (555) 123-4567',
-    annualRevenue: 45000000,
-    yearEnd: 'December',
-    services: ['Annual Audit', 'Tax Planning', 'Advisory'],
-    engagementStart: '2019-03-15',
-    lastContact: '2024-01-15',
-    nextDeadline: '2024-04-15',
-    deadlineType: 'Tax Filing',
-    billedYTD: 125000,
-    outstanding: 15000,
-    healthScore: 92,
-    starred: true,
-    entities: 4,
-    employees: 450,
-  },
-  {
-    id: '2',
-    name: 'Sterling Financial Group',
-    type: 'Partnership',
-    industry: 'Financial Services',
-    status: 'Active',
-    tier: 'Premium',
-    contactName: 'Sarah Chen',
-    contactEmail: 's.chen@sterlingfin.com',
-    contactPhone: '+1 (555) 234-5678',
-    annualRevenue: 28000000,
-    yearEnd: 'March',
-    services: ['Quarterly Review', 'Tax Compliance', 'Payroll'],
-    engagementStart: '2020-06-01',
-    lastContact: '2024-01-10',
-    nextDeadline: '2024-03-31',
-    deadlineType: 'Year End',
-    billedYTD: 85000,
-    outstanding: 0,
-    healthScore: 88,
-    starred: true,
-    entities: 2,
-    employees: 120,
-  },
-  {
-    id: '3',
-    name: 'TechVenture Startup Inc',
-    type: 'Corporation',
-    industry: 'Technology',
-    status: 'Active',
-    tier: 'Growth',
-    contactName: 'Michael Park',
-    contactEmail: 'm.park@techventure.io',
-    contactPhone: '+1 (555) 345-6789',
-    annualRevenue: 5000000,
-    yearEnd: 'December',
-    services: ['Bookkeeping', 'Tax Filing', 'R&D Credits'],
-    engagementStart: '2022-01-15',
-    lastContact: '2024-01-08',
-    nextDeadline: '2024-01-31',
-    deadlineType: 'Monthly Close',
-    billedYTD: 24000,
-    outstanding: 4000,
-    healthScore: 75,
-    starred: false,
-    entities: 1,
-    employees: 35,
-  },
-  {
-    id: '4',
-    name: 'Global Retail Holdings',
-    type: 'Corporation',
-    industry: 'Retail',
-    status: 'Prospect',
-    tier: 'Enterprise',
-    contactName: 'Lisa Wong',
-    contactEmail: 'l.wong@globalretail.com',
-    contactPhone: '+1 (555) 456-7890',
-    annualRevenue: 120000000,
-    yearEnd: 'January',
-    services: ['Audit', 'Tax', 'Transfer Pricing'],
-    engagementStart: null,
-    lastContact: '2024-01-12',
-    nextDeadline: '2024-02-15',
-    deadlineType: 'Proposal Due',
-    billedYTD: 0,
-    outstanding: 0,
-    healthScore: 0,
-    starred: false,
-    entities: 12,
-    employees: 2500,
-  },
-];
-
-const upcomingDeadlines = [
-  { client: 'TechVenture Startup Inc', deadline: '2024-01-31', type: 'Monthly Close', daysLeft: 3, priority: 'high' },
-  { client: 'Global Retail Holdings', deadline: '2024-02-15', type: 'Proposal Due', daysLeft: 18, priority: 'medium' },
-  { client: 'Sterling Financial Group', deadline: '2024-03-31', type: 'Year End', daysLeft: 62, priority: 'low' },
-  { client: 'Nexus Industries Ltd', deadline: '2024-04-15', type: 'Tax Filing', daysLeft: 77, priority: 'low' },
-];
-
 const ClientManagement: React.FC = () => {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [clientsData, setClientsData] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEngagementModalOpen, setIsEngagementModalOpen] = useState(false);
   const [isProfileDrawerOpen, setIsProfileDrawerOpen] = useState(false);
@@ -179,46 +80,77 @@ const ClientManagement: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null);
   const [form] = Form.useForm();
   const [engagementForm] = Form.useForm();
+  const [editingClient, setEditingClient] = useState<any>(null);
+  const [clientEngagements, setClientEngagements] = useState<any[]>([]);
+  const [clientInteractions, setClientInteractions] = useState<any[]>([]);
+  const [summaryStats, setSummaryStats] = useState({ total: 0, activeEngagements: 0, revenueYTD: 0, outstanding: 0 });
 
-  // Demo data for engagements linked to clients
-  const clientEngagements: Record<string, any[]> = {
-    '1': [
-      { id: 'PRJ-001', name: '2024 Annual Audit', type: 'Audit', status: 'Active', manager: 'John Smith', hours: 120, budget: 45000, progress: 65 },
-      { id: 'PRJ-002', name: 'Tax Planning 2024', type: 'Tax', status: 'Planning', manager: 'Sarah Lee', hours: 0, budget: 15000, progress: 10 },
-      { id: 'PRJ-003', name: 'Advisory - M&A Support', type: 'Advisory', status: 'Active', manager: 'Michael Brown', hours: 45, budget: 25000, progress: 40 },
-    ],
-    '2': [
-      { id: 'PRJ-004', name: 'Q4 Review', type: 'Review', status: 'Completed', manager: 'Emily Chen', hours: 32, budget: 12000, progress: 100 },
-      { id: 'PRJ-005', name: 'Payroll Services 2024', type: 'Recurring', status: 'Active', manager: 'David Kim', hours: 24, budget: 8000, progress: 50 },
-    ],
-    '3': [
-      { id: 'PRJ-006', name: 'Monthly Bookkeeping', type: 'Recurring', status: 'Active', manager: 'Lisa Wang', hours: 16, budget: 4000, progress: 75 },
-      { id: 'PRJ-007', name: 'R&D Tax Credit Study', type: 'Tax', status: 'Planning', manager: 'John Smith', hours: 0, budget: 8000, progress: 5 },
-    ],
-    '4': [],
+  const fetchClients = async () => {
+    setLoading(true);
+    try {
+      // Fetch customers from Sales module (shared client base)
+      const res = await apiClient.get('/api/sales/customers', { params: { limit: 200 } }).catch(() => ({ data: { customers: [] } }));
+      const list = res.data?.customers || res.data?.data || [];
+      if (Array.isArray(list)) {
+        // Map Sales customer fields to the expected client shape
+        const mapped = list.map((c: any) => ({
+          id: c.id || c.customer_id,
+          name: c.company_name || c.customer_name || c.name || 'Unknown',
+          type: c.customer_type || c.type || 'Corporation',
+          industry: c.industry || '—',
+          status: c.status || 'Active',
+          tier: c.tier || 'Growth',
+          contactName: c.contact_person || c.contact_name || '—',
+          contactEmail: c.email || '—',
+          contactPhone: c.phone || '—',
+          annualRevenue: Number(c.annual_revenue || 0),
+          yearEnd: c.year_end || '—',
+          services: c.services || [],
+          lastContact: c.updated_at || c.last_contact || '—',
+          billedYTD: Number(c.billed_ytd || 0),
+          outstanding: Number(c.outstanding || c.balance || 0),
+          healthScore: Number(c.health_score || 0),
+          starred: c.starred || false,
+          entities: Number(c.entities || 1),
+          employees: Number(c.employees || 0),
+        }));
+        setClientsData(mapped);
+        setSummaryStats({
+          total: mapped.length,
+          activeEngagements: mapped.filter((c: any) => c.status === 'Active').length,
+          revenueYTD: mapped.reduce((s: number, c: any) => s + c.billedYTD, 0),
+          outstanding: mapped.reduce((s: number, c: any) => s + c.outstanding, 0),
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching clients:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const clientInteractions: Record<string, any[]> = {
-    '1': [
-      { date: '2024-01-15', type: 'Call', summary: 'Discussed Q4 results and audit timeline', employee: 'John Smith' },
-      { date: '2024-01-10', type: 'Email', summary: 'Sent engagement letter for 2024 audit', employee: 'Sarah Lee' },
-      { date: '2024-01-05', type: 'Meeting', summary: 'Kickoff meeting for tax planning project', employee: 'Michael Brown' },
-    ],
-    '2': [
-      { date: '2024-01-10', type: 'Call', summary: 'Year-end close preparation call', employee: 'Emily Chen' },
-      { date: '2024-01-08', type: 'Email', summary: 'Payroll schedule confirmation', employee: 'David Kim' },
-    ],
-    '3': [
-      { date: '2024-01-08', type: 'Email', summary: 'Monthly financials delivered', employee: 'Lisa Wang' },
-    ],
-    '4': [
-      { date: '2024-01-12', type: 'Meeting', summary: 'Initial discovery meeting - potential new client', employee: 'John Smith' },
-    ],
+  const fetchClientDetails = async (clientId: string) => {
+    try {
+      // Fetch linked projects/engagements
+      const projRes = await apiClient.get('/api/v2/practice/projects', { params: { customer_id: clientId } }).catch(() => ({ data: { data: [] } }));
+      const projList = projRes.data?.data || projRes.data?.projects || [];
+      setClientEngagements(Array.isArray(projList) ? projList : []);
+
+      // Fetch interactions
+      const intRes = await apiClient.get('/api/v2/practice/interactions', { params: { client_id: clientId } }).catch(() => ({ data: { data: [] } }));
+      const intList = intRes.data?.data || intRes.data?.interactions || [];
+      setClientInteractions(Array.isArray(intList) ? intList : []);
+    } catch (err) {
+      console.error('Error fetching client details:', err);
+    }
   };
+
+  useEffect(() => { fetchClients(); }, []);
 
   const openClientProfile = (client: any) => {
     setSelectedClient(client);
     setIsProfileDrawerOpen(true);
+    fetchClientDetails(client.id);
   };
 
   const openNewEngagement = (client: any) => {
@@ -227,9 +159,72 @@ const ClientManagement: React.FC = () => {
     setIsEngagementModalOpen(true);
   };
 
+  const openEditClient = (client: any) => {
+    setEditingClient(client);
+    form.setFieldsValue({
+      name: client.name,
+      type: client.type,
+      industry: client.industry !== '—' ? client.industry : undefined,
+      tier: client.tier,
+      contactName: client.contactName !== '—' ? client.contactName : undefined,
+      contactEmail: client.contactEmail !== '—' ? client.contactEmail : undefined,
+      phone: client.contactPhone !== '—' ? client.contactPhone : undefined,
+      yearEnd: client.yearEnd !== '—' ? client.yearEnd : undefined,
+      annualRevenue: client.annualRevenue || undefined,
+      employees: client.employees || undefined,
+      services: client.services || [],
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleDeleteClient = async (client: any) => {
+    const confirmed = window.confirm(`Are you sure you want to delete "${client.name}"? This action cannot be undone.`);
+    if (!confirmed) return;
+    try {
+      await practiceService.deleteClient(client.id);
+      message.success('Client deleted successfully');
+      fetchClients();
+    } catch (err) {
+      message.error('Failed to delete client');
+    }
+  };
+
+  const handleSaveClient = async () => {
+    try {
+      const values = await form.validateFields();
+      const payload = {
+        company_name: values.name,
+        customer_type: values.type,
+        industry: values.industry,
+        tier: values.tier,
+        contact_person: values.contactName,
+        email: values.contactEmail,
+        phone: values.phone,
+        year_end: values.yearEnd,
+        annual_revenue: values.annualRevenue,
+        employees: values.employees,
+        services: values.services,
+      };
+      if (editingClient) {
+        await practiceService.updateClient(editingClient.id, payload);
+        message.success('Client updated successfully');
+      } else {
+        await practiceService.createClient(payload);
+        message.success('Client added successfully');
+      }
+      setIsModalOpen(false);
+      setEditingClient(null);
+      form.resetFields();
+      fetchClients();
+    } catch (err: any) {
+      if (err.errorFields) return;
+      message.error(editingClient ? 'Failed to update client' : 'Failed to add client');
+    }
+  };
+
   const filteredClients = clientsData.filter(client => {
-    const matchesSearch = client.name.toLowerCase().includes(searchText.toLowerCase()) ||
-      client.contactName.toLowerCase().includes(searchText.toLowerCase());
+    const matchesSearch = (client.name || '').toLowerCase().includes(searchText.toLowerCase()) ||
+      (client.contactName || '').toLowerCase().includes(searchText.toLowerCase());
     const matchesTier = !selectedTier || client.tier === selectedTier;
     const matchesStatus = !selectedStatus || client.status === selectedStatus;
     return matchesSearch && matchesTier && matchesStatus;
@@ -354,7 +349,7 @@ const ClientManagement: React.FC = () => {
       key: 'billed',
       render: (record: any) => (
         <Text strong style={{ color: record.billedYTD > 0 ? '#10b981' : undefined }}>
-          ${record.billedYTD.toLocaleString()}
+          R {record.billedYTD.toLocaleString('en-ZA')}
         </Text>
       ),
     },
@@ -367,11 +362,13 @@ const ClientManagement: React.FC = () => {
           menu={{
             items: [
               { key: 'view', icon: <EyeOutlined />, label: 'View Profile', onClick: () => openClientProfile(record) },
-              { key: 'edit', icon: <EditOutlined />, label: 'Edit Client' },
+              { key: 'edit', icon: <EditOutlined />, label: 'Edit Client', onClick: () => openEditClient(record) },
               { key: 'email', icon: <MailOutlined />, label: 'Send Email' },
               { type: 'divider' },
               { key: 'engagement', icon: <FileTextOutlined />, label: 'New Engagement', onClick: () => openNewEngagement(record) },
               { key: 'task', icon: <CheckCircleOutlined />, label: 'Add Task' },
+              { type: 'divider' },
+              { key: 'delete', icon: <DeleteOutlined />, label: 'Delete Client', danger: true, onClick: () => handleDeleteClient(record) },
             ],
           }}
           trigger={['click']}
@@ -394,7 +391,7 @@ const ClientManagement: React.FC = () => {
           type="primary"
           icon={<PlusOutlined />}
           size="large"
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => { setEditingClient(null); form.resetFields(); setIsModalOpen(true); }}
         >
           Add Client
         </Button>
@@ -406,26 +403,26 @@ const ClientManagement: React.FC = () => {
           <Card className="stat-card">
             <Statistic
               title="Total Clients"
-              value={47}
+              value={summaryStats.total}
               prefix={<BankOutlined />}
               valueStyle={{ color: '#667eea' }}
             />
             <div className="stat-trend">
               <RiseOutlined style={{ color: '#10b981' }} />
-              <span style={{ color: '#10b981' }}>+3 this month</span>
+              <span style={{ color: '#10b981' }}>From Sales & CRM</span>
             </div>
           </Card>
         </Col>
         <Col span={6}>
           <Card className="stat-card">
             <Statistic
-              title="Active Engagements"
-              value={62}
+              title="Active Clients"
+              value={summaryStats.activeEngagements}
               prefix={<FileProtectOutlined />}
               valueStyle={{ color: '#764ba2' }}
             />
             <div className="stat-trend">
-              <span style={{ color: '#64748b' }}>12 pending completion</span>
+              <span style={{ color: '#64748b' }}>Active status</span>
             </div>
           </Card>
         </Col>
@@ -433,14 +430,14 @@ const ClientManagement: React.FC = () => {
           <Card className="stat-card">
             <Statistic
               title="Revenue YTD"
-              value={892500}
-              prefix={<DollarOutlined />}
+              value={summaryStats.revenueYTD}
+              prefix="R"
               valueStyle={{ color: '#10b981' }}
-              formatter={(value) => `$${Number(value).toLocaleString()}`}
+              formatter={(value) => `${Number(value).toLocaleString('en-ZA')}`}
             />
             <div className="stat-trend">
               <RiseOutlined style={{ color: '#10b981' }} />
-              <span style={{ color: '#10b981' }}>+18% vs last year</span>
+              <span style={{ color: '#10b981' }}>Year to date</span>
             </div>
           </Card>
         </Col>
@@ -448,13 +445,13 @@ const ClientManagement: React.FC = () => {
           <Card className="stat-card">
             <Statistic
               title="Outstanding"
-              value={34500}
-              prefix={<ClockCircleOutlined />}
+              value={summaryStats.outstanding}
+              prefix="R"
               valueStyle={{ color: '#f59e0b' }}
-              formatter={(value) => `$${Number(value).toLocaleString()}`}
+              formatter={(value) => `${Number(value).toLocaleString('en-ZA')}`}
             />
             <div className="stat-trend">
-              <span style={{ color: '#64748b' }}>8 invoices pending</span>
+              <span style={{ color: '#64748b' }}>Balance outstanding</span>
             </div>
           </Card>
         </Col>
@@ -510,26 +507,25 @@ const ClientManagement: React.FC = () => {
         {/* Sidebar */}
         <Col span={7}>
           {/* Upcoming Deadlines */}
-          <Card className="deadlines-card" title={<><CalendarOutlined /> Upcoming Deadlines</>}>
-            <div className="deadlines-list">
-              {upcomingDeadlines.map((item, i) => (
-                <div key={i} className={`deadline-item priority-${item.priority}`}>
-                  <div className="deadline-left">
-                    <Text strong>{item.client}</Text>
-                    <Text type="secondary" style={{ fontSize: 12 }}>{item.type}</Text>
-                  </div>
-                  <div className="deadline-right">
-                    <Tag color={
-                      item.daysLeft <= 7 ? 'red' : 
-                      item.daysLeft <= 30 ? 'orange' : 
-                      'blue'
-                    }>
-                      {item.daysLeft} days
-                    </Tag>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <Card className="deadlines-card" title={<><CalendarOutlined /> Quick Navigation</>}>
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Button block icon={<ProjectOutlined />} onClick={() => navigate(
+                (window.location.pathname.startsWith('/app/practice-hub') ? '/app/practice-hub' : '/app/practice') + '/engagements'
+              )}>
+                View Engagements
+              </Button>
+              <Button block icon={<ClockCircleOutlined />} onClick={() => navigate(
+                (window.location.pathname.startsWith('/app/practice-hub') ? '/app/practice-hub' : '/app/practice') + '/time-tracking'
+              )}>
+                Time Tracking
+              </Button>
+              <Button block icon={<DollarOutlined />} onClick={() => navigate('/app/sales-hub/invoices')}>
+                Sales Invoices
+              </Button>
+              <Button block icon={<TeamOutlined />} onClick={() => navigate('/app/sales-hub/customers')}>
+                Sales Customers
+              </Button>
+            </Space>
           </Card>
 
           {/* Quick Actions */}
@@ -542,38 +538,24 @@ const ClientManagement: React.FC = () => {
             </div>
           </Card>
 
-          {/* Services Breakdown */}
-          <Card className="services-card" title="Services Overview">
-            <div className="service-item">
-              <div className="service-info">
-                <AuditOutlined />
-                <span>Audit & Assurance</span>
-              </div>
-              <Text strong>$425,000</Text>
-            </div>
-            <div className="service-item">
-              <div className="service-info">
-                <CalculatorOutlined />
-                <span>Tax Services</span>
-              </div>
-              <Text strong>$312,000</Text>
-            </div>
-            <div className="service-item">
-              <div className="service-info">
-                <SolutionOutlined />
-                <span>Advisory</span>
-              </div>
-              <Text strong>$155,500</Text>
-            </div>
+          {/* Cross-Module Info */}
+          <Card className="services-card" title="Practice Info">
+            <Text type="secondary" style={{ display: 'block', marginBottom: 12 }}>
+              Clients are shared with the Sales & CRM module. Adding a client here also creates a Sales customer.
+            </Text>
+            <Divider style={{ margin: '12px 0' }} />
+            <Text type="secondary">
+              Use the Engagements page to create project engagements for clients, and Time Tracking to log billable hours.
+            </Text>
           </Card>
         </Col>
       </Row>
 
-      {/* Add Client Modal */}
+      {/* Add/Edit Client Modal */}
       <Modal
-        title="Add New Client"
+        title={editingClient ? 'Edit Client' : 'Add New Client'}
         open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
+        onCancel={() => { setIsModalOpen(false); setEditingClient(null); form.resetFields(); }}
         footer={null}
         width={700}
       >
@@ -677,12 +659,9 @@ const ClientManagement: React.FC = () => {
             </Select>
           </Form.Item>
           <div className="modal-actions">
-            <Button onClick={() => setIsModalOpen(false)}>Cancel</Button>
-            <Button type="primary" onClick={() => {
-              message.success('Client added successfully');
-              setIsModalOpen(false);
-            }}>
-              Add Client
+            <Button onClick={() => { setIsModalOpen(false); setEditingClient(null); form.resetFields(); }}>Cancel</Button>
+            <Button type="primary" onClick={handleSaveClient}>
+              {editingClient ? 'Update Client' : 'Add Client'}
             </Button>
           </div>
         </Form>
@@ -726,10 +705,10 @@ const ClientManagement: React.FC = () => {
             {/* Quick Stats */}
             <Row gutter={16} className="profile-stats">
               <Col span={6}>
-                <Statistic title="YTD Billed" value={selectedClient.billedYTD} prefix="$" valueStyle={{ fontSize: 18 }} />
+                <Statistic title="YTD Billed" value={selectedClient.billedYTD} prefix="R" valueStyle={{ fontSize: 18 }} />
               </Col>
               <Col span={6}>
-                <Statistic title="Outstanding" value={selectedClient.outstanding} prefix="$" valueStyle={{ fontSize: 18, color: selectedClient.outstanding > 0 ? '#f59e0b' : undefined }} />
+                <Statistic title="Outstanding" value={selectedClient.outstanding} prefix="R" valueStyle={{ fontSize: 18, color: selectedClient.outstanding > 0 ? '#f59e0b' : undefined }} />
               </Col>
               <Col span={6}>
                 <Statistic title="Health Score" value={selectedClient.healthScore || '—'} suffix={selectedClient.healthScore ? '/100' : ''} valueStyle={{ fontSize: 18, color: getHealthColor(selectedClient.healthScore) }} />
@@ -747,10 +726,10 @@ const ClientManagement: React.FC = () => {
               items={[
                 {
                   key: 'engagements',
-                  label: <><ProjectOutlined /> Engagements ({(clientEngagements[selectedClient.id] || []).length})</>,
+                  label: <><ProjectOutlined /> Engagements ({clientEngagements.length})</>,
                   children: (
                     <div className="engagements-list">
-                      {(clientEngagements[selectedClient.id] || []).length === 0 ? (
+                      {clientEngagements.length === 0 ? (
                         <div className="empty-engagements">
                           <FileTextOutlined style={{ fontSize: 48, color: '#d1d5db' }} />
                           <Text type="secondary">No engagements yet</Text>
@@ -760,29 +739,28 @@ const ClientManagement: React.FC = () => {
                         </div>
                       ) : (
                         <List
-                          dataSource={clientEngagements[selectedClient.id]}
+                          dataSource={clientEngagements}
                           renderItem={(item: any) => (
                             <List.Item className="engagement-item">
                               <div className="engagement-info">
                                 <div className="engagement-header">
-                                  <Text strong>{item.name}</Text>
+                                  <Text strong>{item.project_name || item.name}</Text>
                                   <Tag color={
-                                    item.status === 'Active' ? 'blue' :
-                                    item.status === 'Completed' ? 'green' :
-                                    item.status === 'Planning' ? 'orange' : 'default'
-                                  }>{item.status}</Tag>
+                                    (item.status || '').toLowerCase() === 'active' || (item.status || '').toLowerCase() === 'in_progress' ? 'blue' :
+                                    (item.status || '').toLowerCase() === 'completed' ? 'green' :
+                                    (item.status || '').toLowerCase() === 'planning' ? 'orange' : 'default'
+                                  }>{(item.status || 'Active').replace(/_/g, ' ')}</Tag>
                                 </div>
                                 <div className="engagement-meta">
-                                  <Text type="secondary">{item.id} • {item.type} • {item.manager}</Text>
+                                  <Text type="secondary">{item.project_type || item.type || '—'}</Text>
                                 </div>
                                 <Progress 
-                                  percent={item.progress} 
+                                  percent={Number(item.progress || item.completion_percentage || 0)} 
                                   size="small" 
                                   strokeColor={{ '0%': '#667eea', '100%': '#764ba2' }}
                                 />
                                 <div className="engagement-stats">
-                                  <span><ClockCircleOutlined /> {item.hours}h logged</span>
-                                  <span><DollarOutlined /> ${item.budget.toLocaleString()} budget</span>
+                                  <span><DollarOutlined /> R {Number(item.budget || 0).toLocaleString('en-ZA')} budget</span>
                                 </div>
                               </div>
                             </List.Item>
@@ -797,16 +775,16 @@ const ClientManagement: React.FC = () => {
                   label: <><HistoryOutlined /> Recent Activity</>,
                   children: (
                     <Timeline
-                      items={(clientInteractions[selectedClient.id] || []).map((item: any) => ({
-                        color: item.type === 'Call' ? 'blue' : item.type === 'Meeting' ? 'green' : 'gray',
+                      items={clientInteractions.map((item: any) => ({
+                        color: (item.interaction_type || item.type) === 'Call' ? 'blue' : (item.interaction_type || item.type) === 'Meeting' ? 'green' : 'gray',
                         children: (
                           <div className="interaction-item">
                             <div className="interaction-header">
-                              <Tag>{item.type}</Tag>
-                              <Text type="secondary">{item.date}</Text>
+                              <Tag>{item.interaction_type || item.type}</Tag>
+                              <Text type="secondary">{(item.interaction_date || item.date || '').slice(0, 10)}</Text>
                             </div>
-                            <Text>{item.summary}</Text>
-                            <Text type="secondary" style={{ fontSize: 12 }}>by {item.employee}</Text>
+                            <Text>{item.notes || item.summary || '—'}</Text>
+                            <Text type="secondary" style={{ fontSize: 12 }}>by {item.employee_name || item.employee || '—'}</Text>
                           </div>
                         ),
                       }))}
@@ -902,7 +880,7 @@ const ClientManagement: React.FC = () => {
             </Col>
             <Col span={12}>
               <Form.Item label="Budget Amount" name="budgetAmount">
-                <Input prefix="$" placeholder="0" />
+                <Input prefix="R" placeholder="0" />
               </Form.Item>
             </Col>
           </Row>
@@ -911,10 +889,28 @@ const ClientManagement: React.FC = () => {
           </Form.Item>
           <div className="modal-actions">
             <Button onClick={() => setIsEngagementModalOpen(false)}>Cancel</Button>
-            <Button type="primary" onClick={() => {
-              message.success('Engagement created and linked to client');
-              setIsEngagementModalOpen(false);
-              engagementForm.resetFields();
+            <Button type="primary" onClick={async () => {
+              try {
+                const values = await engagementForm.validateFields();
+                await apiClient.post('/api/v2/practice/projects', {
+                  project_name: values.engagementName,
+                  customer_id: selectedClient?.id,
+                  project_type: values.engagementType,
+                  start_date: values.startDate?.format('YYYY-MM-DD'),
+                  end_date: values.endDate?.format('YYYY-MM-DD'),
+                  budget: Number(values.budgetAmount || 0),
+                  budget_hours: Number(values.budgetHours || 0),
+                  description: values.description,
+                  status: 'planning',
+                });
+                message.success('Engagement created and linked to client');
+                setIsEngagementModalOpen(false);
+                engagementForm.resetFields();
+                if (selectedClient) fetchClientDetails(selectedClient.id);
+              } catch (err: any) {
+                if (err.errorFields) return;
+                message.error('Failed to create engagement');
+              }
             }}>
               Create Engagement
             </Button>

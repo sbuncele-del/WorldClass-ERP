@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { workspaceApi } from '../../services/api.service';
 import EnhancedDataTable from '../../components/data/EnhancedDataTable';
 import type { TableColumn, TableAction } from '../../components/data/EnhancedDataTable';
-import { Eye, Edit, Mail, Phone, AlertCircle } from 'lucide-react';
+import { Eye, Edit, Mail, Phone, AlertCircle, Trash2, UserX } from 'lucide-react';
 import '../../styles/erp-ui.css';
 
 interface Customer {
@@ -201,6 +201,32 @@ const CustomersPage: React.FC = () => {
     }
   ];
 
+  const handleDeactivateCustomer = async (customer: Customer) => {
+    const action = customer.status === 'ACTIVE' ? 'deactivate' : 'activate';
+    if (!window.confirm(`Are you sure you want to ${action} ${customer.customer_name}?`)) return;
+    try {
+      await workspaceApi.sales.updateCustomer(customer.customer_id, {
+        status: customer.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE',
+        is_active: customer.status !== 'ACTIVE'
+      });
+      fetchCustomers();
+    } catch (err) {
+      console.error(`Error ${action} customer:`, err);
+      alert(`Failed to ${action} customer. Please try again.`);
+    }
+  };
+
+  const handleDeleteCustomer = async (customer: Customer) => {
+    if (!window.confirm(`Are you sure you want to permanently delete ${customer.customer_name}? This cannot be undone.`)) return;
+    try {
+      await workspaceApi.sales.deleteCustomer(customer.customer_id);
+      fetchCustomers();
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || err?.message || 'Failed to delete customer';
+      alert(msg);
+    }
+  };
+
   // Define row actions
   const actions: TableAction<Customer>[] = [
     {
@@ -208,7 +234,6 @@ const CustomersPage: React.FC = () => {
       icon: <Eye size={16} />,
       onClick: (row) => {
         console.log('View customer:', row);
-        // Navigate to customer detail page
       },
       variant: 'primary'
     },
@@ -217,9 +242,20 @@ const CustomersPage: React.FC = () => {
       icon: <Edit size={16} />,
       onClick: (row) => {
         console.log('Edit customer:', row);
-        // Open edit drawer
       },
       variant: 'secondary'
+    },
+    {
+      label: 'Deactivate',
+      icon: <UserX size={16} />,
+      onClick: (row) => handleDeactivateCustomer(row),
+      variant: 'secondary'
+    },
+    {
+      label: 'Delete',
+      icon: <Trash2 size={16} />,
+      onClick: (row) => handleDeleteCustomer(row),
+      variant: 'danger' as any
     }
   ];
 

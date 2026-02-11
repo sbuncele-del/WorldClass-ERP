@@ -35,7 +35,7 @@ export async function sendWelcomeEmail(
     // Send welcome email
     await sendEmail({
       to: email,
-      subject: `Welcome to Worldclass ERP, ${userName}! 🎉`,
+      subject: `Welcome to SiyaBusa ERP, ${userName}! 🎉`,
       template: 'welcome',
       variables: {
         userName,
@@ -127,7 +127,7 @@ export async function sendGettingStartedEmail(
     // Send getting started guide
     await sendEmail({
       to: email,
-      subject: 'Getting Started with Worldclass ERP 📚',
+      subject: 'Getting Started with SiyaBusa ERP 📚',
       template: 'getting-started',
       variables: {
         userName,

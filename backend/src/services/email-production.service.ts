@@ -149,7 +149,7 @@ class ProductionEmailService {
   }
 
   private getFromAddress(): string {
-    const name = process.env.EMAIL_FROM_NAME || 'WorldClass ERP';
+    const name = process.env.EMAIL_FROM_NAME || 'SiyaBusa ERP';
     const email = process.env.EMAIL_FROM || process.env.SMTP_USER || 'noreply@aetheros.co.za';
     return `"${name}" <${email}>`;
   }
@@ -209,7 +209,7 @@ class ProductionEmailService {
     if (!this.resendApiKey) throw new Error('Resend API key not configured');
 
     const fromDomain = process.env.RESEND_FROM_DOMAIN || 'siyabusaerp.co.za';
-    const fromName = process.env.EMAIL_FROM_NAME || 'WorldClass ERP';
+    const fromName = process.env.EMAIL_FROM_NAME || 'SiyaBusa ERP';
     const fromEmail = process.env.EMAIL_FROM || `noreply@${fromDomain}`;
     
     const response = await fetch('https://api.resend.com/emails', {
@@ -343,13 +343,13 @@ class ProductionEmailService {
   async sendPasswordReset(email: string, resetUrl: string, userName: string): Promise<boolean> {
     return this.sendTemplate({
       to: email,
-      subject: 'Reset Your Password - WorldClass ERP',
+      subject: 'Reset Your Password - SiyaBusa ERP',
       template: 'reset-password',
       variables: {
         userName,
         resetUrl,
         expiryTime: '1 hour',
-        companyName: 'WorldClass ERP',
+        companyName: 'SiyaBusa ERP',
       },
     });
   }
@@ -360,7 +360,7 @@ class ProductionEmailService {
   ): Promise<boolean> {
     return this.sendTemplate({
       to: email,
-      subject: `Trip ${tripDetails.tripNumber} Completed - WorldClass ERP`,
+      subject: `Trip ${tripDetails.tripNumber} Completed - SiyaBusa ERP`,
       template: 'trip-completed',
       variables: {
         tripNumber: tripDetails.tripNumber,
@@ -379,7 +379,7 @@ class ProductionEmailService {
   ): Promise<boolean> {
     return this.sendTemplate({
       to: email,
-      subject: `Invoice ${invoiceDetails.invoiceNumber} - WorldClass ERP`,
+      subject: `Invoice ${invoiceDetails.invoiceNumber} - SiyaBusa ERP`,
       template: 'invoice-notification',
       variables: {
         invoiceNumber: invoiceDetails.invoiceNumber,

@@ -1,0 +1,268 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Card, Row, Col, Table, Button, Input, Select, Tag, Space, Modal, Form,
+  InputNumber, message, Statistic, Typography, Empty, Tooltip, Badge, Progress,
+} from 'antd';
+import {
+  AimOutlined, PlusOutlined, SearchOutlined, EyeOutlined,
+  SyncOutlined, PhoneOutlined, MailOutlined, RocketOutlined,
+} from '@ant-design/icons';
+import { workspaceApi } from '../../services/api.service';
+
+const { Text } = Typography;
+const { Option } = Select;
+
+interface Lead {
+  id: number;
+  lead_id?: number;
+  lead_number?: string;
+  lead_name: string;
+  company?: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  source: string;
+  status: string;
+  score?: number;
+  estimated_value?: number;
+  notes?: string;
+  created_at?: string;
+}
+
+const LeadsPage: React.FC = () => {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [showModal, setShowModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [form] = Form.useForm();
+
+  useEffect(() => { fetchLeads(); }, []);
+
+  const extractList = (response: any, ...keys: string[]) => {
+    if (Array.isArray(response)) return response;
+    for (const k of keys) { if (Array.isArray(response?.[k])) return response[k]; }
+    for (const k of keys) { if (Array.isArray(response?.data?.[k])) return response.data[k]; }
+    if (Array.isArray(response?.data)) return response.data;
+    return [];
+  };
+
+  const fetchLeads = async () => {
+    setLoading(true);
+    try {
+      const response: any = await workspaceApi.sales.getLeads();
+      console.log('[Leads] response:', JSON.stringify(response).slice(0, 300));
+      const list = extractList(response, 'data', 'leads');
+      setLeads(list.map((l: any) => ({ ...l, id: l.lead_id || l.id })));
+    } catch (err) { console.error('[Leads] error:', err); message.error('Failed to load leads'); }
+    finally { setLoading(false); }
+  };
+
+  const handleCreate = async () => {
+    try {
+      const values = await form.validateFields();
+      setSaving(true);
+      await workspaceApi.sales.createLead({
+        lead_name: values.lead_name,
+        company: values.company,
+        contact_person: values.contact_person,
+        email: values.email,
+        phone: values.phone,
+        source: values.source || 'WEBSITE',
+        status: 'NEW',
+        score: values.score || 50,
+        estimated_value: values.estimated_value || 0,
+        notes: values.notes,
+      });
+      message.success('Lead created successfully');
+      setShowModal(false); form.resetFields(); fetchLeads();
+    } catch (err: any) {
+      if (err?.errorFields) return;
+      message.error(err?.message || 'Failed to create lead');
+    } finally { setSaving(false); }
+  };
+
+  const handleConvert = async (lead: Lead) => {
+    try {
+      await workspaceApi.sales.convertLead(lead.id);
+      message.success('Lead converted to opportunity!');
+      fetchLeads();
+    } catch (err: any) {
+      message.error(err?.message || 'Failed to convert lead');
+    }
+  };
+
+  const formatCurrency = (v: number) => `R ${(v || 0).toLocaleString('en-ZA')}`;
+
+  const statusColors: Record<string, string> = {
+    NEW: 'blue', CONTACTED: 'orange', QUALIFIED: 'green', UNQUALIFIED: 'red', CONVERTED: 'purple',
+    new: 'blue', contacted: 'orange', qualified: 'green', unqualified: 'red', converted: 'purple',
+  };
+
+  const sourceColors: Record<string, string> = {
+    WEBSITE: 'cyan', REFERRAL: 'green', COLD_CALL: 'orange', TRADE_SHOW: 'purple', SOCIAL_MEDIA: 'blue',
+    Website: 'cyan', Referral: 'green', 'Cold Call': 'orange', Event: 'purple', LinkedIn: 'blue',
+  };
+
+  const filtered = leads.filter(l => {
+    const matchSearch = !searchTerm || l.lead_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (l.company || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchStatus = !filterStatus || (l.status || '').toUpperCase() === filterStatus.toUpperCase();
+    return matchSearch && matchStatus;
+  });
+
+  const columns = [
+    {
+      title: 'Lead', key: 'name',
+      render: (_: any, r: Lead) => (
+        <div>
+          <Text strong>{r.lead_name}</Text>
+          {r.company && <div><Text type="secondary" style={{ fontSize: 12 }}>{r.company}</Text></div>}
+        </div>
+      ),
+      sorter: (a: Lead, b: Lead) => a.lead_name.localeCompare(b.lead_name),
+    },
+    {
+      title: 'Contact', key: 'contact', width: 200,
+      render: (_: any, r: Lead) => (
+        <Space direction="vertical" size={0}>
+          {r.email && <Text style={{ fontSize: 12 }}><MailOutlined style={{ marginRight: 4 }} />{r.email}</Text>}
+          {r.phone && <Text style={{ fontSize: 12 }}><PhoneOutlined style={{ marginRight: 4 }} />{r.phone}</Text>}
+        </Space>
+      ),
+    },
+    {
+      title: 'Source', dataIndex: 'source', key: 'source', width: 120,
+      render: (s: string) => <Tag color={sourceColors[s] || 'default'}>{s || '—'}</Tag>,
+    },
+    {
+      title: 'Score', dataIndex: 'score', key: 'score', width: 100,
+      render: (v: number) => (
+        <Progress percent={v || 0} size="small" strokeColor={v >= 70 ? '#52c41a' : v >= 40 ? '#faad14' : '#ff4d4f'} format={p => `${p}`} />
+      ),
+      sorter: (a: Lead, b: Lead) => (a.score || 0) - (b.score || 0),
+    },
+    {
+      title: 'Est. Value', dataIndex: 'estimated_value', key: 'value', width: 130,
+      render: (v: number) => <Text>{formatCurrency(v)}</Text>,
+      sorter: (a: Lead, b: Lead) => (a.estimated_value || 0) - (b.estimated_value || 0),
+    },
+    {
+      title: 'Status', dataIndex: 'status', key: 'status', width: 120,
+      render: (s: string) => <Tag color={statusColors[s] || 'default'}>{(s || 'NEW').toUpperCase()}</Tag>,
+    },
+    {
+      title: 'Actions', key: 'actions', width: 120,
+      render: (_: any, r: Lead) => (
+        <Space size="small">
+          <Tooltip title="View"><Button type="text" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedLead(r); setShowDetailModal(true); }} /></Tooltip>
+          {(r.status || '').toUpperCase() === 'QUALIFIED' && (
+            <Tooltip title="Convert to Opportunity"><Button type="text" size="small" icon={<RocketOutlined />} style={{ color: '#722ed1' }} onClick={() => handleConvert(r)} /></Tooltip>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
+  const totalLeads = leads.length;
+  const newCount = leads.filter(l => (l.status || '').toUpperCase() === 'NEW').length;
+  const qualifiedCount = leads.filter(l => (l.status || '').toUpperCase() === 'QUALIFIED').length;
+  const totalValue = leads.reduce((s, l) => s + (l.estimated_value || 0), 0);
+
+  return (
+    <>
+      <Row gutter={16} style={{ marginBottom: 20 }}>
+        <Col span={6}><Card><Statistic title="Total Leads" value={totalLeads} prefix={<AimOutlined style={{ color: '#667eea' }} />} /></Card></Col>
+        <Col span={6}><Card><Statistic title="New" value={newCount} valueStyle={{ color: '#1890ff' }} /></Card></Col>
+        <Col span={6}><Card><Statistic title="Qualified" value={qualifiedCount} valueStyle={{ color: '#52c41a' }} /></Card></Col>
+        <Col span={6}><Card><Statistic title="Pipeline Value" value={totalValue} prefix="R" valueStyle={{ color: '#667eea' }} /></Card></Col>
+      </Row>
+
+      <Card
+        title={<Space><AimOutlined style={{ color: '#667eea' }} /><span>Lead Management</span></Space>}
+        extra={
+          <Space>
+            <Input placeholder="Search..." prefix={<SearchOutlined />} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} style={{ width: 220 }} allowClear />
+            <Select placeholder="All Status" value={filterStatus || undefined} onChange={v => setFilterStatus(v || '')} style={{ width: 130 }} allowClear>
+              <Option value="NEW">New</Option><Option value="CONTACTED">Contacted</Option>
+              <Option value="QUALIFIED">Qualified</Option><Option value="CONVERTED">Converted</Option>
+            </Select>
+            <Button icon={<SyncOutlined />} onClick={fetchLeads} loading={loading} />
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setShowModal(true); }}>New Lead</Button>
+          </Space>
+        }
+      >
+        <Table dataSource={filtered} columns={columns} rowKey="id" loading={loading}
+          pagination={{ pageSize: 15, showSizeChanger: true, showTotal: t => `${t} leads` }} size="middle"
+          locale={{ emptyText: <Empty description="No leads yet. Click 'New Lead' to add one." /> }}
+        />
+      </Card>
+
+      {/* Create Modal */}
+      <Modal title="🎯 New Lead" open={showModal}
+        onCancel={() => setShowModal(false)} onOk={handleCreate} okText="Create Lead" confirmLoading={saving} width={700}>
+        <Form layout="vertical" form={form} initialValues={{ source: 'WEBSITE', score: 50, estimated_value: 0 }}>
+          <Row gutter={16}>
+            <Col span={12}><Form.Item label="Lead Name" name="lead_name" rules={[{ required: true }]}><Input placeholder="e.g. John from Acme" /></Form.Item></Col>
+            <Col span={12}><Form.Item label="Company" name="company"><Input placeholder="Company name" /></Form.Item></Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}><Form.Item label="Contact Person" name="contact_person"><Input /></Form.Item></Col>
+            <Col span={8}><Form.Item label="Email" name="email" rules={[{ type: 'email' }]}><Input prefix={<MailOutlined />} /></Form.Item></Col>
+            <Col span={8}><Form.Item label="Phone" name="phone"><Input prefix={<PhoneOutlined />} /></Form.Item></Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item label="Source" name="source">
+                <Select>
+                  <Option value="WEBSITE">Website</Option><Option value="REFERRAL">Referral</Option>
+                  <Option value="COLD_CALL">Cold Call</Option><Option value="TRADE_SHOW">Trade Show</Option>
+                  <Option value="SOCIAL_MEDIA">Social Media</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}><Form.Item label="Score (0–100)" name="score"><InputNumber style={{ width: '100%' }} min={0} max={100} /></Form.Item></Col>
+            <Col span={8}><Form.Item label="Est. Value (R)" name="estimated_value"><InputNumber style={{ width: '100%' }} prefix="R" min={0} step={1000} /></Form.Item></Col>
+          </Row>
+          <Form.Item label="Notes" name="notes"><Input.TextArea rows={2} /></Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Detail Modal */}
+      <Modal title={selectedLead ? selectedLead.lead_name : 'Lead'} open={showDetailModal}
+        onCancel={() => setShowDetailModal(false)}
+        footer={
+          <Space>
+            <Button onClick={() => setShowDetailModal(false)}>Close</Button>
+            {selectedLead && (selectedLead.status || '').toUpperCase() === 'QUALIFIED' && (
+              <Button type="primary" icon={<RocketOutlined />} onClick={() => { setShowDetailModal(false); handleConvert(selectedLead); }}>Convert to Opportunity</Button>
+            )}
+          </Space>
+        } width={500}>
+        {selectedLead && (
+          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+            <Row gutter={16}>
+              <Col span={12}><Text type="secondary">Company</Text><br /><Text strong>{selectedLead.company || '—'}</Text></Col>
+              <Col span={12}><Text type="secondary">Status</Text><br /><Tag color={statusColors[selectedLead.status]}>{selectedLead.status}</Tag></Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={12}><Text type="secondary">Email</Text><br /><Text>{selectedLead.email || '—'}</Text></Col>
+              <Col span={12}><Text type="secondary">Phone</Text><br /><Text>{selectedLead.phone || '—'}</Text></Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={8}><Text type="secondary">Source</Text><br /><Tag color={sourceColors[selectedLead.source]}>{selectedLead.source}</Tag></Col>
+              <Col span={8}><Text type="secondary">Score</Text><br /><Progress percent={selectedLead.score || 0} size="small" /></Col>
+              <Col span={8}><Statistic title="Est. Value" value={selectedLead.estimated_value || 0} prefix="R" /></Col>
+            </Row>
+            {selectedLead.notes && <><Text type="secondary">Notes</Text><br /><Text>{selectedLead.notes}</Text></>}
+          </Space>
+        )}
+      </Modal>
+    </>
+  );
+};
+
+export default LeadsPage;

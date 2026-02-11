@@ -17,18 +17,15 @@ import {
   Select,
   DatePicker,
   InputNumber,
-  Switch,
   message,
   Divider,
   List,
   Alert,
   Badge,
-  Avatar,
   Descriptions,
   Timeline,
   Popconfirm,
   Spin,
-  Empty,
 } from 'antd';
 import {
   BankOutlined,
@@ -38,16 +35,12 @@ import {
   HomeOutlined,
   AppstoreOutlined,
   BarChartOutlined,
-  PieChartOutlined,
-  RiseOutlined,
-  FallOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   ExclamationCircleOutlined,
   WarningOutlined,
   PlusOutlined,
   DownloadOutlined,
-  PrinterOutlined,
   SyncOutlined,
   SettingOutlined,
   SafetyCertificateOutlined,
@@ -57,7 +50,6 @@ import {
   DeleteOutlined,
   EditOutlined,
   LockOutlined,
-  UnlockOutlined,
   HistoryOutlined,
   CalculatorOutlined,
   FileTextOutlined,
@@ -68,12 +60,15 @@ import {
   StatusBanner,
   HubTabs,
   QuickActionsCard,
-  StatusIndicator,
-  InfoListCard,
 } from '../../components/hub';
-import apiClient from '../../services/api';
+import {
+  assetService,
+  FixedAsset,
+  AssetCategory,
+  AssetDisposal,
+} from '../../services/asset.service';
 
-const { Title, Text, Paragraph } = Typography;
+const { Text } = Typography;
 
 // ===========================================
 // IAS 16 COMPLIANT ASSET POLICIES - TYPE DEFINITIONS
@@ -97,34 +92,6 @@ interface AssetPolicy {
   ias16Reference: string;
 }
 
-interface Asset {
-  id: string;
-  assetNumber: string;
-  description: string;
-  category: string;
-  categoryCode: string;
-  location: string;
-  department: string;
-  custodian: string;
-  acquisitionDate: string;
-  acquisitionCost: number;
-  directlyAttributableCosts: number;
-  estimatedDismantlingCost: number;
-  totalCost: number;
-  usefulLifeYears: number;
-  residualValue: number;
-  depreciationMethod: string;
-  monthlyDepreciation: number;
-  accumulatedDepreciation: number;
-  carryingValue: number;
-  status: 'active' | 'disposed' | 'impaired' | 'fully_depreciated' | 'under_construction';
-  lastDepreciationDate: string;
-  impairmentLoss: number;
-  recoverableAmount: number | null;
-  policyApplied: string;
-  policyVersion: string;
-}
-
 interface AssetStats {
   totalAssets: number;
   totalCost: number;
@@ -136,15 +103,17 @@ interface AssetStats {
   impairedAssets: number;
   monthlyDepreciation: number;
   categories: number;
+  activeAssets: number;
+  underMaintenance: number;
 }
 
-// Default IAS 16 compliant policies (used as fallback only)
-const assetPolicies: AssetPolicy[] = [
+// Default IAS 16 compliant policies (static reference data)
+const DEFAULT_POLICIES: AssetPolicy[] = [
   {
     id: 'POL-001',
     category: 'Land',
     categoryCode: 'LAND',
-    usefulLifeYears: 0, // Not depreciated
+    usefulLifeYears: 0,
     residualValuePercent: 100,
     depreciationMethod: 'straight_line',
     componentDepreciation: false,
@@ -170,7 +139,7 @@ const assetPolicies: AssetPolicy[] = [
     nextReviewDate: '2026-03-01',
     approvedBy: 'CFO',
     status: 'active',
-    sarsWearAndTear: 5, // 5% per annum
+    sarsWearAndTear: 5,
     ias16Reference: 'IAS 16.43 - Systematic depreciation',
   },
   {
@@ -187,7 +156,7 @@ const assetPolicies: AssetPolicy[] = [
     nextReviewDate: '2026-03-01',
     approvedBy: 'CFO',
     status: 'active',
-    sarsWearAndTear: 20, // 20% per annum (5 years)
+    sarsWearAndTear: 20,
     ias16Reference: 'IAS 16.50 - Useful life factors',
   },
   {
@@ -204,7 +173,7 @@ const assetPolicies: AssetPolicy[] = [
     nextReviewDate: '2026-03-01',
     approvedBy: 'CFO',
     status: 'active',
-    sarsWearAndTear: 25, // 25% per annum (4 years)
+    sarsWearAndTear: 25,
     ias16Reference: 'IAS 16.6 - Definition of PPE',
   },
   {
@@ -221,7 +190,7 @@ const assetPolicies: AssetPolicy[] = [
     nextReviewDate: '2026-03-01',
     approvedBy: 'CFO',
     status: 'active',
-    sarsWearAndTear: 33.33, // 33.33% per annum (3 years)
+    sarsWearAndTear: 33.33,
     ias16Reference: 'IAS 16.43 - Depreciation method',
   },
   {
@@ -255,14 +224,14 @@ const assetPolicies: AssetPolicy[] = [
     nextReviewDate: '2026-03-01',
     approvedBy: 'CFO',
     status: 'active',
-    sarsWearAndTear: 16.67, // 16.67% per annum (6 years)
+    sarsWearAndTear: 16.67,
     ias16Reference: 'IAS 16.6 - Definition of PPE',
   },
   {
     id: 'POL-008',
     category: 'Leasehold Improvements',
     categoryCode: 'LHLD',
-    usefulLifeYears: 5, // Or lease term, whichever is shorter
+    usefulLifeYears: 5,
     residualValuePercent: 0,
     depreciationMethod: 'straight_line',
     componentDepreciation: false,
@@ -277,182 +246,7 @@ const assetPolicies: AssetPolicy[] = [
   },
 ];
 
-// ===========================================
-// ASSET REGISTER
-// ===========================================
-
-interface Asset {
-  id: string;
-  assetNumber: string;
-  description: string;
-  category: string;
-  categoryCode: string;
-  location: string;
-  department: string;
-  custodian: string;
-  // IAS 16 Recognition
-  acquisitionDate: string;
-  acquisitionCost: number;
-  directlyAttributableCosts: number;
-  estimatedDismantlingCost: number;
-  totalCost: number; // Initial measurement
-  // Depreciation (inherited from policy)
-  usefulLifeYears: number;
-  residualValue: number;
-  depreciationMethod: string;
-  monthlyDepreciation: number;
-  accumulatedDepreciation: number;
-  carryingValue: number; // NBV
-  // Status
-  status: 'active' | 'disposed' | 'impaired' | 'fully_depreciated' | 'under_construction';
-  lastDepreciationDate: string;
-  // IAS 36 Impairment
-  impairmentLoss: number;
-  recoverableAmount: number | null;
-  // Audit
-  policyApplied: string;
-  policyVersion: string;
-}
-
-const assetRegister: Asset[] = [
-  {
-    id: 'AST-001',
-    assetNumber: 'VEHI-2024-001',
-    description: 'Toyota Hilux 2.8 GD-6 4x4',
-    category: 'Motor Vehicles',
-    categoryCode: 'VEHI',
-    location: 'Head Office - Parking',
-    department: 'Operations',
-    custodian: 'John Smith',
-    acquisitionDate: '2024-03-15',
-    acquisitionCost: 850000,
-    directlyAttributableCosts: 15000,
-    estimatedDismantlingCost: 0,
-    totalCost: 865000,
-    usefulLifeYears: 5,
-    residualValue: 129750, // 15%
-    depreciationMethod: 'Straight Line',
-    monthlyDepreciation: 12254,
-    accumulatedDepreciation: 220572,
-    carryingValue: 644428,
-    status: 'active',
-    lastDepreciationDate: '2025-11-30',
-    impairmentLoss: 0,
-    recoverableAmount: null,
-    policyApplied: 'POL-004',
-    policyVersion: '1.0',
-  },
-  {
-    id: 'AST-002',
-    assetNumber: 'ITEQ-2023-015',
-    description: 'Dell PowerEdge R750 Server',
-    category: 'IT Equipment',
-    categoryCode: 'ITEQ',
-    location: 'Data Center - Rack A3',
-    department: 'IT',
-    custodian: 'Sarah Chen',
-    acquisitionDate: '2023-06-01',
-    acquisitionCost: 450000,
-    directlyAttributableCosts: 25000,
-    estimatedDismantlingCost: 5000,
-    totalCost: 480000,
-    usefulLifeYears: 3,
-    residualValue: 0,
-    depreciationMethod: 'Straight Line',
-    monthlyDepreciation: 13333,
-    accumulatedDepreciation: 240000,
-    carryingValue: 240000,
-    status: 'active',
-    lastDepreciationDate: '2025-11-30',
-    impairmentLoss: 0,
-    recoverableAmount: null,
-    policyApplied: 'POL-006',
-    policyVersion: '1.0',
-  },
-  {
-    id: 'AST-003',
-    assetNumber: 'MACH-2022-008',
-    description: 'CNC Milling Machine - Haas VF-2',
-    category: 'Plant & Machinery',
-    categoryCode: 'MACH',
-    location: 'Factory Floor - Bay 4',
-    department: 'Manufacturing',
-    custodian: 'Mike Johnson',
-    acquisitionDate: '2022-01-15',
-    acquisitionCost: 2500000,
-    directlyAttributableCosts: 150000,
-    estimatedDismantlingCost: 50000,
-    totalCost: 2700000,
-    usefulLifeYears: 10,
-    residualValue: 135000, // 5%
-    depreciationMethod: 'Straight Line',
-    monthlyDepreciation: 21375,
-    accumulatedDepreciation: 769500,
-    carryingValue: 1930500,
-    status: 'active',
-    lastDepreciationDate: '2025-11-30',
-    impairmentLoss: 0,
-    recoverableAmount: null,
-    policyApplied: 'POL-003',
-    policyVersion: '1.0',
-  },
-  {
-    id: 'AST-004',
-    assetNumber: 'BLDG-2020-001',
-    description: 'Warehouse Building - Midrand',
-    category: 'Buildings',
-    categoryCode: 'BLDG',
-    location: 'Midrand Industrial Park',
-    department: 'Operations',
-    custodian: 'Facilities Manager',
-    acquisitionDate: '2020-07-01',
-    acquisitionCost: 15000000,
-    directlyAttributableCosts: 500000,
-    estimatedDismantlingCost: 200000,
-    totalCost: 15700000,
-    usefulLifeYears: 40,
-    residualValue: 1570000, // 10%
-    depreciationMethod: 'Straight Line',
-    monthlyDepreciation: 29438,
-    accumulatedDepreciation: 1942908,
-    carryingValue: 13757092,
-    status: 'active',
-    lastDepreciationDate: '2025-11-30',
-    impairmentLoss: 0,
-    recoverableAmount: null,
-    policyApplied: 'POL-002',
-    policyVersion: '1.0',
-  },
-  {
-    id: 'AST-005',
-    assetNumber: 'OFEQ-2024-042',
-    description: 'Herman Miller Aeron Chairs (Set of 10)',
-    category: 'Office Equipment',
-    categoryCode: 'OFEQ',
-    location: 'Head Office - Floor 3',
-    department: 'Administration',
-    custodian: 'Office Manager',
-    acquisitionDate: '2024-08-01',
-    acquisitionCost: 180000,
-    directlyAttributableCosts: 5000,
-    estimatedDismantlingCost: 0,
-    totalCost: 185000,
-    usefulLifeYears: 5,
-    residualValue: 0,
-    depreciationMethod: 'Straight Line',
-    monthlyDepreciation: 3083,
-    accumulatedDepreciation: 12332,
-    carryingValue: 172668,
-    status: 'active',
-    lastDepreciationDate: '2025-11-30',
-    impairmentLoss: 0,
-    recoverableAmount: null,
-    policyApplied: 'POL-005',
-    policyVersion: '1.0',
-  },
-];
-
-// Pending policy change requests
+// Pending policy change requests (static reference data)
 const pendingPolicyChanges = [
   {
     id: 'PCR-001',
@@ -473,12 +267,19 @@ const pendingPolicyChanges = [
 const AssetsHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showAddAssetModal, setShowAddAssetModal] = useState(false);
-  const [showPolicyModal, setShowPolicyModal] = useState(false);
+  const [showDisposalModal, setShowDisposalModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
   const [showPolicyChangeModal, setShowPolicyChangeModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedPolicy, setSelectedPolicy] = useState<AssetPolicy | null>(null);
   const [addAssetForm] = Form.useForm();
+  const [disposalForm] = Form.useForm();
+  const [transferForm] = Form.useForm();
+  const [maintenanceForm] = Form.useForm();
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [depreciationPeriod, setDepreciationPeriod] = useState<any>(null);
+  const [depreciationLoading, setDepreciationLoading] = useState(false);
 
   // State for API data
   const [assetStats, setAssetStats] = useState<AssetStats>({
@@ -492,26 +293,62 @@ const AssetsHub: React.FC = () => {
     impairedAssets: 0,
     monthlyDepreciation: 0,
     categories: 0,
+    activeAssets: 0,
+    underMaintenance: 0,
   });
-  const [assetRegister, setAssetRegister] = useState<Asset[]>([]);
-  const [assetPolicies, setAssetPolicies] = useState<AssetPolicy[]>([]);
+  const [assets, setAssets] = useState<FixedAsset[]>([]);
+  const [categories, setCategories] = useState<AssetCategory[]>([]);
+  const [disposals, setDisposals] = useState<AssetDisposal[]>([]);
 
   // Fetch assets data from API
   useEffect(() => {
     const fetchAssetsData = async () => {
       setLoading(true);
       try {
-        const [statsRes, assetsRes, policiesRes] = await Promise.all([
-          apiClient.get('/api/assets/stats').catch(() => ({ data: null })),
-          apiClient.get('/api/assets/register').catch(() => ({ data: [] })),
-          apiClient.get('/api/assets/policies').catch(() => ({ data: [] })),
+        const [dashboardRes, assetsRes, categoriesRes, disposalsRes] = await Promise.all([
+          assetService.getDashboard().catch(() => null),
+          assetService.getAssets({ limit: 100 }).catch(() => null),
+          assetService.getCategories().catch(() => []),
+          assetService.getDisposals().catch(() => []),
         ]);
 
-        if (statsRes.data) {
-          setAssetStats(statsRes.data.data || statsRes.data);
+        // Process dashboard data
+        if (dashboardRes?.summary) {
+          const s = dashboardRes.summary;
+          setAssetStats(prev => ({
+            ...prev,
+            totalAssets: s.total_assets || 0,
+            totalCost: s.total_acquisition_cost || 0,
+            totalNBV: s.total_book_value || 0,
+            accumulatedDepreciation: s.total_accumulated_depreciation || 0,
+            activeAssets: s.active_assets || 0,
+            categories: s.total_categories || 0,
+            underMaintenance: s.under_maintenance || 0,
+          }));
         }
-        setAssetRegister(assetsRes.data?.data || assetsRes.data || []);
-        setAssetPolicies(policiesRes.data?.data || policiesRes.data || []);
+
+        // Supplement with assets list summary if available
+        if (assetsRes?.summary) {
+          const s = assetsRes.summary;
+          setAssetStats(prev => ({
+            ...prev,
+            totalAssets: prev.totalAssets || parseInt(s.total_assets || '0'),
+            totalCost: prev.totalCost || parseFloat(s.total_acquisition_cost || '0'),
+            activeAssets: prev.activeAssets || parseInt(s.active_assets || '0'),
+            underMaintenance: prev.underMaintenance || parseInt(s.under_maintenance || '0'),
+          }));
+        }
+
+        // Set categories count
+        const catList = Array.isArray(categoriesRes) ? categoriesRes : [];
+        setAssetStats(prev => ({
+          ...prev,
+          categories: prev.categories || catList.length,
+        }));
+
+        setAssets(assetsRes?.data || []);
+        setCategories(catList);
+        setDisposals(Array.isArray(disposalsRes) ? disposalsRes : []);
       } catch (error) {
         console.error('Error fetching assets data:', error);
         message.error('Failed to load assets data');
@@ -521,9 +358,11 @@ const AssetsHub: React.FC = () => {
     };
 
     fetchAssetsData();
-  }, []);
+  }, [refreshKey]);
 
-  const formatCurrency = (amount: number) => `R ${amount.toLocaleString('en-ZA')}`;
+  const refreshData = () => setRefreshKey(k => k + 1);
+
+  const formatCurrency = (amount: number) => `R ${(amount || 0).toLocaleString('en-ZA')}`;
 
   const getCategoryIcon = (code: string) => {
     const icons: Record<string, React.ReactNode> = {
@@ -540,92 +379,283 @@ const AssetsHub: React.FC = () => {
   };
 
   const getStatusTag = (status: string) => {
+    const normalized = (status || '').toLowerCase();
     const configs: Record<string, { color: string; text: string; icon?: React.ReactNode }> = {
       'active': { color: 'green', text: 'Active', icon: <CheckCircleOutlined /> },
       'disposed': { color: 'default', text: 'Disposed' },
       'impaired': { color: 'orange', text: 'Impaired', icon: <WarningOutlined /> },
       'fully_depreciated': { color: 'purple', text: 'Fully Depreciated' },
       'under_construction': { color: 'blue', text: 'Under Construction', icon: <ClockCircleOutlined /> },
+      'under_maintenance': { color: 'orange', text: 'Under Maintenance', icon: <ToolOutlined /> },
+      'idle': { color: 'default', text: 'Idle', icon: <ClockCircleOutlined /> },
       'pending_approval': { color: 'orange', text: 'Pending Approval', icon: <ClockCircleOutlined /> },
       'superseded': { color: 'default', text: 'Superseded' },
     };
-    const config = configs[status] || { color: 'default', text: status };
+    const config = configs[normalized] || { color: 'default', text: status };
     return <Tag color={config.color} icon={config.icon}>{config.text}</Tag>;
   };
 
-  // When category changes, auto-populate policy fields
-  const handleCategoryChange = (categoryCode: string) => {
-    setSelectedCategory(categoryCode);
-    const policy = assetPolicies.find(p => p.categoryCode === categoryCode);
-    if (policy) {
-      setSelectedPolicy(policy);
-      addAssetForm.setFieldsValue({
-        usefulLifeYears: policy.usefulLifeYears,
-        residualValuePercent: policy.residualValuePercent,
-        depreciationMethod: policy.depreciationMethod,
-      });
-      message.info(`Policy applied: ${policy.category} - ${policy.usefulLifeYears} years ${policy.depreciationMethod.replace('_', ' ')}`);
+  // =============================================
+  // ACTION HANDLERS
+  // =============================================
+
+  const handleCreateAsset = async () => {
+    try {
+      const values = await addAssetForm.validateFields();
+
+      const usefulLifeMonths = values.usefulLifeYears
+        ? values.usefulLifeYears * 12
+        : 60;
+
+      const assetData: Record<string, any> = {
+        asset_name: values.assetName,
+        description: values.description || values.assetName,
+        category_id: values.category_id,
+        acquisition_cost: values.purchasePrice || 0,
+        residual_value: values.residualValue || 0,
+        useful_life_months: usefulLifeMonths,
+        depreciation_method: values.depreciationMethod || 'STRAIGHT_LINE',
+        acquisition_date: values.acquisitionDate?.format('YYYY-MM-DD'),
+        serial_number: values.serialNumber,
+        manufacturer: values.manufacturer,
+        model_number: values.modelNumber,
+        notes: values.notes,
+      };
+
+      await assetService.createAsset(assetData);
+      message.success('Asset created successfully');
+      setShowAddAssetModal(false);
+      addAssetForm.resetFields();
+      setSelectedPolicy(null);
+      refreshData();
+    } catch (error: any) {
+      if (error.errorFields) return; // Form validation error
+      message.error(error.response?.data?.message || 'Failed to create asset');
     }
   };
+
+  const handleDeleteAsset = async (assetId: string) => {
+    try {
+      await assetService.deleteAsset(assetId);
+      message.success('Asset disposed successfully');
+      refreshData();
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'Failed to delete asset');
+    }
+  };
+
+  const handleRunDepreciation = async () => {
+    if (!depreciationPeriod) {
+      message.warning('Please select a depreciation period');
+      return;
+    }
+    setDepreciationLoading(true);
+    try {
+      const periodEndDate = depreciationPeriod.endOf('month').format('YYYY-MM-DD');
+      const result = await assetService.runDepreciation(periodEndDate);
+      message.success(
+        result.message || `Depreciation run completed: ${result.data?.processedAssets || 0} assets processed, R ${result.data?.totalDepreciation || '0'} total`
+      );
+      refreshData();
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'Failed to run depreciation');
+    } finally {
+      setDepreciationLoading(false);
+    }
+  };
+
+  const handleCreateDisposal = async () => {
+    try {
+      const values = await disposalForm.validateFields();
+      const disposalData = {
+        asset_id: values.asset_id,
+        disposal_date: values.disposal_date?.format('YYYY-MM-DD'),
+        disposal_type: values.disposal_type,
+        disposal_amount: values.disposal_amount || 0,
+        reason: values.reason,
+        notes: values.notes,
+      };
+
+      await assetService.createDisposal(disposalData);
+      message.success('Asset disposed successfully');
+      setShowDisposalModal(false);
+      disposalForm.resetFields();
+      refreshData();
+    } catch (error: any) {
+      if (error.errorFields) return;
+      message.error(error.response?.data?.message || 'Failed to record disposal');
+    }
+  };
+
+  const handleCreateTransfer = async () => {
+    try {
+      const values = await transferForm.validateFields();
+      const transferData = {
+        asset_id: values.asset_id,
+        transfer_date: values.transfer_date?.format('YYYY-MM-DD'),
+        to_location_id: values.to_location_id,
+        to_department_id: values.to_department_id,
+        reason: values.reason,
+        notes: values.notes,
+      };
+
+      await assetService.createTransfer(transferData);
+      message.success('Asset transferred successfully');
+      setShowTransferModal(false);
+      transferForm.resetFields();
+      refreshData();
+    } catch (error: any) {
+      if (error.errorFields) return;
+      message.error(error.response?.data?.message || 'Failed to transfer asset');
+    }
+  };
+
+  const handleCreateMaintenance = async () => {
+    try {
+      const values = await maintenanceForm.validateFields();
+      const assetId = values.asset_id;
+      const maintenanceData = {
+        asset_id: assetId,
+        maintenance_type: values.maintenance_type,
+        maintenance_date: values.maintenance_date?.format('YYYY-MM-DD'),
+        description: values.description,
+        cost: values.cost,
+        vendor: values.vendor,
+        status: values.status || 'SCHEDULED',
+        next_maintenance_date: values.next_maintenance_date?.format('YYYY-MM-DD'),
+        notes: values.notes,
+      };
+
+      await assetService.createMaintenance(assetId, maintenanceData);
+      message.success('Maintenance record created successfully');
+      setShowMaintenanceModal(false);
+      maintenanceForm.resetFields();
+      refreshData();
+    } catch (error: any) {
+      if (error.errorFields) return;
+      message.error(error.response?.data?.message || 'Failed to create maintenance record');
+    }
+  };
+
+  // When category changes, auto-populate policy fields
+  const handleCategoryChange = (categoryId: string) => {
+    const category = categories.find(c => c.category_id === categoryId);
+    if (category) {
+      const usefulLifeYears = Math.round((category.default_useful_life_months || 60) / 12);
+      const method = (category.default_depreciation_method || 'STRAIGHT_LINE').toLowerCase();
+
+      addAssetForm.setFieldsValue({
+        usefulLifeYears,
+        depreciationMethod: category.default_depreciation_method || 'STRAIGHT_LINE',
+      });
+
+      // Try to find matching static policy for IAS 16 reference display
+      const staticPolicy = DEFAULT_POLICIES.find(p =>
+        p.categoryCode === category.category_code
+      );
+
+      setSelectedPolicy(staticPolicy || {
+        id: category.category_id,
+        category: category.category_name,
+        categoryCode: category.category_code || '',
+        usefulLifeYears,
+        residualValuePercent: 0,
+        depreciationMethod: method as any,
+        componentDepreciation: false,
+        revaluationModel: false,
+        reviewFrequency: 'annual',
+        lastReviewDate: '',
+        nextReviewDate: '',
+        approvedBy: '',
+        status: 'active',
+        ias16Reference: 'IAS 16',
+      });
+
+      message.info(`Policy applied: ${category.category_name} - ${usefulLifeYears} years ${method.replace(/_/g, ' ')}`);
+    }
+  };
+
+  // The category options for dropdowns: prefer API categories, fall back to static policies
+  const categoryOptions = categories.length > 0
+    ? categories.map(c => ({
+        value: c.category_id,
+        label: c.category_name,
+        code: c.category_code,
+      }))
+    : DEFAULT_POLICIES.map(p => ({
+        value: p.id,
+        label: p.category,
+        code: p.categoryCode,
+      }));
+
+  // =============================================
+  // TABLE COLUMNS
+  // =============================================
 
   const assetColumns = [
     {
       title: 'Asset Number',
-      dataIndex: 'assetNumber',
-      key: 'assetNumber',
-      render: (text: string, record: Asset) => (
-        <Space>
-          {getCategoryIcon(record.categoryCode)}
-          <Text strong style={{ color: '#667eea' }}>{text}</Text>
-        </Space>
+      dataIndex: 'asset_number',
+      key: 'asset_number',
+      render: (text: string) => (
+        <Text strong style={{ color: '#667eea' }}>{text}</Text>
       ),
     },
     {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
+      title: 'Name',
+      dataIndex: 'asset_name',
+      key: 'asset_name',
       ellipsis: true,
     },
     {
       title: 'Category',
-      dataIndex: 'category',
-      key: 'category',
-      render: (text: string) => <Tag>{text}</Tag>,
+      dataIndex: 'category_name',
+      key: 'category_name',
+      render: (text: string) => <Tag>{text || 'Uncategorized'}</Tag>,
     },
     {
       title: 'Cost',
-      dataIndex: 'totalCost',
-      key: 'totalCost',
-      render: (v: number) => formatCurrency(v),
+      dataIndex: 'acquisition_cost',
+      key: 'acquisition_cost',
+      render: (v: number) => formatCurrency(v || 0),
       align: 'right' as const,
     },
     {
       title: 'Acc. Depr.',
-      dataIndex: 'accumulatedDepreciation',
-      key: 'accumulatedDepreciation',
-      render: (v: number) => <Text type="secondary">{formatCurrency(v)}</Text>,
+      dataIndex: 'accumulated_depreciation',
+      key: 'accumulated_depreciation',
+      render: (v: number) => <Text type="secondary">{formatCurrency(v || 0)}</Text>,
       align: 'right' as const,
     },
     {
       title: 'NBV',
-      dataIndex: 'carryingValue',
-      key: 'carryingValue',
-      render: (v: number) => <Text strong style={{ color: '#10b981' }}>{formatCurrency(v)}</Text>,
+      dataIndex: 'book_value',
+      key: 'book_value',
+      render: (v: number) => <Text strong style={{ color: '#10b981' }}>{formatCurrency(v || 0)}</Text>,
       align: 'right' as const,
     },
     {
       title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
+      dataIndex: 'asset_status',
+      key: 'asset_status',
       render: (status: string) => getStatusTag(status),
     },
     {
       title: 'Actions',
       key: 'actions',
-      render: (_: unknown, record: Asset) => (
+      render: (_: unknown, record: FixedAsset) => (
         <Space>
           <Tooltip title="View Details"><Button type="link" size="small" icon={<FileTextOutlined />} /></Tooltip>
           <Tooltip title="Depreciation Schedule"><Button type="link" size="small" icon={<CalculatorOutlined />} /></Tooltip>
+          <Popconfirm
+            title="Dispose this asset?"
+            description="This will mark the asset as disposed."
+            onConfirm={() => handleDeleteAsset(record.asset_id)}
+          >
+            <Tooltip title="Dispose">
+              <Button type="link" size="small" danger icon={<DeleteOutlined />} />
+            </Tooltip>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -692,9 +722,9 @@ const AssetsHub: React.FC = () => {
       render: (_: unknown, record: AssetPolicy) => (
         <Space>
           <Tooltip title="Request Change">
-            <Button 
-              type="link" 
-              size="small" 
+            <Button
+              type="link"
+              size="small"
               icon={<EditOutlined />}
               onClick={() => {
                 setSelectedPolicy(record);
@@ -710,12 +740,74 @@ const AssetsHub: React.FC = () => {
     },
   ];
 
+  const disposalColumns = [
+    {
+      title: 'Asset',
+      key: 'asset',
+      render: (_: unknown, record: AssetDisposal) => (
+        <Space direction="vertical" size={0}>
+          <Text strong>{record.asset_number || 'N/A'}</Text>
+          <Text type="secondary" style={{ fontSize: 12 }}>{record.asset_name}</Text>
+        </Space>
+      ),
+    },
+    {
+      title: 'Disposal Date',
+      dataIndex: 'disposal_date',
+      key: 'disposal_date',
+      render: (date: string) => date ? new Date(date).toLocaleDateString() : '-',
+    },
+    {
+      title: 'Type',
+      dataIndex: 'disposal_type',
+      key: 'disposal_type',
+      render: (type: string) => <Tag>{type || 'N/A'}</Tag>,
+    },
+    {
+      title: 'Disposal Amount',
+      dataIndex: 'disposal_amount',
+      key: 'disposal_amount',
+      render: (v: number) => formatCurrency(v || 0),
+      align: 'right' as const,
+    },
+    {
+      title: 'Book Value',
+      dataIndex: 'book_value_at_disposal',
+      key: 'book_value_at_disposal',
+      render: (v: number) => formatCurrency(v || 0),
+      align: 'right' as const,
+    },
+    {
+      title: 'Gain/Loss',
+      dataIndex: 'gain_loss',
+      key: 'gain_loss',
+      render: (v: number) => {
+        const val = v || 0;
+        const color = val >= 0 ? '#10b981' : '#ef4444';
+        return <Text style={{ color }}>{formatCurrency(val)}</Text>;
+      },
+      align: 'right' as const,
+    },
+    {
+      title: 'Reason',
+      dataIndex: 'reason',
+      key: 'reason',
+      ellipsis: true,
+    },
+  ];
+
+  // =============================================
+  // TAB CONTENT
+  // =============================================
+
   const tabs = [
     {
       key: 'dashboard',
       label: 'Dashboard',
       icon: <BarChartOutlined />,
-      children: (
+      children: loading ? (
+        <div style={{ textAlign: 'center', padding: 80 }}><Spin size="large" /></div>
+      ) : (
         <Row gutter={24}>
           <Col span={16}>
             {/* Asset Value Summary */}
@@ -792,22 +884,23 @@ const AssetsHub: React.FC = () => {
               style={{ marginBottom: 24 }}
             />
 
-            {/* Recent Assets */}
-            <Card 
+            {/* Asset Register */}
+            <Card
               title="Asset Register"
               extra={
                 <Space>
                   <Button icon={<PlusOutlined />} onClick={() => setShowAddAssetModal(true)}>Add Asset</Button>
-                  <Button type="link">View All</Button>
+                  <Button type="link" onClick={() => setActiveTab('register')}>View All</Button>
                 </Space>
               }
             >
               <Table
-                dataSource={assetRegister}
+                dataSource={assets.slice(0, 5)}
                 columns={assetColumns}
-                rowKey="id"
+                rowKey="asset_id"
                 pagination={false}
                 size="middle"
+                locale={{ emptyText: 'No assets found. Click "Add Asset" to create one.' }}
               />
             </Card>
           </Col>
@@ -828,10 +921,10 @@ const AssetsHub: React.FC = () => {
               <Col span={12}>
                 <Card>
                   <Statistic
-                    title="Fully Depreciated"
-                    value={assetStats.assetsFullyDepreciated}
+                    title="Active"
+                    value={assetStats.activeAssets}
                     prefix={<CheckCircleOutlined style={{ color: '#10b981' }} />}
-                    valueStyle={{ color: '#64748b' }}
+                    valueStyle={{ color: '#10b981' }}
                   />
                 </Card>
               </Col>
@@ -842,15 +935,15 @@ const AssetsHub: React.FC = () => {
               title="Quick Actions"
               actions={[
                 { icon: <PlusOutlined />, label: 'Add Asset', onClick: () => setShowAddAssetModal(true) },
-                { icon: <CalculatorOutlined />, label: 'Run Depreciation' },
-                { icon: <SwapOutlined />, label: 'Transfer Asset' },
-                { icon: <AuditOutlined />, label: 'Impairment Test' },
+                { icon: <CalculatorOutlined />, label: 'Run Depreciation', onClick: () => setActiveTab('depreciation') },
+                { icon: <SwapOutlined />, label: 'Transfer Asset', onClick: () => setShowTransferModal(true) },
+                { icon: <AuditOutlined />, label: 'Record Maintenance', onClick: () => setShowMaintenanceModal(true) },
               ]}
             />
 
             {/* Pending Approvals */}
             {pendingPolicyChanges.length > 0 && (
-              <Card 
+              <Card
                 title={
                   <Space>
                     <LockOutlined style={{ color: '#f59e0b' }} />
@@ -864,7 +957,7 @@ const AssetsHub: React.FC = () => {
                   <div key={change.id} style={{ marginBottom: 16 }}>
                     <Text strong>{change.category}</Text>
                     <br />
-                    <Text type="secondary">{change.changeType}: {change.currentValue} → {change.proposedValue}</Text>
+                    <Text type="secondary">{change.changeType}: {change.currentValue} &rarr; {change.proposedValue}</Text>
                     <br />
                     <Space style={{ marginTop: 8 }}>
                       <Button type="primary" size="small">Approve</Button>
@@ -877,15 +970,27 @@ const AssetsHub: React.FC = () => {
 
             {/* Categories Summary */}
             <Card title="Categories" style={{ marginTop: 24 }}>
-              {assetPolicies.slice(0, 5).map(policy => (
-                <div key={policy.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
-                  <Space>
-                    {getCategoryIcon(policy.categoryCode)}
-                    <Text>{policy.category}</Text>
-                  </Space>
-                  <Text type="secondary">{policy.usefulLifeYears > 0 ? `${policy.usefulLifeYears}yr` : 'N/A'}</Text>
-                </div>
-              ))}
+              {categories.length > 0 ? (
+                categories.slice(0, 6).map(cat => (
+                  <div key={cat.category_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                    <Space>
+                      {getCategoryIcon(cat.category_code)}
+                      <Text>{cat.category_name}</Text>
+                    </Space>
+                    <Tag>{cat.asset_count || 0} assets</Tag>
+                  </div>
+                ))
+              ) : (
+                DEFAULT_POLICIES.slice(0, 5).map(policy => (
+                  <div key={policy.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                    <Space>
+                      {getCategoryIcon(policy.categoryCode)}
+                      <Text>{policy.category}</Text>
+                    </Space>
+                    <Text type="secondary">{policy.usefulLifeYears > 0 ? `${policy.usefulLifeYears}yr` : 'N/A'}</Text>
+                  </div>
+                ))
+              )}
             </Card>
           </Col>
         </Row>
@@ -896,7 +1001,7 @@ const AssetsHub: React.FC = () => {
       label: 'Asset Register',
       icon: <FileTextOutlined />,
       children: (
-        <Card 
+        <Card
           title="Full Asset Register"
           extra={
             <Space>
@@ -908,10 +1013,12 @@ const AssetsHub: React.FC = () => {
           }
         >
           <Table
-            dataSource={assetRegister}
+            dataSource={assets}
             columns={assetColumns}
-            rowKey="id"
+            rowKey="asset_id"
             pagination={{ pageSize: 10 }}
+            loading={loading}
+            locale={{ emptyText: 'No assets found. Click "Add Asset" to create your first asset.' }}
           />
         </Card>
       ),
@@ -932,24 +1039,33 @@ const AssetsHub: React.FC = () => {
                 style={{ marginBottom: 16 }}
               />
               <Table
-                dataSource={assetRegister.filter(a => a.status === 'active')}
+                dataSource={assets.filter(a => (a.asset_status || '').toUpperCase() === 'ACTIVE')}
                 columns={[
-                  { title: 'Asset', dataIndex: 'description', key: 'description' },
-                  { title: 'Method', dataIndex: 'depreciationMethod', key: 'depreciationMethod' },
-                  { title: 'Monthly', dataIndex: 'monthlyDepreciation', key: 'monthlyDepreciation', render: (v: number) => formatCurrency(v), align: 'right' as const },
-                  { title: 'Accumulated', dataIndex: 'accumulatedDepreciation', key: 'accumulatedDepreciation', render: (v: number) => formatCurrency(v), align: 'right' as const },
-                  { title: 'NBV', dataIndex: 'carryingValue', key: 'carryingValue', render: (v: number) => <Text strong>{formatCurrency(v)}</Text>, align: 'right' as const },
-                  { 
-                    title: 'Progress', 
+                  { title: 'Asset', dataIndex: 'asset_name', key: 'asset_name' },
+                  { title: 'Method', dataIndex: 'depreciation_method', key: 'depreciation_method',
+                    render: (v: string) => (v || '').replace(/_/g, ' ') },
+                  { title: 'Cost', dataIndex: 'acquisition_cost', key: 'acquisition_cost',
+                    render: (v: number) => formatCurrency(v || 0), align: 'right' as const },
+                  { title: 'Accumulated', dataIndex: 'accumulated_depreciation', key: 'accumulated_depreciation',
+                    render: (v: number) => formatCurrency(v || 0), align: 'right' as const },
+                  { title: 'NBV', dataIndex: 'book_value', key: 'book_value',
+                    render: (v: number) => <Text strong>{formatCurrency(v || 0)}</Text>, align: 'right' as const },
+                  {
+                    title: 'Progress',
                     key: 'progress',
-                    render: (_: unknown, record: Asset) => {
-                      const percent = Math.round((record.accumulatedDepreciation / (record.totalCost - record.residualValue)) * 100);
+                    render: (_: unknown, record: FixedAsset) => {
+                      const depreciable = (record.acquisition_cost || 0) - (record.residual_value || 0);
+                      const percent = depreciable > 0
+                        ? Math.min(100, Math.round(((record.accumulated_depreciation || 0) / depreciable) * 100))
+                        : 0;
                       return <Progress percent={percent} size="small" strokeColor="#667eea" />;
                     },
                   },
                 ]}
-                rowKey="id"
+                rowKey="asset_id"
                 pagination={false}
+                loading={loading}
+                locale={{ emptyText: 'No active assets found for depreciation.' }}
               />
             </Card>
           </Col>
@@ -957,7 +1073,12 @@ const AssetsHub: React.FC = () => {
             <Card title="Run Depreciation">
               <Form layout="vertical">
                 <Form.Item label="Period">
-                  <DatePicker.MonthPicker style={{ width: '100%' }} />
+                  <DatePicker.MonthPicker
+                    style={{ width: '100%' }}
+                    value={depreciationPeriod}
+                    onChange={(val) => setDepreciationPeriod(val)}
+                    placeholder="Select month"
+                  />
                 </Form.Item>
                 <Form.Item label="Scope">
                   <Select defaultValue="all">
@@ -966,7 +1087,13 @@ const AssetsHub: React.FC = () => {
                     <Select.Option value="selected">Selected Assets</Select.Option>
                   </Select>
                 </Form.Item>
-                <Button type="primary" block icon={<CalculatorOutlined />}>
+                <Button
+                  type="primary"
+                  block
+                  icon={<CalculatorOutlined />}
+                  onClick={handleRunDepreciation}
+                  loading={depreciationLoading}
+                >
                   Calculate Depreciation
                 </Button>
               </Form>
@@ -996,7 +1123,7 @@ const AssetsHub: React.FC = () => {
               style={{ marginBottom: 24 }}
             />
 
-            <Card 
+            <Card
               title={
                 <Space>
                   <LockOutlined />
@@ -1011,7 +1138,7 @@ const AssetsHub: React.FC = () => {
               }
             >
               <Table
-                dataSource={assetPolicies}
+                dataSource={DEFAULT_POLICIES}
                 columns={policyColumns}
                 rowKey="id"
                 pagination={false}
@@ -1039,10 +1166,15 @@ const AssetsHub: React.FC = () => {
               <List
                 header={<Text strong>Assets Requiring Review</Text>}
                 bordered
-                dataSource={[
-                  { asset: 'CNC Milling Machine - Haas VF-2', indicator: 'Market value decline', action: 'Calculate recoverable amount' },
-                  { asset: 'Dell PowerEdge R750 Server', indicator: 'Technology obsolescence', action: 'Review useful life' },
-                ]}
+                dataSource={assets.filter(a =>
+                  (a.asset_status || '').toUpperCase() === 'ACTIVE' &&
+                  (a.book_value || 0) > 0
+                ).slice(0, 5).map(a => ({
+                  asset: a.asset_name,
+                  indicator: 'Scheduled review',
+                  action: 'Calculate recoverable amount',
+                }))}
+                locale={{ emptyText: 'No assets currently flagged for impairment review.' }}
                 renderItem={item => (
                   <List.Item
                     actions={[<Button type="primary" size="small" key="test">Test Impairment</Button>]}
@@ -1066,8 +1198,8 @@ const AssetsHub: React.FC = () => {
               <Form layout="vertical">
                 <Form.Item label="Select Asset">
                   <Select placeholder="Choose asset">
-                    {assetRegister.map(a => (
-                      <Select.Option key={a.id} value={a.id}>{a.description}</Select.Option>
+                    {assets.map(a => (
+                      <Select.Option key={a.asset_id} value={a.asset_id}>{a.asset_name}</Select.Option>
                     ))}
                   </Select>
                 </Form.Item>
@@ -1089,7 +1221,14 @@ const AssetsHub: React.FC = () => {
       label: 'Disposals',
       icon: <DeleteOutlined />,
       children: (
-        <Card title="Asset Disposals & Derecognition">
+        <Card
+          title="Asset Disposals & Derecognition"
+          extra={
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowDisposalModal(true)}>
+              Record Disposal
+            </Button>
+          }
+        >
           <Alert
             message="IAS 16.67 - Derecognition"
             description="An asset shall be derecognized on disposal or when no future economic benefits are expected from its use or disposal."
@@ -1097,7 +1236,14 @@ const AssetsHub: React.FC = () => {
             showIcon
             style={{ marginBottom: 16 }}
           />
-          <Button type="primary" icon={<PlusOutlined />}>Record Disposal</Button>
+          <Table
+            dataSource={disposals}
+            columns={disposalColumns}
+            rowKey="disposal_id"
+            pagination={{ pageSize: 10 }}
+            loading={loading}
+            locale={{ emptyText: 'No disposal records found.' }}
+          />
         </Card>
       ),
     },
@@ -1173,7 +1319,7 @@ const AssetsHub: React.FC = () => {
         gradient="green"
         actions={
           <>
-            <Button icon={<SyncOutlined />}>Sync</Button>
+            <Button icon={<SyncOutlined spin={loading} />} onClick={refreshData}>Sync</Button>
             <Button icon={<DownloadOutlined />}>Export</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowAddAssetModal(true)}>
               Add Asset
@@ -1196,14 +1342,16 @@ const AssetsHub: React.FC = () => {
         ]}
       />
 
-      <HubTabs 
+      <HubTabs
         theme="green"
         tabs={tabs}
         activeKey={activeTab}
         onChange={setActiveTab}
       />
 
-      {/* Add Asset Modal - With Policy Auto-Application */}
+      {/* ===========================================
+          ADD ASSET MODAL
+          =========================================== */}
       <Modal
         title={
           <Space>
@@ -1219,12 +1367,12 @@ const AssetsHub: React.FC = () => {
           setSelectedPolicy(null);
         }}
         footer={[
-          <Button key="cancel" onClick={() => setShowAddAssetModal(false)}>Cancel</Button>,
-          <Button key="create" type="primary" onClick={() => {
-            message.success('Asset created with policy automatically applied');
+          <Button key="cancel" onClick={() => {
             setShowAddAssetModal(false);
             addAssetForm.resetFields();
-          }}>
+            setSelectedPolicy(null);
+          }}>Cancel</Button>,
+          <Button key="create" type="primary" onClick={handleCreateAsset}>
             Create Asset
           </Button>
         ]}
@@ -1237,89 +1385,109 @@ const AssetsHub: React.FC = () => {
           showIcon
           style={{ marginBottom: 16 }}
         />
-        
+
         <Form form={addAssetForm} layout="vertical">
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Asset Category" name="category" required>
-                <Select 
-                  placeholder="Select category" 
+              <Form.Item label="Asset Category" name="category_id" rules={[{ required: true, message: 'Please select a category' }]}>
+                <Select
+                  placeholder="Select category"
                   onChange={handleCategoryChange}
                 >
-                  {assetPolicies.map(p => (
-                    <Select.Option key={p.categoryCode} value={p.categoryCode}>
-                      <Space>{getCategoryIcon(p.categoryCode)} {p.category}</Space>
+                  {categoryOptions.map(opt => (
+                    <Select.Option key={opt.value} value={opt.value}>
+                      <Space>{getCategoryIcon(opt.code)} {opt.label}</Space>
                     </Select.Option>
                   ))}
                 </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Asset Number" name="assetNumber">
+              <Form.Item label="Asset Number">
                 <Input placeholder="Auto-generated" disabled />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item label="Description" name="description" required>
-            <Input placeholder="Enter asset description" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Asset Name" name="assetName" rules={[{ required: true, message: 'Please enter asset name' }]}>
+                <Input placeholder="Enter asset name" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Description" name="description">
+                <Input placeholder="Enter description (optional)" />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Divider orientation="left">IAS 16 Initial Measurement</Divider>
 
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item label="Purchase Price" name="purchasePrice" required>
-                <InputNumber 
-                  style={{ width: '100%' }} 
+              <Form.Item label="Purchase Price" name="purchasePrice" rules={[{ required: true, message: 'Purchase price is required' }]}>
+                <InputNumber
+                  style={{ width: '100%' }}
                   prefix="R"
+                  min={0}
                   formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item 
-                label={
-                  <Tooltip title="IAS 16.16(b) - Costs directly attributable to bringing the asset to working condition">
-                    Directly Attributable Costs <SafetyCertificateOutlined />
-                  </Tooltip>
-                } 
-                name="attributableCosts"
-              >
-                <InputNumber 
-                  style={{ width: '100%' }} 
+              <Form.Item label="Residual Value" name="residualValue">
+                <InputNumber
+                  style={{ width: '100%' }}
                   prefix="R"
+                  min={0}
                   formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                 />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item 
-                label={
-                  <Tooltip title="IAS 16.16(c) - Estimated costs of dismantling and removing the asset">
-                    Dismantling Costs <SafetyCertificateOutlined />
-                  </Tooltip>
-                } 
-                name="dismantlingCosts"
-              >
-                <InputNumber 
-                  style={{ width: '100%' }} 
-                  prefix="R"
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                />
+              <Form.Item label="Useful Life (Years)" name="usefulLifeYears">
+                <InputNumber style={{ width: '100%' }} min={0} max={100} />
               </Form.Item>
             </Col>
           </Row>
 
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Acquisition Date" name="acquisitionDate" required>
+            <Col span={8}>
+              <Form.Item label="Acquisition Date" name="acquisitionDate" rules={[{ required: true, message: 'Acquisition date is required' }]}>
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item label="Location" name="location">
-                <Input placeholder="Asset location" />
+            <Col span={8}>
+              <Form.Item label="Depreciation Method" name="depreciationMethod">
+                <Select placeholder="Select method">
+                  <Select.Option value="STRAIGHT_LINE">Straight Line</Select.Option>
+                  <Select.Option value="REDUCING_BALANCE">Reducing Balance</Select.Option>
+                  <Select.Option value="UNITS_OF_PRODUCTION">Units of Production</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="Serial Number" name="serialNumber">
+                <Input placeholder="Serial number (optional)" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item label="Manufacturer" name="manufacturer">
+                <Input placeholder="Manufacturer (optional)" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="Model Number" name="modelNumber">
+                <Input placeholder="Model number (optional)" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="Notes" name="notes">
+                <Input placeholder="Notes (optional)" />
               </Form.Item>
             </Col>
           </Row>
@@ -1332,14 +1500,14 @@ const AssetsHub: React.FC = () => {
                   Applied Policy (Auto-Inherited)
                 </Space>
               </Divider>
-              
+
               <Card size="small" style={{ background: '#f0fdf4', borderColor: '#bbf7d0' }}>
                 <Descriptions size="small" column={3}>
                   <Descriptions.Item label="Category">{selectedPolicy.category}</Descriptions.Item>
                   <Descriptions.Item label="Useful Life">{selectedPolicy.usefulLifeYears} years</Descriptions.Item>
                   <Descriptions.Item label="Residual Value">{selectedPolicy.residualValuePercent}%</Descriptions.Item>
-                  <Descriptions.Item label="Method">{selectedPolicy.depreciationMethod.replace('_', ' ')}</Descriptions.Item>
-                  <Descriptions.Item label="SARS Rate">{selectedPolicy.sarsWearAndTear}%</Descriptions.Item>
+                  <Descriptions.Item label="Method">{selectedPolicy.depreciationMethod.replace(/_/g, ' ')}</Descriptions.Item>
+                  <Descriptions.Item label="SARS Rate">{selectedPolicy.sarsWearAndTear || 'N/A'}%</Descriptions.Item>
                   <Descriptions.Item label="IAS 16 Ref">{selectedPolicy.ias16Reference}</Descriptions.Item>
                 </Descriptions>
                 <Text type="secondary" style={{ fontSize: 12, marginTop: 8, display: 'block' }}>
@@ -1351,7 +1519,263 @@ const AssetsHub: React.FC = () => {
         </Form>
       </Modal>
 
-      {/* Policy Change Request Modal */}
+      {/* ===========================================
+          DISPOSAL MODAL
+          =========================================== */}
+      <Modal
+        title={
+          <Space>
+            <DeleteOutlined />
+            Record Asset Disposal
+          </Space>
+        }
+        open={showDisposalModal}
+        onCancel={() => {
+          setShowDisposalModal(false);
+          disposalForm.resetFields();
+        }}
+        footer={[
+          <Button key="cancel" onClick={() => {
+            setShowDisposalModal(false);
+            disposalForm.resetFields();
+          }}>Cancel</Button>,
+          <Button key="submit" type="primary" onClick={handleCreateDisposal}>
+            Record Disposal
+          </Button>
+        ]}
+        width={600}
+      >
+        <Alert
+          message="IAS 16.67 - Derecognition"
+          description="The gain or loss arising from derecognition shall be determined as the difference between the net disposal proceeds and the carrying amount."
+          type="info"
+          showIcon
+          style={{ marginBottom: 16 }}
+        />
+
+        <Form form={disposalForm} layout="vertical">
+          <Form.Item label="Asset" name="asset_id" rules={[{ required: true, message: 'Please select an asset' }]}>
+            <Select placeholder="Select asset to dispose">
+              {assets
+                .filter(a => (a.asset_status || '').toUpperCase() !== 'DISPOSED')
+                .map(a => (
+                  <Select.Option key={a.asset_id} value={a.asset_id}>
+                    {a.asset_number} - {a.asset_name}
+                  </Select.Option>
+                ))
+              }
+            </Select>
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Disposal Date" name="disposal_date" rules={[{ required: true, message: 'Required' }]}>
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Disposal Type" name="disposal_type" rules={[{ required: true, message: 'Required' }]}>
+                <Select placeholder="Select type">
+                  <Select.Option value="SALE">Sale</Select.Option>
+                  <Select.Option value="SCRAP">Scrap</Select.Option>
+                  <Select.Option value="DONATION">Donation</Select.Option>
+                  <Select.Option value="THEFT">Theft/Loss</Select.Option>
+                  <Select.Option value="TRADE_IN">Trade-in</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item label="Disposal Amount" name="disposal_amount">
+            <InputNumber
+              style={{ width: '100%' }}
+              prefix="R"
+              min={0}
+              formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+            />
+          </Form.Item>
+
+          <Form.Item label="Reason" name="reason" rules={[{ required: true, message: 'Reason is required' }]}>
+            <Input.TextArea rows={2} placeholder="Reason for disposal" />
+          </Form.Item>
+
+          <Form.Item label="Notes" name="notes">
+            <Input.TextArea rows={2} placeholder="Additional notes (optional)" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* ===========================================
+          TRANSFER MODAL
+          =========================================== */}
+      <Modal
+        title={
+          <Space>
+            <SwapOutlined />
+            Transfer Asset
+          </Space>
+        }
+        open={showTransferModal}
+        onCancel={() => {
+          setShowTransferModal(false);
+          transferForm.resetFields();
+        }}
+        footer={[
+          <Button key="cancel" onClick={() => {
+            setShowTransferModal(false);
+            transferForm.resetFields();
+          }}>Cancel</Button>,
+          <Button key="submit" type="primary" onClick={handleCreateTransfer}>
+            Transfer Asset
+          </Button>
+        ]}
+        width={600}
+      >
+        <Form form={transferForm} layout="vertical">
+          <Form.Item label="Asset" name="asset_id" rules={[{ required: true, message: 'Please select an asset' }]}>
+            <Select placeholder="Select asset to transfer">
+              {assets
+                .filter(a => (a.asset_status || '').toUpperCase() === 'ACTIVE')
+                .map(a => (
+                  <Select.Option key={a.asset_id} value={a.asset_id}>
+                    {a.asset_number} - {a.asset_name}
+                  </Select.Option>
+                ))
+              }
+            </Select>
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Transfer Date" name="transfer_date" rules={[{ required: true, message: 'Required' }]}>
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="To Location" name="to_location_id">
+                <Input placeholder="New location" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item label="To Department" name="to_department_id">
+            <Input placeholder="New department" />
+          </Form.Item>
+
+          <Form.Item label="Reason" name="reason" rules={[{ required: true, message: 'Reason is required' }]}>
+            <Input.TextArea rows={2} placeholder="Reason for transfer" />
+          </Form.Item>
+
+          <Form.Item label="Notes" name="notes">
+            <Input.TextArea rows={2} placeholder="Additional notes (optional)" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* ===========================================
+          MAINTENANCE MODAL
+          =========================================== */}
+      <Modal
+        title={
+          <Space>
+            <ToolOutlined />
+            Record Maintenance
+          </Space>
+        }
+        open={showMaintenanceModal}
+        onCancel={() => {
+          setShowMaintenanceModal(false);
+          maintenanceForm.resetFields();
+        }}
+        footer={[
+          <Button key="cancel" onClick={() => {
+            setShowMaintenanceModal(false);
+            maintenanceForm.resetFields();
+          }}>Cancel</Button>,
+          <Button key="submit" type="primary" onClick={handleCreateMaintenance}>
+            Record Maintenance
+          </Button>
+        ]}
+        width={600}
+      >
+        <Form form={maintenanceForm} layout="vertical">
+          <Form.Item label="Asset" name="asset_id" rules={[{ required: true, message: 'Please select an asset' }]}>
+            <Select placeholder="Select asset">
+              {assets.map(a => (
+                <Select.Option key={a.asset_id} value={a.asset_id}>
+                  {a.asset_number} - {a.asset_name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Maintenance Type" name="maintenance_type" rules={[{ required: true, message: 'Required' }]}>
+                <Select placeholder="Select type">
+                  <Select.Option value="PREVENTIVE">Preventive</Select.Option>
+                  <Select.Option value="CORRECTIVE">Corrective</Select.Option>
+                  <Select.Option value="INSPECTION">Inspection</Select.Option>
+                  <Select.Option value="CALIBRATION">Calibration</Select.Option>
+                  <Select.Option value="OVERHAUL">Overhaul</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Maintenance Date" name="maintenance_date" rules={[{ required: true, message: 'Required' }]}>
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item label="Description" name="description" rules={[{ required: true, message: 'Description is required' }]}>
+            <Input.TextArea rows={2} placeholder="Describe the maintenance work" />
+          </Form.Item>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Cost" name="cost">
+                <InputNumber
+                  style={{ width: '100%' }}
+                  prefix="R"
+                  min={0}
+                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Vendor" name="vendor">
+                <Input placeholder="Vendor/Contractor" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Status" name="status" initialValue="SCHEDULED">
+                <Select>
+                  <Select.Option value="SCHEDULED">Scheduled</Select.Option>
+                  <Select.Option value="IN_PROGRESS">In Progress</Select.Option>
+                  <Select.Option value="COMPLETED">Completed</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Next Maintenance Date" name="next_maintenance_date">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item label="Notes" name="notes">
+            <Input.TextArea rows={2} placeholder="Additional notes (optional)" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* ===========================================
+          POLICY CHANGE REQUEST MODAL
+          =========================================== */}
       <Modal
         title={
           <Space>
@@ -1386,7 +1810,7 @@ const AssetsHub: React.FC = () => {
             <Form.Item label="Category">
               <Input value={selectedPolicy.category} disabled />
             </Form.Item>
-            
+
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item label="Current Useful Life">
@@ -1414,8 +1838,8 @@ const AssetsHub: React.FC = () => {
             </Row>
 
             <Form.Item label="Reason for Change" required>
-              <Input.TextArea 
-                rows={3} 
+              <Input.TextArea
+                rows={3}
                 placeholder="Provide justification per IAS 16.51 - change in expected pattern of consumption, technical obsolescence, etc."
               />
             </Form.Item>
@@ -1425,7 +1849,7 @@ const AssetsHub: React.FC = () => {
             </Form.Item>
 
             <Divider />
-            
+
             <Text strong>Approval Workflow:</Text>
             <Timeline style={{ marginTop: 12 }}>
               <Timeline.Item color="blue">Finance Manager Review</Timeline.Item>

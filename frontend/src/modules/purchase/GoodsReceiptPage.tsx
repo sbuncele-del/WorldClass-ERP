@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { Modal, Form, Input, Select, Row, Col, Button, message, InputNumber, DatePicker } from 'antd';
 import apiClient from '../../services/api';
+import { purchaseService } from '../../services/purchase.service';
 import '../../styles/erp-ui.css';
 
 interface GoodsReceipt {
@@ -19,11 +21,35 @@ interface GoodsReceipt {
   notes: string;
 }
 
+interface PurchaseOrderOption {
+  id: string;
+  po_number: string;
+  supplier_name: string;
+  supplier_code: string;
+  status: string;
+  item_count: number;
+  lines?: Array<{
+    id: string;
+    item_code?: string;
+    description: string;
+    quantity: number;
+    unit_of_measure?: string;
+  }>;
+}
+
 const GoodsReceiptPage: React.FC = () => {
   const [receipts, setReceipts] = useState<GoodsReceipt[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+
+  // Create modal state
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [createForm] = Form.useForm();
+  const [orders, setOrders] = useState<PurchaseOrderOption[]>([]);
+  const [selectedOrder, setSelectedOrder] = useState<PurchaseOrderOption | null>(null);
+  const [lineItems, setLineItems] = useState<Array<{ po_line_id: string; description: string; ordered_qty: number; quantity_received: number; unit_of_measure?: string; notes: string }>>([]);
 
   useEffect(() => {
     fetchGoodsReceipts();
@@ -32,12 +58,27 @@ const GoodsReceiptPage: React.FC = () => {
   const fetchGoodsReceipts = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get('/api/purchase/receipts');
+      const response = await apiClient.get('/api/purchase/goods-receipts');
       setReceipts(response.data?.data || response.data || []);
     } catch (err) {
       console.error('Error fetching goods receipts:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    try {
+      const response = await apiClient.get('/api/purchase/orders');
+      const data = response.data?.data || response.data || [];
+      // Only show orders that can receive goods
+      const receivableOrders = Array.isArray(data)
+        ? data.filter((o: any) => ['CONFIRMED', 'SENT', 'PARTIALLY_RECEIVED'].includes(o.status))
+        : [];
+      setOrders(receivableOrders);
+    } catch (err) {
+      console.error('Error fetching purchase orders:', err);
+      setOrders([]);
     }
   };
 
@@ -58,14 +99,130 @@ const GoodsReceiptPage: React.FC = () => {
     return 'red';
   };
 
+  // ── Create GRN ──────────────────────────────────────────────────────────
+  const openCreateModal = () => {
+    createForm.resetFields();
+    setSelectedOrder(null);
+    setLineItems([]);
+    fetchOrders();
+    setShowCreateModal(true);
+  };
+
+  const handleOrderSelect = async (orderId: string) => {
+    const order = orders.find(o => o.id === orderId) || null;
+    setSelectedOrder(order);
+
+    if (order) {
+      // If the order has line items, populate them for quantity entry
+      if (order.lines && order.lines.length > 0) {
+        setLineItems(order.lines.map(line => ({
+          po_line_id: line.id,
+          description: line.description,
+          ordered_qty: line.quantity,
+          quantity_received: line.quantity,
+          unit_of_measure: line.unit_of_measure,
+          notes: '',
+        })));
+      } else {
+        // Fallback: create a single generic line based on item_count
+        const count = order.item_count || 1;
+        const items = [];
+        for (let i = 0; i < count; i++) {
+          items.push({
+            po_line_id: `line-${i}`,
+            description: `Item ${i + 1}`,
+            ordered_qty: 1,
+            quantity_received: 1,
+            unit_of_measure: 'EA',
+            notes: '',
+          });
+        }
+        setLineItems(items);
+      }
+    } else {
+      setLineItems([]);
+    }
+  };
+
+  const updateLineQuantity = (index: number, qty: number) => {
+    setLineItems(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], quantity_received: qty };
+      return updated;
+    });
+  };
+
+  const updateLineNotes = (index: number, notes: string) => {
+    setLineItems(prev => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], notes };
+      return updated;
+    });
+  };
+
+  const handleCreateReceipt = async () => {
+    try {
+      const values = await createForm.validateFields();
+      setSaving(true);
+
+      const payload: any = {
+        order_id: values.order_id,
+        gr_date: values.gr_date ? values.gr_date.format('YYYY-MM-DD') : new Date().toISOString().split('T')[0],
+        notes: values.notes || '',
+        line_items: lineItems.map(item => ({
+          po_line_id: item.po_line_id,
+          quantity_received: item.quantity_received,
+          notes: item.notes || '',
+        })),
+      };
+
+      await purchaseService.createGoodsReceipt(payload);
+      message.success('Goods receipt created successfully');
+      setShowCreateModal(false);
+      createForm.resetFields();
+      setSelectedOrder(null);
+      setLineItems([]);
+      fetchGoodsReceipts();
+    } catch (err: any) {
+      if (err?.errorFields) return; // form validation error
+      message.error(err?.response?.data?.message || err?.message || 'Failed to create goods receipt');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Confirm Receipt ─────────────────────────────────────────────────────
+  const handleConfirmReceipt = async (receipt: GoodsReceipt) => {
+    if (!window.confirm(`Confirm receipt "${receipt.grn_number}"? This will update inventory quantities.`)) return;
+    try {
+      await purchaseService.confirmGoodsReceipt(receipt.id);
+      message.success(`Receipt ${receipt.grn_number} confirmed successfully`);
+      fetchGoodsReceipts();
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || err?.message || 'Failed to confirm receipt');
+    }
+  };
+
+  // ── Delete Receipt ──────────────────────────────────────────────────────
+  const handleDeleteReceipt = async (receipt: GoodsReceipt) => {
+    if (!window.confirm(`Are you sure you want to delete receipt "${receipt.grn_number}"?`)) return;
+    try {
+      await purchaseService.deleteGoodsReceipt(receipt.id);
+      message.success(`Receipt ${receipt.grn_number} deleted successfully`);
+      fetchGoodsReceipts();
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || err?.message || 'Failed to delete receipt');
+    }
+  };
+
   const filteredReceipts = receipts.filter(receipt => {
-    const matchesSearch = 
+    const matchesSearch =
       receipt.grn_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       receipt.po_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       receipt.supplier_name.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesFilter = filterStatus === 'ALL' || receipt.status === filterStatus;
-    
+
     return matchesSearch && matchesFilter;
   });
 
@@ -74,7 +231,7 @@ const GoodsReceiptPage: React.FC = () => {
   const approved = receipts.filter(r => r.status === 'APPROVED').length;
   const rejected = receipts.filter(r => r.status === 'REJECTED').length;
   const avgQualityScore = receipts.filter(r => r.quality_score !== null).length > 0
-    ? receipts.filter(r => r.quality_score !== null).reduce((sum, r) => sum + (r.quality_score || 0), 0) / 
+    ? receipts.filter(r => r.quality_score !== null).reduce((sum, r) => sum + (r.quality_score || 0), 0) /
       receipts.filter(r => r.quality_score !== null).length
     : 0;
 
@@ -93,8 +250,8 @@ const GoodsReceiptPage: React.FC = () => {
     <div className="dashboard-container">
       <div className="content-card">
         <div className="card-header">
-          <h2>📥 Goods Receipt Notes</h2>
-          <button className="btn-primary">+ New GRN</button>
+          <h2>Goods Receipt Notes</h2>
+          <button className="btn-primary" onClick={openCreateModal}>+ New GRN</button>
         </div>
 
         <div className="filters-section">
@@ -107,31 +264,31 @@ const GoodsReceiptPage: React.FC = () => {
             />
           </div>
           <div className="filter-buttons">
-            <button 
+            <button
               className={filterStatus === 'ALL' ? 'filter-btn active' : 'filter-btn'}
               onClick={() => setFilterStatus('ALL')}
             >
               All
             </button>
-            <button 
+            <button
               className={filterStatus === 'PENDING' ? 'filter-btn active' : 'filter-btn'}
               onClick={() => setFilterStatus('PENDING')}
             >
               Pending
             </button>
-            <button 
+            <button
               className={filterStatus === 'RECEIVED' ? 'filter-btn active' : 'filter-btn'}
               onClick={() => setFilterStatus('RECEIVED')}
             >
               Received
             </button>
-            <button 
+            <button
               className={filterStatus === 'QUALITY_CHECK' ? 'filter-btn active' : 'filter-btn'}
               onClick={() => setFilterStatus('QUALITY_CHECK')}
             >
               QC
             </button>
-            <button 
+            <button
               className={filterStatus === 'APPROVED' ? 'filter-btn active' : 'filter-btn'}
               onClick={() => setFilterStatus('APPROVED')}
             >
@@ -205,14 +362,17 @@ const GoodsReceiptPage: React.FC = () => {
                   <td>{receipt.received_by}</td>
                   <td>
                     <div className="action-buttons">
-                      <button className="btn-icon" title="View Details">👁️</button>
+                      {receipt.status === 'PENDING' && (
+                        <button className="btn-icon" title="Confirm Receipt" onClick={() => handleConfirmReceipt(receipt)}>&#10003;</button>
+                      )}
                       {receipt.status === 'QUALITY_CHECK' && (
                         <>
-                          <button className="btn-icon" title="Approve">✅</button>
-                          <button className="btn-icon" title="Reject">❌</button>
+                          <button className="btn-icon" title="Approve" onClick={() => handleConfirmReceipt(receipt)}>&#10003;</button>
                         </>
                       )}
-                      <button className="btn-icon" title="Print GRN">🖨️</button>
+                      {(receipt.status === 'PENDING' || receipt.status === 'RECEIVED') && (
+                        <button className="btn-icon" title="Delete" onClick={() => handleDeleteReceipt(receipt)}>&#128465;</button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -250,6 +410,103 @@ const GoodsReceiptPage: React.FC = () => {
           <div className="metric-detail">Quality performance</div>
         </div>
       </div>
+
+      {/* Create Goods Receipt Modal */}
+      <Modal
+        title="Create Goods Receipt"
+        open={showCreateModal}
+        onCancel={() => { setShowCreateModal(false); createForm.resetFields(); setSelectedOrder(null); setLineItems([]); }}
+        footer={[
+          <Button key="cancel" onClick={() => { setShowCreateModal(false); createForm.resetFields(); setSelectedOrder(null); setLineItems([]); }}>Cancel</Button>,
+          <Button key="save" type="primary" onClick={handleCreateReceipt} loading={saving}>
+            Create Receipt
+          </Button>
+        ]}
+        width={750}
+      >
+        <Form layout="vertical" form={createForm}>
+          <Row gutter={16}>
+            <Col span={16}>
+              <Form.Item label="Purchase Order" name="order_id" rules={[{ required: true, message: 'Please select a purchase order' }]}>
+                <Select
+                  placeholder="Select a purchase order"
+                  showSearch
+                  optionFilterProp="children"
+                  onChange={handleOrderSelect}
+                >
+                  {orders.map(order => (
+                    <Select.Option key={order.id} value={order.id}>
+                      {order.po_number} - {order.supplier_name} ({order.status})
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="Receipt Date" name="gr_date" rules={[{ required: true, message: 'Please select receipt date' }]}>
+                <DatePicker style={{ width: '100%' }} format="YYYY-MM-DD" />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {selectedOrder && (
+            <div style={{ marginBottom: 16, padding: '8px 12px', background: '#f5f5f5', borderRadius: 6 }}>
+              <strong>Supplier:</strong> {selectedOrder.supplier_name} ({selectedOrder.supplier_code})
+            </div>
+          )}
+
+          {lineItems.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <h4 style={{ marginBottom: 8 }}>Line Items - Enter Received Quantities</h4>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #e8e8e8', textAlign: 'left' }}>
+                    <th style={{ padding: '8px 4px' }}>Description</th>
+                    <th style={{ padding: '8px 4px', width: 80 }}>Ordered</th>
+                    <th style={{ padding: '8px 4px', width: 120 }}>Received</th>
+                    <th style={{ padding: '8px 4px', width: 80 }}>UOM</th>
+                    <th style={{ padding: '8px 4px', width: 150 }}>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lineItems.map((item, index) => (
+                    <tr key={item.po_line_id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                      <td style={{ padding: '6px 4px' }}>{item.description}</td>
+                      <td style={{ padding: '6px 4px', textAlign: 'center' }}>{item.ordered_qty}</td>
+                      <td style={{ padding: '6px 4px' }}>
+                        <InputNumber
+                          min={0}
+                          max={item.ordered_qty}
+                          value={item.quantity_received}
+                          onChange={(val) => updateLineQuantity(index, val || 0)}
+                          style={{ width: '100%' }}
+                        />
+                      </td>
+                      <td style={{ padding: '6px 4px', textAlign: 'center' }}>{item.unit_of_measure || 'EA'}</td>
+                      <td style={{ padding: '6px 4px' }}>
+                        <Input
+                          placeholder="Line notes"
+                          value={item.notes}
+                          onChange={(e) => updateLineNotes(index, e.target.value)}
+                          size="small"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <Row gutter={16}>
+            <Col span={24}>
+              <Form.Item label="Notes" name="notes">
+                <Input.TextArea placeholder="Additional notes about this receipt (e.g., delivery condition, discrepancies)" rows={3} />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </div>
   );
 };

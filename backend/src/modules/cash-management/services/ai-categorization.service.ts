@@ -26,7 +26,7 @@ interface CategorySuggestion {
 }
 
 interface AIProvider {
-  name: 'openai' | 'anthropic' | 'xai';
+  name: 'openai' | 'anthropic' | 'xai' | 'groq';
   client: any;
 }
 
@@ -38,7 +38,25 @@ class AICategorizationService {
   }
 
   private async initializeProvider() {
-    // Try x.ai/Grok first (if configured)
+    // Try Groq first (FREE and fast!)
+    if (process.env.GROQ_API_KEY) {
+      try {
+        const OpenAI = require('openai');
+        this.provider = {
+          name: 'groq',
+          client: new OpenAI({
+            apiKey: process.env.GROQ_API_KEY,
+            baseURL: 'https://api.groq.com/openai/v1'
+          })
+        };
+        console.log('AI Categorization: Using Groq (FREE)');
+        return;
+      } catch (error) {
+        console.warn('Failed to initialize Groq:', error);
+      }
+    }
+
+    // Try x.ai/Grok (if configured)
     if (process.env.XAI_API_KEY) {
       try {
         const OpenAI = require('openai');
@@ -111,13 +129,61 @@ class AICategorizationService {
   }
 
   /**
+   * Get learned patterns from previous allocations to feed into AI
+   */
+  private async getLearnedPatterns(tenantId: string): Promise<string> {
+    try {
+      const result = await pool.query(`
+        SELECT gl_account_code, gl_account_name, keywords, frequency, transaction_type, confidence_score
+        FROM allocation_patterns
+        WHERE tenant_id = $1 AND confidence_score >= 40
+        ORDER BY frequency DESC
+        LIMIT 30
+      `, [tenantId]);
+
+      if (result.rows.length === 0) return '';
+
+      return result.rows.map((p: any) =>
+        `  ${p.transaction_type.toUpperCase()}: keywords [${(p.keywords || []).join(', ')}] → ${p.gl_account_code} "${p.gl_account_name}" (used ${p.frequency}x, confidence ${p.confidence_score}%)`
+      ).join('\n');
+    } catch {
+      return ''; // Table may not exist yet
+    }
+  }
+
+  /**
+   * Get chart of accounts for proper GL mapping
+   */
+  private async getChartOfAccounts(tenantId: string): Promise<string> {
+    try {
+      const result = await pool.query(`
+        SELECT COALESCE(NULLIF(account_code, ''), code) as account_code,
+               COALESCE(NULLIF(account_name, ''), name) as account_name,
+               account_type
+        FROM chart_of_accounts
+        WHERE tenant_id = $1 AND is_active = true
+        ORDER BY account_code
+        LIMIT 50
+      `, [tenantId]);
+
+      if (result.rows.length === 0) return '';
+
+      return result.rows.map((a: any) =>
+        `  ${a.account_code}: ${a.account_name} (${a.account_type})`
+      ).join('\n');
+    } catch {
+      return '';
+    }
+  }
+
+  /**
    * AI-powered transaction categorization
    */
   async categorizeTransactions(
     transactions: TransactionForCategorization[],
     tenantId: string
   ): Promise<CategorySuggestion[]> {
-    
+
     // Get available categories
     const categories = await this.getCategories(tenantId);
     const categoryList = categories.map(c => `${c.category}: ${c.description} (${c.type})`).join('\n');
@@ -127,8 +193,14 @@ class AICategorizationService {
       return this.ruleBasedCategorize(transactions, categories);
     }
 
-    // Build prompt
-    const prompt = this.buildCategorizationPrompt(transactions, categoryList);
+    // Get learned patterns and chart of accounts for context
+    const [learnedPatterns, chartOfAccounts] = await Promise.all([
+      this.getLearnedPatterns(tenantId),
+      this.getChartOfAccounts(tenantId)
+    ]);
+
+    // Build prompt with full context
+    const prompt = this.buildCategorizationPrompt(transactions, categoryList, learnedPatterns, chartOfAccounts);
 
     try {
       let suggestions: CategorySuggestion[];
@@ -153,34 +225,76 @@ class AICategorizationService {
 
   private buildCategorizationPrompt(
     transactions: TransactionForCategorization[],
-    categoryList: string
+    categoryList: string,
+    learnedPatterns: string,
+    chartOfAccounts: string
   ): string {
-    const transactionList = transactions.map((t, i) => 
-      `${i + 1}. [ID:${t.line_id}] ${t.is_debit ? 'DEBIT' : 'CREDIT'} R${Math.abs(t.amount).toFixed(2)} - "${t.description}" (${t.reference || 'No ref'})`
+    const transactionList = transactions.map((t, i) =>
+      `${i + 1}. [ID:${t.line_id}] ${t.is_debit ? 'DEBIT (expense/payment)' : 'CREDIT (income/receipt)'} R${Math.abs(t.amount).toFixed(2)} - "${t.description}" (${t.reference || 'No ref'})`
     ).join('\n');
 
-    return `You are a South African accounting expert helping categorize bank transactions.
+    let prompt = `You are a South African chartered accountant categorizing bank transactions for a small/medium business.
+
+CRITICAL RULES:
+- DEBIT transactions are money going OUT (expenses, supplier payments, bank charges, salaries, rent)
+- CREDIT transactions are money coming IN (customer payments, refunds, interest earned, deposits)
+- Do NOT categorize debit transactions as revenue/income
+- Do NOT categorize credit transactions as expenses
+- Bank charges, fees, and levies are ALWAYS expenses (debit)
+- EFT payments OUT are supplier/creditor payments, NOT revenue
+- Customer EFT payments IN are customer receipts, NOT expenses
+- When unsure, use the most specific category available, not generic ones
 
 AVAILABLE CATEGORIES:
-${categoryList}
+${categoryList}`;
+
+    if (chartOfAccounts) {
+      prompt += `
+
+CHART OF ACCOUNTS (use these GL account codes when possible):
+${chartOfAccounts}`;
+    }
+
+    if (learnedPatterns) {
+      prompt += `
+
+PREVIOUSLY LEARNED PATTERNS (the user has manually categorized similar transactions before - follow these patterns):
+${learnedPatterns}`;
+    }
+
+    prompt += `
 
 TRANSACTIONS TO CATEGORIZE:
 ${transactionList}
 
-For each transaction, respond with a JSON array. Each item should have:
+For each transaction, respond with a JSON array. Each item must have:
 - line_id: The ID from the transaction
-- suggested_category: The category code (e.g., "BANK_CHARGES", "UTILITIES")
+- suggested_category: The category code from the AVAILABLE CATEGORIES list
+- gl_account: The GL account code from Chart of Accounts if applicable
 - confidence: 0-100 confidence score
-- reasoning: Brief explanation
+- reasoning: Brief explanation of why this category was chosen
 
-Respond ONLY with valid JSON array, no other text.`;
+Respond ONLY with a valid JSON array, no other text.`;
+
+    return prompt;
   }
 
   private async categorizeWithOpenAI(
     prompt: string,
     transactions: TransactionForCategorization[]
   ): Promise<CategorySuggestion[]> {
-    const model = this.provider!.name === 'xai' ? 'grok-2-latest' : 'gpt-4o-mini';
+    // Select model based on provider
+    let model: string;
+    switch (this.provider!.name) {
+      case 'groq':
+        model = 'llama-3.3-70b-versatile';
+        break;
+      case 'xai':
+        model = 'grok-4-latest';
+        break;
+      default:
+        model = 'gpt-4o-mini';
+    }
     
     const response = await this.provider!.client.chat.completions.create({
       model,

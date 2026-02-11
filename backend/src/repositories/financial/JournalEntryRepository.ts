@@ -59,7 +59,7 @@ export interface JournalEntry {
 export class JournalEntryRepository extends BaseRepository<JournalEntry> {
   protected tableName = 'journal_entries';
   protected schema = 'public';
-  protected primaryKey = 'entry_id';
+  protected primaryKey = 'id';
   protected softDelete = false;  // Table uses deleted_at now but we don't filter by it
 
   /**
@@ -72,7 +72,7 @@ export class JournalEntryRepository extends BaseRepository<JournalEntry> {
     const linesSql = `
       SELECT jel.*, coa.account_code as account_number, coa.account_name as account_name
       FROM journal_entry_lines jel
-      LEFT JOIN chart_of_accounts coa ON coa.account_id = jel.account_id
+      LEFT JOIN chart_of_accounts coa ON coa.id = jel.account_id
       WHERE jel.journal_entry_id = $2 AND jel.tenant_id = $1
       ORDER BY jel.line_number
     `;
@@ -136,7 +136,7 @@ export class JournalEntryRepository extends BaseRepository<JournalEntry> {
            product_id, location_id)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         `, [
-          ctx.tenantId, entry.entry_id, i + 1, line.account_id, line.description,
+          ctx.tenantId, entry.id, i + 1, line.account_id, line.description,
           line.debit_amount || 0, line.credit_amount || 0,
           line.cost_center_id || null, line.department_id || null, line.project_id || null,
           line.product_id || null, line.location_id || null
@@ -278,7 +278,7 @@ export class JournalEntryRepository extends BaseRepository<JournalEntry> {
           jel.debit_amount as debit,
           jel.credit_amount as credit
         FROM journal_entry_lines jel
-        JOIN ${this.fullTableName} je ON je.entry_id = jel.journal_entry_id
+        JOIN ${this.fullTableName} je ON je.id = jel.journal_entry_id
         WHERE jel.tenant_id = $1 
           AND jel.account_id = $2
           AND je.status = 'posted'

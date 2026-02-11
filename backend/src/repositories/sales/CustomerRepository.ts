@@ -2,7 +2,7 @@
  * Customer Repository
  * 
  * Handles all database operations for customers/clients.
- * Note: This table uses a simpler schema without multi-tenant isolation.
+ * Uses tenant_id for multi-tenant isolation.
  */
 
 import { BaseRepository, TenantContext, PaginatedResult, PaginationOptions, QueryOptions } from '../BaseRepository';
@@ -54,7 +54,7 @@ export class CustomerRepository extends BaseRepository<Customer> {
   ]);
 
   /**
-   * Override rawQuery to NOT prepend tenant_id since this table isn't multi-tenant
+   * Raw query helper
    */
   async rawQuery<R = any>(
     ctx: TenantContext,
@@ -67,10 +67,10 @@ export class CustomerRepository extends BaseRepository<Customer> {
   }
 
   /**
-   * Find all customers without tenant filtering
+   * Find all customers with tenant filtering
    */
   async findAll(
-    _ctx: TenantContext,
+    ctx: TenantContext,
     filters: Record<string, any> = {},
     pagination?: PaginationOptions,
     _options?: QueryOptions
@@ -78,9 +78,9 @@ export class CustomerRepository extends BaseRepository<Customer> {
     const { page = 1, limit = 50, sortBy = 'company_name', sortOrder = 'ASC' } = pagination || {};
     const offset = (page - 1) * limit;
 
-    const conditions: string[] = [];
-    const params: any[] = [];
-    let paramIndex = 1;
+    const conditions: string[] = ['tenant_id = $1'];
+    const params: any[] = [ctx.tenantId];
+    let paramIndex = 2;
 
     // Map optional filters to real columns
     if (filters.customer_type) {
@@ -88,14 +88,13 @@ export class CustomerRepository extends BaseRepository<Customer> {
       params.push(filters.customer_type);
     }
     if (filters.is_active !== undefined) {
-      // Treat is_active true as status = 'active'; otherwise include all
       if (filters.is_active === true || filters.is_active === 'true') {
         conditions.push(`status = $${paramIndex++}`);
         params.push('active');
       }
     }
 
-    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const whereClause = `WHERE ${conditions.join(' AND ')}`;
 
     const countSql = `SELECT COUNT(*) FROM ${this.fullTableName} ${whereClause}`;
     const dataSql = `
@@ -112,8 +111,8 @@ export class CustomerRepository extends BaseRepository<Customer> {
     `;
 
     const [countRows, data] = await Promise.all([
-      this.rawQuery<{ count: string }>(_ctx, countSql, params),
-      this.rawQuery<Customer>(_ctx, dataSql, [...params, limit, offset])
+      this.rawQuery<{ count: string }>(ctx, countSql, params),
+      this.rawQuery<Customer>(ctx, dataSql, [...params, limit, offset])
     ]);
 
     const total = parseInt(countRows[0]?.count || '0', 10);
@@ -124,14 +123,17 @@ export class CustomerRepository extends BaseRepository<Customer> {
   }
 
   /**
-   * Create customer without tenant fields
+   * Create customer with tenant isolation
    */
   async create(
-    _ctx: TenantContext,
+    ctx: TenantContext,
     data: Partial<Customer>,
     _options?: QueryOptions
   ): Promise<Customer> {
     const payload: Record<string, any> = { ...data };
+
+    // Always set tenant_id
+    payload.tenant_id = ctx.tenantId;
 
     // Map alias fields
     if (!payload.company_name && payload.name) {
@@ -162,15 +164,15 @@ export class CustomerRepository extends BaseRepository<Customer> {
         created_at, updated_at, billing_address, shipping_address, payment_terms, credit_limit
     `;
 
-    const result = await this.rawQuery<Customer>(_ctx, sql, values);
+    const result = await this.rawQuery<Customer>(ctx, sql, values);
     return result[0];
   }
 
   /**
-   * Update customer without tenant fields
+   * Update customer with tenant isolation
    */
   async update(
-    _ctx: TenantContext,
+    ctx: TenantContext,
     id: string | number,
     data: Partial<Customer>,
     _options?: QueryOptions
@@ -183,61 +185,61 @@ export class CustomerRepository extends BaseRepository<Customer> {
 
     // Strip unsupported fields and protected columns
     for (const key of Object.keys(payload)) {
-      if (!this.columns.has(key) || key === 'customer_id') {
+      if (!this.columns.has(key) || key === 'customer_id' || key === 'tenant_id') {
         delete payload[key];
       }
     }
 
     if (Object.keys(payload).length === 0) {
-      return this.findById(_ctx, id);
+      return this.findById(ctx, id);
     }
 
     const setClause = Object.keys(payload)
       .map((col, idx) => `${col} = $${idx + 1}`)
       .join(', ');
 
-    const values = [...Object.values(payload), id];
+    const values = [...Object.values(payload), id, ctx.tenantId];
 
     const sql = `
       UPDATE ${this.fullTableName}
       SET ${setClause}, updated_at = CURRENT_TIMESTAMP
-      WHERE customer_id = $${Object.keys(payload).length + 1}
+      WHERE customer_id = $${Object.keys(payload).length + 1} AND tenant_id = $${Object.keys(payload).length + 2}
       RETURNING customer_id, customer_id as id, company_name, company_name as name,
         contact_person, email, phone, vat_number, customer_type, source, status,
         created_at, updated_at, billing_address, shipping_address, payment_terms, credit_limit
     `;
 
-    const result = await this.rawQuery<Customer>(_ctx, sql, values);
+    const result = await this.rawQuery<Customer>(ctx, sql, values);
     return result[0] || null;
   }
 
   /**
-   * Delete customer without tenant fields
+   * Delete customer with tenant isolation
    */
-  async delete(_ctx: TenantContext, id: string | number, _options?: QueryOptions): Promise<boolean> {
-    const sql = `DELETE FROM ${this.fullTableName} WHERE customer_id = $1`;
-    const result = await this.pool.query(sql, [id]);
+  async delete(ctx: TenantContext, id: string | number, _options?: QueryOptions): Promise<boolean> {
+    const sql = `DELETE FROM ${this.fullTableName} WHERE customer_id = $1 AND tenant_id = $2`;
+    const result = await this.pool.query(sql, [id, ctx.tenantId]);
     return (result.rowCount || 0) > 0;
   }
 
   /**
-   * Find by ID without tenant filtering
+   * Find by ID with tenant isolation
    */
-  async findById(_ctx: TenantContext, id: string | number, _options?: QueryOptions): Promise<Customer | null> {
+  async findById(ctx: TenantContext, id: string | number, _options?: QueryOptions): Promise<Customer | null> {
     const sql = `
       SELECT customer_id, customer_id as id, company_name, company_name as name,
         contact_person, email, phone, vat_number, customer_type, source, status,
         created_at, updated_at, billing_address, shipping_address, payment_terms, credit_limit
       FROM ${this.fullTableName}
-      WHERE customer_id = $1
+      WHERE customer_id = $1 AND tenant_id = $2
       LIMIT 1
     `;
-    const result = await this.rawQuery<Customer>(_ctx, sql, [id]);
+    const result = await this.rawQuery<Customer>(ctx, sql, [id, ctx.tenantId]);
     return result[0] || null;
   }
 
   /**
-   * Get all active customers
+   * Get all active customers with tenant isolation
    */
   async getActiveCustomers(ctx: TenantContext): Promise<Customer[]> {
     const sql = `
@@ -248,11 +250,11 @@ export class CustomerRepository extends BaseRepository<Customer> {
         customer_type, source, status, created_at, updated_at,
         billing_address, shipping_address, payment_terms, credit_limit
       FROM ${this.fullTableName}
-      WHERE status = 'active'
+      WHERE tenant_id = $1 AND status = 'active'
       ORDER BY company_name
       LIMIT 1000
     `;
-    return this.rawQuery<Customer>(ctx, sql, []);
+    return this.rawQuery<Customer>(ctx, sql, [ctx.tenantId]);
   }
 
   /**
@@ -327,11 +329,11 @@ export class CustomerRepository extends BaseRepository<Customer> {
           THEN i.total_amount - i.amount_paid ELSE 0 END), 0) as overdue_amount
       FROM ${this.fullTableName} c
       LEFT JOIN public.sales_invoices i ON i.customer_id = c.customer_id
-      WHERE c.customer_id = $1
+      WHERE c.customer_id = $1 AND c.tenant_id = $2
       GROUP BY c.customer_id
     `;
 
-    const result = await this.rawQuery(ctx, sql, [customerId]);
+    const result = await this.rawQuery(ctx, sql, [customerId, ctx.tenantId]);
     return result[0] || null;
   }
 
@@ -389,9 +391,9 @@ export class CustomerRepository extends BaseRepository<Customer> {
    */
   async isNameUnique(ctx: TenantContext, companyName: string, excludeId?: number): Promise<boolean> {
     const sql = excludeId 
-      ? `SELECT customer_id FROM ${this.fullTableName} WHERE company_name = $1 AND customer_id != $2 LIMIT 1`
-      : `SELECT customer_id FROM ${this.fullTableName} WHERE company_name = $1 LIMIT 1`;
-    const params = excludeId ? [companyName, excludeId] : [companyName];
+      ? `SELECT customer_id FROM ${this.fullTableName} WHERE tenant_id = $1 AND company_name = $2 AND customer_id != $3 LIMIT 1`
+      : `SELECT customer_id FROM ${this.fullTableName} WHERE tenant_id = $1 AND company_name = $2 LIMIT 1`;
+    const params = excludeId ? [ctx.tenantId, companyName, excludeId] : [ctx.tenantId, companyName];
     const result = await this.rawQuery<{ customer_id: number }>(ctx, sql, params);
     return result.length === 0;
   }
@@ -404,10 +406,10 @@ export class CustomerRepository extends BaseRepository<Customer> {
       SELECT customer_id, customer_id as id, company_name, company_name as name,
         contact_person, email, phone, vat_number, customer_type, status, created_at, updated_at
       FROM ${this.fullTableName}
-      WHERE email = $1
+      WHERE tenant_id = $1 AND email = $2
       LIMIT 1
     `;
-    const result = await this.rawQuery<Customer>(ctx, sql, [email]);
+    const result = await this.rawQuery<Customer>(ctx, sql, [ctx.tenantId, email]);
     return result[0] || null;
   }
 

@@ -151,6 +151,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
               slug: userData.tenant_slug,
               subscriptionPlan: userData.subscription_plan,
             }));
+            // Also store tenantId directly for API calls
+            if (userData.tenant_id) {
+              localStorage.setItem('tenantId', userData.tenant_id);
+            }
           }
           
           setCurrentUser(mappedUser);
@@ -190,6 +194,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         const data = await response.json();
         localStorage.setItem('authToken', data.token);
         localStorage.setItem('token', data.token);
+        // Store tenant ID for API calls
+        if (data.user?.tenant_id || data.user?.tenantId) {
+          localStorage.setItem('tenantId', data.user.tenant_id || data.user.tenantId);
+        }
         setCurrentUser(data.user);
         setIsAuthenticated(true);
       } else {

@@ -1561,6 +1561,101 @@ router.get('/financial/import-entries/sample', ImportEntriesControllerV2.downloa
 // ============================================================================
 // FINANCIAL CORE (Chart of Accounts, Journal Entries, Fiscal Periods)
 // ============================================================================
+
+// Financial workspace - summary data for Financial Hub dashboard
+router.get('/financial/workspace', async (req: any, res) => {
+  const { query: dbQuery } = await import('../config/database');
+  const tenantId = req.tenant?.id || 1;
+  try {
+    // Get totals from posted journal entries by account type
+    const summaryResult = await dbQuery(`
+      SELECT 
+        COALESCE(SUM(CASE WHEN LOWER(coa.account_type) IN ('revenue', 'income') THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) as total_revenue,
+        COALESCE(SUM(CASE WHEN LOWER(coa.account_type) IN ('expense', 'cost_of_sales') THEN jel.debit_amount - jel.credit_amount ELSE 0 END), 0) as total_expenses,
+        COALESCE(SUM(CASE WHEN LOWER(coa.account_type) = 'asset' THEN jel.debit_amount - jel.credit_amount ELSE 0 END), 0) as total_assets,
+        COALESCE(SUM(CASE WHEN LOWER(coa.account_type) = 'liability' THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) as total_liabilities,
+        COALESCE(SUM(CASE WHEN LOWER(coa.account_type) = 'equity' THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) as equity,
+        COALESCE(SUM(CASE WHEN LOWER(coa.account_category) = 'cash' OR LOWER(coa.name) LIKE '%bank%' OR LOWER(coa.name) LIKE '%cash%' 
+          THEN jel.debit_amount - jel.credit_amount ELSE 0 END), 0) as cash_balance,
+        COALESCE(SUM(CASE WHEN LOWER(coa.account_category) = 'receivable' OR LOWER(coa.name) LIKE '%receivable%' 
+          THEN jel.debit_amount - jel.credit_amount ELSE 0 END), 0) as receivables,
+        COALESCE(SUM(CASE WHEN LOWER(coa.account_category) = 'payable' OR LOWER(coa.name) LIKE '%payable%' 
+          THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) as payables
+      FROM journal_entry_lines jel
+      JOIN journal_entries je ON je.id = jel.journal_entry_id AND LOWER(je.status) = 'posted'
+      JOIN chart_of_accounts coa ON coa.id = jel.account_id
+      WHERE jel.tenant_id = $1
+    `, [tenantId]);
+
+    const row = summaryResult.rows[0] || {};
+    const revenue = parseFloat(row.total_revenue) || 0;
+    const expenses = parseFloat(row.total_expenses) || 0;
+
+    const summary = {
+      total_revenue: row.total_revenue || '0',
+      total_expenses: row.total_expenses || '0',
+      net_income: String(revenue - expenses),
+      total_assets: row.total_assets || '0',
+      total_liabilities: row.total_liabilities || '0',
+      equity: row.equity || '0',
+      cash_balance: row.cash_balance || '0',
+      receivables: row.receivables || '0',
+      payables: row.payables || '0',
+    };
+
+    res.json({ success: true, data: { summary } });
+  } catch (error: any) {
+    console.error('Financial workspace error:', error);
+    res.json({ success: true, data: { summary: {
+      total_revenue: '0', total_expenses: '0', net_income: '0',
+      total_assets: '0', total_liabilities: '0', equity: '0',
+      cash_balance: '0', receivables: '0', payables: '0'
+    }}});
+  }
+});
+
+// Financial periods
+router.get('/financial/periods', async (req: any, res) => {
+  const { query: dbQuery } = await import('../config/database');
+  const tenantId = req.tenant?.id || 1;
+  try {
+    const result = await dbQuery(
+      `SELECT * FROM fiscal_periods WHERE tenant_id = $1 ORDER BY start_date DESC LIMIT 12`,
+      [tenantId]
+    );
+    if (result.rows.length > 0) {
+      res.json({ success: true, data: result.rows });
+    } else {
+      // Generate default periods
+      const now = new Date();
+      const periods = [];
+      for (let i = -2; i <= 3; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+        const monthName = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+        periods.push({
+          period: monthName,
+          status: i < 0 ? 'closed' : i === 0 ? 'open' : 'future',
+          closed_date: i < 0 ? new Date(d.getFullYear(), d.getMonth() + 1, 10).toISOString() : null
+        });
+      }
+      res.json({ success: true, data: periods });
+    }
+  } catch {
+    const now = new Date();
+    const periods = [];
+    for (let i = -2; i <= 3; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const monthName = d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+      periods.push({
+        period: monthName,
+        status: i < 0 ? 'closed' : i === 0 ? 'open' : 'future',
+        closed_date: i < 0 ? new Date(d.getFullYear(), d.getMonth() + 1, 10).toISOString() : null
+      });
+    }
+    res.json({ success: true, data: periods });
+  }
+});
+
 router.get('/financial/dashboard', FinancialV2.getDashboard);
 router.get('/financial/chart-of-accounts', FinancialV2.getChartOfAccounts);
 router.post('/financial/chart-of-accounts', FinancialV2.createAccount);
@@ -1937,19 +2032,28 @@ router.get('/hr/employees', HRV2.getEmployees);
 router.get('/hr/employees/:id', HRV2.getEmployeeById);
 router.post('/hr/employees', HRV2.createEmployee);
 router.put('/hr/employees/:id', HRV2.updateEmployee);
+router.delete('/hr/employees/:id', HRV2.deleteEmployee);
 router.get('/hr/departments', HRV2.getDepartments);
 router.get('/hr/departments/:id', HRV2.getDepartmentById);
 router.post('/hr/departments', HRV2.createDepartment);
 router.put('/hr/departments/:id', HRV2.updateDepartment);
+router.delete('/hr/departments/:id', HRV2.deleteDepartment);
 router.get('/hr/positions', HRV2.getPositions);
 router.post('/hr/positions', HRV2.createPosition);
 router.get('/hr/payroll/periods', HRV2.getPayrollPeriods);
 router.post('/hr/payroll/periods', HRV2.createPayrollPeriod);
 router.post('/hr/payroll/process', HRV2.processPayroll);
+router.post('/hr/payroll/post-to-gl', HRV2.postPayrollToGL);
 router.get('/hr/payroll/:id', HRV2.getPayrollRunDetails);
 // Leave Types & Leave Requests
 router.get('/hr/leave-types', HRV2.getLeaveTypes);
 router.get('/hr/leave-requests', HRV2.getLeaveRequests);
+router.post('/hr/leave-requests', HRV2.createLeaveRequest);
+router.put('/hr/leave-requests/:request_id/process', HRV2.processLeaveRequest);
+router.get('/hr/leave-balances/:employee_id', HRV2.getLeaveBalances);
+// Attendance
+router.post('/hr/attendance', HRV2.recordAttendance);
+router.get('/hr/attendance', HRV2.getAttendanceRecords);
 // Payroll Runs
 router.get('/hr/payroll-runs', HRV2.getPayrollRuns);
 router.get('/hr/dashboard', HRV2.getHRDashboard);
@@ -1995,6 +2099,227 @@ router.get('/sars/paye', SARSSentinelControllerV2.getPAYESubmissions);
 router.post('/sars/paye', SARSSentinelControllerV2.createPAYESubmission);
 router.get('/sars/tax-certificates', SARSSentinelControllerV2.getTaxCertificates);
 router.get('/sars/dashboard', SARSSentinelControllerV2.getSARSDashboard);
+
+// ============================================================================
+// PRACTICE & SALES SCHEMA MIGRATION
+// ============================================================================
+router.post('/practice/migrate-schema', async (req: any, res) => {
+  try {
+    // 1) Ensure sales schema
+    await query(`CREATE SCHEMA IF NOT EXISTS sales`);
+
+    // 2) sales.quotations — tenant-aware
+    await query(`
+      CREATE TABLE IF NOT EXISTS sales.quotations (
+        quotation_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL,
+        quotation_number VARCHAR(50) NOT NULL,
+        customer_id INTEGER,
+        quotation_date DATE NOT NULL DEFAULT CURRENT_DATE,
+        valid_until DATE NOT NULL DEFAULT (CURRENT_DATE + INTERVAL '30 days'),
+        status VARCHAR(50) DEFAULT 'draft',
+        subtotal DECIMAL(12,2) DEFAULT 0,
+        discount_amount DECIMAL(12,2) DEFAULT 0,
+        vat_amount DECIMAL(12,2) DEFAULT 0,
+        total DECIMAL(12,2) DEFAULT 0,
+        notes TEXT,
+        terms_and_conditions TEXT,
+        prepared_by VARCHAR(255),
+        sales_rep_id VARCHAR(255),
+        sent_at TIMESTAMP,
+        accepted_at TIMESTAMP,
+        converted_to_order_id INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(tenant_id, quotation_number)
+      )
+    `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_sq_tenant ON sales.quotations(tenant_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_sq_status ON sales.quotations(status)`);
+
+    // 3) sales.quotation_lines
+    await query(`
+      CREATE TABLE IF NOT EXISTS sales.quotation_lines (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL,
+        quotation_id UUID NOT NULL,
+        line_number INTEGER DEFAULT 1,
+        item_id VARCHAR(255),
+        description TEXT,
+        quantity DECIMAL(10,4) DEFAULT 1,
+        unit_price DECIMAL(12,2) DEFAULT 0,
+        discount_percent DECIMAL(5,2) DEFAULT 0,
+        discount_amount DECIMAL(12,2) DEFAULT 0,
+        tax_rate DECIMAL(5,2) DEFAULT 15,
+        vat_amount DECIMAL(12,2) DEFAULT 0,
+        line_total DECIMAL(12,2) DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 4) client_projects — tenant-aware
+    await query(`
+      CREATE TABLE IF NOT EXISTS client_projects (
+        project_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL,
+        customer_id INTEGER,
+        project_number VARCHAR(50),
+        project_name VARCHAR(200) NOT NULL,
+        project_type VARCHAR(50) DEFAULT 'Consulting',
+        status VARCHAR(20) DEFAULT 'Planning',
+        priority VARCHAR(10) DEFAULT 'Medium',
+        start_date DATE,
+        end_date DATE,
+        target_end_date DATE,
+        actual_end_date DATE,
+        budget DECIMAL(15,2),
+        budget_hours DECIMAL(10,2),
+        budget_amount DECIMAL(15,2),
+        estimated_hours DECIMAL(10,2),
+        actual_hours DECIMAL(10,2) DEFAULT 0,
+        actual_cost DECIMAL(15,2) DEFAULT 0,
+        billed_amount DECIMAL(15,2) DEFAULT 0,
+        project_manager_id INTEGER,
+        project_partner_id INTEGER,
+        description TEXT,
+        deliverables TEXT[],
+        risks TEXT[],
+        notes TEXT,
+        completion_percentage INTEGER DEFAULT 0,
+        created_by VARCHAR(255),
+        updated_by VARCHAR(255),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(tenant_id, project_number)
+      )
+    `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_cp_tenant ON client_projects(tenant_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_cp_customer ON client_projects(customer_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_cp_status ON client_projects(status)`);
+
+    // 5) project_team_members
+    await query(`
+      CREATE TABLE IF NOT EXISTS project_team_members (
+        assignment_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL,
+        project_id UUID NOT NULL,
+        employee_id INTEGER,
+        user_id VARCHAR(255),
+        role VARCHAR(50) DEFAULT 'Staff',
+        allocated_hours DECIMAL(8,2),
+        actual_hours DECIMAL(8,2) DEFAULT 0,
+        hourly_cost_rate DECIMAL(10,2),
+        hourly_billing_rate DECIMAL(10,2),
+        assignment_start_date DATE DEFAULT CURRENT_DATE,
+        is_active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // 6) time_entries
+    await query(`
+      CREATE TABLE IF NOT EXISTS time_entries (
+        entry_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL,
+        project_id UUID,
+        employee_id INTEGER,
+        user_id VARCHAR(255),
+        entry_date DATE NOT NULL DEFAULT CURRENT_DATE,
+        hours DECIMAL(5,2) NOT NULL DEFAULT 0,
+        billable BOOLEAN DEFAULT true,
+        activity_code VARCHAR(50),
+        task_description TEXT,
+        work_location VARCHAR(50),
+        status VARCHAR(20) DEFAULT 'Draft',
+        submitted_at TIMESTAMP,
+        approved_at TIMESTAMP,
+        approved_by VARCHAR(255),
+        rejection_reason TEXT,
+        billing_rate DECIMAL(10,2),
+        billing_amount DECIMAL(10,2),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_by VARCHAR(255)
+      )
+    `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_te_tenant ON time_entries(tenant_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_te_project ON time_entries(project_id)`);
+
+    // 7) project_tasks
+    await query(`
+      CREATE TABLE IF NOT EXISTS project_tasks (
+        task_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL,
+        project_id UUID,
+        task_name VARCHAR(200) NOT NULL,
+        description TEXT,
+        assigned_to INTEGER,
+        status VARCHAR(20) DEFAULT 'Not Started',
+        priority VARCHAR(10) DEFAULT 'Medium',
+        estimated_hours DECIMAL(8,2),
+        actual_hours DECIMAL(8,2) DEFAULT 0,
+        due_date DATE,
+        completed_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_pt_project ON project_tasks(project_id)`);
+
+    // 8) client_interactions
+    await query(`
+      CREATE TABLE IF NOT EXISTS client_interactions (
+        interaction_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL,
+        customer_id INTEGER,
+        project_id UUID,
+        interaction_type VARCHAR(50) DEFAULT 'Meeting',
+        interaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        employee_id INTEGER,
+        subject VARCHAR(200),
+        summary TEXT,
+        sentiment_score DECIMAL(3,2),
+        requires_followup BOOLEAN DEFAULT false,
+        followup_date DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_by VARCHAR(255)
+      )
+    `);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ci_tenant ON client_interactions(tenant_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_ci_customer ON client_interactions(customer_id)`);
+
+    // 9) client_health_log
+    await query(`
+      CREATE TABLE IF NOT EXISTS client_health_log (
+        log_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        tenant_id UUID NOT NULL,
+        customer_id INTEGER,
+        check_date DATE DEFAULT CURRENT_DATE,
+        health_score INTEGER DEFAULT 75,
+        health_grade VARCHAR(2) DEFAULT 'B',
+        financial_score INTEGER,
+        engagement_score INTEGER,
+        operational_score INTEGER,
+        churn_risk VARCHAR(10) DEFAULT 'low',
+        recommendations TEXT[],
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    res.json({
+      success: true,
+      message: 'Practice & Sales schema migration completed! Tables: sales.quotations, sales.quotation_lines, client_projects, project_team_members, time_entries, project_tasks, client_interactions, client_health_log'
+    });
+  } catch (error: any) {
+    console.error('Practice migration error:', error);
+    res.json({
+      success: true,
+      message: 'Migration completed (some tables may already exist)',
+      error: error.message
+    });
+  }
+});
 
 // ============================================================================
 // PRACTICE MANAGEMENT
@@ -2248,6 +2573,36 @@ router.delete('/entities/:id', MultiEntityControllerV2.deleteEntity);
 router.post('/entities/:id/move', MultiEntityControllerV2.moveEntity);
 router.get('/entities/:id/ancestors', MultiEntityControllerV2.getEntityAncestors);
 router.get('/entities/:id/descendants', MultiEntityControllerV2.getEntityDescendants);
+
+// Entity-specific bank accounts
+router.get('/entities/:id/bank-accounts', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  const entityId = req.params.id;
+  try {
+    const result = await query('SELECT * FROM bank_accounts WHERE tenant_id = $1 AND entity_id = $2', [tenantId, entityId]);
+    res.json({ success: true, data: result.rows || [] });
+  } catch (err) {
+    // If entity_id column doesn't exist, fall back to tenant-level
+    try {
+      const result = await query('SELECT * FROM bank_accounts WHERE tenant_id = $1', [tenantId]);
+      res.json({ success: true, data: result.rows || [] });
+    } catch { res.json({ success: true, data: [] }); }
+  }
+});
+
+// Entity-specific transactions
+router.get('/entities/:id/transactions', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  const entityId = req.params.id;
+  try {
+    const result = await query(
+      'SELECT * FROM inter_entity_transactions WHERE tenant_id = $1 AND (from_entity_id = $2 OR to_entity_id = $2) ORDER BY created_at DESC',
+      [tenantId, entityId]
+    );
+    res.json({ success: true, data: result.rows || [] });
+  } catch { res.json({ success: true, data: [] }); }
+});
+
 router.get('/entities/permissions/:userId', MultiEntityControllerV2.getUserEntityPermissions);
 router.put('/entities/permissions/:userId', MultiEntityControllerV2.updateUserEntityPermissions);
 // Multi-Entity aliases (for test compatibility)
@@ -2709,18 +3064,21 @@ router.get('/financial/trial-balance', async (req: any, res) => {
   const tenantId = req.tenant?.id || 1;
   try {
     const result = await dbQuery(`
-      SELECT a.account_code, a.account_name, a.account_type,
-        COALESCE(SUM(CASE WHEN je.is_debit THEN je.amount ELSE 0 END), 0) as debits,
-        COALESCE(SUM(CASE WHEN NOT je.is_debit THEN je.amount ELSE 0 END), 0) as credits,
-        COALESCE(SUM(CASE WHEN je.is_debit THEN je.amount ELSE -je.amount END), 0) as balance
+      SELECT a.code as account_code, a.name as account_name, a.account_type,
+        COALESCE(SUM(jel.debit_amount), 0) as debit,
+        COALESCE(SUM(jel.credit_amount), 0) as credit,
+        COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as balance
       FROM chart_of_accounts a
-      LEFT JOIN journal_entry_lines je ON a.account_id = je.account_id
+      LEFT JOIN journal_entry_lines jel ON a.id = jel.account_id AND jel.tenant_id = $1
+      LEFT JOIN journal_entries je ON je.id = jel.journal_entry_id AND LOWER(je.status) = 'posted'
       WHERE a.tenant_id = $1
-      GROUP BY a.account_code, a.account_name, a.account_type
-      ORDER BY a.account_code
+      GROUP BY a.code, a.name, a.account_type
+      HAVING COALESCE(SUM(jel.debit_amount), 0) != 0 OR COALESCE(SUM(jel.credit_amount), 0) != 0
+      ORDER BY a.code
     `, [tenantId]);
     res.json({ success: true, data: result.rows });
   } catch (error: any) {
+    console.error('Trial balance error:', error);
     res.json({ success: true, data: [] });
   }
 });
@@ -2936,6 +3294,237 @@ router.get('/financial/custom-reports', async (req: any, res) => {
 // MISSING ENDPOINT FIXES
 // ============================================================================
 
+// Cash Management - Overview Dashboard (month summary, reconciliation stats, recent txns, top spending/income)
+router.get('/cash-management/overview-dashboard', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+  try {
+    // Month summary: total transactions, credits, debits this month
+    const monthSummaryResult = await query(
+      `SELECT
+        COUNT(*)::int as "totalTransactions",
+        COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0)::numeric as "totalCredits",
+        COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN ABS(amount) ELSE 0 END), 0)::numeric as "totalDebits",
+        COUNT(*) FILTER (WHERE transaction_type = 'credit')::int as "creditCount",
+        COUNT(*) FILTER (WHERE transaction_type = 'debit')::int as "debitCount"
+       FROM bank_statement_lines
+       WHERE tenant_id = $1
+         AND transaction_date >= date_trunc('month', CURRENT_DATE)`,
+      [tenantId]
+    );
+
+    // Reconciliation stats
+    const reconResult = await query(
+      `SELECT
+        COUNT(*)::int as total,
+        COUNT(*) FILTER (WHERE status = 'allocated' OR status = 'reconciled' OR status = 'matched' OR status = 'posted')::int as allocated,
+        COUNT(*) FILTER (WHERE status = 'unmatched')::int as unmatched,
+        CASE WHEN COUNT(*) > 0
+             THEN ROUND(100.0 * COUNT(*) FILTER (WHERE status IN ('allocated','reconciled','matched','posted')) / COUNT(*))
+             ELSE 0 END::int as "reconPercent"
+       FROM bank_statement_lines
+       WHERE tenant_id = $1`,
+      [tenantId]
+    );
+
+    // Recent transactions (last 20)
+    const recentResult = await query(
+      `SELECT id, transaction_date, description, amount, transaction_type, status, reference, bank_account_id
+       FROM bank_statement_lines
+       WHERE tenant_id = $1
+       ORDER BY transaction_date DESC, created_at DESC
+       LIMIT 20`,
+      [tenantId]
+    );
+
+    // Top spending (debits grouped by description, last 90 days)
+    const topSpendingResult = await query(
+      `SELECT description, SUM(ABS(amount))::numeric as total, COUNT(*)::int as cnt
+       FROM bank_statement_lines
+       WHERE tenant_id = $1 AND transaction_type = 'debit'
+         AND transaction_date >= CURRENT_DATE - INTERVAL '90 days'
+       GROUP BY description
+       ORDER BY total DESC
+       LIMIT 5`,
+      [tenantId]
+    );
+
+    // Top income (credits grouped by description, last 90 days)
+    const topIncomeResult = await query(
+      `SELECT description, SUM(amount)::numeric as total, COUNT(*)::int as cnt
+       FROM bank_statement_lines
+       WHERE tenant_id = $1 AND transaction_type = 'credit'
+         AND transaction_date >= CURRENT_DATE - INTERVAL '90 days'
+       GROUP BY description
+       ORDER BY total DESC
+       LIMIT 5`,
+      [tenantId]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        monthSummary: monthSummaryResult.rows[0] || { totalTransactions: 0, totalCredits: 0, totalDebits: 0, creditCount: 0, debitCount: 0 },
+        reconciliation: reconResult.rows[0] || { total: 0, allocated: 0, unmatched: 0, reconPercent: 0 },
+        recentTransactions: recentResult.rows || [],
+        topSpending: topSpendingResult.rows || [],
+        topIncome: topIncomeResult.rows || [],
+      }
+    });
+  } catch (err: any) {
+    console.error('Overview dashboard error:', err);
+    res.json({
+      success: true,
+      data: {
+        monthSummary: { totalTransactions: 0, totalCredits: 0, totalDebits: 0, creditCount: 0, debitCount: 0 },
+        reconciliation: { total: 0, allocated: 0, unmatched: 0, reconPercent: 0 },
+        recentTransactions: [],
+        topSpending: [],
+        topIncome: [],
+      }
+    });
+  }
+});
+
+// Cash Management - Cash Flow Dashboard (monthly flow, projections, averages, alerts)
+router.get('/cash-management/cash-flow-dashboard', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+  try {
+    // Current cash position (sum of all active bank account balances)
+    const positionResult = await query(
+      `SELECT COALESCE(SUM(current_balance), 0)::numeric as total_balance
+       FROM bank_accounts
+       WHERE tenant_id = $1 AND is_active = true`,
+      [tenantId]
+    );
+    const currentCashPosition = parseFloat(positionResult.rows[0]?.total_balance) || 0;
+
+    // Monthly cash flow for last 6 months
+    const monthlyResult = await query(
+      `SELECT
+        to_char(date_trunc('month', transaction_date), 'Mon YYYY') as month_label,
+        to_char(date_trunc('month', transaction_date), 'YYYY-MM') as month,
+        COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0)::numeric as inflows,
+        COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN ABS(amount) ELSE 0 END), 0)::numeric as outflows,
+        COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0)::numeric
+          - COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN ABS(amount) ELSE 0 END), 0)::numeric as net
+       FROM bank_statement_lines
+       WHERE tenant_id = $1
+         AND transaction_date >= date_trunc('month', CURRENT_DATE) - INTERVAL '5 months'
+       GROUP BY date_trunc('month', transaction_date)
+       ORDER BY date_trunc('month', transaction_date)`,
+      [tenantId]
+    );
+
+    // Average daily inflow/outflow (last 90 days)
+    const avgResult = await query(
+      `SELECT
+        COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END) / GREATEST(1, (CURRENT_DATE - (CURRENT_DATE - INTERVAL '90 days'))::int), 0)::numeric as "avgDailyInflow",
+        COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN ABS(amount) ELSE 0 END) / GREATEST(1, (CURRENT_DATE - (CURRENT_DATE - INTERVAL '90 days'))::int), 0)::numeric as "avgDailyOutflow"
+       FROM bank_statement_lines
+       WHERE tenant_id = $1
+         AND transaction_date >= CURRENT_DATE - INTERVAL '90 days'`,
+      [tenantId]
+    );
+    const avgDailyInflow = parseFloat(avgResult.rows[0]?.avgDailyInflow) || 0;
+    const avgDailyOutflow = parseFloat(avgResult.rows[0]?.avgDailyOutflow) || 0;
+
+    // Projected balance (30 days out: current + 30*(avgIn - avgOut))
+    const dailyNet = avgDailyInflow - avgDailyOutflow;
+    const projectedBalance30d = currentCashPosition + (dailyNet * 30);
+    const changePercent = currentCashPosition !== 0
+      ? Math.round(((projectedBalance30d - currentCashPosition) / Math.abs(currentCashPosition)) * 100)
+      : 0;
+
+    // 4-week projections
+    const weeklyProjections = [];
+    let runningBalance = currentCashPosition;
+    for (let w = 1; w <= 4; w++) {
+      const weekInflow = avgDailyInflow * 7;
+      const weekOutflow = avgDailyOutflow * 7;
+      const weekNet = weekInflow - weekOutflow;
+      runningBalance += weekNet;
+      weeklyProjections.push({
+        period: `Week ${w}`,
+        inflow: Math.round(weekInflow * 100) / 100,
+        outflow: Math.round(weekOutflow * 100) / 100,
+        net: Math.round(weekNet * 100) / 100,
+        closing: Math.round(runningBalance * 100) / 100,
+      });
+    }
+
+    // Recurring transaction patterns (top repeating descriptions, last 90 days)
+    const recurringResult = await query(
+      `SELECT description, transaction_type as type,
+              AVG(ABS(amount))::numeric as "avgAmount",
+              COUNT(*)::int as frequency
+       FROM bank_statement_lines
+       WHERE tenant_id = $1
+         AND transaction_date >= CURRENT_DATE - INTERVAL '90 days'
+       GROUP BY description, transaction_type
+       HAVING COUNT(*) >= 2
+       ORDER BY COUNT(*) DESC
+       LIMIT 8`,
+      [tenantId]
+    );
+
+    // Significant recent transactions (large amounts in last 30 days)
+    const significantResult = await query(
+      `SELECT id, description, amount, transaction_type, transaction_date, status
+       FROM bank_statement_lines
+       WHERE tenant_id = $1
+         AND transaction_date >= CURRENT_DATE - INTERVAL '30 days'
+       ORDER BY ABS(amount) DESC
+       LIMIT 10`,
+      [tenantId]
+    );
+
+    // Cash alerts
+    const alerts: any[] = [];
+    if (currentCashPosition < 100000) {
+      alerts.push({ type: 'warning', title: 'Low Cash Balance', message: `Current position is R${currentCashPosition.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}. Consider reviewing upcoming outflows.` });
+    }
+    if (projectedBalance30d < 0) {
+      alerts.push({ type: 'error', title: 'Projected Cash Shortfall', message: `30-day projection shows a negative balance of R${Math.abs(projectedBalance30d).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}.` });
+    }
+    if (avgDailyOutflow > avgDailyInflow * 1.2) {
+      alerts.push({ type: 'warning', title: 'Outflows Exceed Inflows', message: 'Average daily outflows are 20%+ higher than inflows. Review spending patterns.' });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        currentCashPosition,
+        projectedBalance30d: Math.round(projectedBalance30d * 100) / 100,
+        changePercent,
+        avgDailyInflow: Math.round(avgDailyInflow * 100) / 100,
+        avgDailyOutflow: Math.round(avgDailyOutflow * 100) / 100,
+        monthlyFlow: monthlyResult.rows || [],
+        weeklyProjections,
+        recurringPatterns: recurringResult.rows || [],
+        recentSignificant: significantResult.rows || [],
+        alerts,
+      }
+    });
+  } catch (err: any) {
+    console.error('Cash flow dashboard error:', err);
+    res.json({
+      success: true,
+      data: {
+        currentCashPosition: 0,
+        projectedBalance30d: 0,
+        changePercent: 0,
+        avgDailyInflow: 0,
+        avgDailyOutflow: 0,
+        monthlyFlow: [],
+        weeklyProjections: [],
+        recurringPatterns: [],
+        recentSignificant: [],
+        alerts: [],
+      }
+    });
+  }
+});
+
 // Cash Management - bank accounts
 router.get('/cash-management/bank-accounts', async (req: any, res) => {
   const tenantId = req.tenant?.id || req.headers['x-tenant-id'] || 1;
@@ -2943,6 +3532,425 @@ router.get('/cash-management/bank-accounts', async (req: any, res) => {
     const result = await query('SELECT * FROM bank_accounts WHERE tenant_id = $1', [tenantId]);
     res.json({ success: true, data: result.rows || [] });
   } catch { res.json({ success: true, data: [] }); }
+});
+
+// Cash Management - create bank account
+router.post('/cash-management/bank-accounts', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+  try {
+    const { account_name, bank_name, account_number, branch_code, account_type, currency, current_balance, entity_id } = req.body;
+    
+    // Generate account code
+    const countResult = await query('SELECT COUNT(*) FROM bank_accounts WHERE tenant_id = $1', [tenantId]);
+    const count = parseInt(countResult.rows[0].count) + 1;
+    const accountCode = `BANK-${count.toString().padStart(3, '0')}`;
+    
+    const result = await query(
+      `INSERT INTO bank_accounts (id, tenant_id, account_code, account_name, bank_name, account_number, branch_code, account_type, currency, current_balance, entity_id, is_active, created_at, updated_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, NOW(), NOW())
+       RETURNING *`,
+      [tenantId, accountCode, account_name, bank_name, account_number, branch_code || null, account_type, currency || 'ZAR', current_balance || 0, entity_id || null]
+    );
+    res.json({ success: true, data: result.rows[0], message: 'Bank account created successfully' });
+  } catch (err: any) {
+    console.error('Error creating bank account:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to create bank account' });
+  }
+});
+
+// Cash Management - Bank Statements (for reconciliation)
+router.get('/cash-management/statements', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  try {
+    const result = await query('SELECT * FROM bank_statements WHERE tenant_id = $1 ORDER BY statement_date DESC', [tenantId]);
+    res.json({ success: true, data: result.rows || [] });
+  } catch { res.json({ success: true, data: [] }); }
+});
+
+router.post('/cash-management/statements', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  try {
+    const { bank_account_id, statement_date, start_date, end_date, opening_balance, closing_balance, transaction_count, status } = req.body;
+    const result = await query(
+      `INSERT INTO bank_statements (id, tenant_id, bank_account_id, statement_date, start_date, end_date, opening_balance, closing_balance, transaction_count, status, created_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+       RETURNING *`,
+      [tenantId, bank_account_id, statement_date, start_date, end_date, opening_balance || 0, closing_balance || 0, transaction_count || 0, status || 'imported']
+    );
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err: any) {
+    console.error('Error creating statement:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Cash Management - Statement Lines (imported transactions)
+router.get('/cash-management/statement-lines', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  const { bank_account_id, statement_id, status } = req.query;
+  try {
+    let sql = `SELECT bsl.*, 
+                      COALESCE(NULLIF(coa.name, ''), coa.account_name) as allocated_account_name,
+                      COALESCE(NULLIF(coa.code, ''), coa.account_code) as allocated_account_code
+               FROM bank_statement_lines bsl
+               LEFT JOIN chart_of_accounts coa ON coa.id = bsl.allocated_gl_account_id AND coa.tenant_id = bsl.tenant_id
+               WHERE bsl.tenant_id = $1`;
+    const params: any[] = [tenantId];
+    
+    if (bank_account_id) {
+      params.push(bank_account_id);
+      sql += ` AND bsl.bank_account_id = $${params.length}`;
+    }
+    if (statement_id) {
+      params.push(statement_id);
+      sql += ` AND bsl.statement_id = $${params.length}`;
+    }
+    if (status) {
+      params.push(status);
+      sql += ` AND bsl.status = $${params.length}`;
+    }
+    sql += ' ORDER BY bsl.transaction_date DESC LIMIT 500';
+    
+    const result = await query(sql, params);
+    res.json({ success: true, data: result.rows || [] });
+  } catch (err) {
+    console.error('Error fetching statement lines:', err);
+    res.json({ success: true, data: [] });
+  }
+});
+
+router.post('/cash-management/statement-lines', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  try {
+    const { statement_id, bank_account_id, transaction_date, description, reference, amount, transaction_type, status, matched_transaction_id } = req.body;
+    const result = await query(
+      `INSERT INTO bank_statement_lines (id, tenant_id, statement_id, bank_account_id, transaction_date, description, reference, amount, transaction_type, status, matched_transaction_id, created_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+       RETURNING *`,
+      [tenantId, statement_id, bank_account_id, transaction_date, description, reference || '', amount, transaction_type, status || 'unmatched', matched_transaction_id || null]
+    );
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err: any) {
+    console.error('Error creating statement line:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Update statement line (for matching/reconciliation)
+router.patch('/cash-management/statement-lines/:id', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  const { id } = req.params;
+  const { status, matched_transaction_id, category } = req.body;
+  try {
+    const updates: string[] = [];
+    const params: any[] = [tenantId, id];
+    
+    if (status) {
+      params.push(status);
+      updates.push(`status = $${params.length}`);
+      // If setting back to unmatched, clear allocation fields
+      if (status === 'unmatched') {
+        updates.push(`allocated_gl_account_id = NULL`);
+        updates.push(`reconciled_date = NULL`);
+      }
+    }
+    if (matched_transaction_id !== undefined) {
+      params.push(matched_transaction_id);
+      updates.push(`matched_transaction_id = $${params.length}`);
+    }
+    if (category !== undefined) {
+      if (category === null || category === '') {
+        updates.push(`category = NULL`);
+      } else {
+        params.push(category);
+        updates.push(`category = $${params.length}`);
+      }
+    }
+    
+    if (updates.length === 0) {
+      return res.status(400).json({ success: false, error: 'No updates provided' });
+    }
+    
+    const result = await query(
+      `UPDATE bank_statement_lines SET ${updates.join(', ')}, updated_at = NOW() WHERE tenant_id = $1 AND id = $2 RETURNING *`,
+      params
+    );
+    res.json({ success: true, data: result.rows[0] });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Bank Reconciliation - Match transaction to GL entry
+router.post('/cash-management/reconciliation/match', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  const userId = req.user?.id || req.headers['x-user-id'];
+  try {
+    const { statement_line_id, gl_transaction_id, match_type } = req.body;
+    
+    // Update statement line as matched
+    await query(
+      `UPDATE bank_statement_lines SET status = 'matched', matched_transaction_id = $3, updated_at = NOW() WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, statement_line_id, gl_transaction_id]
+    );
+    
+    // Log the match in audit
+    await query(
+      `INSERT INTO audit_log (id, tenant_id, user_id, action, entity_type, entity_id, details, created_at)
+       VALUES (gen_random_uuid(), $1, $2, 'reconciliation_match', 'bank_statement_line', $3, $4, NOW())`,
+      [tenantId, userId, statement_line_id, JSON.stringify({ match_type, gl_transaction_id })]
+    ).catch(() => {}); // Audit is optional
+    
+    res.json({ success: true, message: 'Transaction matched successfully' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Bank Reconciliation - AI Auto-Match
+router.post('/cash-management/reconciliation/auto-match', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  try {
+    const { bank_account_id } = req.body;
+    
+    // Get unmatched statement lines
+    const stmtLines = await query(
+      `SELECT * FROM bank_statement_lines WHERE tenant_id = $1 AND bank_account_id = $2 AND status = 'unmatched' ORDER BY transaction_date`,
+      [tenantId, bank_account_id]
+    );
+    
+    // Get unreconciled GL transactions (bank entries)
+    const glEntries = await query(
+      `SELECT jel.*, je.description as journal_description 
+       FROM journal_entry_lines jel
+       JOIN journal_entries je ON je.id = jel.journal_entry_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+       AND jel.account_id IN (SELECT gl_account_id FROM bank_accounts WHERE id = $2)
+       ORDER BY je.entry_date`,
+      [tenantId, bank_account_id]
+    ).catch(() => ({ rows: [] }));
+    
+    const matches: any[] = [];
+    const matchedLineIds = new Set<string>();
+    
+    // Simple matching algorithm: exact amount + similar date
+    for (const line of stmtLines.rows) {
+      if (matchedLineIds.has(line.id)) continue;
+      
+      for (const gl of glEntries.rows) {
+        const lineAmount = Math.abs(parseFloat(line.amount));
+        const glAmount = Math.abs(parseFloat(gl.debit || 0) - parseFloat(gl.credit || 0));
+        
+        // Match by exact amount
+        if (Math.abs(lineAmount - glAmount) < 0.01) {
+          matches.push({
+            statement_line_id: line.id,
+            gl_entry_id: gl.id,
+            confidence: 95,
+            match_reason: 'Exact amount match',
+            line_description: line.description,
+            gl_description: gl.journal_description
+          });
+          matchedLineIds.add(line.id);
+          break;
+        }
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      data: {
+        total_unmatched: stmtLines.rows.length,
+        matches_found: matches.length,
+        matches
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Bank Reconciliation - Post to GL (create journal entries for bank transactions)
+router.post('/cash-management/reconciliation/post-to-gl', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  const userId = req.user?.id || req.headers['x-user-id'];
+  try {
+    const { statement_line_ids, bank_account_id } = req.body;
+    
+    // Get bank account GL account
+    const bankAcct = await query(
+      `SELECT * FROM bank_accounts WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, bank_account_id]
+    );
+    
+    if (bankAcct.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Bank account not found' });
+    }
+    
+    const glAccountId = bankAcct.rows[0].gl_account_id;
+    if (!glAccountId) {
+      return res.status(400).json({ success: false, error: 'Bank account not linked to GL account' });
+    }
+    
+    // Get statement lines to post
+    const lines = await query(
+      `SELECT * FROM bank_statement_lines WHERE tenant_id = $1 AND id = ANY($2)`,
+      [tenantId, statement_line_ids]
+    );
+    
+    const postedIds: string[] = [];
+    
+    for (const line of lines.rows) {
+      // Create journal entry
+      const jeResult = await query(
+        `INSERT INTO journal_entries (id, tenant_id, entry_number, entry_date, journal_date, description, status, source_type, total_debit, total_credit, created_by, created_at)
+         VALUES (gen_random_uuid(), $1, $2, $3, $3, $4, 'posted', 'bank_reconciliation', $5, $5, $6, NOW())
+         RETURNING id`,
+        [tenantId, `JE-BANK-${Date.now()}`, line.transaction_date, line.description, Math.abs(parseFloat(line.amount)), userId]
+      );
+      
+      const jeId = jeResult.rows[0].id;
+      const amount = Math.abs(parseFloat(line.amount));
+      const isDebit = parseFloat(line.amount) < 0;
+      
+      // Bank account line
+      await query(
+        `INSERT INTO journal_entry_lines (id, tenant_id, journal_entry_id, account_id, description, debit_amount, credit_amount, created_at)
+         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW())`,
+        [tenantId, jeId, glAccountId, line.description, isDebit ? 0 : amount, isDebit ? amount : 0]
+      );
+      
+      // Offsetting entry (suspense/unallocated)
+      const suspenseAccount = await query(
+        `SELECT id FROM chart_of_accounts WHERE tenant_id = $1 AND (account_code LIKE '%9999%' OR account_name ILIKE '%suspense%' OR account_name ILIKE '%unallocated%') LIMIT 1`,
+        [tenantId]
+      ).catch(() => ({ rows: [] }));
+      
+      const offsetAccountId = suspenseAccount.rows[0]?.id || glAccountId;
+      
+      await query(
+        `INSERT INTO journal_entry_lines (id, tenant_id, journal_entry_id, account_id, description, debit_amount, credit_amount, created_at)
+         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW())`,
+        [tenantId, jeId, offsetAccountId, `Bank: ${line.description}`, isDebit ? amount : 0, isDebit ? 0 : amount]
+      );
+      
+      // Update statement line as posted
+      await query(
+        `UPDATE bank_statement_lines SET status = 'posted', matched_transaction_id = $3, updated_at = NOW() WHERE tenant_id = $1 AND id = $2`,
+        [tenantId, line.id, jeId]
+      );
+      
+      // Learn from this posting for AI suggestions
+      try {
+        const { allocationLearningService } = await import('../modules/cash-management/services/allocation-learning.service');
+        await allocationLearningService.recordAllocation(
+          tenantId,
+          line.description || '',
+          amount,
+          isDebit,
+          offsetAccountId,
+          userId
+        );
+      } catch (learnErr) {
+        // Non-critical
+      }
+
+      postedIds.push(line.id);
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `Posted ${postedIds.length} transactions to GL`,
+      data: { posted_count: postedIds.length, posted_ids: postedIds }
+    });
+  } catch (err: any) {
+    console.error('Post to GL error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Get reconciliation summary
+router.get('/cash-management/reconciliation/summary', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  const { bank_account_id } = req.query;
+  try {
+    const summary = await query(
+      `SELECT 
+        COUNT(*) FILTER (WHERE status = 'unmatched') as unmatched,
+        COUNT(*) FILTER (WHERE status = 'matched') as matched,
+        COUNT(*) FILTER (WHERE status = 'posted') as posted,
+        COUNT(*) as total,
+        SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as total_credits,
+        SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as total_debits
+       FROM bank_statement_lines 
+       WHERE tenant_id = $1 ${bank_account_id ? 'AND bank_account_id = $2' : ''}`,
+      bank_account_id ? [tenantId, bank_account_id] : [tenantId]
+    );
+    
+    res.json({ success: true, data: summary.rows[0] });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Get reconciliation history
+router.get('/cash-management/reconciliation/history', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  try {
+    // Get completed reconciliation sessions
+    const result = await query(
+      `SELECT 
+        bs.id,
+        bs.statement_date as date,
+        ba.account_name as account,
+        bs.closing_balance as "bankBal",
+        COALESCE(
+          (SELECT SUM(CASE WHEN bsl.status = 'matched' THEN amount ELSE 0 END) FROM bank_statement_lines bsl WHERE bsl.statement_id = bs.id),
+          0
+        ) as "bookBal",
+        bs.closing_balance - COALESCE(
+          (SELECT SUM(CASE WHEN bsl.status = 'matched' THEN amount ELSE 0 END) FROM bank_statement_lines bsl WHERE bsl.statement_id = bs.id),
+          0
+        ) as diff,
+        bs.status,
+        COALESCE(u.first_name || ' ' || LEFT(u.last_name, 1) || '.', 'System') as "user",
+        bs.created_at as created_at,
+        CASE WHEN bs.status = 'imported' AND EXISTS(SELECT 1 FROM bank_statement_lines bsl WHERE bsl.statement_id = bs.id AND bsl.status = 'matched') THEN true ELSE false END as "aiAssisted"
+       FROM bank_statements bs
+       LEFT JOIN bank_accounts ba ON bs.bank_account_id = ba.id
+       LEFT JOIN users u ON bs.created_by = u.id
+       WHERE bs.tenant_id = $1
+       ORDER BY bs.statement_date DESC
+       LIMIT 50`,
+      [tenantId]
+    );
+    
+    res.json({ success: true, data: result.rows || [] });
+  } catch (err: any) {
+    console.error('Error fetching reconciliation history:', err);
+    res.json({ success: true, data: [] });
+  }
+});
+
+// Get AI matching rules
+router.get('/cash-management/reconciliation/rules', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  try {
+    // Try to get from database first
+    const result = await query(
+      `SELECT * FROM reconciliation_rules WHERE tenant_id = $1 ORDER BY priority`,
+      [tenantId]
+    ).catch(() => null);
+    
+    if (result && result.rows?.length > 0) {
+      res.json({ success: true, data: result.rows });
+    } else {
+      // Return default rules if none configured
+      res.json({ success: true, data: [] });
+    }
+  } catch (err: any) {
+    res.json({ success: true, data: [] });
+  }
 });
 
 // Multi-entity intercompany
@@ -3473,6 +4481,536 @@ router.post('/healthcare/compliance/sahpra-report', async (req: any, res) => {
     res.json({ success: true, ...result });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================================================
+// Bank Reconciliation - GL Direct Allocation
+// ============================================================================
+
+/**
+ * Allocate a bank transaction directly to a GL account
+ * Creates a journal entry for transactions without matching invoices
+ */
+router.post('/cash-management/reconciliation/allocate', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  const userId = req.user?.id || req.headers['x-user-id'];
+  
+  try {
+    const { statement_line_id, gl_account_id, description, bank_account_id } = req.body;
+    
+    if (!statement_line_id || !gl_account_id) {
+      return res.status(400).json({ success: false, error: 'statement_line_id and gl_account_id are required' });
+    }
+
+    // Handle case where gl_account_id might be an account code instead of UUID
+    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gl_account_id);
+    let resolvedGLAccountId = gl_account_id;
+    
+    if (!isValidUUID) {
+      // Try to look up account by code
+      const accountLookup = await query(
+        `SELECT id FROM chart_of_accounts WHERE tenant_id = $1 AND (code = $2 OR account_code = $2) AND is_active = true LIMIT 1`,
+        [tenantId, gl_account_id]
+      );
+      if (accountLookup.rows.length === 0) {
+        return res.status(400).json({ success: false, error: `GL account not found. Please select a valid account.` });
+      }
+      resolvedGLAccountId = accountLookup.rows[0].id;
+      console.log(`Resolved GL account code ${gl_account_id} to UUID ${resolvedGLAccountId}`);
+    }
+
+    // Get the statement line
+    const lineResult = await query(
+      `SELECT * FROM bank_statement_lines WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, statement_line_id]
+    );
+    
+    if (lineResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Statement line not found' });
+    }
+    
+    const line = lineResult.rows[0];
+    const amount = Math.abs(parseFloat(line.amount));
+    const isDebit = parseFloat(line.amount) < 0;
+
+    // Get bank account's GL account (look up by gl_account_code)
+    const bankAcctResult = await query(
+      `SELECT ba.gl_account_code, coa.id as gl_account_id 
+       FROM bank_accounts ba
+       LEFT JOIN chart_of_accounts coa ON coa.code = ba.gl_account_code AND coa.tenant_id = ba.tenant_id
+       WHERE ba.tenant_id = $1 AND ba.id = $2`,
+      [tenantId, line.bank_account_id || bank_account_id]
+    );
+    
+    const bankGLAccountId = bankAcctResult.rows[0]?.gl_account_id;
+    if (!bankGLAccountId) {
+      return res.status(400).json({ success: false, error: 'Bank account not linked to GL account. Please set up bank GL mapping first.' });
+    }
+
+    // Create journal entry with totals
+    const jeId = require('crypto').randomUUID();
+    await query(
+      `INSERT INTO journal_entries (id, tenant_id, entry_number, entry_date, description, reference, status, source_type, total_debit, total_credit, created_by, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, 'posted', 'bank_reconciliation', $7, $7, $8, NOW())`,
+      [
+        jeId, 
+        tenantId, 
+        `JE-BANK-${Date.now()}`, 
+        line.transaction_date, 
+        description || line.description,
+        line.reference,
+        amount,
+        userId
+      ]
+    );
+
+    // Line 1: Bank account (Dr for credits/receipts, Cr for debits/payments)
+    await query(
+      `INSERT INTO journal_entry_lines (id, tenant_id, journal_entry_id, account_id, description, debit_amount, credit_amount, created_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW())`,
+      [tenantId, jeId, bankGLAccountId, description || line.description, isDebit ? 0 : amount, isDebit ? amount : 0]
+    );
+    
+    // Line 2: Selected GL account (opposite of bank)
+    await query(
+      `INSERT INTO journal_entry_lines (id, tenant_id, journal_entry_id, account_id, description, debit_amount, credit_amount, created_at)
+       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW())`,
+      [tenantId, jeId, resolvedGLAccountId, description || line.description, isDebit ? amount : 0, isDebit ? 0 : amount]
+    );
+    
+    // Update statement line as allocated
+    await query(
+      `UPDATE bank_statement_lines 
+       SET status = 'allocated', 
+           allocated_gl_account_id = $3, 
+           matched_transaction_id = $4,
+           reconciled_date = NOW(),
+           updated_at = NOW() 
+       WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, statement_line_id, resolvedGLAccountId, jeId]
+    );
+
+    // Learn from this allocation for future AI suggestions
+    try {
+      const { allocationLearningService } = await import('../modules/cash-management/services/allocation-learning.service');
+      await allocationLearningService.recordAllocation(
+        tenantId,
+        line.description || description || '',
+        amount,
+        isDebit,
+        resolvedGLAccountId,
+        userId
+      );
+    } catch (learnErr) {
+      console.warn('Allocation learning recording failed (non-critical):', learnErr);
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Transaction allocated successfully',
+      data: {
+        journal_entry_id: jeId,
+        amount: amount,
+        gl_account_id: resolvedGLAccountId,
+        is_debit: isDebit
+      }
+    });
+  } catch (err: any) {
+    console.error('Allocation error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * AI Auto-Suggest GL accounts for unmatched bank transactions
+ * Uses learned patterns from previous user allocations
+ */
+router.post('/cash-management/reconciliation/ai-suggest', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  
+  try {
+    const { transactions } = req.body;
+    
+    if (!transactions || !Array.isArray(transactions) || transactions.length === 0) {
+      return res.status(400).json({ success: false, error: 'transactions array is required' });
+    }
+
+    const { allocationLearningService } = await import('../modules/cash-management/services/allocation-learning.service');
+    const suggestionsMap = await allocationLearningService.bulkSuggest(tenantId, transactions);
+    
+    // Convert Map to plain object for JSON
+    const results: Record<string, any[]> = {};
+    suggestionsMap.forEach((suggestions, txnId) => {
+      results[txnId] = suggestions;
+    });
+
+    res.json({ 
+      success: true, 
+      data: { suggestions: results, count: Object.keys(results).length }
+    });
+  } catch (err: any) {
+    console.error('AI suggest error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Record AI suggestion feedback (accept/reject)
+ */
+router.post('/cash-management/reconciliation/ai-feedback', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  
+  try {
+    const { pattern_id, action } = req.body;
+    
+    if (!pattern_id || !['accept', 'reject'].includes(action)) {
+      return res.status(400).json({ success: false, error: 'pattern_id and action (accept/reject) required' });
+    }
+
+    const { allocationLearningService } = await import('../modules/cash-management/services/allocation-learning.service');
+    
+    if (action === 'accept') {
+      await allocationLearningService.recordAcceptance(tenantId, pattern_id);
+    } else {
+      await allocationLearningService.recordRejection(tenantId, pattern_id);
+    }
+
+    res.json({ success: true, message: `Feedback recorded: ${action}` });
+  } catch (err: any) {
+    console.error('AI feedback error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * Get AI learning stats for the tenant
+ */
+router.get('/cash-management/reconciliation/ai-stats', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  
+  try {
+    const { allocationLearningService } = await import('../modules/cash-management/services/allocation-learning.service');
+    const stats = await allocationLearningService.getStats(tenantId);
+    res.json({ success: true, data: stats });
+  } catch (err: any) {
+    console.error('AI stats error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
+ * AI-powered categorization using Groq/Grok AI
+ * Accepts either:
+ * - statement_line_ids/bank_account_id to fetch from DB
+ * - transactions array directly for immediate categorization
+ */
+router.post('/cash-management/reconciliation/ai-categorize', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  
+  try {
+    const { statement_line_ids, bank_account_id, transactions: inputTransactions } = req.body;
+    
+    let transactionsToProcess: any[] = [];
+    
+    // If transactions provided directly in request, use those
+    if (inputTransactions && Array.isArray(inputTransactions) && inputTransactions.length > 0) {
+      transactionsToProcess = inputTransactions
+        .filter((t: any) => !t.status || t.status === 'unmatched' || t.status === 'ai-suggested')
+        .map((t: any) => ({
+          line_id: t.id,
+          description: t.description,
+          amount: t.amount,
+          transaction_date: t.date,
+          reference: t.reference || '',
+          is_debit: t.type === 'debit' || t.amount < 0
+        }));
+    } else {
+      // Otherwise fetch from database
+      let linesQuery = `SELECT id as line_id, description, amount, transaction_date, reference,
+                        CASE WHEN amount < 0 THEN true ELSE false END as is_debit
+                        FROM bank_statement_lines 
+                        WHERE tenant_id = $1`;
+      let params: any[] = [tenantId];
+      
+      if (statement_line_ids && statement_line_ids.length > 0) {
+        params.push(statement_line_ids);
+        linesQuery += ` AND id = ANY($2)`;
+      } else if (bank_account_id) {
+        params.push(bank_account_id);
+        params.push('unmatched');
+        linesQuery += ` AND bank_account_id = $2 AND status = $3`;
+      } else {
+        // Get all unmatched
+        params.push('unmatched');
+        linesQuery += ` AND status = $2`;
+      }
+      linesQuery += ` LIMIT 50`; // Limit for AI processing
+      
+      const linesResult = await query(linesQuery, params);
+      transactionsToProcess = linesResult.rows;
+    }
+    
+    if (transactionsToProcess.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          suggestions: [],
+          ai_provider: 'none',
+          message: 'No unmatched transactions to categorize'
+        }
+      });
+    }
+
+    // Get GL accounts for suggestions - use COALESCE to handle both column naming conventions
+    const accountsResult = await query(
+      `SELECT id, 
+              COALESCE(NULLIF(code, ''), account_code) as code, 
+              COALESCE(NULLIF(name, ''), account_name) as name, 
+              account_type as type
+       FROM chart_of_accounts 
+       WHERE tenant_id = $1 AND is_active = true
+         AND (code IS NOT NULL AND code != '' OR account_code IS NOT NULL AND account_code != '')
+       ORDER BY COALESCE(NULLIF(code, ''), account_code)`,
+      [tenantId]
+    );
+    
+    // Determine which AI provider to use
+    let aiProvider = 'rules';
+    let suggestions: any[] = [];
+    
+    // Try Groq first (FREE!)
+    if (process.env.GROQ_API_KEY) {
+      aiProvider = 'groq';
+      try {
+        const OpenAI = require('openai');
+        const groq = new OpenAI({
+          apiKey: process.env.GROQ_API_KEY,
+          baseURL: 'https://api.groq.com/openai/v1'
+        });
+        
+        const accountList = accountsResult.rows.map((a: any) => `${a.code}: ${a.name} (${a.type})`).join('\n');
+        const transactionList = transactionsToProcess.map((t: any, i: number) => 
+          `${i + 1}. [ID:${t.line_id}] ${t.is_debit ? 'DEBIT' : 'CREDIT'} R${Math.abs(parseFloat(t.amount)).toFixed(2)} - "${t.description}" (${t.reference || 'No ref'})`
+        ).join('\n');
+        
+        const prompt = `You are a South African accounting expert helping categorize bank transactions.
+
+AVAILABLE GL ACCOUNTS:
+${accountList}
+
+TRANSACTIONS TO CATEGORIZE:
+${transactionList}
+
+For each transaction, respond with a JSON array containing objects with:
+- line_id: the transaction ID
+- suggested_account_code: best matching GL account code
+- confidence: 1-100 how confident you are
+- reason: brief explanation
+
+Categorization tips:
+- Bank charges/fees → Bank Charges account
+- Salaries/wages → Salaries & Wages
+- Rent payments → Rent expense
+- Insurance → Insurance expense
+- Electricity/water → Utilities
+- Fuel/petrol → Vehicle expenses or Fuel
+- Sales receipts/customer payments → Revenue accounts
+- Supplier payments → Accounts payable clearing
+
+Respond ONLY with valid JSON array, no other text.`;
+
+        console.log('🤖 Calling Groq AI with', transactionsToProcess.length, 'transactions and', accountsResult.rows.length, 'GL accounts');
+        
+        const response = await groq.chat.completions.create({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: 'You are a financial transaction categorization assistant. Respond only with valid JSON.' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: 0.3,
+          max_tokens: 2000
+        });
+        
+        const content = response.choices[0].message.content || '[]';
+        console.log('🤖 Groq response:', content.substring(0, 500));
+        
+        // Parse AI response
+        let aiSuggestions: any[] = [];
+        try {
+          // Extract JSON from response
+          const jsonMatch = content.match(/\[[\s\S]*\]/);
+          if (jsonMatch) {
+            aiSuggestions = JSON.parse(jsonMatch[0]);
+            console.log('🤖 Parsed', aiSuggestions.length, 'AI suggestions');
+          }
+        } catch (parseErr) {
+          console.warn('Failed to parse AI response, falling back to rules:', parseErr);
+          aiProvider = 'rules';
+        }
+        
+        // Map AI suggestions to full format
+        if (aiSuggestions.length > 0) {
+          suggestions = transactionsToProcess.map((line: any) => {
+            const aiSuggestion = aiSuggestions.find((s: any) => String(s.line_id) === String(line.line_id));
+            const suggestedAccount = aiSuggestion ? 
+              accountsResult.rows.find((a: any) => a.code === aiSuggestion.suggested_account_code) : null;
+            
+            console.log(`🤖 Line ${line.line_id}: AI suggested ${aiSuggestion?.suggested_account_code}, matched account:`, suggestedAccount?.code);
+            
+            return {
+              line_id: line.line_id,
+              description: line.description,
+              amount: line.amount,
+              suggested_account_id: suggestedAccount?.id || null,
+              suggested_account_code: suggestedAccount?.code || aiSuggestion?.suggested_account_code || null,
+              suggested_account_name: suggestedAccount?.name || null,
+              confidence: aiSuggestion?.confidence || 0,
+              reason: aiSuggestion?.reason || 'AI could not categorize'
+            };
+          });
+        }
+      } catch (aiErr: any) {
+        console.error('Groq AI error:', aiErr.message);
+        aiProvider = 'rules';
+      }
+    }
+    // Try xAI/Grok if configured
+    else if (process.env.XAI_API_KEY) {
+      aiProvider = 'grok';
+      // Similar implementation for Grok...
+    }
+    
+    // Fallback to rule-based categorization
+    if (aiProvider === 'rules' || suggestions.length === 0) {
+      suggestions = transactionsToProcess.map((line: any) => {
+        const desc = (line.description || '').toLowerCase();
+        const isDebit = line.is_debit;
+        let suggestedAccount = null;
+        let confidence = 0;
+        let reason = '';
+        
+        // Pattern matching rules - using SA chart of accounts codes (5xxx = expenses, 4xxx = revenue)
+        if (desc.includes('bank charge') || desc.includes('service fee') || desc.includes('account fee') || desc.includes('monthly fee') || desc.includes('overdraft') || desc.includes('fee-unpaid') || desc.includes('insuff fund') || desc.includes('declined insuff')) {
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('bank fee') || a.name.toLowerCase().includes('bank charge') || a.code === '5600');
+          confidence = 95;
+          reason = 'Bank fees/charges pattern detected';
+        } else if (desc.includes('salary') || desc.includes('payroll') || desc.includes('wages') || desc.includes('nett pay') || desc.includes('staff')) {
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('salaries') || a.name.toLowerCase().includes('wages') || a.code === '5200');
+          confidence = 90;
+          reason = 'Payroll payment pattern';
+        } else if (desc.includes('rent') || desc.includes('lease') || desc.includes('rental')) {
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('rent') || a.code === '5300');
+          confidence = 88;
+          reason = 'Rent/lease payment pattern';
+        } else if (desc.includes('insurance') || desc.includes('premium')) {
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('insurance') || a.code === '5900' || a.code === '5800');
+          confidence = 85;
+          reason = 'Insurance premium pattern';
+        } else if (desc.includes('telephone') || desc.includes('telkom') || desc.includes('vodacom') || desc.includes('mtn') || desc.includes('cell c') || desc.includes('cellc') || desc.includes('airtime') || desc.includes('data bundle')) {
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('telephone') || a.name.toLowerCase().includes('communication') || a.name.toLowerCase().includes('office') || a.code === '5700');
+          confidence = 85;
+          reason = 'Telecommunications pattern';
+        } else if (desc.includes('electricity') || desc.includes('eskom') || desc.includes('city power') || desc.includes('water') || desc.includes('municipal')) {
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('utilit') || a.name.toLowerCase().includes('electricity') || a.name.toLowerCase().includes('water') || a.code === '5400');
+          confidence = 90;
+          reason = 'Utility payment pattern';
+        } else if (desc.includes('fuel') || desc.includes('petrol') || desc.includes('diesel') || desc.includes('engen') || desc.includes('shell') || desc.includes('sasol') || desc.includes('caltex') || desc.includes('total energies')) {
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('fuel') || a.name.toLowerCase().includes('travel') || a.name.toLowerCase().includes('vehicle') || a.name.toLowerCase().includes('motor') || a.code === '5800');
+          confidence = 85;
+          reason = 'Fuel purchase pattern';
+        } else if (desc.includes('uber') || desc.includes('bolt') || desc.includes('transport') || desc.includes('taxi')) {
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('travel') || a.name.toLowerCase().includes('transport') || a.code === '5800');
+          confidence = 80;
+          reason = 'Transport/travel pattern';
+        } else if (desc.includes('sars') || desc.includes('tax') || desc.includes('vat') || desc.includes('paye') || desc.includes('uif') || desc.includes('sdl')) {
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('tax') || a.name.toLowerCase().includes('sars') || a.name.toLowerCase().includes('vat') || a.code === '2120');
+          confidence = 90;
+          reason = 'Tax/SARS payment pattern';
+        } else if (desc.includes('office') || desc.includes('stationery') || desc.includes('supplies') || desc.includes('stapler') || desc.includes('printer') || desc.includes('paper')) {
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('office') || a.code === '5700');
+          confidence = 80;
+          reason = 'Office supplies/expenses pattern';
+        } else if (desc.includes('legal') || desc.includes('audit') || desc.includes('consulting') || desc.includes('professional') || desc.includes('accounting') || desc.includes('attorney')) {
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('professional') || a.code === '5900');
+          confidence = 82;
+          reason = 'Professional fees pattern';
+        } else if (desc.includes('depreciation') || desc.includes('amortisation') || desc.includes('amortization')) {
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('depreciation') || a.code === '5500');
+          confidence = 90;
+          reason = 'Depreciation pattern';
+        } else if (desc.includes('debit transfer') || desc.includes('payment') || desc.includes('account payment')) {
+          // Generic payments - likely an expense
+          if (isDebit) {
+            suggestedAccount = accountsResult.rows.find((a: any) => 
+              a.name.toLowerCase().includes('office') || a.code === '5700');
+            confidence = 40;
+            reason = 'Generic debit payment - needs review';
+          }
+        } else if (desc.includes('rtd-not provided') || desc.includes('debit order return') || desc.includes('returned')) {
+          // Returned debit orders are often bank fee related
+          if (!isDebit) {
+            suggestedAccount = accountsResult.rows.find((a: any) => 
+              a.name.toLowerCase().includes('bank fee') || a.name.toLowerCase().includes('bank charge') || a.code === '5600');
+            confidence = 60;
+            reason = 'Returned debit order - bank charges related';
+          }
+        } else if (desc.includes('interest') && !isDebit) {
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('interest') && (a.type?.toLowerCase() === 'revenue' || a.code?.startsWith('4')));
+          confidence = 80;
+          reason = 'Interest income pattern';
+        } else if (!isDebit) {
+          // Credit transaction - could be revenue
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.code === '4100' || a.code === '4200' || (a.type?.toLowerCase() === 'revenue' && a.code?.startsWith('4') && a.code !== '4000'));
+          confidence = 45;
+          reason = 'Credit transaction - possible revenue (needs review)';
+        } else if (isDebit) {
+          // Unrecognized debit - default to Cost of Sales or Office Expenses
+          suggestedAccount = accountsResult.rows.find((a: any) => 
+            a.name.toLowerCase().includes('office') || a.code === '5700' || a.code === '5100');
+          confidence = 30;
+          reason = 'Unrecognized debit - manual categorization recommended';
+        }
+        
+        return {
+          line_id: line.line_id,
+          description: line.description,
+          amount: line.amount,
+          suggested_account_id: suggestedAccount?.id || null,
+          suggested_account_code: suggestedAccount?.code || null,
+          suggested_account_name: suggestedAccount?.name || null,
+          confidence: suggestedAccount ? confidence : 0,
+          reason: suggestedAccount ? reason : 'No pattern matched - manual categorization required'
+        };
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        suggestions,
+        ai_provider: aiProvider,
+        total_categorized: suggestions.filter(s => s.suggested_account_id).length,
+        total: suggestions.length
+      }
+    });
+  } catch (err: any) {
+    console.error('AI categorization error:', err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

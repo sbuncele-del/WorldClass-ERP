@@ -171,7 +171,7 @@ export class EmailQueueService {
   ): Promise<void> {
     await this.queueNormalPriority({
       to,
-      subject: 'Welcome to Worldclass ERP! 🎉',
+      subject: 'Welcome to SiyaBusa ERP! 🎉',
       template: 'welcome',
       variables,
       userId,

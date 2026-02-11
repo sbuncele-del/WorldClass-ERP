@@ -79,7 +79,7 @@ export async function sendPasswordResetEmail(email: string): Promise<{
     // Send email
     await sendEmail({
       to: email,
-      subject: 'Reset Your Password - Worldclass ERP',
+      subject: 'Reset Your Password - SiyaBusa ERP',
       template: 'reset-password',
       variables: {
         resetUrl,
@@ -216,7 +216,7 @@ export async function resetPassword(
       // Send password changed notification email
       await sendEmail({
         to: user.email,
-        subject: 'Password Changed Successfully - Worldclass ERP',
+        subject: 'Password Changed Successfully - SiyaBusa ERP',
         template: 'password-changed',
         variables: {
           userName: user.first_name || 'there',

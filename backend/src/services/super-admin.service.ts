@@ -52,14 +52,11 @@ class SuperAdminService {
       SELECT 
         t.id,
         t.name,
-        t.email,
+        t.company_email as email,
         t.status,
         t.subscription_plan,
         t.subscription_status,
-        t.subscription_start_date,
-        t.subscription_end_date,
         t.max_users,
-        t.max_storage_gb,
         t.country,
         t.created_at,
         t.updated_at,
@@ -67,7 +64,7 @@ class SuperAdminService {
         COUNT(DISTINCT CASE WHEN u.last_login_at >= NOW() - INTERVAL '7 days' THEN u.id END) as active_users_7d
       FROM tenants t
       LEFT JOIN users u ON u.tenant_id = t.id
-      WHERE 1=1
+      WHERE t.deleted_at IS NULL
     `;
 
     const params: any[] = [];
@@ -86,7 +83,7 @@ class SuperAdminService {
     }
 
     if (search) {
-      query += ` AND (t.name ILIKE $${paramCount} OR t.email ILIKE $${paramCount})`;
+      query += ` AND (t.name ILIKE $${paramCount} OR t.company_email ILIKE $${paramCount})`;
       params.push(`%${search}%`);
       paramCount++;
     }

@@ -76,7 +76,7 @@ async function loadTemplate(templateName: string, variables: Record<string, stri
  * Generate fallback HTML when template file is missing
  */
 function generateFallbackTemplate(templateName: string, variables: Record<string, string>): string {
-  const companyName = variables.companyName || 'WorldClass ERP';
+  const companyName = variables.companyName || 'SiyaBusa ERP';
   const userName = variables.userName || variables.name || 'User';
   
   const templates: Record<string, string> = {
@@ -90,7 +90,7 @@ function generateFallbackTemplate(templateName: string, variables: Record<string
         </div>
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
           <p>Hi ${userName},</p>
-          <p><strong>${variables.inviterName || 'Someone'}</strong> has invited you to join <strong>${companyName}</strong> on WorldClass ERP.</p>
+          <p><strong>${variables.inviterName || 'Someone'}</strong> has invited you to join <strong>${companyName}</strong> on SiyaBusa ERP.</p>
           <p>Click the button below to accept your invitation and set up your account:</p>
           <div style="text-align: center; margin: 30px 0;">
             <a href="${variables.inviteUrl || variables.acceptUrl || '#'}" 
@@ -101,7 +101,7 @@ function generateFallbackTemplate(templateName: string, variables: Record<string
           <p style="color: #666; font-size: 12px;">This invitation will expire in 7 days.</p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
           <p style="color: #888; font-size: 11px; text-align: center;">
-            &copy; ${new Date().getFullYear()} WorldClass ERP. All rights reserved.
+            &copy; ${new Date().getFullYear()} SiyaBusa ERP. All rights reserved.
           </p>
         </div>
       </body>
@@ -113,7 +113,7 @@ function generateFallbackTemplate(templateName: string, variables: Record<string
       <head><meta charset="utf-8"><title>Welcome!</title></head>
       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
-          <h1 style="color: white; margin: 0;">Welcome to WorldClass ERP! 🚀</h1>
+          <h1 style="color: white; margin: 0;">Welcome to SiyaBusa ERP! 🚀</h1>
         </div>
         <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
           <p>Hi ${userName},</p>
@@ -127,11 +127,21 @@ function generateFallbackTemplate(templateName: string, variables: Record<string
             <li>And much more...</li>
           </ul>
           <div style="text-align: center; margin: 30px 0;">
-            <a href="${variables.loginUrl || process.env.FRONTEND_URL || '#'}" 
+            <a href="${variables.dashboardUrl || variables.frontendUrl || 'https://siyabusaerp.co.za'}/app/dashboard" 
                style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
               Go to Dashboard
             </a>
           </div>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="color: #888; font-size: 10px; text-align: center;">
+            <strong>POPIA Notice:</strong> This email was sent to you because you registered for SiyaBusa ERP. 
+            Your personal information is processed in accordance with the Protection of Personal Information Act (POPIA). 
+            You may unsubscribe or request deletion of your data at any time by contacting support@siyabusaerp.co.za
+          </p>
+          <p style="color: #888; font-size: 10px; text-align: center;">
+            &copy; ${new Date().getFullYear()} SiyaBusa ERP (Pty) Ltd. All rights reserved.<br>
+            Johannesburg, South Africa
+          </p>
         </div>
       </body>
       </html>
@@ -193,11 +203,11 @@ function generateFallbackTemplate(templateName: string, variables: Record<string
     <head><meta charset="utf-8"><title>${variables.subject || 'Notification'}</title></head>
     <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 8px 8px 0 0;">
-        <h1 style="color: white; margin: 0;">WorldClass ERP</h1>
+        <h1 style="color: white; margin: 0;">SiyaBusa ERP</h1>
       </div>
       <div style="background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px;">
         <p>Hi ${userName},</p>
-        <p>${variables.message || 'You have a new notification from WorldClass ERP.'}</p>
+        <p>${variables.message || 'You have a new notification from SiyaBusa ERP.'}</p>
         ${variables.actionUrl ? `
         <div style="text-align: center; margin: 30px 0;">
           <a href="${variables.actionUrl}" 
@@ -207,7 +217,7 @@ function generateFallbackTemplate(templateName: string, variables: Record<string
         </div>` : ''}
         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
         <p style="color: #888; font-size: 11px; text-align: center;">
-          &copy; ${new Date().getFullYear()} WorldClass ERP. All rights reserved.
+          &copy; ${new Date().getFullYear()} SiyaBusa ERP. All rights reserved.
         </p>
       </div>
     </body>
@@ -275,7 +285,7 @@ export async function sendEmail(options: {
 
     // Send email via SMTP
     const info = await transporter.sendMail({
-      from: from || `"Worldclass ERP" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+      from: from || `"SiyaBusa ERP" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
@@ -318,7 +328,7 @@ export async function sendPlainEmail(options: {
     const { to, subject, text, html, from } = options;
 
     const info = await transporter.sendMail({
-      from: from || `"Worldclass ERP" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+      from: from || `"SiyaBusa ERP" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
       to,
       subject,
       text,

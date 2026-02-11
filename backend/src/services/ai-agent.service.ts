@@ -1,7 +1,7 @@
 /**
  * AI Agent Service
  * Core service for AI-powered assistants
- * Supports: x.ai/Grok, OpenAI, Anthropic
+ * Supports: Groq (FREE), x.ai/Grok, OpenAI, Anthropic
  */
 
 import OpenAI from 'openai';
@@ -37,11 +37,21 @@ class AIAgentService {
     private openaiClient: OpenAI | null = null;
     private anthropicClient: Anthropic | null = null;
     private xaiClient: OpenAI | null = null;  // x.ai uses OpenAI-compatible API
-    private activeProvider: 'xai' | 'openai' | 'anthropic' | null = null;
+    private groqClient: OpenAI | null = null;  // Groq uses OpenAI-compatible API
+    private activeProvider: 'groq' | 'xai' | 'openai' | 'anthropic' | null = null;
 
     constructor() {
-        // Initialize x.ai/Grok FIRST (priority)
-        if (process.env.XAI_API_KEY) {
+        // Initialize Groq FIRST (FREE and fast!)
+        if (process.env.GROQ_API_KEY) {
+            this.groqClient = new OpenAI({
+                apiKey: process.env.GROQ_API_KEY,
+                baseURL: 'https://api.groq.com/openai/v1',
+            });
+            this.activeProvider = 'groq';
+            console.log('🤖 AI Agent: Using Groq (FREE)');
+        }
+        // Then try x.ai/Grok
+        else if (process.env.XAI_API_KEY) {
             this.xaiClient = new OpenAI({
                 apiKey: process.env.XAI_API_KEY,
                 baseURL: 'https://api.x.ai/v1',
@@ -65,7 +75,7 @@ class AIAgentService {
             this.activeProvider = 'anthropic';
             console.log('🤖 AI Agent: Using Anthropic');
         } else {
-            console.warn('⚠️ AI Agent: No AI provider configured (XAI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY)');
+            console.warn('⚠️ AI Agent: No AI provider configured (GROQ_API_KEY, XAI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY)');
         }
     }
 
@@ -178,8 +188,8 @@ class AIAgentService {
         userMessage: string,
         contextData: any = {}
     ): Promise<{ response: string; conversationId: string }> {
-        if (!this.xaiClient && !this.openaiClient && !this.anthropicClient) {
-            throw new Error('No AI provider configured. Set XAI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY');
+        if (!this.groqClient && !this.xaiClient && !this.openaiClient && !this.anthropicClient) {
+            throw new Error('No AI provider configured. Set GROQ_API_KEY, XAI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY');
         }
 
         const agent = await this.getAgent(agentCode);
@@ -202,10 +212,22 @@ class AIAgentService {
         let assistantResponse: string;
         let tokensUsed: number = 0;
 
-        // Use x.ai/Grok if available (priority)
-        if (this.xaiClient) {
+        // Use Groq if available (FREE and fast!)
+        if (this.groqClient) {
+            const completion = await this.groqClient.chat.completions.create({
+                model: 'llama-3.3-70b-versatile',
+                messages: messages as any,
+                temperature: agent.temperature || 0.7,
+                max_tokens: agent.max_tokens || 2000,
+            });
+
+            assistantResponse = completion.choices[0].message.content || '';
+            tokensUsed = completion.usage?.total_tokens || 0;
+        }
+        // Use x.ai/Grok if available
+        else if (this.xaiClient) {
             const completion = await this.xaiClient.chat.completions.create({
-                model: 'grok-2-latest',
+                model: 'grok-4-latest',
                 messages: messages as any,
                 temperature: agent.temperature || 0.7,
                 max_tokens: agent.max_tokens || 2000,
@@ -262,10 +284,10 @@ class AIAgentService {
         userMessage: string,
         contextData: any = {}
     ): AsyncGenerator<string, void, unknown> {
-        // Streaming works with x.ai/Grok or OpenAI (both use OpenAI-compatible API)
-        const client = this.xaiClient || this.openaiClient;
+        // Streaming works with Groq, x.ai/Grok, or OpenAI (all use OpenAI-compatible API)
+        const client = this.groqClient || this.xaiClient || this.openaiClient;
         if (!client) {
-            throw new Error('Streaming requires x.ai or OpenAI API');
+            throw new Error('Streaming requires Groq, x.ai, or OpenAI API');
         }
 
         const agent = await this.getAgent(agentCode);
@@ -280,7 +302,16 @@ class AIAgentService {
             ...history.slice(-10),
         ];
 
-        const model = this.xaiClient ? 'grok-2-latest' : (agent.model_name || 'gpt-4');
+        // Select model based on provider
+        let model: string;
+        if (this.groqClient) {
+            model = 'llama-3.3-70b-versatile';
+        } else if (this.xaiClient) {
+            model = 'grok-4-latest';
+        } else {
+            model = agent.model_name || 'gpt-4';
+        }
+        
         const stream = await client.chat.completions.create({
             model,
             messages: messages as any,

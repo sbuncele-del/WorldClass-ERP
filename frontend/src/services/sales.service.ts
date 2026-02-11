@@ -36,10 +36,19 @@ export interface RevenueByMonth {
 }
 
 export const salesService = {
-  async getStats(): Promise<SalesStats> {
+  async getStats(): Promise<any> {
     const { data } = await apiClient.get('/api/sales/workspace');
-    // Extract summary from workspace response
-    return data.data?.summary || data.summary || data;
+    // Return the full workspace data (summary + pipeline + recent_orders + top_customers)
+    // so dashboard can use all of it
+    const workspace = data.data || data;
+    return {
+      ...(workspace.summary || workspace),
+      pipeline: workspace.pipeline || [],
+      recent_orders: workspace.recent_orders || [],
+      top_customers: workspace.top_customers || [],
+      pending_quotations: workspace.pending_quotations || [],
+      sales_charts: workspace.sales_charts || [],
+    };
   },
 
   async getOrders(params?: { limit?: number; status?: string }): Promise<{ data: SalesOrder[]; total: number }> {

@@ -21,23 +21,23 @@ export interface QuotationLine {
   discount_percent?: number;
   discount_amount?: number;
   tax_rate?: number;
-  tax_amount?: number;
+  vat_amount?: number;
   line_total: number;
 }
 
 export interface Quotation {
   id: string;
   tenant_id: string;
-  quote_number: string;
+  quotation_number: string;
   customer_id: string;
   customer_name?: string;
-  quote_date: Date;
-  expiry_date: Date;
+  quotation_date: Date;
+  valid_until: Date;
   status: QuotationStatus;
   subtotal: number;
   discount_amount?: number;
-  tax_amount?: number;
-  total_amount: number;
+  vat_amount?: number;
+  total: number;
   currency_code: string;
   notes?: string;
   terms_and_conditions?: string;
@@ -53,8 +53,9 @@ export interface Quotation {
 
 export class QuotationRepository extends BaseRepository<Quotation> {
   protected tableName = 'quotations';
-  protected schema = 'sales';
+  protected schema = 'sales';  // Table is in sales schema
   protected softDelete = false;  // Table doesn't have deleted_at column
+  protected primaryKey = 'quotation_id';  // Override default 'id'
 
   /**
    * Get quotations by status
@@ -95,8 +96,8 @@ export class QuotationRepository extends BaseRepository<Quotation> {
       WHERE tenant_id = $1 
         AND deleted_at IS NULL
         AND status IN ('draft', 'sent')
-        AND expiry_date BETWEEN CURRENT_DATE AND CURRENT_DATE + $2
-      ORDER BY expiry_date ASC
+        AND valid_until BETWEEN CURRENT_DATE AND CURRENT_DATE + $2
+      ORDER BY valid_until ASC
     `;
 
     return this.rawQuery(ctx, sql, [withinDays]);
@@ -131,13 +132,13 @@ export class QuotationRepository extends BaseRepository<Quotation> {
       const orderResult = await client.query(`
         INSERT INTO sales.orders
         (tenant_id, order_number, customer_id, order_date, status,
-         subtotal, discount_amount, tax_amount, total_amount,
+         subtotal, discount_amount, vat_amount, total,
          currency_code, notes, sales_rep_id, quotation_id, created_by)
         VALUES ($1, $2, $3, CURRENT_DATE, 'draft', $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING id
       `, [
         ctx.tenantId, orderNumber, quotation.customer_id,
-        quotation.subtotal, quotation.discount_amount, quotation.tax_amount, quotation.total_amount,
+        quotation.subtotal, quotation.discount_amount, quotation.vat_amount, quotation.total,
         quotation.currency_code, quotation.notes, quotation.sales_rep_id, quotationId, ctx.userId
       ]);
 
@@ -150,11 +151,11 @@ export class QuotationRepository extends BaseRepository<Quotation> {
           await client.query(`
             INSERT INTO sales.order_lines
             (tenant_id, order_id, line_number, item_id, quantity, unit_price,
-             discount_percent, discount_amount, tax_rate, tax_amount, line_total, notes)
+             discount_percent, discount_amount, tax_rate, vat_amount, line_total, notes)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
           `, [
             ctx.tenantId, orderId, i + 1, line.item_id, line.quantity, line.unit_price,
-            line.discount_percent, line.discount_amount, line.tax_rate, line.tax_amount,
+            line.discount_percent, line.discount_amount, line.tax_rate, line.vat_amount,
             line.line_total, line.description
           ]);
         }
@@ -189,12 +190,12 @@ export class QuotationRepository extends BaseRepository<Quotation> {
       SELECT
         COUNT(*) as total_quotations,
         COUNT(CASE WHEN status = 'converted' THEN 1 END) as converted_quotations,
-        COALESCE(SUM(total_amount), 0) as total_value,
-        COALESCE(SUM(CASE WHEN status = 'converted' THEN total_amount ELSE 0 END), 0) as converted_value
+        COALESCE(SUM(total), 0) as total_value,
+        COALESCE(SUM(CASE WHEN status = 'converted' THEN total ELSE 0 END), 0) as converted_value
       FROM ${this.fullTableName}
       WHERE tenant_id = $1 
         AND deleted_at IS NULL
-        AND quote_date BETWEEN $2 AND $3
+        AND quotation_date BETWEEN $2 AND $3
     `;
 
     const result = await this.rawQuery(ctx, sql, [startDate, endDate]);
@@ -217,7 +218,7 @@ export class QuotationRepository extends BaseRepository<Quotation> {
    */
   async generateQuoteNumber(ctx: TenantContext): Promise<string> {
     const result = await this.pool.query(`
-      SELECT COALESCE(MAX(CAST(SUBSTRING(quote_number FROM '[0-9]+$') AS INTEGER)), 0) + 1 as next_num
+      SELECT COALESCE(MAX(CAST(SUBSTRING(quotation_number FROM '[0-9]+$') AS INTEGER)), 0) + 1 as next_num
       FROM ${this.fullTableName}
       WHERE tenant_id = $1
     `, [ctx.tenantId]);
@@ -241,27 +242,24 @@ export class QuotationRepository extends BaseRepository<Quotation> {
 
       const quotationResult = await client.query(`
         INSERT INTO ${this.fullTableName}
-        (tenant_id, quote_number, customer_id, quote_date, expiry_date, status,
-         subtotal, discount_amount, tax_amount, total_amount, currency_code,
-         notes, terms_and_conditions, sales_rep_id, created_by)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        (tenant_id, quotation_number, customer_id, quotation_date, valid_until, status,
+         subtotal, discount_amount, vat_amount, total,
+         notes, prepared_by)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         RETURNING *
       `, [
         ctx.tenantId,
         quoteNumber,
         quotationData.customer_id,
-        quotationData.quote_date || new Date(),
-        quotationData.expiry_date || new Date(),
+        quotationData.quotation_date || new Date(),
+        quotationData.valid_until || new Date(),
         quotationData.status || 'draft',
         quotationData.subtotal || 0,
         quotationData.discount_amount || 0,
-        quotationData.tax_amount || 0,
-        quotationData.total_amount || 0,
-        quotationData.currency_code || 'ZAR',
+        quotationData.vat_amount || 0,
+        quotationData.total || 0,
         quotationData.notes,
-        quotationData.terms_and_conditions,
-        quotationData.sales_rep_id,
-        ctx.userId
+        ctx.userId || 'System'
       ]);
 
       const quotation = quotationResult.rows[0];
@@ -271,11 +269,11 @@ export class QuotationRepository extends BaseRepository<Quotation> {
         await client.query(`
           INSERT INTO sales.quotation_lines
           (tenant_id, quotation_id, line_number, item_id, description, quantity, unit_price,
-           discount_percent, discount_amount, tax_rate, tax_amount, line_total)
+           discount_percent, discount_amount, tax_rate, vat_amount, line_total)
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         `, [
           ctx.tenantId,
-          quotation.id,
+          quotation.quotation_id,
           i + 1,
           line.item_id,
           line.description,
@@ -284,7 +282,7 @@ export class QuotationRepository extends BaseRepository<Quotation> {
           line.discount_percent || 0,
           line.discount_amount || 0,
           line.tax_rate || 0,
-          line.tax_amount || 0,
+          line.vat_amount || 0,
           line.line_total || 0
         ]);
       }

@@ -220,11 +220,18 @@ export const workspaceApi = {
     getCustomers: (params?: any) => apiGet('/api/sales/customers', params),
     getOrders: (params?: any) => apiGet('/api/sales/orders', params),
     getQuotations: (params?: any) => apiGet('/api/sales/quotations', params),
+    getInvoices: (params?: any) => apiGet('/api/sales/invoices', params),
     createLead: (data: any) => apiPost('/api/sales/leads', data),
     updateLead: (id: number, data: any) => apiPut(`/api/sales/leads/${id}`, data),
+    createOpportunity: (data: any) => apiPost('/api/sales/opportunities', data),
+    updateOpportunity: (id: number, data: any) => apiPut(`/api/sales/opportunities/${id}`, data),
+    convertLead: (id: number) => apiPost(`/api/sales/leads/${id}/convert`, {}),
     createCustomer: (data: any) => apiPost('/api/sales/customers', data),
+    updateCustomer: (id: number, data: any) => apiPut(`/api/sales/customers/${id}`, data),
+    deleteCustomer: (id: number) => apiClient.delete(`/api/sales/customers/${id}`).then(r => r.data),
     createOrder: (data: any) => apiPost('/api/sales/orders', data),
     createQuotation: (data: any) => apiPost('/api/sales/quotations', data),
+    createInvoice: (data: any) => apiPost('/api/sales/invoices', data),
   },
 
   // Purchase Workspace

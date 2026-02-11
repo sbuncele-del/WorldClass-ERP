@@ -34,6 +34,7 @@ import {
 import { HubLayout, HubHeader, StatusBanner, HubTabs } from '../../components/hub';
 import { apiGet } from '../../services/api.service';
 import apiClient from '../../services/api';
+import { projectService } from '../../services/project.service';
 
 const { Title, Text, Paragraph } = Typography;
 const { Option } = Select;
@@ -122,7 +123,9 @@ const ProjectsHub: React.FC = () => {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [ganttTasks, setGanttTasks] = useState<GanttTask[]>([]);
   const [form] = Form.useForm();
-  
+  const [taskForm] = Form.useForm();
+  const [timeEntryForm] = Form.useForm();
+
   // Loading and API data states
   const [loading, setLoading] = useState(true);
   const [apiStats, setApiStats] = useState<any>(null);
@@ -131,134 +134,144 @@ const ProjectsHub: React.FC = () => {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [teamCount, setTeamCount] = useState(0);
   const [weeklySummary, setWeeklySummary] = useState({ totalHours: 0, billableHours: 0, billableAmount: 0 });
+  const [salesCustomers, setSalesCustomers] = useState<any[]>([]);
   
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch workspace/stats - this is the main data endpoint
-        const workspaceResponse = await apiClient.get('/api/v2/projects/workspace').catch((error) => {
-          console.error('Workspace fetch failed', error);
-          return { data: null };
-        });
-        if (workspaceResponse.data?.data) {
-          setApiStats(workspaceResponse.data.data.summary || workspaceResponse.data.data);
-        }
-        
-        // Fetch projects list from practice/projects endpoint
-        const projectsResponse = await apiClient.get('/api/v2/practice/projects').catch((error) => {
-          console.error('Projects fetch failed', error);
-          return { data: { data: [] } };
-        });
-        const projectsData = Array.isArray(projectsResponse?.data?.data) ? projectsResponse.data.data : [];
-        if (projectsData.length > 0) {
-          // Transform to expected format
-          const transformedProjects = projectsData.map((p: any) => ({
-            id: p.project_id,
-            name: p.project_name,
-            code: p.project_number,
-            client: p.customer_name || 'Internal',
-            status: (p.status || 'planning').toLowerCase().replace(' ', '-'),
-            priority: (p.priority || 'medium').toLowerCase(),
-            progress: toNumber(p.progress_percentage) || safePercent(toNumber(p.completed_tasks), toNumber(p.total_tasks) || 1),
-            startDate: p.start_date ? new Date(p.start_date).toLocaleDateString() : '-',
-            endDate: p.end_date ? new Date(p.end_date).toLocaleDateString() : '-',
-            budget: toNumber(p.budget),
-            spent: toNumber(p.actual_cost),
-            manager: p.manager_name || 'Unassigned',
-            team: p.team_size || 0,
-            tasks: { total: p.total_tasks || 0, completed: p.completed_tasks || 0 },
-            milestones: { total: 0, completed: 0 },
-            type: p.project_type || 'internal'
-          }));
-          setProjects(transformedProjects);
-        } else {
-          setProjects([]);
-        }
-        
-        // Fetch tasks
-        const tasksResponse = await apiClient.get('/api/v2/practice/tasks').catch((error) => {
-          console.error('Tasks fetch failed', error);
-          return { data: [] };
-        });
-        const taskData = Array.isArray(tasksResponse?.data?.data)
-          ? tasksResponse.data.data
-          : Array.isArray(tasksResponse?.data)
-            ? tasksResponse.data
-            : [];
-        setTasks(taskData);
-        
-        // Fetch team resources (users in tenant)
-        const usersResponse = await apiClient.get('/api/v2/admin/users').catch((error) => {
-          console.error('Users fetch failed', error);
-          return { data: { users: [] } };
-        });
-        const userData = Array.isArray(usersResponse?.data?.users) ? usersResponse.data.users : [];
-        if (userData.length > 0) {
-          const teamResources = userData.map((u: any) => ({
-            id: u.id,
-            name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email,
-            role: u.role || 'Team Member',
-            projects: 0, // Would need join with project_team_members
-            utilization: 0,
-            availability: u.status === 'active' ? 'Available' : 'Unavailable'
-          }));
-          setResources(teamResources);
-          setTeamCount(teamResources.length);
-        }
-        
-        // Fetch time entries
-        const timeRes = await apiClient.get('/api/v2/practice/time-entries').catch((error) => {
-          console.error('Time entries fetch failed', error);
-          return { data: [] };
-        });
-        const entries = Array.isArray(timeRes?.data?.entries)
-          ? timeRes.data.entries
-          : Array.isArray(timeRes?.data?.data)
-            ? timeRes.data.data
-            : Array.isArray(timeRes?.data)
-              ? timeRes.data
-              : [];
-        setTimeEntries(entries);
-        
-        // Calculate weekly summary from time entries
-        if (Array.isArray(entries) && entries.length > 0) {
-          const totalHours = entries.reduce((sum: number, t: any) => sum + (parseFloat(t.hours) || 0), 0);
-          const billableHours = entries.filter((t: any) => t.billable).reduce((sum: number, t: any) => sum + (parseFloat(t.hours) || 0), 0);
-          const billableAmount = entries.filter((t: any) => t.billable).reduce((sum: number, t: any) => sum + ((parseFloat(t.hours) || 0) * (parseFloat(t.rate) || 0)), 0);
-          setWeeklySummary({ totalHours, billableHours, billableAmount });
-        }
-        
-        // Build gantt tasks from projects
-        const ganttFromProjects = projectsResponse.data?.data?.map((p: any) => ({
-          id: p.project_id,
-          projectId: p.project_id,
-          name: p.project_name,
-          owner: p.manager_name || 'Unassigned',
-          start: p.start_date || new Date().toISOString().split('T')[0],
-          end: p.end_date || new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
-          progress: p.progress_percentage || 0,
-          status: p.status === 'Completed' ? 'done' : p.status === 'Active' ? 'in-progress' : 'not-started'
-        })) || [];
-        setGanttTasks(ganttFromProjects);
-        
-        // Recent activity would come from audit logs or activity table
-        // For now, set empty until we have that endpoint
-        setRecentActivity([]);
-        
-      } catch (err) {
-        console.error('Failed to fetch projects data:', err);
-        setProjects([]);
-        setTasks([]);
-        setGanttTasks([]);
-        setTimeEntries([]);
-        setResources([]);
-      } finally {
-        setLoading(false);
-        setApiLoading(false);
+  // ── Helper: transform raw API project to the component Project interface ──
+  const transformProject = (p: any): Project => ({
+    id: p.project_id,
+    name: p.project_name,
+    code: p.project_number,
+    client: p.customer_name || 'Internal',
+    status: (p.status || 'planning').toLowerCase().replace(' ', '-') as Project['status'],
+    priority: (p.priority || 'medium').toLowerCase() as Project['priority'],
+    progress: toNumber(p.progress_percentage) || safePercent(toNumber(p.completed_tasks), toNumber(p.total_tasks) || 1),
+    startDate: p.start_date ? new Date(p.start_date).toLocaleDateString() : '-',
+    endDate: p.end_date ? new Date(p.end_date).toLocaleDateString() : '-',
+    budget: toNumber(p.budget),
+    spent: toNumber(p.actual_cost),
+    manager: p.manager_name || 'Unassigned',
+    team: p.team_size || 0,
+    tasks: { total: p.total_tasks || 0, completed: p.completed_tasks || 0 },
+    milestones: { total: 0, completed: 0 },
+    type: p.project_type || 'internal',
+  });
+
+  // ── Fetch all data ──────────────────────────────────────────────────────
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      // Fetch workspace/stats
+      const workspaceData = await projectService.getWorkspace().catch((error) => {
+        console.error('Workspace fetch failed', error);
+        return null;
+      });
+      if (workspaceData) {
+        setApiStats(workspaceData.summary || workspaceData);
       }
-    };
-    fetchData();
+
+      // Fetch projects list
+      const projectsRes = await projectService.getProjects().catch((error) => {
+        console.error('Projects fetch failed', error);
+        return { data: [] };
+      });
+      const projectsData = Array.isArray(projectsRes?.data) ? projectsRes.data : [];
+      if (projectsData.length > 0) {
+        setProjects(projectsData.map(transformProject));
+      } else {
+        setProjects([]);
+      }
+
+      // Fetch tasks
+      const tasksRes = await projectService.getTasks().catch((error) => {
+        console.error('Tasks fetch failed', error);
+        return { data: [] };
+      });
+      const taskData = Array.isArray(tasksRes?.data)
+        ? tasksRes.data
+        : Array.isArray(tasksRes)
+          ? tasksRes
+          : [];
+      setTasks(taskData);
+
+      // Fetch team resources (users in tenant)
+      const usersResponse = await apiClient.get('/api/v2/admin/users').catch((error) => {
+        console.error('Users fetch failed', error);
+        return { data: { users: [] } };
+      });
+      const userData = Array.isArray(usersResponse?.data?.users) ? usersResponse.data.users : [];
+      if (userData.length > 0) {
+        const teamResources = userData.map((u: any) => ({
+          id: u.id,
+          name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email,
+          role: u.role || 'Team Member',
+          projects: 0,
+          utilization: 0,
+          availability: u.status === 'active' ? 'Available' : 'Unavailable'
+        }));
+        setResources(teamResources);
+        setTeamCount(teamResources.length);
+      }
+
+      // Fetch time entries
+      const timeRes = await projectService.getTimeEntries().catch((error) => {
+        console.error('Time entries fetch failed', error);
+        return { data: [] };
+      });
+      const entries = Array.isArray(timeRes?.entries)
+        ? timeRes.entries
+        : Array.isArray(timeRes?.data)
+          ? timeRes.data
+          : Array.isArray(timeRes)
+            ? timeRes
+            : [];
+      setTimeEntries(entries);
+
+      // Calculate weekly summary from time entries
+      if (Array.isArray(entries) && entries.length > 0) {
+        const totalHours = entries.reduce((sum: number, t: any) => sum + (parseFloat(t.hours) || 0), 0);
+        const billableHours = entries.filter((t: any) => t.billable).reduce((sum: number, t: any) => sum + (parseFloat(t.hours) || 0), 0);
+        const billableAmount = entries.filter((t: any) => t.billable).reduce((sum: number, t: any) => sum + ((parseFloat(t.hours) || 0) * (parseFloat(t.rate) || 0)), 0);
+        setWeeklySummary({ totalHours, billableHours, billableAmount });
+      }
+
+      // Build gantt tasks from projects
+      const ganttFromProjects = projectsData.map((p: any) => ({
+        id: p.project_id,
+        projectId: p.project_id,
+        name: p.project_name,
+        owner: p.manager_name || 'Unassigned',
+        start: p.start_date || new Date().toISOString().split('T')[0],
+        end: p.end_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        progress: p.progress_percentage || 0,
+        status: p.status === 'Completed' ? 'done' as const : p.status === 'Active' ? 'in-progress' as const : 'not-started' as const
+      }));
+      setGanttTasks(ganttFromProjects);
+
+      // Recent activity - placeholder until audit endpoint exists
+      setRecentActivity([]);
+
+      // Fetch Sales customers for the New Project modal
+      const customersResponse = await apiClient.get('/api/sales/customers', { params: { limit: 100 } }).catch(() => ({ data: { customers: [] } }));
+      const custList = customersResponse?.data?.customers || customersResponse?.data?.data || [];
+      if (Array.isArray(custList)) {
+        setSalesCustomers(custList);
+      }
+
+    } catch (err) {
+      console.error('Failed to fetch projects data:', err);
+      setProjects([]);
+      setTasks([]);
+      setGanttTasks([]);
+      setTimeEntries([]);
+      setResources([]);
+    } finally {
+      setLoading(false);
+      setApiLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllData();
   }, []);
 
   // Calculate stats - use API data if available, otherwise fall back to mock data
@@ -306,16 +319,41 @@ const ProjectsHub: React.FC = () => {
     return colors[status] || 'default';
   };
 
-  const handleProjectAction = (action: string, project: Project) => {
-    const labelMap: Record<string, string> = {
-      view: 'View Details',
-      edit: 'Edit Project',
-      gantt: 'Open Gantt',
-      archive: 'Archive'
-    };
-    message.info(`${labelMap[action] || action} - connect to API (Project ${project.code})`);
-    if (action === 'gantt') {
+  const handleProjectAction = async (action: string, project: Project) => {
+    if (action === 'view') {
+      setSelectedProject(project);
+    } else if (action === 'edit') {
+      setSelectedProject(project);
+      // Pre-fill the project form and open the modal for editing
+      form.setFieldsValue({
+        name: project.name,
+        client: project.client === 'Internal' ? 'internal' : project.client,
+        priority: project.priority,
+        description: '',
+      });
+      setProjectModalVisible(true);
+    } else if (action === 'gantt') {
       setActiveTab('gantt');
+    } else if (action === 'archive') {
+      Modal.confirm({
+        title: 'Delete Project',
+        content: `Are you sure you want to delete "${project.name}" (${project.code})? This will set its status to Cancelled.`,
+        okText: 'Delete',
+        okType: 'danger',
+        cancelText: 'Cancel',
+        onOk: async () => {
+          try {
+            await projectService.deleteProject(project.id);
+            message.success(`Project "${project.name}" has been deleted.`);
+            // Refresh the projects list
+            const projectsRes = await projectService.getProjects().catch(() => ({ data: [] }));
+            const projectsData = Array.isArray(projectsRes?.data) ? projectsRes.data : [];
+            setProjects(projectsData.map(transformProject));
+          } catch (error: any) {
+            message.error(error.response?.data?.message || 'Failed to delete project. Please try again.');
+          }
+        },
+      });
     }
   };
 
@@ -1182,7 +1220,7 @@ const ProjectsHub: React.FC = () => {
         gradient="purple"
         actions={
           <>
-            <Button icon={<SyncOutlined />}>Refresh</Button>
+            <Button icon={<SyncOutlined />} onClick={() => fetchAllData()}>Refresh</Button>
             <Button icon={<ExportOutlined />}>Export</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setProjectModalVisible(true)}>
               New Project
@@ -1242,35 +1280,16 @@ const ProjectsHub: React.FC = () => {
                 description: values.description,
                 status: 'Planning'
               };
-              await apiClient.post('/api/v2/practice/projects', projectData);
+              await projectService.createProject(projectData);
               message.success('Project created successfully!');
               setProjectModalVisible(false);
               form.resetFields();
               // Refresh projects list
-              const projectsResponse = await apiClient.get('/api/v2/practice/projects');
-              if (projectsResponse.data?.data) {
-                const transformedProjects = projectsResponse.data.data.map((p: any) => ({
-                  id: p.project_id,
-                  name: p.project_name,
-                  code: p.project_number,
-                  client: p.customer_name || 'Internal',
-                  status: (p.status || 'planning').toLowerCase().replace(' ', '-'),
-                  priority: (p.priority || 'medium').toLowerCase(),
-                  progress: p.progress_percentage || 0,
-                  startDate: p.start_date ? new Date(p.start_date).toLocaleDateString() : '-',
-                  endDate: p.end_date ? new Date(p.end_date).toLocaleDateString() : '-',
-                  budget: parseFloat(p.budget) || 0,
-                  spent: parseFloat(p.actual_cost) || 0,
-                  manager: p.manager_name || 'Unassigned',
-                  team: p.team_size || 0,
-                  tasks: { total: p.total_tasks || 0, completed: p.completed_tasks || 0 },
-                  milestones: { total: 0, completed: 0 },
-                  type: p.project_type || 'internal'
-                }));
-                setProjects(transformedProjects);
-              }
+              const projectsRes = await projectService.getProjects().catch(() => ({ data: [] }));
+              const projectsData = Array.isArray(projectsRes?.data) ? projectsRes.data : [];
+              setProjects(projectsData.map(transformProject));
             } catch (error: any) {
-              message.error(error.response?.data?.message || 'Failed to create project');
+              message.error(error.response?.data?.message || 'Failed to create project. Please try again.');
             }
           }}>Create Project</Button>
         ]}
@@ -1292,11 +1311,13 @@ const ProjectsHub: React.FC = () => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Client" name="client" rules={[{ required: true }]}>
-                <Select placeholder="Select client">
-                  <Option value="internal">Internal</Option>
-                  <Option value="fnb">First National Bank</Option>
-                  <Option value="shoprite">Shoprite Holdings</Option>
-                  <Option value="attacq">Attacq Limited</Option>
+                <Select placeholder="Select client" showSearch optionFilterProp="children">
+                  <Option value="internal">Internal Project</Option>
+                  {salesCustomers.map((c: any) => (
+                    <Option key={c.id || c.customer_id} value={c.id || c.customer_id}>
+                      {c.customer_name || c.name}
+                    </Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
@@ -1353,20 +1374,47 @@ const ProjectsHub: React.FC = () => {
       <Modal
         title="Add Task"
         open={taskModalVisible}
-        onCancel={() => setTaskModalVisible(false)}
+        onCancel={() => { setTaskModalVisible(false); taskForm.resetFields(); }}
         footer={[
-          <Button key="cancel" onClick={() => setTaskModalVisible(false)}>Cancel</Button>,
+          <Button key="cancel" onClick={() => { setTaskModalVisible(false); taskForm.resetFields(); }}>Cancel</Button>,
           <Button key="create" type="primary" onClick={async () => {
-            message.info('Task creation - connect to project tasks API');
-            setTaskModalVisible(false);
+            try {
+              const values = await taskForm.validateFields();
+              const taskData = {
+                project_id: values.projectId,
+                task_name: values.title,
+                description: values.description,
+                assigned_to: values.assignee || null,
+                priority: values.priority || 'Medium',
+                estimated_hours: values.estimatedHours || 0,
+                due_date: values.dueDate?.format('YYYY-MM-DD') || null,
+                status: 'Not Started',
+              };
+              await projectService.createTask(taskData);
+              message.success('Task created successfully!');
+              setTaskModalVisible(false);
+              taskForm.resetFields();
+              // Refresh tasks list
+              const tasksRes = await projectService.getTasks().catch(() => ({ data: [] }));
+              const taskItems = Array.isArray(tasksRes?.data)
+                ? tasksRes.data
+                : Array.isArray(tasksRes) ? tasksRes : [];
+              setTasks(taskItems);
+            } catch (error: any) {
+              if (error.errorFields) {
+                // Form validation error -- Ant Design will highlight fields
+                return;
+              }
+              message.error(error.response?.data?.message || 'Failed to create task. Please try again.');
+            }
           }}>Add Task</Button>
         ]}
       >
-        <Form layout="vertical">
-          <Form.Item label="Task Title" name="title" rules={[{ required: true }]}>
+        <Form form={taskForm} layout="vertical">
+          <Form.Item label="Task Title" name="title" rules={[{ required: true, message: 'Please enter a task title' }]}>
             <Input placeholder="Enter task title" />
           </Form.Item>
-          <Form.Item label="Project" name="projectId" rules={[{ required: true }]}>
+          <Form.Item label="Project" name="projectId" rules={[{ required: true, message: 'Please select a project' }]}>
             <Select placeholder="Select project">
               {projects.map(p => <Option key={p.id} value={p.id}>{p.name}</Option>)}
             </Select>
@@ -1374,14 +1422,14 @@ const ProjectsHub: React.FC = () => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="Assignee" name="assignee">
-                <Select placeholder="Select team member">
+                <Select placeholder="Select team member" allowClear>
                   {resources.map(r => <Option key={r.id} value={r.id}>{r.name}</Option>)}
                 </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Priority" name="priority">
-                <Select defaultValue="medium">
+              <Form.Item label="Priority" name="priority" initialValue="medium">
+                <Select>
                   <Option value="low">Low</Option>
                   <Option value="medium">Medium</Option>
                   <Option value="high">High</Option>
@@ -1412,31 +1460,58 @@ const ProjectsHub: React.FC = () => {
       <Modal
         title="Log Time"
         open={timeEntryModalVisible}
-        onCancel={() => setTimeEntryModalVisible(false)}
+        onCancel={() => { setTimeEntryModalVisible(false); timeEntryForm.resetFields(); }}
         footer={[
-          <Button key="cancel" onClick={() => setTimeEntryModalVisible(false)}>Cancel</Button>,
-          <Button key="save" type="primary">Save Entry</Button>
+          <Button key="cancel" onClick={() => { setTimeEntryModalVisible(false); timeEntryForm.resetFields(); }}>Cancel</Button>,
+          <Button key="save" type="primary" onClick={async () => {
+            try {
+              const values = await timeEntryForm.validateFields();
+              const entryData = {
+                project_id: values.project,
+                task_id: values.task || null,
+                entry_date: values.date?.format('YYYY-MM-DD'),
+                hours: values.hours,
+                description: values.description,
+                is_billable: values.billable !== false,
+              };
+              await projectService.createTimeEntry(entryData);
+              message.success('Time entry logged successfully!');
+              setTimeEntryModalVisible(false);
+              timeEntryForm.resetFields();
+              // Refresh time entries
+              const timeRes = await projectService.getTimeEntries().catch(() => ({ data: [] }));
+              const entries = Array.isArray(timeRes?.entries)
+                ? timeRes.entries
+                : Array.isArray(timeRes?.data)
+                  ? timeRes.data
+                  : Array.isArray(timeRes) ? timeRes : [];
+              setTimeEntries(entries);
+            } catch (error: any) {
+              if (error.errorFields) return;
+              message.error(error.response?.data?.message || 'Failed to log time entry. Please try again.');
+            }
+          }}>Save Entry</Button>
         ]}
       >
-        <Form layout="vertical">
-          <Form.Item label="Project" name="project" rules={[{ required: true }]}>
+        <Form form={timeEntryForm} layout="vertical">
+          <Form.Item label="Project" name="project" rules={[{ required: true, message: 'Please select a project' }]}>
             <Select placeholder="Select project">
               {projects.map(p => <Option key={p.id} value={p.id}>{p.name}</Option>)}
             </Select>
           </Form.Item>
           <Form.Item label="Task" name="task">
-            <Select placeholder="Select task">
+            <Select placeholder="Select task" allowClear>
               {tasks.map(t => <Option key={t.id} value={t.id}>{t.title}</Option>)}
             </Select>
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Date" name="date" rules={[{ required: true }]}>
+              <Form.Item label="Date" name="date" rules={[{ required: true, message: 'Please select a date' }]}>
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Hours" name="hours" rules={[{ required: true }]}>
+              <Form.Item label="Hours" name="hours" rules={[{ required: true, message: 'Please enter hours' }]}>
                 <InputNumber min={0.25} max={24} step={0.25} style={{ width: '100%' }} />
               </Form.Item>
             </Col>
@@ -1444,7 +1519,7 @@ const ProjectsHub: React.FC = () => {
           <Form.Item label="Description" name="description">
             <TextArea rows={2} placeholder="What did you work on?" />
           </Form.Item>
-          <Form.Item label="Billable" name="billable" valuePropName="checked">
+          <Form.Item label="Billable" name="billable" valuePropName="checked" initialValue={true}>
             <Switch defaultChecked />
           </Form.Item>
         </Form>

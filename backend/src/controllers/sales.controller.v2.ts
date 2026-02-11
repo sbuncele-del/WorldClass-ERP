@@ -1256,7 +1256,70 @@ export const updateOpportunity = async (req: TenantRequest, res: Response) => {
       return res.status(404).json({ success: false, message: 'Opportunity not found' });
     }
 
-    res.json({ success: true, data: result.rows[0], message: 'Opportunity updated successfully' });
+    const opp = result.rows[0];
+    let customerCreated = null;
+
+    // When opportunity is WON → auto-create customer if not exists
+    if (opp.stage && opp.stage.toUpperCase() === 'CLOSED_WON') {
+      // Set closed_at timestamp
+      await pool.query(
+        'UPDATE sales.opportunities SET closed_at = NOW() WHERE opportunity_id = $1 AND tenant_id = $2',
+        [id, ctx.tenantId]
+      );
+
+      // Check if customer already exists by email or company name
+      let existingCustomer = null;
+      if (opp.email) {
+        const byEmail = await pool.query(
+          'SELECT customer_id FROM sales.customers WHERE tenant_id = $1 AND LOWER(email) = LOWER($2)',
+          [ctx.tenantId, opp.email]
+        );
+        if (byEmail.rows.length > 0) existingCustomer = byEmail.rows[0];
+      }
+      if (!existingCustomer && opp.opportunity_name) {
+        const byName = await pool.query(
+          'SELECT customer_id FROM sales.customers WHERE tenant_id = $1 AND LOWER(company_name) = LOWER($2)',
+          [ctx.tenantId, opp.opportunity_name]
+        );
+        if (byName.rows.length > 0) existingCustomer = byName.rows[0];
+      }
+
+      if (!existingCustomer) {
+        // Auto-create customer from opportunity data
+        const custCount = await pool.query('SELECT COUNT(*) FROM sales.customers WHERE tenant_id = $1', [ctx.tenantId]);
+        const custCode = `CUST-${String(parseInt(custCount.rows[0].count) + 1).padStart(4, '0')}`;
+
+        const newCust = await pool.query(
+          `INSERT INTO sales.customers (tenant_id, customer_code, company_name, contact_person, email, phone, customer_type, status, payment_terms, credit_limit)
+           VALUES ($1, $2, $3, $4, $5, $6, 'corporate', 'active', '30', 0)
+           RETURNING customer_id, company_name`,
+          [ctx.tenantId, custCode, opp.opportunity_name, opp.contact_person || null, opp.email || null, opp.phone || null]
+        );
+
+        // Link customer to opportunity
+        await pool.query(
+          'UPDATE sales.opportunities SET customer_id = $1 WHERE opportunity_id = $2 AND tenant_id = $3',
+          [newCust.rows[0].customer_id, id, ctx.tenantId]
+        );
+
+        customerCreated = newCust.rows[0];
+      } else {
+        // Link existing customer
+        await pool.query(
+          'UPDATE sales.opportunities SET customer_id = $1 WHERE opportunity_id = $2 AND tenant_id = $3',
+          [existingCustomer.customer_id, id, ctx.tenantId]
+        );
+      }
+    }
+
+    res.json({
+      success: true,
+      data: result.rows[0],
+      customerCreated,
+      message: opp.stage?.toUpperCase() === 'CLOSED_WON'
+        ? `Opportunity won!${customerCreated ? ` Customer "${customerCreated.company_name}" created automatically.` : ' Customer linked.'} Ready to create a quotation.`
+        : 'Opportunity updated successfully',
+    });
   } catch (error) {
     console.error('Error updating opportunity:', error);
     res.status(500).json({ success: false, message: 'Failed to update opportunity' });

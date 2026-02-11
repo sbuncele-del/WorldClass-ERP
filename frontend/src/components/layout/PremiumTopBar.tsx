@@ -26,6 +26,7 @@ import {
 } from '@ant-design/icons';
 import { useUser } from '../../contexts/UserContext';
 import apiClient from '../../services/api';
+import EntitySwitcher from '../EntitySwitcher';
 import './PremiumTopBar.css';
 
 const { Text } = Typography;
@@ -297,17 +298,9 @@ const PremiumTopBar: React.FC = () => {
 
   return (
     <header className="premium-topbar">
-      {/* Left: Entity & Breadcrumbs */}
+      {/* Left: Entity Switcher & Breadcrumbs */}
       <div className="topbar-left">
-        <div className="topbar-entity" onClick={() => navigate('/app/dashboard')}>
-          <div className="entity-icon">
-            <BankOutlined />
-          </div>
-          <div className="entity-details">
-            <span className="entity-name">{currentEntity.name}</span>
-            <span className="entity-meta">Reg: {currentEntity.registrationNo}</span>
-          </div>
-        </div>
+        <EntitySwitcher />
 
         <Divider type="vertical" className="topbar-divider" />
 

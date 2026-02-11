@@ -61,25 +61,27 @@ export class AuthService {
       const features = this.getPlanFeatures(data.plan);
       const limits = this.getPlanLimits(data.plan);
 
+      // Generate tenant code from slug
+      const tenantCode = slug.toUpperCase().replace(/-/g, '').substring(0, 10);
+
       // Create tenant
       const tenantResult = await client.query(
         `INSERT INTO tenants (
-          name, slug, status, subscription_plan, subscription_status,
-          trial_ends_at, billing_email, billing_cycle, 
-          max_users, max_storage_gb, features, settings
-        ) VALUES ($1::text, $2::text, $3::text, $4::text, $5::text, $6::timestamp, $7::text, $8::text, $9::int, $10::int, $11::jsonb, $12::jsonb)
+          name, tenant_code, slug, status, subscription_plan, subscription_status,
+          trial_ends_at, company_email, 
+          max_users, features, settings
+        ) VALUES ($1::text, $2::text, $3::text, $4::text, $5::text, $6::text, $7::timestamp, $8::text, $9::int, $10::jsonb, $11::jsonb)
         RETURNING *`,
         [
           data.companyName,
+          tenantCode,
           slug,
           'trial',
           data.plan,
           'trialing',
           new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
           data.email,
-          data.billingCycle,
           limits.maxUsers,
-          limits.maxStorageGb,
           JSON.stringify(features),
           JSON.stringify({
             currency: 'ZAR',

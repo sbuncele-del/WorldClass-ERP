@@ -44,6 +44,15 @@ router.post('/purchase-orders/:id/send', purchaseControllerV2.sendPurchaseOrder)
 router.post('/purchase-orders/:id/acknowledge', purchaseControllerV2.acknowledgePurchaseOrder);
 router.post('/purchase-orders/:id/cancel', purchaseControllerV2.cancelPurchaseOrder);
 
+// ==================== ORDER ROUTES (Aliases for Purchase Orders) ====================
+router.get('/orders', purchaseControllerV2.getPurchaseOrders);
+router.get('/orders/:id', purchaseControllerV2.getPurchaseOrder);
+router.post('/orders', purchaseControllerV2.createPurchaseOrder);
+router.put('/orders/:id', purchaseControllerV2.updatePurchaseOrder);
+router.post('/orders/:id/send', purchaseControllerV2.sendPurchaseOrder);
+router.post('/orders/:id/acknowledge', purchaseControllerV2.acknowledgePurchaseOrder);
+router.post('/orders/:id/cancel', purchaseControllerV2.cancelPurchaseOrder);
+
 // ==================== GOODS RECEIPT ROUTES ====================
 router.get('/goods-receipts', purchaseControllerV2.getGoodsReceipts);
 router.get('/goods-receipts/:id', purchaseControllerV2.getGoodsReceipt);
@@ -70,5 +79,8 @@ router.put('/invoices/:id', purchaseControllerV2.updateVendorInvoice);
 router.post('/invoices/:id/approve', purchaseControllerV2.approveVendorInvoice);
 router.post('/invoices/:id/reject', purchaseControllerV2.rejectVendorInvoice);
 router.post('/invoices/:id/pay', purchaseControllerV2.payVendorInvoice);
+
+// ==================== DASHBOARD ====================
+router.get('/dashboard', purchaseControllerV2.getPurchaseDashboard);
 
 export default router;

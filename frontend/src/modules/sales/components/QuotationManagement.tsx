@@ -1,819 +1,263 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../../../services/api.service';
-import './QuotationManagement.css';
+import {
+  Card, Row, Col, Table, Button, Input, Select, Tag, Space, Modal, Form,
+  InputNumber, message, Statistic, Typography, Empty, Tooltip, DatePicker, Divider, Badge,
+} from 'antd';
+import {
+  FileTextOutlined, PlusOutlined, SearchOutlined, EyeOutlined,
+  SyncOutlined, SendOutlined, ShoppingCartOutlined, DollarOutlined, DeleteOutlined,
+} from '@ant-design/icons';
+import { workspaceApi } from '../../../services/api.service';
+
+const { Text } = Typography;
+const { Option } = Select;
 
 interface Quotation {
   id: number;
-  quotation_number: string;
-  customer_id: number;
+  quotation_number?: string;
+  quote_number?: string;
+  customer_id?: number;
   customer_name?: string;
-  quotation_date: string;
-  valid_until: string;
-  subtotal: number;
-  tax_amount: number;
-  total_amount: number;
+  quotation_date?: string;
+  valid_until?: string;
+  subtotal?: number;
+  tax_amount?: number;
+  total_amount?: number;
   status: string;
-  approval_status: string;
-  converted_to_order: boolean;
-  sales_person: string;
-  probability: number;
-}
-
-interface QuotationLine {
-  id?: number;
-  line_number: number;
-  item_code: string;
-  description: string;
-  quantity: number;
-  unit_of_measure: string;
-  unit_price: number;
-  discount_percentage: number;
-  tax_rate: number;
-  line_total: number;
-}
-
-interface Customer {
-  id: number;
-  customer_code: string;
-  customer_name: string;
+  notes?: string;
+  created_at?: string;
 }
 
 const QuotationManagement: React.FC = () => {
   const [quotations, setQuotations] = useState<Quotation[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isViewMode, setIsViewMode] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
-  const [currentStep, setCurrentStep] = useState(1);
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [showModal, setShowModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState<Quotation | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [form] = Form.useForm();
+  const [allCustomers, setAllCustomers] = useState<{ id: number; name: string }[]>([]);
+  const [lines, setLines] = useState<{ description: string; qty: number; rate: number; unit: string }[]>([]);
 
-  // Form state
-  const [formData, setFormData] = useState<Partial<Quotation>>({
-    quotation_date: new Date().toISOString().split('T')[0],
-    status: 'DRAFT',
-    approval_status: 'PENDING',
-    probability: 50
-  });
+  useEffect(() => { fetchQuotations(); loadCustomers(); }, []);
 
-  const [lines, setLines] = useState<QuotationLine[]>([]);
-  const [currentLine, setCurrentLine] = useState<QuotationLine>({
-    line_number: 1,
-    item_code: '',
-    description: '',
-    quantity: 1,
-    unit_of_measure: 'EA',
-    unit_price: 0,
-    discount_percentage: 0,
-    tax_rate: 15,
-    line_total: 0
-  });
-
-  useEffect(() => {
-    fetchQuotations();
-    fetchCustomers();
-  }, [searchTerm, filterStatus]);
+  const extractList = (response: any, ...keys: string[]) => {
+    if (Array.isArray(response)) return response;
+    for (const k of keys) { if (Array.isArray(response?.[k])) return response[k]; }
+    for (const k of keys) { if (Array.isArray(response?.data?.[k])) return response.data[k]; }
+    if (Array.isArray(response?.data)) return response.data;
+    return [];
+  };
 
   const fetchQuotations = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
-      if (filterStatus) params.append('status', filterStatus);
-
-      const response = await fetch(`${API_BASE_URL}/api/sales/quotations?${params}`);
-      const data = await response.json();
-      setQuotations(data.quotations || []);
-    } catch (error) {
-      console.error('Error fetching quotations:', error);
-    } finally {
-      setLoading(false);
-    }
+      const response: any = await workspaceApi.sales.getQuotations({ limit: 100 });
+      console.log('[Quotations] response:', JSON.stringify(response).slice(0, 300));
+      const list = extractList(response, 'data', 'quotations');
+      setQuotations(list.map((q: any) => ({
+        ...q, id: q.quotation_id || q.id,
+        quotation_number: q.quotation_number || q.quote_number || `Q-${q.id}`,
+      })));
+    } catch (err) { console.error('[Quotations] error:', err); message.error('Failed to load quotations'); }
+    finally { setLoading(false); }
   };
 
-  const fetchCustomers = async () => {
+  const loadCustomers = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/sales/customers?limit=100`);
-      const data = await response.json();
-      setCustomers(data.customers || []);
-    } catch (error) {
-      console.error('Error fetching customers:', error);
-    }
+      const res: any = await workspaceApi.sales.getCustomers({ limit: 200 });
+      const list = extractList(res, 'data', 'customers');
+      setAllCustomers(list.map((c: any) => ({
+        id: c.customer_id || c.id,
+        name: c.company_name || c.customer_name || c.name || 'Unnamed',
+      })));
+    } catch { /* ignore */ }
   };
 
-  const fetchQuotationDetails = async (id: number) => {
+  const handleCreate = async (asDraft = true) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/sales/quotations/${id}`);
-      const data = await response.json();
-      setSelectedQuotation(data.quotation);
-      setLines(data.lines || []);
-      setFormData(data.quotation);
-      setIsViewMode(true);
-      setIsModalOpen(true);
-    } catch (error) {
-      console.error('Error fetching quotation details:', error);
-    }
-  };
-
-  const handleCreateNew = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const validUntil = new Date();
-    validUntil.setDate(validUntil.getDate() + 30);
-
-    setFormData({
-      quotation_date: today,
-      valid_until: validUntil.toISOString().split('T')[0],
-      status: 'DRAFT',
-      approval_status: 'PENDING',
-      probability: 50,
-      payment_terms: 30
-    });
-    setLines([]);
-    setSelectedQuotation(null);
-    setIsViewMode(false);
-    setCurrentStep(1);
-    setIsModalOpen(true);
-  };
-
-  const calculateLineTotal = (line: QuotationLine) => {
-    const subtotal = line.quantity * line.unit_price;
-    const discountAmount = subtotal * (line.discount_percentage / 100);
-    const taxableAmount = subtotal - discountAmount;
-    const taxAmount = taxableAmount * (line.tax_rate / 100);
-    return taxableAmount + taxAmount;
-  };
-
-  const handleAddLine = () => {
-    if (!currentLine.description || currentLine.quantity <= 0 || currentLine.unit_price <= 0) {
-      alert('Please fill in all line item details');
-      return;
-    }
-
-    const lineTotal = calculateLineTotal(currentLine);
-    const newLine = { ...currentLine, line_total: lineTotal, line_number: lines.length + 1 };
-    setLines([...lines, newLine]);
-
-    setCurrentLine({
-      line_number: lines.length + 2,
-      item_code: '',
-      description: '',
-      quantity: 1,
-      unit_of_measure: 'EA',
-      unit_price: 0,
-      discount_percentage: 0,
-      tax_rate: 15,
-      line_total: 0
-    });
-  };
-
-  const handleRemoveLine = (index: number) => {
-    const updatedLines = lines.filter((_, i) => i !== index);
-    // Renumber lines
-    const renumberedLines = updatedLines.map((line, i) => ({
-      ...line,
-      line_number: i + 1
-    }));
-    setLines(renumberedLines);
-  };
-
-  const calculateTotals = () => {
-    let subtotal = 0;
-    let totalTax = 0;
-
-    lines.forEach(line => {
-      const lineSubtotal = line.quantity * line.unit_price;
-      const discountAmount = lineSubtotal * (line.discount_percentage / 100);
-      const taxableAmount = lineSubtotal - discountAmount;
-      const taxAmount = taxableAmount * (line.tax_rate / 100);
-
-      subtotal += lineSubtotal;
-      totalTax += taxAmount;
-    });
-
-    return {
-      subtotal,
-      tax_amount: totalTax,
-      total_amount: subtotal + totalTax
-    };
-  };
-
-  const handleSave = async () => {
-    if (!formData.customer_id) {
-      alert('Please select a customer');
-      return;
-    }
-
-    if (lines.length === 0) {
-      alert('Please add at least one line item');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const totals = calculateTotals();
-      const url = selectedQuotation
-        ? `${API_BASE_URL}/api/sales/quotations/${selectedQuotation.id}`
-        : `${API_BASE_URL}/api/sales/quotations`;
-
-      const method = selectedQuotation ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, ...totals, lines })
+      const values = await form.validateFields();
+      setSaving(true);
+      const lineTotal = lines.reduce((s, l) => s + l.qty * l.rate, 0);
+      const tax = lineTotal * 0.15;
+      await workspaceApi.sales.createQuotation({
+        customer_id: values.customer_id,
+        valid_until: values.valid_until?.toDate?.()?.toISOString() || values.valid_until?.toISOString?.(),
+        subtotal: lineTotal, tax_amount: tax, total_amount: lineTotal + tax,
+        notes: values.notes, status: asDraft ? 'draft' : 'sent',
+        lines: lines.map((l, i) => ({
+          line_number: i + 1, description: l.description, quantity: l.qty,
+          unit_of_measure: l.unit, unit_price: l.rate, discount_percentage: 0,
+          tax_rate: 15, line_total: l.qty * l.rate * 1.15,
+        })),
       });
-
-      if (response.ok) {
-        setIsModalOpen(false);
-        fetchQuotations();
-        alert(selectedQuotation ? 'Quotation updated successfully!' : 'Quotation created successfully!');
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('Error saving quotation:', error);
-      alert('Failed to save quotation');
-    } finally {
-      setLoading(false);
-    }
+      message.success(asDraft ? 'Quote saved as draft' : 'Quote created & sent');
+      setShowModal(false); form.resetFields(); setLines([]); fetchQuotations();
+    } catch (err: any) {
+      if (err?.errorFields) return;
+      message.error(err?.message || 'Failed to create quote');
+    } finally { setSaving(false); }
   };
 
-  const handleConvertToOrder = async (id: number) => {
-    if (!confirm('Convert this quotation to a sales order?')) return;
+  const formatCurrency = (v: number) => `R ${(v || 0).toLocaleString('en-ZA')}`;
 
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/api/sales/quotations/${id}/convert-to-order`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (response.ok) {
-        fetchQuotations();
-        alert('Quotation converted to sales order successfully!');
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('Error converting quotation:', error);
-      alert('Failed to convert quotation');
-    } finally {
-      setLoading(false);
-    }
+  const statusColors: Record<string, string> = {
+    draft: 'default', sent: 'processing', viewed: 'purple', accepted: 'success',
+    rejected: 'error', expired: 'warning', converted: 'cyan',
   };
 
-  const handleUpdateStatus = async (id: number, status: string) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/sales/quotations/${id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status })
-      });
+  const filtered = quotations.filter(q => {
+    const matchSearch = !searchTerm || (q.quotation_number || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (q.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchStatus = !filterStatus || (q.status || '').toLowerCase() === filterStatus.toLowerCase();
+    return matchSearch && matchStatus;
+  });
 
-      if (response.ok) {
-        fetchQuotations();
-        alert('Status updated successfully!');
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
-      }
-    } catch (error) {
-      console.error('Error updating status:', error);
-      alert('Failed to update status');
-    }
-  };
+  const columns = [
+    {
+      title: 'Quote #', dataIndex: 'quotation_number', key: 'num', width: 140,
+      render: (t: string) => <Text strong style={{ color: '#667eea' }}>{t}</Text>,
+      sorter: (a: Quotation, b: Quotation) => (a.quotation_number || '').localeCompare(b.quotation_number || ''),
+    },
+    { title: 'Customer', dataIndex: 'customer_name', key: 'customer', ellipsis: true },
+    {
+      title: 'Date', key: 'date', width: 110,
+      render: (_: any, r: Quotation) => r.quotation_date ? new Date(r.quotation_date).toLocaleDateString('en-ZA') : '—',
+      sorter: (a: Quotation, b: Quotation) => (a.quotation_date || '').localeCompare(b.quotation_date || ''),
+    },
+    {
+      title: 'Valid Until', key: 'valid', width: 110,
+      render: (_: any, r: Quotation) => r.valid_until ? new Date(r.valid_until).toLocaleDateString('en-ZA') : '—',
+    },
+    {
+      title: 'Amount', dataIndex: 'total_amount', key: 'amount', width: 140,
+      render: (v: number) => <Text strong>{formatCurrency(v)}</Text>,
+      sorter: (a: Quotation, b: Quotation) => (a.total_amount || 0) - (b.total_amount || 0),
+    },
+    {
+      title: 'Status', dataIndex: 'status', key: 'status', width: 110,
+      render: (s: string) => <Tag color={statusColors[(s || '').toLowerCase()] || 'default'}>{(s || 'Draft').toUpperCase()}</Tag>,
+    },
+    {
+      title: 'Actions', key: 'actions', width: 120,
+      render: (_: any, r: Quotation) => (
+        <Space size="small">
+          <Tooltip title="View"><Button type="text" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedQuote(r); setShowDetailModal(true); }} /></Tooltip>
+          {(r.status || '').toLowerCase() === 'draft' && (
+            <Tooltip title="Send"><Button type="text" size="small" icon={<SendOutlined />} style={{ color: '#1890ff' }} /></Tooltip>
+          )}
+        </Space>
+      ),
+    },
+  ];
 
-  const getStatusColor = (status: string) => {
-    const colors: { [key: string]: string } = {
-      'DRAFT': 'gray',
-      'SENT': 'blue',
-      'NEGOTIATION': 'orange',
-      'WON': 'green',
-      'LOST': 'red',
-      'EXPIRED': 'purple'
-    };
-    return colors[status] || 'gray';
-  };
-
-  const totals = calculateTotals();
+  const totalValue = quotations.reduce((s, q) => s + (q.total_amount || 0), 0);
+  const draftCount = quotations.filter(q => (q.status || '').toLowerCase() === 'draft').length;
+  const sentCount = quotations.filter(q => (q.status || '').toLowerCase() === 'sent').length;
 
   return (
-    <div className="quotation-management">
-      <div className="quotation-header">
-        <h1>Quotation Management</h1>
-        <button className="btn btn-primary" onClick={handleCreateNew}>
-          + New Quotation
-        </button>
-      </div>
+    <>
+      <Row gutter={16} style={{ marginBottom: 20 }}>
+        <Col span={6}><Card><Statistic title="Total Quotations" value={quotations.length} prefix={<FileTextOutlined style={{ color: '#667eea' }} />} /></Card></Col>
+        <Col span={6}><Card><Statistic title="Total Value" value={totalValue} prefix="R" valueStyle={{ color: '#667eea' }} /></Card></Col>
+        <Col span={6}><Card><Statistic title="Drafts" value={draftCount} valueStyle={{ color: '#8c8c8c' }} /></Card></Col>
+        <Col span={6}><Card><Statistic title="Sent / Pending" value={sentCount} valueStyle={{ color: '#1890ff' }} /></Card></Col>
+      </Row>
 
-      <div className="quotation-filters">
-        <input
-          type="text"
-          placeholder="Search quotations..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
+      <Card
+        title={<Space><FileTextOutlined style={{ color: '#667eea' }} /><span>All Quotations</span></Space>}
+        extra={
+          <Space>
+            <Input placeholder="Search..." prefix={<SearchOutlined />} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} style={{ width: 220 }} allowClear />
+            <Select placeholder="All Status" value={filterStatus || undefined} onChange={v => setFilterStatus(v || '')} style={{ width: 130 }} allowClear>
+              <Option value="draft">Draft</Option><Option value="sent">Sent</Option>
+              <Option value="accepted">Accepted</Option><Option value="expired">Expired</Option>
+            </Select>
+            <Button icon={<SyncOutlined />} onClick={fetchQuotations} loading={loading} />
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => { setLines([]); form.resetFields(); setShowModal(true); }}>New Quotation</Button>
+          </Space>
+        }
+      >
+        <Table dataSource={filtered} columns={columns} rowKey="id" loading={loading}
+          pagination={{ pageSize: 15, showSizeChanger: true, showTotal: t => `${t} quotations` }} size="middle"
+          locale={{ emptyText: <Empty description="No quotations yet" /> }}
         />
+      </Card>
 
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="filter-select"
-        >
-          <option value="">All Status</option>
-          <option value="DRAFT">Draft</option>
-          <option value="SENT">Sent</option>
-          <option value="NEGOTIATION">Negotiation</option>
-          <option value="WON">Won</option>
-          <option value="LOST">Lost</option>
-          <option value="EXPIRED">Expired</option>
-        </select>
-      </div>
-
-      {loading && <div className="loading">Loading quotations...</div>}
-
-      <div className="quotation-grid">
-        <table className="quotation-table">
-          <thead>
-            <tr>
-              <th>Quotation #</th>
-              <th>Customer</th>
-              <th>Date</th>
-              <th>Valid Until</th>
-              <th>Amount</th>
-              <th>Probability</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {quotations.map((quotation) => (
-              <tr key={quotation.id}>
-                <td>
-                  <span
-                    className="quotation-number"
-                    onClick={() => fetchQuotationDetails(quotation.id)}
-                  >
-                    {quotation.quotation_number}
-                  </span>
-                </td>
-                <td>{quotation.customer_name}</td>
-                <td>{new Date(quotation.quotation_date).toLocaleDateString()}</td>
-                <td>{new Date(quotation.valid_until).toLocaleDateString()}</td>
-                <td className="text-right">R {quotation.total_amount?.toLocaleString()}</td>
-                <td>
-                  <div className="probability-bar">
-                    <div
-                      className="probability-fill"
-                      style={{ width: `${quotation.probability}%` }}
-                    />
-                    <span>{quotation.probability}%</span>
-                  </div>
-                </td>
-                <td>
-                  <span className={`status-badge status-${getStatusColor(quotation.status)}`}>
-                    {quotation.status}
-                  </span>
-                  {quotation.converted_to_order && (
-                    <span className="converted-badge">✓ Converted</span>
-                  )}
-                </td>
-                <td>
-                  <div className="action-buttons">
-                    {quotation.status === 'SENT' && !quotation.converted_to_order && (
-                      <button
-                        className="btn-sm btn-success"
-                        onClick={() => handleConvertToOrder(quotation.id)}
-                        title="Convert to Order"
-                      >
-                        ➜ Order
-                      </button>
-                    )}
-                    {quotation.status === 'DRAFT' && (
-                      <button
-                        className="btn-sm btn-primary"
-                        onClick={() => handleUpdateStatus(quotation.id, 'SENT')}
-                        title="Send"
-                      >
-                        📤 Send
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {isModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
-          <div className="modal-content large" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>
-                {isViewMode
-                  ? `Quotation ${selectedQuotation?.quotation_number}`
-                  : selectedQuotation
-                  ? 'Edit Quotation'
-                  : 'New Quotation'}
-              </h2>
-              <button className="modal-close" onClick={() => setIsModalOpen(false)}>
-                ×
-              </button>
+      {/* Create Modal */}
+      <Modal title="📝 Create Quotation" open={showModal}
+        onCancel={() => { setShowModal(false); setLines([]); }}
+        footer={[
+          <Button key="c" onClick={() => setShowModal(false)}>Cancel</Button>,
+          <Button key="d" onClick={() => handleCreate(true)} loading={saving}>Save Draft</Button>,
+          <Button key="s" type="primary" onClick={() => handleCreate(false)} loading={saving} icon={<SendOutlined />}>Send Quote</Button>,
+        ]} width={800}>
+        <Form layout="vertical" form={form}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Customer" name="customer_id" rules={[{ required: true }]}>
+                <Select placeholder="Select customer..." showSearch optionFilterProp="children">
+                  {allCustomers.map(c => <Option key={c.id} value={c.id}>{c.name}</Option>)}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Valid Until" name="valid_until" rules={[{ required: true }]}>
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="Notes / Terms" name="notes"><Input.TextArea rows={2} /></Form.Item>
+          <Divider>Line Items</Divider>
+          {lines.map((line, idx) => (
+            <Row gutter={8} key={idx} align="middle" style={{ marginBottom: 8 }}>
+              <Col span={9}><Input placeholder="Description" value={line.description} onChange={e => { const u = [...lines]; u[idx].description = e.target.value; setLines(u); }} /></Col>
+              <Col span={3}><InputNumber min={0.01} step={0.5} value={line.qty} onChange={v => { const u = [...lines]; u[idx].qty = v || 1; setLines(u); }} style={{ width: '100%' }} /></Col>
+              <Col span={3}><Select value={line.unit} onChange={v => { const u = [...lines]; u[idx].unit = v; setLines(u); }} style={{ width: '100%' }}>
+                <Option value="service">Service</Option><Option value="hrs">Hours</Option><Option value="days">Days</Option>
+                <Option value="EA">Each</Option><Option value="month">Monthly</Option><Option value="fixed">Fixed</Option>
+              </Select></Col>
+              <Col span={4}><InputNumber prefix="R" min={0} step={100} value={line.rate} onChange={v => { const u = [...lines]; u[idx].rate = v || 0; setLines(u); }} style={{ width: '100%' }} /></Col>
+              <Col span={3}><Text strong style={{ color: '#10b981' }}>R {(line.qty * line.rate).toLocaleString('en-ZA')}</Text></Col>
+              <Col span={2}><Button type="text" danger size="small" onClick={() => setLines(lines.filter((_, i) => i !== idx))}>✕</Button></Col>
+            </Row>
+          ))}
+          <Button type="dashed" icon={<PlusOutlined />} onClick={() => setLines([...lines, { description: '', qty: 1, rate: 0, unit: 'service' }])} style={{ width: '100%' }}>+ Add Item</Button>
+          {lines.length > 0 && (
+            <div style={{ textAlign: 'right', marginTop: 16, padding: '12px 16px', background: '#f6ffed', borderRadius: 8 }}>
+              <Text>Subtotal: <Text strong>R {lines.reduce((s, l) => s + l.qty * l.rate, 0).toLocaleString('en-ZA')}</Text></Text><br />
+              <Text>VAT (15%): <Text strong>R {(lines.reduce((s, l) => s + l.qty * l.rate, 0) * 0.15).toLocaleString('en-ZA')}</Text></Text><br />
+              <Text style={{ fontSize: 16 }}>Total: <Text strong style={{ color: '#10b981', fontSize: 18 }}>R {(lines.reduce((s, l) => s + l.qty * l.rate, 0) * 1.15).toLocaleString('en-ZA')}</Text></Text>
             </div>
+          )}
+        </Form>
+      </Modal>
 
-            <div className="modal-body">
-              {isViewMode ? (
-                <div className="quotation-view">
-                  <div className="view-header">
-                    <div className="view-info">
-                      <h3>{selectedQuotation?.customer_name}</h3>
-                      <p>Quotation: {selectedQuotation?.quotation_number}</p>
-                      <p>Date: {new Date(selectedQuotation?.quotation_date || '').toLocaleDateString()}</p>
-                      <p>Valid Until: {new Date(selectedQuotation?.valid_until || '').toLocaleDateString()}</p>
-                    </div>
-                    <div className="view-status">
-                      <span className={`status-badge large status-${getStatusColor(selectedQuotation?.status || '')}`}>
-                        {selectedQuotation?.status}
-                      </span>
-                      <div className="probability-display">
-                        <label>Win Probability:</label>
-                        <span>{selectedQuotation?.probability}%</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="line-items-view">
-                    <h4>Line Items</h4>
-                    <table className="lines-table">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Item</th>
-                          <th>Description</th>
-                          <th>Qty</th>
-                          <th>Unit Price</th>
-                          <th>Discount</th>
-                          <th>Tax</th>
-                          <th>Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {lines.map((line) => (
-                          <tr key={line.id || line.line_number}>
-                            <td>{line.line_number}</td>
-                            <td>{line.item_code}</td>
-                            <td>{line.description}</td>
-                            <td>{line.quantity} {line.unit_of_measure}</td>
-                            <td>R {line.unit_price.toLocaleString()}</td>
-                            <td>{line.discount_percentage}%</td>
-                            <td>{line.tax_rate}%</td>
-                            <td>R {line.line_total.toLocaleString()}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="totals-view">
-                    <div className="total-row">
-                      <span>Subtotal:</span>
-                      <span>R {selectedQuotation?.subtotal.toLocaleString()}</span>
-                    </div>
-                    <div className="total-row">
-                      <span>Tax:</span>
-                      <span>R {selectedQuotation?.tax_amount.toLocaleString()}</span>
-                    </div>
-                    <div className="total-row grand-total">
-                      <span>Total:</span>
-                      <span>R {selectedQuotation?.total_amount.toLocaleString()}</span>
-                    </div>
-                  </div>
-
-                  <div className="modal-actions">
-                    {!selectedQuotation?.converted_to_order && selectedQuotation?.status === 'SENT' && (
-                      <button
-                        className="btn btn-success"
-                        onClick={() => handleConvertToOrder(selectedQuotation.id)}
-                      >
-                        Convert to Sales Order
-                      </button>
-                    )}
-                    <button className="btn btn-secondary" onClick={() => setIsViewMode(false)}>
-                      Edit
-                    </button>
-                    <button className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
-                      Close
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="quotation-wizard">
-                  <div className="wizard-steps">
-                    <div className={`step ${currentStep >= 1 ? 'active' : ''}`}>
-                      <div className="step-number">1</div>
-                      <div className="step-label">Details</div>
-                    </div>
-                    <div className={`step ${currentStep >= 2 ? 'active' : ''}`}>
-                      <div className="step-number">2</div>
-                      <div className="step-label">Line Items</div>
-                    </div>
-                    <div className={`step ${currentStep >= 3 ? 'active' : ''}`}>
-                      <div className="step-number">3</div>
-                      <div className="step-label">Review</div>
-                    </div>
-                  </div>
-
-                  {currentStep === 1 && (
-                    <div className="step-content">
-                      <h3>Quotation Details</h3>
-                      <div className="form-grid">
-                        <div className="form-group">
-                          <label>Customer *</label>
-                          <select
-                            value={formData.customer_id || ''}
-                            onChange={(e) => setFormData({ ...formData, customer_id: parseInt(e.target.value) })}
-                            required
-                          >
-                            <option value="">Select Customer</option>
-                            {customers.map(customer => (
-                              <option key={customer.id} value={customer.id}>
-                                {customer.customer_code} - {customer.customer_name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="form-group">
-                          <label>Quotation Date *</label>
-                          <input
-                            type="date"
-                            value={formData.quotation_date || ''}
-                            onChange={(e) => setFormData({ ...formData, quotation_date: e.target.value })}
-                            required
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label>Valid Until *</label>
-                          <input
-                            type="date"
-                            value={formData.valid_until || ''}
-                            onChange={(e) => setFormData({ ...formData, valid_until: e.target.value })}
-                            required
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label>Sales Person</label>
-                          <input
-                            type="text"
-                            value={formData.sales_person || ''}
-                            onChange={(e) => setFormData({ ...formData, sales_person: e.target.value })}
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label>Win Probability (%)</label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={formData.probability || 50}
-                            onChange={(e) => setFormData({ ...formData, probability: parseInt(e.target.value) })}
-                          />
-                        </div>
-
-                        <div className="form-group">
-                          <label>Payment Terms (days)</label>
-                          <input
-                            type="number"
-                            value={formData.payment_terms || 30}
-                            onChange={(e) => setFormData({ ...formData, payment_terms: parseInt(e.target.value) })}
-                          />
-                        </div>
-
-                        <div className="form-group full-width">
-                          <label>Notes</label>
-                          <textarea
-                            rows={3}
-                            value={formData.notes || ''}
-                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="step-navigation">
-                        <button
-                          className="btn btn-primary"
-                          onClick={() => setCurrentStep(2)}
-                          disabled={!formData.customer_id}
-                        >
-                          Next: Line Items →
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {currentStep === 2 && (
-                    <div className="step-content">
-                      <h3>Line Items</h3>
-
-                      <div className="line-item-form">
-                        <div className="form-grid">
-                          <div className="form-group">
-                            <label>Item Code</label>
-                            <input
-                              type="text"
-                              value={currentLine.item_code}
-                              onChange={(e) => setCurrentLine({ ...currentLine, item_code: e.target.value })}
-                            />
-                          </div>
-
-                          <div className="form-group full-width">
-                            <label>Description *</label>
-                            <input
-                              type="text"
-                              value={currentLine.description}
-                              onChange={(e) => setCurrentLine({ ...currentLine, description: e.target.value })}
-                              required
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>Quantity *</label>
-                            <input
-                              type="number"
-                              min="0.01"
-                              step="0.01"
-                              value={currentLine.quantity}
-                              onChange={(e) => setCurrentLine({ ...currentLine, quantity: parseFloat(e.target.value) })}
-                              required
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>Unit</label>
-                            <input
-                              type="text"
-                              value={currentLine.unit_of_measure}
-                              onChange={(e) => setCurrentLine({ ...currentLine, unit_of_measure: e.target.value })}
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>Unit Price *</label>
-                            <input
-                              type="number"
-                              min="0"
-                              step="0.01"
-                              value={currentLine.unit_price}
-                              onChange={(e) => setCurrentLine({ ...currentLine, unit_price: parseFloat(e.target.value) })}
-                              required
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>Discount (%)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={currentLine.discount_percentage}
-                              onChange={(e) => setCurrentLine({ ...currentLine, discount_percentage: parseFloat(e.target.value) })}
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label>Tax Rate (%)</label>
-                            <input
-                              type="number"
-                              min="0"
-                              max="100"
-                              value={currentLine.tax_rate}
-                              onChange={(e) => setCurrentLine({ ...currentLine, tax_rate: parseFloat(e.target.value) })}
-                            />
-                          </div>
-                        </div>
-
-                        <button className="btn btn-primary btn-sm" onClick={handleAddLine}>
-                          + Add Line Item
-                        </button>
-                      </div>
-
-                      {lines.length > 0 && (
-                        <div className="added-lines">
-                          <h4>Added Items ({lines.length})</h4>
-                          <table className="lines-table">
-                            <thead>
-                              <tr>
-                                <th>#</th>
-                                <th>Description</th>
-                                <th>Qty</th>
-                                <th>Price</th>
-                                <th>Discount</th>
-                                <th>Total</th>
-                                <th></th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {lines.map((line, index) => (
-                                <tr key={index}>
-                                  <td>{line.line_number}</td>
-                                  <td>{line.description}</td>
-                                  <td>{line.quantity} {line.unit_of_measure}</td>
-                                  <td>R {line.unit_price.toLocaleString()}</td>
-                                  <td>{line.discount_percentage}%</td>
-                                  <td>R {line.line_total.toLocaleString()}</td>
-                                  <td>
-                                    <button
-                                      className="btn-icon"
-                                      onClick={() => handleRemoveLine(index)}
-                                    >
-                                      🗑️
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-
-                          <div className="line-totals">
-                            <div className="total-row">
-                              <span>Subtotal:</span>
-                              <span>R {totals.subtotal.toLocaleString()}</span>
-                            </div>
-                            <div className="total-row">
-                              <span>Tax:</span>
-                              <span>R {totals.tax_amount.toLocaleString()}</span>
-                            </div>
-                            <div className="total-row grand-total">
-                              <span>Total:</span>
-                              <span>R {totals.total_amount.toLocaleString()}</span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="step-navigation">
-                        <button className="btn btn-secondary" onClick={() => setCurrentStep(1)}>
-                          ← Back
-                        </button>
-                        <button
-                          className="btn btn-primary"
-                          onClick={() => setCurrentStep(3)}
-                          disabled={lines.length === 0}
-                        >
-                          Next: Review →
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {currentStep === 3 && (
-                    <div className="step-content">
-                      <h3>Review & Submit</h3>
-
-                      <div className="review-summary">
-                        <div className="review-section">
-                          <h4>Customer Information</h4>
-                          <p>
-                            {customers.find(c => c.id === formData.customer_id)?.customer_name}
-                          </p>
-                          <p>Valid Until: {formData.valid_until}</p>
-                        </div>
-
-                        <div className="review-section">
-                          <h4>Items Summary</h4>
-                          <p>{lines.length} line item(s)</p>
-                          <p>Total Amount: R {totals.total_amount.toLocaleString()}</p>
-                        </div>
-                      </div>
-
-                      <div className="step-navigation">
-                        <button className="btn btn-secondary" onClick={() => setCurrentStep(2)}>
-                          ← Back
-                        </button>
-                        <button
-                          className="btn btn-primary"
-                          onClick={handleSave}
-                          disabled={loading}
-                        >
-                          {loading ? 'Saving...' : (selectedQuotation ? 'Update Quotation' : 'Create Quotation')}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      {/* Detail Modal */}
+      <Modal title={selectedQuote ? `Quote ${selectedQuote.quotation_number}` : 'Quote'} open={showDetailModal}
+        onCancel={() => setShowDetailModal(false)} footer={<Button onClick={() => setShowDetailModal(false)}>Close</Button>} width={500}>
+        {selectedQuote && (
+          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+            <Row gutter={16}>
+              <Col span={12}><Text type="secondary">Customer</Text><br /><Text strong>{selectedQuote.customer_name || '—'}</Text></Col>
+              <Col span={12}><Text type="secondary">Status</Text><br /><Tag color={statusColors[(selectedQuote.status || '').toLowerCase()]}>{(selectedQuote.status || 'Draft').toUpperCase()}</Tag></Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={12}><Text type="secondary">Date</Text><br /><Text>{selectedQuote.quotation_date ? new Date(selectedQuote.quotation_date).toLocaleDateString('en-ZA') : '—'}</Text></Col>
+              <Col span={12}><Text type="secondary">Valid Until</Text><br /><Text>{selectedQuote.valid_until ? new Date(selectedQuote.valid_until).toLocaleDateString('en-ZA') : '—'}</Text></Col>
+            </Row>
+            <Divider />
+            <Row gutter={16}>
+              <Col span={8}><Statistic title="Subtotal" value={selectedQuote.subtotal || 0} prefix="R" /></Col>
+              <Col span={8}><Statistic title="VAT" value={selectedQuote.tax_amount || 0} prefix="R" /></Col>
+              <Col span={8}><Statistic title="Total" value={selectedQuote.total_amount || 0} prefix="R" valueStyle={{ color: '#10b981', fontWeight: 700 }} /></Col>
+            </Row>
+          </Space>
+        )}
+      </Modal>
+    </>
   );
 };
 

@@ -159,6 +159,32 @@ export const updateDepartment = async (req: TenantRequest, res: Response) => {
   }
 };
 
+export const deleteDepartment = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+
+    // Check for employees in this department
+    const empCheck = await query(
+      'SELECT COUNT(*) as count FROM hr.employees WHERE tenant_id = $1 AND department_id = $2 AND employment_status = \'Active\'',
+      [ctx.tenantId, id]
+    );
+
+    if (parseInt(empCheck.rows[0]?.count || '0', 10) > 0) {
+      return res.status(400).json({ success: false, message: 'Cannot delete department with active employees. Reassign employees first.' });
+    }
+
+    // Soft delete by setting is_active = false
+    const result = await departmentRepository.update(ctx, id, { is_active: false } as any);
+    if (!result) return res.status(404).json({ success: false, message: 'Department not found' });
+
+    res.json({ success: true, message: 'Department deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting department:', error);
+    res.status(400).json({ success: false, message: 'Failed to delete department', error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+};
+
 // ============================================================================
 // POSITIONS
 // ============================================================================
@@ -305,6 +331,25 @@ export const updateEmployee = async (req: TenantRequest, res: Response) => {
   } catch (error) {
     console.error('Error updating employee:', error);
     res.status(400).json({ success: false, message: 'Failed to update employee', error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+};
+
+export const deleteEmployee = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+
+    // Soft delete by setting employment_status to Terminated
+    const updated = await employeeRepository.update(ctx, id, {
+      employment_status: 'Terminated',
+      termination_date: new Date().toISOString().split('T')[0],
+    } as any);
+
+    if (!updated) return res.status(404).json({ success: false, message: 'Employee not found' });
+    res.json({ success: true, message: 'Employee terminated successfully' });
+  } catch (error) {
+    console.error('Error deleting employee:', error);
+    res.status(400).json({ success: false, message: 'Failed to delete employee', error: error instanceof Error ? error.message : 'Unknown error' });
   }
 };
 

@@ -3,6 +3,9 @@ import { redisConfig } from './redis.config';
 
 // Allow test environments to swap in an in-memory Redis mock
 const useMock = process.env.USE_REDIS_MOCK === 'true';
+// Check if Redis is disabled
+const isRedisDisabled = process.env.REDIS_ENABLED === 'false' || process.env.SKIP_REDIS === 'true';
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const RedisCtor: typeof Redis = useMock ? require('ioredis-mock') : Redis;
 
@@ -24,7 +27,49 @@ let defaultClient: RedisClient | null = null;
 // Singleton instance for subscriptions
 let subscriberClient: RedisClient | null = null;
 
+// In-memory mock for disabled mode
+class MockRedisClient {
+  private store: Map<string, string> = new Map();
+  
+  async get(key: string): Promise<string | null> {
+    return this.store.get(key) || null;
+  }
+  async set(key: string, value: string): Promise<'OK'> {
+    this.store.set(key, value);
+    return 'OK';
+  }
+  async del(...keys: string[]): Promise<number> {
+    let deleted = 0;
+    for (const key of keys) {
+      if (this.store.delete(key)) deleted++;
+    }
+    return deleted;
+  }
+  async ping(): Promise<string> { return 'PONG'; }
+  async quit(): Promise<'OK'> { return 'OK'; }
+  async flushdb(): Promise<'OK'> { this.store.clear(); return 'OK'; }
+  async keys(pattern: string): Promise<string[]> { return Array.from(this.store.keys()); }
+  async exists(...keys: string[]): Promise<number> {
+    return keys.filter(k => this.store.has(k)).length;
+  }
+  async setex(key: string, seconds: number, value: string): Promise<'OK'> {
+    this.store.set(key, value);
+    setTimeout(() => this.store.delete(key), seconds * 1000);
+    return 'OK';
+  }
+  on(_event: string, _handler: Function): this { return this; }
+  duplicate(): MockRedisClient { return new MockRedisClient(); }
+}
+
 export const getRedisClient = (): RedisClient => {
+  if (isRedisDisabled) {
+    if (!defaultClient) {
+      console.log('🔌 Redis disabled - using in-memory mock');
+      defaultClient = new MockRedisClient() as unknown as RedisClient;
+    }
+    return defaultClient;
+  }
+  
   if (!defaultClient) {
     console.log('🔌 Initializing Redis Default Client...');
     defaultClient = new RedisCtor(redisConfig as any);
@@ -41,6 +86,13 @@ export const getRedisClient = (): RedisClient => {
 };
 
 export const getRedisSubscriber = (): RedisClient => {
+  if (isRedisDisabled) {
+    if (!subscriberClient) {
+      subscriberClient = new MockRedisClient() as unknown as RedisClient;
+    }
+    return subscriberClient;
+  }
+  
   if (!subscriberClient) {
     console.log('🔌 Initializing Redis Subscriber Client...');
     subscriberClient = new RedisCtor({
@@ -64,6 +116,10 @@ export const getRedisSubscriber = (): RedisClient => {
  * Factory function for libraries that need new connections (e.g., Bull)
  */
 export const createRedisClient = (type: 'client' | 'subscriber' | 'bclient'): RedisClient => {
+  if (isRedisDisabled) {
+    return new MockRedisClient() as unknown as RedisClient;
+  }
+  
   const options = { ...redisConfig } as any;
 
   // Bull does not allow enableReadyCheck/maxRetriesPerRequest for subscriber/bclient

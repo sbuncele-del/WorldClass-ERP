@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useEffect, Suspense, lazy } from 'react';
+import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { ConfigProvider, Spin } from 'antd';
 import { antdTheme } from './theme/antd.theme';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -10,6 +10,7 @@ import { ClientProvider } from './contexts/ClientContext';
 import { CurrencyProvider } from './contexts/CurrencyContext';
 import { UserProvider } from './contexts/UserContext';
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext';
+import { EntityProvider } from './contexts/EntityContext';
 
 // Critical path components (loaded immediately)
 import Login from './pages/Login';
@@ -83,6 +84,7 @@ const ClientPortal = lazy(() => import('./modules/proposals/pages/ClientPortal')
 const PortalAccess = lazy(() => import('./modules/proposals/pages/PortalAccess'));
 
 // Lazy-loaded Practice Module
+const PracticeModule = lazy(() => import('./modules/practice/PracticeModule'));
 const PracticeDashboard = lazy(() => 
   import('./modules/practice/PracticeDashboard').then(module => ({ default: module.PracticeDashboard }))
 );
@@ -90,10 +92,12 @@ const ClientManagement = lazy(() => import('./modules/practice/pages/ClientManag
 
 // Enterprise Hub Pages (Premium SaaS Design)
 const MultiEntityHub = lazy(() => import('./modules/multi-entity/MultiEntityHub'));
+const EntityDetails = lazy(() => import('./modules/multi-entity/EntityDetails'));
 const BankingHub = lazy(() => import('./modules/banking/BankingHub'));
 const PracticeHub = lazy(() => import('./modules/professional/PracticeHub'));
 const HRHub = lazy(() => import('./modules/hr/HRHub'));
 const FinancialHub = lazy(() => import('./modules/financial/FinancialHub'));
+const SalesModule = lazy(() => import('./modules/sales/SalesModule'));
 const SalesHub = lazy(() => import('./modules/sales/SalesHub'));
 const InventoryHub = lazy(() => import('./modules/inventory/InventoryHub'));
 const PurchaseHub = lazy(() => import('./modules/purchase/PurchaseHub'));
@@ -151,6 +155,93 @@ const PageLoader = () => (
 );
 
 
+// Sidebar layout with collapse state management
+const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar-collapsed') === 'true';
+  });
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed(prev => {
+      const next = !prev;
+      localStorage.setItem('sidebar-collapsed', String(next));
+      return next;
+    });
+  }, []);
+  return (
+    <div className={`app premium-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
+      <PremiumTopBar />
+      <PremiumSidebar isCollapsed={sidebarCollapsed} onToggleCollapse={toggleSidebar} />
+      <main className="main-content-v2">
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<RoleBasedWorkspace />} />
+            <Route path="/dashboard" element={<RoleBasedWorkspace />} />
+            <Route path="/workspace" element={<RoleBasedWorkspace />} />
+            <Route path="/sales/*" element={<SalesModule />} />
+            <Route path="/sales-hub/*" element={<SalesModule />} />
+            <Route path="/purchase/*" element={<PurchaseHub />} />
+            <Route path="/purchase-hub/*" element={<PurchaseHub />} />
+            <Route path="/inventory/*" element={<InventoryHub />} />
+            <Route path="/inventory-hub/*" element={<InventoryHub />} />
+            <Route path="/warehouse/*" element={<WarehouseHub />} />
+            <Route path="/warehouse-hub/*" element={<WarehouseHub />} />
+            <Route path="/manufacturing/*" element={<ManufacturingHub />} />
+            <Route path="/manufacturing-hub/*" element={<ManufacturingHub />} />
+            <Route path="/financial" element={<FinancialHub />} />
+            <Route path="/financial/chart-of-accounts" element={<ChartOfAccountsPage />} />
+            <Route path="/financial/dimensions" element={<Dimensions />} />
+            <Route path="/financial/*" element={<FinancialHub />} />
+            <Route path="/financial-hub/*" element={<FinancialHub />} />
+            <Route path="/banking/*" element={<BankingHub />} />
+            <Route path="/banking-hub/*" element={<BankingHub />} />
+            <Route path="/assets/*" element={<AssetsHub />} />
+            <Route path="/assets-hub/*" element={<AssetsHub />} />
+            <Route path="/treasury" element={<TreasuryManagement />} />
+            <Route path="/cash" element={<CashManagement />} />
+            <Route path="/cash-management" element={<CashManagement />} />
+            <Route path="/hr/*" element={<HRHub />} />
+            <Route path="/hr-hub/*" element={<HRHub />} />
+            <Route path="/practice/*" element={<PracticeModule />} />
+            <Route path="/practice-hub/*" element={<PracticeModule />} />
+            <Route path="/logistics/*" element={<LogisticsHub />} />
+            <Route path="/logistics-hub/*" element={<LogisticsHub />} />
+            <Route path="/projects/*" element={<ProjectsHub />} />
+            <Route path="/projects-hub/*" element={<ProjectsHub />} />
+            <Route path="/proposals/pitch/coffee" element={<CoffeePitchDeck />} />
+            <Route path="/proposals/pitch/siyabusa" element={<SiyaBusaPitchDeck />} />
+            <Route path="/proposals/new" element={<SmartProposalBuilder />} />
+            <Route path="/proposals/builder" element={<SmartProposalBuilder />} />
+            <Route path="/proposals/edit/:id" element={<ProposalEditor />} />
+            <Route path="/proposals" element={<ProposalsHub />} />
+            <Route path="/communication/*" element={<CommunicationsHub />} />
+            <Route path="/communications-hub/*" element={<CommunicationsHub />} />
+            <Route path="/calendar/*" element={<CalendarModule />} />
+            <Route path="/audit-ready" element={<AuditReadyHub />} />
+            <Route path="/regulatory" element={<RegulatoryHub />} />
+            <Route path="/sars/*" element={<SARSSentinel />} />
+            <Route path="/admin/*" element={<AdminHub />} />
+            <Route path="/admin-hub/*" element={<AdminHub />} />
+            <Route path="/multi-entity" element={<MultiEntityHub />} />
+            <Route path="/multi-entity/:entityId" element={<EntityDetails />} />
+            <Route path="/profile" element={<ProfileSettings />} />
+            <Route path="/tenant-settings" element={<TenantSettings />} />
+            <Route path="/users" element={<UserManagement />} />
+            <Route path="/settings" element={<SystemSettings />} />
+            <Route path="/audit-logs" element={<AuditLogs />} />
+            <Route path="/help" element={<HelpCenter />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/billing" element={<Billing />} />
+            <Route path="/api-test" element={<APITestDashboard />} />
+          </Routes>
+        </Suspense>
+      </main>
+      <Suspense fallback={null}>
+        <CoPilotAssistant />
+      </Suspense>
+    </div>
+  );
+};
+
 function App() {
   // Load saved theme on app startup
   useEffect(() => {
@@ -188,7 +279,7 @@ function App() {
           <FeatureFlagProvider>
             <ClientProvider>
               <CurrencyProvider>
-                <Router>
+                  <Router>
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
                       {/* Landing Page - Public Homepage */}
@@ -270,91 +361,9 @@ function App() {
                       {/* Protected Routes - With Premium Layout */}
                       <Route path="/app/*" element={
                         <ProtectedRoute>
-                          <div className="app premium-layout">
-                            <PremiumTopBar />
-                            <PremiumSidebar />
-                            <main className="main-content-v2">
-                              <Suspense fallback={<PageLoader />}>
-                                <Routes>
-                                  {/* Main Dashboard */}
-                                  <Route path="/" element={<RoleBasedWorkspace />} />
-                                  <Route path="/dashboard" element={<RoleBasedWorkspace />} />
-                                  <Route path="/workspace" element={<RoleBasedWorkspace />} />
-                                  
-                                  {/* Core Business Hubs */}
-                                  <Route path="/sales/*" element={<SalesHub />} />
-                                  <Route path="/sales-hub/*" element={<SalesHub />} />
-                                  <Route path="/purchase/*" element={<PurchaseHub />} />
-                                  <Route path="/purchase-hub/*" element={<PurchaseHub />} />
-                                  <Route path="/inventory/*" element={<InventoryHub />} />
-                                  <Route path="/inventory-hub/*" element={<InventoryHub />} />
-                                  <Route path="/warehouse/*" element={<WarehouseHub />} />
-                                  <Route path="/warehouse-hub/*" element={<WarehouseHub />} />
-                                  <Route path="/manufacturing/*" element={<ManufacturingHub />} />
-                                  <Route path="/manufacturing-hub/*" element={<ManufacturingHub />} />
-                                  
-                                  {/* Financial Hubs */}
-                                  <Route path="/financial" element={<FinancialHub />} />
-                                  <Route path="/financial/chart-of-accounts" element={<ChartOfAccountsPage />} />
-                                  <Route path="/financial/dimensions" element={<Dimensions />} />
-                                  <Route path="/financial/*" element={<FinancialHub />} />
-                                  <Route path="/financial-hub/*" element={<FinancialHub />} />
-                                  <Route path="/banking/*" element={<BankingHub />} />
-                                  <Route path="/banking-hub/*" element={<BankingHub />} />
-                                  <Route path="/assets/*" element={<AssetsHub />} />
-                                  <Route path="/assets-hub/*" element={<AssetsHub />} />
-                                  <Route path="/treasury" element={<TreasuryManagement />} />
-                                  <Route path="/cash" element={<CashManagement />} />
-                                  <Route path="/cash-management" element={<CashManagement />} />
-                                  
-                                  {/* HR & Practice Hubs */}
-                                  <Route path="/hr/*" element={<HRHub />} />
-                                  <Route path="/hr-hub/*" element={<HRHub />} />
-                                  <Route path="/practice/*" element={<PracticeHub />} />
-                                  <Route path="/practice-hub/*" element={<PracticeHub />} />
-                                  
-                                  {/* Operations Hubs */}
-                                  <Route path="/logistics/*" element={<LogisticsHub />} />
-                                  <Route path="/logistics-hub/*" element={<LogisticsHub />} />
-                                  <Route path="/projects/*" element={<ProjectsHub />} />
-                                  <Route path="/projects-hub/*" element={<ProjectsHub />} />
-                                  <Route path="/proposals/pitch/coffee" element={<CoffeePitchDeck />} />
-                                  <Route path="/proposals/pitch/siyabusa" element={<SiyaBusaPitchDeck />} />
-                                  <Route path="/proposals/new" element={<SmartProposalBuilder />} />
-                                  <Route path="/proposals/builder" element={<SmartProposalBuilder />} />
-                                  <Route path="/proposals/edit/:id" element={<ProposalEditor />} />
-                                  <Route path="/proposals" element={<ProposalsHub />} />
-                                  <Route path="/communication/*" element={<CommunicationsHub />} />
-                                  <Route path="/communications-hub/*" element={<CommunicationsHub />} />
-                                  <Route path="/calendar/*" element={<CalendarModule />} />
-                                  
-                                  {/* Industry modules removed - focusing on core accounting */}
-                                  
-                                  {/* Compliance & Admin Hubs */}
-                                  <Route path="/audit-ready" element={<AuditReadyHub />} />
-                                  <Route path="/regulatory" element={<RegulatoryHub />} />
-                                  <Route path="/sars/*" element={<SARSSentinel />} />
-                                  <Route path="/admin/*" element={<AdminHub />} />
-                                  <Route path="/admin-hub/*" element={<AdminHub />} />
-                                  <Route path="/multi-entity" element={<MultiEntityHub />} />
-                                  
-                                  {/* Settings & Profile */}
-                                  <Route path="/profile" element={<ProfileSettings />} />
-                                  <Route path="/tenant-settings" element={<TenantSettings />} />
-                                  <Route path="/users" element={<UserManagement />} />
-                                  <Route path="/settings" element={<SystemSettings />} />
-                                  <Route path="/audit-logs" element={<AuditLogs />} />
-                                  <Route path="/help" element={<HelpCenter />} />
-                                  <Route path="/onboarding" element={<Onboarding />} />
-                                  <Route path="/billing" element={<Billing />} />
-                                  <Route path="/api-test" element={<APITestDashboard />} />
-                                </Routes>
-                              </Suspense>
-                            </main>
-                            <Suspense fallback={null}>
-                              <CoPilotAssistant />
-                            </Suspense>
-                          </div>
+                          <EntityProvider>
+                            <SidebarLayout />
+                          </EntityProvider>
                         </ProtectedRoute>
                       } />
                     </Routes>

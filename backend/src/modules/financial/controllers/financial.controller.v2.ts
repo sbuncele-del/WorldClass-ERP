@@ -45,28 +45,52 @@ export const listJournalEntries = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
     const { status, from_date, to_date, page, limit } = req.query;
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 50;
+    const offset = (pageNum - 1) * limitNum;
 
-    // If date filters present, use range helper
-    if (from_date || to_date) {
-      const start = from_date ? new Date(from_date as string) : new Date('1970-01-01');
-      const end = to_date ? new Date(to_date as string) : new Date();
-      const result = await journalEntryRepository.getEntriesByDateRange(
-        ctx,
-        start,
-        end,
-        status as any,
-        { page: Number(page) || 1, limit: Number(limit) || 50 }
-      );
-      return res.json({ success: true, data: result.data, pagination: result.pagination });
+    // Build query directly to handle case-insensitive status and COALESCE dates
+    const params: any[] = [ctx.tenantId];
+    const conditions: string[] = ['tenant_id = $1'];
+    let paramIndex = 2;
+
+    if (status) {
+      conditions.push(`LOWER(status) = LOWER($${paramIndex})`);
+      params.push(status);
+      paramIndex++;
     }
 
-    const result = await journalEntryRepository.findAll(
-      ctx,
-      status ? { status } : {},
-      { page: Number(page) || 1, limit: Number(limit) || 50, sortBy: 'posting_date', sortOrder: 'DESC' }
+    if (from_date || to_date) {
+      const start = from_date ? from_date as string : '1970-01-01';
+      const end = to_date ? to_date as string : '2099-12-31';
+      conditions.push(`COALESCE(entry_date, journal_date, posting_date, created_at::date) BETWEEN $${paramIndex} AND $${paramIndex + 1}`);
+      params.push(start, end);
+      paramIndex += 2;
+    }
+
+    const whereClause = conditions.join(' AND ');
+
+    const countResult = await query(
+      `SELECT COUNT(*) FROM journal_entries WHERE ${whereClause}`,
+      params
+    );
+    const total = parseInt(countResult.rows[0]?.count || '0', 10);
+
+    const dataResult = await query(
+      `SELECT *, 
+        COALESCE(entry_date, journal_date, posting_date, created_at::date) as effective_date
+       FROM journal_entries 
+       WHERE ${whereClause}
+       ORDER BY created_at DESC
+       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+      [...params, limitNum, offset]
     );
 
-    res.json({ success: true, data: result.data, pagination: result.pagination });
+    res.json({
+      success: true,
+      data: dataResult.rows,
+      pagination: { page: pageNum, limit: limitNum, total, totalPages: Math.ceil(total / limitNum) }
+    });
   } catch (error) {
     console.error('Error listing journal entries:', error);
     res.status(500).json({ success: false, message: 'Failed to list journal entries', error: error instanceof Error ? error.message : 'Unknown error' });
@@ -269,9 +293,25 @@ export const getAccount = async (req: TenantRequest, res: Response) => {
 export const getTrialBalance = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
-    const asOf = req.query.as_of ? new Date(req.query.as_of as string) : new Date();
-    const tb = await accountRepository.getTrialBalance(ctx, asOf);
-    res.json({ success: true, data: tb, as_of: asOf });
+    // Direct SQL trial balance - bypass broken repository
+    const result = await query(
+      `SELECT 
+        coa.code as account_code,
+        COALESCE(coa.name, coa.account_name) as account_name,
+        coa.account_type,
+        COALESCE(SUM(jel.debit_amount), 0) as debit,
+        COALESCE(SUM(jel.credit_amount), 0) as credit,
+        COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as balance
+       FROM chart_of_accounts coa
+       LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id AND jel.tenant_id = coa.tenant_id
+       LEFT JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id AND je.status = 'posted'
+       WHERE coa.tenant_id = $1 AND coa.is_header = false AND coa.deleted_at IS NULL
+       GROUP BY coa.id, coa.code, coa.name, coa.account_name, coa.account_type
+       HAVING COALESCE(SUM(jel.debit_amount), 0) != 0 OR COALESCE(SUM(jel.credit_amount), 0) != 0
+       ORDER BY coa.code`,
+      [ctx.tenantId]
+    );
+    res.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Error fetching trial balance:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch trial balance', error: error instanceof Error ? error.message : 'Unknown error' });
@@ -390,43 +430,46 @@ export const getGeneralLedger = async (req: TenantRequest, res: Response) => {
     const ctx = getTenantContext(req);
     const { from_date, to_date, account_code, limit = 100, offset = 0 } = req.query;
 
-    const conditions = ["je.tenant_id = $1", "je.status = 'posted'"];
+    const conditions = ["je.tenant_id = $1", "LOWER(je.status) = 'posted'"];
     const params: any[] = [ctx.tenantId];
     let idx = 2;
 
     if (from_date) {
-      conditions.push(`je.entry_date >= $${idx}`);
+      conditions.push(`COALESCE(je.journal_date, je.entry_date, je.posting_date) >= $${idx}`);
       params.push(from_date);
       idx += 1;
     }
 
     if (to_date) {
-      conditions.push(`je.entry_date <= $${idx}`);
+      conditions.push(`COALESCE(je.journal_date, je.entry_date, je.posting_date) <= $${idx}`);
       params.push(to_date);
       idx += 1;
     }
 
     if (account_code) {
-      conditions.push(`coa.account_number = $${idx}`);
+      conditions.push(`COALESCE(NULLIF(coa.account_code, ''), coa.code) = $${idx}`);
       params.push(account_code);
       idx += 1;
     }
 
     const ledgerQuery = `
       SELECT 
-        je.entry_date AS transaction_date,
-        je.entry_number AS document_number,
+        COALESCE(je.journal_date, je.entry_date, je.posting_date) AS transaction_date,
+        COALESCE(je.entry_number, je.journal_number) AS document_number,
         je.description AS entry_description,
-        coa.account_number,
-        coa.name AS account_name,
+        COALESCE(NULLIF(coa.account_code, ''), coa.code) AS account_code,
+        COALESCE(NULLIF(coa.account_name, ''), coa.name) AS account_name,
+        coa.account_type,
         jel.debit_amount,
         jel.credit_amount,
-        jel.description AS line_description
+        jel.description AS line_description,
+        je.id AS journal_entry_id,
+        je.status
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
-      INNER JOIN financial.accounts coa ON jel.account_id = coa.id
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
       WHERE ${conditions.join(' AND ')}
-      ORDER BY je.entry_date DESC, je.entry_number, jel.line_number
+      ORDER BY COALESCE(je.journal_date, je.entry_date, je.posting_date) DESC, COALESCE(je.entry_number, je.journal_number), jel.line_number
       LIMIT $${idx} OFFSET $${idx + 1}
     `;
 
@@ -446,38 +489,38 @@ export const getAccountLedgerByCode = async (req: TenantRequest, res: Response) 
     const { accountCode } = req.params;
     const { from_date, to_date, limit = 100, offset = 0 } = req.query;
 
-    const conditions = ["je.tenant_id = $1", "je.status = 'posted'", 'coa.account_number = $2'];
+    const conditions = ["je.tenant_id = $1", "LOWER(je.status) = 'posted'", 'COALESCE(NULLIF(coa.account_code, \'\'), coa.code) = $2'];
     const params: any[] = [ctx.tenantId, accountCode];
     let idx = 3;
 
     if (from_date) {
-      conditions.push(`je.entry_date >= $${idx}`);
+      conditions.push(`COALESCE(je.journal_date, je.entry_date, je.posting_date) >= $${idx}`);
       params.push(from_date);
       idx += 1;
     }
 
     if (to_date) {
-      conditions.push(`je.entry_date <= $${idx}`);
+      conditions.push(`COALESCE(je.journal_date, je.entry_date, je.posting_date) <= $${idx}`);
       params.push(to_date);
       idx += 1;
     }
 
     const ledgerQuery = `
       SELECT 
-        je.entry_date AS transaction_date,
-        je.entry_number AS document_number,
+        COALESCE(je.journal_date, je.entry_date, je.posting_date) AS transaction_date,
+        COALESCE(je.entry_number, je.journal_number) AS document_number,
         je.description AS entry_description,
         jel.description AS line_description,
         jel.debit_amount,
         jel.credit_amount,
         SUM(jel.debit_amount - jel.credit_amount) OVER (
-          ORDER BY je.entry_date, je.entry_number, jel.line_number
+          ORDER BY COALESCE(je.journal_date, je.entry_date, je.posting_date), COALESCE(je.entry_number, je.journal_number), jel.line_number
         ) AS running_balance
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
-      INNER JOIN financial.accounts coa ON jel.account_id = coa.id
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
       WHERE ${conditions.join(' AND ')}
-      ORDER BY je.entry_date, je.entry_number, jel.line_number
+      ORDER BY COALESCE(je.journal_date, je.entry_date, je.posting_date), COALESCE(je.entry_number, je.journal_number), jel.line_number
       LIMIT $${idx} OFFSET $${idx + 1}
     `;
 
@@ -568,53 +611,56 @@ export const getCashFlowStatement = async (req: TenantRequest, res: Response) =>
 
     const operatingQuery = `
       SELECT 
-        coa.name AS account_name,
+        COALESCE(NULLIF(coa.account_name, ''), coa.name) AS account_name,
+        COALESCE(NULLIF(coa.account_code, ''), coa.code) AS account_code,
         SUM(jel.debit_amount) AS debit_amount,
         SUM(jel.credit_amount) AS credit_amount,
         SUM(jel.credit_amount - jel.debit_amount) AS net_amount
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
-      INNER JOIN financial.accounts coa ON jel.account_id = coa.id
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
       WHERE je.tenant_id = $1
-        AND je.status = 'posted'
-        AND je.entry_date BETWEEN $2 AND $3
-        AND UPPER(coa.account_type) IN ('REVENUE', 'EXPENSE')
-      GROUP BY coa.name
+        AND LOWER(je.status) = 'posted'
+        AND COALESCE(je.journal_date, je.entry_date, je.posting_date) BETWEEN $2 AND $3
+        AND LOWER(coa.account_type) IN ('revenue', 'expense')
+      GROUP BY coa.name, coa.account_name, coa.code, coa.account_code
       ORDER BY coa.name
     `;
 
     const investingQuery = `
       SELECT 
-        coa.name AS account_name,
+        COALESCE(NULLIF(coa.account_name, ''), coa.name) AS account_name,
+        COALESCE(NULLIF(coa.account_code, ''), coa.code) AS account_code,
         SUM(jel.debit_amount) AS debit_amount,
         SUM(jel.credit_amount) AS credit_amount,
         SUM(jel.debit_amount - jel.credit_amount) AS net_amount
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
-      INNER JOIN financial.accounts coa ON jel.account_id = coa.id
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
       WHERE je.tenant_id = $1
-        AND je.status = 'posted'
-        AND je.entry_date BETWEEN $2 AND $3
-        AND UPPER(coa.account_type) = 'ASSET'
-        AND coa.account_number NOT LIKE '1000%'
-      GROUP BY coa.name
+        AND LOWER(je.status) = 'posted'
+        AND COALESCE(je.journal_date, je.entry_date, je.posting_date) BETWEEN $2 AND $3
+        AND LOWER(coa.account_type) = 'asset'
+        AND COALESCE(NULLIF(coa.account_code, ''), coa.code) NOT LIKE '1000%'
+      GROUP BY coa.name, coa.account_name, coa.code, coa.account_code
       ORDER BY coa.name
     `;
 
     const financingQuery = `
       SELECT 
-        coa.name AS account_name,
+        COALESCE(NULLIF(coa.account_name, ''), coa.name) AS account_name,
+        COALESCE(NULLIF(coa.account_code, ''), coa.code) AS account_code,
         SUM(jel.debit_amount) AS debit_amount,
         SUM(jel.credit_amount) AS credit_amount,
         SUM(jel.credit_amount - jel.debit_amount) AS net_amount
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.entry_id = jel.journal_entry_id
-      INNER JOIN financial.accounts coa ON jel.account_id = coa.id
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
       WHERE je.tenant_id = $1
-        AND je.status = 'posted'
-        AND je.entry_date BETWEEN $2 AND $3
-        AND UPPER(coa.account_type) IN ('LIABILITY', 'EQUITY')
-      GROUP BY coa.name
+        AND LOWER(je.status) = 'posted'
+        AND COALESCE(je.journal_date, je.entry_date, je.posting_date) BETWEEN $2 AND $3
+        AND LOWER(coa.account_type) IN ('liability', 'equity')
+      GROUP BY coa.name, coa.account_name, coa.code, coa.account_code
       ORDER BY coa.name
     `;
 
@@ -648,19 +694,96 @@ export const getCashFlowStatement = async (req: TenantRequest, res: Response) =>
   }
 };
 
-export const getIncomeStatement = async (_req: TenantRequest, res: Response) => {
+export const getIncomeStatement = async (req: TenantRequest, res: Response) => {
   try {
+    const ctx = getTenantContext(req);
+    const now = new Date();
+    const fromDate = req.query.fromDate || req.query.from_date || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const toDate = req.query.toDate || req.query.to_date || now.toISOString().split('T')[0];
+
+    // Get revenue accounts (credits increase revenue)
+    const revenueQuery = `
+      SELECT 
+        COALESCE(NULLIF(coa.account_code, ''), coa.code) AS account_code,
+        COALESCE(NULLIF(coa.account_name, ''), coa.name) AS account_name,
+        SUM(jel.credit_amount) AS credits,
+        SUM(jel.debit_amount) AS debits,
+        SUM(jel.credit_amount - jel.debit_amount) AS balance
+      FROM journal_entries je
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
+      WHERE je.tenant_id = $1
+        AND LOWER(je.status) = 'posted'
+        AND COALESCE(je.journal_date, je.entry_date, je.posting_date) BETWEEN $2 AND $3
+        AND LOWER(coa.account_type) = 'revenue'
+      GROUP BY coa.code, coa.account_code, coa.name, coa.account_name
+      ORDER BY coa.code
+    `;
+
+    // Get expense accounts (debits increase expenses)
+    const expenseQuery = `
+      SELECT 
+        COALESCE(NULLIF(coa.account_code, ''), coa.code) AS account_code,
+        COALESCE(NULLIF(coa.account_name, ''), coa.name) AS account_name,
+        SUM(jel.debit_amount) AS debits,
+        SUM(jel.credit_amount) AS credits,
+        SUM(jel.debit_amount - jel.credit_amount) AS balance
+      FROM journal_entries je
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
+      WHERE je.tenant_id = $1
+        AND LOWER(je.status) = 'posted'
+        AND COALESCE(je.journal_date, je.entry_date, je.posting_date) BETWEEN $2 AND $3
+        AND LOWER(coa.account_type) = 'expense'
+      GROUP BY coa.code, coa.account_code, coa.name, coa.account_name
+      ORDER BY coa.code
+    `;
+
+    const [revenueResult, expenseResult] = await Promise.all([
+      query(revenueQuery, [ctx.tenantId, fromDate, toDate]),
+      query(expenseQuery, [ctx.tenantId, fromDate, toDate])
+    ]);
+
+    const totalRevenue = revenueResult.rows.reduce((sum: number, r: any) => sum + parseFloat(r.balance || 0), 0);
+    const totalExpenses = expenseResult.rows.reduce((sum: number, r: any) => sum + parseFloat(r.balance || 0), 0);
+    const netIncome = totalRevenue - totalExpenses;
+
     res.json({
       success: true,
       data: {
-        revenue: 0,
-        cost_of_sales: 0,
-        gross_profit: 0,
-        expenses: 0,
-        net_income: 0,
-        details: [],
-        message: 'Income statement endpoint ready - requires ledger data setup'
-      },
+        period: { start_date: fromDate, end_date: toDate, label: `${fromDate} to ${toDate}` },
+        revenue: {
+          title: 'Revenue',
+          accounts: revenueResult.rows.map((r: any) => ({
+            code: r.account_code,
+            name: r.account_name,
+            balance: parseFloat(r.balance || 0)
+          })),
+          subtotal: totalRevenue
+        },
+        cost_of_sales: { title: 'Cost of Sales', accounts: [], subtotal: 0 },
+        gross_profit: totalRevenue,
+        operating_expenses: {
+          title: 'Operating Expenses',
+          accounts: expenseResult.rows.map((r: any) => ({
+            code: r.account_code,
+            name: r.account_name,
+            balance: parseFloat(r.balance || 0)
+          })),
+          subtotal: totalExpenses
+        },
+        operating_profit: netIncome,
+        other_income: { title: 'Other Income', accounts: [], subtotal: 0 },
+        other_expenses: { title: 'Other Expenses', accounts: [], subtotal: 0 },
+        net_profit_before_tax: netIncome,
+        tax_expense: 0,
+        net_profit_after_tax: netIncome,
+        // Legacy flat format for simple consumers
+        revenue_total: totalRevenue,
+        expenses_total: totalExpenses,
+        net_income: netIncome,
+        details: [...revenueResult.rows, ...expenseResult.rows]
+      }
     });
   } catch (error) {
     console.error('Error fetching income statement:', error);
@@ -671,6 +794,105 @@ export const getIncomeStatement = async (_req: TenantRequest, res: Response) => 
 // ==========================================================================
 // TAX SETTINGS
 // ==========================================================================
+
+export const getBalanceSheet = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const asOfDate = req.query.as_of_date || req.query.asOfDate || new Date().toISOString().split('T')[0];
+
+    const balanceQuery = `
+      SELECT 
+        COALESCE(NULLIF(coa.account_code, ''), coa.code) AS account_code,
+        COALESCE(NULLIF(coa.account_name, ''), coa.name) AS account_name,
+        LOWER(coa.account_type) AS account_type,
+        coa.account_category,
+        SUM(jel.debit_amount) AS total_debits,
+        SUM(jel.credit_amount) AS total_credits,
+        CASE 
+          WHEN LOWER(coa.account_type) IN ('asset', 'expense') THEN SUM(jel.debit_amount - jel.credit_amount)
+          ELSE SUM(jel.credit_amount - jel.debit_amount)
+        END AS balance
+      FROM chart_of_accounts coa
+      LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id AND jel.tenant_id = $1
+      LEFT JOIN journal_entries je ON je.id = jel.journal_entry_id 
+        AND LOWER(je.status) = 'posted' 
+        AND COALESCE(je.journal_date, je.entry_date, je.posting_date) <= $2
+      WHERE coa.tenant_id = $1 
+        AND LOWER(coa.account_type) IN ('asset', 'liability', 'equity')
+      GROUP BY coa.code, coa.account_code, coa.name, coa.account_name, coa.account_type, coa.account_category
+      HAVING SUM(COALESCE(jel.debit_amount, 0)) != 0 OR SUM(COALESCE(jel.credit_amount, 0)) != 0
+      ORDER BY coa.code
+    `;
+
+    const result = await query(balanceQuery, [ctx.tenantId, asOfDate]);
+    const rows = result.rows;
+
+    const assets = rows.filter((r: any) => r.account_type === 'asset');
+    const liabilities = rows.filter((r: any) => r.account_type === 'liability');
+    const equityAccounts = rows.filter((r: any) => r.account_type === 'equity');
+
+    const totalAssets = assets.reduce((s: number, r: any) => s + parseFloat(r.balance || 0), 0);
+    const totalLiabilities = liabilities.reduce((s: number, r: any) => s + parseFloat(r.balance || 0), 0);
+    const totalEquity = equityAccounts.reduce((s: number, r: any) => s + parseFloat(r.balance || 0), 0);
+
+    // Calculate retained earnings (net income from P&L accounts not yet closed)
+    const retainedEarningsQuery = `
+      SELECT 
+        COALESCE(SUM(CASE WHEN LOWER(coa.account_type) = 'revenue' THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) AS total_revenue,
+        COALESCE(SUM(CASE WHEN LOWER(coa.account_type) = 'expense' THEN jel.debit_amount - jel.credit_amount ELSE 0 END), 0) AS total_expenses
+      FROM journal_entries je
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
+      WHERE je.tenant_id = $1
+        AND LOWER(je.status) = 'posted'
+        AND COALESCE(je.journal_date, je.entry_date, je.posting_date) <= $2
+        AND LOWER(coa.account_type) IN ('revenue', 'expense')
+    `;
+    const reResult = await query(retainedEarningsQuery, [ctx.tenantId, asOfDate]);
+    const retainedEarnings = parseFloat(reResult.rows[0]?.total_revenue || 0) - parseFloat(reResult.rows[0]?.total_expenses || 0);
+
+    const totalEquityWithRE = totalEquity + retainedEarnings;
+    const totalLE = totalLiabilities + totalEquityWithRE;
+
+    const mapAccount = (r: any) => ({ code: r.account_code, name: r.account_name, balance: parseFloat(r.balance || 0) });
+
+    // Calculate subtotals properly
+    const currentAssets = assets.filter((r: any) => (r.account_code || '').startsWith('1'));
+    const nonCurrentAssets = assets.filter((r: any) => !(r.account_code || '').startsWith('1'));
+    const currentAssetsTotal = currentAssets.reduce((s: number, r: any) => s + parseFloat(r.balance || 0), 0);
+    const nonCurrentAssetsTotal = nonCurrentAssets.reduce((s: number, r: any) => s + parseFloat(r.balance || 0), 0);
+
+    // Add retained earnings to equity accounts list
+    const equityAccountsMapped = equityAccounts.map(mapAccount);
+    if (Math.abs(retainedEarnings) > 0.01) {
+      equityAccountsMapped.push({ code: '3200', name: 'Retained Earnings (Net Income)', balance: retainedEarnings });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        as_of_date: asOfDate,
+        label: `Balance Sheet as at ${asOfDate}`,
+        current_assets: { title: 'Current Assets', accounts: currentAssets.map(mapAccount), subtotal: currentAssetsTotal },
+        non_current_assets: { title: 'Non-Current Assets', accounts: nonCurrentAssets.map(mapAccount), subtotal: nonCurrentAssetsTotal },
+        total_assets: totalAssets,
+        current_liabilities: { title: 'Current Liabilities', accounts: liabilities.map(mapAccount), subtotal: totalLiabilities },
+        non_current_liabilities: { title: 'Non-Current Liabilities', accounts: [], subtotal: 0 },
+        total_liabilities: totalLiabilities,
+        equity: { title: 'Equity', accounts: equityAccountsMapped, subtotal: totalEquityWithRE },
+        total_equity: totalEquityWithRE,
+        total_liabilities_equity: totalLE,
+        is_balanced: Math.abs(totalAssets - totalLE) < 0.01,
+        variance: totalAssets - totalLE,
+        retained_earnings: retainedEarnings,
+        accounts: rows.map(mapAccount)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching balance sheet:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch balance sheet', error: error instanceof Error ? error.message : 'Unknown error' });
+  }
+};
 
 export const getTaxSettings = async (req: TenantRequest, res: Response) => {
   try {
@@ -906,29 +1128,171 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
 
-    // Simplified dashboard using just journal entries count
+    // Journal counts
     const journalCount = await query(
       `SELECT COUNT(*) as total FROM journal_entries WHERE tenant_id = $1`,
       [ctx.tenantId]
     );
-
     const postedCount = await query(
       `SELECT COUNT(*) as total FROM journal_entries WHERE tenant_id = $1 AND status = 'posted'`,
       [ctx.tenantId]
     );
 
+    // Calculate actual financial balances from posted journal entry lines
+    // Cash balance: Sum of debits minus credits on cash/bank accounts (1000-1099 range)
+    const cashResult = await query(
+      `SELECT COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as balance
+       FROM journal_entry_lines jel
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+         AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '1%')
+         AND (LOWER(COALESCE(coa.name, coa.account_name, '')) LIKE '%cash%' OR LOWER(COALESCE(coa.name, coa.account_name, '')) LIKE '%bank%')`,
+      [ctx.tenantId]
+    ).catch(() => ({ rows: [{ balance: 0 }] }));
+
+    // Accounts Receivable (1200-1299 range or 'receivable' in name)
+    const arResult = await query(
+      `SELECT COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as balance
+       FROM journal_entry_lines jel
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+         AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '12%'
+              OR LOWER(COALESCE(coa.name, coa.account_name, '')) LIKE '%receivable%')`,
+      [ctx.tenantId]
+    ).catch(() => ({ rows: [{ balance: 0 }] }));
+
+    // Accounts Payable (2000-2099 range or 'payable' in name) - credit balance
+    const apResult = await query(
+      `SELECT COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0) as balance
+       FROM journal_entry_lines jel
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+         AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '20%'
+              OR LOWER(COALESCE(coa.name, coa.account_name, '')) LIKE '%payable%')`,
+      [ctx.tenantId]
+    ).catch(() => ({ rows: [{ balance: 0 }] }));
+
+    // Monthly Revenue (4xxx accounts) - current month
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+
+    const revenueResult = await query(
+      `SELECT COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0) as balance
+       FROM journal_entry_lines jel
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+         AND COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '4%'
+         AND je.entry_date >= $2 AND je.entry_date <= $3`,
+      [ctx.tenantId, monthStart, monthEnd]
+    ).catch(() => ({ rows: [{ balance: 0 }] }));
+
+    // Monthly Expenses (5xxx-6xxx accounts) - current month
+    const expenseResult = await query(
+      `SELECT COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as balance
+       FROM journal_entry_lines jel
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+         AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '5%'
+              OR COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '6%')
+         AND je.entry_date >= $2 AND je.entry_date <= $3`,
+      [ctx.tenantId, monthStart, monthEnd]
+    ).catch(() => ({ rows: [{ balance: 0 }] }));
+
+    // Recent posted journal entries
+    const recentResult = await query(
+      `SELECT je.id, je.reference_number as reference, je.entry_date as date,
+              je.description, je.status,
+              COALESCE(SUM(jel.debit_amount), 0) as total_debit,
+              COALESCE(SUM(jel.credit_amount), 0) as total_credit
+       FROM journal_entries je
+       LEFT JOIN journal_entry_lines jel ON jel.journal_entry_id = je.id AND jel.tenant_id = je.tenant_id
+       WHERE je.tenant_id = $1 AND je.status = 'posted'
+       GROUP BY je.id, je.reference_number, je.entry_date, je.description, je.status
+       ORDER BY je.entry_date DESC, je.created_at DESC LIMIT 10`,
+      [ctx.tenantId]
+    ).catch(() => ({ rows: [] }));
+
+    // All-time Revenue (4xxx accounts)
+    const allTimeRevenueResult = await query(
+      `SELECT COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0) as balance
+       FROM journal_entry_lines jel
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+         AND COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '4%'`,
+      [ctx.tenantId]
+    ).catch(() => ({ rows: [{ balance: 0 }] }));
+
+    // All-time Expenses (5xxx-6xxx accounts)
+    const allTimeExpenseResult = await query(
+      `SELECT COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as balance
+       FROM journal_entry_lines jel
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+         AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '5%'
+              OR COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '6%')`,
+      [ctx.tenantId]
+    ).catch(() => ({ rows: [{ balance: 0 }] }));
+
+    // Balance Sheet aggregates
+    const balanceSheetResult = await query(
+      `SELECT 
+         COALESCE(SUM(CASE WHEN LOWER(coa.account_type) = 'asset' THEN jel.debit_amount - jel.credit_amount ELSE 0 END), 0) as total_assets,
+         COALESCE(SUM(CASE WHEN LOWER(coa.account_type) IN ('liability') THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) as total_liabilities,
+         COALESCE(SUM(CASE WHEN LOWER(coa.account_type) = 'equity' THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) as total_equity
+       FROM journal_entry_lines jel
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'`,
+      [ctx.tenantId]
+    ).catch(() => ({ rows: [{ total_assets: 0, total_liabilities: 0, total_equity: 0 }] }));
+
+    const monthlyRevenue = parseFloat(revenueResult.rows[0]?.balance || '0');
+    const monthlyExpenses = parseFloat(expenseResult.rows[0]?.balance || '0');
+    const totalRevenue = parseFloat(allTimeRevenueResult.rows[0]?.balance || '0');
+    const totalExpenses = parseFloat(allTimeExpenseResult.rows[0]?.balance || '0');
+    const cashBalance = parseFloat(cashResult.rows[0]?.balance || '0');
+    const receivables = parseFloat(arResult.rows[0]?.balance || '0');
+    const payables = parseFloat(apResult.rows[0]?.balance || '0');
+    const totalAssets = parseFloat(balanceSheetResult.rows[0]?.total_assets || '0');
+    const totalLiabilities = parseFloat(balanceSheetResult.rows[0]?.total_liabilities || '0');
+    const postedEquity = parseFloat(balanceSheetResult.rows[0]?.total_equity || '0');
+    // Retained Earnings = Revenue - Expenses (not yet posted to equity accounts)
+    const retainedEarnings = totalRevenue - totalExpenses;
+    const totalEquity = postedEquity + retainedEarnings;
+    const netIncome = totalRevenue - totalExpenses;
+
     const stats = {
-      current_cash_balance: 0,
-      accounts_receivable: 0,
-      accounts_payable: 0,
-      monthly_revenue: 0,
-      monthly_expenses: 0,
-      net_income: 0,
+      // Original field names
+      current_cash_balance: cashBalance,
+      accounts_receivable: receivables,
+      accounts_payable: payables,
+      monthly_revenue: monthlyRevenue,
+      monthly_expenses: monthlyExpenses,
+      net_income: netIncome,
+      // Fields expected by FinancialHub frontend
+      total_revenue: totalRevenue,
+      total_expenses: totalExpenses,
+      total_assets: totalAssets,
+      total_liabilities: totalLiabilities,
+      equity: totalEquity,
+      retained_earnings: retainedEarnings,
+      cash_balance: cashBalance,
+      receivables: receivables,
+      payables: payables,
+      // Journal counts
       total_journals: parseInt(journalCount.rows[0]?.total || '0'),
       posted_journals: parseInt(postedCount.rows[0]?.total || '0'),
       unposted_journals: parseInt(journalCount.rows[0]?.total || '0') - parseInt(postedCount.rows[0]?.total || '0'),
       pending_approvals: 0,
-      recent_transactions: [],
+      recent_transactions: recentResult.rows,
     };
 
     res.json({ success: true, data: stats });

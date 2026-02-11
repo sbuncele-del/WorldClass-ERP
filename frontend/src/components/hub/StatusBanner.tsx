@@ -9,6 +9,7 @@ export interface StatusStat {
   suffix?: string;
   valueStyle?: React.CSSProperties;
   span?: number;
+  precision?: number;
 }
 
 interface StatusBannerProps {
@@ -100,6 +101,7 @@ export const StatusBanner: React.FC<StatusBannerProps> = ({
               value={stat.value}
               prefix={stat.prefix}
               suffix={stat.suffix}
+              precision={stat.precision}
               valueStyle={{ 
                 color: 'white',
                 fontSize: '18px',

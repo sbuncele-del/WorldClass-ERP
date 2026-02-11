@@ -63,6 +63,7 @@ router.post(
 
 // ===== CHART OF ACCOUNTS =====
 router.get('/chart-of-accounts', financialControllerV2.getChartOfAccounts);
+router.post('/chart-of-accounts', financialControllerV2.createAccount);
 router.get('/chart-of-accounts/:code', financialControllerV2.getAccount);
 
 // ===== COA TEMPLATES =====
@@ -76,6 +77,12 @@ router.post(
 
 // ===== REPORTS =====
 router.get(
+	'/trial-balance',
+	financialTrialBalanceValidation,
+	handleValidationErrors,
+	financialControllerV2.getTrialBalance
+);
+router.get(
 	'/reports/trial-balance',
 	financialTrialBalanceValidation,
 	handleValidationErrors,
@@ -87,10 +94,16 @@ router.get(
 	handleValidationErrors,
 	financialControllerV2.getAccountLedger
 );
-// TODO: implement balance sheet endpoint (v2) when ledger data is available
+// Balance Sheet route
+router.get('/balance-sheet', financialControllerV2.getBalanceSheet);
+router.get('/reports/balance-sheet', financialControllerV2.getBalanceSheet);
+// Income Statement / Profit & Loss routes
 router.get('/reports/income-statement', financialControllerV2.getIncomeStatement);
+router.get('/profit-loss', financialControllerV2.getIncomeStatement);
+router.get('/income-statement', financialControllerV2.getIncomeStatement);
 
 // ===== GENERAL LEDGER =====
+router.get('/general-ledger', financialControllerV2.getGeneralLedger);
 router.get(
 	'/ledger/general',
 	financialLedgerQueryValidation,

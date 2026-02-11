@@ -39,24 +39,27 @@ export class AccountRepository extends BaseRepository<Account> {
    */
   async getChartOfAccounts(ctx: TenantContext): Promise<Account[]> {
     // Simplified query - no recursive tree, just flat list
+    // Use COALESCE to handle different column naming conventions (id vs account_id)
+    // Also try both 'code' and 'account_code' for account number
     const sql = `
       SELECT 
-        account_id as id,
+        COALESCE(id, account_id::text::uuid, gen_random_uuid()) as id,
         tenant_id,
-        code as account_number,
-        name,
+        COALESCE(NULLIF(code, ''), account_code) as account_number,
+        COALESCE(NULLIF(name, ''), account_name) as name,
         description,
-        account_type,
+        LOWER(account_type) as account_type,
         parent_code as parent_id,
-        normal_balance,
-        is_active,
-        is_header,
-        current_balance as balance,
+        LOWER(normal_balance) as normal_balance,
+        COALESCE(is_active, true) as is_active,
+        COALESCE(is_header, false) as is_header,
+        COALESCE(current_balance, 0) as balance,
         created_at,
         updated_at
       FROM chart_of_accounts
       WHERE tenant_id = $1
-      ORDER BY code
+        AND COALESCE(deleted_at, '9999-12-31') > NOW()
+      ORDER BY COALESCE(NULLIF(code, ''), account_code)
     `;
 
     return this.rawQuery(ctx, sql);
@@ -121,21 +124,21 @@ export class AccountRepository extends BaseRepository<Account> {
     const sql = `
       SELECT 
         a.id as account_id,
-        a.account_code as account_number,
-        a.account_name as account_name,
+        COALESCE(NULLIF(a.account_code, ''), a.code) as account_number,
+        COALESCE(NULLIF(a.account_name, ''), a.name) as account_name,
         a.account_type,
         COALESCE(CASE WHEN SUM(COALESCE(jel.debit_amount, 0) - COALESCE(jel.credit_amount, 0)) > 0 
           THEN SUM(COALESCE(jel.debit_amount, 0) - COALESCE(jel.credit_amount, 0)) ELSE 0 END, 0) as debit_balance,
         COALESCE(CASE WHEN SUM(COALESCE(jel.debit_amount, 0) - COALESCE(jel.credit_amount, 0)) < 0 
           THEN ABS(SUM(COALESCE(jel.debit_amount, 0) - COALESCE(jel.credit_amount, 0))) ELSE 0 END, 0) as credit_balance
-      FROM ${this.fullTableName} a
+      FROM chart_of_accounts a
       LEFT JOIN journal_entry_lines jel ON jel.account_id = a.id AND jel.tenant_id = a.tenant_id
-      LEFT JOIN journal_entries je ON je.entry_id = jel.journal_entry_id AND je.tenant_id = a.tenant_id 
-        AND je.status = 'posted' AND je.posting_date <= $2
+      LEFT JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = a.tenant_id 
+        AND LOWER(je.status) = 'posted' AND COALESCE(je.posting_date, je.journal_date, je.entry_date) <= $2
       WHERE a.tenant_id = $1 AND a.deleted_at IS NULL AND a.is_header = false
-      GROUP BY a.id, a.account_code, a.account_name, a.account_type
+      GROUP BY a.id, a.account_code, a.code, a.account_name, a.name, a.account_type
       HAVING COALESCE(SUM(COALESCE(jel.debit_amount, 0) - COALESCE(jel.credit_amount, 0)), 0) != 0
-      ORDER BY a.account_code
+      ORDER BY COALESCE(NULLIF(a.account_code, ''), a.code)
     `;
 
     return this.rawQuery(ctx, sql, [asOfDate]);

@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiyaBusa ERP - Investor Pitch Deck</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+        }
+        
+        .slide {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 80px;
+            position: relative;
+            page-break-after: always;
+        }
+        
+        .slide-number {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* Slide 1 - Title */
+        .slide-title {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            text-align: center;
+        }
+        
+        .logo {
+            font-size: 72px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00d4ff, #7c3aed, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+        }
+        
+        .tagline {
+            font-size: 28px;
+            font-weight: 300;
+            color: #a0aec0;
+            margin-bottom: 60px;
+        }
+        
+        .ask-box {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 40px 60px;
+            text-align: center;
+        }
+        
+        .ask-label {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .ask-amount {
+            font-size: 64px;
+            font-weight: 800;
+            color: #10b981;
+        }
+        
+        .ask-purpose {
+            font-size: 18px;
+            color: #a0aec0;
+            margin-top: 10px;
+        }
+        
+        /* Slide 2 - The Pain */
+        .slide-pain {
+            background: linear-gradient(180deg, #1a0a0a 0%, #2d1515 100%);
+        }
+        
+        .pain-title {
+            font-size: 48px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 60px;
+            color: #ef4444;
+        }
+        
+        .pain-story {
+            max-width: 900px;
+            text-align: center;
+        }
+        
+        .pain-quote {
+            font-size: 32px;
+            font-weight: 300;
+            line-height: 1.6;
+            color: #fca5a5;
+            font-style: italic;
+            margin-bottom: 40px;
+        }
+        
+        .pain-speaker {
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .pain-stats {
+            display: flex;
+            gap: 40px;
+            margin-top: 60px;
+        }
+        
+        .pain-stat {
+            background: rgba(239,68,68,0.1);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 16px;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        
+        .pain-stat-number {
+            font-size: 48px;
+            font-weight: 800;
+            color: #ef4444;
+        }
+        
+        .pain-stat-label {
+            font-size: 14px;
+            color: #fca5a5;
+            margin-top: 10px;
+        }
+        
+        /* Slide 3 - The Reality */
+        .slide-reality {
+            background: linear-gradient(180deg, #0a0a1a 0%, #1a1a2e 100%);
+        }
+        
+        .section-title {
+            font-size: 48px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .reality-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            max-width: 1000px;
+        }
+        
+        .reality-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 40px;
+        }
+        
+        .reality-card.bad {
+            border-color: rgba(239,68,68,0.3);
+        }
+        
+        .reality-card.expensive {
+            border-color: rgba(251,191,36,0.3);
+        }
+        
+        .card-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .card-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+        
+        .card-price {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 20px;
+        }
+        
+        .card-price.red { color: #ef4444; }
+        .card-price.yellow { color: #fbbf24; }
+        
+        .card-problems {
+            list-style: none;
+        }
+        
+        .card-problems li {
+            padding: 8px 0;
+            color: #a0aec0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .card-problems li::before {
+            content: "✗";
+            color: #ef4444;
+            font-weight: bold;
+        }
+        
+        /* Slide 4 - The Gap */
+        .slide-gap {
+            background: linear-gradient(180deg, #0a1a0a 0%, #1a2e1a 100%);
+        }
+        
+        .gap-visual {
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .gap-line {
+            display: flex;
+            align-items: center;
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .gap-company {
+            width: 200px;
+            font-weight: 600;
+            font-size: 20px;
+        }
+        
+        .gap-bar-container {
+            flex: 1;
+            height: 50px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 25px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .gap-bar {
+            height: 100%;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 20px;
+            font-weight: 700;
+        }
+        
+        .gap-bar.sap { 
+            width: 100%; 
+            background: linear-gradient(90deg, #7c3aed, #ec4899);
+        }
+        
+        .gap-bar.sage { 
+            width: 40%; 
+            background: linear-gradient(90deg, #f59e0b, #ef4444);
+        }
+        
+        .gap-bar.siyabusa { 
+            width: 15%; 
+            background: linear-gradient(90deg, #10b981, #3b82f6);
+        }
+        
+        .gap-bar.quickbooks { 
+            width: 8%; 
+            background: linear-gradient(90deg, #6b7280, #9ca3af);
+        }
+        
+        .gap-highlight {
+            background: rgba(16,185,129,0.1);
+            border: 2px solid #10b981;
+            border-radius: 20px;
+            padding: 30px 40px;
+            margin-top: 40px;
+            text-align: center;
+        }
+        
+        .gap-highlight-text {
+            font-size: 24px;
+            font-weight: 600;
+            color: #10b981;
+        }
+        
+        .gap-highlight-sub {
+            font-size: 48px;
+            font-weight: 800;
+            margin-top: 10px;
+        }
+        
+        /* Slide 5 - Solution */
+        .slide-solution {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+        }
+        
+        .solution-intro {
+            font-size: 24px;
+            color: #a0aec0;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .solution-title {
+            font-size: 72px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .solution-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            max-width: 1000px;
+        }
+        
+        .solution-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .solution-card-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+        }
+        
+        .solution-card-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .solution-card-desc {
+            font-size: 14px;
+            color: #a0aec0;
+        }
+        
+        /* Slide 6 - What's Built */
+        .slide-built {
+            background: linear-gradient(180deg, #0a0a0a 0%, #1a1a1a 100%);
+        }
+        
+        .built-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(16,185,129,0.1);
+            border: 1px solid rgba(16,185,129,0.3);
+            border-radius: 50px;
+            padding: 15px 30px;
+            margin-bottom: 40px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .status-text {
+            font-size: 18px;
+            font-weight: 600;
+            color: #10b981;
+        }
+        
+        .built-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            max-width: 1000px;
+        }
+        
+        .built-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .built-item-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .built-item-name {
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .built-stats {
+            display: flex;
+            gap: 60px;
+            margin-top: 50px;
+        }
+        
+        .built-stat {
+            text-align: center;
+        }
+        
+        .built-stat-number {
+            font-size: 56px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .built-stat-label {
+            font-size: 16px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        /* Slide 7 - The Ask */
+        .slide-ask {
+            background: linear-gradient(135deg, #064e3b 0%, #0f766e 100%);
+        }
+        
+        .ask-main {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+        
+        .ask-main-label {
+            font-size: 20px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 20px;
+        }
+        
+        .ask-main-amount {
+            font-size: 120px;
+            font-weight: 900;
+            color: #fff;
+        }
+        
+        .ask-main-period {
+            font-size: 28px;
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .ask-breakdown {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            max-width: 900px;
+        }
+        
+        .ask-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        .ask-item-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .ask-item-amount {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .ask-item-label {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            margin-top: 5px;
+        }
+        
+        .ask-item-percent {
+            font-size: 12px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 5px;
+        }
+        
+        /* Slide 8 - Timeline */
+        .slide-timeline {
+            background: linear-gradient(180deg, #0a0a1a 0%, #1a1a2e 100%);
+        }
+        
+        .timeline {
+            display: flex;
+            align-items: flex-start;
+            gap: 0;
+            max-width: 1000px;
+            position: relative;
+        }
+        
+        .timeline::before {
+            content: "";
+            position: absolute;
+            top: 60px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981, #f59e0b);
+            border-radius: 2px;
+        }
+        
+        .timeline-item {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            padding: 0 20px;
+        }
+        
+        .timeline-month {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .timeline-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .timeline-dot.blue { background: #3b82f6; }
+        .timeline-dot.green { background: #10b981; }
+        .timeline-dot.yellow { background: #f59e0b; }
+        
+        .timeline-content {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 25px;
+        }
+        
+        .timeline-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .timeline-desc {
+            font-size: 14px;
+            color: #a0aec0;
+        }
+        
+        .timeline-milestone {
+            margin-top: 15px;
+            padding: 10px 15px;
+            background: rgba(16,185,129,0.2);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #10b981;
+        }
+        
+        /* Slide 9 - Why Low Risk */
+        .slide-risk {
+            background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+        }
+        
+        .risk-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            max-width: 1100px;
+        }
+        
+        .risk-card {
+            background: rgba(16,185,129,0.05);
+            border: 1px solid rgba(16,185,129,0.2);
+            border-radius: 16px;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .risk-number {
+            font-size: 48px;
+            font-weight: 800;
+            color: #10b981;
+            margin-bottom: 15px;
+        }
+        
+        .risk-title {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .risk-desc {
+            font-size: 13px;
+            color: #a0aec0;
+        }
+        
+        /* Slide 10 - The Vision */
+        .slide-vision {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            text-align: center;
+        }
+        
+        .vision-quote {
+            font-size: 48px;
+            font-weight: 300;
+            line-height: 1.4;
+            max-width: 900px;
+            margin-bottom: 40px;
+        }
+        
+        .vision-highlight {
+            color: #a78bfa;
+            font-weight: 600;
+        }
+        
+        .vision-cta {
+            display: flex;
+            gap: 30px;
+            margin-top: 60px;
+        }
+        
+        .cta-button {
+            padding: 20px 50px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: transform 0.2s;
+        }
+        
+        .cta-button:hover {
+            transform: scale(1.05);
+        }
+        
+        .cta-primary {
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            color: #fff;
+        }
+        
+        .cta-secondary {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+        }
+        
+        /* Slide 11 - Contact */
+        .slide-contact {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            text-align: center;
+        }
+        
+        .contact-name {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .contact-role {
+            font-size: 20px;
+            color: #a0aec0;
+            margin-bottom: 40px;
+        }
+        
+        .contact-company {
+            font-size: 24px;
+            color: #666;
+            margin-bottom: 60px;
+        }
+        
+        .contact-links {
+            display: flex;
+            gap: 40px;
+            justify-content: center;
+        }
+        
+        .contact-link {
+            text-align: center;
+        }
+        
+        .contact-link-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .contact-link-text {
+            font-size: 18px;
+            color: #3b82f6;
+        }
+        
+        .final-tagline {
+            margin-top: 80px;
+            font-size: 28px;
+            font-weight: 300;
+            color: #666;
+        }
+        
+        .final-tagline span {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        /* Print styles */
+        @media print {
+            .slide {
+                height: 100vh;
+                page-break-after: always;
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SLIDE 1: Title -->
+<div class="slide slide-title">
+    <div class="logo">SiyaBusa ERP</div>
+    <div class="tagline">Enterprise Power. SME Pricing.</div>
+    
+    <div class="ask-box">
+        <div class="ask-label">Seeking Seed Investment</div>
+        <div class="ask-amount">R30,000</div>
+        <div class="ask-purpose">3 months to first paying customer</div>
+    </div>
+    
+    <div class="slide-number">1</div>
+</div>
+
+<!-- SLIDE 2: The Pain -->
+<div class="slide slide-pain">
+    <div class="pain-title">The Silent Struggle</div>
+    
+    <div class="pain-story">
+        <div class="pain-quote">
+            "I have 3 branches, 12 employees, and R8 million in revenue.<br>
+            I run my entire business on Excel spreadsheets and WhatsApp messages.<br>
+            I know I'm losing money. I just don't know where."
+        </div>
+        <div class="pain-speaker">— Every SME owner in South Africa</div>
+        
+        <div class="pain-stats">
+            <div class="pain-stat">
+                <div class="pain-stat-number">95,000</div>
+                <div class="pain-stat-label">SA businesses stuck in this gap</div>
+            </div>
+            <div class="pain-stat">
+                <div class="pain-stat-number">R2.3T</div>
+                <div class="pain-stat-label">Combined annual revenue</div>
+            </div>
+            <div class="pain-stat">
+                <div class="pain-stat-number">0</div>
+                <div class="pain-stat-label">Affordable ERP options</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="slide-number">2</div>
+</div>
+
+<!-- SLIDE 3: The Reality -->
+<div class="slide slide-reality">
+    <div class="section-title">Their Only Options Today</div>
+    
+    <div class="reality-grid">
+        <div class="reality-card bad">
+            <div class="card-icon">📊</div>
+            <div class="card-title">QuickBooks</div>
+            <div class="card-price red">R500-R2,000/mo</div>
+            <ul class="card-problems">
+                <li>Accounting only — no inventory</li>
+                <li>No manufacturing support</li>
+                <li>No HR or payroll</li>
+                <li>Single location only</li>
+                <li>No industry customization</li>
+            </ul>
+        </div>
+        
+        <div class="reality-card expensive">
+            <div class="card-icon">🏢</div>
+            <div class="card-title">SAP / Oracle</div>
+            <div class="card-price yellow">R50,000-R200,000/mo</div>
+            <ul class="card-problems">
+                <li>R500K+ implementation cost</li>
+                <li>6-18 month deployment</li>
+                <li>Need dedicated IT team</li>
+                <li>Designed for corporations</li>
+                <li>Overkill for most SMEs</li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="slide-number">3</div>
+</div>
+
+<!-- SLIDE 4: The Gap -->
+<div class="slide slide-gap">
+    <div class="section-title">The Underserved Middle Market</div>
+    
+    <div class="gap-visual">
+        <div class="gap-line">
+            <div class="gap-company">SAP</div>
+            <div class="gap-bar-container">
+                <div class="gap-bar sap">R50K-R200K/mo</div>
+            </div>
+        </div>
+        
+        <div class="gap-line">
+            <div class="gap-company">Sage</div>
+            <div class="gap-bar-container">
+                <div class="gap-bar sage">R10K-R30K/mo</div>
+            </div>
+        </div>
+        
+        <div class="gap-line">
+            <div class="gap-company" style="color: #10b981; font-weight: 800;">SiyaBusa</div>
+            <div class="gap-bar-container">
+                <div class="gap-bar siyabusa">R1.5K-R7.5K</div>
+            </div>
+        </div>
+        
+        <div class="gap-line">
+            <div class="gap-company">QuickBooks</div>
+            <div class="gap-bar-container">
+                <div class="gap-bar quickbooks">R500-R2K</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="gap-highlight">
+        <div class="gap-highlight-text">We're capturing the gap that nobody serves</div>
+        <div class="gap-highlight-sub">95,000 businesses waiting</div>
+    </div>
+    
+    <div class="slide-number">4</div>
+</div>
+
+<!-- SLIDE 5: Solution -->
+<div class="slide slide-solution">
+    <div class="solution-intro">Introducing</div>
+    <div class="solution-title">SiyaBusa ERP</div>
+    
+    <div class="solution-grid">
+        <div class="solution-card">
+            <div class="solution-card-icon">💰</div>
+            <div class="solution-card-title">Full Accounting</div>
+            <div class="solution-card-desc">GL, AP, AR, Bank Reconciliation, IAS-compliant</div>
+        </div>
+        <div class="solution-card">
+            <div class="solution-card-icon">📦</div>
+            <div class="solution-card-title">Inventory</div>
+            <div class="solution-card-desc">Multi-warehouse, stock control, transfers</div>
+        </div>
+        <div class="solution-card">
+            <div class="solution-card-icon">🏭</div>
+            <div class="solution-card-title">Manufacturing</div>
+            <div class="solution-card-desc">BOM, work orders, production planning</div>
+        </div>
+        <div class="solution-card">
+            <div class="solution-card-icon">👥</div>
+            <div class="solution-card-title">HR & Payroll</div>
+            <div class="solution-card-desc">SARS-ready, leave, attendance</div>
+        </div>
+        <div class="solution-card">
+            <div class="solution-card-icon">🛒</div>
+            <div class="solution-card-title">Sales & CRM</div>
+            <div class="solution-card-desc">Quotes, invoices, pipeline</div>
+        </div>
+        <div class="solution-card">
+            <div class="solution-card-icon">🤖</div>
+            <div class="solution-card-title">AI-Powered</div>
+            <div class="solution-card-desc">Smart categorization, natural language</div>
+        </div>
+    </div>
+    
+    <div class="slide-number">5</div>
+</div>
+
+<!-- SLIDE 6: What's Built -->
+<div class="slide slide-built">
+    <div class="section-title">It's Already Built</div>
+    
+    <div class="built-status">
+        <div class="status-dot"></div>
+        <div class="status-text">LIVE at siyabusaerp.co.za</div>
+    </div>
+    
+    <div class="built-grid">
+        <div class="built-item">
+            <div class="built-item-icon">💵</div>
+            <div class="built-item-name">Accounting</div>
+        </div>
+        <div class="built-item">
+            <div class="built-item-icon">📦</div>
+            <div class="built-item-name">Inventory</div>
+        </div>
+        <div class="built-item">
+            <div class="built-item-icon">🛒</div>
+            <div class="built-item-name">Sales</div>
+        </div>
+        <div class="built-item">
+            <div class="built-item-icon">🛍️</div>
+            <div class="built-item-name">Purchasing</div>
+        </div>
+        <div class="built-item">
+            <div class="built-item-icon">👥</div>
+            <div class="built-item-name">HR</div>
+        </div>
+        <div class="built-item">
+            <div class="built-item-icon">🏭</div>
+            <div class="built-item-name">Manufacturing</div>
+        </div>
+        <div class="built-item">
+            <div class="built-item-icon">🏥</div>
+            <div class="built-item-name">Healthcare</div>
+        </div>
+        <div class="built-item">
+            <div class="built-item-icon">🏗️</div>
+            <div class="built-item-name">Construction</div>
+        </div>
+        <div class="built-item">
+            <div class="built-item-icon">🚚</div>
+            <div class="built-item-name">Logistics</div>
+        </div>
+        <div class="built-item">
+            <div class="built-item-icon">🌾</div>
+            <div class="built-item-name">Agriculture</div>
+        </div>
+        <div class="built-item">
+            <div class="built-item-icon">⛏️</div>
+            <div class="built-item-name">Mining</div>
+        </div>
+        <div class="built-item">
+            <div class="built-item-icon">🏠</div>
+            <div class="built-item-name">Property</div>
+        </div>
+    </div>
+    
+    <div class="built-stats">
+        <div class="built-stat">
+            <div class="built-stat-number">25+</div>
+            <div class="built-stat-label">Modules</div>
+        </div>
+        <div class="built-stat">
+            <div class="built-stat-number">400+</div>
+            <div class="built-stat-label">API Endpoints</div>
+        </div>
+        <div class="built-stat">
+            <div class="built-stat-number">100%</div>
+            <div class="built-stat-label">Production Ready</div>
+        </div>
+    </div>
+    
+    <div class="slide-number">6</div>
+</div>
+
+<!-- SLIDE 7: The Ask -->
+<div class="slide slide-ask">
+    <div class="ask-main">
+        <div class="ask-main-label">We're asking for</div>
+        <div class="ask-main-amount">R30,000</div>
+        <div class="ask-main-period">for 3 months</div>
+    </div>
+    
+    <div class="ask-breakdown">
+        <div class="ask-item">
+            <div class="ask-item-icon">🖥️</div>
+            <div class="ask-item-amount">R6,000</div>
+            <div class="ask-item-label">Infrastructure</div>
+            <div class="ask-item-percent">Vultr Servers</div>
+        </div>
+        <div class="ask-item">
+            <div class="ask-item-icon">💻</div>
+            <div class="ask-item-amount">R2,050</div>
+            <div class="ask-item-label">Development</div>
+            <div class="ask-item-percent">GitHub Team</div>
+        </div>
+        <div class="ask-item">
+            <div class="ask-item-icon">📧</div>
+            <div class="ask-item-amount">R2,550</div>
+            <div class="ask-item-label">Communications</div>
+            <div class="ask-item-percent">Email + SMS</div>
+        </div>
+        <div class="ask-item">
+            <div class="ask-item-icon">🤖</div>
+            <div class="ask-item-amount">R2,400</div>
+            <div class="ask-item-label">AI Services</div>
+            <div class="ask-item-percent">xAI Grok</div>
+        </div>
+        <div class="ask-item">
+            <div class="ask-item-icon">📢</div>
+            <div class="ask-item-amount">R10,500</div>
+            <div class="ask-item-label">Marketing</div>
+            <div class="ask-item-percent">LinkedIn + Google</div>
+        </div>
+        <div class="ask-item">
+            <div class="ask-item-icon">🚗</div>
+            <div class="ask-item-amount">R6,500</div>
+            <div class="ask-item-label">Operations</div>
+            <div class="ask-item-percent">Transport + Onboarding</div>
+        </div>
+    </div>
+    
+    <div class="slide-number">7</div>
+</div>
+
+<!-- SLIDE 8: Timeline -->
+<div class="slide slide-timeline">
+    <div class="section-title">The 3-Month Plan</div>
+    
+    <div class="timeline">
+        <div class="timeline-item">
+            <div class="timeline-month">February</div>
+            <div class="timeline-dot blue"></div>
+            <div class="timeline-content">
+                <div class="timeline-title">Launch Marketing</div>
+                <div class="timeline-desc">LinkedIn ads live, Google ads live, content creation</div>
+            </div>
+        </div>
+        
+        <div class="timeline-item">
+            <div class="timeline-month">March</div>
+            <div class="timeline-dot green"></div>
+            <div class="timeline-content">
+                <div class="timeline-title">First Customer</div>
+                <div class="timeline-desc">Sign, onboard, and support our first paying client</div>
+                <div class="timeline-milestone">🎉 R1,500 MRR</div>
+            </div>
+        </div>
+        
+        <div class="timeline-item">
+            <div class="timeline-month">April</div>
+            <div class="timeline-dot yellow"></div>
+            <div class="timeline-content">
+                <div class="timeline-title">Scale</div>
+                <div class="timeline-desc">Second customer, build pipeline, refine</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="slide-number">8</div>
+</div>
+
+<!-- SLIDE 9: Why Low Risk -->
+<div class="slide slide-risk">
+    <div class="section-title">Why This is Low Risk</div>
+    
+    <div class="risk-grid">
+        <div class="risk-card">
+            <div class="risk-number">1</div>
+            <div class="risk-title">Product Done</div>
+            <div class="risk-desc">Not a prototype. Full ERP, live in production.</div>
+        </div>
+        <div class="risk-card">
+            <div class="risk-number">2</div>
+            <div class="risk-title">Infra Cheap</div>
+            <div class="risk-desc">Vultr costs 70% less than AWS. R2K/month.</div>
+        </div>
+        <div class="risk-card">
+            <div class="risk-number">3</div>
+            <div class="risk-title">Market Ready</div>
+            <div class="risk-desc">95,000 SMEs need this. No competition.</div>
+        </div>
+        <div class="risk-card">
+            <div class="risk-number">4</div>
+            <div class="risk-title">Amount Small</div>
+            <div class="risk-desc">R30,000 total. R10K/month burn rate.</div>
+        </div>
+        <div class="risk-card">
+            <div class="risk-number">5</div>
+            <div class="risk-title">Timeline Short</div>
+            <div class="risk-desc">First customer in 60 days. Not 6 months.</div>
+        </div>
+    </div>
+    
+    <div class="slide-number">9</div>
+</div>
+
+<!-- SLIDE 10: Vision -->
+<div class="slide slide-vision">
+    <div class="vision-quote">
+        "In 5 years, every SME in Africa<br>
+        will know the name <span class="vision-highlight">SiyaBusa</span>.<br>
+        This is where it starts."
+    </div>
+    
+    <div class="vision-cta">
+        <a href="https://siyabusaerp.co.za" class="cta-button cta-primary">See It Live →</a>
+        <a href="#contact" class="cta-button cta-secondary">Let's Talk</a>
+    </div>
+    
+    <div class="slide-number">10</div>
+</div>
+
+<!-- SLIDE 11: Contact -->
+<div class="slide slide-contact" id="contact">
+    <div class="contact-name">Sibusiso Buncele</div>
+    <div class="contact-role">Founder & CEO</div>
+    <div class="contact-company">Masaphokati Technologies (Pty) Ltd</div>
+    
+    <div class="contact-links">
+        <div class="contact-link">
+            <div class="contact-link-icon">🌐</div>
+            <div class="contact-link-text">siyabusaerp.co.za</div>
+        </div>
+        <div class="contact-link">
+            <div class="contact-link-icon">📧</div>
+            <div class="contact-link-text">info@masaphokati.co.za</div>
+        </div>
+    </div>
+    
+    <div class="final-tagline">
+        Enterprise power. SME pricing. <span>First customer in March.</span>
+    </div>
+    
+    <div class="slide-number">11</div>
+</div>
+
+</body>
+</html>

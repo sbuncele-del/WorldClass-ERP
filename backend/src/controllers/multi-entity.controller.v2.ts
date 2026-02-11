@@ -306,9 +306,9 @@ export const getEntityHierarchy = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
 
-    // Get all entities
+    // Get all entities with country and currency
     const result = await pool.query(
-      `SELECT id, name, code, type, parent_id, level, status
+      `SELECT id, name, code, type, parent_id, level, status, country, currency, ownership_percentage
        FROM legal_entities
        WHERE tenant_id = $1 AND status = 'active'
        ORDER BY level, name`,

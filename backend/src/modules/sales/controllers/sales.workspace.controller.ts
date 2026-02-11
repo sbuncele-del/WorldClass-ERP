@@ -73,18 +73,20 @@ async function getSalesPipeline(tenantId: string) {
   const result = await query(
     `
     SELECT 
-      stage,
+      UPPER(stage) as stage,
       COUNT(*) as opportunity_count,
       COALESCE(SUM(value), 0) as total_value
     FROM sales.opportunities
-    WHERE tenant_id = $1 AND stage NOT IN ('closed_won', 'closed_lost')
-    GROUP BY stage
+    WHERE tenant_id = $1 AND UPPER(COALESCE(stage,'')) NOT IN ('CLOSED_LOST')
+    GROUP BY UPPER(stage)
     ORDER BY 
-      CASE stage
-        WHEN 'qualification' THEN 1
-        WHEN 'proposal' THEN 2
-        WHEN 'negotiation' THEN 3
-        ELSE 4
+      CASE UPPER(stage)
+        WHEN 'LEAD' THEN 1
+        WHEN 'QUALIFICATION' THEN 2
+        WHEN 'PROPOSAL' THEN 3
+        WHEN 'NEGOTIATION' THEN 4
+        WHEN 'CLOSED_WON' THEN 5
+        ELSE 6
       END
     `,
     [tenantId]
@@ -203,19 +205,26 @@ async function getSalesSummary(tenantId: string) {
       (SELECT COUNT(*) FROM sales.orders WHERE tenant_id = $1 AND status != 'cancelled') as total_orders,
       (SELECT COALESCE(SUM(total), 0) FROM sales.orders WHERE tenant_id = $1 AND status != 'cancelled') as total_revenue,
       (SELECT COUNT(*) FROM sales.customers WHERE tenant_id = $1) as total_customers,
-      (SELECT COUNT(*) FROM sales.opportunities WHERE tenant_id = $1 AND stage NOT IN ('closed_won', 'closed_lost')) as open_opportunities,
-      (SELECT COALESCE(SUM(value), 0) FROM sales.opportunities WHERE tenant_id = $1 AND stage NOT IN ('closed_won', 'closed_lost')) as pipeline_value,
-      (SELECT COUNT(*) FROM sales.quotations WHERE tenant_id = $1 AND status = 'sent') as pending_quotes
+      (SELECT COUNT(*) FROM sales.opportunities WHERE tenant_id = $1 AND UPPER(COALESCE(stage,'')) NOT IN ('CLOSED_WON', 'CLOSED_LOST')) as open_opportunities,
+      (SELECT COALESCE(SUM(value), 0) FROM sales.opportunities WHERE tenant_id = $1 AND UPPER(COALESCE(stage,'')) NOT IN ('CLOSED_WON', 'CLOSED_LOST')) as pipeline_value,
+      (SELECT COUNT(*) FROM sales.quotations WHERE tenant_id = $1 AND status = 'sent') as pending_quotes,
+      (SELECT COUNT(*) FROM sales.opportunities WHERE tenant_id = $1 AND UPPER(COALESCE(stage,'')) = 'CLOSED_WON') as won_deals,
+      (SELECT COUNT(*) FROM sales.opportunities WHERE tenant_id = $1 AND UPPER(COALESCE(stage,'')) IN ('CLOSED_WON', 'CLOSED_LOST')) as closed_deals,
+      (SELECT COALESCE(AVG(value), 0) FROM sales.opportunities WHERE tenant_id = $1 AND UPPER(COALESCE(stage,'')) = 'CLOSED_WON') as avg_deal_size,
+      (SELECT COALESCE(SUM(value), 0) FROM sales.opportunities WHERE tenant_id = $1 AND UPPER(COALESCE(stage,'')) = 'CLOSED_WON') as won_revenue
     `,
     [tenantId]
   );
 
-  return result.rows[0] || {
-    total_orders: 0,
-    total_revenue: 0,
-    total_customers: 0,
-    open_opportunities: 0,
-    pipeline_value: 0,
-    pending_quotes: 0,
+  const row = result.rows[0] || {};
+  const wonDeals = parseInt(row.won_deals) || 0;
+  const closedDeals = parseInt(row.closed_deals) || 0;
+  const winRate = closedDeals > 0 ? Math.round((wonDeals / closedDeals) * 100) : 0;
+
+  return {
+    ...row,
+    win_rate: winRate,
+    avg_deal_size: parseFloat(row.avg_deal_size) || 0,
+    won_revenue: parseFloat(row.won_revenue) || 0,
   };
 }

@@ -27,7 +27,7 @@ import {
   SettingOutlined, SwapOutlined, BarChartOutlined,
   RightOutlined, DownOutlined, MenuFoldOutlined,
   MenuUnfoldOutlined, PlusOutlined, SearchOutlined,
-  BellOutlined
+  BellOutlined, ClockCircleOutlined
 } from '@ant-design/icons';
 import { useUser } from '../../contexts/UserContext';
 import './PremiumSidebar.css';
@@ -262,8 +262,6 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
             <div className="sidebar-section-content">
               {renderNavItem('/app/financial-hub', <BarChartOutlined />, 'Financial Hub', undefined, ['director', 'executive', 'accountant'])}
               {renderNavItem('/app/banking-hub', <BankOutlined />, 'Banking Hub')}
-              {renderNavItem('/app/cash', <WalletOutlined />, 'Cash Management')}
-              {renderNavItem('/app/treasury', <SafetyCertificateOutlined />, 'Treasury', undefined, ['director', 'executive'])}
               {renderNavItem('/app/sars', <FileProtectOutlined />, 'SARS Sentinel')}
             </div>
           )}
@@ -274,7 +272,7 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
           {renderSectionTitle('OPERATIONS', 'operations', <ToolOutlined />)}
           {expandedSections.operations && (
             <div className="sidebar-section-content">
-              {renderNavItem('/app/sales-hub', <ShoppingCartOutlined />, 'Sales Hub')}
+              {renderNavItem('/app/sales-hub', <ShoppingCartOutlined />, 'Sales & CRM')}
               {renderNavItem('/app/purchase-hub', <ShoppingOutlined />, 'Purchase Hub')}
               {renderNavItem('/app/inventory-hub', <InboxOutlined />, 'Inventory Hub')}
               {renderNavItem('/app/assets-hub', <BuildOutlined />, 'Assets Hub')}
@@ -286,9 +284,9 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
           )}
         </div>
 
-        {/* Operations */}
+        {/* Professional Services */}
         <div className="sidebar-section">
-          {renderSectionTitle('OPERATIONS', 'industry', <CloudOutlined />)}
+          {renderSectionTitle('PROFESSIONAL', 'industry', <CloudOutlined />)}
           {expandedSections.industry && (
             <div className="sidebar-section-content">
               {renderNavItem('/app/practice-hub', <SafetyCertificateOutlined />, 'Practice Hub')}

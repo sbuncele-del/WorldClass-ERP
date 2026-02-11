@@ -1,289 +1,325 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Card, Row, Col, Table, Button, Input, Select, Tag, Space, Modal, Form,
+  InputNumber, message, Statistic, Typography, Empty, Tooltip, Progress, Popconfirm,
+} from 'antd';
+import {
+  AimOutlined, PlusOutlined, SearchOutlined, EyeOutlined,
+  SyncOutlined, PhoneOutlined, MailOutlined, RocketOutlined, SendOutlined,
+  CheckCircleOutlined,
+} from '@ant-design/icons';
 import { workspaceApi } from '../../services/api.service';
-import '../../styles/erp-ui.css';
 
+const { Text } = Typography;
+const { Option } = Select;
+
+// DB field names from sales.leads table
 interface Lead {
-  lead_id: number;
-  lead_name: string;
-  company: string;
-  contact_person: string;
-  email: string;
-  phone: string;
-  source: 'WEBSITE' | 'REFERRAL' | 'COLD_CALL' | 'TRADE_SHOW' | 'SOCIAL_MEDIA';
-  status: 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'UNQUALIFIED' | 'CONVERTED';
-  score: number;
-  estimated_value: number;
-  assigned_to: string;
-  created_date: string;
+  id: number;
+  lead_id?: number;
+  lead_number?: string;
+  company_name: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  mobile?: string;
+  source: string;
+  industry?: string;
+  lead_value?: number;
+  probability?: number;
+  status: string;
+  assigned_to?: string;
+  notes?: string;
+  next_follow_up?: string;
+  converted_to_opportunity_id?: number;
+  converted_at?: string;
+  created_at?: string;
+  updated_at?: string;
 }
+
+const buildHeaders = () => {
+  const token = localStorage.getItem('token') || localStorage.getItem('authToken') || '';
+  const tenantId = localStorage.getItem('tenantId') || localStorage.getItem('workspaceId') || '';
+  const h: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  if (tenantId) h['X-Tenant-ID'] = tenantId;
+  return h;
+};
 
 const LeadsPage: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [showModal, setShowModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [form] = Form.useForm();
+  const [emailForm] = Form.useForm();
 
-  useEffect(() => {
-    fetchLeads();
-  }, []);
+  useEffect(() => { fetchLeads(); }, []);
 
   const fetchLeads = async () => {
     setLoading(true);
     try {
-      const response: any = await workspaceApi.sales.getLeads();
-      
-      if (response && Array.isArray(response)) {
-        setLeads(response);
-      } else if (response && response.data && Array.isArray(response.data)) {
-        setLeads(response.data);
-      } else if (response && response.leads && Array.isArray(response.leads)) {
-        setLeads(response.leads);
-      } else {
-        console.warn('No leads returned from API');
-        setLeads([]);
-      }
-    } catch (error) {
-      console.error('Error fetching leads:', error);
-      setLeads([]);
-    } finally {
-      setLoading(false);
+      const res = await fetch('/api/sales/leads?limit=200', { method: 'GET', headers: buildHeaders() });
+      const json = await res.json();
+      const list = Array.isArray(json?.data) ? json.data : Array.isArray(json?.leads) ? json.leads : [];
+      setLeads(list.map((l: any) => ({ ...l, id: l.lead_id || l.id })));
+    } catch (err) {
+      console.error('[Leads] error:', err);
+      message.error('Failed to load leads');
+    } finally { setLoading(false); }
+  };
+
+  const handleCreate = async () => {
+    try {
+      const values = await form.validateFields();
+      setSaving(true);
+      const res = await fetch('/api/sales/leads', {
+        method: 'POST', headers: buildHeaders(),
+        body: JSON.stringify({
+          company_name: values.company_name,
+          contact_person: values.contact_person,
+          email: values.email,
+          phone: values.phone,
+          source: values.source || 'WEBSITE',
+          industry: values.industry,
+          lead_value: values.lead_value || 0,
+          probability: values.probability || 50,
+          status: 'NEW',
+          notes: values.notes,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message || 'Failed to create lead');
+      message.success('Lead created successfully!');
+      setShowModal(false); form.resetFields(); fetchLeads();
+    } catch (err: any) {
+      if (err?.errorFields) return;
+      message.error(err?.message || 'Failed to create lead');
+    } finally { setSaving(false); }
+  };
+
+  const handleConvert = async (lead: Lead) => {
+    try {
+      const res = await fetch(`/api/sales/leads/${lead.id}/convert`, {
+        method: 'POST', headers: buildHeaders(),
+        body: JSON.stringify({}),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.message || 'Failed to convert');
+      message.success('Lead converted to opportunity! Check the Opportunities tab.');
+      fetchLeads();
+    } catch (err: any) {
+      message.error(err?.message || 'Failed to convert lead');
     }
   };
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency: 'ZAR',
-      minimumFractionDigits: 0,
-    }).format(amount);
+  const handleUpdateStatus = async (lead: Lead, newStatus: string) => {
+    try {
+      await fetch(`/api/sales/leads/${lead.id}`, {
+        method: 'PUT', headers: buildHeaders(),
+        body: JSON.stringify({ status: newStatus }),
+      });
+      message.success(`Lead marked as ${newStatus}`);
+      fetchLeads();
+    } catch { message.error('Failed to update lead'); }
   };
 
-  const getStatusColor = (status: string): string => {
-    const colors: Record<string, string> = {
-      'NEW': '#3b82f6',
-      'CONTACTED': '#f59e0b',
-      'QUALIFIED': '#10b981',
-      'UNQUALIFIED': '#ef4444',
-      'CONVERTED': '#8b5cf6'
-    };
-    return colors[status] || '#64748b';
+  const handleSendEmail = async () => {
+    try {
+      const values = await emailForm.validateFields();
+      setSendingEmail(true);
+      const res = await fetch('/api/v2/communications/email/send', {
+        method: 'POST', headers: buildHeaders(),
+        body: JSON.stringify({
+          to: values.to,
+          subject: values.subject,
+          content: values.content,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || json.message || 'Email service not configured');
+      message.success('Email sent successfully!');
+      setShowEmailModal(false); emailForm.resetFields();
+    } catch (err: any) {
+      message.error(err?.message || 'Email service not configured. Ask admin to set RESEND_API_KEY.');
+    } finally { setSendingEmail(false); }
   };
 
-  const getScoreColor = (score: number): string => {
-    if (score >= 80) return '#10b981';
-    if (score >= 60) return '#f59e0b';
-    return '#ef4444';
+  const openEmailForLead = (lead: Lead) => {
+    emailForm.resetFields();
+    emailForm.setFieldsValue({
+      to: lead.email || '',
+      subject: `Following up — ${lead.company_name}`,
+      content: `Hi ${lead.contact_person || 'there'},\n\nThank you for your interest. I'd like to discuss how we can work together.\n\nPlease let me know a convenient time for a call.\n\nKind regards`,
+    });
+    setShowEmailModal(true);
   };
 
-  if (loading) {
-    return (
-      <div className="dashboard-container">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Loading leads...</p>
+  const fmt = (v: number) => `R ${(v || 0).toLocaleString('en-ZA')}`;
+  const statusColors: Record<string, string> = { NEW: 'blue', CONTACTED: 'orange', QUALIFIED: 'green', UNQUALIFIED: 'red', CONVERTED: 'purple' };
+  const sourceColors: Record<string, string> = { WEBSITE: 'cyan', REFERRAL: 'green', COLD_CALL: 'orange', TRADE_SHOW: 'purple', SOCIAL_MEDIA: 'blue', LINKEDIN: 'geekblue', Referral: 'green' };
+
+  const filtered = leads.filter(l => {
+    const name = (l.company_name || '').toLowerCase();
+    const matchSearch = !searchTerm || name.includes(searchTerm.toLowerCase()) ||
+      (l.contact_person || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (l.email || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchStatus = !filterStatus || (l.status || '').toUpperCase() === filterStatus.toUpperCase();
+    return matchSearch && matchStatus;
+  });
+
+  const columns: any[] = [
+    {
+      title: 'Lead', key: 'name',
+      render: (_: any, r: Lead) => (
+        <div>
+          <Text strong>{r.company_name || 'Unnamed'}</Text>
+          {r.contact_person && <div><Text type="secondary" style={{ fontSize: 12 }}>{r.contact_person}</Text></div>}
+          {r.lead_number && <div><Text type="secondary" style={{ fontSize: 11 }}>{r.lead_number}</Text></div>}
         </div>
-      </div>
-    );
-  }
+      ),
+      sorter: (a: Lead, b: Lead) => (a.company_name || '').localeCompare(b.company_name || ''),
+    },
+    {
+      title: 'Contact', key: 'contact', width: 220,
+      render: (_: any, r: Lead) => (
+        <Space direction="vertical" size={0}>
+          {r.email && <Text style={{ fontSize: 12 }}><MailOutlined style={{ marginRight: 4, color: '#667eea' }} />{r.email}</Text>}
+          {r.phone && <Text style={{ fontSize: 12 }}><PhoneOutlined style={{ marginRight: 4 }} />{r.phone}</Text>}
+        </Space>
+      ),
+    },
+    { title: 'Source', dataIndex: 'source', key: 'source', width: 120, render: (s: string) => <Tag color={sourceColors[s] || 'default'}>{s || '—'}</Tag> },
+    {
+      title: 'Probability', dataIndex: 'probability', key: 'prob', width: 110,
+      render: (v: number) => <Progress percent={v || 0} size="small" strokeColor={v >= 70 ? '#52c41a' : v >= 40 ? '#faad14' : '#ff4d4f'} format={p => `${p}%`} />,
+      sorter: (a: Lead, b: Lead) => (a.probability || 0) - (b.probability || 0),
+    },
+    {
+      title: 'Value', dataIndex: 'lead_value', key: 'value', width: 130,
+      render: (v: any) => <Text>{fmt(parseFloat(v) || 0)}</Text>,
+      sorter: (a: Lead, b: Lead) => (parseFloat(String(a.lead_value)) || 0) - (parseFloat(String(b.lead_value)) || 0),
+    },
+    { title: 'Status', dataIndex: 'status', key: 'status', width: 120, render: (s: string) => <Tag color={statusColors[s] || 'default'}>{(s || 'NEW')}</Tag> },
+    {
+      title: 'Actions', key: 'actions', width: 180,
+      render: (_: any, r: Lead) => (
+        <Space size="small">
+          <Tooltip title="View"><Button type="text" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedLead(r); setShowDetailModal(true); }} /></Tooltip>
+          {r.email && <Tooltip title="Send Email"><Button type="text" size="small" icon={<MailOutlined style={{ color: '#667eea' }} />} onClick={() => { setSelectedLead(r); openEmailForLead(r); }} /></Tooltip>}
+          {(r.status || '').toUpperCase() !== 'CONVERTED' && (
+            <Tooltip title="Convert to Opportunity">
+              <Popconfirm title="Convert this lead to an opportunity?" onConfirm={() => handleConvert(r)} okText="Convert">
+                <Button type="text" size="small" icon={<RocketOutlined style={{ color: '#722ed1' }} />} />
+              </Popconfirm>
+            </Tooltip>
+          )}
+        </Space>
+      ),
+    },
+  ];
+
+  const totalLeads = leads.length;
+  const newCount = leads.filter(l => (l.status || '').toUpperCase() === 'NEW').length;
+  const qualifiedCount = leads.filter(l => (l.status || '').toUpperCase() === 'QUALIFIED').length;
+  const totalValue = leads.reduce((s, l) => s + (parseFloat(String(l.lead_value)) || 0), 0);
 
   return (
-    <div className="dashboard-container">
-        <div className="content-card">
+    <>
+      <Row gutter={16} style={{ marginBottom: 20 }}>
+        <Col span={6}><Card><Statistic title="Total Leads" value={totalLeads} prefix={<AimOutlined style={{ color: '#667eea' }} />} /></Card></Col>
+        <Col span={6}><Card><Statistic title="New" value={newCount} valueStyle={{ color: '#1890ff' }} /></Card></Col>
+        <Col span={6}><Card><Statistic title="Qualified" value={qualifiedCount} valueStyle={{ color: '#52c41a' }} /></Card></Col>
+        <Col span={6}><Card><Statistic title="Pipeline Value" value={totalValue} prefix="R" valueStyle={{ color: '#667eea' }} /></Card></Col>
+      </Row>
 
-        <div className="table-container">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Lead Name</th>
-                <th>Company</th>
-                <th>Contact</th>
-                <th>Source</th>
-                <th>Score</th>
-                <th>Est. Value</th>
-                <th>Status</th>
-                <th>Assigned To</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leads.map((lead) => (
-                <tr key={lead.lead_id}>
-                  <td style={{ fontWeight: 600, color: '#667eea' }}>{lead.lead_name}</td>
-                  <td style={{ fontWeight: 600 }}>{lead.company}</td>
-                  <td>
-                    <div style={{ fontSize: '0.875rem' }}>
-                      <div style={{ fontWeight: 600 }}>{lead.contact_person}</div>
-                      <div style={{ color: '#7f8c8d' }}>{lead.email}</div>
-                      <div style={{ color: '#7f8c8d' }}>{lead.phone}</div>
-                    </div>
-                  </td>
-                  <td>
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '12px',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      background: '#f3f4f6',
-                      color: '#374151'
-                    }}>
-                      {lead.source.replace('_', ' ')}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <div style={{ 
-                        width: '60px', 
-                        height: '8px', 
-                        background: '#e5e7eb', 
-                        borderRadius: '4px',
-                        overflow: 'hidden'
-                      }}>
-                        <div style={{
-                          height: '100%',
-                          width: `${lead.score}%`,
-                          background: getScoreColor(lead.score),
-                          borderRadius: '4px'
-                        }}></div>
-                      </div>
-                      <span style={{ 
-                        fontWeight: 700, 
-                        fontSize: '0.875rem',
-                        color: getScoreColor(lead.score)
-                      }}>
-                        {lead.score}
-                      </span>
-                    </div>
-                  </td>
-                  <td style={{ fontWeight: 600 }}>{formatCurrency(lead.estimated_value)}</td>
-                  <td>
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '0.25rem 0.75rem',
-                      borderRadius: '12px',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      background: `${getStatusColor(lead.status)}15`,
-                      color: getStatusColor(lead.status)
-                    }}>
-                      {lead.status}
-                    </span>
-                  </td>
-                  <td>{lead.assigned_to}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button style={{
-                        background: 'white',
-                        color: '#667eea',
-                        border: '2px solid #667eea',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '6px',
-                        fontSize: '0.875rem',
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}>
-                        View
-                      </button>
-                      {lead.status === 'QUALIFIED' && (
-                        <button style={{
-                          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                          color: 'white',
-                          border: 'none',
-                          padding: '0.5rem 1rem',
-                          borderRadius: '6px',
-                          fontSize: '0.875rem',
-                          fontWeight: 600,
-                          cursor: 'pointer'
-                        }}>
-                          Convert
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <Card title={<Space><AimOutlined style={{ color: '#667eea' }} /><span>Lead Management</span></Space>}
+        extra={<Space>
+          <Input placeholder="Search..." prefix={<SearchOutlined />} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} style={{ width: 220 }} allowClear />
+          <Select placeholder="All Status" value={filterStatus || undefined} onChange={v => setFilterStatus(v || '')} style={{ width: 130 }} allowClear>
+            <Option value="NEW">New</Option><Option value="CONTACTED">Contacted</Option>
+            <Option value="QUALIFIED">Qualified</Option><Option value="CONVERTED">Converted</Option>
+          </Select>
+          <Button icon={<SyncOutlined />} onClick={fetchLeads} loading={loading} />
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); form.setFieldsValue({ source: 'REFERRAL', probability: 50, lead_value: 0 }); setShowModal(true); }} style={{ background: '#667eea' }}>New Lead</Button>
+        </Space>}>
+        <Table dataSource={filtered} columns={columns} rowKey="id" loading={loading}
+          pagination={{ pageSize: 15, showSizeChanger: true, showTotal: t => `${t} leads` }} size="middle"
+          locale={{ emptyText: <Empty description="No leads yet. Click 'New Lead' to add one." /> }} />
+      </Card>
 
-      {/* Sales Funnel Metrics */}
-      <div className="metrics-grid" style={{ marginTop: '2rem' }}>
-        <div className="metric-card revenue">
-          <div className="metric-icon">🎯</div>
-          <div className="metric-content">
-            <div className="metric-label">Total Leads</div>
-            <div className="metric-value">{leads.length}</div>
-            <div className="metric-trend positive">
-              <span className="trend-text">{leads.filter(l => l.status === 'NEW').length} New</span>
-            </div>
-          </div>
-        </div>
+      {/* Create Lead Modal */}
+      <Modal title="🎯 New Lead" open={showModal} onCancel={() => setShowModal(false)} onOk={handleCreate} okText="Create Lead" confirmLoading={saving} width={700}>
+        <Form layout="vertical" form={form}>
+          <Row gutter={16}>
+            <Col span={12}><Form.Item label="Company / Lead Name" name="company_name" rules={[{ required: true, message: 'Required' }]}><Input placeholder="e.g. Boikago Events Creatives" /></Form.Item></Col>
+            <Col span={12}><Form.Item label="Industry" name="industry"><Input placeholder="e.g. Events, Technology" /></Form.Item></Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}><Form.Item label="Contact Person" name="contact_person"><Input placeholder="e.g. Keagile Kwakwa" /></Form.Item></Col>
+            <Col span={8}><Form.Item label="Email" name="email" rules={[{ type: 'email', message: 'Invalid email' }]}><Input prefix={<MailOutlined />} placeholder="email@company.co.za" /></Form.Item></Col>
+            <Col span={8}><Form.Item label="Phone" name="phone"><Input prefix={<PhoneOutlined />} placeholder="081 443 0590" /></Form.Item></Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}><Form.Item label="Source" name="source"><Select><Option value="REFERRAL">Referral</Option><Option value="WEBSITE">Website</Option><Option value="COLD_CALL">Cold Call</Option><Option value="TRADE_SHOW">Trade Show</Option><Option value="SOCIAL_MEDIA">Social Media</Option><Option value="LINKEDIN">LinkedIn</Option></Select></Form.Item></Col>
+            <Col span={8}><Form.Item label="Probability (%)" name="probability"><InputNumber style={{ width: '100%' }} min={0} max={100} /></Form.Item></Col>
+            <Col span={8}><Form.Item label="Est. Value (R)" name="lead_value"><InputNumber style={{ width: '100%' }} prefix="R" min={0} step={500} /></Form.Item></Col>
+          </Row>
+          <Form.Item label="Notes" name="notes"><Input.TextArea rows={2} placeholder="Context about this lead..." /></Form.Item>
+        </Form>
+      </Modal>
 
-        <div className="metric-card expenses">
-          <div className="metric-icon">✅</div>
-          <div className="metric-content">
-            <div className="metric-label">Qualified Leads</div>
-            <div className="metric-value">{leads.filter(l => l.status === 'QUALIFIED').length}</div>
-            <div className="metric-trend positive">
-              <span className="trend-text">{((leads.filter(l => l.status === 'QUALIFIED').length / leads.length) * 100).toFixed(0)}% rate</span>
-            </div>
-          </div>
-        </div>
+      {/* Lead Detail Modal */}
+      <Modal title={selectedLead ? `🎯 ${selectedLead.company_name}` : 'Lead'} open={showDetailModal} onCancel={() => setShowDetailModal(false)}
+        footer={<Space>
+          <Button onClick={() => setShowDetailModal(false)}>Close</Button>
+          {selectedLead?.email && <Button icon={<MailOutlined />} onClick={() => { setShowDetailModal(false); openEmailForLead(selectedLead!); }}>Send Email</Button>}
+          {selectedLead && (selectedLead.status || '').toUpperCase() === 'NEW' && <Button icon={<CheckCircleOutlined />} onClick={() => { handleUpdateStatus(selectedLead, 'CONTACTED'); setShowDetailModal(false); }}>Mark Contacted</Button>}
+          {selectedLead && (selectedLead.status || '').toUpperCase() === 'CONTACTED' && <Button type="primary" style={{ background: '#52c41a' }} icon={<CheckCircleOutlined />} onClick={() => { handleUpdateStatus(selectedLead, 'QUALIFIED'); setShowDetailModal(false); }}>Mark Qualified</Button>}
+          {selectedLead && (selectedLead.status || '').toUpperCase() !== 'CONVERTED' && <Button type="primary" icon={<RocketOutlined />} style={{ background: '#722ed1' }} onClick={() => { setShowDetailModal(false); handleConvert(selectedLead); }}>Convert to Opportunity</Button>}
+        </Space>} width={550}>
+        {selectedLead && (
+          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+            <Row gutter={16}>
+              <Col span={12}><Text type="secondary">Company</Text><br /><Text strong style={{ fontSize: 16 }}>{selectedLead.company_name || '—'}</Text></Col>
+              <Col span={12}><Text type="secondary">Status</Text><br /><Tag color={statusColors[selectedLead.status]} style={{ fontSize: 14 }}>{selectedLead.status}</Tag></Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={12}><Text type="secondary">Contact Person</Text><br /><Text>{selectedLead.contact_person || '—'}</Text></Col>
+              <Col span={12}><Text type="secondary">Lead Number</Text><br /><Text>{selectedLead.lead_number || '—'}</Text></Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={12}><Text type="secondary">Email</Text><br />{selectedLead.email ? <a href={`mailto:${selectedLead.email}`}>{selectedLead.email}</a> : <Text>—</Text>}</Col>
+              <Col span={12}><Text type="secondary">Phone</Text><br />{selectedLead.phone ? <a href={`tel:${selectedLead.phone}`}>{selectedLead.phone}</a> : <Text>—</Text>}</Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={8}><Text type="secondary">Source</Text><br /><Tag color={sourceColors[selectedLead.source]}>{selectedLead.source}</Tag></Col>
+              <Col span={8}><Text type="secondary">Probability</Text><br /><Progress percent={selectedLead.probability || 0} size="small" /></Col>
+              <Col span={8}><Statistic title="Est. Value" value={parseFloat(String(selectedLead.lead_value)) || 0} prefix="R" /></Col>
+            </Row>
+            {selectedLead.industry && <><Text type="secondary">Industry</Text><br /><Text>{selectedLead.industry}</Text></>}
+            {selectedLead.notes && <><Text type="secondary">Notes</Text><br /><Text>{selectedLead.notes}</Text></>}
+            <Text type="secondary" style={{ fontSize: 11 }}>Created: {selectedLead.created_at ? new Date(selectedLead.created_at).toLocaleDateString('en-ZA') : '—'}</Text>
+          </Space>
+        )}
+      </Modal>
 
-        <div className="metric-card profit">
-          <div className="metric-icon">💰</div>
-          <div className="metric-content">
-            <div className="metric-label">Pipeline Value</div>
-            <div className="metric-value">
-              {formatCurrency(leads.filter(l => l.status !== 'UNQUALIFIED').reduce((sum, l) => sum + l.estimated_value, 0))}
-            </div>
-          </div>
-        </div>
-
-        <div className="metric-card activity">
-          <div className="metric-icon">📊</div>
-          <div className="metric-content">
-            <div className="metric-label">Avg. Lead Score</div>
-            <div className="metric-value">
-              {Math.round(leads.reduce((sum, l) => sum + l.score, 0) / leads.length)}
-            </div>
-            <div className="metric-detail">
-              <span className="pending-badge">Out of 100</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Lead Funnel Visualization */}
-      <div className="balance-sheet-section" style={{ marginTop: '2rem' }}>
-        <h2>📈 Sales Funnel</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1rem' }}>
-          {['NEW', 'CONTACTED', 'QUALIFIED', 'CONVERTED', 'UNQUALIFIED'].map((stage, index) => {
-            const count = leads.filter(l => l.status === stage).length;
-            const percentage = (count / leads.length) * 100;
-            const colors = ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444'];
-            
-            return (
-              <div key={stage} style={{
-                background: `${colors[index]}15`,
-                borderLeft: `4px solid ${colors[index]}`,
-                padding: '1.5rem',
-                borderRadius: '12px'
-              }}>
-                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#7f8c8d', marginBottom: '0.5rem' }}>
-                  {stage}
-                </div>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color: colors[index], marginBottom: '0.5rem' }}>
-                  {count}
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#7f8c8d' }}>
-                  {percentage.toFixed(0)}% of total
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
+      {/* Email Compose Modal */}
+      <Modal title="✉️ Send Email" open={showEmailModal} onCancel={() => setShowEmailModal(false)} onOk={handleSendEmail}
+        okText="Send" okButtonProps={{ icon: <SendOutlined /> }} confirmLoading={sendingEmail} width={650}>
+        <Form layout="vertical" form={emailForm}>
+          <Form.Item label="To" name="to" rules={[{ required: true, type: 'email', message: 'Enter recipient email' }]}><Input prefix={<MailOutlined />} placeholder="recipient@company.co.za" /></Form.Item>
+          <Form.Item label="Subject" name="subject" rules={[{ required: true, message: 'Enter subject' }]}><Input placeholder="Subject line" /></Form.Item>
+          <Form.Item label="Message" name="content" rules={[{ required: true, message: 'Enter message' }]}><Input.TextArea rows={6} placeholder="Type your message..." /></Form.Item>
+        </Form>
+      </Modal>
+    </>
   );
 };
 

@@ -11,12 +11,28 @@ const apiClient = axios.create({
   },
 });
 
-// Request interceptor for adding auth tokens
+// Request interceptor for adding auth tokens and tenant ID
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('accessToken');
+    // Try multiple sources for tenant ID
+    let tenantId = localStorage.getItem('tenantId') || localStorage.getItem('workspaceId');
+    if (!tenantId) {
+      try {
+        const tenantData = localStorage.getItem('tenant');
+        if (tenantData) {
+          const tenant = JSON.parse(tenantData);
+          tenantId = tenant.id;
+        }
+      } catch (e) {
+        // ignore parse error
+      }
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (tenantId) {
+      config.headers['X-Tenant-ID'] = tenantId;
     }
     return config;
   },
@@ -28,9 +44,19 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Handle unauthorized
-      localStorage.removeItem('token');
-      window.location.href = '/login';
+      // Only redirect if not already on login/signup pages to prevent loop
+      const currentPath = window.location.pathname;
+      const publicPaths = ['/login', '/signup', '/forgot-password', '/reset-password', '/verify-email', '/accept-invite', '/'];
+      const isPublicPage = publicPaths.some(path => currentPath === path || currentPath.startsWith('/portal'));
+      
+      if (!isPublicPage) {
+        // Handle unauthorized - only clear tokens and redirect if on protected page
+        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

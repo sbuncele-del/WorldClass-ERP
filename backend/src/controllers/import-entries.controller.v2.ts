@@ -425,6 +425,14 @@ async function createJournalEntry(
   lines: any[],
   autoPost: boolean
 ): Promise<any> {
+  // Calculate totals
+  let totalDebit = 0;
+  let totalCredit = 0;
+  for (const line of lines) {
+    totalDebit += parseFloat(line.debit_amount) || 0;
+    totalCredit += parseFloat(line.credit_amount) || 0;
+  }
+
   // Create journal entry
   const entryNumber = `JE-IMP-${Date.now()}`;
   const status = autoPost ? 'POSTED' : 'DRAFT';
@@ -432,11 +440,11 @@ async function createJournalEntry(
   const jeResult = await client.query(`
     INSERT INTO journal_entries (
       tenant_id, entry_number, journal_date, description,
-      source_type, status, created_by
+      source_type, status, total_debit, total_credit, created_by
     )
-    VALUES ($1, $2, $3, $4, 'IMPORT', $5, $6)
+    VALUES ($1, $2, $3, $4, 'IMPORT', $5, $6, $7, $8)
     RETURNING *
-  `, [tenantId, entryNumber, journalDate, description, status, userId]);
+  `, [tenantId, entryNumber, journalDate, description, status, totalDebit, totalCredit, userId]);
 
   const journalEntryId = jeResult.rows[0].id;
 
@@ -453,10 +461,9 @@ async function createJournalEntry(
     await client.query(`
       INSERT INTO journal_entry_lines (
         tenant_id, journal_entry_id, account_id, account_code,
-        description, debit_amount, credit_amount,
-        cost_center, project_code
+        description, debit_amount, credit_amount
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
     `, [
       tenantId,
       journalEntryId,
@@ -464,9 +471,7 @@ async function createJournalEntry(
       line.account_code,
       line.description,
       line.debit_amount || 0,
-      line.credit_amount || 0,
-      line.cost_center,
-      line.project_code
+      line.credit_amount || 0
     ]);
   }
 

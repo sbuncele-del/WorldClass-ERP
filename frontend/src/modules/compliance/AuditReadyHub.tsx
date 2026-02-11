@@ -133,25 +133,58 @@ const AuditReadyHub: React.FC = () => {
   const [auditorMessages, setAuditorMessages] = useState<AuditorMessage[]>([]);
   const [documentRequests, setDocumentRequests] = useState<DocumentRequest[]>([]);
 
+  // Safe fetch helper: tries the API call but returns fallback on error
+  // so one failed endpoint does not break the entire page
+  const safeFetch = async <T,>(url: string, fallback: T): Promise<T> => {
+    try {
+      const res = await apiClient.get(url);
+      // Backend may wrap in { success, data } or return array directly
+      const payload = res.data?.data ?? res.data;
+      // If payload is an object with a nested array (e.g. { entries: [...] }), try common keys
+      if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+        const arrayKey = Object.keys(payload).find(k => Array.isArray(payload[k]));
+        if (arrayKey) return payload[arrayKey] as T;
+      }
+      return (payload ?? fallback) as T;
+    } catch (error: any) {
+      // 404 means the endpoint is not implemented yet - that is expected for some features
+      if (error?.response?.status !== 404) {
+        console.warn(`Audit endpoint ${url} failed:`, error?.message || error);
+      }
+      return fallback;
+    }
+  };
+
   // Fetch data from API
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [docsRes, checklistRes, logsRes, auditorsRes, messagesRes, requestsRes] = await Promise.all([
-          apiClient.get('/api/compliance/audit/documents'),
-          apiClient.get('/api/compliance/audit/checklist'),
-          apiClient.get('/api/compliance/audit/logs'),
-          apiClient.get('/api/compliance/audit/auditors'),
-          apiClient.get('/api/compliance/audit/messages'),
-          apiClient.get('/api/compliance/audit/requests')
+        // Fetch all data in parallel; each call handles its own errors
+        // so a single missing endpoint does not take down the whole page.
+        //
+        // Endpoint mapping:
+        //   /api/audit/documents       -> backend: not yet implemented (uses empty state)
+        //   /api/audit/checklist       -> backend: not yet implemented (uses empty state)
+        //   /api/audit-log/logs        -> backend: audit-log.routes.ts  (exists)
+        //   /api/audit/auditors        -> backend: not yet implemented (uses empty state)
+        //   /api/audit/messages        -> backend: not yet implemented (uses empty state)
+        //   /api/audit/requests        -> backend: not yet implemented (uses empty state)
+        const [docsData, checklistData, logsData, auditorsData, messagesData, requestsData] = await Promise.all([
+          safeFetch<AuditDocument[]>('/api/audit/documents', []),
+          safeFetch<ChecklistItem[]>('/api/audit/checklist', []),
+          safeFetch<AuditLog[]>('/api/audit-log/logs', []),
+          safeFetch<AuditorAccess[]>('/api/audit/auditors', []),
+          safeFetch<AuditorMessage[]>('/api/audit/messages', []),
+          safeFetch<DocumentRequest[]>('/api/audit/requests', [])
         ]);
-        setDocuments(docsRes.data || []);
-        setChecklist(checklistRes.data || []);
-        setAuditLogs(logsRes.data || []);
-        setAuditors(auditorsRes.data || []);
-        setAuditorMessages(messagesRes.data || []);
-        setDocumentRequests(requestsRes.data || []);
+
+        setDocuments(docsData);
+        setChecklist(checklistData);
+        setAuditLogs(logsData);
+        setAuditors(auditorsData);
+        setAuditorMessages(messagesData);
+        setDocumentRequests(requestsData);
       } catch (error) {
         console.error('Failed to fetch audit data:', error);
         message.error('Failed to load audit data');
@@ -175,7 +208,7 @@ const AuditReadyHub: React.FC = () => {
   const readyDocuments = documents.filter(d => d.status === 'ready').length;
   const pendingDocuments = documents.filter(d => d.status === 'pending' || d.status === 'review').length;
   const missingDocuments = documents.filter(d => d.status === 'missing').length;
-  const readinessScore = Math.round((completedChecklist / totalChecklist) * 100);
+  const readinessScore = totalChecklist > 0 ? Math.round((completedChecklist / totalChecklist) * 100) : 0;
 
   const handleGenerateAuditPack = () => {
     setGenerating(true);
@@ -494,7 +527,7 @@ const AuditReadyHub: React.FC = () => {
           title={<><CheckSquareOutlined /> Audit Checklist</>}
           extra={
             <Space>
-              <Progress percent={Math.round((completedChecklist / totalChecklist) * 100)} style={{ width: 150 }} />
+              <Progress percent={totalChecklist > 0 ? Math.round((completedChecklist / totalChecklist) * 100) : 0} style={{ width: 150 }} />
               <Button icon={<PrinterOutlined />}>Print Checklist</Button>
             </Space>
           }

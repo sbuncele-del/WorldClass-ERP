@@ -215,7 +215,7 @@ export async function sendTeamInvitationEmail(
 
     await sendEmail({
       to: email,
-      subject: `You've been invited to join ${companyName} on Worldclass ERP`,
+      subject: `You've been invited to join ${companyName} on SiyaBusa ERP`,
       template: 'team-invitation',
       variables: {
         inviterName,

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../services/api';
+import { practiceService } from '../../services/practice.service';
 import {
   Card,
   Row,
@@ -76,6 +77,8 @@ const PracticeHub: React.FC = () => {
   const [activeEngagements, setActiveEngagements] = useState<any[]>(defaultEngagements);
   const [teamMembers, setTeamMembers] = useState<any[]>(defaultTeamMembers);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<any[]>(defaultDeadlines);
+  const [salesCustomers, setSalesCustomers] = useState<any[]>([]);
+  const [engagementForm] = Form.useForm();
 
   useEffect(() => {
     const fetchPracticeData = async () => {
@@ -83,14 +86,36 @@ const PracticeHub: React.FC = () => {
       try {
         const [statsRes, engagementsRes, teamRes, deadlinesRes] = await Promise.all([
           apiClient.get('/api/practice/stats').catch(() => ({ data: null })),
-          apiClient.get('/api/practice/engagements').catch(() => ({ data: [] })),
+          apiClient.get('/api/v2/practice/projects').catch(() => ({ data: { data: [] } })),
           apiClient.get('/api/practice/team').catch(() => ({ data: [] })),
           apiClient.get('/api/practice/deadlines').catch(() => ({ data: [] })),
         ]);
         if (statsRes.data) setPracticeStats({ ...defaultPracticeStats, ...statsRes.data });
-        if (engagementsRes.data?.length) setActiveEngagements(engagementsRes.data);
-        if (teamRes.data?.length) setTeamMembers(teamRes.data);
-        if (deadlinesRes.data?.length) setUpcomingDeadlines(deadlinesRes.data);
+        const projList = engagementsRes.data?.data || engagementsRes.data?.projects || engagementsRes.data || [];
+        if (Array.isArray(projList) && projList.length > 0) {
+          // Map backend project data to engagement table shape
+          const mapped = projList.map((p: any) => ({
+            id: p.project_id || p.id,
+            client: p.client_name || p.customer_name || 'Internal',
+            type: p.project_type || p.type || '—',
+            partner: p.partner || '—',
+            manager: p.manager || '—',
+            progress: Number(p.progress || p.completion_percentage || 0),
+            wip: Number(p.budget || 0),
+            deadline: (p.end_date || '').slice(0, 10),
+            status: (p.status || 'active').replace(/_/g, '-'),
+            priority: p.priority || 'medium',
+          }));
+          setActiveEngagements(mapped);
+        }
+        if (Array.isArray(teamRes.data) && teamRes.data.length > 0) setTeamMembers(teamRes.data);
+        if (Array.isArray(deadlinesRes.data) && deadlinesRes.data.length > 0) setUpcomingDeadlines(deadlinesRes.data);
+        // Fetch Sales customers for engagement client dropdown
+        const customersRes = await apiClient.get('/api/sales/customers', { params: { limit: 100 } }).catch(() => ({ data: { customers: [] } }));
+        const custList = customersRes?.data?.customers || customersRes?.data?.data || [];
+        if (Array.isArray(custList)) {
+          setSalesCustomers(custList);
+        }
       } catch (err) {
         console.error('Error fetching practice data:', err);
       } finally {
@@ -455,29 +480,70 @@ const PracticeHub: React.FC = () => {
       <Modal
         title="Create New Engagement"
         open={showNewEngagement}
-        onCancel={() => setShowNewEngagement(false)}
+        onCancel={() => { setShowNewEngagement(false); engagementForm.resetFields(); }}
         footer={[
-          <Button key="cancel" onClick={() => setShowNewEngagement(false)}>Cancel</Button>,
-          <Button key="create" type="primary" onClick={() => { message.success('Engagement created'); setShowNewEngagement(false); }}>
+          <Button key="cancel" onClick={() => { setShowNewEngagement(false); engagementForm.resetFields(); }}>Cancel</Button>,
+          <Button key="create" type="primary" onClick={async () => {
+            try {
+              const values = await engagementForm.validateFields();
+              await practiceService.createProject({
+                project_name: values.engagementType ? `${values.engagementType} — ${salesCustomers.find((c: any) => (c.id || c.customer_id) === values.client)?.customer_name || 'Client'}` : 'New Engagement',
+                customer_id: values.client,
+                project_type: values.engagementType,
+                budget: Number(values.budget || 0),
+                end_date: values.deadline?.format('YYYY-MM-DD'),
+                status: 'planning',
+              });
+              message.success('Engagement created successfully');
+              setShowNewEngagement(false);
+              engagementForm.resetFields();
+              // Refresh engagements
+              const engRes = await apiClient.get('/api/v2/practice/projects').catch(() => ({ data: { data: [] } }));
+              const pl = engRes.data?.data || engRes.data?.projects || [];
+              if (Array.isArray(pl)) {
+                const mapped = pl.map((p: any) => ({
+                  id: p.project_id || p.id,
+                  client: p.client_name || p.customer_name || 'Internal',
+                  type: p.project_type || p.type || '—',
+                  partner: p.partner || '—',
+                  manager: p.manager || '—',
+                  progress: Number(p.progress || p.completion_percentage || 0),
+                  wip: Number(p.budget || 0),
+                  deadline: (p.end_date || '').slice(0, 10),
+                  status: (p.status || 'active').replace(/_/g, '-'),
+                  priority: p.priority || 'medium',
+                }));
+                setActiveEngagements(mapped);
+              }
+            } catch (err: any) {
+              if (err.errorFields) return;
+              message.error('Failed to create engagement');
+            }
+          }}>
             Create Engagement
           </Button>
         ]}
         width={600}
       >
-        <Form layout="vertical">
-          <Form.Item label="Client" required>
-            <Select placeholder="Select client">
-              <Select.Option value="stellar">Stellar Holdings Ltd</Select.Option>
-              <Select.Option value="tech">TechVentures Inc</Select.Option>
-              <Select.Option value="global">Global Manufacturing</Select.Option>
+        <Form form={engagementForm} layout="vertical">
+          <Form.Item label="Client" name="client" rules={[{ required: true, message: 'Please select a client' }]}>
+            <Select placeholder="Select client" showSearch optionFilterProp="children">
+              {salesCustomers.map((c: any) => (
+                <Select.Option key={c.id || c.customer_id} value={c.id || c.customer_id}>
+                  {c.customer_name || c.name}
+                </Select.Option>
+              ))}
             </Select>
           </Form.Item>
-          <Form.Item label="Engagement Type" required>
+          <Form.Item label="Engagement Type" name="engagementType" rules={[{ required: true, message: 'Please select a type' }]}>
             <Select placeholder="Select type">
               <Select.Option value="audit">Annual Audit</Select.Option>
               <Select.Option value="tax">Tax Planning</Select.Option>
               <Select.Option value="advisory">Advisory</Select.Option>
               <Select.Option value="accounting">Monthly Accounting</Select.Option>
+              <Select.Option value="review">Review</Select.Option>
+              <Select.Option value="compliance">Compliance</Select.Option>
+              <Select.Option value="consulting">Consulting</Select.Option>
             </Select>
           </Form.Item>
           <Row gutter={16}>
@@ -500,12 +566,12 @@ const PracticeHub: React.FC = () => {
           </Row>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="Budget">
+              <Form.Item label="Budget" name="budget">
                 <Input prefix="R" placeholder="Enter budget" />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="Deadline">
+              <Form.Item label="Deadline" name="deadline">
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>

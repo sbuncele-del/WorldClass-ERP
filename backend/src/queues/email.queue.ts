@@ -27,114 +27,157 @@ export interface EmailJobData {
   scheduledFor?: Date | number; // Unix timestamp or Date object
 }
 
-// Create email queue
+// Check if Redis is disabled
+const isRedisDisabled = process.env.REDIS_ENABLED === 'false' || process.env.SKIP_REDIS === 'true';
+
+// Create email queue (only if Redis is enabled)
 const EMAIL_QUEUE_CONCURRENCY = parseInt(process.env.EMAIL_QUEUE_CONCURRENCY || '10', 10);
 
-export const emailQueue: Queue<EmailJobData> = new Bull('email', {
-  createClient: (type) => {
-    if (type === 'client') return createRedisClient('client');
-    if (type === 'subscriber') return createRedisClient('subscriber');
-    return createRedisClient('bclient');
-  },
-  defaultJobOptions: {
-    attempts: 5, // Retry up to 5 times
-    backoff: {
-      type: 'exponential',
-      delay: 2000, // Start with 2 second delay, doubles each retry
-    },
-    removeOnComplete: true, // Clean up completed jobs after 1 hour
-    removeOnFail: false, // Keep failed jobs for debugging
-  },
-  settings: {
-    maxStalledCount: 3, // Max times a job can be recovered from stalled state
-    stalledInterval: 30000, // Check for stalled jobs every 30 seconds
-    lockDuration: 60000, // Job lock duration: 60 seconds
-  },
-});
+// Mock queue for when Redis is disabled
+class MockQueue {
+  async add(data: EmailJobData, opts?: JobOptions): Promise<any> {
+    console.log('📧 Mock queue - sending email directly:', data.to);
+    try {
+      await sendEmailDirect({
+        to: data.to,
+        subject: data.subject,
+        template: data.template,
+        variables: data.variables,
+      });
+      return { id: Date.now().toString(), data };
+    } catch (error) {
+      console.error('Failed to send email:', error);
+      throw error;
+    }
+  }
+  async close(): Promise<void> {}
+  process(_: any, __: any): void {}
+  on(_: string, __: any): this { return this; }
+  async getJobCounts(): Promise<any> { return { waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0, paused: 0 }; }
+  async getJobs(): Promise<any[]> { return []; }
+  async getJob(): Promise<any> { return null; }
+  async getFailed(): Promise<any[]> { return []; }
+  async empty(): Promise<void> {}
+  async pause(): Promise<void> {}
+  async resume(): Promise<void> {}
+  async clean(): Promise<any[]> { return []; }
+  async isPaused(): Promise<boolean> { return false; }
+  async getWaitingCount(): Promise<number> { return 0; }
+  async getActiveCount(): Promise<number> { return 0; }
+  async getCompletedCount(): Promise<number> { return 0; }
+  async getFailedCount(): Promise<number> { return 0; }
+  async getDelayedCount(): Promise<number> { return 0; }
+}
+
+export const emailQueue = isRedisDisabled 
+  ? new MockQueue() as any
+  : new Bull<EmailJobData>('email', {
+      createClient: (type) => {
+        if (type === 'client') return createRedisClient('client');
+        if (type === 'subscriber') return createRedisClient('subscriber');
+        return createRedisClient('bclient');
+      },
+      defaultJobOptions: {
+        attempts: 5, // Retry up to 5 times
+        backoff: {
+          type: 'exponential',
+          delay: 2000, // Start with 2 second delay, doubles each retry
+        },
+        removeOnComplete: true, // Clean up completed jobs after 1 hour
+        removeOnFail: false, // Keep failed jobs for debugging
+      },
+      settings: {
+        maxStalledCount: 3, // Max times a job can be recovered from stalled state
+        stalledInterval: 30000, // Check for stalled jobs every 30 seconds
+        lockDuration: 60000, // Job lock duration: 60 seconds
+      },
+    });
 
 /**
- * Process email jobs
+ * Process email jobs (only for real queue)
  * 
  * Concurrency: Process up to 10 emails simultaneously
  */
-emailQueue.process(EMAIL_QUEUE_CONCURRENCY, async (job: Job<EmailJobData>) => {
-  const { to, subject, template, variables, from, userId, tenantId, category } = job.data;
+if (!isRedisDisabled && emailQueue instanceof Bull) {
+  (emailQueue as Queue<EmailJobData>).process(EMAIL_QUEUE_CONCURRENCY, async (job: Job<EmailJobData>) => {
+    const { to, subject, template, variables, from, userId, tenantId, category } = job.data;
 
-  try {
-    console.log(`📧 Processing email job ${job.id}: ${template} to ${to}`);
+    try {
+      console.log(`📧 Processing email job ${job.id}: ${template} to ${to}`);
 
-    // Send email using direct email service
-    await sendEmailDirect({
-      to,
-      subject,
-      template,
-      variables,
-      from,
-      userId,
-      tenantId,
-      category,
-    });
+      // Send email using direct email service
+      await sendEmailDirect({
+        to,
+        subject,
+        template,
+        variables,
+        from,
+        userId,
+        tenantId,
+        category,
+      });
 
-    console.log(`✅ Email job ${job.id} completed successfully`);
-    return { success: true, jobId: job.id, to, template };
-  } catch (error) {
-    console.error(`❌ Email job ${job.id} failed:`, error);
+      console.log(`✅ Email job ${job.id} completed successfully`);
+      return { success: true, jobId: job.id, to, template };
+    } catch (error) {
+      console.error(`❌ Email job ${job.id} failed:`, error);
 
-    // Log failure for monitoring
-    if (job.attemptsMade < (job.opts.attempts || 5)) {
-      console.log(`⏳ Email job ${job.id} will retry (attempt ${job.attemptsMade + 1}/${job.opts.attempts})`);
-    } else {
-      console.error(`💀 Email job ${job.id} moved to dead letter queue after ${job.attemptsMade} attempts`);
+      // Log failure for monitoring
+      if (job.attemptsMade < (job.opts.attempts || 5)) {
+        console.log(`⏳ Email job ${job.id} will retry (attempt ${job.attemptsMade + 1}/${job.opts.attempts})`);
+      } else {
+        console.error(`💀 Email job ${job.id} moved to dead letter queue after ${job.attemptsMade} attempts`);
+      }
+
+      throw error; // Re-throw to trigger retry logic
     }
+  });
 
-    throw error; // Re-throw to trigger retry logic
-  }
-});
+  /**
+   * Queue event handlers (only for real queue)
+   */
+  emailQueue.on('completed', (job: Job, result: any) => {
+    console.log(`✅ Job ${job.id} completed:`, result);
+  });
 
-/**
- * Queue event handlers
- */
-emailQueue.on('completed', (job: Job, result: any) => {
-  console.log(`✅ Job ${job.id} completed:`, result);
-});
+  emailQueue.on('failed', (job: Job, error: Error) => {
+    console.error(`❌ Job ${job.id} failed:`, error.message);
+    
+    // If all retries exhausted, log to dead letter queue
+    if (job.attemptsMade >= (job.opts.attempts || 5)) {
+      console.error(`💀 Job ${job.id} dead letter:`, {
+        to: job.data.to,
+        template: job.data.template,
+        attempts: job.attemptsMade,
+        error: error.message,
+      });
+    }
+  });
 
-emailQueue.on('failed', (job: Job, error: Error) => {
-  console.error(`❌ Job ${job.id} failed:`, error.message);
-  
-  // If all retries exhausted, log to dead letter queue
-  if (job.attemptsMade >= (job.opts.attempts || 5)) {
-    console.error(`💀 Job ${job.id} dead letter:`, {
-      to: job.data.to,
-      template: job.data.template,
-      attempts: job.attemptsMade,
-      error: error.message,
-    });
-  }
-});
+  emailQueue.on('stalled', (job: Job) => {
+    console.warn(`⚠️ Job ${job.id} stalled (possibly crashed worker)`);
+  });
 
-emailQueue.on('stalled', (job: Job) => {
-  console.warn(`⚠️ Job ${job.id} stalled (possibly crashed worker)`);
-});
+  emailQueue.on('active', (job: Job) => {
+    console.log(`🔄 Job ${job.id} started processing`);
+  });
 
-emailQueue.on('active', (job: Job) => {
-  console.log(`🔄 Job ${job.id} started processing`);
-});
-
-emailQueue.on('error', (error: Error) => {
-  console.error('❌ Queue error:', error);
-});
+  emailQueue.on('error', (error: Error) => {
+    console.error('❌ Queue error:', error);
+  });
+}
 
 /**
  * Add email to queue
  * 
  * @param emailData - Email job data
  * @param options - Job options (priority, delay, etc.)
- * @returns Job instance
+ * @returns Job instance or mock job
  */
 export async function queueEmail(
   emailData: EmailJobData,
   options?: JobOptions
-): Promise<Job<EmailJobData>> {
+): Promise<Job<EmailJobData> | { id: string; data: EmailJobData }> {
   const priority = emailData.priority || 'normal';
   const priorityValue = {
     high: 1,

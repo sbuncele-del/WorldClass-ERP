@@ -1,0 +1,125 @@
+.entity-switcher-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.entity-switcher-button {
+  height: auto !important;
+  padding: 6px 12px !important;
+  border-radius: 8px !important;
+  display: flex;
+  align-items: center;
+}
+
+.entity-switcher-button.subsidiary-mode {
+  background: linear-gradient(135deg, #52c41a 0%, #389e0d 100%) !important;
+  border-color: #52c41a !important;
+}
+
+.entity-switcher-button.subsidiary-mode:hover {
+  background: linear-gradient(135deg, #73d13d 0%, #52c41a 100%) !important;
+}
+
+.entity-button-text {
+  text-align: left;
+  max-width: 180px;
+}
+
+.entity-button-text .ant-typography {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.subsidiary-indicator {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.entity-switcher-loading {
+  padding: 8px 16px;
+}
+
+/* Dropdown styles */
+.entity-switcher-dropdown {
+  min-width: 320px !important;
+}
+
+.entity-switcher-dropdown .ant-dropdown-menu {
+  padding: 8px !important;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.entity-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 4px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.entity-menu-item:hover {
+  background: #f5f5f5;
+}
+
+.entity-menu-item.active {
+  background: #e6f7ff;
+}
+
+.entity-menu-item.holding {
+  background: #fff7e6;
+  border: 1px dashed #faad14;
+  margin-bottom: 4px;
+}
+
+.entity-menu-item.holding:hover {
+  background: #fff1b8;
+}
+
+.entity-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.entity-info .ant-typography {
+  line-height: 1.4;
+}
+
+.entity-path {
+  padding: 4px 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .entity-menu-item:hover {
+    background: #1f1f1f;
+  }
+  
+  .entity-menu-item.active {
+    background: #111d2c;
+  }
+  
+  .entity-menu-item.holding {
+    background: #2b2111;
+    border-color: #d89614;
+  }
+}

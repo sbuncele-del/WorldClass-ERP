@@ -37,33 +37,46 @@ export const getAllProjects = async (req: TenantRequest, res: Response) => {
       limit = '20'
     } = req.query;
 
-    // Simple query using the projects table
+    // Query from client_projects table (practice management projects)
     let query = `
       SELECT 
-        p.id,
-        p.project_name,
-        p.status,
-        p.created_at
-      FROM projects p
-      WHERE p.tenant_id = $1
+        cp.project_id as id,
+        cp.project_id,
+        cp.project_number,
+        cp.project_name,
+        cp.project_type,
+        cp.status,
+        cp.priority,
+        cp.customer_id,
+        cp.start_date,
+        cp.end_date,
+        cp.budget,
+        cp.estimated_hours,
+        cp.actual_hours,
+        cp.description,
+        cp.completion_percentage,
+        cp.created_at,
+        cp.updated_at
+      FROM client_projects cp
+      WHERE cp.tenant_id = $1
     `;
 
     const params: any[] = [tenantId];
     let paramCount = 2;
 
     if (status) {
-      query += ` AND p.status = $${paramCount}`;
+      query += ` AND cp.status = $${paramCount}`;
       params.push(status);
       paramCount++;
     }
 
     if (search) {
-      query += ` AND p.project_name ILIKE $${paramCount}`;
+      query += ` AND cp.project_name ILIKE $${paramCount}`;
       params.push(`%${search}%`);
       paramCount++;
     }
 
-    query += ` ORDER BY p.created_at DESC`;
+    query += ` ORDER BY cp.created_at DESC`;
 
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
     query += ` LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
@@ -73,7 +86,7 @@ export const getAllProjects = async (req: TenantRequest, res: Response) => {
 
     // Get total count
     const countResult = await pool.query(
-      `SELECT COUNT(*) FROM projects WHERE tenant_id = $1`,
+      `SELECT COUNT(*) FROM client_projects WHERE tenant_id = $1`,
       [tenantId]
     );
 

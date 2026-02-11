@@ -90,6 +90,7 @@ import projectsRoutes from './routes/projects.routes';
 import proposalsRoutes from './routes/proposals.routes';
 import communicationsRoutes from './routes/communications.routes';
 import calendarRoutes from './routes/calendar.routes';
+import emailIntegrationRoutes from './routes/email-integration.routes';
 // Industry routes removed - focusing on core accounting
 
 // Validate environment variables
@@ -1642,6 +1643,7 @@ v1Router.use('/projects', apiLimiter, projectsRoutes); // Project Management API
 v1Router.use('/proposals', apiLimiter, proposalsRoutes); // Proposals & Quotes API
 v1Router.use('/communications', apiLimiter, communicationsRoutes); // Communications Hub API
 v1Router.use('/calendar', apiLimiter, calendarRoutes); // Calendar & Events API
+v1Router.use('/email', apiLimiter, emailIntegrationRoutes); // IMAP/SMTP Email Integration (CommunicationsHub)
 // Industry routes removed - focusing on core accounting
 
 // V2 Routes - Tenant-Hardened API (multi-tenant secure)

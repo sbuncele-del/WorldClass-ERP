@@ -98,14 +98,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false }) => {
             <span className="sidebar-icon">📊</span>
             <span className="sidebar-label">Financial Accounting</span>
           </Link>
-          <Link to="/cash-management" className={`sidebar-item ${isActive('/cash-management') ? 'active' : ''}`}>
-            <span className="sidebar-icon">💰</span>
-            <span className="sidebar-label">Cash Management</span>
-          </Link>
-          <Link to="/treasury" className={`sidebar-item ${isActive('/treasury') ? 'active' : ''}`}>
-            <span className="sidebar-icon">🏦</span>
-            <span className="sidebar-label">Treasury Management</span>
-          </Link>
+
           <Link to="/reports" className={`sidebar-item ${isActive('/reports') ? 'active' : ''}`}>
             <span className="sidebar-icon">📈</span>
             <span className="sidebar-label">Reports & Analytics</span>
