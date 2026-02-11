@@ -365,7 +365,7 @@ export const getMyTasks = async (req: TenantRequest, res: Response) => {
 
     // Get employee_id for current user
     const employeeResult = await pool.query(
-      'SELECT employee_id FROM employees WHERE user_id = $1 AND tenant_id = $2',
+      'SELECT id as employee_id FROM hr_employees WHERE user_id = $1 AND tenant_id = $2',
       [userId, tenantId]
     );
 

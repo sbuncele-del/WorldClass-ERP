@@ -53,20 +53,20 @@ router.get('/workspace', async (req: any, res) => {
 
     // Get recent projects
     const recentProjectsResult = await query(`
-      SELECT id, code, name, status, priority, progress, budget, spent, start_date, end_date
-      FROM projects 
+      SELECT id, project_code as code, project_name as name, status, priority, progress, budget, spent, start_date, end_date
+      FROM projects
       WHERE tenant_id = $1 AND is_active = true
-      ORDER BY created_at DESC 
+      ORDER BY created_at DESC
       LIMIT 5
     `, [tenantId]);
 
     // Get my tasks (assigned to current user)
     const userId = req.user?.id;
     const myTasksResult = await query(`
-      SELECT t.id, t.title, t.status, t.priority, t.due_date, p.name as project_name
+      SELECT t.id, t.task_name as title, t.status, t.priority, t.due_date, p.project_name as project_name
       FROM project_tasks t
       JOIN projects p ON t.project_id = p.id
-      WHERE t.tenant_id = $1 AND t.assignee_id = $2 AND t.status != 'done'
+      WHERE t.tenant_id = $1 AND t.assigned_to = $2 AND t.status != 'done'
       ORDER BY t.due_date ASC NULLS LAST
       LIMIT 10
     `, [tenantId, userId]);
@@ -134,12 +134,13 @@ router.get('/', async (req: any, res) => {
 
     const result = await query(`
       SELECT p.id, p.project_code as code, p.project_name as name, p.description, p.status,
-        p.start_date, p.end_date, p.budget, p.manager_id, p.created_at, p.updated_at,
-        u.full_name as manager_name,
-        0 as task_count,
-        0 as completed_tasks
+        p.priority, p.project_type, p.start_date, p.end_date, p.budget, p.spent, p.progress,
+        p.project_manager_id, p.created_at, p.updated_at,
+        u.first_name || ' ' || u.last_name as manager_name,
+        (SELECT COUNT(*) FROM project_tasks t WHERE t.project_id = p.id AND t.tenant_id = p.tenant_id) as task_count,
+        (SELECT COUNT(*) FROM project_tasks t WHERE t.project_id = p.id AND t.tenant_id = p.tenant_id AND t.status = 'done') as completed_tasks
       FROM projects p
-      LEFT JOIN users u ON p.manager_id = u.id
+      LEFT JOIN users u ON p.project_manager_id = u.id
       ${whereClause}
       ORDER BY p.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -168,9 +169,9 @@ router.get('/:id', async (req: any, res) => {
     const { id } = req.params;
 
     const result = await query(`
-      SELECT p.*, u.name as manager_name
+      SELECT p.*, u.first_name || ' ' || u.last_name as manager_name
       FROM projects p
-      LEFT JOIN users u ON p.manager_id = u.id
+      LEFT JOIN users u ON p.project_manager_id = u.id
       WHERE p.id = $1 AND p.tenant_id = $2
     `, [id, tenantId]);
 
@@ -180,12 +181,12 @@ router.get('/:id', async (req: any, res) => {
 
     // Get tasks for this project
     const tasksResult = await query(`
-      SELECT t.*, u.name as assignee_name
+      SELECT t.*, u.first_name || ' ' || u.last_name as assignee_name
       FROM project_tasks t
-      LEFT JOIN users u ON t.assignee_id = u.id
-      WHERE t.project_id = $1
+      LEFT JOIN users u ON t.assigned_to = u.id
+      WHERE t.project_id = $1 AND t.tenant_id = $2
       ORDER BY t.created_at DESC
-    `, [id]);
+    `, [id, tenantId]);
 
     res.json({
       success: true,
@@ -211,7 +212,7 @@ router.post('/', async (req: any, res) => {
     }
 
     const result = await query(`
-      INSERT INTO projects (tenant_id, code, name, description, client_name, status, priority, project_type, start_date, end_date, budget, manager_id)
+      INSERT INTO projects (tenant_id, project_code, project_name, description, client_name, status, priority, project_type, start_date, end_date, budget, project_manager_id)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `, [tenantId, code, name, description, client_name, status || 'planning', priority || 'medium', project_type || 'internal', start_date, end_date, budget || 0, manager_id]);
@@ -238,7 +239,7 @@ router.put('/:id', async (req: any, res) => {
 
     const result = await query(`
       UPDATE projects SET
-        name = COALESCE($3, name),
+        project_name = COALESCE($3, project_name),
         description = COALESCE($4, description),
         client_name = COALESCE($5, client_name),
         status = COALESCE($6, status),
@@ -249,7 +250,7 @@ router.put('/:id', async (req: any, res) => {
         budget = COALESCE($11, budget),
         spent = COALESCE($12, spent),
         progress = COALESCE($13, progress),
-        manager_id = COALESCE($14, manager_id),
+        project_manager_id = COALESCE($14, project_manager_id),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $1 AND tenant_id = $2
       RETURNING *
@@ -309,9 +310,9 @@ router.get('/:projectId/tasks', async (req: any, res) => {
     }
 
     const result = await query(`
-      SELECT t.*, u.name as assignee_name
+      SELECT t.*, u.first_name || ' ' || u.last_name as assignee_name
       FROM project_tasks t
-      LEFT JOIN users u ON t.assignee_id = u.id
+      LEFT JOIN users u ON t.assigned_to = u.id
       ${whereClause}
       ORDER BY t.created_at DESC
     `, params);
@@ -335,7 +336,7 @@ router.post('/:projectId/tasks', async (req: any, res) => {
     }
 
     const result = await query(`
-      INSERT INTO project_tasks (tenant_id, project_id, title, description, status, priority, assignee_id, due_date, estimated_hours)
+      INSERT INTO project_tasks (tenant_id, project_id, task_name, description, status, priority, assigned_to, due_date, estimated_hours)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
     `, [tenantId, projectId, title, description, status || 'todo', priority || 'medium', assignee_id, due_date, estimated_hours || 0]);
@@ -356,11 +357,11 @@ router.put('/tasks/:taskId', async (req: any, res) => {
 
     const result = await query(`
       UPDATE project_tasks SET
-        title = COALESCE($3, title),
+        task_name = COALESCE($3, task_name),
         description = COALESCE($4, description),
         status = COALESCE($5, status),
         priority = COALESCE($6, priority),
-        assignee_id = COALESCE($7, assignee_id),
+        assigned_to = COALESCE($7, assigned_to),
         due_date = COALESCE($8, due_date),
         estimated_hours = COALESCE($9, estimated_hours),
         actual_hours = COALESCE($10, actual_hours)

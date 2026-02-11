@@ -84,10 +84,10 @@ export async function getWorkspace(req: AuthenticatedRequest, res: Response): Pr
 
     // Get recent projects
     const recentProjects = await query(`
-      SELECT p.id, p.code, p.name, p.status, p.progress, p.end_date,
-             u.full_name as manager_name
+      SELECT p.id, p.project_code as code, p.project_name as name, p.status, p.progress, p.end_date,
+             u.first_name || ' ' || u.last_name as manager_name
       FROM projects p
-      LEFT JOIN users u ON p.manager_id = u.id
+      LEFT JOIN users u ON p.project_manager_id = u.id
       WHERE p.tenant_id = $1 AND p.is_active = true
       ORDER BY p.updated_at DESC
       LIMIT 5
@@ -95,7 +95,7 @@ export async function getWorkspace(req: AuthenticatedRequest, res: Response): Pr
 
     // Get upcoming deadlines
     const upcomingDeadlines = await query(`
-      SELECT p.id, p.code, p.name, p.end_date,
+      SELECT p.id, p.project_code as code, p.project_name as name, p.end_date,
              (p.end_date - CURRENT_DATE) as days_remaining
       FROM projects p
       WHERE p.tenant_id = $1 
@@ -182,13 +182,14 @@ export async function listProjects(req: AuthenticatedRequest, res: Response): Pr
     const total = parseInt(countResult.rows[0].count);
 
     const result = await query(`
-      SELECT p.id, p.project_code as code, p.project_name as name, p.description, p.status, 
-        p.start_date, p.end_date, p.budget, p.manager_id, p.created_at, p.updated_at, p.tenant_id,
-        u.full_name as manager_name,
-        0 as task_count,
-        0 as completed_tasks
+      SELECT p.id, p.project_code as code, p.project_name as name, p.description, p.status,
+        p.priority, p.project_type, p.start_date, p.end_date, p.budget, p.spent, p.progress,
+        p.project_manager_id, p.created_at, p.updated_at, p.tenant_id,
+        u.first_name || ' ' || u.last_name as manager_name,
+        (SELECT COUNT(*) FROM project_tasks t WHERE t.project_id = p.id AND t.tenant_id = p.tenant_id) as task_count,
+        (SELECT COUNT(*) FROM project_tasks t WHERE t.project_id = p.id AND t.tenant_id = p.tenant_id AND t.status = 'done') as completed_tasks
       FROM projects p
-      LEFT JOIN users u ON p.manager_id = u.id
+      LEFT JOIN users u ON p.project_manager_id = u.id
       ${whereClause}
       ORDER BY p.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -227,9 +228,9 @@ export async function getProject(req: AuthenticatedRequest, res: Response): Prom
 
   try {
     const result = await query(`
-      SELECT p.*, u.full_name as manager_name
+      SELECT p.*, u.first_name || ' ' || u.last_name as manager_name
       FROM projects p
-      LEFT JOIN users u ON p.manager_id = u.id
+      LEFT JOIN users u ON p.project_manager_id = u.id
       WHERE p.id = $1 AND p.tenant_id = $2
     `, [id, tenantId]);
 
@@ -240,9 +241,9 @@ export async function getProject(req: AuthenticatedRequest, res: Response): Prom
 
     // Get tasks for this project
     const tasksResult = await query(`
-      SELECT t.*, u.full_name as assignee_name
+      SELECT t.*, u.first_name || ' ' || u.last_name as assignee_name
       FROM project_tasks t
-      LEFT JOIN users u ON t.assignee_id = u.id
+      LEFT JOIN users u ON t.assigned_to = u.id
       WHERE t.project_id = $1 AND t.tenant_id = $2
       ORDER BY t.created_at DESC
     `, [id, tenantId]);
@@ -273,9 +274,9 @@ export async function createProject(req: AuthenticatedRequest, res: Response): P
     return;
   }
 
-  const { 
-    code, name, description, client_name, status, priority, 
-    project_type, start_date, end_date, budget, manager_id 
+  const {
+    code, name, description, client_name, status, priority,
+    project_type, start_date, end_date, budget, manager_id
   } = req.body;
 
   if (!code || !name) {
@@ -286,15 +287,15 @@ export async function createProject(req: AuthenticatedRequest, res: Response): P
   try {
     const result = await query(`
       INSERT INTO projects (
-        tenant_id, code, name, description, client_name, status, 
-        priority, project_type, start_date, end_date, budget, manager_id
+        tenant_id, project_code, project_name, description, client_name, status,
+        priority, project_type, start_date, end_date, budget, project_manager_id
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `, [
-      tenantId, code, name, description, client_name, 
-      status || 'planning', priority || 'medium', 
-      project_type || 'internal', start_date, end_date, 
+      tenantId, code, name, description, client_name,
+      status || 'planning', priority || 'medium',
+      project_type || 'internal', start_date, end_date,
       budget || 0, manager_id
     ]);
 
@@ -326,15 +327,15 @@ export async function updateProject(req: AuthenticatedRequest, res: Response): P
   }
 
   const { id } = req.params;
-  const { 
-    name, description, client_name, status, priority, 
-    project_type, start_date, end_date, budget, spent, progress, manager_id 
+  const {
+    name, description, client_name, status, priority,
+    project_type, start_date, end_date, budget, spent, progress, manager_id
   } = req.body;
 
   try {
     const result = await query(`
       UPDATE projects SET
-        name = COALESCE($3, name),
+        project_name = COALESCE($3, project_name),
         description = COALESCE($4, description),
         client_name = COALESCE($5, client_name),
         status = COALESCE($6, status),
@@ -345,11 +346,11 @@ export async function updateProject(req: AuthenticatedRequest, res: Response): P
         budget = COALESCE($11, budget),
         spent = COALESCE($12, spent),
         progress = COALESCE($13, progress),
-        manager_id = COALESCE($14, manager_id),
+        project_manager_id = COALESCE($14, project_manager_id),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $1 AND tenant_id = $2
       RETURNING *
-    `, [id, tenantId, name, description, client_name, status, priority, 
+    `, [id, tenantId, name, description, client_name, status, priority,
         project_type, start_date, end_date, budget, spent, progress, manager_id]);
 
     if (result.rows.length === 0) {
@@ -438,9 +439,9 @@ export async function listTasks(req: AuthenticatedRequest, res: Response): Promi
     }
 
     const result = await query(`
-      SELECT t.*, u.full_name as assignee_name
+      SELECT t.*, u.first_name || ' ' || u.last_name as assignee_name
       FROM project_tasks t
-      LEFT JOIN users u ON t.assignee_id = u.id
+      LEFT JOIN users u ON t.assigned_to = u.id
       ${whereClause}
       ORDER BY t.created_at DESC
     `, params);
@@ -486,14 +487,14 @@ export async function createTask(req: AuthenticatedRequest, res: Response): Prom
 
     const result = await query(`
       INSERT INTO project_tasks (
-        tenant_id, project_id, title, description, status, 
-        priority, assignee_id, due_date, estimated_hours
+        tenant_id, project_id, task_name, description, status,
+        priority, assigned_to, due_date, estimated_hours
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *
     `, [
-      tenantId, projectId, title, description, 
-      status || 'todo', priority || 'medium', 
+      tenantId, projectId, title, description,
+      status || 'todo', priority || 'medium',
       assignee_id, due_date, estimated_hours || 0
     ]);
 
@@ -523,11 +524,11 @@ export async function updateTask(req: AuthenticatedRequest, res: Response): Prom
   try {
     const result = await query(`
       UPDATE project_tasks SET
-        title = COALESCE($3, title),
+        task_name = COALESCE($3, task_name),
         description = COALESCE($4, description),
         status = COALESCE($5, status),
         priority = COALESCE($6, priority),
-        assignee_id = COALESCE($7, assignee_id),
+        assigned_to = COALESCE($7, assigned_to),
         due_date = COALESCE($8, due_date),
         estimated_hours = COALESCE($9, estimated_hours),
         actual_hours = COALESCE($10, actual_hours)
@@ -596,12 +597,12 @@ export async function getTask(req: AuthenticatedRequest, res: Response): Promise
 
   try {
     const result = await query(`
-      SELECT t.*, 
-             u.full_name as assignee_name,
-             p.name as project_name,
-             p.code as project_code
+      SELECT t.*,
+             u.first_name || ' ' || u.last_name as assignee_name,
+             p.project_name as project_name,
+             p.project_code as project_code
       FROM project_tasks t
-      LEFT JOIN users u ON t.assignee_id = u.id
+      LEFT JOIN users u ON t.assigned_to = u.id
       LEFT JOIN projects p ON t.project_id = p.id
       WHERE t.id = $1 AND t.tenant_id = $2
     `, [taskId, tenantId]);

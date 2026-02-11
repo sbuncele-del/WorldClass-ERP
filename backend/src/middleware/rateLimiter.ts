@@ -18,7 +18,7 @@ try {
   const { getRedisClient } = require('../config/redis-connection');
   const redisClient = getRedisClient();
   
-  if (redisClient) {
+  if (redisClient && typeof (redisClient as any).call === 'function') {
     createStore = (prefix: string) => {
       return new RedisStore({
         sendCommand: (...args: string[]) => (redisClient as any).call(...args),
@@ -26,6 +26,8 @@ try {
       });
     };
     console.log('📊 Rate limiter using Redis store');
+  } else if (redisClient) {
+    console.log('📊 Rate limiter using memory store (Redis client incompatible with rate-limit-redis)');
   }
 } catch (e) {
   console.log('📊 Rate limiter using memory store (Redis not available)');
