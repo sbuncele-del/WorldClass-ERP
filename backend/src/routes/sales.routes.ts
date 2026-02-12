@@ -81,7 +81,9 @@ router.get('/invoices/:id', salesController.getInvoice);
 router.post('/invoices', salesController.createInvoice);
 router.post('/invoices/from-order/:orderId', salesController.createInvoiceFromOrder);
 router.post('/invoices/:id/send', salesController.sendInvoice);
+router.post('/invoices/:id/approve', salesController.approveInvoice);
 router.post('/invoices/:id/void', salesController.voidInvoice);
+router.post('/invoices/:id/convert-proforma', salesController.convertProformaToInvoice);
 
 // ============================================================================
 // REPORTS (v2 - Repository Pattern)

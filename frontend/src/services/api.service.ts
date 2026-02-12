@@ -220,9 +220,11 @@ export const workspaceApi = {
     getLeads: (params?: any) => apiGet('/api/sales/leads', params),
     getOpportunities: (params?: any) => apiGet('/api/sales/opportunities', params),
     getCustomers: (params?: any) => apiGet('/api/sales/customers', params),
+    getCustomer: (id: number) => apiGet(`/api/sales/customers/${id}`),
     getOrders: (params?: any) => apiGet('/api/sales/orders', params),
     getQuotations: (params?: any) => apiGet('/api/sales/quotations', params),
     getInvoices: (params?: any) => apiGet('/api/sales/invoices', params),
+    getInvoice: (id: number) => apiGet(`/api/sales/invoices/${id}`),
     createLead: (data: any) => apiPost('/api/sales/leads', data),
     updateLead: (id: number, data: any) => apiPut(`/api/sales/leads/${id}`, data),
     createOpportunity: (data: any) => apiPost('/api/sales/opportunities', data),
@@ -234,6 +236,11 @@ export const workspaceApi = {
     createOrder: (data: any) => apiPost('/api/sales/orders', data),
     createQuotation: (data: any) => apiPost('/api/sales/quotations', data),
     createInvoice: (data: any) => apiPost('/api/sales/invoices', data),
+    sendInvoice: (id: number) => apiPost(`/api/sales/invoices/${id}/send`, {}),
+    approveInvoice: (id: number) => apiPost(`/api/sales/invoices/${id}/approve`, {}),
+    voidInvoice: (id: number, reason?: string) => apiPost(`/api/sales/invoices/${id}/void`, { reason }),
+    convertProforma: (id: number) => apiPost(`/api/sales/invoices/${id}/convert-proforma`, {}),
+    getCompanySettings: () => apiGet('/api/v2/settings/tenant'),
   },
 
   // Purchase Workspace

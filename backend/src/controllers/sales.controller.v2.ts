@@ -590,11 +590,28 @@ export const createInvoice = async (req: TenantRequest, res: Response) => {
     const ctx = getTenantContext(req);
     const invoiceData = req.body;
     const lines = invoiceData.lines || [];
+    const isProforma = invoiceData.invoice_type === 'proforma';
+    const isVatRegistered = invoiceData.is_vat_registered !== false; // default true
+    const vatRate = isVatRegistered ? (invoiceData.vat_rate || 15) : 0;
 
-    // Calculate totals from lines
-    const subtotal = lines.reduce((sum: number, line: any) => sum + (parseFloat(line.line_total) || 0), 0);
-    const taxAmount = lines.reduce((sum: number, line: any) => sum + (parseFloat(line.vat_amount) || 0), 0);
+    // Calculate totals from lines (respect per-line VAT or use global rate)
+    const subtotal = lines.reduce((sum: number, line: any) => {
+      const qty = parseFloat(line.quantity) || 1;
+      const price = parseFloat(line.unit_price) || 0;
+      return sum + (qty * price);
+    }, 0);
+    
+    const taxAmount = isVatRegistered ? lines.reduce((sum: number, line: any) => {
+      const qty = parseFloat(line.quantity) || 1;
+      const price = parseFloat(line.unit_price) || 0;
+      const lineVatRate = parseFloat(line.tax_rate ?? line.vat_rate ?? vatRate) || 0;
+      return sum + ((qty * price) * lineVatRate / 100);
+    }, 0) : 0;
+    
     const totalAmount = subtotal + taxAmount;
+
+    // Determine status: proforma invoices start as 'proforma', regular as 'draft'
+    const status = isProforma ? 'proforma' : (invoiceData.status || 'draft');
 
     const invoice = await invoiceRepository.createInvoiceWithLines(
       ctx,
@@ -603,16 +620,23 @@ export const createInvoice = async (req: TenantRequest, res: Response) => {
         subtotal,
         tax_amount: taxAmount,
         total_amount: totalAmount,
-        status: invoiceData.status || 'draft',
+        status,
         amount_paid: invoiceData.amount_paid || 0
       },
-      lines
+      lines.map((line: any) => ({
+        ...line,
+        tax_rate: isVatRegistered ? (line.tax_rate ?? line.vat_rate ?? vatRate) : 0,
+        tax_amount: isVatRegistered
+          ? ((parseFloat(line.quantity) || 1) * (parseFloat(line.unit_price) || 0)) * ((parseFloat(line.tax_rate ?? line.vat_rate ?? vatRate)) / 100)
+          : 0,
+      }))
     );
 
+    const invoiceLabel = isProforma ? 'Pro-forma invoice' : 'Invoice';
     res.status(201).json({
       success: true,
       data: invoice,
-      message: 'Invoice created successfully'
+      message: `${invoiceLabel} created successfully`
     });
   } catch (error) {
     console.error('Error creating invoice:', error);
@@ -740,6 +764,77 @@ export const voidInvoice = async (req: TenantRequest, res: Response) => {
     res.status(500).json({
       success: false,
       message: 'Failed to void invoice',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+/**
+ * Approve an invoice — transitions from DRAFT to APPROVED (ready to send)
+ */
+export const approveInvoice = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+
+    const invoice = await invoiceRepository.findById(ctx, id);
+    if (!invoice) {
+      return res.status(404).json({ success: false, message: 'Invoice not found' });
+    }
+
+    const status = (invoice.status || '').toLowerCase();
+    if (status !== 'draft') {
+      return res.status(400).json({ success: false, message: 'Only draft invoices can be approved' });
+    }
+
+    const updatedInvoice = await invoiceRepository.update(ctx, id, { status: 'approved' as any });
+    res.json({ success: true, data: updatedInvoice, message: 'Invoice approved successfully' });
+  } catch (error) {
+    console.error('Error approving invoice:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to approve invoice',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+/**
+ * Convert a pro-forma invoice to a tax invoice.
+ * Accounting: Reverses DR AR / CR Deferred Revenue and posts DR AR / CR Revenue.
+ */
+export const convertProformaToInvoice = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+
+    const invoice = await invoiceRepository.findById(ctx, id);
+    if (!invoice) {
+      return res.status(404).json({ success: false, message: 'Invoice not found' });
+    }
+
+    const invoiceType = (invoice as any).invoice_type || '';
+    const status = (invoice.status || '').toLowerCase();
+    if (invoiceType !== 'proforma' && status !== 'proforma') {
+      return res.status(400).json({ success: false, message: 'Only pro-forma invoices can be converted' });
+    }
+
+    // Update to tax invoice  — status becomes POSTED (revenue recognised)
+    const updatedInvoice = await invoiceRepository.update(ctx, id, {
+      status: 'posted' as any,
+      notes: `${invoice.notes || ''}\n[Converted from Pro-forma to Tax Invoice on ${new Date().toISOString().split('T')[0]}]`
+    });
+
+    res.json({
+      success: true,
+      data: updatedInvoice,
+      message: 'Pro-forma converted to tax invoice. Revenue now recognised.'
+    });
+  } catch (error) {
+    console.error('Error converting proforma:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to convert pro-forma invoice',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
