@@ -430,6 +430,95 @@ export const getProjectsDashboard = async (req: TenantRequest, res: Response) =>
   }
 };
 
+// ============================================================================
+// PROJECT UPDATES (client-facing activity feed)
+// ============================================================================
+
+export const getProjectUpdates = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { project_id, limit = '50' } = req.query;
+
+    let query = `
+      SELECT pu.*, 
+        COALESCE(u.first_name || ' ' || u.last_name, u.email, 'System') as author_name,
+        cp.project_name
+      FROM project_updates pu
+      LEFT JOIN users u ON u.id = pu.created_by AND u.tenant_id = pu.tenant_id
+      LEFT JOIN client_projects cp ON cp.project_id = pu.project_id AND cp.tenant_id = pu.tenant_id
+      WHERE pu.tenant_id = $1
+    `;
+    const params: any[] = [tenantId];
+
+    if (project_id) {
+      params.push(project_id);
+      query += ` AND pu.project_id = $${params.length}`;
+    }
+    query += ` ORDER BY pu.created_at DESC LIMIT $${params.length + 1}`;
+    params.push(Number(limit));
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error: any) {
+    if (error.message === 'Tenant ID not found') {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    console.error('Error fetching project updates:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch updates' });
+  }
+};
+
+export const createProjectUpdate = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { project_id, update_type, title, content, is_client_visible } = req.body;
+
+    if (!project_id || !title) {
+      return res.status(400).json({ success: false, message: 'project_id and title are required' });
+    }
+
+    const result = await pool.query(`
+      INSERT INTO project_updates (tenant_id, project_id, update_type, title, content, is_client_visible, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *
+    `, [tenantId, project_id, update_type || 'general', title, content || '', is_client_visible !== false, userId]);
+
+    // Also return author name
+    const update = result.rows[0];
+    if (userId) {
+      const userRes = await pool.query(`SELECT first_name, last_name, email FROM users WHERE id = $1 AND tenant_id = $2`, [userId, tenantId]);
+      if (userRes.rows.length > 0) {
+        const u = userRes.rows[0];
+        update.author_name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email;
+      }
+    }
+
+    res.status(201).json({ success: true, data: update });
+  } catch (error: any) {
+    if (error.message === 'Tenant ID not found') {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    console.error('Error creating project update:', error);
+    res.status(500).json({ success: false, message: 'Failed to create update' });
+  }
+};
+
+export const deleteProjectUpdate = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { id } = req.params;
+
+    await pool.query(`DELETE FROM project_updates WHERE id = $1 AND tenant_id = $2`, [id, tenantId]);
+    res.json({ success: true, message: 'Update deleted' });
+  } catch (error: any) {
+    if (error.message === 'Tenant ID not found') {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    console.error('Error deleting project update:', error);
+    res.status(500).json({ success: false, message: 'Failed to delete update' });
+  }
+};
+
 export default {
   getAllProjects,
   getProjectById,
@@ -437,5 +526,8 @@ export default {
   updateProject,
   addTeamMember,
   removeTeamMember,
-  getProjectsDashboard
+  getProjectsDashboard,
+  getProjectUpdates,
+  createProjectUpdate,
+  deleteProjectUpdate
 };

@@ -2327,11 +2327,14 @@ router.post('/practice/migrate-schema', async (req: any, res) => {
 // Projects
 router.get('/practice/projects', ProjectsV2.getAllProjects);
 router.get('/practice/projects/dashboard', ProjectsV2.getProjectsDashboard);
+router.get('/practice/projects/updates', ProjectsV2.getProjectUpdates);
 router.get('/practice/projects/:id', ProjectsV2.getProjectById);
 router.post('/practice/projects', ProjectsV2.createProject);
 router.put('/practice/projects/:id', ProjectsV2.updateProject);
 router.post('/practice/projects/:id/team', ProjectsV2.addTeamMember);
 router.delete('/practice/projects/:id/team/:userId', ProjectsV2.removeTeamMember);
+router.post('/practice/projects/updates', ProjectsV2.createProjectUpdate);
+router.delete('/practice/projects/updates/:id', ProjectsV2.deleteProjectUpdate);
 
 // Tasks
 router.get('/practice/tasks', TasksV2.getAllTasks);

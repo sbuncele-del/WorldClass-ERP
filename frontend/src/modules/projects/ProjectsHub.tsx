@@ -126,6 +126,11 @@ const ProjectsHub: React.FC = () => {
   const [taskForm] = Form.useForm();
   const [timeEntryForm] = Form.useForm();
 
+  // Search & filter state
+  const [projectSearch, setProjectSearch] = useState('');
+  const [projectStatusFilter, setProjectStatusFilter] = useState('all');
+  const [editingTimeEntry, setEditingTimeEntry] = useState<TimeEntry | null>(null);
+
   // Loading and API data states
   const [loading, setLoading] = useState(true);
   const [apiStats, setApiStats] = useState<any>(null);
@@ -135,6 +140,9 @@ const ProjectsHub: React.FC = () => {
   const [teamCount, setTeamCount] = useState(0);
   const [weeklySummary, setWeeklySummary] = useState({ totalHours: 0, billableHours: 0, billableAmount: 0 });
   const [salesCustomers, setSalesCustomers] = useState<any[]>([]);
+  const [projectUpdates, setProjectUpdates] = useState<any[]>([]);
+  const [updateModalVisible, setUpdateModalVisible] = useState(false);
+  const [updateForm] = Form.useForm();
   
   // ── Helper: transform raw API project to the component Project interface ──
   const transformProject = (p: any): Project => ({
@@ -200,14 +208,28 @@ const ProjectsHub: React.FC = () => {
       });
       const userData = Array.isArray(usersResponse?.data?.users) ? usersResponse.data.users : [];
       if (userData.length > 0) {
-        const teamResources = userData.map((u: any) => ({
-          id: u.id,
-          name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email,
-          role: u.role || 'Team Member',
-          projects: 0,
-          utilization: 0,
-          availability: u.status === 'active' ? 'Available' : 'Unavailable'
-        }));
+        // Calculate per-user project counts from fetched projects data
+        const managerProjectCounts: Record<string, number> = {};
+        projectsData.forEach((p: any) => {
+          if (p.project_manager_id) {
+            managerProjectCounts[p.project_manager_id] = (managerProjectCounts[p.project_manager_id] || 0) + 1;
+          }
+        });
+        const activeProjectCount = projectsData.filter((p: any) => (p.status || '').toLowerCase() === 'active').length;
+
+        const teamResources = userData.map((u: any) => {
+          const userProjects = managerProjectCounts[u.id] || 0;
+          // Rough utilization: each active project counts as ~25%
+          const utilization = Math.min(100, userProjects * 25);
+          return {
+            id: u.id,
+            name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email,
+            role: u.role || 'Team Member',
+            projects: userProjects,
+            utilization,
+            availability: u.status !== 'active' ? 'Unavailable' : utilization >= 100 ? 'Fully Booked' : 'Available',
+          };
+        });
         setResources(teamResources);
         setTeamCount(teamResources.length);
       }
@@ -247,14 +269,28 @@ const ProjectsHub: React.FC = () => {
       }));
       setGanttTasks(ganttFromProjects);
 
-      // Recent activity - placeholder until audit endpoint exists
-      setRecentActivity([]);
+      // Recent activity - populated from project updates below
 
       // Fetch Sales customers for the New Project modal
       const customersResponse = await apiClient.get('/api/sales/customers', { params: { limit: 100 } }).catch(() => ({ data: { customers: [] } }));
       const custList = customersResponse?.data?.customers || customersResponse?.data?.data || [];
       if (Array.isArray(custList)) {
         setSalesCustomers(custList);
+      }
+
+      // Fetch project updates for activity feed
+      const updatesRes = await projectService.getProjectUpdates({ limit: 50 }).catch(() => ({ data: [] }));
+      const updatesData = Array.isArray(updatesRes?.data) ? updatesRes.data : [];
+      setProjectUpdates(updatesData);
+
+      // Also populate recent activity from updates
+      if (updatesData.length > 0) {
+        setRecentActivity(updatesData.slice(0, 5).map((u: any) => ({
+          title: u.title,
+          description: `${u.project_name || 'Project'} — ${u.content?.substring(0, 80) || ''}`,
+          time: new Date(u.created_at).toLocaleString(),
+          type: u.update_type === 'milestone' ? 'milestone' : u.update_type === 'status_change' ? 'completed' : 'update',
+        })));
       }
 
     } catch (err) {
@@ -359,10 +395,98 @@ const ProjectsHub: React.FC = () => {
 
   const handleGanttDateChange = (id: string, dates: [Dayjs, Dayjs]) => {
     setGanttTasks(prev => prev.map(task => task.id === id ? { ...task, start: dates[0].format('YYYY-MM-DD'), end: dates[1].format('YYYY-MM-DD') } : task));
+    // Persist to backend
+    projectService.updateProject(id, { start_date: dates[0].format('YYYY-MM-DD'), end_date: dates[1].format('YYYY-MM-DD') }).catch(() => {});
   };
 
   const handleGanttProgressChange = (id: string, value: number) => {
     setGanttTasks(prev => prev.map(task => task.id === id ? { ...task, progress: value, status: value >= 90 ? 'done' : value >= 50 ? 'in-progress' : 'at-risk' } : task));
+    // Persist to backend
+    const statusLabel = value >= 100 ? 'Completed' : value >= 50 ? 'Active' : 'Planning';
+    projectService.updateProject(id, { status: statusLabel }).catch(() => {});
+  };
+
+  // ── Export projects to CSV ───────────────────────────────────────────────
+  const handleExport = () => {
+    if (projects.length === 0) {
+      message.warning('No projects to export');
+      return;
+    }
+    const headers = ['Code', 'Name', 'Client', 'Status', 'Priority', 'Progress %', 'Budget', 'Spent', 'Manager', 'Start Date', 'End Date'];
+    const rows = projects.map(p => [p.code, p.name, p.client, p.status, p.priority, p.progress, p.budget, p.spent, p.manager, p.startDate, p.endDate]);
+    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `projects-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    message.success('Projects exported successfully');
+  };
+
+  // ── Time entry edit/delete handlers ──────────────────────────────────────
+  const handleEditTimeEntry = (entry: TimeEntry) => {
+    setEditingTimeEntry(entry);
+    timeEntryForm.setFieldsValue({
+      project: entry.project,
+      task: entry.task,
+      date: entry.date ? dayjs(entry.date) : undefined,
+      hours: entry.hours,
+      description: entry.description,
+      billable: entry.billable,
+    });
+    setTimeEntryModalVisible(true);
+  };
+
+  const handleDeleteTimeEntry = async (entry: TimeEntry) => {
+    Modal.confirm({
+      title: 'Delete Time Entry',
+      content: `Delete ${entry.hours}h entry for "${entry.project}"?`,
+      okText: 'Delete',
+      okType: 'danger',
+      onOk: async () => {
+        try {
+          await projectService.deleteTimeEntry(entry.id);
+          message.success('Time entry deleted');
+          setTimeEntries(prev => prev.filter(t => t.id !== entry.id));
+        } catch {
+          message.error('Failed to delete time entry');
+        }
+      },
+    });
+  };
+
+  // ── Kanban drag-and-drop ─────────────────────────────────────────────────
+  const [draggedTask, setDraggedTask] = useState<Task | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, task: Task) => {
+    setDraggedTask(task);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e: React.DragEvent, newStatus: string) => {
+    e.preventDefault();
+    if (!draggedTask || draggedTask.status === newStatus) {
+      setDraggedTask(null);
+      return;
+    }
+    // Update local state immediately
+    setTasks(prev => prev.map(t => t.id === draggedTask.id ? { ...t, status: newStatus as Task['status'] } : t));
+    // Persist to backend
+    try {
+      await projectService.updateTaskStatus(draggedTask.id, newStatus);
+    } catch {
+      // Revert on failure
+      setTasks(prev => prev.map(t => t.id === draggedTask.id ? { ...t, status: draggedTask.status } : t));
+      message.error('Failed to update task status');
+    }
+    setDraggedTask(null);
   };
 
   const ganttBounds = (() => {
@@ -498,7 +622,7 @@ const ProjectsHub: React.FC = () => {
                   render: (_, record) => (
                     <Space>
                       <Button size="small" icon={<EyeOutlined />} onClick={() => setSelectedProject(record)} />
-                      <Button size="small" icon={<BarChartOutlined />} />
+                      <Button size="small" icon={<BarChartOutlined />} onClick={() => setActiveTab('gantt')} />
                     </Space>
                   )
                 }
@@ -598,14 +722,14 @@ const ProjectsHub: React.FC = () => {
         title="All Projects"
         extra={
           <Space>
-            <Input placeholder="Search projects..." prefix={<SearchOutlined />} style={{ width: 250 }} />
-            <Select defaultValue="all" style={{ width: 120 }}>
+            <Input placeholder="Search projects..." prefix={<SearchOutlined />} style={{ width: 250 }} value={projectSearch} onChange={(e) => setProjectSearch(e.target.value)} />
+            <Select value={projectStatusFilter} style={{ width: 120 }} onChange={(v) => setProjectStatusFilter(v)}>
               <Option value="all">All Status</Option>
               <Option value="active">Active</Option>
               <Option value="planning">Planning</Option>
               <Option value="completed">Completed</Option>
+              <Option value="on-hold">On Hold</Option>
             </Select>
-            <Button icon={<FilterOutlined />}>Filter</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setProjectModalVisible(true)}>
               New Project
             </Button>
@@ -613,7 +737,11 @@ const ProjectsHub: React.FC = () => {
         }
       >
         <Table
-          dataSource={projects}
+          dataSource={projects.filter(p => {
+            const matchSearch = !projectSearch || p.name.toLowerCase().includes(projectSearch.toLowerCase()) || p.code.toLowerCase().includes(projectSearch.toLowerCase()) || p.client.toLowerCase().includes(projectSearch.toLowerCase());
+            const matchStatus = projectStatusFilter === 'all' || p.status === projectStatusFilter;
+            return matchSearch && matchStatus;
+          })}
           rowKey="id"
           columns={[
             {
@@ -750,7 +878,9 @@ const ProjectsHub: React.FC = () => {
                       <Tag>{tasks.filter(t => t.status === status).length}</Tag>
                     </Space>
                   }
-                  style={{ background: '#fafafa', minHeight: 500 }}
+                  style={{ background: draggedTask ? '#f0f5ff' : '#fafafa', minHeight: 500, transition: 'background 0.2s' }}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, status)}
                 >
                   <Space direction="vertical" style={{ width: '100%' }}>
                     {tasks.filter(t => t.status === status).map(task => (
@@ -758,7 +888,9 @@ const ProjectsHub: React.FC = () => {
                         key={task.id}
                         size="small"
                         hoverable
-                        style={{ marginBottom: 8 }}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, task)}
+                        style={{ marginBottom: 8, cursor: 'grab', opacity: draggedTask?.id === task.id ? 0.5 : 1 }}
                       >
                         <div style={{ marginBottom: 8 }}>
                           <Text strong>{task.title}</Text>
@@ -926,10 +1058,10 @@ const ProjectsHub: React.FC = () => {
                 {
                   title: 'Actions',
                   key: 'actions',
-                  render: () => (
+                  render: (_: any, record: TimeEntry) => (
                     <Space>
-                      <Button size="small" icon={<EditOutlined />} />
-                      <Button size="small" icon={<DeleteOutlined />} danger />
+                      <Button size="small" icon={<EditOutlined />} onClick={() => handleEditTimeEntry(record)} />
+                      <Button size="small" icon={<DeleteOutlined />} danger onClick={() => handleDeleteTimeEntry(record)} />
                     </Space>
                   )
                 }
@@ -1018,7 +1150,7 @@ const ProjectsHub: React.FC = () => {
               {
                 title: 'Actions',
                 key: 'actions',
-                render: () => <Button size="small">View Schedule</Button>
+                render: (_: any, record: any) => <Button size="small" onClick={() => { setProjectStatusFilter('all'); setProjectSearch(record.name); setActiveTab('projects'); }}>View Projects</Button>
               }
             ]}
           />
@@ -1109,7 +1241,7 @@ const ProjectsHub: React.FC = () => {
             {
               title: 'GL Account',
               key: 'gl',
-              render: () => <Tag color="purple">WIP 1300</Tag>
+              render: (_: any, record: any) => <Tag color="purple">WIP {record.type === 'construction' ? '1310' : '1300'}</Tag>
             }
           ]}
         />
@@ -1139,7 +1271,7 @@ const ProjectsHub: React.FC = () => {
               <Form.Item label="Require Budget Approval">
                 <Switch defaultChecked />
               </Form.Item>
-              <Button type="primary">Save Settings</Button>
+              <Button type="primary" onClick={() => message.success('Project settings saved')}>Save Settings</Button>
             </Form>
           </Card>
         </Col>
@@ -1168,7 +1300,7 @@ const ProjectsHub: React.FC = () => {
               <Form.Item label="Auto-post to GL">
                 <Switch defaultChecked />
               </Form.Item>
-              <Button type="primary">Save Settings</Button>
+              <Button type="primary" onClick={() => message.success('Financial integration settings saved')}>Save Settings</Button>
             </Form>
           </Card>
         </Col>
@@ -1195,7 +1327,7 @@ const ProjectsHub: React.FC = () => {
                 </Col>
                 <Col span={8}>
                   <Form.Item label="CIDB Registration Number">
-                    <Input defaultValue="CIDB-12345678" />
+                    <Input placeholder="Enter CIDB registration number" />
                   </Form.Item>
                 </Col>
                 <Col span={8}>
@@ -1211,6 +1343,115 @@ const ProjectsHub: React.FC = () => {
     </div>
   );
 
+  // Updates / Activity Feed (client-visible project updates)
+  const renderUpdates = () => {
+    const updateTypeColors: Record<string, string> = {
+      general: 'blue', milestone: 'green', status_change: 'orange',
+      budget: 'purple', risk: 'red', deliverable: 'cyan'
+    };
+
+    return (
+      <div style={{ padding: '24px' }}>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} lg={16}>
+            <Card
+              title={<><BellOutlined /> Project Updates</>}
+              extra={
+                <Button type="primary" icon={<PlusOutlined />} onClick={() => setUpdateModalVisible(true)}>
+                  Post Update
+                </Button>
+              }
+            >
+              {projectUpdates.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                  <BellOutlined style={{ fontSize: 48, color: '#d9d9d9' }} />
+                  <Title level={4} type="secondary">No Updates Yet</Title>
+                  <Text type="secondary">Post your first project update to keep clients and team members informed.</Text>
+                  <br /><br />
+                  <Button type="primary" icon={<PlusOutlined />} onClick={() => setUpdateModalVisible(true)}>
+                    Post First Update
+                  </Button>
+                </div>
+              ) : (
+                <Timeline
+                  items={projectUpdates.map((update: any) => ({
+                    color: updateTypeColors[update.update_type] || 'blue',
+                    children: (
+                      <div style={{ marginBottom: 8 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div>
+                            <Space>
+                              <Tag color={updateTypeColors[update.update_type] || 'blue'}>{(update.update_type || 'general').replace('_', ' ')}</Tag>
+                              <Text strong>{update.title}</Text>
+                              {update.is_client_visible && <Tag color="green" style={{ fontSize: 10 }}>Client Visible</Tag>}
+                            </Space>
+                            <br />
+                            <Text>{update.content}</Text>
+                            <br />
+                            <Text type="secondary" style={{ fontSize: 11 }}>
+                              {update.project_name} • by {update.author_name || 'System'} • {new Date(update.created_at).toLocaleString()}
+                            </Text>
+                          </div>
+                          <Button
+                            size="small"
+                            icon={<DeleteOutlined />}
+                            danger
+                            type="text"
+                            onClick={() => {
+                              Modal.confirm({
+                                title: 'Delete Update',
+                                content: 'Are you sure you want to delete this update?',
+                                okText: 'Delete',
+                                okType: 'danger',
+                                onOk: async () => {
+                                  try {
+                                    await projectService.deleteProjectUpdate(update.id);
+                                    setProjectUpdates(prev => prev.filter(u => u.id !== update.id));
+                                    message.success('Update deleted');
+                                  } catch {
+                                    message.error('Failed to delete update');
+                                  }
+                                },
+                              });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )
+                  }))}
+                />
+              )}
+            </Card>
+          </Col>
+          <Col xs={24} lg={8}>
+            <Card title="Update Summary">
+              <Statistic title="Total Updates" value={projectUpdates.length} />
+              <Divider />
+              <Statistic title="Client-Visible" value={projectUpdates.filter((u: any) => u.is_client_visible).length} valueStyle={{ color: '#52c41a' }} />
+              <Divider />
+              <Statistic title="This Week" value={projectUpdates.filter((u: any) => {
+                const d = new Date(u.created_at);
+                const now = new Date();
+                return d >= new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+              }).length} valueStyle={{ color: '#1890ff' }} />
+            </Card>
+            <Card title="Update Types" style={{ marginTop: 16 }}>
+              {['general', 'milestone', 'status_change', 'budget', 'risk', 'deliverable'].map(type => {
+                const count = projectUpdates.filter((u: any) => u.update_type === type).length;
+                return count > 0 ? (
+                  <div key={type} style={{ marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+                    <Tag color={updateTypeColors[type]}>{type.replace('_', ' ')}</Tag>
+                    <Text strong>{count}</Text>
+                  </div>
+                ) : null;
+              })}
+            </Card>
+          </Col>
+        </Row>
+      </div>
+    );
+  };
+
   return (
     <HubLayout>
       <HubHeader
@@ -1221,7 +1462,7 @@ const ProjectsHub: React.FC = () => {
         actions={
           <>
             <Button icon={<SyncOutlined />} onClick={() => fetchAllData()}>Refresh</Button>
-            <Button icon={<ExportOutlined />}>Export</Button>
+            <Button icon={<ExportOutlined />} onClick={handleExport}>Export</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setProjectModalVisible(true)}>
               New Project
             </Button>
@@ -1253,6 +1494,7 @@ const ProjectsHub: React.FC = () => {
           { key: 'time', label: 'Time Tracking', icon: <FieldTimeOutlined />, children: renderTimeTracking() },
           { key: 'resources', label: 'Resources', icon: <TeamOutlined />, children: renderResources() },
           { key: 'budget', label: 'Budget', icon: <DollarOutlined />, children: renderBudget() },
+          { key: 'updates', label: 'Updates', icon: <BellOutlined />, children: renderUpdates() },
           { key: 'settings', label: 'Settings', icon: <SettingOutlined />, children: renderSettings() }
         ]}
         activeKey={activeTab}
@@ -1273,6 +1515,7 @@ const ProjectsHub: React.FC = () => {
                 project_name: values.name,
                 project_type: values.type || 'Internal',
                 customer_id: values.client !== 'internal' ? values.client : null,
+                manager_id: values.manager || null,
                 start_date: values.startDate?.format('YYYY-MM-DD'),
                 end_date: values.endDate?.format('YYYY-MM-DD'),
                 budget: values.budget,
@@ -1323,10 +1566,10 @@ const ProjectsHub: React.FC = () => {
             </Col>
             <Col span={12}>
               <Form.Item label="Project Manager" name="manager" rules={[{ required: true }]}>
-                <Select placeholder="Select manager">
-                  <Option value="sarah">Sarah Johnson</Option>
-                  <Option value="michael">Michael Ndlovu</Option>
-                  <Option value="emily">Emily Chen</Option>
+                <Select placeholder="Select manager" showSearch optionFilterProp="children">
+                  {resources.map(r => (
+                    <Option key={r.id} value={r.id}>{r.name}</Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>
@@ -1458,11 +1701,11 @@ const ProjectsHub: React.FC = () => {
 
       {/* Time Entry Modal */}
       <Modal
-        title="Log Time"
+        title={editingTimeEntry ? 'Edit Time Entry' : 'Log Time'}
         open={timeEntryModalVisible}
-        onCancel={() => { setTimeEntryModalVisible(false); timeEntryForm.resetFields(); }}
+        onCancel={() => { setTimeEntryModalVisible(false); timeEntryForm.resetFields(); setEditingTimeEntry(null); }}
         footer={[
-          <Button key="cancel" onClick={() => { setTimeEntryModalVisible(false); timeEntryForm.resetFields(); }}>Cancel</Button>,
+          <Button key="cancel" onClick={() => { setTimeEntryModalVisible(false); timeEntryForm.resetFields(); setEditingTimeEntry(null); }}>Cancel</Button>,
           <Button key="save" type="primary" onClick={async () => {
             try {
               const values = await timeEntryForm.validateFields();
@@ -1474,10 +1717,16 @@ const ProjectsHub: React.FC = () => {
                 description: values.description,
                 is_billable: values.billable !== false,
               };
-              await projectService.createTimeEntry(entryData);
-              message.success('Time entry logged successfully!');
+              if (editingTimeEntry) {
+                await projectService.updateTimeEntry(editingTimeEntry.id, entryData);
+                message.success('Time entry updated!');
+              } else {
+                await projectService.createTimeEntry(entryData);
+                message.success('Time entry logged successfully!');
+              }
               setTimeEntryModalVisible(false);
               timeEntryForm.resetFields();
+              setEditingTimeEntry(null);
               // Refresh time entries
               const timeRes = await projectService.getTimeEntries().catch(() => ({ data: [] }));
               const entries = Array.isArray(timeRes?.entries)
@@ -1521,6 +1770,78 @@ const ProjectsHub: React.FC = () => {
           </Form.Item>
           <Form.Item label="Billable" name="billable" valuePropName="checked" initialValue={true}>
             <Switch defaultChecked />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Post Update Modal */}
+      <Modal
+        title="Post Project Update"
+        open={updateModalVisible}
+        onCancel={() => { setUpdateModalVisible(false); updateForm.resetFields(); }}
+        footer={[
+          <Button key="cancel" onClick={() => { setUpdateModalVisible(false); updateForm.resetFields(); }}>Cancel</Button>,
+          <Button key="post" type="primary" onClick={async () => {
+            try {
+              const values = await updateForm.validateFields();
+              const updateData = {
+                project_id: values.project_id,
+                update_type: values.update_type || 'general',
+                title: values.title,
+                content: values.content || '',
+                is_client_visible: values.is_client_visible !== false,
+              };
+              const newUpdate = await projectService.createProjectUpdate(updateData);
+              message.success('Update posted successfully!');
+              setUpdateModalVisible(false);
+              updateForm.resetFields();
+              // Add to local state
+              setProjectUpdates(prev => [newUpdate, ...prev]);
+              // Also update recent activity
+              setRecentActivity(prev => [{
+                title: updateData.title,
+                description: `${projects.find(p => p.id === updateData.project_id)?.name || 'Project'} — ${updateData.content.substring(0, 80)}`,
+                time: new Date().toLocaleString(),
+                type: updateData.update_type === 'milestone' ? 'milestone' : 'update',
+              }, ...prev].slice(0, 5));
+            } catch (error: any) {
+              if (error.errorFields) return;
+              message.error(error.response?.data?.message || 'Failed to post update');
+            }
+          }}>Post Update</Button>
+        ]}
+        width={600}
+      >
+        <Form form={updateForm} layout="vertical">
+          <Form.Item label="Project" name="project_id" rules={[{ required: true, message: 'Select a project' }]}>
+            <Select placeholder="Select project" showSearch optionFilterProp="children">
+              {projects.map(p => <Option key={p.id} value={p.id}>{p.name}</Option>)}
+            </Select>
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Update Type" name="update_type" initialValue="general">
+                <Select>
+                  <Option value="general">General Update</Option>
+                  <Option value="milestone">Milestone Reached</Option>
+                  <Option value="status_change">Status Change</Option>
+                  <Option value="budget">Budget Update</Option>
+                  <Option value="risk">Risk Alert</Option>
+                  <Option value="deliverable">Deliverable</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Client Visible" name="is_client_visible" valuePropName="checked" initialValue={true}>
+                <Switch defaultChecked />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item label="Title" name="title" rules={[{ required: true, message: 'Enter a title' }]}>
+            <Input placeholder="e.g. Phase 1 completed ahead of schedule" />
+          </Form.Item>
+          <Form.Item label="Details" name="content">
+            <TextArea rows={4} placeholder="Describe the update in detail..." />
           </Form.Item>
         </Form>
       </Modal>

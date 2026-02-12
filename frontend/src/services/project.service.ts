@@ -298,6 +298,32 @@ export const projectService = {
     const { data } = await apiClient.get(`/api/v2/projects/${projectId}/summary`);
     return extractData({ data });
   },
+
+  // ── Project Updates (Activity Feed) ─────────────────────────────────────
+
+  /** GET /api/v2/practice/projects/updates */
+  async getProjectUpdates(params?: { project_id?: string; limit?: number }): Promise<any> {
+    const { data } = await apiClient.get('/api/v2/practice/projects/updates', { params });
+    return data;
+  },
+
+  /** POST /api/v2/practice/projects/updates */
+  async createProjectUpdate(update: {
+    project_id: string;
+    update_type?: string;
+    title: string;
+    content?: string;
+    is_client_visible?: boolean;
+  }): Promise<any> {
+    const { data } = await apiClient.post('/api/v2/practice/projects/updates', update);
+    return extractData({ data });
+  },
+
+  /** DELETE /api/v2/practice/projects/updates/:id */
+  async deleteProjectUpdate(id: string): Promise<any> {
+    const { data } = await apiClient.delete(`/api/v2/practice/projects/updates/${id}`);
+    return data;
+  },
 };
 
 export default projectService;
