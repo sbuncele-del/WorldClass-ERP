@@ -43,10 +43,23 @@ export const getAllTasks = async (req: TenantRequest, res: Response) => {
       SELECT 
         pt.id,
         pt.task_name,
+        pt.description,
         pt.status,
+        pt.priority,
         pt.project_id,
-        pt.created_at
+        pt.assigned_to,
+        pt.estimated_hours,
+        pt.actual_hours,
+        pt.due_date,
+        pt.start_date,
+        pt.completed_date,
+        pt.created_at,
+        cp.project_name,
+        cp.project_number,
+        COALESCE(u.first_name || ' ' || u.last_name, 'Unassigned') as assigned_to_name
       FROM project_tasks pt
+      LEFT JOIN client_projects cp ON pt.project_id = cp.project_id
+      LEFT JOIN users u ON pt.assigned_to = u.id
       WHERE pt.tenant_id = $1
     `;
 
@@ -115,13 +128,13 @@ export const getTaskById = async (req: TenantRequest, res: Response) => {
         pt.*,
         cp.project_name,
         cp.project_number,
-        c.customer_name,
-        e.first_name || ' ' || e.last_name as assigned_to_name
+        COALESCE(sc.company_name, 'Internal') as customer_name,
+        COALESCE(u.first_name || ' ' || u.last_name, 'Unassigned') as assigned_to_name
       FROM project_tasks pt
       JOIN client_projects cp ON pt.project_id = cp.project_id
-      JOIN customers c ON cp.customer_id = c.id
-      LEFT JOIN employees e ON pt.assigned_to = e.employee_id
-      WHERE pt.task_id = $1 AND pt.tenant_id = $2
+      LEFT JOIN sales.customers sc ON cp.customer_id = sc.customer_id
+      LEFT JOIN users u ON pt.assigned_to = u.id
+      WHERE pt.id = $1 AND pt.tenant_id = $2
     `, [id, tenantId]);
 
     if (result.rows.length === 0) {

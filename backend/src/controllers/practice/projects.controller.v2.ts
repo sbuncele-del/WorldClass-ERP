@@ -48,6 +48,7 @@ export const getAllProjects = async (req: TenantRequest, res: Response) => {
         cp.status,
         cp.priority,
         cp.customer_id,
+        cp.project_manager_id,
         cp.start_date,
         cp.end_date,
         cp.budget,
@@ -56,8 +57,12 @@ export const getAllProjects = async (req: TenantRequest, res: Response) => {
         cp.description,
         cp.completion_percentage,
         cp.created_at,
-        cp.updated_at
+        cp.updated_at,
+        COALESCE(u.first_name || ' ' || u.last_name, 'Unassigned') as manager_name,
+        COALESCE(sc.company_name, 'Internal') as client_name
       FROM client_projects cp
+      LEFT JOIN users u ON cp.project_manager_id = u.id
+      LEFT JOIN sales.customers sc ON cp.customer_id = sc.customer_id
       WHERE cp.tenant_id = $1
     `;
 
@@ -119,14 +124,14 @@ export const getProjectById = async (req: TenantRequest, res: Response) => {
     const result = await pool.query(`
       SELECT 
         cp.*,
-        c.customer_name,
-        c.customer_code,
-        em1.first_name || ' ' || em1.last_name as manager_name,
-        em2.first_name || ' ' || em2.last_name as partner_name
+        sc.company_name as customer_name,
+        sc.customer_code,
+        COALESCE(u1.first_name || ' ' || u1.last_name, 'Unassigned') as manager_name,
+        COALESCE(u2.first_name || ' ' || u2.last_name, 'Unassigned') as partner_name
       FROM client_projects cp
-      LEFT JOIN customers c ON cp.customer_id = c.id
-      LEFT JOIN employees em1 ON cp.project_manager_id = em1.employee_id
-      LEFT JOIN employees em2 ON cp.project_partner_id = em2.employee_id
+      LEFT JOIN sales.customers sc ON cp.customer_id = sc.customer_id
+      LEFT JOIN users u1 ON cp.project_manager_id = u1.id
+      LEFT JOIN users u2 ON cp.project_partner_id = u2.id
       WHERE cp.project_id = $1 AND cp.tenant_id = $2
     `, [id, tenantId]);
 
@@ -178,6 +183,11 @@ export const createProject = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId, userId } = getTenantContext(req);
     const projectData = req.body;
+
+    // Accept both manager_id and project_manager_id from frontend
+    if (projectData.manager_id && !projectData.project_manager_id) {
+      projectData.project_manager_id = projectData.manager_id;
+    }
 
     // Generate project number
     const seqResult = await pool.query(`

@@ -98,12 +98,12 @@ const AdminHub: React.FC = () => {
       setLoading(true);
       try {
         const [usersRes, auditLogsRes, integrationsRes, tenantRes] = await Promise.all([
-          apiClient.get('/api/admin/users'),
+          apiClient.get('/api/v2/admin/users'),
           apiClient.get('/api/admin/audit-logs'),
           apiClient.get('/api/admin/integrations'),
           apiClient.get('/api/v2/settings/tenant')
         ]);
-        setUsers(usersRes.data || []);
+        setUsers(usersRes.data?.users || usersRes.data?.data || usersRes.data || []);
         setAuditLogs(auditLogsRes.data || []);
         setIntegrations(integrationsRes.data || []);
         

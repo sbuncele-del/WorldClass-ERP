@@ -18,7 +18,7 @@ import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
   Input, Select, DatePicker, Modal, Form, Typography, Tabs, Avatar,
   Timeline, Descriptions, Tooltip, Dropdown, InputNumber, Switch, Alert,
-  List, Checkbox, Spin, Divider, Slider, message
+  List, Checkbox, Spin, Divider, Slider, Drawer, message
 } from 'antd';
 import {
   ProjectOutlined, TeamOutlined, CalendarOutlined, ClockCircleOutlined,
@@ -146,13 +146,13 @@ const ProjectsHub: React.FC = () => {
   
   // ── Helper: transform raw API project to the component Project interface ──
   const transformProject = (p: any): Project => ({
-    id: p.project_id,
+    id: p.project_id || p.id,
     name: p.project_name,
     code: p.project_number,
-    client: p.customer_name || 'Internal',
+    client: p.client_name || p.customer_name || 'Internal',
     status: (p.status || 'planning').toLowerCase().replace(' ', '-') as Project['status'],
     priority: (p.priority || 'medium').toLowerCase() as Project['priority'],
-    progress: toNumber(p.progress_percentage) || safePercent(toNumber(p.completed_tasks), toNumber(p.total_tasks) || 1),
+    progress: toNumber(p.progress_percentage) || toNumber(p.completion_percentage) || safePercent(toNumber(p.completed_tasks), toNumber(p.total_tasks) || 1),
     startDate: p.start_date ? new Date(p.start_date).toLocaleDateString() : '-',
     endDate: p.end_date ? new Date(p.end_date).toLocaleDateString() : '-',
     budget: toNumber(p.budget),
@@ -361,7 +361,7 @@ const ProjectsHub: React.FC = () => {
     if (action === 'view') {
       setSelectedProject(project);
     } else if (action === 'edit') {
-      setSelectedProject(project);
+      setSelectedProject(null);
       // Pre-fill the project form and open the modal for editing
       form.setFieldsValue({
         name: project.name,
@@ -392,6 +392,23 @@ const ProjectsHub: React.FC = () => {
           }
         },
       });
+    }
+  };
+
+  const handleStatusChange = async (projectId: string, newStatus: string) => {
+    try {
+      await projectService.updateProject(projectId, { status: newStatus });
+      message.success(`Project status updated to ${newStatus}`);
+      // Update local state
+      setProjects(prev => prev.map(p => 
+        p.id === projectId ? { ...p, status: newStatus.toLowerCase().replace(' ', '-') as Project['status'] } : p
+      ));
+      // Update selectedProject if it's the one being changed
+      if (selectedProject?.id === projectId) {
+        setSelectedProject(prev => prev ? { ...prev, status: newStatus.toLowerCase().replace(' ', '-') as Project['status'] } : null);
+      }
+    } catch (error: any) {
+      message.error(error.response?.data?.message || 'Failed to update status');
     }
   };
 
@@ -543,7 +560,7 @@ const ProjectsHub: React.FC = () => {
               prefix={<DollarOutlined />}
               valueStyle={{ color: '#722ed1' }}
             />
-            <Text type="secondary">R{(projectStats.totalSpent / 1000000).toFixed(1)}M / R{(projectStats.totalBudget / 1000000).toFixed(1)}M</Text>
+            <Text type="secondary">R{projectStats.totalSpent.toLocaleString()} / R{projectStats.totalBudget.toLocaleString()}</Text>
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
@@ -788,7 +805,7 @@ const ProjectsHub: React.FC = () => {
               key: 'budget',
               render: (_, record) => (
                 <div>
-                  <Text>R{(record.budget / 1000000).toFixed(1)}M</Text>
+                  <Text>R{record.budget >= 1000000 ? `${(record.budget / 1000000).toFixed(1)}M` : record.budget.toLocaleString()}</Text>
                   <Progress 
                     percent={safePercent(record.spent, record.budget)} 
                     size="small" 
@@ -827,9 +844,24 @@ const ProjectsHub: React.FC = () => {
                       { key: 'edit', label: 'Edit Project', icon: <EditOutlined /> },
                       { key: 'gantt', label: 'Gantt Chart', icon: <BarChartOutlined /> },
                       { type: 'divider' },
+                      { key: 'status-active', label: 'Set Active', icon: <CheckCircleOutlined />, disabled: record.status === 'active' },
+                      { key: 'status-on-hold', label: 'Set On Hold', icon: <ClockCircleOutlined />, disabled: record.status === 'on-hold' },
+                      { key: 'status-completed', label: 'Set Completed', icon: <CarryOutOutlined />, disabled: record.status === 'completed' },
+                      { type: 'divider' },
                       { key: 'archive', label: 'Archive', icon: <DeleteOutlined />, danger: true }
                     ],
-                    onClick: ({ key }) => handleProjectAction(key, record)
+                    onClick: ({ key }) => {
+                      if (key.startsWith('status-')) {
+                        const statusMap: Record<string, string> = {
+                          'status-active': 'Active',
+                          'status-on-hold': 'On Hold',
+                          'status-completed': 'Completed'
+                        };
+                        handleStatusChange(record.id, statusMap[key]);
+                      } else {
+                        handleProjectAction(key, record);
+                      }
+                    }
                   }}
                 >
                   <Button icon={<MoreOutlined />} />
@@ -1517,7 +1549,7 @@ const ProjectsHub: React.FC = () => {
                 project_name: values.name,
                 project_type: values.type || 'Internal',
                 customer_id: values.client !== 'internal' ? values.client : null,
-                manager_id: values.manager || null,
+                project_manager_id: values.manager || null,
                 start_date: values.startDate?.format('YYYY-MM-DD'),
                 end_date: values.endDate?.format('YYYY-MM-DD'),
                 budget: values.budget,
@@ -1847,6 +1879,115 @@ const ProjectsHub: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Project Detail Drawer */}
+      <Drawer 
+        title={selectedProject?.name || 'Project Details'}
+        open={!!selectedProject}
+        onClose={() => setSelectedProject(null)}
+        width={640}
+        extra={
+          <Space>
+            <Select 
+              value={selectedProject?.status} 
+              onChange={(v) => selectedProject && handleStatusChange(selectedProject.id, v)}
+              style={{ width: 140 }}
+            >
+              <Option value="Planning">Planning</Option>
+              <Option value="Active">Active</Option>
+              <Option value="On Hold">On Hold</Option>
+              <Option value="Completed">Completed</Option>
+              <Option value="Cancelled">Cancelled</Option>
+            </Select>
+          </Space>
+        }
+      >
+        {selectedProject && (
+          <div>
+            <Descriptions column={2} bordered size="small" style={{ marginBottom: 16 }}>
+              <Descriptions.Item label="Project Code">{selectedProject.code}</Descriptions.Item>
+              <Descriptions.Item label="Status">
+                <Tag color={getStatusColor(selectedProject.status)}>{selectedProject.status.toUpperCase()}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Client">{selectedProject.client}</Descriptions.Item>
+              <Descriptions.Item label="Priority">
+                <Tag color={getPriorityColor(selectedProject.priority)}>{selectedProject.priority}</Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="Manager">
+                <Space><Avatar size="small" icon={<UserOutlined />} /> {selectedProject.manager}</Space>
+              </Descriptions.Item>
+              <Descriptions.Item label="Type">{selectedProject.type}</Descriptions.Item>
+              <Descriptions.Item label="Start Date">{selectedProject.startDate}</Descriptions.Item>
+              <Descriptions.Item label="End Date">{selectedProject.endDate}</Descriptions.Item>
+              <Descriptions.Item label="Budget">R{selectedProject.budget.toLocaleString()}</Descriptions.Item>
+              <Descriptions.Item label="Spent">R{selectedProject.spent.toLocaleString()}</Descriptions.Item>
+            </Descriptions>
+
+            <Card size="small" title="Progress" style={{ marginBottom: 16 }}>
+              <Progress percent={selectedProject.progress} status={selectedProject.progress >= 100 ? 'success' : 'active'} />
+            </Card>
+
+            <Card size="small" title="Tasks" style={{ marginBottom: 16 }}>
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Statistic title="Total Tasks" value={selectedProject.tasks.total} />
+                </Col>
+                <Col span={12}>
+                  <Statistic title="Completed" value={selectedProject.tasks.completed} />
+                </Col>
+              </Row>
+              <Divider style={{ margin: '12px 0' }} />
+              <List
+                size="small"
+                dataSource={tasks.filter(t => t.project_id === selectedProject.id)}
+                locale={{ emptyText: 'No tasks yet' }}
+                renderItem={(task: any) => (
+                  <List.Item>
+                    <Space>
+                      <Tag color={getTaskStatusColor(task.status?.toLowerCase() || 'todo')}>
+                        {task.status || 'Pending'}
+                      </Tag>
+                      <Text>{task.task_name}</Text>
+                    </Space>
+                    <Text type="secondary">{task.assigned_to_name || ''}</Text>
+                  </List.Item>
+                )}
+              />
+              <Button 
+                type="dashed" 
+                block 
+                icon={<PlusOutlined />} 
+                onClick={() => { 
+                  setSelectedProject(null); 
+                  taskForm.setFieldsValue({ projectId: selectedProject.id }); 
+                  setTaskModalVisible(true); 
+                }}
+                style={{ marginTop: 8 }}
+              >
+                Add Task
+              </Button>
+            </Card>
+
+            <Space>
+              <Button 
+                type="primary" 
+                icon={<EditOutlined />}
+                onClick={() => {
+                  handleProjectAction('edit', selectedProject);
+                }}
+              >
+                Edit Project
+              </Button>
+              <Button 
+                icon={<BarChartOutlined />}
+                onClick={() => { setSelectedProject(null); setActiveTab('gantt'); }}
+              >
+                Gantt Chart
+              </Button>
+            </Space>
+          </div>
+        )}
+      </Drawer>
     </HubLayout>
   );
 };
