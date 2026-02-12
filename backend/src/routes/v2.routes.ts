@@ -1832,10 +1832,21 @@ router.post('/sales/orders/:id/confirm', SalesV2.confirmSalesOrder);
 router.post('/sales/orders/:id/cancel', SalesV2.cancelSalesOrder);
 router.get('/sales/invoices', SalesV2.getInvoices);
 router.get('/sales/invoices/:id', SalesV2.getInvoice);
+router.post('/sales/invoices', SalesV2.createInvoice);
+router.post('/sales/invoices/:id/approve', SalesV2.approveInvoice);
+router.post('/sales/invoices/:id/void', SalesV2.voidInvoice);
+router.post('/sales/invoices/:id/send', SalesV2.sendInvoice);
+router.post('/sales/invoices/:id/convert-proforma', SalesV2.convertProformaToInvoice);
 // GL Posting - Sales Invoice Integration
 router.post('/sales/invoices/:id/post-to-gl', SalesV2.postInvoiceToGL);
 router.get('/sales/invoices/:id/gl-status', SalesV2.getInvoiceGLStatus);
 router.post('/sales/invoices/:id/record-payment', SalesV2.recordPaymentReceived);
+// Credit Notes
+router.get('/sales/credit-notes', SalesV2.getCreditNotes);
+router.get('/sales/credit-notes/:id', SalesV2.getCreditNoteById);
+router.post('/sales/credit-notes', SalesV2.createCreditNote);
+router.put('/sales/credit-notes/:id', SalesV2.updateCreditNote);
+router.delete('/sales/credit-notes/:id', SalesV2.deleteCreditNote);
 // Leads
 router.get('/sales/leads', SalesV2.getLeads);
 router.get('/sales/leads/:id', SalesV2.getLeadById);
@@ -1857,6 +1868,14 @@ router.post('/sales/quotations', SalesV2.createQuotation);
 router.put('/sales/quotations/:id', SalesV2.updateQuotation);
 router.delete('/sales/quotations/:id', SalesV2.deleteQuotation);
 router.post('/sales/quotations/:id/convert', SalesV2.convertQuotationToOrder);
+// Retainers (Recurring Billing Services)
+router.get('/sales/retainers', SalesV2.getRetainers);
+router.get('/sales/retainers/:id', SalesV2.getRetainerById);
+router.post('/sales/retainers', SalesV2.createRetainer);
+router.put('/sales/retainers/:id', SalesV2.updateRetainer);
+router.delete('/sales/retainers/:id', SalesV2.deleteRetainer);
+router.post('/sales/retainers/:id/generate-invoice', SalesV2.generateRetainerInvoice);
+router.post('/sales/retainers/:id/toggle-status', SalesV2.toggleRetainerStatus);
 // Dashboard & Pipeline
 router.get('/sales/dashboard', SalesV2.getSalesDashboard);
 router.get('/sales/pipeline', SalesV2.getOpportunities);

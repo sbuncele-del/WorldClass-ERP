@@ -240,6 +240,16 @@ export const workspaceApi = {
     approveInvoice: (id: number) => apiPost(`/api/sales/invoices/${id}/approve`, {}),
     voidInvoice: (id: number, reason?: string) => apiPost(`/api/sales/invoices/${id}/void`, { reason }),
     convertProforma: (id: number) => apiPost(`/api/sales/invoices/${id}/convert-proforma`, {}),
+    createCreditNote: (data: { customer_id: number; invoice_id: number; amount: number; reason: string }) => apiPost('/api/sales/credit-notes', data),
+    getCreditNotes: (params?: any) => apiGet('/api/sales/credit-notes', params),
+    // Retainer Services
+    getRetainers: (params?: any) => apiGet('/api/sales/retainers', params),
+    getRetainer: (id: number) => apiGet(`/api/sales/retainers/${id}`),
+    createRetainer: (data: any) => apiPost('/api/sales/retainers', data),
+    updateRetainer: (id: number, data: any) => apiPut(`/api/sales/retainers/${id}`, data),
+    deleteRetainer: (id: number) => apiClient.delete(`/api/sales/retainers/${id}`).then(r => r.data),
+    generateRetainerInvoice: (id: number) => apiPost(`/api/sales/retainers/${id}/generate-invoice`, {}),
+    toggleRetainerStatus: (id: number, action: string) => apiPost(`/api/sales/retainers/${id}/toggle-status`, { action }),
     getCompanySettings: () => apiGet('/api/v2/settings/tenant'),
   },
 

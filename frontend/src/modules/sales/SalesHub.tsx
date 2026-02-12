@@ -180,6 +180,13 @@ const SalesHub: React.FC = () => {
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [salesTeam, setSalesTeam] = useState<SalesTeamMember[]>([]);
 
+  // Retainer Services State
+  const [retainers, setRetainers] = useState<any[]>([]);
+  const [loadingRetainers, setLoadingRetainers] = useState(false);
+  const [showRetainerModal, setShowRetainerModal] = useState(false);
+  const [retainerForm] = Form.useForm();
+  const [creatingRetainer, setCreatingRetainer] = useState(false);
+
   // Fetch data from API
   useEffect(() => {
     const fetchSalesData = async () => {
@@ -398,6 +405,85 @@ const SalesHub: React.FC = () => {
       console.error('Export failed:', err);
       message.error('Failed to export data');
     }
+  };
+
+  // ===== RETAINER SERVICES =====
+  const loadRetainers = async () => {
+    setLoadingRetainers(true);
+    try {
+      const res = await workspaceApi.sales.getRetainers();
+      setRetainers(res.data || []);
+    } catch (err) {
+      console.warn('Failed to load retainers:', err);
+    } finally {
+      setLoadingRetainers(false);
+    }
+  };
+
+  const handleCreateRetainer = async () => {
+    try {
+      const values = await retainerForm.validateFields();
+      setCreatingRetainer(true);
+      await workspaceApi.sales.createRetainer({
+        ...values,
+        start_date: values.start_date?.format('YYYY-MM-DD'),
+        end_date: values.end_date?.format('YYYY-MM-DD') || null,
+      });
+      message.success('Retainer created successfully');
+      setShowRetainerModal(false);
+      retainerForm.resetFields();
+      loadRetainers();
+    } catch (err: any) {
+      if (err?.errorFields) return; // validation error
+      message.error(err?.response?.data?.message || 'Failed to create retainer');
+    } finally {
+      setCreatingRetainer(false);
+    }
+  };
+
+  const handleGenerateRetainerInvoice = async (retainerId: number, retainerName: string) => {
+    Modal.confirm({
+      title: 'Generate Invoice',
+      content: `Generate a new invoice for retainer "${retainerName}"? This will create an approved invoice and advance the next billing date.`,
+      okText: 'Generate Invoice',
+      onOk: async () => {
+        try {
+          const res = await workspaceApi.sales.generateRetainerInvoice(retainerId);
+          message.success(res.message || 'Invoice generated successfully');
+          loadRetainers();
+        } catch (err: any) {
+          message.error(err?.response?.data?.message || 'Failed to generate invoice');
+        }
+      },
+    });
+  };
+
+  const handleToggleRetainer = async (retainerId: number, action: string) => {
+    try {
+      await workspaceApi.sales.toggleRetainerStatus(retainerId, action);
+      message.success(`Retainer ${action}d successfully`);
+      loadRetainers();
+    } catch (err: any) {
+      message.error(err?.response?.data?.message || `Failed to ${action} retainer`);
+    }
+  };
+
+  const handleDeleteRetainer = async (retainerId: number) => {
+    Modal.confirm({
+      title: 'Delete Retainer',
+      content: 'Are you sure you want to delete this retainer? This action cannot be undone.',
+      okText: 'Delete',
+      okButtonProps: { danger: true },
+      onOk: async () => {
+        try {
+          await workspaceApi.sales.deleteRetainer(retainerId);
+          message.success('Retainer deleted');
+          loadRetainers();
+        } catch (err: any) {
+          message.error('Failed to delete retainer');
+        }
+      },
+    });
   };
 
   const formatCurrency = (amount: number) => `R ${amount.toLocaleString('en-ZA')}`;
@@ -1085,6 +1171,134 @@ const SalesHub: React.FC = () => {
       ),
     },
     {
+      key: 'retainers',
+      label: 'Retainers',
+      icon: <CalendarOutlined />,
+      children: (
+        <Card
+          title="Retainer Services"
+          extra={
+            <Space>
+              <Button onClick={loadRetainers} icon={<SyncOutlined />} loading={loadingRetainers}>Refresh</Button>
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowRetainerModal(true)}>New Retainer</Button>
+            </Space>
+          }
+        >
+          {retainers.length === 0 && !loadingRetainers ? (
+            <Empty
+              description="No retainers yet. Create a retainer to set up recurring billing for your clients."
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+            >
+              <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowRetainerModal(true)}>
+                Create First Retainer
+              </Button>
+            </Empty>
+          ) : (
+            <Table
+              dataSource={retainers}
+              loading={loadingRetainers}
+              rowKey="id"
+              columns={[
+                {
+                  title: 'Client',
+                  dataIndex: 'customer_name',
+                  key: 'customer_name',
+                  render: (text: string) => <Text strong>{text || 'Unknown'}</Text>,
+                },
+                {
+                  title: 'Service',
+                  dataIndex: 'retainer_name',
+                  key: 'retainer_name',
+                },
+                {
+                  title: 'Amount',
+                  dataIndex: 'amount',
+                  key: 'amount',
+                  render: (v: number) => formatCurrency(Number(v) || 0),
+                },
+                {
+                  title: 'Frequency',
+                  dataIndex: 'billing_frequency',
+                  key: 'billing_frequency',
+                  render: (v: string) => <Tag color="blue">{(v || 'monthly').charAt(0).toUpperCase() + (v || 'monthly').slice(1)}</Tag>,
+                },
+                {
+                  title: 'Hours',
+                  key: 'hours',
+                  render: (_: any, record: any) => (
+                    record.hours_included > 0 ? (
+                      <Tooltip title={`${record.hours_used || 0}h used of ${record.hours_included}h`}>
+                        <Progress
+                          percent={Math.round(((record.hours_used || 0) / record.hours_included) * 100)}
+                          size="small"
+                          strokeColor={((record.hours_used || 0) / record.hours_included) > 0.8 ? '#ff4d4f' : '#667eea'}
+                        />
+                      </Tooltip>
+                    ) : <Text type="secondary">N/A</Text>
+                  ),
+                },
+                {
+                  title: 'Next Invoice',
+                  dataIndex: 'next_invoice_date',
+                  key: 'next_invoice_date',
+                  render: (v: string) => v ? new Date(v).toLocaleDateString('en-ZA') : '-',
+                },
+                {
+                  title: 'Status',
+                  dataIndex: 'status',
+                  key: 'status',
+                  render: (v: string) => {
+                    const colors: Record<string, string> = {
+                      active: 'green', paused: 'orange', cancelled: 'red',
+                      expired: 'default', draft: 'blue'
+                    };
+                    return <Tag color={colors[v] || 'default'}>{(v || 'active').toUpperCase()}</Tag>;
+                  },
+                },
+                {
+                  title: 'Actions',
+                  key: 'actions',
+                  render: (_: any, record: any) => (
+                    <Space>
+                      {record.status === 'active' && (
+                        <>
+                          <Tooltip title="Generate Invoice">
+                            <Button type="link" size="small" icon={<DollarOutlined />}
+                              onClick={() => handleGenerateRetainerInvoice(record.id, record.retainer_name)} />
+                          </Tooltip>
+                          <Tooltip title="Pause">
+                            <Button type="link" size="small" icon={<ClockCircleOutlined />}
+                              onClick={() => handleToggleRetainer(record.id, 'pause')} />
+                          </Tooltip>
+                        </>
+                      )}
+                      {record.status === 'paused' && (
+                        <Tooltip title="Resume">
+                          <Button type="link" size="small" icon={<CheckCircleOutlined />}
+                            onClick={() => handleToggleRetainer(record.id, 'resume')} />
+                        </Tooltip>
+                      )}
+                      {['active', 'paused'].includes(record.status) && (
+                        <Tooltip title="Cancel">
+                          <Button type="link" size="small" danger icon={<ExclamationCircleOutlined />}
+                            onClick={() => handleToggleRetainer(record.id, 'cancel')} />
+                        </Tooltip>
+                      )}
+                      <Tooltip title="Delete">
+                        <Button type="link" size="small" danger
+                          onClick={() => handleDeleteRetainer(record.id)}>Del</Button>
+                      </Tooltip>
+                    </Space>
+                  ),
+                },
+              ]}
+              pagination={{ pageSize: 10 }}
+            />
+          )}
+        </Card>
+      ),
+    },
+    {
       key: 'team',
       label: 'Sales Team',
       icon: <TrophyOutlined />,
@@ -1265,7 +1479,10 @@ const SalesHub: React.FC = () => {
         theme="cyan"
         tabs={tabs}
         activeKey={activeTab}
-        onChange={setActiveTab}
+        onChange={(key: string) => {
+          setActiveTab(key);
+          if (key === 'retainers' && retainers.length === 0) loadRetainers();
+        }}
       />
 
       {/* New Quote Modal */}
@@ -1848,6 +2065,92 @@ const SalesHub: React.FC = () => {
               <Text style={{ fontSize: 16 }}>Total: <Text strong style={{ color: '#10b981', fontSize: 18 }}>R {(invoiceLines.reduce((s, l) => s + l.qty * l.rate, 0) * 1.15).toLocaleString('en-ZA')}</Text></Text>
             </div>
           )}
+        </Form>
+      </Modal>
+
+      {/* Retainer Modal */}
+      <Modal
+        title="Create Retainer Service"
+        open={showRetainerModal}
+        onCancel={() => { setShowRetainerModal(false); retainerForm.resetFields(); }}
+        footer={[
+          <Button key="cancel" onClick={() => { setShowRetainerModal(false); retainerForm.resetFields(); }}>Cancel</Button>,
+          <Button key="create" type="primary" loading={creatingRetainer} onClick={handleCreateRetainer}>
+            Create Retainer
+          </Button>,
+        ]}
+        width={640}
+      >
+        <Form form={retainerForm} layout="vertical">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="customer_id" label="Client" rules={[{ required: true, message: 'Select a client' }]}>
+                <Select placeholder="Select client" showSearch optionFilterProp="children">
+                  {allCustomers.map(c => (
+                    <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="retainer_name" label="Service Name" rules={[{ required: true, message: 'Enter service name' }]}>
+                <Input placeholder="e.g. Monthly IT Support" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="amount" label="Amount (excl. VAT)" rules={[{ required: true, message: 'Enter amount' }]}>
+                <InputNumber prefix="R" min={0} step={100} style={{ width: '100%' }} placeholder="5000" />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="billing_frequency" label="Billing Frequency" initialValue="monthly">
+                <Select>
+                  <Select.Option value="monthly">Monthly</Select.Option>
+                  <Select.Option value="quarterly">Quarterly</Select.Option>
+                  <Select.Option value="bi-annual">Bi-Annual</Select.Option>
+                  <Select.Option value="annual">Annual</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="service_type" label="Service Type" initialValue="monthly">
+                <Select>
+                  <Select.Option value="monthly">Monthly Retainer</Select.Option>
+                  <Select.Option value="project">Project-Based</Select.Option>
+                  <Select.Option value="hourly">Hourly Retainer</Select.Option>
+                  <Select.Option value="custom">Custom</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item name="start_date" label="Start Date" rules={[{ required: true, message: 'Select start date' }]}>
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="end_date" label="End Date (Optional)">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item name="hours_included" label="Hours Included" initialValue={0}>
+                <InputNumber min={0} style={{ width: '100%' }} placeholder="0 = unlimited" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="description" label="Description">
+            <Input.TextArea rows={2} placeholder="Describe the retainer service..." />
+          </Form.Item>
+          <Form.Item name="auto_invoice" label="Auto-Generate Invoices" valuePropName="checked" initialValue={true}>
+            <Select defaultValue={true}>
+              <Select.Option value={true}>Yes - Auto-generate invoices</Select.Option>
+              <Select.Option value={false}>No - Manual invoicing</Select.Option>
+            </Select>
+          </Form.Item>
         </Form>
       </Modal>
     </HubLayout>

@@ -1040,15 +1040,32 @@ export const getSalesDashboard = async (req: TenantRequest, res: Response) => {
       [ctx.tenantId]
     );
 
-    const invoiceCount = await pool.query(
-      'SELECT COUNT(*) as count FROM public.sales_invoices WHERE tenant_id = $1',
+    const invoiceStats = await pool.query(
+      `SELECT 
+        COUNT(*) as count,
+        COALESCE(SUM(COALESCE(total_amount, total, 0)), 0) as total_revenue,
+        COUNT(*) FILTER (WHERE LOWER(status) NOT IN ('void','cancelled','draft','paid')) as unpaid_count,
+        COALESCE(SUM(COALESCE(total_amount, total, 0)) FILTER (WHERE LOWER(status) NOT IN ('void','cancelled','draft','paid')), 0) as unpaid_amount,
+        COUNT(*) FILTER (WHERE due_date < CURRENT_DATE AND LOWER(status) NOT IN ('void','cancelled','paid')) as overdue_count,
+        COALESCE(SUM(COALESCE(total_amount, total, 0)) FILTER (WHERE due_date < CURRENT_DATE AND LOWER(status) NOT IN ('void','cancelled','paid')), 0) as overdue_amount
+      FROM public.sales_invoices WHERE tenant_id = $1 AND LOWER(status) NOT IN ('void','cancelled')`,
       [ctx.tenantId]
     );
 
-    const invoiceTotal = await pool.query(
-      'SELECT COALESCE(SUM(total), 0) as total FROM public.sales_invoices WHERE tenant_id = $1',
+    // Top customers from invoices
+    const topCustomersResult = await pool.query(
+      `SELECT c.company_name as name, c.customer_type,
+        COALESCE(SUM(COALESCE(i.total_amount, i.total, 0)), 0) as total_revenue,
+        COUNT(i.id) as invoice_count
+       FROM public.sales_invoices i
+       JOIN sales.customers c ON c.customer_id = i.customer_id AND c.tenant_id = i.tenant_id
+       WHERE i.tenant_id = $1 AND LOWER(i.status) NOT IN ('void','cancelled','draft')
+       GROUP BY c.company_name, c.customer_type
+       ORDER BY total_revenue DESC LIMIT 5`,
       [ctx.tenantId]
     );
+
+    const stats = invoiceStats.rows[0] || {};
 
     res.json({
       success: true,
@@ -1056,13 +1073,14 @@ export const getSalesDashboard = async (req: TenantRequest, res: Response) => {
         summary: {
           total_customers: parseInt(customerCount.rows[0]?.count || '0'),
           pending_orders: parseInt(orderCount.rows[0]?.count || '0'),
-          unpaid_invoices: parseInt(invoiceCount.rows[0]?.count || '0'),
-          unpaid_amount: parseFloat(invoiceTotal.rows[0]?.total || '0'),
-          overdue_invoices: 0,
-          overdue_amount: 0
+          total_revenue: parseFloat(stats.total_revenue || '0'),
+          unpaid_invoices: parseInt(stats.unpaid_count || '0'),
+          unpaid_amount: parseFloat(stats.unpaid_amount || '0'),
+          overdue_invoices: parseInt(stats.overdue_count || '0'),
+          overdue_amount: parseFloat(stats.overdue_amount || '0')
         },
         recent_orders: [],
-        top_customers: []
+        top_customers: topCustomersResult.rows
       }
     });
   } catch (error) {
@@ -2390,6 +2408,448 @@ export const recordPaymentReceived = async (req: TenantRequest, res: Response) =
     res.status(500).json({
       success: false,
       message: 'Failed to record payment',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+// ============================================================================
+// RETAINER SERVICES
+// ============================================================================
+
+/**
+ * Get all retainers for tenant
+ */
+export const getRetainers = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { status, customer_id, page = 1, limit = 50 } = req.query;
+    const offset = (Number(page) - 1) * Number(limit);
+
+    let whereClause = 'WHERE r.tenant_id = $1 AND r.deleted_at IS NULL';
+    const params: any[] = [ctx.tenantId];
+    let paramIdx = 2;
+
+    if (status) {
+      whereClause += ` AND r.status = $${paramIdx}`;
+      params.push(status);
+      paramIdx++;
+    }
+    if (customer_id) {
+      whereClause += ` AND r.customer_id = $${paramIdx}`;
+      params.push(customer_id);
+      paramIdx++;
+    }
+
+    const pool = require('../config/database').default;
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*) FROM sales.retainers r ${whereClause}`,
+      params
+    );
+
+    const result = await pool.query(
+      `SELECT r.*, c.customer_name 
+       FROM sales.retainers r
+       LEFT JOIN sales.customers c ON c.id = r.customer_id AND c.tenant_id = r.tenant_id
+       ${whereClause}
+       ORDER BY r.created_at DESC
+       LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
+      [...params, Number(limit), offset]
+    );
+
+    res.json({
+      success: true,
+      data: result.rows,
+      pagination: {
+        total: parseInt(countResult.rows[0].count),
+        page: Number(page),
+        limit: Number(limit),
+        pages: Math.ceil(parseInt(countResult.rows[0].count) / Number(limit))
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching retainers:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch retainers',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+/**
+ * Get retainer by ID
+ */
+export const getRetainerById = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+    const pool = require('../config/database').default;
+
+    const result = await pool.query(
+      `SELECT r.*, c.customer_name, c.email as customer_email
+       FROM sales.retainers r
+       LEFT JOIN sales.customers c ON c.id = r.customer_id AND c.tenant_id = r.tenant_id
+       WHERE r.id = $1 AND r.tenant_id = $2 AND r.deleted_at IS NULL`,
+      [id, ctx.tenantId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Retainer not found' });
+    }
+
+    // Get related invoices generated from this retainer
+    const invoices = await pool.query(
+      `SELECT id, invoice_number, invoice_date, total_amount, status
+       FROM public.sales_invoices
+       WHERE tenant_id = $1 AND reference LIKE $2 AND deleted_at IS NULL
+       ORDER BY invoice_date DESC`,
+      [ctx.tenantId, `RET-${id}-%`]
+    );
+
+    res.json({
+      success: true,
+      data: {
+        ...result.rows[0],
+        invoices: invoices.rows
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching retainer:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch retainer',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+/**
+ * Create new retainer
+ */
+export const createRetainer = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const {
+      customer_id, retainer_name, description, service_type,
+      amount, currency, billing_frequency, start_date, end_date,
+      hours_included, auto_invoice, notes, terms
+    } = req.body;
+
+    if (!customer_id || !retainer_name || !amount || !start_date) {
+      return res.status(400).json({
+        success: false,
+        message: 'customer_id, retainer_name, amount, and start_date are required'
+      });
+    }
+
+    // Calculate next invoice date based on start_date
+    const nextInvoiceDate = start_date;
+
+    const pool = require('../config/database').default;
+    const result = await pool.query(
+      `INSERT INTO sales.retainers (
+        tenant_id, customer_id, retainer_name, description, service_type,
+        amount, currency, billing_frequency, start_date, end_date,
+        next_invoice_date, hours_included, auto_invoice, notes, terms,
+        created_by, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, 'active')
+      RETURNING *`,
+      [
+        ctx.tenantId, customer_id, retainer_name, description || null,
+        service_type || 'monthly', amount, currency || 'ZAR',
+        billing_frequency || 'monthly', start_date, end_date || null,
+        nextInvoiceDate, hours_included || 0, auto_invoice !== false,
+        notes || null, terms || null, ctx.userId || 'system'
+      ]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Retainer created successfully',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error creating retainer:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create retainer',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+/**
+ * Update retainer
+ */
+export const updateRetainer = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+    const {
+      retainer_name, description, service_type, amount, currency,
+      billing_frequency, start_date, end_date, hours_included,
+      hours_used, auto_invoice, notes, terms, status
+    } = req.body;
+
+    const pool = require('../config/database').default;
+
+    // Verify exists
+    const existing = await pool.query(
+      'SELECT id FROM sales.retainers WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL',
+      [id, ctx.tenantId]
+    );
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Retainer not found' });
+    }
+
+    const fields: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    const addField = (name: string, value: any) => {
+      if (value !== undefined) {
+        fields.push(`${name} = $${idx}`);
+        values.push(value);
+        idx++;
+      }
+    };
+
+    addField('retainer_name', retainer_name);
+    addField('description', description);
+    addField('service_type', service_type);
+    addField('amount', amount);
+    addField('currency', currency);
+    addField('billing_frequency', billing_frequency);
+    addField('start_date', start_date);
+    addField('end_date', end_date);
+    addField('hours_included', hours_included);
+    addField('hours_used', hours_used);
+    addField('auto_invoice', auto_invoice);
+    addField('notes', notes);
+    addField('terms', terms);
+    addField('status', status);
+    fields.push(`updated_by = $${idx}`);
+    values.push(ctx.userId || 'system');
+    idx++;
+    fields.push(`updated_at = NOW()`);
+
+    values.push(id, ctx.tenantId);
+
+    const result = await pool.query(
+      `UPDATE sales.retainers SET ${fields.join(', ')} 
+       WHERE id = $${idx} AND tenant_id = $${idx + 1} AND deleted_at IS NULL
+       RETURNING *`,
+      values
+    );
+
+    res.json({
+      success: true,
+      message: 'Retainer updated successfully',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error updating retainer:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update retainer',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+/**
+ * Delete retainer (soft delete)
+ */
+export const deleteRetainer = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+    const pool = require('../config/database').default;
+
+    const result = await pool.query(
+      `UPDATE sales.retainers SET deleted_at = NOW(), updated_by = $3
+       WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
+       RETURNING id`,
+      [id, ctx.tenantId, ctx.userId || 'system']
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Retainer not found' });
+    }
+
+    res.json({ success: true, message: 'Retainer deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting retainer:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete retainer',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+/**
+ * Generate invoice from retainer (manual trigger or auto-billing)
+ */
+export const generateRetainerInvoice = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+    const pool = require('../config/database').default;
+
+    // Get retainer
+    const retainer = await pool.query(
+      `SELECT r.*, c.customer_name, c.email as customer_email
+       FROM sales.retainers r
+       LEFT JOIN sales.customers c ON c.id = r.customer_id AND c.tenant_id = r.tenant_id
+       WHERE r.id = $1 AND r.tenant_id = $2 AND r.deleted_at IS NULL`,
+      [id, ctx.tenantId]
+    );
+
+    if (retainer.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Retainer not found' });
+    }
+
+    const ret = retainer.rows[0];
+    if (ret.status !== 'active') {
+      return res.status(400).json({ success: false, message: 'Only active retainers can generate invoices' });
+    }
+
+    // Generate invoice number
+    const lastInv = await pool.query(
+      `SELECT invoice_number FROM public.sales_invoices 
+       WHERE tenant_id = $1 ORDER BY id DESC LIMIT 1`,
+      [ctx.tenantId]
+    );
+    let nextNum = 1;
+    if (lastInv.rows.length > 0) {
+      const match = lastInv.rows[0].invoice_number?.match(/(\d+)$/);
+      if (match) nextNum = parseInt(match[1]) + 1;
+    }
+    const invoiceNumber = `INV-${String(nextNum).padStart(6, '0')}`;
+
+    // Calculate due date (30 days from now)
+    const invoiceDate = new Date().toISOString().split('T')[0];
+    const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // Calculate VAT (15%)
+    const subtotal = parseFloat(ret.amount);
+    const vatAmount = subtotal * 0.15;
+    const totalAmount = subtotal + vatAmount;
+
+    // Create invoice
+    const invoice = await pool.query(
+      `INSERT INTO public.sales_invoices (
+        tenant_id, customer_id, invoice_number, invoice_date, due_date,
+        status, subtotal, tax_amount, vat_amount, total_amount, balance_due,
+        currency, notes, reference, created_by
+      ) VALUES ($1, $2, $3, $4, $5, 'approved', $6, $7, $7, $8, $8, $9, $10, $11, $12)
+      RETURNING *`,
+      [
+        ctx.tenantId, ret.customer_id, invoiceNumber, invoiceDate, dueDate,
+        subtotal, vatAmount, totalAmount, ret.currency || 'ZAR',
+        `Retainer: ${ret.retainer_name} - ${ret.billing_frequency} billing`,
+        `RET-${id}-${Date.now()}`,
+        ctx.userId || 'system'
+      ]
+    );
+
+    // Calculate next invoice date based on frequency
+    let nextDate = new Date(ret.next_invoice_date || new Date());
+    switch (ret.billing_frequency) {
+      case 'monthly': nextDate.setMonth(nextDate.getMonth() + 1); break;
+      case 'quarterly': nextDate.setMonth(nextDate.getMonth() + 3); break;
+      case 'bi-annual': nextDate.setMonth(nextDate.getMonth() + 6); break;
+      case 'annual': nextDate.setFullYear(nextDate.getFullYear() + 1); break;
+      default: nextDate.setMonth(nextDate.getMonth() + 1);
+    }
+
+    // Update retainer with next invoice date and reset hours if applicable
+    await pool.query(
+      `UPDATE sales.retainers SET 
+        next_invoice_date = $3, hours_used = 0, updated_at = NOW()
+       WHERE id = $1 AND tenant_id = $2`,
+      [id, ctx.tenantId, nextDate.toISOString().split('T')[0]]
+    );
+
+    // Check if retainer has expired
+    if (ret.end_date && new Date(ret.end_date) < nextDate) {
+      await pool.query(
+        `UPDATE sales.retainers SET status = 'expired', updated_at = NOW()
+         WHERE id = $1 AND tenant_id = $2`,
+        [id, ctx.tenantId]
+      );
+    }
+
+    res.status(201).json({
+      success: true,
+      message: `Invoice ${invoiceNumber} generated from retainer`,
+      data: {
+        invoice: invoice.rows[0],
+        next_invoice_date: nextDate.toISOString().split('T')[0]
+      }
+    });
+  } catch (error) {
+    console.error('Error generating retainer invoice:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate retainer invoice',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+/**
+ * Pause/Resume retainer
+ */
+export const toggleRetainerStatus = async (req: TenantRequest, res: Response) => {
+  try {
+    const ctx = getTenantContext(req);
+    const { id } = req.params;
+    const { action } = req.body; // 'pause' or 'resume'
+    const pool = require('../config/database').default;
+
+    const validActions: Record<string, { from: string[]; to: string }> = {
+      pause: { from: ['active'], to: 'paused' },
+      resume: { from: ['paused'], to: 'active' },
+      cancel: { from: ['active', 'paused', 'draft'], to: 'cancelled' },
+    };
+
+    if (!action || !validActions[action]) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid action. Use: pause, resume, or cancel'
+      });
+    }
+
+    const { from, to } = validActions[action];
+
+    const result = await pool.query(
+      `UPDATE sales.retainers SET status = $3, updated_by = $4, updated_at = NOW()
+       WHERE id = $1 AND tenant_id = $2 AND status = ANY($5) AND deleted_at IS NULL
+       RETURNING *`,
+      [id, ctx.tenantId, to, ctx.userId || 'system', from]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot ${action} retainer in current state`
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Retainer ${action}d successfully`,
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Error toggling retainer status:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update retainer status',
       error: error instanceof Error ? error.message : 'Unknown error'
     });
   }

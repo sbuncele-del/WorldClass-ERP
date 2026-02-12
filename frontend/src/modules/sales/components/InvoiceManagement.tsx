@@ -9,7 +9,7 @@ import {
   DollarOutlined, PlusOutlined, SearchOutlined, EyeOutlined,
   SyncOutlined, FileTextOutlined, SendOutlined, PrinterOutlined,
   CheckCircleOutlined, CloseCircleOutlined, DownloadOutlined,
-  MoreOutlined, SwapOutlined, ExclamationCircleOutlined,
+  MoreOutlined, SwapOutlined, ExclamationCircleOutlined, RollbackOutlined,
 } from '@ant-design/icons';
 import { workspaceApi } from '../../../services/api.service';
 
@@ -490,6 +490,41 @@ const InvoiceManagement: React.FC = () => {
     return matchSearch && matchStatus;
   });
 
+  // ─── Credit Note Handler ──────────────────────────────────────────────
+  const handleCreateCreditNote = async (inv: Invoice) => {
+    Modal.confirm({
+      title: 'Create Credit Note',
+      icon: <RollbackOutlined />,
+      content: (
+        <div>
+          <p>Create a credit note for invoice <strong>{inv.invoice_number}</strong>?</p>
+          <p>Amount: <strong>R {(Number(inv.total_amount) || Number(inv.subtotal) || 0).toLocaleString()}</strong></p>
+          <p>This will:</p>
+          <ul>
+            <li>Create a credit note reversing the full invoice amount</li>
+            <li>Mark the original invoice as credited</li>
+          </ul>
+        </div>
+      ),
+      okText: 'Create Credit Note',
+      onOk: async () => {
+        try {
+          await workspaceApi.sales.createCreditNote({
+            customer_id: inv.customer_id,
+            invoice_id: inv.id,
+            amount: Number(inv.total_amount) || Number(inv.subtotal) || 0,
+            reason: `Credit note for ${inv.invoice_number}`,
+          });
+          message.success(`Credit note created for ${inv.invoice_number}`);
+          fetchInvoices();
+          setShowDetailModal(false);
+        } catch (err: any) {
+          message.error(err?.message || 'Failed to create credit note');
+        }
+      },
+    });
+  };
+
   // ─── Action Menu per Row ──────────────────────────────────────────────
   const getRowActions = (inv: Invoice): MenuProps['items'] => {
     const status = (inv.status || '').toLowerCase();
@@ -500,14 +535,19 @@ const InvoiceManagement: React.FC = () => {
     if (status === 'draft') {
       items.push(
         { key: 'approve', label: 'Approve', icon: <CheckCircleOutlined /> },
-        { key: 'void', label: 'Void', icon: <CloseCircleOutlined />, danger: true },
       );
     }
-    if (status === 'approved' || status === 'draft') {
-      items.push({ key: 'send', label: 'Send to Customer', icon: <SendOutlined /> });
+    if (status === 'approved' || status === 'draft' || status === 'sent') {
+      items.push({ key: 'send', label: status === 'sent' ? 'Resend to Customer' : 'Send to Customer', icon: <SendOutlined /> });
     }
     if (isProforma(inv)) {
       items.push({ key: 'convert', label: 'Convert to Tax Invoice', icon: <SwapOutlined /> });
+    }
+    // Void & Credit Note - available for all non-void/non-cancelled invoices
+    if (status !== 'void' && status !== 'cancelled') {
+      items.push({ type: 'divider' });
+      items.push({ key: 'credit_note', label: 'Create Credit Note', icon: <RollbackOutlined /> });
+      items.push({ key: 'void', label: 'Void Invoice', icon: <CloseCircleOutlined />, danger: true });
     }
     items.push(
       { type: 'divider' },
@@ -524,6 +564,7 @@ const InvoiceManagement: React.FC = () => {
       case 'approve': handleApprove(inv); break;
       case 'send': handleSend(inv); break;
       case 'void': handleVoid(inv); break;
+      case 'credit_note': handleCreateCreditNote(inv); break;
       case 'convert': handleConvertProforma(inv); break;
       case 'print': previewInvoice(inv).then(() => { setTimeout(handlePrint, 500); }); break;
       case 'download': previewInvoice(inv).then(() => { setTimeout(handleDownloadPDF, 500); }); break;

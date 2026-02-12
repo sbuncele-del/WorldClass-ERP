@@ -122,7 +122,7 @@ async function getRecentOrders(tenantId: string) {
 }
 
 /**
- * Get top customers by revenue
+ * Get top customers by revenue (orders + invoices per IFRS 15)
  */
 async function getTopCustomers(tenantId: string) {
   const result = await query(
@@ -130,14 +130,22 @@ async function getTopCustomers(tenantId: string) {
     SELECT 
       c.customer_id as id,
       c.company_name as name,
+      c.customer_type,
       c.email,
-      COUNT(so.order_id) as order_count,
-      COALESCE(SUM(so.total), 0) as total_revenue
+      COALESCE(order_stats.order_count, 0) as order_count,
+      COALESCE(order_stats.order_revenue, 0) + COALESCE(invoice_stats.invoice_revenue, 0) as total_revenue,
+      COALESCE(invoice_stats.invoice_count, 0) as invoice_count
     FROM sales.customers c
-    LEFT JOIN sales.orders so ON c.customer_id = so.customer_id AND so.status != 'cancelled'
+    LEFT JOIN (
+      SELECT customer_id, COUNT(*) as order_count, COALESCE(SUM(total),0) as order_revenue
+      FROM sales.orders WHERE tenant_id = $1 AND status != 'cancelled' GROUP BY customer_id
+    ) order_stats ON c.customer_id = order_stats.customer_id
+    LEFT JOIN (
+      SELECT customer_id, COUNT(*) as invoice_count, COALESCE(SUM(COALESCE(total_amount, total, 0)),0) as invoice_revenue
+      FROM public.sales_invoices WHERE tenant_id = $1 AND LOWER(status) NOT IN ('void','cancelled','draft') GROUP BY customer_id
+    ) invoice_stats ON c.customer_id = invoice_stats.customer_id
     WHERE c.tenant_id = $1
-    GROUP BY c.customer_id, c.company_name, c.email
-    HAVING COUNT(so.order_id) > 0
+      AND (COALESCE(order_stats.order_count,0) > 0 OR COALESCE(invoice_stats.invoice_count,0) > 0)
     ORDER BY total_revenue DESC
     LIMIT 10
     `,
@@ -197,13 +205,18 @@ async function getPendingQuotations(tenantId: string) {
 
 /**
  * Get sales summary metrics
+ * IFRS 15: Revenue is recognized when performance obligation is satisfied.
+ * For invoiced revenue, we include approved/sent/posted invoices (not draft/void).
  */
 async function getSalesSummary(tenantId: string) {
   const result = await query(
     `
     SELECT 
       (SELECT COUNT(*) FROM sales.orders WHERE tenant_id = $1 AND status != 'cancelled') as total_orders,
-      (SELECT COALESCE(SUM(total), 0) FROM sales.orders WHERE tenant_id = $1 AND status != 'cancelled') as total_revenue,
+      (SELECT COALESCE(SUM(total), 0) FROM sales.orders WHERE tenant_id = $1 AND status != 'cancelled') as order_revenue,
+      (SELECT COALESCE(SUM(COALESCE(total_amount, total, 0)), 0) FROM public.sales_invoices WHERE tenant_id = $1 AND LOWER(status) NOT IN ('void','cancelled','draft')) as invoice_revenue,
+      (SELECT COUNT(*) FROM public.sales_invoices WHERE tenant_id = $1 AND LOWER(status) NOT IN ('void','cancelled','draft')) as total_invoices,
+      (SELECT COALESCE(SUM(COALESCE(total_amount, total, 0)), 0) FROM public.sales_invoices WHERE tenant_id = $1 AND LOWER(status) = 'proforma') as proforma_value,
       (SELECT COUNT(*) FROM sales.customers WHERE tenant_id = $1) as total_customers,
       (SELECT COUNT(*) FROM sales.opportunities WHERE tenant_id = $1 AND UPPER(COALESCE(stage,'')) NOT IN ('CLOSED_WON', 'CLOSED_LOST')) as open_opportunities,
       (SELECT COALESCE(SUM(value), 0) FROM sales.opportunities WHERE tenant_id = $1 AND UPPER(COALESCE(stage,'')) NOT IN ('CLOSED_WON', 'CLOSED_LOST')) as pipeline_value,
@@ -221,10 +234,23 @@ async function getSalesSummary(tenantId: string) {
   const closedDeals = parseInt(row.closed_deals) || 0;
   const winRate = closedDeals > 0 ? Math.round((wonDeals / closedDeals) * 100) : 0;
 
+  // Total revenue = MAX of (order revenue, invoice revenue, won opportunity revenue)
+  // IFRS 15: we use invoice revenue as the primary metric since it represents recognized revenue
+  const orderRevenue = parseFloat(row.order_revenue) || 0;
+  const invoiceRevenue = parseFloat(row.invoice_revenue) || 0;
+  const wonRevenue = parseFloat(row.won_revenue) || 0;
+  const totalRevenue = Math.max(invoiceRevenue, orderRevenue, wonRevenue);
+
   return {
     ...row,
+    // Expose total_revenue as the main dashboard metric
+    total_revenue: totalRevenue,
+    invoice_revenue: invoiceRevenue,
+    order_revenue: orderRevenue,
+    won_revenue: wonRevenue,
+    total_invoices: parseInt(row.total_invoices) || 0,
     win_rate: winRate,
     avg_deal_size: parseFloat(row.avg_deal_size) || 0,
-    won_revenue: parseFloat(row.won_revenue) || 0,
+    average_order_value: parseFloat(row.avg_deal_size) || 0,
   };
 }
