@@ -593,11 +593,20 @@ const ProjectsHub: React.FC = () => {
       setDraggedTask(null);
       return;
     }
+    // Map kanban status to backend status
+    const kanbanToBackend: Record<string, string> = {
+      'todo': 'Not Started',
+      'in-progress': 'In Progress',
+      'review': 'Review',
+      'done': 'Completed'
+    };
+    const backendStatus = kanbanToBackend[newStatus] || newStatus;
     // Update local state immediately
     setTasks(prev => prev.map(t => t.id === draggedTask.id ? { ...t, status: newStatus as Task['status'] } : t));
     // Persist to backend
     try {
-      await projectService.updateTaskStatus(draggedTask.id, newStatus);
+      await projectService.updateTaskStatus(draggedTask.id, backendStatus);
+      message.success(`Task moved to ${newStatus === 'todo' ? 'To Do' : newStatus === 'in-progress' ? 'In Progress' : newStatus === 'review' ? 'Review' : 'Done'}`);
     } catch {
       // Revert on failure
       setTasks(prev => prev.map(t => t.id === draggedTask.id ? { ...t, status: draggedTask.status } : t));

@@ -322,7 +322,7 @@ export const updateTaskStatus = async (req: TenantRequest, res: Response) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const validStatuses = ['Not Started', 'In Progress', 'On Hold', 'Completed', 'Cancelled'];
+    const validStatuses = ['Not Started', 'In Progress', 'On Hold', 'Review', 'Completed', 'Cancelled'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
