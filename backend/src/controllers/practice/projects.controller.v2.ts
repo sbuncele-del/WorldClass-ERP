@@ -524,7 +524,7 @@ export const createProjectUpdate = async (req: TenantRequest, res: Response) => 
       const allUsers = await pool.query(`SELECT id FROM users WHERE tenant_id = $1 AND id != $2`, [tenantId, userId]);
       for (const u of allUsers.rows) {
         await pool.query(`
-          INSERT INTO user_notifications (tenant_id, user_id, type, title, message, data, is_read)
+          INSERT INTO user_notifications (tenant_id, user_id, notification_type, title, message, metadata, is_read)
           VALUES ($1, $2, 'project_update', $3, $4, $5, false)
         `, [
           tenantId,
@@ -551,8 +551,8 @@ export const createProjectUpdate = async (req: TenantRequest, res: Response) => 
         
         if (customerRes.rows.length > 0 && customerRes.rows[0].email) {
           const customer = customerRes.rows[0];
-          const tenantRes = await pool.query(`SELECT name, business_name FROM tenants WHERE id = $1`, [tenantId]);
-          const companyName = tenantRes.rows[0]?.business_name || tenantRes.rows[0]?.name || 'WorldClass ERP';
+          const tenantRes = await pool.query(`SELECT name, company_name FROM tenants WHERE id = $1`, [tenantId]);
+          const companyName = tenantRes.rows[0]?.company_name || tenantRes.rows[0]?.name || 'WorldClass ERP';
 
           const updateTypeLabel = {
             general: 'General Update',

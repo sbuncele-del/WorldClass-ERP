@@ -1492,6 +1492,12 @@ const ProjectsHub: React.FC = () => {
   );
 
   // Budget & Costs
+  const formatBudget = (value: number) => {
+    if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+    if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
+    return value.toLocaleString();
+  };
+
   const renderBudget = () => (
     <div style={{ padding: '24px' }}>
       <Row gutter={[16, 16]}>
@@ -1501,7 +1507,7 @@ const ProjectsHub: React.FC = () => {
               title="Total Portfolio Budget" 
               value={projectStats.totalBudget} 
               prefix="R" 
-              formatter={(value) => `${(Number(value) / 1000000).toFixed(1)}M`}
+              formatter={(value) => formatBudget(Number(value))}
             />
           </Card>
         </Col>
@@ -1512,7 +1518,7 @@ const ProjectsHub: React.FC = () => {
               value={projectStats.totalSpent} 
               prefix="R" 
               valueStyle={{ color: '#faad14' }}
-              formatter={(value) => `${(Number(value) / 1000000).toFixed(1)}M`}
+              formatter={(value) => formatBudget(Number(value))}
             />
           </Card>
         </Col>
@@ -1523,7 +1529,7 @@ const ProjectsHub: React.FC = () => {
               value={projectStats.totalBudget - projectStats.totalSpent} 
               prefix="R" 
               valueStyle={{ color: '#52c41a' }}
-              formatter={(value) => `${(Number(value) / 1000000).toFixed(1)}M`}
+              formatter={(value) => formatBudget(Number(value))}
             />
           </Card>
         </Col>
@@ -1539,13 +1545,13 @@ const ProjectsHub: React.FC = () => {
               title: 'Budget', 
               dataIndex: 'budget', 
               key: 'budget',
-              render: (budget: number) => `R${(budget / 1000000).toFixed(2)}M`
+              render: (budget: number) => `R${formatBudget(budget)}`
             },
             { 
               title: 'Spent', 
               dataIndex: 'spent', 
               key: 'spent',
-              render: (spent: number) => `R${(spent / 1000000).toFixed(2)}M`
+              render: (spent: number) => `R${formatBudget(spent)}`
             },
             {
               title: 'Variance',
@@ -1554,7 +1560,7 @@ const ProjectsHub: React.FC = () => {
                 const remaining = record.budget - record.spent;
                 return (
                   <Text style={{ color: remaining > 0 ? '#52c41a' : '#ff4d4f' }}>
-                    R{(remaining / 1000000).toFixed(2)}M
+                    R{formatBudget(Math.abs(remaining))}
                   </Text>
                 );
               }
@@ -2256,14 +2262,29 @@ const ProjectsHub: React.FC = () => {
               setTimeEntryModalVisible(false);
               timeEntryForm.resetFields();
               setEditingTimeEntry(null);
-              // Refresh time entries
+              // Refresh time entries with transformation
               const timeRes = await projectService.getTimeEntries().catch(() => ({ data: [] }));
-              const entries = Array.isArray(timeRes?.entries)
+              const rawEntries = Array.isArray(timeRes?.entries)
                 ? timeRes.entries
                 : Array.isArray(timeRes?.data)
                   ? timeRes.data
                   : Array.isArray(timeRes) ? timeRes : [];
-              setTimeEntries(entries);
+              const transformedEntries = rawEntries.map((e: any) => ({
+                id: e.id || e.entry_id,
+                project: e.project_name || e.project || '',
+                project_id: e.project_id,
+                task: e.task_name || e.task || '',
+                task_id: e.task_id,
+                user: e.user_name || e.user || '',
+                date: e.entry_date ? new Date(e.entry_date).toLocaleDateString() : e.date || '',
+                rawDate: e.entry_date || e.date,
+                hours: parseFloat(e.hours) || 0,
+                description: e.description || '',
+                billable: e.billable === true || e.is_billable === true,
+                rate: parseFloat(e.billing_rate || e.rate) || 0,
+                status: e.status || 'Pending',
+              }));
+              setTimeEntries(transformedEntries);
             } catch (error: any) {
               if (error.errorFields) return;
               message.error(error.response?.data?.message || 'Failed to log time entry. Please try again.');
