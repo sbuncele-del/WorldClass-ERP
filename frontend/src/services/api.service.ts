@@ -112,7 +112,9 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
  * Generic GET request
  */
 export const apiGet = async <T>(endpoint: string, params?: Record<string, any>): Promise<T> => {
-  const url = new URL(`${API_BASE_URL}${endpoint}`);
+  // Build URL with query params - use window.location.origin as base for relative URLs
+  const base = API_BASE_URL || window.location.origin;
+  const url = new URL(endpoint, base);
   
   if (params) {
     Object.keys(params).forEach(key => {

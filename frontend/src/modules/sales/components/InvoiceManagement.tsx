@@ -72,11 +72,15 @@ const InvoiceManagement: React.FC = () => {
   const loadCustomers = async () => {
     try {
       const res: any = await workspaceApi.sales.getCustomers({ limit: 200 });
+      console.log('[Customers] response:', JSON.stringify(res).slice(0, 300));
       const list = extractList(res, 'data', 'customers');
+      console.log('[Customers] extracted list:', list.length, 'customers');
       setAllCustomers(list.map((c: any) => ({
         id: c.customer_id || c.id, name: c.company_name || c.customer_name || c.name || 'Unnamed',
       })));
-    } catch { /* ignore */ }
+    } catch (err) {
+      console.error('[Customers] Failed to load customers:', err);
+    }
   };
 
   const handleCreate = async () => {
