@@ -218,16 +218,18 @@ const ProjectsHub: React.FC = () => {
         const activeProjectCount = projectsData.filter((p: any) => (p.status || '').toLowerCase() === 'active').length;
 
         const teamResources = userData.map((u: any) => {
-          const userProjects = managerProjectCounts[u.id] || 0;
-          // Rough utilization: each active project counts as ~25%
+          const uid = u.user_id || u.id;
+          const userProjects = managerProjectCounts[uid] || 0;
+          // Utilization: each active project counts as ~25%
           const utilization = Math.min(100, userProjects * 25);
+          const isActive = u.is_active !== false && !u.account_suspended;
           return {
-            id: u.id,
+            id: uid,
             name: `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email,
-            role: u.role || 'Team Member',
+            role: u.roles?.[0]?.role_name || 'Team Member',
             projects: userProjects,
             utilization,
-            availability: u.status !== 'active' ? 'Unavailable' : utilization >= 100 ? 'Fully Booked' : 'Available',
+            availability: !isActive ? 'Unavailable' : utilization >= 100 ? 'Fully Booked' : 'Available',
           };
         });
         setResources(teamResources);
@@ -1089,7 +1091,7 @@ const ProjectsHub: React.FC = () => {
       <Card 
         title={<><TeamOutlined /> Team Resources</>}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => message.info('Add team member - connect to HR module')}>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => window.open('/app/admin/users', '_blank')}>
             Add Resource
           </Button>
         }

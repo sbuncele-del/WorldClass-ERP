@@ -2449,9 +2449,9 @@ export const getRetainers = async (req: TenantRequest, res: Response) => {
     );
 
     const result = await pool.query(
-      `SELECT r.*, c.customer_name 
+      `SELECT r.*, c.company_name AS customer_name 
        FROM sales.retainers r
-       LEFT JOIN sales.customers c ON c.id = r.customer_id AND c.tenant_id = r.tenant_id
+       LEFT JOIN sales.customers c ON c.customer_id = r.customer_id AND c.tenant_id = r.tenant_id
        ${whereClause}
        ORDER BY r.created_at DESC
        LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
@@ -2488,9 +2488,9 @@ export const getRetainerById = async (req: TenantRequest, res: Response) => {
     const pool = require('../config/database').default;
 
     const result = await pool.query(
-      `SELECT r.*, c.customer_name, c.email as customer_email
+      `SELECT r.*, c.company_name AS customer_name, c.email as customer_email
        FROM sales.retainers r
-       LEFT JOIN sales.customers c ON c.id = r.customer_id AND c.tenant_id = r.tenant_id
+       LEFT JOIN sales.customers c ON c.customer_id = r.customer_id AND c.tenant_id = r.tenant_id
        WHERE r.id = $1 AND r.tenant_id = $2 AND r.deleted_at IS NULL`,
       [id, ctx.tenantId]
     );
@@ -2701,9 +2701,9 @@ export const generateRetainerInvoice = async (req: TenantRequest, res: Response)
 
     // Get retainer
     const retainer = await pool.query(
-      `SELECT r.*, c.customer_name, c.email as customer_email
+      `SELECT r.*, c.company_name AS customer_name, c.email as customer_email
        FROM sales.retainers r
-       LEFT JOIN sales.customers c ON c.id = r.customer_id AND c.tenant_id = r.tenant_id
+       LEFT JOIN sales.customers c ON c.customer_id = r.customer_id AND c.tenant_id = r.tenant_id
        WHERE r.id = $1 AND r.tenant_id = $2 AND r.deleted_at IS NULL`,
       [id, ctx.tenantId]
     );
