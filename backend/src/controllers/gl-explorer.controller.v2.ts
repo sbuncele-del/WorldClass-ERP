@@ -49,10 +49,10 @@ export class GLExplorerControllerV2 {
       const params: any[] = [tenantId];
       let paramIndex = 2;
 
-      // Account codes filter
+      // Account codes filter - use COA join for robustness
       if (account_codes) {
         const codes = Array.isArray(account_codes) ? account_codes : [account_codes];
-        conditions.push(`jel.account_code = ANY($${paramIndex})`);
+        conditions.push(`COALESCE(coa.account_code, jel.account_code) = ANY($${paramIndex})`);
         params.push(codes);
         paramIndex++;
       }
@@ -111,21 +111,11 @@ export class GLExplorerControllerV2 {
         paramIndex++;
       }
 
-      // Cost centers filter
-      if (cost_centers) {
-        const centers = Array.isArray(cost_centers) ? cost_centers : [cost_centers];
-        conditions.push(`jel.cost_center = ANY($${paramIndex})`);
-        params.push(centers);
-        paramIndex++;
-      }
+      // Cost centers filter (not supported yet)
+      // if (cost_centers) { ... }
 
-      // Project codes filter
-      if (project_codes) {
-        const projects = Array.isArray(project_codes) ? project_codes : [project_codes];
-        conditions.push(`jel.project_code = ANY($${paramIndex})`);
-        params.push(projects);
-        paramIndex++;
-      }
+      // Project codes filter (not supported yet)
+      // if (project_codes) { ... }
 
       // Posted only filter
       if (posted_only === 'true') {
@@ -152,14 +142,11 @@ export class GLExplorerControllerV2 {
           je.source_type,
           je.source_document_number,
           je.status,
-          jel.account_code,
-          coa.account_name,
+          COALESCE(coa.account_code, jel.account_code) as account_code,
+          COALESCE(coa.account_name, jel.account_name) as account_name,
           jel.description as line_description,
           jel.debit_amount,
-          jel.credit_amount,
-          jel.cost_center,
-          jel.project_code,
-          jel.department
+          jel.credit_amount
         FROM journal_entry_lines jel
         JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
@@ -180,6 +167,8 @@ export class GLExplorerControllerV2 {
         FROM journal_entry_lines jel
         JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
+        LEFT JOIN chart_of_accounts coa ON jel.account_id = coa.id
+          AND coa.tenant_id = $1
         WHERE ${whereClause}
       `;
 
@@ -249,7 +238,7 @@ export class GLExplorerControllerV2 {
           AND jel.tenant_id = $1
         LEFT JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
-          AND je.status = 'POSTED'
+          AND LOWER(je.status) = 'posted'
           AND je.journal_date <= $2
         WHERE coa.tenant_id = $1
           AND coa.is_active = true
@@ -325,7 +314,7 @@ export class GLExplorerControllerV2 {
         JOIN chart_of_accounts coa ON jel.account_id = coa.id
           AND coa.tenant_id = $1
         WHERE jel.tenant_id = $1
-          AND je.status = 'POSTED'
+          AND LOWER(je.status) = 'posted'
           AND je.journal_date < $2
           AND coa.account_code = $3
       `;
@@ -350,7 +339,7 @@ export class GLExplorerControllerV2 {
         JOIN chart_of_accounts coa ON jel.account_id = coa.id
           AND coa.tenant_id = $1
         WHERE jel.tenant_id = $1
-          AND je.status = 'POSTED'
+          AND LOWER(je.status) = 'posted'
           AND je.journal_date >= $2 AND je.journal_date <= $3
           AND coa.account_code = $4
         ORDER BY je.journal_date, je.entry_id
@@ -406,21 +395,21 @@ export class GLExplorerControllerV2 {
     try {
       const { tenantId } = getTenantContext(req);
 
-      // Get accounts - using correct column names
+      // Get accounts
       const accountsQuery = `
-        SELECT code as account_code, name as account_name, account_type
+        SELECT account_code, account_name, account_type
         FROM chart_of_accounts
         WHERE tenant_id = $1 AND is_active = true
-        ORDER BY code
+        ORDER BY account_code
       `;
       const accounts = await pool.query(accountsQuery, [tenantId]);
 
-      // Get source types (column is 'source' not 'source_type')
+      // Get source types
       const sourceTypesQuery = `
-        SELECT DISTINCT source
+        SELECT DISTINCT COALESCE(source_type, source) as source_type
         FROM journal_entries
-        WHERE tenant_id = $1 AND source IS NOT NULL
-        ORDER BY source
+        WHERE tenant_id = $1 AND (source_type IS NOT NULL OR source IS NOT NULL)
+        ORDER BY source_type
       `;
       const sourceTypes = await pool.query(sourceTypesQuery, [tenantId]);
 
@@ -429,7 +418,7 @@ export class GLExplorerControllerV2 {
         success: true,
         data: {
           accounts: accounts.rows,
-          source_types: sourceTypes.rows.map(r => r.source),
+          source_types: sourceTypes.rows.map(r => r.source_type),
           cost_centers: [],
           project_codes: [],
           statuses: ['DRAFT', 'PENDING', 'POSTED', 'REVERSED']

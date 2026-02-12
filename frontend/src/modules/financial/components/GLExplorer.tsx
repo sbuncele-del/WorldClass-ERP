@@ -1,10 +1,34 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './GLExplorer.css';
 
 interface Account {
   code: string;
   name: string;
   account_type: string;
+}
+
+interface AccountSummary {
+  account_code: string;
+  account_name: string;
+  account_type: string;
+  total_debits: number;
+  total_credits: number;
+  balance: number;
+  entry_count: number;
+}
+
+interface AccountLedgerEntry {
+  journal_entry_id: string;
+  entry_number: string;
+  journal_date: string;
+  description: string;
+  source_type: string;
+  source_document_number: string;
+  line_description: string;
+  debit_amount: number;
+  credit_amount: number;
+  running_balance: number;
 }
 
 interface FilterOptions {
@@ -53,7 +77,8 @@ interface SearchFilters {
 }
 
 const GLExplorer: React.FC = () => {
-  const [view, setView] = useState<'search' | 'tree' | 'drill'>('search');
+  const navigate = useNavigate();
+  const [view, setView] = useState<'search' | 'tree' | 'drill'>('tree');
   const [filters, setFilters] = useState<SearchFilters>({
     account_codes: [],
     date_from: '',
@@ -73,11 +98,77 @@ const GLExplorer: React.FC = () => {
   const [showFilters, setShowFilters] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, limit: 50, total: 0, total_pages: 0 });
 
+  // Account Tree state
+  const [accountSummaries, setAccountSummaries] = useState<AccountSummary[]>([]);
+  const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set(['asset', 'liability', 'equity', 'revenue', 'expense']));
+  const [selectedAccount, setSelectedAccount] = useState<AccountSummary | null>(null);
+  const [accountLedger, setAccountLedger] = useState<AccountLedgerEntry[]>([]);
+  const [accountLedgerInfo, setAccountLedgerInfo] = useState<{ opening_balance: number; closing_balance: number } | null>(null);
+  const [loadingTree, setLoadingTree] = useState(false);
+  const [loadingLedger, setLoadingLedger] = useState(false);
+
   useEffect(() => {
     fetchFilterOptions();
-    handleSearch();
+    fetchAccountSummaries();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const fetchAccountSummaries = async () => {
+    setLoadingTree(true);
+    try {
+      const response = await fetch('/api/financial/gl-explorer/account-summary');
+      const result = await response.json();
+      if (result.success) {
+        setAccountSummaries(result.data.accounts || []);
+      }
+    } catch (error) {
+      console.error('Error fetching account summaries:', error);
+    } finally {
+      setLoadingTree(false);
+    }
+  };
+
+  const fetchAccountLedger = async (accountCode: string) => {
+    setLoadingLedger(true);
+    try {
+      const response = await fetch(`/api/financial/gl-explorer/account-ledger/${accountCode}`);
+      const result = await response.json();
+      if (result.success) {
+        setAccountLedger(result.data.transactions || []);
+        setAccountLedgerInfo({
+          opening_balance: result.data.opening_balance || 0,
+          closing_balance: result.data.closing_balance || 0,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching account ledger:', error);
+    } finally {
+      setLoadingLedger(false);
+    }
+  };
+
+  const handleAccountClick = (account: AccountSummary) => {
+    setSelectedAccount(account);
+    setView('drill');
+    fetchAccountLedger(account.account_code);
+  };
+
+  const handleBackToTree = () => {
+    setSelectedAccount(null);
+    setAccountLedger([]);
+    setAccountLedgerInfo(null);
+    setView('tree');
+  };
+
+  const toggleAccountType = (type: string) => {
+    const newExpanded = new Set(expandedTypes);
+    if (newExpanded.has(type)) {
+      newExpanded.delete(type);
+    } else {
+      newExpanded.add(type);
+    }
+    setExpandedTypes(newExpanded);
+  };
 
   const fetchFilterOptions = async () => {
     try {
@@ -514,11 +605,161 @@ const GLExplorer: React.FC = () => {
       {/* Account Tree View */}
       {view === 'tree' && (
         <div className="tree-view">
-          <div className="coming-soon">
-            <div className="coming-icon">🌳</div>
-            <h3>Account Tree View</h3>
-            <p>Hierarchical account navigation coming soon!</p>
+          {loadingTree ? (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p>Loading accounts...</p>
+            </div>
+          ) : (
+            <div className="account-tree">
+              <div className="tree-header">
+                <h3>Chart of Accounts — General Ledger</h3>
+                <p className="tree-subtitle">Click any account to view its detailed transaction ledger</p>
+              </div>
+              {['asset', 'liability', 'equity', 'revenue', 'expense'].map(type => {
+                const typeAccounts = accountSummaries.filter(a => 
+                  a.account_type?.toLowerCase() === type
+                );
+                if (typeAccounts.length === 0) return null;
+                
+                const typeLabels: Record<string, string> = {
+                  asset: '📊 ASSETS', liability: '📋 LIABILITIES', equity: '🏛️ EQUITY',
+                  revenue: '💰 REVENUE', expense: '💳 EXPENSES'
+                };
+                const typeColors: Record<string, string> = {
+                  asset: '#10b981', liability: '#ef4444', equity: '#3b82f6',
+                  revenue: '#22c55e', expense: '#f59e0b'
+                };
+                const typeTotalBalance = typeAccounts.reduce((sum, a) => sum + parseFloat(String(a.balance || 0)), 0);
+
+                return (
+                  <div key={type} className="account-type-group">
+                    <div className="type-header" onClick={() => toggleAccountType(type)}
+                      style={{ borderLeftColor: typeColors[type] }}>
+                      <div className="type-label">
+                        <span className="expand-arrow">{expandedTypes.has(type) ? '▼' : '▶'}</span>
+                        <span>{typeLabels[type] || type.toUpperCase()}</span>
+                      </div>
+                      <div className="type-balance" style={{ color: typeColors[type] }}>
+                        {formatCurrency(typeTotalBalance)}
+                      </div>
+                    </div>
+                    {expandedTypes.has(type) && (
+                      <div className="type-accounts">
+                        {typeAccounts.map(account => (
+                          <div key={account.account_code} className="account-row"
+                            onClick={() => handleAccountClick(account)}>
+                            <div className="account-info">
+                              <span className="acct-code">{account.account_code}</span>
+                              <span className="acct-name">{account.account_name}</span>
+                              {parseInt(String(account.entry_count)) > 0 && (
+                                <span className="entry-count">{account.entry_count} entries</span>
+                              )}
+                            </div>
+                            <div className="account-amounts">
+                              <span className="acct-debit">Dr: {formatCurrency(parseFloat(String(account.total_debits || 0)))}</span>
+                              <span className="acct-credit">Cr: {formatCurrency(parseFloat(String(account.total_credits || 0)))}</span>
+                              <span className="acct-balance" style={{ 
+                                color: parseFloat(String(account.balance || 0)) >= 0 ? '#10b981' : '#ef4444',
+                                fontWeight: 'bold'
+                              }}>
+                                {formatCurrency(parseFloat(String(account.balance || 0)))}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Drill-Down View (Account Ledger) */}
+      {view === 'drill' && selectedAccount && (
+        <div className="drill-view">
+          <div className="drill-header">
+            <button onClick={handleBackToTree} className="btn-back">← Back to Accounts</button>
+            <div className="drill-account-info">
+              <h2>{selectedAccount.account_code} — {selectedAccount.account_name}</h2>
+              <span className="drill-type">{selectedAccount.account_type}</span>
+            </div>
           </div>
+
+          {accountLedgerInfo && (
+            <div className="drill-summary">
+              <div className="summary-card">
+                <label>Opening Balance</label>
+                <span>{formatCurrency(accountLedgerInfo.opening_balance)}</span>
+              </div>
+              <div className="summary-card">
+                <label>Total Debits</label>
+                <span style={{ color: '#10b981' }}>{formatCurrency(parseFloat(String(selectedAccount.total_debits || 0)))}</span>
+              </div>
+              <div className="summary-card">
+                <label>Total Credits</label>
+                <span style={{ color: '#ef4444' }}>{formatCurrency(parseFloat(String(selectedAccount.total_credits || 0)))}</span>
+              </div>
+              <div className="summary-card highlight">
+                <label>Closing Balance</label>
+                <span>{formatCurrency(accountLedgerInfo.closing_balance)}</span>
+              </div>
+            </div>
+          )}
+
+          {loadingLedger ? (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p>Loading transactions...</p>
+            </div>
+          ) : accountLedger.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-icon">📄</div>
+              <h3>No transactions</h3>
+              <p>No posted journal entries found for this account</p>
+            </div>
+          ) : (
+            <div className="drill-table-container">
+              <table className="drill-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Entry #</th>
+                    <th>Description</th>
+                    <th>Source</th>
+                    <th className="amount-col">Debit</th>
+                    <th className="amount-col">Credit</th>
+                    <th className="amount-col">Balance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {accountLedger.map((entry, idx) => (
+                    <tr key={`${entry.journal_entry_id}-${idx}`}>
+                      <td>{formatDate(entry.journal_date)}</td>
+                      <td className="entry-num">{entry.entry_number}</td>
+                      <td>{entry.line_description || entry.description}</td>
+                      <td><span className="source-badge">{(entry.source_type || '').replace(/_/g, ' ')}</span></td>
+                      <td className="amount-col debit">
+                        {parseFloat(String(entry.debit_amount || 0)) > 0 ? formatCurrency(parseFloat(String(entry.debit_amount))) : '-'}
+                      </td>
+                      <td className="amount-col credit">
+                        {parseFloat(String(entry.credit_amount || 0)) > 0 ? formatCurrency(parseFloat(String(entry.credit_amount))) : '-'}
+                      </td>
+                      <td className="amount-col balance" style={{ 
+                        color: parseFloat(String(entry.running_balance || 0)) >= 0 ? '#10b981' : '#ef4444',
+                        fontWeight: 'bold'
+                      }}>
+                        {formatCurrency(parseFloat(String(entry.running_balance || 0)))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

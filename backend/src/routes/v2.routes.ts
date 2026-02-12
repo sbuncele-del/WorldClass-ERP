@@ -3558,14 +3558,21 @@ router.get('/cash-management/cash-flow-dashboard', async (req: any, res) => {
 router.get('/cash-management/bank-accounts', async (req: any, res) => {
   const tenantId = req.tenant?.id || req.headers['x-tenant-id'] || 1;
   try {
-    // Get bank accounts with dynamically calculated balance from statement lines
+    // Get bank accounts with dynamically calculated balance from statement lines + GL book balance
     const result = await query(`
       SELECT ba.*,
         COALESCE(sl.statement_balance, 0) as calculated_bank_balance,
         COALESCE(sl.total_credits, 0) as total_credits,
         COALESCE(sl.total_debits, 0) as total_debits,
-        COALESCE(sl.transaction_count, 0) as transaction_count
+        COALESCE(sl.transaction_count, 0) as transaction_count,
+        COALESCE(gl.gl_balance, 0) as gl_book_balance,
+        COALESCE(gl.gl_debits, 0) as gl_total_debits,
+        COALESCE(gl.gl_credits, 0) as gl_total_credits,
+        COALESCE(gl.gl_entry_count, 0) as gl_entry_count,
+        coa.id as gl_account_id,
+        coa.account_name as gl_account_name
       FROM bank_accounts ba
+      LEFT JOIN chart_of_accounts coa ON coa.account_code = ba.gl_account_code AND coa.tenant_id = ba.tenant_id
       LEFT JOIN LATERAL (
         SELECT 
           SUM(amount) as statement_balance,
@@ -3575,6 +3582,16 @@ router.get('/cash-management/bank-accounts', async (req: any, res) => {
         FROM bank_statement_lines bsl
         WHERE bsl.bank_account_id = ba.id AND bsl.tenant_id = ba.tenant_id
       ) sl ON true
+      LEFT JOIN LATERAL (
+        SELECT 
+          COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as gl_balance,
+          COALESCE(SUM(jel.debit_amount), 0) as gl_debits,
+          COALESCE(SUM(jel.credit_amount), 0) as gl_credits,
+          COUNT(DISTINCT jel.journal_entry_id) as gl_entry_count
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = ba.tenant_id
+        WHERE jel.account_id = coa.id AND jel.tenant_id = ba.tenant_id AND LOWER(je.status) = 'posted'
+      ) gl ON coa.id IS NOT NULL
       WHERE ba.tenant_id = $1
     `, [tenantId]);
     
@@ -3836,7 +3853,10 @@ router.post('/cash-management/reconciliation/post-to-gl', async (req: any, res) 
     
     // Get bank account GL account
     const bankAcct = await query(
-      `SELECT * FROM bank_accounts WHERE tenant_id = $1 AND id = $2`,
+      `SELECT ba.*, coa.id as gl_account_uuid, coa.account_code as gl_code, coa.account_name as gl_name
+       FROM bank_accounts ba
+       LEFT JOIN chart_of_accounts coa ON coa.account_code = ba.gl_account_code AND coa.tenant_id = ba.tenant_id
+       WHERE ba.tenant_id = $1 AND ba.id = $2`,
       [tenantId, bank_account_id]
     );
     
@@ -3844,9 +3864,11 @@ router.post('/cash-management/reconciliation/post-to-gl', async (req: any, res) 
       return res.status(404).json({ success: false, error: 'Bank account not found' });
     }
     
-    const glAccountId = bankAcct.rows[0].gl_account_id;
+    const glAccountId = bankAcct.rows[0].gl_account_uuid;
+    const glAccountCode = bankAcct.rows[0].gl_code;
+    const glAccountName = bankAcct.rows[0].gl_name;
     if (!glAccountId) {
-      return res.status(400).json({ success: false, error: 'Bank account not linked to GL account' });
+      return res.status(400).json({ success: false, error: 'Bank account not linked to GL account. Set gl_account_code on bank_accounts.' });
     }
     
     // Get statement lines to post
@@ -3870,25 +3892,27 @@ router.post('/cash-management/reconciliation/post-to-gl', async (req: any, res) 
       const amount = Math.abs(parseFloat(line.amount));
       const isDebit = parseFloat(line.amount) < 0;
       
-      // Bank account line
+      // Bank account line (with account_code and account_name for GL filtering)
       await query(
-        `INSERT INTO journal_entry_lines (id, tenant_id, journal_entry_id, account_id, description, debit_amount, credit_amount, created_at)
-         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW())`,
-        [tenantId, jeId, glAccountId, line.description, isDebit ? 0 : amount, isDebit ? amount : 0]
+        `INSERT INTO journal_entry_lines (id, tenant_id, journal_entry_id, account_id, account_code, account_name, description, debit_amount, credit_amount, created_at)
+         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+        [tenantId, jeId, glAccountId, glAccountCode, glAccountName, line.description, isDebit ? 0 : amount, isDebit ? amount : 0]
       );
       
       // Offsetting entry (suspense/unallocated)
       const suspenseAccount = await query(
-        `SELECT id FROM chart_of_accounts WHERE tenant_id = $1 AND (account_code LIKE '%9999%' OR account_name ILIKE '%suspense%' OR account_name ILIKE '%unallocated%') LIMIT 1`,
+        `SELECT id, account_code, account_name FROM chart_of_accounts WHERE tenant_id = $1 AND (account_code LIKE '%9999%' OR account_name ILIKE '%suspense%' OR account_name ILIKE '%unallocated%') LIMIT 1`,
         [tenantId]
       ).catch(() => ({ rows: [] }));
       
       const offsetAccountId = suspenseAccount.rows[0]?.id || glAccountId;
+      const offsetAccountCode = suspenseAccount.rows[0]?.account_code || glAccountCode;
+      const offsetAccountName = suspenseAccount.rows[0]?.account_name || glAccountName;
       
       await query(
-        `INSERT INTO journal_entry_lines (id, tenant_id, journal_entry_id, account_id, description, debit_amount, credit_amount, created_at)
-         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW())`,
-        [tenantId, jeId, offsetAccountId, `Bank: ${line.description}`, isDebit ? amount : 0, isDebit ? 0 : amount]
+        `INSERT INTO journal_entry_lines (id, tenant_id, journal_entry_id, account_id, account_code, account_name, description, debit_amount, credit_amount, created_at)
+         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+        [tenantId, jeId, offsetAccountId, offsetAccountCode, offsetAccountName, `Bank: ${line.description}`, isDebit ? amount : 0, isDebit ? 0 : amount]
       );
       
       // Update statement line as posted

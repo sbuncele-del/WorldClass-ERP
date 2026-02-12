@@ -344,10 +344,13 @@ const BankReconciliation: React.FC = () => {
   const selectedAccount = bankAccounts.find(a => a.id === selectedBankAccount);
   // Bank Balance = sum of ALL statement lines (what the bank says)
   const bankBalance = bankTransactions.reduce((sum, t) => sum + ((t as any).signedAmount || (t.type === 'debit' ? -t.amount : t.amount)), 0);
-  // Book Balance = sum of RECONCILED/ALLOCATED lines (what's been posted to the books)
-  const bookBalance = bankTransactions
+  // Book Balance = GL balance for the linked bank GL account (if available), otherwise sum of reconciled lines
+  const glBookBalance = selectedAccount && parseFloat((selectedAccount as any).gl_book_balance || '0');
+  const hasGLLink = selectedAccount && (selectedAccount as any).gl_account_code && glBookBalance !== undefined;
+  const reconciledBalance = bankTransactions
     .filter(t => t.status === 'matched' || (t as any).originalStatus === 'allocated' || (t as any).originalStatus === 'reconciled')
     .reduce((sum, t) => sum + ((t as any).signedAmount || (t.type === 'debit' ? -t.amount : t.amount)), 0);
+  const bookBalance = hasGLLink && glBookBalance !== 0 ? glBookBalance : reconciledBalance;
   const stats = {
     bankBalance,
     bookBalance,
@@ -1706,7 +1709,7 @@ const BankReconciliation: React.FC = () => {
         subtitle={currentSelectedAccount?.name || 'Select Account'}
         stats={[
           { title: 'Bank Balance', value: `R ${stats.bankBalance.toLocaleString()}`, prefix: <BankOutlined /> },
-          { title: 'Book Balance', value: `R ${stats.bookBalance.toLocaleString()}`, prefix: <FileTextOutlined /> },
+          { title: hasGLLink ? `Book Balance (GL: ${(selectedAccount as any).gl_account_code})` : 'Book Balance', value: `R ${stats.bookBalance.toLocaleString()}`, prefix: <FileTextOutlined /> },
           { title: 'Difference', value: `R ${stats.difference.toLocaleString()}`, prefix: <SwapOutlined /> },
           { title: 'Match Rate', value: `${stats.matchRate}%`, prefix: <CheckCircleOutlined /> },
         ]}

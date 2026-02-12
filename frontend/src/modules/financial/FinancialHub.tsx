@@ -183,6 +183,8 @@ const FinancialHub: React.FC = () => {
   });
   const [trialBalance, setTrialBalance] = useState<TrialBalanceItem[]>([]);
   const [ledgerEntries, setLedgerEntries] = useState<any[]>([]);
+  const [ledgerAccountFilter, setLedgerAccountFilter] = useState<string>('');
+  const [chartOfAccounts, setChartOfAccounts] = useState<{ account_code: string; account_name: string; account_type: string }[]>([]);
   const [recentJournals, setRecentJournals] = useState<JournalItem[]>([]);
   const [financialReports] = useState<FinancialReport[]>(defaultFinancialReports);
   const [showReportPreview, setShowReportPreview] = useState(false);
@@ -286,6 +288,19 @@ const FinancialHub: React.FC = () => {
           console.error('Failed to fetch general ledger:', err);
           setLedgerEntries([]);
         }
+
+        // Fetch chart of accounts for GL filtering
+        try {
+          const coaRes = await fetch('/api/financial/chart-of-accounts');
+          const coaData = await coaRes.json();
+          if (coaData.success && Array.isArray(coaData.data)) {
+            setChartOfAccounts(coaData.data.map((a: any) => ({
+              account_code: a.account_code || a.code,
+              account_name: a.account_name || a.name,
+              account_type: a.account_type,
+            })));
+          }
+        } catch { /* ignore */ }
 
         // Fetch fiscal year data (includes periods + summary)
         try {
@@ -1244,10 +1259,42 @@ const FinancialHub: React.FC = () => {
       children: (
         <Card title="General Ledger" extra={
           <Space>
+            <Select
+              style={{ width: 280 }}
+              placeholder="Filter by Account..."
+              allowClear
+              showSearch
+              optionFilterProp="children"
+              value={ledgerAccountFilter || undefined}
+              onChange={async (value: string) => {
+                setLedgerAccountFilter(value || '');
+                try {
+                  setLoading(true);
+                  const response = await financialService.getGeneralLedger({ 
+                    limit: 200,
+                    ...(value ? { account_code: value } : {})
+                  });
+                  if (response?.data && Array.isArray(response.data)) {
+                    setLedgerEntries(response.data);
+                  }
+                } catch { /* ignore */ } finally { setLoading(false); }
+              }}
+            >
+              {chartOfAccounts
+                .filter(a => !['asset','liability','equity','revenue','expense'].includes(a.account_type?.toLowerCase()) || true)
+                .map(a => (
+                  <Select.Option key={a.account_code} value={a.account_code}>
+                    {a.account_code} — {a.account_name}
+                  </Select.Option>
+                ))}
+            </Select>
             <Button icon={<SyncOutlined />} onClick={async () => {
               try {
                 setLoading(true);
-                const response = await financialService.getGeneralLedger();
+                const response = await financialService.getGeneralLedger({
+                  limit: 200,
+                  ...(ledgerAccountFilter ? { account_code: ledgerAccountFilter } : {})
+                });
                 if (response?.data && Array.isArray(response.data)) {
                   setLedgerEntries(response.data);
                 }
@@ -1256,6 +1303,21 @@ const FinancialHub: React.FC = () => {
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setShowJournalModal(true)}>New Entry</Button>
           </Space>
         }>
+          {ledgerAccountFilter && (
+            <Alert
+              message={`Showing transactions for account: ${ledgerAccountFilter} — ${chartOfAccounts.find(a => a.account_code === ledgerAccountFilter)?.account_name || ''}`}
+              type="info"
+              showIcon
+              closable
+              onClose={() => {
+                setLedgerAccountFilter('');
+                financialService.getGeneralLedger({ limit: 200 }).then(r => {
+                  if (r?.data) setLedgerEntries(r.data);
+                });
+              }}
+              style={{ marginBottom: 16 }}
+            />
+          )}
           {ledgerEntries.length > 0 ? (
             <Table
               dataSource={ledgerEntries}
@@ -1266,8 +1328,14 @@ const FinancialHub: React.FC = () => {
                   render: (v: string) => <Text copyable={{ text: v || '' }}>{v || '-'}</Text> },
                 { title: 'Account', key: 'account', width: 200,
                   render: (_: any, r: any) => (
-                    <span>
-                      <Tag color="blue">{r.account_code || '-'}</Tag>
+                    <span style={{ cursor: 'pointer' }} onClick={() => {
+                      setLedgerAccountFilter(r.account_code);
+                      setLoading(true);
+                      financialService.getGeneralLedger({ limit: 200, account_code: r.account_code }).then(resp => {
+                        if (resp?.data && Array.isArray(resp.data)) setLedgerEntries(resp.data);
+                      }).finally(() => setLoading(false));
+                    }}>
+                      <Tag color="blue" style={{ cursor: 'pointer' }}>{r.account_code || '-'}</Tag>
                       <Text>{r.account_name || '-'}</Text>
                     </span>
                   )},

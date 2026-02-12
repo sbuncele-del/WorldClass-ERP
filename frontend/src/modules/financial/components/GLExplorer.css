@@ -615,3 +615,301 @@
     min-width: 800px;
   }
 }
+
+/* =========================================
+   Account Tree View
+   ========================================= */
+.account-tree {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.tree-header {
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  color: white;
+}
+
+.tree-header h3 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.3rem;
+}
+
+.tree-subtitle {
+  margin: 0;
+  opacity: 0.85;
+  font-size: 0.9rem;
+}
+
+.account-type-group {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.account-type-group:last-child {
+  border-bottom: none;
+}
+
+.type-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  cursor: pointer;
+  background: #f8fafc;
+  border-left: 4px solid #cbd5e1;
+  transition: background 0.2s;
+  user-select: none;
+}
+
+.type-header:hover {
+  background: #f1f5f9;
+}
+
+.type-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  color: #334155;
+}
+
+.expand-arrow {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  width: 1rem;
+  text-align: center;
+}
+
+.type-balance {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.type-accounts {
+  border-top: 1px solid #e2e8f0;
+}
+
+.account-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 2rem 0.75rem 3.5rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.account-row:last-child {
+  border-bottom: none;
+}
+
+.account-row:hover {
+  background: #eff6ff;
+  padding-left: 4rem;
+}
+
+.account-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.acct-code {
+  font-family: 'SF Mono', SFMono-Regular, Consolas, monospace;
+  font-weight: 600;
+  color: #2563eb;
+  font-size: 0.9rem;
+  min-width: 50px;
+}
+
+.acct-name {
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.entry-count {
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.account-amounts {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  font-size: 0.85rem;
+}
+
+.acct-debit {
+  color: #64748b;
+}
+
+.acct-credit {
+  color: #64748b;
+}
+
+.acct-balance {
+  min-width: 100px;
+  text-align: right;
+}
+
+/* =========================================
+   Drill-Down View (Account Ledger)
+   ========================================= */
+.drill-view {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.drill-header {
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+  color: white;
+}
+
+.btn-back {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  transition: background 0.2s;
+}
+
+.btn-back:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+.drill-account-info h2 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.3rem;
+}
+
+.drill-type {
+  opacity: 0.8;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.drill-summary {
+  display: flex;
+  gap: 1rem;
+  padding: 1.25rem 2rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.summary-card {
+  flex: 1;
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.summary-card label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.summary-card span {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.summary-card.highlight {
+  background: #eff6ff;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #bfdbfe;
+}
+
+.drill-table-container {
+  overflow-x: auto;
+}
+
+.drill-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.drill-table thead {
+  background: #f1f5f9;
+  position: sticky;
+  top: 0;
+}
+
+.drill-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.drill-table td {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+
+.drill-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.drill-table .entry-num {
+  font-family: 'SF Mono', SFMono-Regular, Consolas, monospace;
+  font-size: 0.8rem;
+  color: #2563eb;
+}
+
+.drill-table .source-badge {
+  background: #e2e8f0;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: #475569;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.drill-table .amount-col {
+  text-align: right;
+  font-family: 'SF Mono', SFMono-Regular, Consolas, monospace;
+}
+
+.drill-table .debit {
+  color: #10b981;
+}
+
+.drill-table .credit {
+  color: #ef4444;
+}
+
+.drill-table .balance {
+  font-weight: 600;
+}
