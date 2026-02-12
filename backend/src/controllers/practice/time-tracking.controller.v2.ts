@@ -252,6 +252,9 @@ export const updateTimeEntry = async (req: TenantRequest, res: Response) => {
       return res.status(400).json({ success: false, message: 'Cannot edit approved or invoiced time entries' });
     }
 
+    // Handle both 'billable' and 'is_billable' field names from frontend
+    const billableValue = updateData.billable !== undefined ? updateData.billable : updateData.is_billable;
+
     const result = await pool.query(`
       UPDATE time_entries SET
         project_id = COALESCE($1, project_id),
@@ -270,7 +273,7 @@ export const updateTimeEntry = async (req: TenantRequest, res: Response) => {
       updateData.entry_date,
       updateData.hours,
       updateData.description,
-      updateData.billable,
+      billableValue,
       userId,
       id,
       tenantId

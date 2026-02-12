@@ -217,6 +217,7 @@ const ProjectsHub: React.FC = () => {
         status: statusMap[(t.status || 'todo').toLowerCase()] || 'todo',
         priority: (t.priority || 'medium').toLowerCase() as Task['priority'],
         dueDate: t.due_date ? new Date(t.due_date).toLocaleDateString() : '-',
+        rawDueDate: t.due_date || null,
         estimatedHours: parseFloat(t.estimated_hours) || 0,
         actualHours: parseFloat(t.actual_hours) || 0,
         tags: [],
@@ -225,6 +226,7 @@ const ProjectsHub: React.FC = () => {
         task_name: t.task_name,
         assigned_to_name: t.assigned_to_name,
         description: t.description,
+        projectName: t.project_name || t.project || '',
       }));
       setTasks(transformedTasks);
 
@@ -268,20 +270,36 @@ const ProjectsHub: React.FC = () => {
         console.error('Time entries fetch failed', error);
         return { data: [] };
       });
-      const entries = Array.isArray(timeRes?.entries)
+      const rawEntries = Array.isArray(timeRes?.entries)
         ? timeRes.entries
         : Array.isArray(timeRes?.data)
           ? timeRes.data
           : Array.isArray(timeRes)
             ? timeRes
             : [];
-      setTimeEntries(entries);
+      // Transform time entries: map API fields to component interface
+      const transformedEntries = rawEntries.map((e: any) => ({
+        id: e.id || e.entry_id,
+        project: e.project_name || e.project || '',
+        project_id: e.project_id,
+        task: e.task_name || e.task || '',
+        task_id: e.task_id,
+        user: e.user_name || e.user || '',
+        date: e.entry_date ? new Date(e.entry_date).toLocaleDateString() : e.date || '',
+        rawDate: e.entry_date || e.date,
+        hours: parseFloat(e.hours) || 0,
+        description: e.description || '',
+        billable: e.billable === true || e.is_billable === true,
+        rate: parseFloat(e.billing_rate || e.rate) || 0,
+        status: e.status || 'Pending',
+      }));
+      setTimeEntries(transformedEntries);
 
       // Calculate weekly summary from time entries
-      if (Array.isArray(entries) && entries.length > 0) {
-        const totalHours = entries.reduce((sum: number, t: any) => sum + (parseFloat(t.hours) || 0), 0);
-        const billableHours = entries.filter((t: any) => t.billable).reduce((sum: number, t: any) => sum + (parseFloat(t.hours) || 0), 0);
-        const billableAmount = entries.filter((t: any) => t.billable).reduce((sum: number, t: any) => sum + ((parseFloat(t.hours) || 0) * (parseFloat(t.rate) || 0)), 0);
+      if (transformedEntries.length > 0) {
+        const totalHours = transformedEntries.reduce((sum: number, t: any) => sum + (t.hours || 0), 0);
+        const billableHours = transformedEntries.filter((t: any) => t.billable).reduce((sum: number, t: any) => sum + (t.hours || 0), 0);
+        const billableAmount = transformedEntries.filter((t: any) => t.billable).reduce((sum: number, t: any) => sum + ((t.hours || 0) * (t.rate || 0)), 0);
         setWeeklySummary({ totalHours, billableHours, billableAmount });
       }
 
@@ -348,19 +366,65 @@ const ProjectsHub: React.FC = () => {
   const projectStats = apiStats ? {
     total: toNumber(apiStats.totalProjects) || projects.length,
     active: toNumber(apiStats.activeProjects) || projects.filter(p => p.status === 'active').length,
-    onTrack: projects.filter(p => p.progress >= 40).length,
-    atRisk: toNumber(apiStats.onHoldProjects) || projects.filter(p => p.priority === 'critical' && p.progress < 50).length,
+    onTrack: projects.filter(p => {
+      if (p.endDate === '-') return true;
+      const endDate = new Date(p.endDate);
+      const now = new Date();
+      const totalDays = Math.max(1, (endDate.getTime() - new Date(p.startDate).getTime()) / (1000 * 60 * 60 * 24));
+      const elapsed = Math.max(0, (now.getTime() - new Date(p.startDate).getTime()) / (1000 * 60 * 60 * 24));
+      const expectedProgress = Math.min(100, (elapsed / totalDays) * 100);
+      return p.progress >= expectedProgress * 0.7;
+    }).length,
+    atRisk: projects.filter(p => {
+      if (p.status === 'completed' || p.status === 'cancelled') return false;
+      const endDate = p.endDate !== '-' ? new Date(p.endDate) : null;
+      const now = new Date();
+      if (endDate && endDate < now && p.progress < 100) return true;
+      if (endDate) {
+        const totalDays = Math.max(1, (endDate.getTime() - new Date(p.startDate).getTime()) / (1000 * 60 * 60 * 24));
+        const elapsed = Math.max(0, (now.getTime() - new Date(p.startDate).getTime()) / (1000 * 60 * 60 * 24));
+        const expectedProgress = Math.min(100, (elapsed / totalDays) * 100);
+        if (p.progress < expectedProgress * 0.5) return true;
+      }
+      const projectMilestones = milestones.filter(m => m.project_id === p.id);
+      const overdueMilestones = projectMilestones.filter(m => m.status !== 'completed' && m.due_date && new Date(m.due_date) < now);
+      if (overdueMilestones.length > 0) return true;
+      const projectTasks = tasks.filter(t => t.project_id === p.id);
+      const overdueTasks = projectTasks.filter(t => t.status !== 'done' && (t as any).dueDate && (t as any).dueDate !== '-' && new Date((t as any).dueDate) < now);
+      if (overdueTasks.length > 0) return true;
+      return false;
+    }).length,
     totalBudget: toNumber(apiStats.totalBudget) || projects.reduce((sum, p) => sum + p.budget, 0),
     totalSpent: toNumber(apiStats.totalSpent) || projects.reduce((sum, p) => sum + p.spent, 0),
-    totalTasks: toNumber(apiStats.totalTasks) || projects.reduce((sum, p) => sum + p.tasks.total, 0),
-    completedTasks: toNumber(apiStats.totalTasks) && toNumber(apiStats.openTasks) >= 0
+    totalTasks: projects.reduce((sum, p) => sum + p.tasks.total, 0) || toNumber(apiStats.totalTasks),
+    completedTasks: projects.reduce((sum, p) => sum + p.tasks.completed, 0) || (toNumber(apiStats.totalTasks) && toNumber(apiStats.openTasks) >= 0
       ? toNumber(apiStats.totalTasks) - toNumber(apiStats.openTasks)
-      : projects.reduce((sum, p) => sum + p.tasks.completed, 0)
+      : 0)
   } : {
     total: projects.length,
     active: projects.filter(p => p.status === 'active').length,
-    onTrack: projects.filter(p => p.progress >= 40).length,
-    atRisk: projects.filter(p => p.priority === 'critical' && p.progress < 50).length,
+    onTrack: projects.filter(p => {
+      if (p.endDate === '-') return true;
+      const endDate = new Date(p.endDate);
+      const now = new Date();
+      const totalDays = Math.max(1, (endDate.getTime() - new Date(p.startDate).getTime()) / (1000 * 60 * 60 * 24));
+      const elapsed = Math.max(0, (now.getTime() - new Date(p.startDate).getTime()) / (1000 * 60 * 60 * 24));
+      const expectedProgress = Math.min(100, (elapsed / totalDays) * 100);
+      return p.progress >= expectedProgress * 0.7;
+    }).length,
+    atRisk: projects.filter(p => {
+      if (p.status === 'completed' || p.status === 'cancelled') return false;
+      const endDate = p.endDate !== '-' ? new Date(p.endDate) : null;
+      const now = new Date();
+      if (endDate && endDate < now && p.progress < 100) return true;
+      if (endDate) {
+        const totalDays = Math.max(1, (endDate.getTime() - new Date(p.startDate).getTime()) / (1000 * 60 * 60 * 24));
+        const elapsed = Math.max(0, (now.getTime() - new Date(p.startDate).getTime()) / (1000 * 60 * 60 * 24));
+        const expectedProgress = Math.min(100, (elapsed / totalDays) * 100);
+        if (p.progress < expectedProgress * 0.5) return true;
+      }
+      return false;
+    }).length,
     totalBudget: projects.reduce((sum, p) => sum + p.budget, 0),
     totalSpent: projects.reduce((sum, p) => sum + p.spent, 0),
     totalTasks: projects.reduce((sum, p) => sum + p.tasks.total, 0),
@@ -477,12 +541,12 @@ const ProjectsHub: React.FC = () => {
   };
 
   // ── Time entry edit/delete handlers ──────────────────────────────────────
-  const handleEditTimeEntry = (entry: TimeEntry) => {
+  const handleEditTimeEntry = (entry: any) => {
     setEditingTimeEntry(entry);
     timeEntryForm.setFieldsValue({
-      project: entry.project,
-      task: entry.task,
-      date: entry.date ? dayjs(entry.date) : undefined,
+      project: entry.project_id || entry.project,
+      task: entry.task_id || undefined,
+      date: entry.rawDate ? dayjs(entry.rawDate) : entry.date ? dayjs(entry.date) : undefined,
       hours: entry.hours,
       description: entry.description,
       billable: entry.billable,
@@ -650,8 +714,8 @@ const ProjectsHub: React.FC = () => {
                   key: 'budget',
                   render: (_, record) => (
                     <div>
-                      <Text>R{(record.spent / 1000000).toFixed(1)}M</Text>
-                      <Text type="secondary"> / R{(record.budget / 1000000).toFixed(1)}M</Text>
+                      <Text>R{record.spent >= 1000000 ? `${(record.spent / 1000000).toFixed(1)}M` : record.spent.toLocaleString()}</Text>
+                      <Text type="secondary"> / R{record.budget >= 1000000 ? `${(record.budget / 1000000).toFixed(1)}M` : record.budget.toLocaleString()}</Text>
                     </div>
                   )
                 },
@@ -760,6 +824,206 @@ const ProjectsHub: React.FC = () => {
                 />
               </Col>
             </Row>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Upcoming Deadlines & Risk Calendar */}
+      <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+        <Col xs={24} lg={16}>
+          <Card title={<><CalendarOutlined /> Upcoming Deadlines</>}>
+            {(() => {
+              const now = new Date();
+              // Collect all deadlines: projects, tasks, milestones
+              const deadlines: Array<{
+                type: 'project' | 'task' | 'milestone';
+                name: string;
+                project: string;
+                dueDate: Date;
+                status: string;
+                overdue: boolean;
+              }> = [];
+
+              // Project deadlines
+              projects.forEach(p => {
+                if (p.endDate && p.endDate !== '-' && p.status !== 'completed') {
+                  const d = new Date(p.endDate);
+                  if (!isNaN(d.getTime())) {
+                    deadlines.push({
+                      type: 'project',
+                      name: p.name,
+                      project: p.name,
+                      dueDate: d,
+                      status: p.status,
+                      overdue: d < now && p.progress < 100
+                    });
+                  }
+                }
+              });
+
+              // Task deadlines
+              tasks.forEach(t => {
+                if ((t as any).dueDate && (t as any).dueDate !== '-' && t.status !== 'done') {
+                  const raw = (t as any).rawDueDate || (t as any).dueDate;
+                  const d = new Date(raw);
+                  if (!isNaN(d.getTime())) {
+                    deadlines.push({
+                      type: 'task',
+                      name: t.title,
+                      project: (t as any).projectName || '',
+                      dueDate: d,
+                      status: t.status,
+                      overdue: d < now
+                    });
+                  }
+                }
+              });
+
+              // Milestone deadlines
+              milestones.forEach(m => {
+                if (m.due_date && m.status !== 'completed') {
+                  const d = new Date(m.due_date);
+                  if (!isNaN(d.getTime())) {
+                    deadlines.push({
+                      type: 'milestone',
+                      name: m.title,
+                      project: '',
+                      dueDate: d,
+                      status: m.status,
+                      overdue: d < now
+                    });
+                  }
+                }
+              });
+
+              // Sort by due date
+              deadlines.sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+              const upcoming = deadlines.slice(0, 10);
+
+              if (upcoming.length === 0) {
+                return (
+                  <div style={{ textAlign: 'center', padding: 24 }}>
+                    <CalendarOutlined style={{ fontSize: 32, color: '#d9d9d9' }} />
+                    <br /><br />
+                    <Text type="secondary">No upcoming deadlines</Text>
+                  </div>
+                );
+              }
+
+              return (
+                <div>
+                  {upcoming.map((d, i) => {
+                    const daysUntil = Math.ceil((d.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                    const typeColor = d.type === 'project' ? 'blue' : d.type === 'milestone' ? 'purple' : 'cyan';
+                    const urgencyColor = d.overdue ? '#ff4d4f' : daysUntil <= 3 ? '#faad14' : daysUntil <= 7 ? '#1890ff' : '#52c41a';
+                    return (
+                      <div key={i} style={{ 
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '10px 12px', borderBottom: '1px solid #f0f0f0',
+                        borderLeft: `3px solid ${urgencyColor}`,
+                        marginBottom: 4, borderRadius: 4,
+                        background: d.overdue ? '#fff2f0' : 'transparent'
+                      }}>
+                        <div style={{ flex: 1 }}>
+                          <Tag color={typeColor} style={{ marginBottom: 2 }}>{d.type.toUpperCase()}</Tag>
+                          <Text strong style={{ marginLeft: 8 }}>{d.name}</Text>
+                          {d.project && d.type !== 'project' && (
+                            <Text type="secondary" style={{ fontSize: 11, display: 'block', marginLeft: 8 }}>{d.project}</Text>
+                          )}
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <Text style={{ color: urgencyColor, fontWeight: 600 }}>
+                            {d.overdue 
+                              ? `${Math.abs(daysUntil)} days overdue` 
+                              : daysUntil === 0 
+                                ? 'Due today' 
+                                : `${daysUntil} days left`}
+                          </Text>
+                          <br />
+                          <Text type="secondary" style={{ fontSize: 11 }}>
+                            {d.dueDate.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </Text>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={8}>
+          <Card title={<><WarningOutlined /> Risk Assessment</>}>
+            {(() => {
+              const now = new Date();
+              const riskProjects = projects.filter(p => {
+                if (p.status === 'completed' || p.status === 'cancelled') return false;
+                const endDate = p.endDate !== '-' ? new Date(p.endDate) : null;
+                if (endDate && endDate < now && p.progress < 100) return true;
+                if (endDate) {
+                  const totalDays = Math.max(1, (endDate.getTime() - new Date(p.startDate).getTime()) / (1000 * 60 * 60 * 24));
+                  const elapsed = Math.max(0, (now.getTime() - new Date(p.startDate).getTime()) / (1000 * 60 * 60 * 24));
+                  const expectedProgress = Math.min(100, (elapsed / totalDays) * 100);
+                  if (p.progress < expectedProgress * 0.5) return true;
+                }
+                const pMilestones = milestones.filter(m => m.project_id === p.id);
+                const overdueMilestones = pMilestones.filter(m => m.status !== 'completed' && m.due_date && new Date(m.due_date) < now);
+                if (overdueMilestones.length > 0) return true;
+                const pTasks = tasks.filter(t => t.project_id === p.id);
+                const overdueTasks = pTasks.filter(t => t.status !== 'done' && (t as any).dueDate && (t as any).dueDate !== '-' && new Date((t as any).rawDueDate || (t as any).dueDate) < now);
+                if (overdueTasks.length > 0) return true;
+                return false;
+              });
+
+              if (riskProjects.length === 0) {
+                return (
+                  <div style={{ textAlign: 'center', padding: 24 }}>
+                    <CheckCircleOutlined style={{ fontSize: 32, color: '#52c41a' }} />
+                    <br /><br />
+                    <Text style={{ color: '#52c41a', fontWeight: 600 }}>All projects on track!</Text>
+                    <br />
+                    <Text type="secondary" style={{ fontSize: 12 }}>No overdue tasks or milestones</Text>
+                  </div>
+                );
+              }
+
+              return (
+                <div>
+                  {riskProjects.map((p, i) => {
+                    const endDate = p.endDate !== '-' ? new Date(p.endDate) : null;
+                    const pMilestones = milestones.filter(m => m.project_id === p.id);
+                    const overdueMilestones = pMilestones.filter(m => m.status !== 'completed' && m.due_date && new Date(m.due_date) < now);
+                    const pTasks = tasks.filter(t => t.project_id === p.id);
+                    const overdueTasks = pTasks.filter(t => t.status !== 'done' && (t as any).dueDate && (t as any).dueDate !== '-' && new Date((t as any).rawDueDate || (t as any).dueDate) < now);
+                    const reasons: string[] = [];
+                    if (endDate && endDate < now) reasons.push('Project overdue');
+                    if (endDate) {
+                      const totalDays = Math.max(1, (endDate.getTime() - new Date(p.startDate).getTime()) / (1000 * 60 * 60 * 24));
+                      const elapsed = Math.max(0, (now.getTime() - new Date(p.startDate).getTime()) / (1000 * 60 * 60 * 24));
+                      const expectedProgress = Math.min(100, (elapsed / totalDays) * 100);
+                      if (p.progress < expectedProgress * 0.5) reasons.push(`Progress ${p.progress}% vs expected ${Math.round(expectedProgress)}%`);
+                    }
+                    if (overdueMilestones.length > 0) reasons.push(`${overdueMilestones.length} overdue milestone(s)`);
+                    if (overdueTasks.length > 0) reasons.push(`${overdueTasks.length} overdue task(s)`);
+
+                    return (
+                      <div key={i} style={{ 
+                        padding: '10px 12px', borderBottom: '1px solid #f0f0f0',
+                        borderLeft: '3px solid #ff4d4f', marginBottom: 4, borderRadius: 4
+                      }}>
+                        <Text strong style={{ color: '#ff4d4f' }}>{p.name}</Text>
+                        <br />
+                        <Progress percent={p.progress} size="small" status="exception" style={{ marginBottom: 4 }} />
+                        {reasons.map((r, ri) => (
+                          <Tag key={ri} color="red" style={{ marginBottom: 2 }}>{r}</Tag>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </Card>
         </Col>
       </Row>
@@ -1879,6 +2143,7 @@ const ProjectsHub: React.FC = () => {
                 status: statusMap2[(t.status || 'todo').toLowerCase()] || 'todo',
                 priority: (t.priority || 'medium').toLowerCase() as Task['priority'],
                 dueDate: t.due_date ? new Date(t.due_date).toLocaleDateString() : '-',
+                rawDueDate: t.due_date || null,
                 estimatedHours: parseFloat(t.estimated_hours) || 0,
                 actualHours: parseFloat(t.actual_hours) || 0,
                 tags: [],
@@ -1886,6 +2151,7 @@ const ProjectsHub: React.FC = () => {
                 task_name: t.task_name,
                 assigned_to_name: t.assigned_to_name,
                 description: t.description,
+                projectName: t.project_name || t.project || '',
               }));
               setTasks(transformedRefresh);
             } catch (error: any) {
