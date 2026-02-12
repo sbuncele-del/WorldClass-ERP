@@ -552,7 +552,7 @@ export const createProjectUpdate = async (req: TenantRequest, res: Response) => 
         if (customerRes.rows.length > 0 && customerRes.rows[0].email) {
           const customer = customerRes.rows[0];
           const tenantRes = await pool.query(`SELECT name, company_name FROM tenants WHERE id = $1`, [tenantId]);
-          const companyName = tenantRes.rows[0]?.company_name || tenantRes.rows[0]?.name || 'WorldClass ERP';
+          const companyName = tenantRes.rows[0]?.company_name || tenantRes.rows[0]?.name || 'Our Company';
 
           const updateTypeLabel = {
             general: 'General Update',
@@ -624,8 +624,7 @@ export const createProjectUpdate = async (req: TenantRequest, res: Response) => 
         <tr>
           <td style="background:#f8f9fa;padding:20px 40px;text-align:center;border-top:1px solid #eee;">
             <p style="color:#999;font-size:12px;margin:0;">
-              This update was sent from <strong>${companyName}</strong><br>
-              <a href="https://siyabusaerp.co.za" style="color:#667eea;text-decoration:none;">Login to view full details</a>
+              This update was sent on behalf of <strong>${companyName}</strong>
             </p>
           </td>
         </tr>
