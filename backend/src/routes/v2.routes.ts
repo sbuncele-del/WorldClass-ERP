@@ -3554,13 +3554,41 @@ router.get('/cash-management/cash-flow-dashboard', async (req: any, res) => {
   }
 });
 
-// Cash Management - bank accounts
+// Cash Management - bank accounts (with live calculated balance)
 router.get('/cash-management/bank-accounts', async (req: any, res) => {
   const tenantId = req.tenant?.id || req.headers['x-tenant-id'] || 1;
   try {
-    const result = await query('SELECT * FROM bank_accounts WHERE tenant_id = $1', [tenantId]);
-    res.json({ success: true, data: result.rows || [] });
-  } catch { res.json({ success: true, data: [] }); }
+    // Get bank accounts with dynamically calculated balance from statement lines
+    const result = await query(`
+      SELECT ba.*,
+        COALESCE(sl.statement_balance, 0) as calculated_bank_balance,
+        COALESCE(sl.total_credits, 0) as total_credits,
+        COALESCE(sl.total_debits, 0) as total_debits,
+        COALESCE(sl.transaction_count, 0) as transaction_count
+      FROM bank_accounts ba
+      LEFT JOIN LATERAL (
+        SELECT 
+          SUM(amount) as statement_balance,
+          SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as total_credits,
+          SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END) as total_debits,
+          COUNT(*) as transaction_count
+        FROM bank_statement_lines bsl
+        WHERE bsl.bank_account_id = ba.id AND bsl.tenant_id = ba.tenant_id
+      ) sl ON true
+      WHERE ba.tenant_id = $1
+    `, [tenantId]);
+    
+    // Update current_balance to reflect actual statement line totals
+    const accounts = result.rows.map((acc: any) => ({
+      ...acc,
+      current_balance: acc.transaction_count > 0 ? acc.calculated_bank_balance : acc.current_balance
+    }));
+    
+    res.json({ success: true, data: accounts });
+  } catch (err) { 
+    console.error('Error fetching bank accounts:', err);
+    res.json({ success: true, data: [] }); 
+  }
 });
 
 // Cash Management - create bank account

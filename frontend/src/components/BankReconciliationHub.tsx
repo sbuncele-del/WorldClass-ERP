@@ -236,6 +236,8 @@ const BankReconciliation: React.FC = () => {
               description: stmt.description || '',
               reference: stmt.reference || '',
               amount: Math.abs(parseFloat(stmt.amount) || 0),
+              signedAmount: parseFloat(stmt.amount) || 0,
+              originalStatus: stmt.status || 'unmatched',
               type: parseFloat(stmt.amount) >= 0 ? 'credit' : 'debit',
               status: uiStatus as 'unmatched' | 'matched' | 'partial' | 'excluded' | 'ai-suggested' | 'reconciled',
               category: stmt.category || stmt.allocated_account_name || '',
@@ -340,9 +342,15 @@ const BankReconciliation: React.FC = () => {
 
   // Calculate stats - use real data only
   const selectedAccount = bankAccounts.find(a => a.id === selectedBankAccount);
+  // Bank Balance = sum of ALL statement lines (what the bank says)
+  const bankBalance = bankTransactions.reduce((sum, t) => sum + ((t as any).signedAmount || (t.type === 'debit' ? -t.amount : t.amount)), 0);
+  // Book Balance = sum of RECONCILED/ALLOCATED lines (what's been posted to the books)
+  const bookBalance = bankTransactions
+    .filter(t => t.status === 'matched' || (t as any).originalStatus === 'allocated' || (t as any).originalStatus === 'reconciled')
+    .reduce((sum, t) => sum + ((t as any).signedAmount || (t.type === 'debit' ? -t.amount : t.amount)), 0);
   const stats = {
-    bankBalance: selectedAccount?.balance || 0,
-    bookBalance: bookEntries.reduce((sum, e) => sum + (e.type === 'credit' ? e.amount : -e.amount), 0),
+    bankBalance,
+    bookBalance,
     difference: 0,
     matchedCount: bankTransactions.filter(t => t.status === 'matched').length,
     unmatchedCount: bankTransactions.filter(t => t.status === 'unmatched').length,
