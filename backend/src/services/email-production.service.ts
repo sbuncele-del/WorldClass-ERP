@@ -13,6 +13,7 @@ import path from 'path';
 // Types
 interface EmailOptions {
   to: string | string[];
+  cc?: string | string[];
   subject: string;
   html: string;
   text?: string;
@@ -158,14 +159,15 @@ class ProductionEmailService {
    * Send email with retry logic
    */
   async send(options: EmailOptions): Promise<boolean> {
-    const { to, subject, html, text, from, replyTo } = options;
+    const { to, cc, subject, html, text, from, replyTo } = options;
     const recipients = Array.isArray(to) ? to : [to];
+    const ccRecipients = cc ? (Array.isArray(cc) ? cc : [cc]) : undefined;
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
         switch (this.provider) {
           case 'resend':
-            await this.sendViaResend(recipients, subject, html, text, from, replyTo);
+            await this.sendViaResend(recipients, subject, html, text, from, replyTo, ccRecipients);
             break;
           case 'ses':
             await this.sendViaSES(recipients, subject, html, text, from);
@@ -204,7 +206,8 @@ class ProductionEmailService {
     html: string,
     text?: string,
     from?: string,
-    replyTo?: string
+    replyTo?: string,
+    cc?: string[]
   ): Promise<void> {
     if (!this.resendApiKey) throw new Error('Resend API key not configured');
 
@@ -221,6 +224,7 @@ class ProductionEmailService {
       body: JSON.stringify({
         from: from || `${fromName} <${fromEmail}>`,
         to: to,
+        cc: cc && cc.length > 0 ? cc : undefined,
         subject: subject,
         html: html,
         text: text || this.htmlToText(html),

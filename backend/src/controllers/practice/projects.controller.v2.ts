@@ -624,7 +624,7 @@ export const createProjectUpdate = async (req: TenantRequest, res: Response) => 
         <tr>
           <td style="background:#f8f9fa;padding:20px 40px;text-align:center;border-top:1px solid #eee;">
             <p style="color:#999;font-size:12px;margin:0;">
-              This update was sent from <strong>${companyName}</strong> via WorldClass ERP<br>
+              This update was sent from <strong>${companyName}</strong><br>
               <a href="https://siyabusaerp.co.za" style="color:#667eea;text-decoration:none;">Login to view full details</a>
             </p>
           </td>
@@ -635,8 +635,38 @@ export const createProjectUpdate = async (req: TenantRequest, res: Response) => 
 </body>
 </html>`;
 
+          // Get project manager email for CC
+          let ccEmails: string[] = [];
+          try {
+            const pmRes = await pool.query(`
+              SELECT u.email FROM client_projects cp
+              JOIN users u ON cp.project_manager_id = u.id
+              WHERE cp.project_id = $1 AND cp.tenant_id = $2 AND u.email IS NOT NULL
+            `, [project_id, tenantId]);
+            if (pmRes.rows.length > 0 && pmRes.rows[0].email) {
+              // Don't CC the same person who posted (they already know)
+              if (pmRes.rows[0].email !== customer.email) {
+                ccEmails.push(pmRes.rows[0].email);
+              }
+            }
+            // Also CC project partner if exists
+            const partnerRes = await pool.query(`
+              SELECT u.email FROM client_projects cp
+              JOIN users u ON cp.project_partner_id = u.id
+              WHERE cp.project_id = $1 AND cp.tenant_id = $2 AND u.email IS NOT NULL
+            `, [project_id, tenantId]);
+            if (partnerRes.rows.length > 0 && partnerRes.rows[0].email) {
+              if (!ccEmails.includes(partnerRes.rows[0].email) && partnerRes.rows[0].email !== customer.email) {
+                ccEmails.push(partnerRes.rows[0].email);
+              }
+            }
+          } catch (ccErr) {
+            console.error('Error fetching CC emails:', ccErr);
+          }
+
           await emailService.send({
             to: customer.email,
+            cc: ccEmails.length > 0 ? ccEmails : undefined,
             subject: `[${projectNumber}] ${updateTypeLabel}: ${title}`,
             html: htmlEmail,
             text: `${updateTypeLabel}: ${title}\n\n${content || ''}\n\nPosted by: ${authorName}\nProject: ${projectName} (${projectNumber})`
