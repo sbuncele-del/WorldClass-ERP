@@ -612,7 +612,7 @@ export const createProjectUpdate = async (req: TenantRequest, res: Response) => 
             <table width="100%" style="background:#f8f9fa;border-radius:6px;padding:16px;">
               <tr>
                 <td style="color:#666;font-size:13px;">
-                  <strong>Posted by:</strong> ${authorName}<br>
+                  <strong>Sent by:</strong> The Projects Team<br>
                   <strong>Date:</strong> ${new Date().toLocaleDateString('en-ZA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}<br>
                   <strong>Project:</strong> ${projectNumber} — ${projectName}
                 </td>
