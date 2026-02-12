@@ -23,6 +23,7 @@ import {
   RocketOutlined,
   AimOutlined,
   SettingOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons';
 
 // Lazy load sub-pages
@@ -33,6 +34,7 @@ const QuotationManagement = lazy(() => import('./components/QuotationManagement'
 const SalesOrderManagement = lazy(() => import('./components/SalesOrderManagement'));
 const LeadsPage = lazy(() => import('./LeadsPage'));
 const OpportunitiesPage = lazy(() => import('./OpportunitiesPage'));
+const RetainerManagement = lazy(() => import('./components/RetainerManagement'));
 
 const PageLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300, width: '100%' }}>
@@ -53,6 +55,7 @@ const SalesModule: React.FC = () => {
     if (path.includes('/orders')) return 'orders';
     if (path.includes('/leads')) return 'leads';
     if (path.includes('/opportunities')) return 'opportunities';
+    if (path.includes('/retainers')) return 'retainers';
     if (path.includes('/settings')) return 'settings';
     return 'dashboard';
   };
@@ -119,6 +122,11 @@ const SalesModule: React.FC = () => {
               icon: <RocketOutlined />,
               label: 'Opportunities',
             },
+            {
+              key: 'retainers',
+              icon: <CalendarOutlined />,
+              label: 'Retainers',
+            },
           ]}
         />
       </div>
@@ -134,6 +142,7 @@ const SalesModule: React.FC = () => {
             <Route path="/orders" element={<SalesOrderManagement />} />
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/opportunities" element={<OpportunitiesPage />} />
+            <Route path="/retainers" element={<RetainerManagement />} />
             <Route path="*" element={<Navigate to="" replace />} />
           </Routes>
         </Suspense>
