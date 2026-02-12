@@ -2347,6 +2347,13 @@ router.post('/practice/migrate-schema', async (req: any, res) => {
 router.get('/practice/projects', ProjectsV2.getAllProjects);
 router.get('/practice/projects/dashboard', ProjectsV2.getProjectsDashboard);
 router.get('/practice/projects/updates', ProjectsV2.getProjectUpdates);
+
+// Project Milestones (must be before :id route)
+router.get('/practice/projects/milestones', ProjectsV2.getProjectMilestones);
+router.post('/practice/projects/milestones', ProjectsV2.createMilestone);
+router.put('/practice/projects/milestones/:id', ProjectsV2.updateMilestone);
+router.delete('/practice/projects/milestones/:id', ProjectsV2.deleteMilestone);
+
 router.get('/practice/projects/:id', ProjectsV2.getProjectById);
 router.post('/practice/projects', ProjectsV2.createProject);
 router.put('/practice/projects/:id', ProjectsV2.updateProject);

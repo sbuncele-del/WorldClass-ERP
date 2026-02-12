@@ -39,16 +39,29 @@ export const getAllTimeEntries = async (req: TenantRequest, res: Response) => {
       limit = '50'
     } = req.query;
 
-    // Simple query using time_entries table
+    // Full query with project/task/user joins
     let query = `
       SELECT 
-        te.id,
+        te.entry_id as id,
+        te.entry_id,
         te.project_id,
         te.task_id,
+        te.employee_id,
         te.hours,
         te.entry_date,
-        te.created_at
+        te.description,
+        te.billable,
+        te.status,
+        te.created_by,
+        te.created_at,
+        cp.project_name,
+        cp.project_number,
+        pt.task_name,
+        COALESCE(u.first_name || ' ' || u.last_name, 'Unknown') as user_name
       FROM time_entries te
+      LEFT JOIN client_projects cp ON te.project_id = cp.project_id
+      LEFT JOIN project_tasks pt ON te.task_id = pt.id
+      LEFT JOIN users u ON te.created_by = u.id
       WHERE te.tenant_id = $1
     `;
 
@@ -159,20 +172,16 @@ export const createTimeEntry = async (req: TenantRequest, res: Response) => {
     const { tenantId, userId } = getTenantContext(req);
     const entryData = req.body;
 
-    // Get employee_id for current user if not provided
-    let employeeId = entryData.employee_id;
+    // Get employee_id for current user if available (optional)
+    let employeeId = entryData.employee_id || null;
     if (!employeeId && userId) {
       const empResult = await pool.query(
-        'SELECT employee_id FROM employees WHERE user_id = $1 AND tenant_id = $2',
+        'SELECT employee_id FROM employees WHERE email = (SELECT email FROM users WHERE id = $1) AND tenant_id = $2',
         [userId, tenantId]
       );
       if (empResult.rows.length > 0) {
         employeeId = empResult.rows[0].employee_id;
       }
-    }
-
-    if (!employeeId) {
-      return res.status(400).json({ success: false, message: 'Employee ID is required' });
     }
 
     // Verify project belongs to tenant
@@ -194,12 +203,12 @@ export const createTimeEntry = async (req: TenantRequest, res: Response) => {
     `, [
       tenantId,
       entryData.project_id,
-      entryData.task_id,
+      entryData.task_id || null,
       employeeId,
       entryData.entry_date,
       entryData.hours,
       entryData.description,
-      entryData.billable !== false,
+      entryData.billable !== false && entryData.is_billable !== false,
       entryData.status || 'Pending',
       userId
     ]);

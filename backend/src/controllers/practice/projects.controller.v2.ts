@@ -8,6 +8,7 @@
 import { Response } from 'express';
 import { TenantRequest } from '../../types';
 import pool from '../../config/database';
+import { emailService } from '../../services/email-production.service';
 
 /**
  * Tenant context helper
@@ -59,10 +60,18 @@ export const getAllProjects = async (req: TenantRequest, res: Response) => {
         cp.created_at,
         cp.updated_at,
         COALESCE(u.first_name || ' ' || u.last_name, 'Unassigned') as manager_name,
-        COALESCE(sc.company_name, 'Internal') as client_name
+        COALESCE(sc.company_name, 'Internal') as client_name,
+        COALESCE(task_counts.total_tasks, 0) as total_tasks,
+        COALESCE(task_counts.completed_tasks, 0) as completed_tasks
       FROM client_projects cp
       LEFT JOIN users u ON cp.project_manager_id = u.id
       LEFT JOIN sales.customers sc ON cp.customer_id = sc.customer_id
+      LEFT JOIN LATERAL (
+        SELECT 
+          COUNT(*) as total_tasks,
+          COUNT(*) FILTER (WHERE pt.status IN ('done','Completed','completed','closed','Closed')) as completed_tasks
+        FROM project_tasks pt WHERE pt.project_id = cp.project_id AND pt.tenant_id = cp.tenant_id
+      ) task_counts ON true
       WHERE cp.tenant_id = $1
     `;
 
@@ -495,11 +504,148 @@ export const createProjectUpdate = async (req: TenantRequest, res: Response) => 
 
     // Also return author name
     const update = result.rows[0];
+    let authorName = 'System';
     if (userId) {
       const userRes = await pool.query(`SELECT first_name, last_name, email FROM users WHERE id = $1 AND tenant_id = $2`, [userId, tenantId]);
       if (userRes.rows.length > 0) {
         const u = userRes.rows[0];
-        update.author_name = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email;
+        authorName = `${u.first_name || ''} ${u.last_name || ''}`.trim() || u.email;
+        update.author_name = authorName;
+      }
+    }
+
+    // Get project details for notifications
+    const projectRes = await pool.query(`SELECT project_name, project_number FROM client_projects WHERE project_id = $1 AND tenant_id = $2`, [project_id, tenantId]);
+    const projectName = projectRes.rows[0]?.project_name || 'Project';
+    const projectNumber = projectRes.rows[0]?.project_number || '';
+
+    // Internal notification: notify all tenant users via system notifications
+    try {
+      const allUsers = await pool.query(`SELECT id FROM users WHERE tenant_id = $1 AND id != $2`, [tenantId, userId]);
+      for (const u of allUsers.rows) {
+        await pool.query(`
+          INSERT INTO user_notifications (tenant_id, user_id, type, title, message, data, is_read)
+          VALUES ($1, $2, 'project_update', $3, $4, $5, false)
+        `, [
+          tenantId,
+          u.id,
+          `${update_type === 'milestone' ? '🏆 Milestone' : '📋 Update'}: ${projectName}`,
+          `${authorName}: ${title}`,
+          JSON.stringify({ project_id, update_id: update.id, update_type })
+        ]);
+      }
+    } catch (notifErr) {
+      console.error('Failed to create notifications:', notifErr);
+    }
+
+    // External email: if update is client-visible, send HTML email
+    if (is_client_visible !== false) {
+      try {
+        // Get client contact email from the project's customer
+        const customerRes = await pool.query(`
+          SELECT sc.email, sc.contact_person, sc.company_name 
+          FROM client_projects cp
+          JOIN sales.customers sc ON cp.customer_id = sc.customer_id
+          WHERE cp.project_id = $1 AND cp.tenant_id = $2
+        `, [project_id, tenantId]);
+        
+        if (customerRes.rows.length > 0 && customerRes.rows[0].email) {
+          const customer = customerRes.rows[0];
+          const tenantRes = await pool.query(`SELECT name, business_name FROM tenants WHERE id = $1`, [tenantId]);
+          const companyName = tenantRes.rows[0]?.business_name || tenantRes.rows[0]?.name || 'WorldClass ERP';
+
+          const updateTypeLabel = {
+            general: 'General Update',
+            milestone: 'Milestone Reached',
+            status_change: 'Status Change',
+            budget: 'Budget Update',
+            risk: 'Risk Alert',
+            deliverable: 'Deliverable'
+          }[update_type || 'general'] || 'Update';
+
+          const updateTypeColor = {
+            general: '#1890ff',
+            milestone: '#52c41a',
+            status_change: '#722ed1',
+            budget: '#fa8c16',
+            risk: '#ff4d4f',
+            deliverable: '#13c2c2'
+          }[update_type || 'general'] || '#1890ff';
+
+          const htmlEmail = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Update - ${projectName}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f5f5;padding:20px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+        <!-- Header -->
+        <tr>
+          <td style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:30px 40px;text-align:center;">
+            <h1 style="color:#ffffff;margin:0;font-size:24px;">📋 Project Update</h1>
+            <p style="color:rgba(255,255,255,0.9);margin:8px 0 0;font-size:14px;">${projectNumber} — ${projectName}</p>
+          </td>
+        </tr>
+        <!-- Update Type Badge -->
+        <tr>
+          <td style="padding:24px 40px 0;">
+            <span style="display:inline-block;background:${updateTypeColor};color:#fff;padding:4px 16px;border-radius:12px;font-size:13px;font-weight:600;">${updateTypeLabel}</span>
+          </td>
+        </tr>
+        <!-- Content -->
+        <tr>
+          <td style="padding:20px 40px;">
+            <h2 style="color:#1a1a2e;margin:0 0 12px;font-size:20px;">${title}</h2>
+            <div style="color:#4a4a4a;font-size:15px;line-height:1.6;border-left:3px solid ${updateTypeColor};padding-left:16px;">
+              ${(content || '').replace(/\n/g, '<br>')}
+            </div>
+          </td>
+        </tr>
+        <!-- Meta -->
+        <tr>
+          <td style="padding:0 40px 24px;">
+            <table width="100%" style="background:#f8f9fa;border-radius:6px;padding:16px;">
+              <tr>
+                <td style="color:#666;font-size:13px;">
+                  <strong>Posted by:</strong> ${authorName}<br>
+                  <strong>Date:</strong> ${new Date().toLocaleDateString('en-ZA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}<br>
+                  <strong>Project:</strong> ${projectNumber} — ${projectName}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background:#f8f9fa;padding:20px 40px;text-align:center;border-top:1px solid #eee;">
+            <p style="color:#999;font-size:12px;margin:0;">
+              This update was sent from <strong>${companyName}</strong> via WorldClass ERP<br>
+              <a href="https://siyabusaerp.co.za" style="color:#667eea;text-decoration:none;">Login to view full details</a>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+          await emailService.send({
+            to: customer.email,
+            subject: `[${projectNumber}] ${updateTypeLabel}: ${title}`,
+            html: htmlEmail,
+            text: `${updateTypeLabel}: ${title}\n\n${content || ''}\n\nPosted by: ${authorName}\nProject: ${projectName} (${projectNumber})`
+          }).catch((emailErr: any) => {
+            console.error('Failed to send update email:', emailErr);
+          });
+        }
+      } catch (emailErr) {
+        console.error('Error preparing update email:', emailErr);
       }
     }
 
@@ -529,6 +675,123 @@ export const deleteProjectUpdate = async (req: TenantRequest, res: Response) => 
   }
 };
 
+// ============================================================================
+// PROJECT MILESTONES
+// ============================================================================
+
+export const getProjectMilestones = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { project_id } = req.query;
+
+    let query = `
+      SELECT pm.*, cp.project_name, cp.project_number
+      FROM project_milestones pm
+      JOIN client_projects cp ON pm.project_id = cp.project_id
+      WHERE pm.tenant_id = $1
+    `;
+    const params: any[] = [tenantId];
+
+    if (project_id) {
+      params.push(project_id);
+      query += ` AND pm.project_id = $${params.length}`;
+    }
+    query += ` ORDER BY pm.due_date ASC NULLS LAST, pm.created_at ASC`;
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error: any) {
+    if (error.message === 'Tenant ID not found') {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    res.status(500).json({ success: false, message: 'Failed to fetch milestones' });
+  }
+};
+
+export const createMilestone = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { project_id, title, description, due_date, weight } = req.body;
+
+    if (!project_id || !title) {
+      return res.status(400).json({ success: false, message: 'project_id and title required' });
+    }
+
+    const result = await pool.query(`
+      INSERT INTO project_milestones (tenant_id, project_id, title, description, due_date, weight, created_by)
+      VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *
+    `, [tenantId, project_id, title, description || '', due_date || null, weight || 1, userId]);
+
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (error: any) {
+    console.error('createMilestone error:', error.message, error.detail || '');
+    if (error.message === 'Tenant ID not found') {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    res.status(500).json({ success: false, message: 'Failed to create milestone', error: error.message });
+  }
+};
+
+export const updateMilestone = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { id } = req.params;
+    const { title, description, due_date, status, weight, completed_date } = req.body;
+
+    const result = await pool.query(`
+      UPDATE project_milestones SET
+        title = COALESCE($1, title),
+        description = COALESCE($2, description),
+        due_date = COALESCE($3, due_date),
+        status = COALESCE($4, status),
+        weight = COALESCE($5, weight),
+        completed_date = COALESCE($6, completed_date),
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = $7 AND tenant_id = $8
+      RETURNING *
+    `, [title, description, due_date, status, weight, completed_date, id, tenantId]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Milestone not found' });
+    }
+
+    // If marking as completed, auto-create a project update
+    if (status === 'completed') {
+      const milestone = result.rows[0];
+      await pool.query(`
+        INSERT INTO project_updates (tenant_id, project_id, update_type, title, content, is_client_visible, created_by)
+        VALUES ($1, $2, 'milestone', $3, $4, true, $5)
+      `, [
+        tenantId, milestone.project_id,
+        `🏆 Milestone Completed: ${milestone.title}`,
+        `The milestone "${milestone.title}" has been completed.${milestone.description ? ' — ' + milestone.description : ''}`,
+        req.user?.id
+      ]);
+    }
+
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error: any) {
+    if (error.message === 'Tenant ID not found') {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    res.status(500).json({ success: false, message: 'Failed to update milestone' });
+  }
+};
+
+export const deleteMilestone = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { id } = req.params;
+    await pool.query(`DELETE FROM project_milestones WHERE id = $1 AND tenant_id = $2`, [id, tenantId]);
+    res.json({ success: true, message: 'Milestone deleted' });
+  } catch (error: any) {
+    if (error.message === 'Tenant ID not found') {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    res.status(500).json({ success: false, message: 'Failed to delete milestone' });
+  }
+};
+
 export default {
   getAllProjects,
   getProjectById,
@@ -539,5 +802,9 @@ export default {
   getProjectsDashboard,
   getProjectUpdates,
   createProjectUpdate,
-  deleteProjectUpdate
+  deleteProjectUpdate,
+  getProjectMilestones,
+  createMilestone,
+  updateMilestone,
+  deleteMilestone
 };

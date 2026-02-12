@@ -324,6 +324,45 @@ export const projectService = {
     const { data } = await apiClient.delete(`/api/v2/practice/projects/updates/${id}`);
     return data;
   },
+
+  // ── Milestones ──────────────────────────────────────────────────────────
+
+  /** GET /api/v2/practice/projects/milestones */
+  async getMilestones(params?: { project_id?: string }): Promise<any> {
+    const { data } = await apiClient.get('/api/v2/practice/projects/milestones', { params });
+    return data;
+  },
+
+  /** POST /api/v2/practice/projects/milestones */
+  async createMilestone(milestone: {
+    project_id: string;
+    title: string;
+    description?: string;
+    due_date?: string;
+    weight?: number;
+  }): Promise<any> {
+    const { data } = await apiClient.post('/api/v2/practice/projects/milestones', milestone);
+    return extractData({ data });
+  },
+
+  /** PUT /api/v2/practice/projects/milestones/:id */
+  async updateMilestone(id: string, milestone: Partial<{
+    title: string;
+    description: string;
+    due_date: string;
+    status: string;
+    weight: number;
+    completed_date: string;
+  }>): Promise<any> {
+    const { data } = await apiClient.put(`/api/v2/practice/projects/milestones/${id}`, milestone);
+    return extractData({ data });
+  },
+
+  /** DELETE /api/v2/practice/projects/milestones/:id */
+  async deleteMilestone(id: string): Promise<any> {
+    const { data } = await apiClient.delete(`/api/v2/practice/projects/milestones/${id}`);
+    return data;
+  },
 };
 
 export default projectService;

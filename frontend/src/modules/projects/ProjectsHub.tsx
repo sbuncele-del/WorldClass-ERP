@@ -143,6 +143,9 @@ const ProjectsHub: React.FC = () => {
   const [projectUpdates, setProjectUpdates] = useState<any[]>([]);
   const [updateModalVisible, setUpdateModalVisible] = useState(false);
   const [updateForm] = Form.useForm();
+  const [milestones, setMilestones] = useState<any[]>([]);
+  const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
+  const [milestoneForm] = Form.useForm();
   
   // ── Helper: transform raw API project to the component Project interface ──
   const transformProject = (p: any): Project => ({
@@ -199,7 +202,31 @@ const ProjectsHub: React.FC = () => {
         : Array.isArray(tasksRes)
           ? tasksRes
           : [];
-      setTasks(taskData);
+      // Transform tasks: map API status to kanban status, map field names
+      const statusMap: Record<string, Task['status']> = {
+        'not started': 'todo', 'pending': 'todo', 'todo': 'todo', 'open': 'todo',
+        'in progress': 'in-progress', 'in-progress': 'in-progress', 'active': 'in-progress', 'working': 'in-progress',
+        'review': 'review', 'testing': 'review', 'qa': 'review', 'under review': 'review',
+        'done': 'done', 'completed': 'done', 'closed': 'done', 'finished': 'done',
+      };
+      const transformedTasks = taskData.map((t: any) => ({
+        id: t.id,
+        title: t.task_name || t.title || 'Untitled',
+        project: t.project_name || t.project || '',
+        assignee: t.assigned_to_name || t.assignee || 'Unassigned',
+        status: statusMap[(t.status || 'todo').toLowerCase()] || 'todo',
+        priority: (t.priority || 'medium').toLowerCase() as Task['priority'],
+        dueDate: t.due_date ? new Date(t.due_date).toLocaleDateString() : '-',
+        estimatedHours: parseFloat(t.estimated_hours) || 0,
+        actualHours: parseFloat(t.actual_hours) || 0,
+        tags: [],
+        // Keep raw fields for detail view
+        project_id: t.project_id,
+        task_name: t.task_name,
+        assigned_to_name: t.assigned_to_name,
+        description: t.description,
+      }));
+      setTasks(transformedTasks);
 
       // Fetch team resources (users in tenant)
       const usersResponse = await apiClient.get('/api/v2/admin/users').catch((error) => {
@@ -294,6 +321,11 @@ const ProjectsHub: React.FC = () => {
           type: u.update_type === 'milestone' ? 'milestone' : u.update_type === 'status_change' ? 'completed' : 'update',
         })));
       }
+
+      // Fetch project milestones
+      const milestonesRes = await projectService.getMilestones().catch(() => ({ data: [] }));
+      const milestonesData = Array.isArray(milestonesRes?.data) ? milestonesRes.data : [];
+      setMilestones(milestonesData);
 
     } catch (err) {
       console.error('Failed to fetch projects data:', err);
@@ -1486,6 +1518,161 @@ const ProjectsHub: React.FC = () => {
     );
   };
 
+  // ── Milestones Tab ──────────────────────────────────────────────────────
+  const renderMilestones = () => {
+    const statusColors: Record<string, string> = {
+      pending: 'default', 'in-progress': 'processing', 'in_progress': 'processing',
+      completed: 'success', overdue: 'error',
+    };
+
+    const getMilestoneStatus = (m: any) => {
+      if (m.status === 'completed') return 'completed';
+      if (m.due_date && new Date(m.due_date) < new Date()) return 'overdue';
+      return m.status || 'pending';
+    };
+
+    // Group milestones by project
+    const milestonesPerProject: Record<string, any[]> = {};
+    milestones.forEach(m => {
+      const pName = m.project_name || 'Unknown Project';
+      if (!milestonesPerProject[pName]) milestonesPerProject[pName] = [];
+      milestonesPerProject[pName].push(m);
+    });
+
+    return (
+      <div style={{ padding: '24px' }}>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} lg={16}>
+            <Card
+              title={<><FlagOutlined /> Project Milestones</>}
+              extra={
+                <Button type="primary" icon={<PlusOutlined />} onClick={() => setMilestoneModalVisible(true)}>
+                  Add Milestone
+                </Button>
+              }
+            >
+              {milestones.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                  <FlagOutlined style={{ fontSize: 48, color: '#d9d9d9' }} />
+                  <Title level={4} type="secondary">No Milestones Yet</Title>
+                  <Text type="secondary">Create milestones to track project progress and plan deliverables.</Text>
+                  <br /><br />
+                  <Button type="primary" icon={<PlusOutlined />} onClick={() => setMilestoneModalVisible(true)}>
+                    Create First Milestone
+                  </Button>
+                </div>
+              ) : (
+                Object.entries(milestonesPerProject).map(([projectName, projectMilestones]) => (
+                  <Card key={projectName} size="small" title={projectName} style={{ marginBottom: 16 }} type="inner">
+                    <Timeline
+                      items={projectMilestones.map((m: any) => {
+                        const status = getMilestoneStatus(m);
+                        return {
+                          color: status === 'completed' ? 'green' : status === 'overdue' ? 'red' : 'blue',
+                          dot: status === 'completed' ? <CheckCircleOutlined /> : status === 'overdue' ? <WarningOutlined /> : <FlagOutlined />,
+                          children: (
+                            <div style={{ marginBottom: 8 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div>
+                                  <Space>
+                                    <Tag color={status === 'completed' ? 'green' : status === 'overdue' ? 'red' : 'blue'}>
+                                      {status.toUpperCase()}
+                                    </Tag>
+                                    <Text strong style={{ textDecoration: status === 'completed' ? 'line-through' : 'none' }}>{m.title}</Text>
+                                    <Text type="secondary">(Weight: {m.weight})</Text>
+                                  </Space>
+                                  {m.description && <><br /><Text type="secondary">{m.description}</Text></>}
+                                  <br />
+                                  <Text type="secondary" style={{ fontSize: 11 }}>
+                                    Due: {m.due_date ? new Date(m.due_date).toLocaleDateString() : 'No date'}
+                                    {m.completed_date && ` • Completed: ${new Date(m.completed_date).toLocaleDateString()}`}
+                                  </Text>
+                                </div>
+                                <Space>
+                                  {status !== 'completed' && (
+                                    <Button
+                                      size="small"
+                                      type="primary"
+                                      icon={<CheckCircleOutlined />}
+                                      onClick={async () => {
+                                        try {
+                                          await projectService.updateMilestone(m.id, {
+                                            status: 'completed',
+                                            completed_date: new Date().toISOString().split('T')[0],
+                                          });
+                                          message.success('Milestone completed!');
+                                          const res = await projectService.getMilestones().catch(() => ({ data: [] }));
+                                          setMilestones(Array.isArray(res?.data) ? res.data : []);
+                                          // Refresh projects too for progress update
+                                          const pRes = await projectService.getProjects().catch(() => ({ data: [] }));
+                                          const pd = Array.isArray(pRes?.data) ? pRes.data : [];
+                                          setProjects(pd.map(transformProject));
+                                        } catch {
+                                          message.error('Failed to update milestone');
+                                        }
+                                      }}
+                                    >
+                                      Complete
+                                    </Button>
+                                  )}
+                                  <Button
+                                    size="small"
+                                    icon={<DeleteOutlined />}
+                                    danger
+                                    type="text"
+                                    onClick={() => {
+                                      Modal.confirm({
+                                        title: 'Delete Milestone',
+                                        content: `Delete "${m.title}"?`,
+                                        okText: 'Delete',
+                                        okType: 'danger',
+                                        onOk: async () => {
+                                          try {
+                                            await projectService.deleteMilestone(m.id);
+                                            setMilestones(prev => prev.filter(ms => ms.id !== m.id));
+                                            message.success('Milestone deleted');
+                                          } catch {
+                                            message.error('Failed to delete milestone');
+                                          }
+                                        },
+                                      });
+                                    }}
+                                  />
+                                </Space>
+                              </div>
+                            </div>
+                          ),
+                        };
+                      })}
+                    />
+                  </Card>
+                ))
+              )}
+            </Card>
+          </Col>
+          <Col xs={24} lg={8}>
+            <Card title="Milestone Summary">
+              <Statistic title="Total Milestones" value={milestones.length} />
+              <Divider />
+              <Statistic title="Completed" value={milestones.filter((m: any) => m.status === 'completed').length} valueStyle={{ color: '#52c41a' }} />
+              <Divider />
+              <Statistic title="Overdue" value={milestones.filter((m: any) => m.status !== 'completed' && m.due_date && new Date(m.due_date) < new Date()).length} valueStyle={{ color: '#ff4d4f' }} />
+              <Divider />
+              <Progress
+                type="circle"
+                percent={milestones.length > 0 ? Math.round((milestones.filter((m: any) => m.status === 'completed').length / milestones.length) * 100) : 0}
+                format={(p) => `${p}%`}
+                size={80}
+              />
+              <br /><br />
+              <Text type="secondary">Overall milestone completion</Text>
+            </Card>
+          </Col>
+        </Row>
+      </div>
+    );
+  };
+
   return (
     <HubLayout>
       <HubHeader
@@ -1529,6 +1716,7 @@ const ProjectsHub: React.FC = () => {
           { key: 'resources', label: 'Resources', icon: <TeamOutlined />, children: renderResources() },
           { key: 'budget', label: 'Budget', icon: <DollarOutlined />, children: renderBudget() },
           { key: 'updates', label: 'Updates', icon: <BellOutlined />, children: renderUpdates() },
+          { key: 'milestones', label: 'Milestones', icon: <FlagOutlined />, children: renderMilestones() },
           { key: 'settings', label: 'Settings', icon: <SettingOutlined />, children: renderSettings() }
         ]}
         activeKey={activeTab}
@@ -1676,7 +1864,30 @@ const ProjectsHub: React.FC = () => {
               const taskItems = Array.isArray(tasksRes?.data)
                 ? tasksRes.data
                 : Array.isArray(tasksRes) ? tasksRes : [];
-              setTasks(taskItems);
+              // Apply same transformation as initial load
+              const statusMap2: Record<string, Task['status']> = {
+                'not started': 'todo', 'pending': 'todo', 'todo': 'todo', 'open': 'todo',
+                'in progress': 'in-progress', 'in-progress': 'in-progress', 'active': 'in-progress', 'working': 'in-progress',
+                'review': 'review', 'testing': 'review', 'qa': 'review', 'under review': 'review',
+                'done': 'done', 'completed': 'done', 'closed': 'done', 'finished': 'done',
+              };
+              const transformedRefresh = taskItems.map((t: any) => ({
+                id: t.id,
+                title: t.task_name || t.title || 'Untitled',
+                project: t.project_name || t.project || '',
+                assignee: t.assigned_to_name || t.assignee || 'Unassigned',
+                status: statusMap2[(t.status || 'todo').toLowerCase()] || 'todo',
+                priority: (t.priority || 'medium').toLowerCase() as Task['priority'],
+                dueDate: t.due_date ? new Date(t.due_date).toLocaleDateString() : '-',
+                estimatedHours: parseFloat(t.estimated_hours) || 0,
+                actualHours: parseFloat(t.actual_hours) || 0,
+                tags: [],
+                project_id: t.project_id,
+                task_name: t.task_name,
+                assigned_to_name: t.assigned_to_name,
+                description: t.description,
+              }));
+              setTasks(transformedRefresh);
             } catch (error: any) {
               if (error.errorFields) {
                 // Form validation error -- Ant Design will highlight fields
@@ -1924,7 +2135,30 @@ const ProjectsHub: React.FC = () => {
             </Descriptions>
 
             <Card size="small" title="Progress" style={{ marginBottom: 16 }}>
-              <Progress percent={selectedProject.progress} status={selectedProject.progress >= 100 ? 'success' : 'active'} />
+              {(() => {
+                const projectMilestones = milestones.filter(m => m.project_id === selectedProject.id);
+                const taskProgress = selectedProject.tasks.total > 0
+                  ? (selectedProject.tasks.completed / selectedProject.tasks.total) * 100
+                  : 0;
+                const milestoneProgress = projectMilestones.length > 0
+                  ? (projectMilestones.filter((m: any) => m.status === 'completed').length / projectMilestones.length) * 100
+                  : 0;
+                // Weighted: if both exist, 60% tasks + 40% milestones; otherwise whichever has data
+                const hasT = selectedProject.tasks.total > 0;
+                const hasM = projectMilestones.length > 0;
+                const combinedProgress = hasT && hasM
+                  ? Math.round(taskProgress * 0.6 + milestoneProgress * 0.4)
+                  : hasT ? Math.round(taskProgress) : hasM ? Math.round(milestoneProgress) : selectedProject.progress;
+                return (
+                  <>
+                    <Progress percent={combinedProgress} status={combinedProgress >= 100 ? 'success' : 'active'} />
+                    <Row gutter={16} style={{ marginTop: 8 }}>
+                      <Col span={12}><Text type="secondary">Tasks: {Math.round(taskProgress)}%</Text></Col>
+                      <Col span={12}><Text type="secondary">Milestones: {Math.round(milestoneProgress)}%</Text></Col>
+                    </Row>
+                  </>
+                );
+              })()}
             </Card>
 
             <Card size="small" title="Tasks" style={{ marginBottom: 16 }}>
@@ -1968,6 +2202,72 @@ const ProjectsHub: React.FC = () => {
               </Button>
             </Card>
 
+            <Card size="small" title={<><FlagOutlined /> Milestones</>} style={{ marginBottom: 16 }}>
+              {(() => {
+                const projectMilestones = milestones.filter(m => m.project_id === selectedProject.id);
+                const completedMs = projectMilestones.filter(m => m.status === 'completed').length;
+                return (
+                  <>
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Statistic title="Total" value={projectMilestones.length} />
+                      </Col>
+                      <Col span={12}>
+                        <Statistic title="Completed" value={completedMs} />
+                      </Col>
+                    </Row>
+                    {projectMilestones.length > 0 && (
+                      <>
+                        <Divider style={{ margin: '12px 0' }} />
+                        <Progress 
+                          percent={Math.round((completedMs / projectMilestones.length) * 100)} 
+                          size="small"
+                          status={completedMs === projectMilestones.length ? 'success' : 'active'}
+                        />
+                        <List
+                          size="small"
+                          dataSource={projectMilestones}
+                          renderItem={(m: any) => (
+                            <List.Item
+                              actions={m.status !== 'completed' ? [
+                                <Button size="small" type="link" onClick={async () => {
+                                  try {
+                                    await projectService.updateMilestone(m.id, { status: 'completed', completed_date: new Date().toISOString().split('T')[0] });
+                                    message.success('Milestone completed!');
+                                    const res = await projectService.getMilestones().catch(() => ({ data: [] }));
+                                    setMilestones(Array.isArray(res?.data) ? res.data : []);
+                                  } catch { message.error('Failed'); }
+                                }}>✓</Button>
+                              ] : []}
+                            >
+                              <Space>
+                                <Tag color={m.status === 'completed' ? 'green' : (m.due_date && new Date(m.due_date) < new Date() ? 'red' : 'blue')}>
+                                  {m.status === 'completed' ? '✓' : m.due_date && new Date(m.due_date) < new Date() ? '!' : '○'}
+                                </Tag>
+                                <Text style={{ textDecoration: m.status === 'completed' ? 'line-through' : 'none' }}>{m.title}</Text>
+                              </Space>
+                            </List.Item>
+                          )}
+                        />
+                      </>
+                    )}
+                    <Button
+                      type="dashed"
+                      block
+                      icon={<PlusOutlined />}
+                      onClick={() => {
+                        milestoneForm.setFieldsValue({ project_id: selectedProject.id });
+                        setMilestoneModalVisible(true);
+                      }}
+                      style={{ marginTop: 8 }}
+                    >
+                      Add Milestone
+                    </Button>
+                  </>
+                );
+              })()}
+            </Card>
+
             <Space>
               <Button 
                 type="primary" 
@@ -1988,6 +2288,64 @@ const ProjectsHub: React.FC = () => {
           </div>
         )}
       </Drawer>
+
+      {/* Milestone Modal */}
+      <Modal
+        title="Add Milestone"
+        open={milestoneModalVisible}
+        onCancel={() => { setMilestoneModalVisible(false); milestoneForm.resetFields(); }}
+        footer={[
+          <Button key="cancel" onClick={() => { setMilestoneModalVisible(false); milestoneForm.resetFields(); }}>Cancel</Button>,
+          <Button key="create" type="primary" onClick={async () => {
+            try {
+              const values = await milestoneForm.validateFields();
+              await projectService.createMilestone({
+                project_id: values.project_id,
+                title: values.title,
+                description: values.description || '',
+                due_date: values.due_date?.format('YYYY-MM-DD') || undefined,
+                weight: values.weight || 1,
+              });
+              message.success('Milestone created!');
+              setMilestoneModalVisible(false);
+              milestoneForm.resetFields();
+              // Refresh milestones
+              const res = await projectService.getMilestones().catch(() => ({ data: [] }));
+              setMilestones(Array.isArray(res?.data) ? res.data : []);
+            } catch (error: any) {
+              if (error.errorFields) return;
+              message.error(error.response?.data?.message || 'Failed to create milestone');
+            }
+          }}>Create Milestone</Button>
+        ]}
+        width={500}
+      >
+        <Form form={milestoneForm} layout="vertical">
+          <Form.Item label="Project" name="project_id" rules={[{ required: true, message: 'Select a project' }]}>
+            <Select placeholder="Select project" showSearch optionFilterProp="children">
+              {projects.map(p => <Option key={p.id} value={p.id}>{p.name}</Option>)}
+            </Select>
+          </Form.Item>
+          <Form.Item label="Milestone Title" name="title" rules={[{ required: true, message: 'Enter milestone title' }]}>
+            <Input placeholder="e.g. Phase 1 Delivery" />
+          </Form.Item>
+          <Form.Item label="Description" name="description">
+            <TextArea rows={3} placeholder="Describe this milestone..." />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="Due Date" name="due_date">
+                <DatePicker style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="Weight" name="weight" initialValue={1}>
+                <InputNumber min={1} max={10} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </HubLayout>
   );
 };
