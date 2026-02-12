@@ -29,7 +29,8 @@ import {
   SafetyCertificateOutlined, AuditOutlined, BankOutlined, RocketOutlined,
   EyeOutlined, EditOutlined, DeleteOutlined, MoreOutlined, HomeOutlined,
   FieldTimeOutlined, AppstoreOutlined, NodeIndexOutlined, PieChartOutlined,
-  FundOutlined, FileDoneOutlined, ScheduleOutlined, CarryOutOutlined
+  FundOutlined, FileDoneOutlined, ScheduleOutlined, CarryOutOutlined,
+  SendOutlined, MailOutlined
 } from '@ant-design/icons';
 import { HubLayout, HubHeader, StatusBanner, HubTabs } from '../../components/hub';
 import { apiGet } from '../../services/api.service';
@@ -146,6 +147,7 @@ const ProjectsHub: React.FC = () => {
   const [milestones, setMilestones] = useState<any[]>([]);
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
   const [milestoneForm] = Form.useForm();
+  const [editingMilestone, setEditingMilestone] = useState<any>(null);
   
   // ── Helper: transform raw API project to the component Project interface ──
   const transformProject = (p: any): Project => ({
@@ -1881,6 +1883,22 @@ const ProjectsHub: React.FC = () => {
                                   )}
                                   <Button
                                     size="small"
+                                    icon={<EditOutlined />}
+                                    onClick={() => {
+                                      setEditingMilestone(m);
+                                      milestoneForm.setFieldsValue({
+                                        project_id: m.project_id,
+                                        title: m.title,
+                                        description: m.description || '',
+                                        due_date: m.due_date ? dayjs(m.due_date) : undefined,
+                                        weight: m.weight || 1,
+                                        status: m.status || 'pending',
+                                      });
+                                      setMilestoneModalVisible(true);
+                                    }}
+                                  />
+                                  <Button
+                                    size="small"
                                     icon={<DeleteOutlined />}
                                     danger
                                     type="text"
@@ -2303,7 +2321,9 @@ const ProjectsHub: React.FC = () => {
                 is_client_visible: values.is_client_visible !== false,
               };
               const newUpdate = await projectService.createProjectUpdate(updateData);
-              message.success('Update posted successfully!');
+              message.success(updateData.is_client_visible 
+                ? 'Update posted & client notified via email!' 
+                : 'Update posted successfully!');
               setUpdateModalVisible(false);
               updateForm.resetFields();
               // Add to local state
@@ -2348,6 +2368,19 @@ const ProjectsHub: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
+          <div style={{ 
+            background: '#f0f7ff', border: '1px solid #91caff', borderRadius: 6, 
+            padding: '10px 14px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 
+          }}>
+            <SendOutlined style={{ color: '#1890ff', fontSize: 16 }} />
+            <div>
+              <Text strong style={{ color: '#1890ff', fontSize: 13 }}>Client will be notified via email</Text>
+              <br />
+              <Text type="secondary" style={{ fontSize: 11 }}>
+                When 'Client Visible' is on, an email update will automatically be sent to the project's client contact from <strong>noreply@siyabusaerp.co.za</strong>
+              </Text>
+            </div>
+          </div>
           <Form.Item label="Title" name="title" rules={[{ required: true, message: 'Enter a title' }]}>
             <Input placeholder="e.g. Phase 1 completed ahead of schedule" />
           </Form.Item>
@@ -2555,43 +2588,63 @@ const ProjectsHub: React.FC = () => {
         )}
       </Drawer>
 
-      {/* Milestone Modal */}
+      {/* Milestone Modal (Create/Edit) */}
       <Modal
-        title="Add Milestone"
+        title={editingMilestone ? 'Edit Milestone' : 'Add Milestone'}
         open={milestoneModalVisible}
-        onCancel={() => { setMilestoneModalVisible(false); milestoneForm.resetFields(); }}
+        onCancel={() => { setMilestoneModalVisible(false); setEditingMilestone(null); milestoneForm.resetFields(); }}
         footer={[
-          <Button key="cancel" onClick={() => { setMilestoneModalVisible(false); milestoneForm.resetFields(); }}>Cancel</Button>,
-          <Button key="create" type="primary" onClick={async () => {
+          <Button key="cancel" onClick={() => { setMilestoneModalVisible(false); setEditingMilestone(null); milestoneForm.resetFields(); }}>Cancel</Button>,
+          <Button key="save" type="primary" onClick={async () => {
             try {
               const values = await milestoneForm.validateFields();
-              await projectService.createMilestone({
-                project_id: values.project_id,
-                title: values.title,
-                description: values.description || '',
-                due_date: values.due_date?.format('YYYY-MM-DD') || undefined,
-                weight: values.weight || 1,
-              });
-              message.success('Milestone created!');
+              if (editingMilestone) {
+                // Update existing milestone
+                await projectService.updateMilestone(editingMilestone.id, {
+                  title: values.title,
+                  description: values.description || '',
+                  due_date: values.due_date?.format('YYYY-MM-DD') || undefined,
+                  weight: values.weight || 1,
+                  status: values.status || editingMilestone.status,
+                });
+                message.success('Milestone updated!');
+              } else {
+                // Create new milestone
+                await projectService.createMilestone({
+                  project_id: values.project_id,
+                  title: values.title,
+                  description: values.description || '',
+                  due_date: values.due_date?.format('YYYY-MM-DD') || undefined,
+                  weight: values.weight || 1,
+                });
+                message.success('Milestone created!');
+              }
               setMilestoneModalVisible(false);
+              setEditingMilestone(null);
               milestoneForm.resetFields();
               // Refresh milestones
               const res = await projectService.getMilestones().catch(() => ({ data: [] }));
               setMilestones(Array.isArray(res?.data) ? res.data : []);
+              // Refresh projects for progress recalculation
+              const pRes = await projectService.getProjects().catch(() => ({ data: [] }));
+              const pd = Array.isArray(pRes?.data) ? pRes.data : [];
+              setProjects(pd.map(transformProject));
             } catch (error: any) {
               if (error.errorFields) return;
-              message.error(error.response?.data?.message || 'Failed to create milestone');
+              message.error(error.response?.data?.message || `Failed to ${editingMilestone ? 'update' : 'create'} milestone`);
             }
-          }}>Create Milestone</Button>
+          }}>{editingMilestone ? 'Save Changes' : 'Create Milestone'}</Button>
         ]}
         width={500}
       >
         <Form form={milestoneForm} layout="vertical">
-          <Form.Item label="Project" name="project_id" rules={[{ required: true, message: 'Select a project' }]}>
-            <Select placeholder="Select project" showSearch optionFilterProp="children">
-              {projects.map(p => <Option key={p.id} value={p.id}>{p.name}</Option>)}
-            </Select>
-          </Form.Item>
+          {!editingMilestone && (
+            <Form.Item label="Project" name="project_id" rules={[{ required: true, message: 'Select a project' }]}>
+              <Select placeholder="Select project" showSearch optionFilterProp="children">
+                {projects.map(p => <Option key={p.id} value={p.id}>{p.name}</Option>)}
+              </Select>
+            </Form.Item>
+          )}
           <Form.Item label="Milestone Title" name="title" rules={[{ required: true, message: 'Enter milestone title' }]}>
             <Input placeholder="e.g. Phase 1 Delivery" />
           </Form.Item>
@@ -2599,15 +2652,26 @@ const ProjectsHub: React.FC = () => {
             <TextArea rows={3} placeholder="Describe this milestone..." />
           </Form.Item>
           <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Due Date" name="due_date">
+            <Col span={8}>
+              <Form.Item label="Due Date" name="due_date" rules={[{ required: true, message: 'Set a due date' }]}>
                 <DatePicker style={{ width: '100%' }} />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item label="Weight" name="weight" initialValue={1}>
                 <InputNumber min={1} max={10} style={{ width: '100%' }} />
               </Form.Item>
+            </Col>
+            <Col span={8}>
+              {editingMilestone && (
+                <Form.Item label="Status" name="status">
+                  <Select>
+                    <Option value="pending">Pending</Option>
+                    <Option value="in-progress">In Progress</Option>
+                    <Option value="completed">Completed</Option>
+                  </Select>
+                </Form.Item>
+              )}
             </Col>
           </Row>
         </Form>
