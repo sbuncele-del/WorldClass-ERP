@@ -266,15 +266,48 @@ const InvoiceManagement: React.FC = () => {
     }
   };
 
-  const handleSend = async (inv: Invoice) => {
+  // ─── Send Invoice Modal State ───────────────────────────────────────
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [sendingInvoice, setSendingInvoice] = useState<Invoice | null>(null);
+  const [sendEmail, setSendEmail] = useState('');
+  const [sendSubject, setSendSubject] = useState('');
+  const [sendMessage, setSendMessage] = useState('');
+  const [sendLoading, setSendLoading] = useState(false);
+
+  const openSendModal = (inv: Invoice) => {
+    const customer = allCustomers.find(c => c.id === inv.customer_id);
+    setSendingInvoice(inv);
+    setSendEmail(customer?.email || '');
+    setSendSubject(`Invoice ${inv.invoice_number} from ${companyInfo.company_name || 'Our Company'}`);
+    setSendMessage(
+      `Dear ${inv.customer_name || customer?.name || 'Customer'},\n\n` +
+      `Please find attached invoice ${inv.invoice_number} ` +
+      `for the amount of R ${toNum(inv.total_amount).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}.\n\n` +
+      `Due date: ${inv.due_date ? new Date(inv.due_date).toLocaleDateString('en-ZA') : 'As per terms'}.\n\n` +
+      `Please use invoice number ${inv.invoice_number} as your payment reference.\n\n` +
+      `Kind regards,\n${companyInfo.company_name || ''}`
+    );
+    setShowSendModal(true);
+  };
+
+  const handleSendConfirm = async () => {
+    if (!sendingInvoice) return;
+    if (!sendEmail) { message.warning('Please enter a recipient email address'); return; }
+    setSendLoading(true);
     try {
-      await workspaceApi.sales.sendInvoice(inv.id);
-      message.success('Invoice sent');
+      await workspaceApi.sales.sendInvoice(sendingInvoice.id);
+      message.success(`Invoice ${sendingInvoice.invoice_number} sent to ${sendEmail}`);
+      setShowSendModal(false);
       fetchInvoices();
     } catch (err: any) {
-      message.error(err?.message || 'Failed to send');
+      message.error(err?.message || 'Failed to send invoice');
+    } finally {
+      setSendLoading(false);
     }
   };
+
+  // Keep old name working for inline calls
+  const handleSend = (inv: Invoice) => openSendModal(inv);
 
   const handleVoid = async (inv: Invoice) => {
     Modal.confirm({
@@ -372,7 +405,8 @@ const InvoiceManagement: React.FC = () => {
   };
 
   // ─── Helpers ──────────────────────────────────────────────────────────
-  const formatCurrency = (v: number) => 'R ' + (v || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const toNum = (v: any): number => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+  const formatCurrency = (v: any) => 'R ' + toNum(v).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const statusColors: Record<string, string> = {
     draft: 'default', approved: 'blue', sent: 'processing', posted: 'cyan',
@@ -502,7 +536,7 @@ const InvoiceManagement: React.FC = () => {
     {
       title: 'Amount', dataIndex: 'total_amount', key: 'amount', width: 140,
       render: (v: number) => <Text strong>{formatCurrency(v)}</Text>,
-      sorter: (a: Invoice, b: Invoice) => (a.total_amount || 0) - (b.total_amount || 0),
+      sorter: (a: Invoice, b: Invoice) => toNum(a.total_amount) - toNum(b.total_amount),
     },
     {
       title: 'Status', dataIndex: 'status', key: 'status', width: 120,
@@ -533,7 +567,7 @@ const InvoiceManagement: React.FC = () => {
   ];
 
   // ─── Summary Statistics ────────────────────────────────────────────────
-  const totalValue = invoices.reduce((s, inv) => s + (inv.total_amount || 0), 0);
+  const totalValue = invoices.reduce((s, inv) => s + toNum(inv.total_amount), 0);
   const paidCount = invoices.filter(inv => (inv.status || '').toLowerCase() === 'paid').length;
   const overdueCount = invoices.filter(inv => {
     if (!inv.due_date) return false;
@@ -548,9 +582,9 @@ const InvoiceManagement: React.FC = () => {
   const renderSARSInvoice = (inv: Invoice) => {
     const customer = allCustomers.find(c => c.id === inv.customer_id);
     const invLines = inv.lines || [];
-    const subtotal = inv.subtotal || invLines.reduce((s: number, l: any) => s + ((l.quantity || l.qty || 1) * (l.unit_price || l.rate || 0)), 0);
-    const vatAmount = inv.tax_amount || inv.vat_amount || 0;
-    const total = inv.total_amount || subtotal + vatAmount;
+    const subtotal = toNum(inv.subtotal) || invLines.reduce((s: number, l: any) => s + (toNum(l.quantity || l.qty || 1) * toNum(l.unit_price || l.rate || 0)), 0);
+    const vatAmount = toNum(inv.tax_amount) || toNum(inv.vat_amount);
+    const total = toNum(inv.total_amount) || (subtotal + vatAmount);
     const isVat = !!companyInfo.vat_number;
     const invoiceLabel = isProforma(inv) ? 'PRO-FORMA INVOICE' : 'TAX INVOICE';
 
@@ -643,16 +677,16 @@ const InvoiceManagement: React.FC = () => {
           </thead>
           <tbody>
             {invLines.length > 0 ? invLines.map((item: any, idx: number) => {
-              const qty = item.quantity || item.qty || 1;
-              const price = item.unit_price || item.rate || 0;
+              const qty = toNum(item.quantity || item.qty || 1);
+              const price = toNum(item.unit_price || item.rate || 0);
               const amount = qty * price;
               return (
                 <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: 12, fontSize: 13 }}>{item.description}</td>
                   <td style={{ padding: 12, textAlign: 'center', fontSize: 13 }}>{qty}</td>
-                  <td style={{ padding: 12, textAlign: 'right', fontSize: 13 }}>R {parseFloat(String(price)).toFixed(2)}</td>
+                  <td style={{ padding: 12, textAlign: 'right', fontSize: 13 }}>{formatCurrency(price)}</td>
                   {isVat && <td style={{ padding: 12, textAlign: 'right', fontSize: 13 }}>{item.vat_rate || item.tax_rate || 15}%</td>}
-                  <td style={{ padding: 12, textAlign: 'right', fontWeight: 600, fontSize: 13 }}>R {amount.toFixed(2)}</td>
+                  <td style={{ padding: 12, textAlign: 'right', fontWeight: 600, fontSize: 13 }}>{formatCurrency(amount)}</td>
                 </tr>
               );
             }) : (
@@ -670,12 +704,12 @@ const InvoiceManagement: React.FC = () => {
           <div style={{ width: 300, background: '#f8fafc', padding: 20, borderRadius: 8, border: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid #cbd5e1' }}>
               <span style={{ fontSize: 13, color: '#64748b' }}>Subtotal (excl VAT):</span>
-              <span style={{ fontWeight: 600 }}>R {subtotal.toFixed(2)}</span>
+              <span style={{ fontWeight: 600 }}>{formatCurrency(subtotal)}</span>
             </div>
             {isVat ? (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid #cbd5e1' }}>
                 <span style={{ fontSize: 13, color: '#64748b' }}>VAT (15%):</span>
-                <span style={{ fontWeight: 600 }}>R {vatAmount.toFixed(2)}</span>
+                <span style={{ fontWeight: 600 }}>{formatCurrency(vatAmount)}</span>
               </div>
             ) : (
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid #cbd5e1' }}>
@@ -685,7 +719,7 @@ const InvoiceManagement: React.FC = () => {
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10 }}>
               <span style={{ fontSize: 16, fontWeight: 'bold', color: '#1e293b' }}>TOTAL:</span>
-              <span style={{ fontSize: 18, fontWeight: 'bold', color: '#667eea' }}>R {total.toFixed(2)}</span>
+              <span style={{ fontSize: 18, fontWeight: 'bold', color: '#667eea' }}>{formatCurrency(total)}</span>
             </div>
           </div>
         </div>
@@ -1102,7 +1136,7 @@ const InvoiceManagement: React.FC = () => {
                     { title: 'Qty', dataIndex: 'quantity', key: 'qty', width: 70, render: (v: number) => v || 1 },
                     { title: 'Unit Price', dataIndex: 'unit_price', key: 'price', width: 110, render: (v: number) => formatCurrency(v) },
                     { title: 'VAT %', dataIndex: 'vat_rate', key: 'vat', width: 70, render: (v: number) => (v || 0) + '%' },
-                    { title: 'Amount', key: 'total', width: 120, render: (_: any, r: any) => <Text strong>{formatCurrency((r.quantity || 1) * (r.unit_price || 0))}</Text> },
+                    { title: 'Amount', key: 'total', width: 120, render: (_: any, r: any) => <Text strong>{formatCurrency(toNum(r.quantity || 1) * toNum(r.unit_price || 0))}</Text> },
                   ]}
                 />
               </Card>
@@ -1163,6 +1197,62 @@ const InvoiceManagement: React.FC = () => {
         }
       >
         {selectedInvoice && renderSARSInvoice(selectedInvoice)}
+      </Modal>
+
+      {/* ================================================================ */}
+      {/* SEND INVOICE EMAIL MODAL                                         */}
+      {/* ================================================================ */}
+      <Modal
+        title={
+          <Space>
+            <SendOutlined />
+            <span>Send Invoice {sendingInvoice ? '\u2014 ' + sendingInvoice.invoice_number : ''}</span>
+          </Space>
+        }
+        open={showSendModal}
+        onCancel={() => setShowSendModal(false)}
+        width={600}
+        okText="Send Invoice"
+        confirmLoading={sendLoading}
+        onOk={handleSendConfirm}
+      >
+        {sendingInvoice && (
+          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+            <Alert
+              type="info"
+              showIcon
+              message={`Sending ${isProforma(sendingInvoice) ? 'Pro-forma' : 'Tax Invoice'} ${sendingInvoice.invoice_number}`}
+              description={`Amount: ${formatCurrency(sendingInvoice.total_amount)} | Customer: ${sendingInvoice.customer_name || '\u2014'}`}
+            />
+
+            <Form layout="vertical">
+              <Form.Item label="Recipient Email" required>
+                <Input
+                  value={sendEmail}
+                  onChange={e => setSendEmail(e.target.value)}
+                  placeholder="customer@example.com"
+                  type="email"
+                  size="large"
+                />
+              </Form.Item>
+              <Form.Item label="Subject">
+                <Input
+                  value={sendSubject}
+                  onChange={e => setSendSubject(e.target.value)}
+                  placeholder="Invoice subject line..."
+                />
+              </Form.Item>
+              <Form.Item label="Message">
+                <Input.TextArea
+                  value={sendMessage}
+                  onChange={e => setSendMessage(e.target.value)}
+                  rows={8}
+                  placeholder="Email message to customer..."
+                />
+              </Form.Item>
+            </Form>
+          </Space>
+        )}
       </Modal>
     </>
   );
