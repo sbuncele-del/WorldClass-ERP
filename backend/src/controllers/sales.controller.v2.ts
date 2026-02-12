@@ -10,6 +10,7 @@
 import { Response } from 'express';
 import { TenantRequest } from '../types';
 import { TenantContext } from '../repositories/BaseRepository';
+import { emailService } from '../services/email-production.service';
 import {
   customerRepository,
   salesOrderRepository,
@@ -693,6 +694,7 @@ export const sendInvoice = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
     const { id } = req.params;
+    const { email, subject, message: bodyMessage } = req.body;
 
     const invoice = await invoiceRepository.findById(ctx, id);
     if (!invoice) {
@@ -702,21 +704,85 @@ export const sendInvoice = async (req: TenantRequest, res: Response) => {
       });
     }
 
-    if (invoice.status.toLowerCase() !== 'draft') {
+    // Allow sending drafts and approved invoices
+    const status = (invoice.status || '').toLowerCase();
+    if (!['draft', 'approved'].includes(status)) {
       return res.status(400).json({
         success: false,
-        message: 'Only draft invoices can be sent'
+        message: 'Only draft or approved invoices can be sent'
       });
     }
 
-    // TODO: Send invoice via email
+    // Get customer info for the email
+    let recipientEmail = email;
+    if (!recipientEmail && invoice.customer_id) {
+      const custResult = await pool.query(
+        'SELECT email FROM sales.customers WHERE customer_id = $1 AND tenant_id = $2',
+        [invoice.customer_id, ctx.tenantId]
+      );
+      if (custResult.rows.length > 0) {
+        recipientEmail = custResult.rows[0].email;
+      }
+    }
 
+    // Get company info for branding
+    const tenantResult = await pool.query(
+      'SELECT name, company_name, company_email, tax_number FROM tenants WHERE id = $1',
+      [ctx.tenantId]
+    );
+    const tenant = tenantResult.rows[0] || {};
+    const companyName = tenant.company_name || tenant.name || 'Our Company';
+
+    // Build email content
+    const emailSubject = subject || `Invoice ${invoice.invoice_number} from ${companyName}`;
+    const emailBody = bodyMessage || `Please find attached your invoice ${invoice.invoice_number}.`;
+
+    // Build HTML email
+    const htmlEmail = `
+      <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">${companyName}</h1>
+        </div>
+        <div style="background: white; padding: 32px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+          <p style="font-size: 16px; color: #1e293b; white-space: pre-wrap;">${emailBody.replace(/\n/g, '<br>')}</p>
+          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 24px 0; border: 1px solid #e2e8f0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Invoice Number:</td><td style="padding: 8px 0; text-align: right; font-weight: bold; font-size: 14px;">${invoice.invoice_number}</td></tr>
+              <tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Invoice Date:</td><td style="padding: 8px 0; text-align: right; font-size: 14px;">${invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString('en-ZA') : '—'}</td></tr>
+              <tr><td style="padding: 8px 0; color: #64748b; font-size: 14px;">Due Date:</td><td style="padding: 8px 0; text-align: right; font-size: 14px; color: #ef4444;">${invoice.due_date ? new Date(invoice.due_date).toLocaleDateString('en-ZA') : '—'}</td></tr>
+              <tr style="border-top: 2px solid #e2e8f0;"><td style="padding: 12px 0; font-weight: bold; font-size: 16px;">Total Amount:</td><td style="padding: 12px 0; text-align: right; font-weight: bold; font-size: 18px; color: #667eea;">R ${Number(invoice.total_amount || 0).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}</td></tr>
+            </table>
+          </div>
+          <p style="font-size: 13px; color: #94a3b8; text-align: center; margin-top: 24px;">
+            This email was sent from ${companyName} via SiyaBusa ERP
+          </p>
+        </div>
+      </div>
+    `;
+
+    // Actually send the email
+    if (recipientEmail) {
+      const sent = await emailService.send({
+        to: recipientEmail,
+        subject: emailSubject,
+        html: htmlEmail,
+        text: emailBody,
+      });
+      console.log(`[Invoice] Email ${sent ? 'sent' : 'failed'} to ${recipientEmail} for invoice ${invoice.invoice_number}`);
+    } else {
+      console.log(`[Invoice] No recipient email for invoice ${invoice.invoice_number} — status updated without sending`);
+    }
+
+    // Update invoice status to 'sent'
     const updatedInvoice = await invoiceRepository.update(ctx, id, { status: 'sent' as any });
 
     res.json({
       success: true,
       data: updatedInvoice,
-      message: 'Invoice sent successfully'
+      emailSent: !!recipientEmail,
+      message: recipientEmail
+        ? `Invoice sent to ${recipientEmail}`
+        : 'Invoice marked as sent (no recipient email configured)'
     });
   } catch (error) {
     console.error('Error sending invoice:', error);
@@ -1329,6 +1395,7 @@ export const createOpportunity = async (req: TenantRequest, res: Response) => {
 };
 
 export const updateOpportunity = async (req: TenantRequest, res: Response) => {
+  const client = await pool.connect();
   try {
     const ctx = getTenantContext(req);
     const { id } = req.params;
@@ -1336,18 +1403,24 @@ export const updateOpportunity = async (req: TenantRequest, res: Response) => {
 
     const fields = Object.keys(updates).filter(k => k !== 'tenant_id' && k !== 'opportunity_id');
     if (fields.length === 0) {
+      client.release();
       return res.status(400).json({ success: false, message: 'No fields to update' });
     }
+
+    // Use a transaction so stage update + customer creation are atomic
+    await client.query('BEGIN');
 
     const setClauses = fields.map((f, i) => `${f} = $${i + 3}`);
     const values = fields.map(f => updates[f]);
 
-    const result = await pool.query(
+    const result = await client.query(
       `UPDATE sales.opportunities SET ${setClauses.join(', ')}, updated_at = NOW() WHERE opportunity_id = $1 AND tenant_id = $2 RETURNING *`,
       [id, ctx.tenantId, ...values]
     );
 
     if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
+      client.release();
       return res.status(404).json({ success: false, message: 'Opportunity not found' });
     }
 
@@ -1356,23 +1429,26 @@ export const updateOpportunity = async (req: TenantRequest, res: Response) => {
 
     // When opportunity is WON → auto-create customer if not exists
     if (opp.stage && opp.stage.toUpperCase() === 'CLOSED_WON') {
+      console.log(`[WON] Opportunity ${id} "${opp.opportunity_name}" marked as WON — starting auto-conversion`);
+
       // Set closed_at timestamp
-      await pool.query(
+      await client.query(
         'UPDATE sales.opportunities SET closed_at = NOW() WHERE opportunity_id = $1 AND tenant_id = $2',
         [id, ctx.tenantId]
       );
+      console.log(`[WON] closed_at set for opportunity ${id}`);
 
       // Check if customer already exists by email or company name
       let existingCustomer = null;
       if (opp.email) {
-        const byEmail = await pool.query(
+        const byEmail = await client.query(
           'SELECT customer_id FROM sales.customers WHERE tenant_id = $1 AND LOWER(email) = LOWER($2)',
           [ctx.tenantId, opp.email]
         );
         if (byEmail.rows.length > 0) existingCustomer = byEmail.rows[0];
       }
       if (!existingCustomer && opp.opportunity_name) {
-        const byName = await pool.query(
+        const byName = await client.query(
           'SELECT customer_id FROM sales.customers WHERE tenant_id = $1 AND LOWER(company_name) = LOWER($2)',
           [ctx.tenantId, opp.opportunity_name]
         );
@@ -1381,41 +1457,59 @@ export const updateOpportunity = async (req: TenantRequest, res: Response) => {
 
       if (!existingCustomer) {
         // Auto-create customer from opportunity data
-        const custCount = await pool.query('SELECT COUNT(*) FROM sales.customers WHERE tenant_id = $1', [ctx.tenantId]);
+        const custCount = await client.query('SELECT COUNT(*) FROM sales.customers WHERE tenant_id = $1', [ctx.tenantId]);
         const custCode = `CUST-${String(parseInt(custCount.rows[0].count) + 1).padStart(4, '0')}`;
 
-        const newCust = await pool.query(
-          `INSERT INTO sales.customers (tenant_id, customer_code, company_name, contact_person, email, phone, customer_type, status, payment_terms, credit_limit)
-           VALUES ($1, $2, $3, $4, $5, $6, 'corporate', 'active', '30', 0)
+        console.log(`[WON] Creating new customer "${opp.opportunity_name}" code=${custCode}`);
+
+        // Build address from opportunity fields
+        const fullAddress = [opp.address, opp.city, opp.province, opp.postal_code].filter(Boolean).join(', ');
+
+        const newCust = await client.query(
+          `INSERT INTO sales.customers (tenant_id, customer_code, company_name, contact_person, email, phone, billing_address, customer_type, status, payment_terms, credit_limit)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, 'corporate', 'active', '30', 0)
            RETURNING customer_id, company_name`,
-          [ctx.tenantId, custCode, opp.opportunity_name, opp.contact_person || null, opp.email || null, opp.phone || null]
+          [ctx.tenantId, custCode, opp.opportunity_name, opp.contact_person || null, opp.email || null, opp.phone || null, fullAddress || null]
         );
 
         // Link customer to opportunity
-        await pool.query(
+        await client.query(
           'UPDATE sales.opportunities SET customer_id = $1 WHERE opportunity_id = $2 AND tenant_id = $3',
           [newCust.rows[0].customer_id, id, ctx.tenantId]
         );
 
         customerCreated = newCust.rows[0];
+        console.log(`[WON] Customer created: id=${newCust.rows[0].customer_id} name="${newCust.rows[0].company_name}"`);
       } else {
         // Link existing customer
-        await pool.query(
+        await client.query(
           'UPDATE sales.opportunities SET customer_id = $1 WHERE opportunity_id = $2 AND tenant_id = $3',
           [existingCustomer.customer_id, id, ctx.tenantId]
         );
+        console.log(`[WON] Linked existing customer ${existingCustomer.customer_id} to opportunity ${id}`);
       }
     }
 
+    await client.query('COMMIT');
+    client.release();
+
+    // Re-fetch the updated opportunity to return fresh data
+    const freshOpp = await pool.query(
+      'SELECT * FROM sales.opportunities WHERE opportunity_id = $1 AND tenant_id = $2',
+      [id, ctx.tenantId]
+    );
+
     res.json({
       success: true,
-      data: result.rows[0],
+      data: freshOpp.rows[0] || opp,
       customerCreated,
       message: opp.stage?.toUpperCase() === 'CLOSED_WON'
         ? `Opportunity won!${customerCreated ? ` Customer "${customerCreated.company_name}" created automatically.` : ' Customer linked.'} Ready to create a quotation.`
         : 'Opportunity updated successfully',
     });
   } catch (error) {
+    await client.query('ROLLBACK').catch(() => {});
+    client.release();
     console.error('Error updating opportunity:', error);
     res.status(500).json({ success: false, message: 'Failed to update opportunity' });
   }

@@ -68,6 +68,7 @@ interface CompanyInfo {
   account_name?: string;
   account_number?: string;
   branch_code?: string;
+  logo_url?: string;
 }
 
 interface ServiceItem {
@@ -97,7 +98,7 @@ const InvoiceManagement: React.FC = () => {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [saving, setSaving] = useState(false);
   const [invoiceType, setInvoiceType] = useState<'invoice' | 'proforma'>('invoice');
-  const [isVatRegistered, setIsVatRegistered] = useState(true);
+  const [isVatRegistered, setIsVatRegistered] = useState(false);
   const [form] = Form.useForm();
   const [lines, setLines] = useState<InvoiceLine[]>([]);
   const printRef = useRef<HTMLDivElement>(null);
@@ -145,7 +146,7 @@ const InvoiceManagement: React.FC = () => {
         name: c.company_name || c.customer_name || c.name || 'Unnamed',
         vat_number: c.vat_number,
         email: c.email || c.primary_email,
-        address: c.address || [c.street, c.city, c.province].filter(Boolean).join(', '),
+        address: c.billing_address || c.address || [c.street, c.city, c.province].filter(Boolean).join(', '),
       })));
     } catch (err) {
       console.error('[Customers] Failed to load:', err);
@@ -176,7 +177,7 @@ const InvoiceManagement: React.FC = () => {
       setCompanyInfo({
         company_name: data.company_name || data.business_name || data.name || '',
         trading_as: data.trading_as || '',
-        registration_number: data.registration_number || data.company_registration || '',
+        registration_number: data.registration_number || '',
         vat_number: data.vat_number || data.tax_number || '',
         tax_number: data.tax_number || '',
         address: data.address || '',
@@ -191,13 +192,14 @@ const InvoiceManagement: React.FC = () => {
         account_name: data.account_name || '',
         account_number: data.account_number || '',
         branch_code: data.branch_code || '',
+        logo_url: data.logo_url || '',
       });
-      // Check if company is VAT registered
-      if (!data.vat_number && !data.tax_number) {
-        setIsVatRegistered(false);
-      }
+      // Only set VAT registered if a VAT/tax number actually exists
+      const hasVat = !!(data.vat_number || data.tax_number);
+      setIsVatRegistered(hasVat);
     } catch (err) {
       console.error('[Company] Failed to load:', err);
+      // Default stays false (not VAT registered) on error — safer
     }
   };
 
@@ -295,7 +297,11 @@ const InvoiceManagement: React.FC = () => {
     if (!sendEmail) { message.warning('Please enter a recipient email address'); return; }
     setSendLoading(true);
     try {
-      await workspaceApi.sales.sendInvoice(sendingInvoice.id);
+      await workspaceApi.sales.sendInvoice(sendingInvoice.id, {
+        email: sendEmail,
+        subject: sendSubject,
+        message: sendMessage,
+      });
       message.success(`Invoice ${sendingInvoice.invoice_number} sent to ${sendEmail}`);
       setShowSendModal(false);
       fetchInvoices();
@@ -383,25 +389,41 @@ const InvoiceManagement: React.FC = () => {
     message.info('Use "Save as PDF" in the print dialog to download');
   }, [handlePrint]);
 
-  // ─── View Invoice Detail (fetch with lines) ───────────────────────────
-  const viewInvoice = async (inv: Invoice) => {
-    setSelectedInvoice(inv);
-    setShowDetailModal(true);
+  // ─── Fetch Invoice Details (with lines) ────────────────────────────────
+  const fetchInvoiceDetails = async (inv: Invoice): Promise<Invoice> => {
     try {
       const res: any = await workspaceApi.sales.getInvoice(inv.id);
       const fullInvoice = res?.data || res;
       if (fullInvoice) {
-        setSelectedInvoice({
+        const merged = {
           ...inv,
           ...fullInvoice,
           id: inv.id,
           invoice_number: fullInvoice.invoice_number || inv.invoice_number,
           lines: fullInvoice.lines || [],
-        });
+        };
+        setSelectedInvoice(merged);
+        return merged;
       }
     } catch (err) {
       console.error('Failed to load invoice details:', err);
     }
+    setSelectedInvoice(inv);
+    return inv;
+  };
+
+  // ─── View Invoice Detail ──────────────────────────────────────────────
+  const viewInvoice = async (inv: Invoice) => {
+    setSelectedInvoice(inv);
+    setShowDetailModal(true);
+    await fetchInvoiceDetails(inv);
+  };
+
+  // ─── Preview Invoice (opens preview modal only, no detail modal) ──────
+  const previewInvoice = async (inv: Invoice) => {
+    setSelectedInvoice(inv);
+    setShowPreviewModal(true);
+    await fetchInvoiceDetails(inv);
   };
 
   // ─── Helpers ──────────────────────────────────────────────────────────
@@ -498,13 +520,13 @@ const InvoiceManagement: React.FC = () => {
   const handleRowAction = (key: string, inv: Invoice) => {
     switch (key) {
       case 'view': viewInvoice(inv); break;
-      case 'preview': viewInvoice(inv).then(() => setShowPreviewModal(true)); break;
+      case 'preview': previewInvoice(inv); break;
       case 'approve': handleApprove(inv); break;
       case 'send': handleSend(inv); break;
       case 'void': handleVoid(inv); break;
       case 'convert': handleConvertProforma(inv); break;
-      case 'print': viewInvoice(inv).then(() => { setShowPreviewModal(true); setTimeout(handlePrint, 500); }); break;
-      case 'download': viewInvoice(inv).then(() => { setShowPreviewModal(true); setTimeout(handleDownloadPDF, 500); }); break;
+      case 'print': previewInvoice(inv).then(() => { setTimeout(handlePrint, 500); }); break;
+      case 'download': previewInvoice(inv).then(() => { setTimeout(handleDownloadPDF, 500); }); break;
     }
   };
 
@@ -592,10 +614,14 @@ const InvoiceManagement: React.FC = () => {
       <div ref={printRef} style={{ fontFamily: "'Segoe UI', Tahoma, sans-serif", color: '#1e293b', maxWidth: '210mm' }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, paddingBottom: 16, borderBottom: '2px solid #1e293b' }}>
-          <div>
-            <h1 style={{ fontSize: 28, fontWeight: 'bold', color: '#1e293b', marginBottom: 4, marginTop: 0 }}>
-              {invoiceLabel}
-            </h1>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+            {companyInfo.logo_url && (
+              <img src={companyInfo.logo_url} alt="Logo" style={{ maxHeight: 80, maxWidth: 120, objectFit: 'contain' }} />
+            )}
+            <div>
+              <h1 style={{ fontSize: 28, fontWeight: 'bold', color: '#1e293b', marginBottom: 4, marginTop: 0 }}>
+                {invoiceLabel}
+              </h1>
             {isProforma(inv) && (
               <div style={{ color: '#7c3aed', fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
                 This is not a tax invoice. No VAT may be claimed from this document.
@@ -610,6 +636,7 @@ const InvoiceManagement: React.FC = () => {
               {companyInfo.phone && <div>Tel: {companyInfo.phone}</div>}
               {companyInfo.email && <div>Email: {companyInfo.email}</div>}
               {companyInfo.website && <div>Web: {companyInfo.website}</div>}
+            </div>
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -1085,7 +1112,7 @@ const InvoiceManagement: React.FC = () => {
                   Convert to Tax Invoice
                 </Button>
               )}
-              <Button icon={<PrinterOutlined />} onClick={() => { setShowPreviewModal(true); }}>
+              <Button icon={<PrinterOutlined />} onClick={() => { setShowDetailModal(false); setShowPreviewModal(true); }}>
                 Print / PDF
               </Button>
               {(selectedInvoice.status || '').toLowerCase() === 'draft' && (

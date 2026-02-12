@@ -92,6 +92,10 @@ const OpportunitiesPage: React.FC = () => {
           expected_close_date: values.expected_close_date?.format?.('YYYY-MM-DD'),
           source: values.source,
           notes: values.notes,
+          address: values.address,
+          city: values.city,
+          province: values.province,
+          postal_code: values.postal_code,
         }),
       });
       const json = await res.json();
@@ -288,6 +292,12 @@ const OpportunitiesPage: React.FC = () => {
           <Row gutter={16}>
             <Col span={8}><Form.Item label="Source" name="source"><Select placeholder="Source" allowClear><Option value="REFERRAL">Referral</Option><Option value="WEBSITE">Website</Option><Option value="COLD_CALL">Cold Call</Option><Option value="LINKEDIN">LinkedIn</Option></Select></Form.Item></Col>
             <Col span={16}><Form.Item label="Notes" name="notes"><Input.TextArea rows={1} /></Form.Item></Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}><Form.Item label="Street Address" name="address"><Input placeholder="123 Main Street" /></Form.Item></Col>
+            <Col span={4}><Form.Item label="City" name="city"><Input placeholder="Johannesburg" /></Form.Item></Col>
+            <Col span={4}><Form.Item label="Province" name="province"><Input placeholder="Gauteng" /></Form.Item></Col>
+            <Col span={4}><Form.Item label="Postal Code" name="postal_code"><Input placeholder="2000" /></Form.Item></Col>
           </Row>
         </Form>
       </Modal>
