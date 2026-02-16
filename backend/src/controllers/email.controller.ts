@@ -22,6 +22,16 @@
 import { Request, Response } from 'express';
 import pool from '../config/database';
 
+// IMAP/SMTP dependencies – loaded eagerly so sync works
+let imapSimple: any = null;
+let simpleParser: any = null;
+try {
+  imapSimple = require('imap-simple');
+} catch { /* will be installed at deploy time */ }
+try {
+  simpleParser = require('mailparser').simpleParser;
+} catch { /* will be installed at deploy time */ }
+
 // ============================================================================
 // TABLE BOOTSTRAP
 // Ensures the email_accounts and email_messages tables exist.
@@ -101,6 +111,174 @@ function getTenantUserId(req: Request): { tenantId: string; userId: string } {
   return { tenantId, userId };
 }
 
+// Smart password decrypt - handles both plain text and base64-encoded passwords
+// The JS handler (email-api-handler.js) stored base64-encoded passwords
+// The TS controller (addAccount) used to store plain text
+function decryptPassword(encrypted: string): string {
+  if (!encrypted) return '';
+  
+  // Check if string contains non-base64 characters → definitely plain text
+  const base64Regex = /^[A-Za-z0-9+/=]+$/;
+  if (!base64Regex.test(encrypted)) {
+    return encrypted; // Plain text (has special chars like }, ~, [, *)
+  }
+  
+  // Could be base64 — try to decode and verify result is printable
+  try {
+    const decoded = Buffer.from(encrypted, 'base64').toString('utf8');
+    // Check if decoded result is printable ASCII (no control chars except tab/newline)
+    const isPrintable = /^[\x20-\x7E]+$/.test(decoded);
+    if (isPrintable && decoded.length > 0) {
+      return decoded;
+    }
+  } catch { /* not valid base64 */ }
+  
+  // Fallback: return as-is (plain text)
+  return encrypted;
+}
+
+// Track active syncs to avoid duplicate concurrent syncs
+const activeSyncs = new Map<string, boolean>();
+
+// ============================================================================
+// BACKGROUND IMAP SYNC (non-blocking helper)
+// ============================================================================
+async function backgroundImapSync(tenantId: string, account: any): Promise<number> {
+  if (!imapSimple) {
+    console.error('[Email Sync] imap-simple not installed – cannot sync');
+    return 0;
+  }
+  const syncKey = `${account.id}:INBOX`;
+  if (activeSyncs.get(syncKey)) {
+    return 0; // already syncing
+  }
+  activeSyncs.set(syncKey, true);
+  let newCount = 0;
+  try {
+    const password = decryptPassword(account.password_encrypted);
+    const config = {
+      imap: {
+        user: account.username,
+        password,
+        host: account.imap_host,
+        port: account.imap_port,
+        tls: account.imap_secure,
+        tlsOptions: { rejectUnauthorized: false },
+        authTimeout: 15000
+      }
+    };
+    const connection = await imapSimple.connect(config);
+    await connection.openBox('INBOX');
+
+    // Fetch emails from last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const searchCriteria = [['SINCE', thirtyDaysAgo]];
+    const fetchOptions = { bodies: ['HEADER', 'TEXT', ''], markSeen: false, struct: true };
+    const messages = await connection.search(searchCriteria, fetchOptions);
+
+    for (const msg of messages) {
+      try {
+        const allPart = msg.parts.find((p: any) => p.which === '');
+        if (!allPart) continue;
+
+        let parsed: any;
+        if (simpleParser) {
+          parsed = await simpleParser(allPart.body);
+        } else {
+          // Fallback: parse from HEADER part
+          const header = msg.parts.find((p: any) => p.which === 'HEADER');
+          if (!header) continue;
+          parsed = {
+            messageId: (header.body['message-id'] || [''])[0],
+            subject: (header.body['subject'] || ['(No Subject)'])[0],
+            from: { value: [{ address: (header.body['from'] || [''])[0], name: '' }] },
+            to: { value: [{ address: (header.body['to'] || [''])[0] }] },
+            cc: { value: [] },
+            date: new Date((header.body['date'] || [''])[0]),
+            text: msg.parts.find((p: any) => p.which === 'TEXT')?.body || '',
+            html: '',
+            attachments: []
+          };
+        }
+
+        const messageId = parsed.messageId || `uid-${msg.attributes.uid}`;
+
+        // Check if already cached
+        const existing = await pool.query(
+          'SELECT id FROM email_messages WHERE account_id = $1 AND message_id = $2',
+          [account.id, messageId]
+        );
+        if (existing.rows.length === 0) {
+          const fromAddr = parsed.from?.value?.[0]?.address || '';
+          const fromName = parsed.from?.value?.[0]?.name || fromAddr;
+          const toAddrs = (parsed.to?.value || []).map((t: any) => t.address).join(', ');
+          const ccAddrs = (parsed.cc?.value || []).map((t: any) => t.address).join(', ');
+          const flags = (msg.attributes.flags || []).join(',');
+          const isRead = flags.includes('\\Seen');
+          const isStarred = flags.includes('\\Flagged');
+          const hasAttachments = parsed.attachments && parsed.attachments.length > 0;
+          const attachmentsJson = hasAttachments ? JSON.stringify(parsed.attachments.map((a: any) => ({
+            filename: a.filename, size: a.size, contentType: a.contentType
+          }))) : null;
+
+          await pool.query(
+            `INSERT INTO email_messages
+              (tenant_id, account_id, message_id, folder, from_address, from_name,
+               to_addresses, cc_addresses, subject, body_text, body_html, date,
+               is_read, is_starred, has_attachments, attachments_json, uid)
+             VALUES ($1, $2, $3, 'INBOX', $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+             ON CONFLICT DO NOTHING`,
+            [
+              tenantId, account.id, messageId, fromAddr, fromName, toAddrs, ccAddrs,
+              parsed.subject || '(No Subject)',
+              (parsed.text || '').substring(0, 50000),
+              (parsed.html || '').substring(0, 200000),
+              parsed.date || new Date(),
+              isRead, isStarred, hasAttachments || false, attachmentsJson,
+              msg.attributes.uid
+            ]
+          );
+          newCount++;
+        }
+      } catch (parseErr: any) {
+        console.error('[Email Sync] Parse error:', parseErr.message);
+      }
+    }
+
+    await connection.end();
+    await pool.query('UPDATE email_accounts SET last_sync_at = NOW() WHERE id = $1', [account.id]);
+    console.log(`[Email Sync] ✅ ${account.email_address} – ${newCount} new emails (${messages.length} checked)`);
+  } catch (imapErr: any) {
+    console.error(`[Email Sync] ❌ ${account.email_address}: ${imapErr.message}`);
+    // Still update last_sync_at to prevent hammering on errors
+    await pool.query('UPDATE email_accounts SET last_sync_at = NOW() WHERE id = $1', [account.id]).catch(() => {});
+  } finally {
+    activeSyncs.delete(syncKey);
+  }
+  return newCount;
+}
+
+// ============================================================================
+// BACKGROUND AUTO-SYNC INTERVAL
+// Every 5 minutes, sync all active email accounts across all tenants
+// ============================================================================
+setInterval(async () => {
+  try {
+    const accounts = await pool.query(
+      `SELECT * FROM email_accounts WHERE is_active = true
+       AND (last_sync_at IS NULL OR last_sync_at < NOW() - INTERVAL '5 minutes')`
+    );
+    for (const account of accounts.rows) {
+      backgroundImapSync(account.tenant_id, account).catch((err: any) => {
+        console.error(`[Email AutoSync] Error for ${account.email_address}:`, err.message);
+      });
+    }
+  } catch (err: any) {
+    console.error('[Email AutoSync] Interval error:', err.message);
+  }
+}, 5 * 60 * 1000); // 5 minutes
+
 // ============================================================================
 // GET /accounts - List email accounts for tenant/user
 // ============================================================================
@@ -165,7 +343,8 @@ export const addAccount = async (req: Request, res: Response) => {
                  smtp_host, smtp_port, smtp_secure,
                  username, is_default, is_active, last_sync_at`,
       [
-        tenantId, userId, email_address, display_name || '', username, password,
+        tenantId, userId, email_address, display_name || '', username,
+        Buffer.from(password).toString('base64'),
         imap_host, imap_port || 993, imap_secure !== false,
         smtp_host, smtp_port || 465, smtp_secure !== false,
         is_default || false
@@ -261,11 +440,29 @@ export const getInbox = async (req: Request, res: Response) => {
 
     const result = await pool.query(query, params);
 
+    // Trigger background sync if stale (> 2 minutes since last sync)
+    let syncing = false;
+    const isImapFolder = !['starred', 'all', 'Sent', 'Drafts', 'Trash'].includes(folder);
+    if (isImapFolder && imapSimple) {
+      try {
+        const acctResult = await pool.query(
+          `SELECT * FROM email_accounts WHERE tenant_id = $1 AND is_active = true
+           AND (last_sync_at IS NULL OR last_sync_at < NOW() - INTERVAL '2 minutes')
+           ORDER BY is_default DESC`,
+          [tenantId]
+        );
+        for (const acct of acctResult.rows) {
+          syncing = true;
+          backgroundImapSync(tenantId, acct).catch(() => {});
+        }
+      } catch { /* ignore sync trigger errors */ }
+    }
+
     res.json({
       success: true,
       data: result.rows,
       total,
-      syncing: false
+      syncing
     });
   } catch (error) {
     console.error('Get inbox error:', error);
@@ -522,6 +719,13 @@ export const syncEmails = async (req: Request, res: Response) => {
   try {
     const { tenantId } = getTenantUserId(req);
 
+    if (!imapSimple) {
+      return res.status(500).json({
+        success: false,
+        message: 'IMAP library not available. Contact admin to install imap-simple.'
+      });
+    }
+
     // Get configured accounts
     const accountResult = await pool.query(
       'SELECT * FROM email_accounts WHERE tenant_id = $1 AND is_active = true',
@@ -535,107 +739,19 @@ export const syncEmails = async (req: Request, res: Response) => {
       });
     }
 
-    let synced = 0;
-
+    // Fire-and-forget background syncs for all accounts
+    let totalStarted = 0;
     for (const account of accountResult.rows) {
-      try {
-        // Try IMAP sync via imap-simple or imapflow if available
-        const Imap = require('imap-simple');
-
-        const config = {
-          imap: {
-            user: account.username,
-            password: account.password_encrypted,
-            host: account.imap_host,
-            port: account.imap_port,
-            tls: account.imap_secure,
-            tlsOptions: { rejectUnauthorized: false },
-            authTimeout: 10000
-          }
-        };
-
-        const connection = await Imap.connect(config);
-        await connection.openBox('INBOX');
-
-        // Fetch emails from the last 7 days (or since last sync)
-        const searchCriteria = account.last_sync_at
-          ? ['ALL', ['SINCE', new Date(account.last_sync_at).toISOString().split('T')[0]]]
-          : ['ALL', ['SINCE', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]]];
-
-        const fetchOptions = {
-          bodies: ['HEADER', 'TEXT', ''],
-          markSeen: false,
-          struct: true
-        };
-
-        const messages = await connection.search(searchCriteria, fetchOptions);
-
-        for (const msg of messages) {
-          const header = msg.parts.find((p: any) => p.which === 'HEADER');
-          if (!header) continue;
-
-          const parsedHeader = header.body;
-          const messageId = (parsedHeader['message-id'] || [''])[0];
-          const subject = (parsedHeader['subject'] || ['(No Subject)'])[0];
-          const fromRaw = (parsedHeader['from'] || [''])[0];
-          const toRaw = (parsedHeader['to'] || [''])[0];
-          const ccRaw = (parsedHeader['cc'] || [''])[0];
-          const dateRaw = (parsedHeader['date'] || [''])[0];
-
-          // Extract name and address from "Name <email>" format
-          const fromMatch = fromRaw.match(/^"?(.+?)"?\s*<(.+?)>$/) || [null, '', fromRaw];
-          const fromName = fromMatch[1] || '';
-          const fromAddress = fromMatch[2] || fromRaw;
-
-          // Check for duplicates by message_id
-          const exists = await pool.query(
-            'SELECT id FROM email_messages WHERE tenant_id = $1 AND message_id = $2',
-            [tenantId, messageId]
-          );
-
-          if (exists.rows.length === 0 && messageId) {
-            // Get the text body
-            const textPart = msg.parts.find((p: any) => p.which === 'TEXT');
-            const bodyText = textPart?.body || '';
-
-            await pool.query(
-              `INSERT INTO email_messages
-                (tenant_id, account_id, message_id, folder, from_address, from_name,
-                 to_addresses, cc_addresses, subject, body_text, date, is_read, uid)
-               VALUES ($1, $2, $3, 'INBOX', $4, $5, $6, $7, $8, $9, $10, false, $11)
-               ON CONFLICT DO NOTHING`,
-              [
-                tenantId, account.id, messageId, fromAddress, fromName,
-                toRaw, ccRaw, subject, bodyText,
-                dateRaw ? new Date(dateRaw) : new Date(),
-                msg.attributes?.uid || null
-              ]
-            );
-            synced++;
-          }
-        }
-
-        connection.end();
-
-        // Update last sync timestamp
-        await pool.query(
-          'UPDATE email_accounts SET last_sync_at = NOW() WHERE id = $1',
-          [account.id]
-        );
-      } catch (imapErr: any) {
-        console.error(`IMAP sync error for ${account.email_address}:`, imapErr.message);
-        // Update last sync attempt even on failure
-        await pool.query(
-          'UPDATE email_accounts SET last_sync_at = NOW() WHERE id = $1',
-          [account.id]
-        );
-      }
+      totalStarted++;
+      backgroundImapSync(tenantId, account).catch((err: any) => {
+        console.error(`[Email Sync] Manual sync failed for ${account.email_address}:`, err.message);
+      });
     }
 
     res.json({
       success: true,
-      message: synced > 0 ? `Synced ${synced} new emails` : 'Sync complete - no new emails',
-      synced
+      message: `Sync started for ${totalStarted} account(s). New emails will appear shortly.`,
+      synced: 0
     });
   } catch (error) {
     console.error('Sync emails error:', error);
