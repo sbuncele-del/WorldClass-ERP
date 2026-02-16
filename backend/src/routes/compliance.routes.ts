@@ -13,6 +13,12 @@ router.use(tenantMiddleware);
 // WORKSPACE
 // ============================================================================
 router.get('/workspace', complianceWorkspaceController.getComplianceWorkspace);
+router.get('/regulatory/filings', complianceWorkspaceController.getRegulatoryFilings);
+router.get('/regulatory/requirements', complianceWorkspaceController.getRegulatoryRequirements);
+router.get('/regulatory/deadlines', complianceWorkspaceController.getRegulatoryDeadlines);
+router.get('/regulatory/auto-sync/status', complianceWorkspaceController.getRegulatoryAutoSyncStatus);
+router.post('/regulatory/filings', complianceWorkspaceController.createRegulatoryFiling);
+router.post('/regulatory/filings/:id/submit', complianceWorkspaceController.submitRegulatoryFiling);
 
 // ============================================================================
 // REGULATORY FRAMEWORKS & REQUIREMENTS (V2 - Tenant Isolated)

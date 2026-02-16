@@ -69,6 +69,24 @@ interface DeadlineEvent {
   filings: { name: string; authority: string; type: string }[];
 }
 
+interface AutoSyncTypeStatus {
+  type: string;
+  lastSyncAt: string | null;
+  amount: number;
+  period: string;
+  reference?: string | null;
+  method?: string | null;
+  source?: string | null;
+}
+
+interface AutoSyncStatus {
+  enabled: boolean;
+  hasFunction?: boolean;
+  hasTrigger?: boolean;
+  lastSyncAt: string | null;
+  byType: AutoSyncTypeStatus[];
+}
+
 const RegulatoryHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [filingModalVisible, setFilingModalVisible] = useState(false);
@@ -79,28 +97,101 @@ const RegulatoryHub: React.FC = () => {
   const [filings, setFilings] = useState<RegulatoryFiling[]>([]);
   const [requirements, setRequirements] = useState<ComplianceRequirement[]>([]);
   const [upcomingDeadlines, setUpcomingDeadlines] = useState<DeadlineEvent[]>([]);
+  const [autoSyncStatus, setAutoSyncStatus] = useState<AutoSyncStatus>({
+    enabled: false,
+    lastSyncAt: null,
+    byType: [],
+  });
+
+  const normalizeArrayResponse = (response: any): any[] => {
+    if (Array.isArray(response?.data)) return response.data;
+    if (Array.isArray(response?.data?.data)) return response.data.data;
+    if (Array.isArray(response?.data?.requirements)) return response.data.requirements;
+    if (Array.isArray(response?.data?.statusRecords)) return response.data.statusRecords;
+    return [];
+  };
+
+  const fetchRegulatoryData = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const [filingsRes, requirementsRes, deadlinesRes, autoSyncRes] = await Promise.all([
+        apiClient.get('/api/compliance/regulatory/filings'),
+        apiClient.get('/api/compliance/regulatory/requirements'),
+        apiClient.get('/api/compliance/regulatory/deadlines'),
+        apiClient.get('/api/compliance/regulatory/auto-sync/status')
+      ]);
+
+      setFilings(normalizeArrayResponse(filingsRes));
+      setRequirements(normalizeArrayResponse(requirementsRes));
+      setUpcomingDeadlines(normalizeArrayResponse(deadlinesRes));
+
+      const autoSyncData = autoSyncRes?.data?.data || autoSyncRes?.data || {};
+      setAutoSyncStatus({
+        enabled: !!autoSyncData.enabled,
+        hasFunction: autoSyncData.hasFunction,
+        hasTrigger: autoSyncData.hasTrigger,
+        lastSyncAt: autoSyncData.lastSyncAt || null,
+        byType: Array.isArray(autoSyncData.byType) ? autoSyncData.byType : [],
+      });
+    } catch (error) {
+      console.error('Failed to fetch regulatory data:', error);
+      if (!silent) {
+        message.error('Failed to load regulatory data');
+      }
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    await fetchRegulatoryData(true);
+    message.success('Regulatory data refreshed');
+  };
+
+  const handleCreateFiling = async (status: 'draft' | 'submit') => {
+    try {
+      const values = await form.validateFields();
+      const payload = {
+        filingType: values.filingType,
+        period: values.period?.toISOString?.() || values.period,
+        amount: values.amount ? Number(values.amount) : undefined,
+      };
+
+      const createRes = await apiClient.post('/api/compliance/regulatory/filings', payload);
+      const filingId = createRes?.data?.data?.id;
+
+      if (status === 'submit' && filingId) {
+        await apiClient.post(`/api/compliance/regulatory/filings/${filingId}/submit`);
+      }
+
+      message.success(status === 'draft' ? 'Filing saved as draft' : 'Filing submitted successfully');
+      setFilingModalVisible(false);
+      form.resetFields();
+      await fetchRegulatoryData(true);
+    } catch (error: any) {
+      if (error?.errorFields) {
+        return;
+      }
+      console.error('Create filing error:', error);
+      message.error(error?.response?.data?.error || 'Failed to process filing');
+    }
+  };
+
+  const handleSubmitExistingFiling = async (id: string) => {
+    try {
+      await apiClient.post(`/api/compliance/regulatory/filings/${id}/submit`);
+      message.success('Filing submitted successfully');
+      await fetchRegulatoryData(true);
+    } catch (error: any) {
+      console.error('Submit filing error:', error);
+      message.error(error?.response?.data?.error || 'Failed to submit filing');
+    }
+  };
 
   // Fetch data from API
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [filingsRes, requirementsRes, deadlinesRes] = await Promise.all([
-          apiClient.get('/api/compliance/regulatory/filings'),
-          apiClient.get('/api/compliance/regulatory/requirements'),
-          apiClient.get('/api/compliance/regulatory/deadlines')
-        ]);
-        setFilings(filingsRes.data || []);
-        setRequirements(requirementsRes.data || []);
-        setUpcomingDeadlines(deadlinesRes.data || []);
-      } catch (error) {
-        console.error('Failed to fetch regulatory data:', error);
-        message.error('Failed to load regulatory data');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
+    fetchRegulatoryData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Calculations
@@ -108,7 +199,7 @@ const RegulatoryHub: React.FC = () => {
   const pendingFilings = filings.filter(f => f.status === 'pending' || f.status === 'draft').length;
   const overdueFilings = filings.filter(f => f.status === 'overdue').length;
   const compliantRequirements = requirements.filter(r => r.status === 'compliant').length;
-  const complianceRate = Math.round((compliantRequirements / requirements.length) * 100);
+  const complianceRate = requirements.length > 0 ? Math.round((compliantRequirements / requirements.length) * 100) : 0;
 
   // Overview Tab
   const renderOverview = () => (
@@ -198,6 +289,58 @@ const RegulatoryHub: React.FC = () => {
           </Card>
         </Col>
       </Row>
+
+      <Card title={<><SyncOutlined /> HR → SARS Auto-Sync Status</>} style={{ marginTop: 16 }}>
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={8}>
+            <Statistic
+              title="Auto-Sync"
+              value={autoSyncStatus.enabled ? 'Active' : 'Inactive'}
+              valueStyle={{ color: autoSyncStatus.enabled ? '#52c41a' : '#ff4d4f' }}
+              prefix={autoSyncStatus.enabled ? <CheckCircleOutlined /> : <WarningOutlined />}
+            />
+          </Col>
+          <Col xs={24} md={8}>
+            <Statistic
+              title="Last Sync"
+              value={autoSyncStatus.lastSyncAt ? new Date(autoSyncStatus.lastSyncAt).toLocaleString() : 'Never'}
+              valueStyle={{ fontSize: 16 }}
+              prefix={<ClockCircleOutlined />}
+            />
+          </Col>
+          <Col xs={24} md={8}>
+            <Space direction="vertical" size={4}>
+              <Text type="secondary">Pipeline checks</Text>
+              <Space>
+                <Badge status={autoSyncStatus.hasFunction === false ? 'error' : 'success'} text="Function" />
+                <Badge status={autoSyncStatus.hasTrigger === false ? 'error' : 'success'} text="Trigger" />
+              </Space>
+            </Space>
+          </Col>
+        </Row>
+
+        <Divider style={{ margin: '16px 0' }} />
+
+        <List
+          size="small"
+          dataSource={autoSyncStatus.byType}
+          locale={{ emptyText: 'No auto-sync filings yet' }}
+          renderItem={(item) => (
+            <List.Item>
+              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
+                <Space>
+                  <Tag color="blue">{item.type}</Tag>
+                  <Text type="secondary">{item.period}</Text>
+                </Space>
+                <Space>
+                  <Text type="secondary">R {Number(item.amount || 0).toLocaleString()}</Text>
+                  <Text type="secondary">{item.lastSyncAt ? new Date(item.lastSyncAt).toLocaleString() : '-'}</Text>
+                </Space>
+              </Space>
+            </List.Item>
+          )}
+        />
+      </Card>
 
       {/* Upcoming Deadlines Alert */}
       {upcomingDeadlines.length > 0 && (
@@ -375,7 +518,14 @@ const RegulatoryHub: React.FC = () => {
                   {record.status === 'submitted' ? (
                     <Button size="small" icon={<FileSearchOutlined />}>View</Button>
                   ) : (
-                    <Button size="small" type="primary" icon={<SendOutlined />}>Submit</Button>
+                    <Button
+                      size="small"
+                      type="primary"
+                      icon={<SendOutlined />}
+                      onClick={() => handleSubmitExistingFiling(record.id)}
+                    >
+                      Submit
+                    </Button>
                   )}
                 </Space>
               )
@@ -561,13 +711,19 @@ const RegulatoryHub: React.FC = () => {
         gradient="green"
         actions={
           <Space>
-            <Button icon={<SyncOutlined />}>Refresh</Button>
+            <Button icon={<SyncOutlined />} onClick={handleRefresh}>Refresh</Button>
             <Button type="primary" icon={<PlusOutlined />} onClick={() => setFilingModalVisible(true)}>
               New Filing
             </Button>
           </Space>
         }
       />
+
+      {loading && (
+        <div style={{ padding: '0 24px 12px 24px' }}>
+          <Spin />
+        </div>
+      )}
 
       <StatusBanner
         gradient="green"
@@ -604,8 +760,8 @@ const RegulatoryHub: React.FC = () => {
         onCancel={() => setFilingModalVisible(false)}
         footer={[
           <Button key="cancel" onClick={() => setFilingModalVisible(false)}>Cancel</Button>,
-          <Button key="draft" icon={<FileDoneOutlined />}>Save Draft</Button>,
-          <Button key="submit" type="primary" icon={<SendOutlined />} onClick={() => { message.success('Filing submitted!'); setFilingModalVisible(false); }}>
+          <Button key="draft" icon={<FileDoneOutlined />} onClick={() => handleCreateFiling('draft')}>Save Draft</Button>,
+          <Button key="submit" type="primary" icon={<SendOutlined />} onClick={() => handleCreateFiling('submit')}>
             Submit
           </Button>
         ]}
