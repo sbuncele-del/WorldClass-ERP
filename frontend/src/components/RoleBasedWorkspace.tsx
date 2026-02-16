@@ -577,22 +577,8 @@ const RoleBasedWorkspace: React.FC = () => {
     </>
   );
 
-  // Role-specific dashboard renderer
-  const renderDashboard = () => {
-    switch (userRole) {
-      case 'director':
-        return renderDirectorDashboard();
-      case 'executive':
-        return renderExecutiveDashboard();
-      case 'accountant':
-        return renderAccountantDashboard();
-      case 'staff':
-        return renderStaffDashboard();
-      case 'manager':
-      default:
-        return renderExecutiveDashboard(); // Managers see similar to executives
-    }
-  };
+  // All roles use the premium ExecutiveDashboard
+  const renderDashboard = () => <ExecutiveDashboard />;
 
   const roleLabels: Record<UserRole, string> = {
     director: 'Director',
@@ -604,53 +590,7 @@ const RoleBasedWorkspace: React.FC = () => {
 
   return (
     <div className="role-workspace">
-      {/* Welcome Header */}
-      <div className="workspace-header">
-        <div className="welcome-section">
-          <Title level={3} style={{ margin: 0 }}>
-            {greeting}, {currentUser?.firstName || 'there'}! 👋
-          </Title>
-          <Text type="secondary">
-            Here's your personalized workspace for today, {new Date().toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long' })}
-          </Text>
-        </div>
-        <div className="workspace-controls">
-          <Segmented
-            options={[
-              { value: 'director', label: 'Director' },
-              { value: 'executive', label: 'Executive' },
-              { value: 'manager', label: 'Manager' },
-              { value: 'accountant', label: 'Accountant' },
-              { value: 'staff', label: 'Staff' }
-            ]}
-            value={userRole}
-            onChange={(value) => setUserRole(value as UserRole)}
-          />
-          <Button icon={<SettingOutlined />} onClick={() => navigate('/app/profile')}>
-            Customize
-          </Button>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="quick-actions-bar">
-        {getQuickActions().map((action, idx) => (
-          <div 
-            key={idx}
-            className="quick-action-item"
-            onClick={() => navigate(action.path)}
-            style={{ '--action-color': action.color } as React.CSSProperties}
-          >
-            <div className="action-icon">{action.icon}</div>
-            <span className="action-label">{action.label}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Role-specific Dashboard or New Tenant Welcome */}
-      <div className="workspace-content">
-        {isNewTenant ? renderNewTenantWelcome() : renderDashboard()}
-      </div>
+      {isNewTenant ? renderNewTenantWelcome() : renderDashboard()}
     </div>
   );
 

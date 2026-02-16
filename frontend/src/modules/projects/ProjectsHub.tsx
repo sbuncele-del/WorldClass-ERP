@@ -148,7 +148,10 @@ const ProjectsHub: React.FC = () => {
   const [milestoneModalVisible, setMilestoneModalVisible] = useState(false);
   const [milestoneForm] = Form.useForm();
   const [editingMilestone, setEditingMilestone] = useState<any>(null);
-  
+  const [weeklyPlanModalVisible, setWeeklyPlanModalVisible] = useState(false);
+  const [weeklyPlanForm] = Form.useForm();
+  const [sendingWeeklyPlan, setSendingWeeklyPlan] = useState(false);
+
   // ── Helper: transform raw API project to the component Project interface ──
   const transformProject = (p: any): Project => ({
     id: p.project_id || p.id,
@@ -1704,9 +1707,18 @@ const ProjectsHub: React.FC = () => {
             <Card
               title={<><BellOutlined /> Project Updates</>}
               extra={
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => setUpdateModalVisible(true)}>
-                  Post Update
-                </Button>
+                <Space>
+                  <Button
+                    type="default"
+                    icon={<SendOutlined />}
+                    onClick={() => setWeeklyPlanModalVisible(true)}
+                  >
+                    Send Weekly Plan
+                  </Button>
+                  <Button type="primary" icon={<PlusOutlined />} onClick={() => setUpdateModalVisible(true)}>
+                    Post Update
+                  </Button>
+                </Space>
               }
             >
               {projectUpdates.length === 0 ? (
@@ -2417,6 +2429,64 @@ const ProjectsHub: React.FC = () => {
           <Form.Item label="Details" name="content">
             <TextArea rows={4} placeholder="Describe the update in detail..." />
           </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Send Weekly Plan Modal */}
+      <Modal
+        title="Send Weekly Plan to Client"
+        open={weeklyPlanModalVisible}
+        onCancel={() => {
+          setWeeklyPlanModalVisible(false);
+          weeklyPlanForm.resetFields();
+        }}
+        onOk={async () => {
+          try {
+            const values = await weeklyPlanForm.validateFields();
+            setSendingWeeklyPlan(true);
+
+            const result = await projectService.sendWeeklyPlan(values.customer_id);
+
+            message.success(`Weekly plan sent successfully to ${result.data?.customer_name || 'client'}!`);
+            setWeeklyPlanModalVisible(false);
+            weeklyPlanForm.resetFields();
+          } catch (error: any) {
+            message.error(error.response?.data?.message || 'Failed to send weekly plan');
+          } finally {
+            setSendingWeeklyPlan(false);
+          }
+        }}
+        confirmLoading={sendingWeeklyPlan}
+        okText="Send Weekly Plan"
+      >
+        <Form form={weeklyPlanForm} layout="vertical">
+          <Form.Item
+            name="customer_id"
+            label="Select Client"
+            rules={[{ required: true, message: 'Please select a client' }]}
+          >
+            <Select
+              showSearch
+              placeholder="Choose a client to send weekly plan"
+              filterOption={(input, option: any) =>
+                option?.children?.toLowerCase().includes(input.toLowerCase())
+              }
+            >
+              {salesCustomers.map((c: any) => (
+                <Option key={c.customer_id || c.id} value={c.customer_id || c.id}>
+                  {c.company_name || c.customer_name}
+                </Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Alert
+            message="Weekly Plan Email"
+            description="This will send an email to the selected client with all tasks and milestones due this week (Monday-Sunday) across all their active projects. Project managers will be CC'd."
+            type="info"
+            showIcon
+            style={{ marginTop: 16 }}
+          />
         </Form>
       </Modal>
 

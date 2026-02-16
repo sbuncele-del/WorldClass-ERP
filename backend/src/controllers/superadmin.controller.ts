@@ -32,10 +32,10 @@ export const getAllTenants = async (req: Request, res: Response) => {
         t.status,
         t.subscription_status,
         t.trial_ends_at,
-        t.billing_email,
+        t.company_email as billing_email,
         t.max_users,
         t.created_at,
-        t.company_info,
+        t.settings as company_info,
         t.settings,
         COUNT(DISTINCT u.id) as user_count,
         COUNT(DISTINCT CASE WHEN u.status = 'active' THEN u.id END) as active_user_count,
@@ -47,8 +47,8 @@ export const getAllTenants = async (req: Request, res: Response) => {
         AND ($2::VARCHAR IS NULL OR t.subscription_plan = $2)
         AND ($3::VARCHAR IS NULL OR t.name ILIKE '%' || $3 || '%')
       GROUP BY t.id, t.name, t.slug, t.subscription_plan, t.status, t.subscription_status,
-               t.trial_ends_at, t.billing_email, t.max_users, t.created_at, 
-               t.company_info, t.settings
+               t.trial_ends_at, t.company_email, t.max_users, t.created_at, 
+               t.settings
       ORDER BY t.created_at DESC
       LIMIT $4 OFFSET $5
     `, [status || null, plan || null, search || null, limit, offset]);

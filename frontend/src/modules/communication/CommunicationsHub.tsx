@@ -14,7 +14,7 @@
  * - PoPI Act Compliance
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
   Input, Select, DatePicker, TimePicker, Modal, Form, Typography, Avatar,
@@ -199,6 +199,8 @@ const CommunicationsHub: React.FC = () => {
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [selectedFolder, setSelectedFolder] = useState('inbox');
+  const selectedFolderRef = useRef(selectedFolder);
+  selectedFolderRef.current = selectedFolder;
   const [form] = Form.useForm();
   
   // Email integration state
@@ -273,7 +275,7 @@ const CommunicationsHub: React.FC = () => {
     try {
       const params = new URLSearchParams();
       params.append('limit', '50');
-      const activeFolder = folder || selectedFolder || 'inbox';
+      const activeFolder = folder || selectedFolderRef.current || 'inbox';
       // Map sidebar keys to backend folder names
       const folderMap: Record<string, string> = { inbox: 'INBOX', sent: 'Sent', drafts: 'Drafts', trash: 'Trash', starred: 'starred', all: 'all' };
       params.append('folder', folderMap[activeFolder] || activeFolder);
@@ -300,7 +302,8 @@ const CommunicationsHub: React.FC = () => {
     } finally {
       setEmailLoading(false);
     }
-  }, [selectedFolder, fetchFolderCounts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchFolderCounts]);
 
   // Load email accounts on mount
   useEffect(() => {
@@ -312,10 +315,11 @@ const CommunicationsHub: React.FC = () => {
     });
     // Auto-refresh emails every 3 minutes
     const interval = setInterval(() => {
-      fetchEmailInbox();
+      fetchEmailInbox(selectedFolderRef.current);
     }, 180000);
     return () => clearInterval(interval);
-  }, [fetchEmailAccounts, fetchEmailInbox]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Add email account
   const handleAddEmailAccount = async (values: any) => {

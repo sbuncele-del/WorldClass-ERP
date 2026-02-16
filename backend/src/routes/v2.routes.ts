@@ -2361,6 +2361,7 @@ router.post('/practice/projects/:id/team', ProjectsV2.addTeamMember);
 router.delete('/practice/projects/:id/team/:userId', ProjectsV2.removeTeamMember);
 router.post('/practice/projects/updates', ProjectsV2.createProjectUpdate);
 router.delete('/practice/projects/updates/:id', ProjectsV2.deleteProjectUpdate);
+router.post('/practice/weekly-plan/send', ProjectsV2.sendWeeklyPlan);
 
 // Tasks
 router.get('/practice/tasks', TasksV2.getAllTasks);
@@ -4185,10 +4186,39 @@ router.get('/admin/permissions', async (req: any, res) => {
 router.get('/calendar/events', async (req: any, res) => {
   const tenantId = req.tenant?.id || 1;
   try {
-    const result = await query(`SELECT * FROM calendar_events WHERE tenant_id = $1 ORDER BY start_time DESC LIMIT 100`, [tenantId]);
+    const result = await query(`SELECT id, tenant_id, title, description, start_time as start, end_time as "end", event_type as type, color, location, attendees, is_all_day as "isAllDay", recurring FROM calendar_events WHERE tenant_id = $1 ORDER BY start_time DESC LIMIT 100`, [tenantId]);
     res.json({ success: true, data: result.rows || [] });
   } catch {
     res.json({ success: true, data: [] });
+  }
+});
+
+router.post('/calendar/events', async (req: any, res) => {
+  const tenantId = req.tenant?.id || 1;
+  const userId = req.user?.id || null;
+  try {
+    const { title, description, startDate, endDate, location, eventType, attendees, isAllDay } = req.body;
+    const color = eventType === 'meeting' ? '#1890ff' : eventType === 'task' ? '#fa541c' : eventType === 'reminder' ? '#faad14' : eventType === 'project' ? '#722ed1' : '#1890ff';
+    const result = await query(
+      `INSERT INTO calendar_events (tenant_id, title, description, start_time, end_time, event_type, color, location, attendees, is_all_day, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       RETURNING id, title, description, start_time as start, end_time as "end", event_type as type, color, location, attendees, is_all_day as "isAllDay"`,
+      [tenantId, title, description || '', startDate, endDate, eventType || 'meeting', color, location || '', JSON.stringify(attendees || []), isAllDay || false, userId]
+    );
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (error: any) {
+    console.error('Create calendar event error:', error);
+    res.status(500).json({ success: false, error: 'Failed to create event' });
+  }
+});
+
+router.delete('/calendar/events/:id', async (req: any, res) => {
+  const tenantId = req.tenant?.id || 1;
+  try {
+    await query(`DELETE FROM calendar_events WHERE id = $1 AND tenant_id = $2`, [req.params.id, tenantId]);
+    res.json({ success: true, message: 'Event deleted' });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: 'Failed to delete event' });
   }
 });
 

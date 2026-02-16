@@ -229,8 +229,8 @@ const Login = () => {
         </div>
 
         <div className="demo-link">
-          <Link to="/demo" className="btn btn-secondary btn-full">
-            Try Demo (No signup required)
+          <Link to="/try-demo" className="btn btn-secondary btn-full">
+            Try Free Demo — No signup required
           </Link>
         </div>
       </div>

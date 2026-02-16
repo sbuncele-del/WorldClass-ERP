@@ -363,6 +363,14 @@ export const projectService = {
     const { data } = await apiClient.delete(`/api/v2/practice/projects/milestones/${id}`);
     return data;
   },
+
+  /** POST /api/v2/practice/weekly-plan/send */
+  async sendWeeklyPlan(customer_id: string | number): Promise<any> {
+    const { data } = await apiClient.post('/api/v2/practice/weekly-plan/send', {
+      customer_id
+    });
+    return data;
+  },
 };
 
 export default projectService;

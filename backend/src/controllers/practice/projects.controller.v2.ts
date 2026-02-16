@@ -704,6 +704,291 @@ export const deleteProjectUpdate = async (req: TenantRequest, res: Response) => 
   }
 };
 
+export const sendWeeklyPlan = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { customer_id } = req.body;
+
+    if (!customer_id) {
+      return res.status(400).json({ success: false, message: 'customer_id is required' });
+    }
+
+    // 1. Get customer info
+    const customerRes = await pool.query(
+      `SELECT email, contact_person, company_name FROM sales.customers WHERE customer_id = $1 AND tenant_id = $2`,
+      [customer_id, tenantId]
+    );
+
+    if (customerRes.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Customer not found' });
+    }
+
+    const customer = customerRes.rows[0];
+    if (!customer.email) {
+      return res.status(400).json({ success: false, message: 'Customer has no email address' });
+    }
+
+    // 2. Get active projects for this customer
+    const projectsRes = await pool.query(
+      `SELECT project_id, project_name, project_number, project_manager_id, project_partner_id
+       FROM client_projects
+       WHERE customer_id = $1 AND tenant_id = $2 AND status IN ('Planning', 'Active', 'In Progress')`,
+      [customer_id, tenantId]
+    );
+
+    if (projectsRes.rows.length === 0) {
+      return res.status(400).json({ success: false, message: 'No active projects found for this customer' });
+    }
+
+    const projects = projectsRes.rows;
+    const projectIds = projects.map(p => p.project_id);
+
+    // 3. Get tasks due this week
+    const tasksRes = await pool.query(
+      `SELECT pt.task_id, pt.title, pt.due_date, pt.priority, pt.status, pt.project_id,
+              u.first_name || ' ' || u.last_name as assignee_name
+       FROM project_tasks pt
+       LEFT JOIN users u ON pt.assigned_to = u.id
+       WHERE pt.project_id = ANY($1) AND pt.tenant_id = $2
+         AND pt.due_date >= date_trunc('week', CURRENT_DATE)
+         AND pt.due_date < date_trunc('week', CURRENT_DATE) + INTERVAL '7 days'
+         AND pt.status NOT IN ('Completed', 'done', 'closed')
+       ORDER BY pt.project_id, pt.due_date, pt.priority DESC`,
+      [projectIds, tenantId]
+    );
+
+    // 4. Get milestones due this week
+    const milestonesRes = await pool.query(
+      `SELECT pm.id, pm.title, pm.due_date, pm.status, pm.project_id
+       FROM project_milestones pm
+       WHERE pm.project_id = ANY($1) AND pm.tenant_id = $2
+         AND pm.due_date >= date_trunc('week', CURRENT_DATE)
+         AND pm.due_date < date_trunc('week', CURRENT_DATE) + INTERVAL '7 days'
+         AND pm.status != 'completed'
+       ORDER BY pm.project_id, pm.due_date`,
+      [projectIds, tenantId]
+    );
+
+    const tasks = tasksRes.rows;
+    const milestones = milestonesRes.rows;
+
+    // 5. Calculate week range
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay() + 1); // Monday
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6); // Sunday
+
+    const dateRangeString = `${weekStart.toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-ZA', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
+    // 6. Build HTML email content
+    let projectSections = '';
+
+    for (const project of projects) {
+      const projectTasks = tasks.filter(t => t.project_id === project.project_id);
+      const projectMilestones = milestones.filter(m => m.project_id === project.project_id);
+
+      if (projectTasks.length === 0 && projectMilestones.length === 0) continue;
+
+      projectSections += `
+        <tr>
+          <td style="padding:24px;">
+            <div style="border-left:4px solid #1890ff;padding-left:16px;margin-bottom:20px;">
+              <h2 style="color:#1a1a2e;margin:0 0 4px;font-size:20px;">${project.project_name}</h2>
+              <p style="color:#666;margin:0;font-size:13px;">${project.project_number}</p>
+            </div>
+      `;
+
+      if (projectTasks.length > 0) {
+        projectSections += `
+          <h3 style="color:#444;font-size:16px;margin:16px 0 8px;">Tasks Due This Week</h3>
+          <table width="100%" style="border-collapse:collapse;margin-bottom:16px;">
+            <thead>
+              <tr style="background:#f8f9fa;">
+                <th style="text-align:left;padding:8px;font-size:13px;">Task</th>
+                <th style="text-align:left;padding:8px;font-size:13px;">Due Date</th>
+                <th style="text-align:left;padding:8px;font-size:13px;">Priority</th>
+                <th style="text-align:left;padding:8px;font-size:13px;">Assignee</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        for (const task of projectTasks) {
+          const priorityColors: any = {
+            'critical': '#ff4d4f',
+            'high': '#fa8c16',
+            'medium': '#1890ff',
+            'low': '#8c8c8c'
+          };
+          const priorityColor = priorityColors[task.priority] || '#8c8c8c';
+          const dueDate = new Date(task.due_date).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' });
+
+          projectSections += `
+            <tr style="border-bottom:1px solid #eee;">
+              <td style="padding:8px;font-size:14px;">${task.title}</td>
+              <td style="padding:8px;font-size:14px;">${dueDate}</td>
+              <td style="padding:8px;">
+                <span style="background:${priorityColor};color:#fff;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">${task.priority}</span>
+              </td>
+              <td style="padding:8px;font-size:14px;">${task.assignee_name || 'Unassigned'}</td>
+            </tr>
+          `;
+        }
+
+        projectSections += `
+            </tbody>
+          </table>
+        `;
+      }
+
+      if (projectMilestones.length > 0) {
+        projectSections += `
+          <h3 style="color:#444;font-size:16px;margin:16px 0 8px;">Milestones This Week</h3>
+          <table width="100%" style="border-collapse:collapse;">
+            <thead>
+              <tr style="background:#f8f9fa;">
+                <th style="text-align:left;padding:8px;font-size:13px;">Milestone</th>
+                <th style="text-align:left;padding:8px;font-size:13px;">Due Date</th>
+                <th style="text-align:left;padding:8px;font-size:13px;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+
+        for (const milestone of projectMilestones) {
+          const dueDate = new Date(milestone.due_date).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' });
+          const statusColors: any = {
+            'pending': '#8c8c8c',
+            'in-progress': '#1890ff',
+            'overdue': '#ff4d4f'
+          };
+          const statusColor = statusColors[milestone.status] || '#8c8c8c';
+
+          projectSections += `
+            <tr style="border-bottom:1px solid #eee;">
+              <td style="padding:8px;font-size:14px;">${milestone.title}</td>
+              <td style="padding:8px;font-size:14px;">${dueDate}</td>
+              <td style="padding:8px;">
+                <span style="background:${statusColor};color:#fff;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;">${milestone.status}</span>
+              </td>
+            </tr>
+          `;
+        }
+
+        projectSections += `
+            </tbody>
+          </table>
+        `;
+      }
+
+      projectSections += `</td></tr>`;
+    }
+
+    if (!projectSections) {
+      projectSections = `
+        <tr>
+          <td style="padding:40px;text-align:center;">
+            <div style="font-size:48px;margin-bottom:16px;">✨</div>
+            <h2 style="color:#52c41a;margin:0 0 8px;">All Clear This Week!</h2>
+            <p style="color:#666;margin:0;">No tasks or milestones are due this week across your active projects.</p>
+          </td>
+        </tr>
+      `;
+    }
+
+    const htmlEmail = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Weekly Plan</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:20px 0;">
+    <tr><td align="center">
+      <table width="650" style="background:#fff;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+        <tr>
+          <td style="background:linear-gradient(135deg,#667eea,#764ba2);padding:30px;text-align:center;">
+            <h1 style="color:#fff;margin:0;font-size:26px;">📅 Weekly Plan</h1>
+            <p style="color:rgba(255,255,255,0.9);margin:8px 0 0;font-size:16px;">${dateRangeString}</p>
+          </td>
+        </tr>
+
+        ${projectSections}
+
+        <tr>
+          <td style="background:#f8f9fa;padding:20px;text-align:center;border-top:1px solid #eee;">
+            <p style="color:#999;font-size:12px;margin:0;">
+              Sent by <strong>The Projects Team</strong>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+    `;
+
+    // 7. Collect CC emails (all project managers and partners)
+    const ccEmails: string[] = [];
+    for (const project of projects) {
+      if (project.project_manager_id) {
+        const pmRes = await pool.query(
+          `SELECT email FROM users WHERE id = $1 AND email IS NOT NULL`,
+          [project.project_manager_id]
+        );
+        if (pmRes.rows.length > 0 && pmRes.rows[0].email && pmRes.rows[0].email !== customer.email) {
+          if (!ccEmails.includes(pmRes.rows[0].email)) {
+            ccEmails.push(pmRes.rows[0].email);
+          }
+        }
+      }
+      if (project.project_partner_id && project.project_partner_id !== project.project_manager_id) {
+        const partnerRes = await pool.query(
+          `SELECT email FROM users WHERE id = $1 AND email IS NOT NULL`,
+          [project.project_partner_id]
+        );
+        if (partnerRes.rows.length > 0 && partnerRes.rows[0].email && partnerRes.rows[0].email !== customer.email) {
+          if (!ccEmails.includes(partnerRes.rows[0].email)) {
+            ccEmails.push(partnerRes.rows[0].email);
+          }
+        }
+      }
+    }
+
+    // 8. Send email
+    await emailService.send({
+      to: customer.email,
+      cc: ccEmails.length > 0 ? ccEmails : undefined,
+      subject: `Weekly Plan: ${dateRangeString} - ${customer.company_name}`,
+      html: htmlEmail,
+      text: `Weekly Plan for ${dateRangeString}\n\nThis email contains tasks and milestones due this week across all your active projects.`
+    });
+
+    res.json({
+      success: true,
+      message: 'Weekly plan sent successfully',
+      data: {
+        customer_name: customer.company_name,
+        email: customer.email,
+        projects_count: projects.length,
+        tasks_count: tasks.length,
+        milestones_count: milestones.length,
+        week_range: dateRangeString
+      }
+    });
+
+  } catch (error: any) {
+    if (error.message === 'Tenant ID not found') {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
+    }
+    console.error('Error sending weekly plan:', error);
+    res.status(500).json({ success: false, message: 'Failed to send weekly plan' });
+  }
+};
+
 // ============================================================================
 // PROJECT MILESTONES
 // ============================================================================

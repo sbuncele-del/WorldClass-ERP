@@ -26,6 +26,12 @@ const RoleBasedWorkspace = lazy(() => import('./components/RoleBasedWorkspace'))
 // Landing Page (lazy loaded for performance)
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 
+// Website Pages (multi-page site)
+const FeaturesPage = lazy(() => import('./pages/website/FeaturesPage'));
+const CompliancePage = lazy(() => import('./pages/website/CompliancePage'));
+const DemoPage = lazy(() => import('./pages/website/DemoPage'));
+const TryDemo = lazy(() => import('./pages/TryDemo'));
+
 // Footer Pages (lazy loaded)
 const About = lazy(() => import('./pages/About'));
 const Careers = lazy(() => import('./pages/Careers'));
@@ -284,6 +290,12 @@ function App() {
                     <Routes>
                       {/* Landing Page - Public Homepage */}
                       <Route path="/" element={<LandingPage />} />
+                      
+                      {/* Website Pages — Multi-page site */}
+                      <Route path="/features" element={<FeaturesPage />} />
+                      <Route path="/compliance" element={<CompliancePage />} />
+                      <Route path="/demo" element={<DemoPage />} />
+                      <Route path="/try-demo" element={<TryDemo />} />
                       
                       {/* Public Footer Pages - No Layout */}
                       <Route path="/about" element={<About />} />

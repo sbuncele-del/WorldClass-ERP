@@ -9,7 +9,7 @@
  * - Modern premium design
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Tooltip, Badge, Dropdown, Space, Avatar
@@ -79,6 +79,34 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
     compliance: true,
     admin: false
   });
+
+  // Track enabled modules from localStorage
+  const [enabledModules, setEnabledModules] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    const loadModules = () => {
+      try {
+        const stored = localStorage.getItem('enabledModules');
+        if (stored) {
+          setEnabledModules(JSON.parse(stored));
+        }
+      } catch { /* ignore */ }
+    };
+    loadModules();
+    // Listen for module toggle changes from SystemSettings
+    window.addEventListener('modulesChanged', loadModules);
+    window.addEventListener('storage', loadModules);
+    return () => {
+      window.removeEventListener('modulesChanged', loadModules);
+      window.removeEventListener('storage', loadModules);
+    };
+  }, []);
+
+  const isModuleEnabled = (code: string): boolean => {
+    // If no modules stored yet, show everything (default)
+    if (Object.keys(enabledModules).length === 0) return true;
+    return enabledModules[code] !== false; // default to true if not explicitly disabled
+  };
 
   // Get tenant info from localStorage (set during login)
   const getTenantInfo = () => {
@@ -248,7 +276,6 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
           {expandedSections.workspace && (
             <div className="sidebar-section-content">
               {renderNavItem('/app/dashboard', <DashboardOutlined />, 'Dashboard')}
-              {renderNavItem('/app/workspace', <HomeOutlined />, 'My Workspace')}
               {renderNavItem('/app/calendar', <CalendarOutlined />, 'Calendar')}
               {renderNavItem('/app/communication', <MessageOutlined />, 'Communications')}
             </div>
@@ -260,9 +287,9 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
           {renderSectionTitle('FINANCIAL', 'financial', <DollarOutlined />)}
           {expandedSections.financial && (
             <div className="sidebar-section-content">
-              {renderNavItem('/app/financial-hub', <BarChartOutlined />, 'Financial Hub', undefined, ['director', 'executive', 'accountant'])}
-              {renderNavItem('/app/banking-hub', <BankOutlined />, 'Banking Hub')}
-              {renderNavItem('/app/sars', <FileProtectOutlined />, 'SARS Sentinel')}
+              {isModuleEnabled('financial') && renderNavItem('/app/financial-hub', <BarChartOutlined />, 'Financial Hub', undefined, ['director', 'executive', 'accountant'])}
+              {isModuleEnabled('financial') && renderNavItem('/app/banking-hub', <BankOutlined />, 'Banking Hub')}
+              {isModuleEnabled('financial') && renderNavItem('/app/sars', <FileProtectOutlined />, 'SARS Sentinel')}
             </div>
           )}
         </div>
@@ -272,13 +299,13 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
           {renderSectionTitle('OPERATIONS', 'operations', <ToolOutlined />)}
           {expandedSections.operations && (
             <div className="sidebar-section-content">
-              {renderNavItem('/app/sales-hub', <ShoppingCartOutlined />, 'Sales & CRM')}
-              {renderNavItem('/app/purchase-hub', <ShoppingOutlined />, 'Purchase Hub')}
-              {renderNavItem('/app/inventory-hub', <InboxOutlined />, 'Inventory Hub')}
-              {renderNavItem('/app/assets-hub', <BuildOutlined />, 'Assets Hub')}
-              {renderNavItem('/app/warehouse-hub', <InboxOutlined />, 'Warehouse Hub')}
-              {renderNavItem('/app/hr-hub', <TeamOutlined />, 'HR Hub')}
-              {renderNavItem('/app/projects-hub', <ProjectOutlined />, 'Projects Hub')}
+              {isModuleEnabled('sales') && renderNavItem('/app/sales-hub', <ShoppingCartOutlined />, 'Sales & CRM')}
+              {isModuleEnabled('purchase') && renderNavItem('/app/purchase-hub', <ShoppingOutlined />, 'Purchase Hub')}
+              {isModuleEnabled('inventory') && renderNavItem('/app/inventory-hub', <InboxOutlined />, 'Inventory Hub')}
+              {isModuleEnabled('assets') && renderNavItem('/app/assets-hub', <BuildOutlined />, 'Assets Hub')}
+              {isModuleEnabled('warehouse') && renderNavItem('/app/warehouse-hub', <InboxOutlined />, 'Warehouse Hub')}
+              {isModuleEnabled('hr') && renderNavItem('/app/hr-hub', <TeamOutlined />, 'HR Hub')}
+              {isModuleEnabled('projects') && renderNavItem('/app/projects-hub', <ProjectOutlined />, 'Projects Hub')}
               {renderNavItem('/app/proposals', <FileTextOutlined />, 'Proposals')}
             </div>
           )}
@@ -289,7 +316,8 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
           {renderSectionTitle('PROFESSIONAL', 'industry', <CloudOutlined />)}
           {expandedSections.industry && (
             <div className="sidebar-section-content">
-              {renderNavItem('/app/practice-hub', <SafetyCertificateOutlined />, 'Practice Hub')}
+              {isModuleEnabled('practice') && renderNavItem('/app/practice-hub', <SafetyCertificateOutlined />, 'Practice Hub')}
+              {isModuleEnabled('manufacturing') && renderNavItem('/app/manufacturing', <ToolOutlined />, 'Manufacturing')}
             </div>
           )}
         </div>

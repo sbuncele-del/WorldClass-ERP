@@ -33,6 +33,7 @@ import {
   MessageOutlined, ReloadOutlined
 } from '@ant-design/icons';
 import '../styles/executive-dashboard.css';
+import { useUser } from '../contexts/UserContext';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -54,6 +55,7 @@ interface DashboardData {
   pendingActions: PendingAction[];
   recentActivity: Activity[];
   aiInsights: AIInsight[];
+  revenueTrend: { month: string; revenue: number }[];
   compliance: ComplianceStatus;
   team: TeamMetrics;
 }
@@ -128,6 +130,7 @@ interface TeamMetrics {
 
 const ExecutiveDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { currentUser } = useUser();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole>('director');
@@ -141,10 +144,22 @@ const ExecutiveDashboard: React.FC = () => {
       });
       const result = await response.json();
       if (result.success) {
-        setData(result.data);
+        const dashData = result.data;
+        // Override API user name with actual logged-in user name
+        const firstName = currentUser?.firstName || dashData.user?.name || 'there';
+        const hour = new Date().getHours();
+        const greetWord = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+        dashData.user = {
+          ...dashData.user,
+          name: firstName,
+          greeting: `${greetWord}, ${firstName}`
+        };
+        setData(dashData);
         // Set role from API response
         if (result.data.user?.role) {
-          const role = result.data.user.role.toLowerCase();
+          let role = result.data.user.role.toLowerCase();
+          // Map super_admin to director view (top-level dashboard)
+          if (role === 'super_admin') role = 'director';
           if (['director', 'executive', 'manager', 'accountant', 'staff', 'admin'].includes(role)) {
             setSelectedRole(role as UserRole);
           }
@@ -171,15 +186,24 @@ const ExecutiveDashboard: React.FC = () => {
     fetchDashboard();
   };
 
-  // Format currency in ZAR
+  // Format currency in ZAR — compact for cards
   const formatCurrency = (value: number) => {
-    if (value >= 1000000) {
-      return `R ${(value / 1000000).toFixed(1)}M`;
+    const abs = Math.abs(value);
+    const sign = value < 0 ? '-' : '';
+    if (abs >= 1000000) {
+      return `${sign}R${(abs / 1000000).toFixed(1)}M`;
     }
-    if (value >= 1000) {
-      return `R ${(value / 1000).toFixed(0)}K`;
-    }
-    return `R ${value.toLocaleString()}`;
+    // Show full number with thousands separator, no decimals for whole numbers
+    const formatted = abs % 1 === 0 
+      ? abs.toLocaleString('en-ZA', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+      : abs.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return `${sign}R${formatted}`;
+  };
+
+  // Full currency format (not abbreviated)
+  const formatCurrencyFull = (value: number) => {
+    const sign = value < 0 ? '-' : '';
+    return `${sign}R ${Math.abs(value).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   // Format KPI value based on type
@@ -302,27 +326,13 @@ const ExecutiveDashboard: React.FC = () => {
             </div>
           </div>
           <div className="header-right">
-            <Space>
-              <Select
-                value={selectedRole}
-                onChange={(v) => setSelectedRole(v as UserRole)}
-                style={{ width: 150 }}
-                dropdownStyle={{ minWidth: 150 }}
-              >
-                <Select.Option value="director">👑 Director</Select.Option>
-                <Select.Option value="executive">🏆 Executive</Select.Option>
-                <Select.Option value="manager">👥 Manager</Select.Option>
-                <Select.Option value="accountant">📊 Accountant</Select.Option>
-                <Select.Option value="staff">👤 Staff</Select.Option>
-              </Select>
-              <Button 
-                icon={<ReloadOutlined spin={refreshing} />} 
-                onClick={handleRefresh}
-                style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none' }}
-              >
-                Refresh
-              </Button>
-            </Space>
+            <Button 
+              icon={<ReloadOutlined spin={refreshing} />} 
+              onClick={handleRefresh}
+              style={{ background: 'rgba(255,255,255,0.2)', color: 'white', border: 'none' }}
+            >
+              Refresh
+            </Button>
           </div>
         </div>
       </div>
@@ -463,55 +473,6 @@ const ExecutiveDashboard: React.FC = () => {
 
         {/* Middle Column - Charts & Financial */}
         <Col xs={24} lg={8}>
-          {/* Revenue Trend Sparkline */}
-          <Card 
-            className="sparkline-card"
-            style={{ marginBottom: 16 }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <Text type="secondary" style={{ fontSize: 12 }}>REVENUE TREND (6 MONTHS)</Text>
-              <Tag color="success">+12.5%</Tag>
-            </div>
-            <svg viewBox="0 0 200 50" style={{ width: '100%', height: 60 }}>
-              {/* Gradient fill */}
-              <defs>
-                <linearGradient id="sparklineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.3"/>
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0"/>
-                </linearGradient>
-              </defs>
-              {/* Area fill */}
-              <path 
-                d="M 0 45 L 33 35 L 66 40 L 100 30 L 133 25 L 166 20 L 200 10 L 200 50 L 0 50 Z" 
-                fill="url(#sparklineGradient)"
-              />
-              {/* Line */}
-              <path 
-                d="M 0 45 L 33 35 L 66 40 L 100 30 L 133 25 L 166 20 L 200 10" 
-                fill="none" 
-                stroke="#10b981" 
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              {/* End dot */}
-              <circle cx="200" cy="10" r="4" fill="#10b981"/>
-            </svg>
-            <Row gutter={16} style={{ marginTop: 8 }}>
-              <Col span={8}>
-                <Text type="secondary" style={{ fontSize: 10 }}>Aug</Text>
-                <div style={{ fontSize: 12 }}>R3.2M</div>
-              </Col>
-              <Col span={8}>
-                <Text type="secondary" style={{ fontSize: 10 }}>Oct</Text>
-                <div style={{ fontSize: 12 }}>R3.8M</div>
-              </Col>
-              <Col span={8}>
-                <Text type="secondary" style={{ fontSize: 10 }}>Jan</Text>
-                <div style={{ fontSize: 12, color: '#10b981', fontWeight: 600 }}>R4.5M</div>
-              </Col>
-            </Row>
-          </Card>
-
           {/* Financial Summary */}
           <Card 
             title={
@@ -528,8 +489,8 @@ const ExecutiveDashboard: React.FC = () => {
                 <div className="financial-value positive">
                   {formatCurrency(data.financial.revenue.mtd)}
                 </div>
-                <div className="financial-trend positive">
-                  <ArrowUpOutlined /> {data.financial.revenue.trend}%
+                <div className="financial-trend">
+                  {data.financial.revenue.invoiceCount} invoice(s)
                 </div>
               </div>
               <div className="financial-item">
@@ -537,26 +498,22 @@ const ExecutiveDashboard: React.FC = () => {
                 <div className="financial-value">
                   {formatCurrency(data.financial.expenses.mtd)}
                 </div>
-                <div className="financial-trend negative">
-                  <ArrowDownOutlined /> {Math.abs(data.financial.expenses.trend)}%
-                </div>
               </div>
               <div className="financial-item highlight">
                 <Text type="secondary">Net Profit MTD</Text>
-                <div className="financial-value positive">
+                <div className={`financial-value ${data.financial.profit.mtd >= 0 ? 'positive' : 'negative'}`}>
                   {formatCurrency(data.financial.profit.mtd)}
                 </div>
-                <div className="financial-trend">
-                  {data.financial.profit.margin.toFixed(1)}% margin
-                </div>
+                {data.financial.profit.margin !== 0 && (
+                  <div className="financial-trend">
+                    {data.financial.profit.margin.toFixed(1)}% margin
+                  </div>
+                )}
               </div>
               <div className="financial-item">
                 <Text type="secondary">Cash Position</Text>
-                <div className="financial-value">
+                <div className={`financial-value ${data.financial.cashPosition.total >= 0 ? '' : 'negative'}`}>
                   {formatCurrency(data.financial.cashPosition.total)}
-                </div>
-                <div className="financial-trend positive">
-                  <ArrowUpOutlined /> {data.financial.cashPosition.trend}%
                 </div>
               </div>
             </div>
@@ -584,6 +541,71 @@ const ExecutiveDashboard: React.FC = () => {
                 />
               </Col>
             </Row>
+          </Card>
+
+          {/* Revenue Trend Chart */}
+          <Card 
+            title={
+              <Space>
+                <LineChartOutlined style={{ color: '#667eea' }} />
+                <span>Revenue Trend (6 Months)</span>
+              </Space>
+            }
+            style={{ marginTop: 16 }}
+            className="revenue-trend-card"
+          >
+            {(() => {
+              const trend = data.revenueTrend || [];
+              if (trend.length === 0) return <Text type="secondary">No revenue data yet</Text>;
+              const maxVal = Math.max(...trend.map(t => t.revenue), 1);
+              const chartH = 160;
+              const chartW = 100; // percentage-based
+              const padBottom = 30;
+              const padTop = 10;
+              const usableH = chartH - padBottom - padTop;
+              const stepX = chartW / (trend.length - 1 || 1);
+              const points = trend.map((t, i) => ({
+                x: i * stepX,
+                y: padTop + usableH - (t.revenue / maxVal) * usableH,
+                ...t
+              }));
+              const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+              const areaPath = `${linePath} L ${points[points.length - 1].x} ${chartH - padBottom} L ${points[0].x} ${chartH - padBottom} Z`;
+              return (
+                <div style={{ position: 'relative' }}>
+                  <svg viewBox={`-2 0 ${chartW + 4} ${chartH}`} style={{ width: '100%', height: chartH }} preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="revGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="#667eea" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#667eea" stopOpacity="0.02" />
+                      </linearGradient>
+                    </defs>
+                    {/* Grid lines */}
+                    {[0.25, 0.5, 0.75].map(f => (
+                      <line key={f} x1="0" y1={padTop + usableH * (1 - f)} x2={chartW} y2={padTop + usableH * (1 - f)} stroke="#e5e7eb" strokeWidth="0.3" strokeDasharray="2,2" />
+                    ))}
+                    {/* Area */}
+                    <path d={areaPath} fill="url(#revGrad)" />
+                    {/* Line */}
+                    <path d={linePath} fill="none" stroke="#667eea" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                    {/* Data points */}
+                    {points.map((p, i) => (
+                      <circle key={i} cx={p.x} cy={p.y} r="2" fill="#667eea" stroke="white" strokeWidth="1" />
+                    ))}
+                  </svg>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+                    {trend.map((t, i) => (
+                      <div key={i} style={{ textAlign: 'center', flex: 1 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: t.revenue > 0 ? '#667eea' : '#9ca3af' }}>
+                          {t.revenue >= 1000 ? `R${(t.revenue / 1000).toFixed(0)}K` : t.revenue > 0 ? `R${t.revenue}` : '-'}
+                        </div>
+                        <div style={{ fontSize: 10, color: '#9ca3af' }}>{t.month}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </Card>
 
           {/* Quick Actions */}
@@ -660,8 +682,8 @@ const ExecutiveDashboard: React.FC = () => {
             </Row>
           </Card>
 
-          {/* Team Overview (for managers+) */}
-          {['director', 'executive', 'manager', 'admin'].includes(selectedRole) && (
+          {/* Team Overview — only show if employees exist */}
+          {data.team.totalEmployees > 0 && (
             <Card 
               title={
                 <Space>
@@ -745,8 +767,8 @@ const ExecutiveDashboard: React.FC = () => {
               </Col>
               <Col span={12}>
                 <div className="ops-metric">
-                  <Text type="secondary">Tasks Due Today</Text>
-                  <div className="ops-value">{data.operational.tasks.dueToday}</div>
+                  <Text type="secondary">Total Projects</Text>
+                  <div className="ops-value">{data.operational.projects.total}</div>
                 </div>
               </Col>
               <Col span={12}>
@@ -757,29 +779,26 @@ const ExecutiveDashboard: React.FC = () => {
               </Col>
               <Col span={12}>
                 <div className="ops-metric">
-                  <Text type="secondary">New This Month</Text>
-                  <div className="ops-value positive">+{data.operational.customers.newMTD}</div>
+                  <Text type="secondary">Suppliers</Text>
+                  <div className="ops-value">{(data.operational as any).suppliers?.total || 0}</div>
                 </div>
               </Col>
             </Row>
             <Divider />
-            <div className="task-completion">
-              <div className="task-label">
-                <Text>Task Completion Rate</Text>
-                <Text strong>{data.operational.tasks.completionRate}%</Text>
-              </div>
-              <Progress 
-                percent={data.operational.tasks.completionRate} 
-                strokeColor="#10b981"
-                showInfo={false}
-              />
-            </div>
-            {data.operational.tasks.overdue > 0 && (
-              <div className="overdue-warning">
-                <WarningOutlined style={{ color: '#ef4444', marginRight: 8 }} />
-                <Text type="danger">{data.operational.tasks.overdue} overdue tasks</Text>
-              </div>
-            )}
+            <Row gutter={16}>
+              <Col span={12}>
+                <div className="ops-metric">
+                  <Text type="secondary">Journal Entries</Text>
+                  <div className="ops-value">{data.operational.tasks.total}</div>
+                </div>
+              </Col>
+              <Col span={12}>
+                <div className="ops-metric">
+                  <Text type="secondary">New Customers MTD</Text>
+                  <div className="ops-value positive">+{data.operational.customers.newMTD}</div>
+                </div>
+              </Col>
+            </Row>
           </Card>
         </Col>
       </Row>

@@ -113,10 +113,13 @@
 }
 
 .kpi-value {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   color: #1f2937;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-trend {

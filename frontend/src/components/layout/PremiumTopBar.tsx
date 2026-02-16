@@ -9,7 +9,7 @@
  * - User profile with role indicator
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Input, Badge, Dropdown, Avatar, Space, Tag, Button, 
@@ -42,7 +42,9 @@ const PremiumTopBar: React.FC = () => {
   const { currentUser } = useUser();
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem('theme-mode') === 'dark' || document.body.classList.contains('dark-mode');
+  });
   const [notificationCount, setNotificationCount] = useState(0);
   const [messageCount, setMessageCount] = useState(0);
 
@@ -199,9 +201,50 @@ const PremiumTopBar: React.FC = () => {
       { key: 'meeting', icon: <CalendarOutlined />, label: 'Schedule Meeting' },
     ],
     onClick: ({ key }) => {
-      // Handle quick actions
-      console.log('Quick action:', key);
+      const routes: Record<string, string> = {
+        invoice: '/app/sales-hub?action=new-invoice',
+        quote: '/app/sales-hub?action=new-quote',
+        payment: '/app/financial-hub?tab=payments',
+        expense: '/app/financial-hub?tab=expenses',
+        client: '/app/sales-hub?action=new-client',
+        meeting: '/app/communication?tab=meetings',
+      };
+      if (routes[key]) navigate(routes[key]);
     }
+  };
+
+  // Real notifications state
+  const [notifications, setNotifications] = useState<any[]>([]);
+
+  // Fetch real notifications
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/api/v2/communications/notifications');
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setNotifications(res.data.data.slice(0, 5));
+      }
+    } catch {
+      // Use recent activity as fallback
+      setNotifications([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  const notifStatusMap: Record<string, 'processing' | 'warning' | 'success' | 'default'> = {
+    info: 'processing', warning: 'warning', success: 'success', error: 'default'
+  };
+
+  const formatTimeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
   };
 
   // Notifications menu
@@ -209,55 +252,34 @@ const PremiumTopBar: React.FC = () => {
     items: [
       {
         key: 'header',
-        label: <Text strong>Notifications</Text>,
+        label: <Text strong>Notifications {notificationCount > 0 ? `(${notificationCount})` : ''}</Text>,
         disabled: true
       },
       { type: 'divider' as const },
-      {
-        key: 'notif-1',
+      ...(notifications.length > 0 ? notifications.map((n, i) => ({
+        key: `notif-${i}`,
         label: (
-          <div className="notification-item">
-            <Badge status="processing" />
+          <div className="notification-item" style={{ maxWidth: 320 }}>
+            <Badge status={notifStatusMap[n.type] || 'processing'} />
             <div>
-              <Text strong>Invoice #INV-2025-0042 paid</Text>
+              <Text strong style={{ fontSize: 13 }}>{n.title || n.message || 'Notification'}</Text>
               <br />
-              <Text type="secondary" style={{ fontSize: 11 }}>R 45,000.00 received • 2 min ago</Text>
+              <Text type="secondary" style={{ fontSize: 11 }}>{n.description || ''} {n.created_at ? `• ${formatTimeAgo(n.created_at)}` : ''}</Text>
             </div>
           </div>
         )
-      },
-      {
-        key: 'notif-2',
-        label: (
-          <div className="notification-item">
-            <Badge status="warning" />
-            <div>
-              <Text strong>VAT return due in 3 days</Text>
-              <br />
-              <Text type="secondary" style={{ fontSize: 11 }}>December 2025 VAT201</Text>
-            </div>
-          </div>
-        )
-      },
-      {
-        key: 'notif-3',
-        label: (
-          <div className="notification-item">
-            <Badge status="success" />
-            <div>
-              <Text strong>Bank feed synced</Text>
-              <br />
-              <Text type="secondary" style={{ fontSize: 11 }}>FNB Business • 12 new transactions</Text>
-            </div>
-          </div>
-        )
-      },
+      })) : [{
+        key: 'no-notifs',
+        label: <Text type="secondary" style={{ fontSize: 13 }}>No new notifications</Text>,
+        disabled: true
+      }]),
       { type: 'divider' as const },
       {
         key: 'view-all',
-        label: <Text type="link">View all notifications</Text>
+        label: <Text type="link">View all notifications</Text>,
+        onClick: () => navigate('/app/communication')
       }
-    ]
+    ] as any[]
   };
 
   // Profile menu
@@ -352,7 +374,13 @@ const PremiumTopBar: React.FC = () => {
         <Tooltip title={isDarkMode ? 'Light Mode' : 'Dark Mode'}>
           <button 
             className="topbar-icon-btn"
-            onClick={() => setIsDarkMode(!isDarkMode)}
+            onClick={() => {
+              const newDark = !isDarkMode;
+              setIsDarkMode(newDark);
+              document.body.classList.toggle('dark-mode', newDark);
+              document.documentElement.setAttribute('data-theme', newDark ? 'dark' : 'light');
+              localStorage.setItem('theme-mode', newDark ? 'dark' : 'light');
+            }}
           >
             {isDarkMode ? <SunOutlined /> : <MoonOutlined />}
           </button>

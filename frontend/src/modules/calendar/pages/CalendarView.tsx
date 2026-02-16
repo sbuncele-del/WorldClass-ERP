@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Card, Button, Space, Typography, Modal, Form, Input, Select, 
-  DatePicker, TimePicker, Tag, Badge, Row, Col, List, Avatar, Checkbox, Spin
+  DatePicker, Tag, Badge, Row, Col, Tooltip, Spin
 } from 'antd';
 import apiClient from '../../../services/api';
 import { 
-  PlusOutlined, LeftOutlined, RightOutlined, CalendarOutlined,
-  ClockCircleOutlined, TeamOutlined, VideoCameraOutlined, EnvironmentOutlined,
-  BellOutlined, EditOutlined, DeleteOutlined
+  PlusOutlined, LeftOutlined, RightOutlined,
+  ClockCircleOutlined, EnvironmentOutlined,
+  DeleteOutlined, ReloadOutlined,
+  ProjectOutlined, CheckSquareOutlined, DollarOutlined,
+  FlagOutlined, CalendarOutlined
 } from '@ant-design/icons';
 import './CalendarView.css';
 
@@ -26,25 +28,31 @@ interface CalendarEvent {
   attendees?: string[];
   isAllDay?: boolean;
   recurring?: boolean;
+  source?: 'manual' | 'project_task' | 'milestone' | 'invoice' | 'project';
+  status?: string;
+  priority?: string;
+  projectName?: string;
+  amount?: number;
 }
 
-const typeColors = {
-  meeting: '#1890ff',
-  task: '#fa541c',
-  reminder: '#faad14',
-  holiday: '#52c41a',
-  project: '#722ed1'
+const sourceConfig: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
+  project_task: { label: 'Task', icon: <CheckSquareOutlined />, color: '#fa541c' },
+  milestone: { label: 'Milestone', icon: <FlagOutlined />, color: '#722ed1' },
+  invoice: { label: 'Invoice', icon: <DollarOutlined />, color: '#faad14' },
+  project: { label: 'Project', icon: <ProjectOutlined />, color: '#1890ff' },
+  manual: { label: 'Event', icon: <CalendarOutlined />, color: '#1890ff' },
 };
 
 const CalendarView: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('week');
+  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [createModalVisible, setCreateModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   useEffect(() => {
     fetchEvents();
@@ -53,9 +61,8 @@ const CalendarView: React.FC = () => {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/api/calendar/events');
+      const response = await apiClient.get('/api/v2/calendar/events');
       const eventsData = response.data?.data || response.data || [];
-      // Convert date strings to Date objects
       const parsedEvents = eventsData.map((event: any) => ({
         ...event,
         start: new Date(event.start || event.start_date),
@@ -74,7 +81,6 @@ const CalendarView: React.FC = () => {
     try {
       setSaving(true);
       const [startDate, endDate] = values.dateRange;
-      
       const eventData = {
         title: values.title,
         description: values.description || '',
@@ -82,17 +88,11 @@ const CalendarView: React.FC = () => {
         endDate: endDate.toISOString(),
         location: values.location || '',
         eventType: values.type,
-        attendees: values.attendees || [],
-        reminders: values.reminder ? [{ minutesBefore: parseInt(values.reminder) }] : [],
+        attendees: [],
         isAllDay: false
       };
-
-      await apiClient.post('/api/calendar/events', eventData);
-      
-      // Refresh events list
+      await apiClient.post('/api/v2/calendar/events', eventData);
       await fetchEvents();
-      
-      // Close modal and reset form
       setCreateModalVisible(false);
       form.resetFields();
     } catch (error) {
@@ -102,33 +102,33 @@ const CalendarView: React.FC = () => {
     }
   };
 
-  // Get days for current view
+  const handleDeleteEvent = async (eventId: string) => {
+    if (!eventId.startsWith('task-') && !eventId.startsWith('milestone-') && !eventId.startsWith('invoice-') && !eventId.startsWith('proj-')) {
+      try {
+        await apiClient.delete(`/api/v2/calendar/events/${eventId}`);
+        await fetchEvents();
+        setSelectedEvent(null);
+      } catch (error) {
+        console.error('Error deleting event:', error);
+      }
+    }
+  };
+
+  const filteredEvents = activeFilters.length === 0 
+    ? events 
+    : events.filter(e => activeFilters.includes(e.source || 'manual'));
+
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
     const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
     const startingDayOfWeek = firstDay.getDay();
-    
     const days: Date[] = [];
-    
-    // Add days from previous month
-    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-      days.push(new Date(year, month, -i));
-    }
-    
-    // Add days of current month
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(new Date(year, month, i));
-    }
-    
-    // Add days from next month to complete the grid
-    const remainingDays = 42 - days.length;
-    for (let i = 1; i <= remainingDays; i++) {
-      days.push(new Date(year, month + 1, i));
-    }
-    
+    for (let i = startingDayOfWeek - 1; i >= 0; i--) days.push(new Date(year, month, -i));
+    for (let i = 1; i <= daysInMonth; i++) days.push(new Date(year, month, i));
+    const remaining = 42 - days.length;
+    for (let i = 1; i <= remaining; i++) days.push(new Date(year, month + 1, i));
     return days;
   };
 
@@ -136,16 +136,12 @@ const CalendarView: React.FC = () => {
     const days: Date[] = [];
     const day = date.getDay();
     const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    
-    for (let i = 0; i < 7; i++) {
-      days.push(new Date(date.getFullYear(), date.getMonth(), diff + i));
-    }
-    
+    for (let i = 0; i < 7; i++) days.push(new Date(date.getFullYear(), date.getMonth(), diff + i));
     return days;
   };
 
   const getEventsForDay = (date: Date) => {
-    return events.filter(event => {
+    return filteredEvents.filter(event => {
       const eventDate = new Date(event.start);
       return eventDate.toDateString() === date.toDateString();
     });
@@ -153,75 +149,85 @@ const CalendarView: React.FC = () => {
 
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentDate);
-    if (viewMode === 'month') {
-      newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
-    } else if (viewMode === 'week') {
-      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
-    } else {
-      newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
-    }
+    if (viewMode === 'month') newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1));
+    else if (viewMode === 'week') newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+    else newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
     setCurrentDate(newDate);
   };
 
-  const goToToday = () => {
-    setCurrentDate(new Date());
+  const goToToday = () => setCurrentDate(new Date());
+
+  const formatTime = (date: Date) => date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const formatDateShort = (date: Date) => date.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' });
+
+  const getSourceTag = (source?: string) => {
+    const cfg = sourceConfig[source || 'manual'] || sourceConfig.manual;
+    return (
+      <Tag color={cfg.color} style={{ fontSize: 10, padding: '0 4px', lineHeight: '18px', margin: 0 }}>
+        {cfg.icon} {cfg.label}
+      </Tag>
+    );
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const toggleFilter = (source: string) => {
+    setActiveFilters(prev => 
+      prev.includes(source) ? prev.filter(s => s !== source) : [...prev, source]
+    );
   };
 
   const days = viewMode === 'month' ? getDaysInMonth(currentDate) : getWeekDays(currentDate);
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const hours = Array.from({ length: 12 }, (_, i) => i + 8); // 8 AM to 7 PM
+  const hours = Array.from({ length: 12 }, (_, i) => i + 7);
 
-  // Upcoming events
-  const upcomingEvents = events
-    .filter(e => new Date(e.start) >= new Date())
+  const now = new Date();
+  const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const upcomingEvents = filteredEvents
+    .filter(e => new Date(e.start) >= now && new Date(e.start) <= weekFromNow)
     .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
-    .slice(0, 5);
+    .slice(0, 8);
+
+  const overdueEvents = filteredEvents
+    .filter(e => new Date(e.start) < now && (e.source === 'project_task' || e.source === 'invoice') && e.status !== 'completed' && e.status !== 'paid')
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
+
+  const sourceCounts = events.reduce((acc, e) => {
+    const s = e.source || 'manual';
+    acc[s] = (acc[s] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
     <div className="calendar-view">
       {/* Header */}
       <div className="calendar-header">
         <div className="header-left">
-          <Title level={2} style={{ margin: 0 }}>Calendar</Title>
-          <Space>
+          <Title level={3} style={{ margin: 0 }}>
+            <CalendarOutlined style={{ marginRight: 8 }} />
+            Calendar
+          </Title>
+          <Space style={{ marginLeft: 16 }}>
             <Button.Group>
               <Button icon={<LeftOutlined />} onClick={() => navigateDate('prev')} />
               <Button onClick={goToToday}>Today</Button>
               <Button icon={<RightOutlined />} onClick={() => navigateDate('next')} />
             </Button.Group>
-            <Text strong style={{ fontSize: 18, marginLeft: 16 }}>
+            <Text strong style={{ fontSize: 16, marginLeft: 8 }}>
               {currentDate.toLocaleDateString('en-US', { 
-                month: 'long', 
-                year: 'numeric',
+                month: 'long', year: 'numeric',
                 ...(viewMode === 'day' && { day: 'numeric' })
               })}
             </Text>
           </Space>
         </div>
         <Space>
+          <Button icon={<ReloadOutlined />} onClick={fetchEvents} loading={loading}>Sync</Button>
           <Button.Group>
-            <Button 
-              type={viewMode === 'day' ? 'primary' : 'default'}
-              onClick={() => setViewMode('day')}
-            >
-              Day
-            </Button>
-            <Button 
-              type={viewMode === 'week' ? 'primary' : 'default'}
-              onClick={() => setViewMode('week')}
-            >
-              Week
-            </Button>
-            <Button 
-              type={viewMode === 'month' ? 'primary' : 'default'}
-              onClick={() => setViewMode('month')}
-            >
-              Month
-            </Button>
+            {(['day', 'week', 'month'] as const).map(mode => (
+              <Button key={mode} type={viewMode === mode ? 'primary' : 'default'} onClick={() => setViewMode(mode)}>
+                {mode.charAt(0).toUpperCase() + mode.slice(1)}
+              </Button>
+            ))}
           </Button.Group>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalVisible(true)}>
             New Event
@@ -229,28 +235,64 @@ const CalendarView: React.FC = () => {
         </Space>
       </div>
 
-      <Row gutter={24}>
+      {/* Source filter bar */}
+      <div style={{ padding: '8px 0', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <Text type="secondary" style={{ fontSize: 12, marginRight: 8 }}>Sources:</Text>
+        {Object.entries(sourceConfig).map(([key, cfg]) => (
+          <Tag
+            key={key}
+            color={activeFilters.length === 0 || activeFilters.includes(key) ? cfg.color : 'default'}
+            style={{ cursor: 'pointer', opacity: activeFilters.length > 0 && !activeFilters.includes(key) ? 0.4 : 1 }}
+            onClick={() => toggleFilter(key)}
+          >
+            {cfg.icon} {cfg.label} ({sourceCounts[key] || 0})
+          </Tag>
+        ))}
+        {activeFilters.length > 0 && (
+          <Button type="link" size="small" onClick={() => setActiveFilters([])}>Clear filters</Button>
+        )}
+      </div>
+
+      <Row gutter={16}>
         {/* Calendar Grid */}
         <Col xs={24} lg={18}>
-          <Card className="calendar-card">
-            {/* Week View / Day View */}
+          <Card className="calendar-card" loading={loading}>
+            {/* Week/Day View */}
             {(viewMode === 'week' || viewMode === 'day') && (
               <div className="week-view">
-                {/* Header */}
+                {/* All-day events bar */}
+                <div style={{ display: 'flex', borderBottom: '1px solid #f0f0f0', minHeight: 32 }}>
+                  <div className="time-gutter" style={{ fontSize: 11, color: '#999', padding: '4px 8px' }}>All day</div>
+                  {(viewMode === 'day' ? [currentDate] : days).map((day, idx) => {
+                    const allDayEvents = getEventsForDay(day).filter(e => e.isAllDay);
+                    return (
+                      <div key={idx} style={{ flex: 1, padding: 2, borderLeft: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {allDayEvents.map(event => (
+                          <Tooltip key={event.id} title={event.description || event.title}>
+                            <div
+                              className="event-block allday-event"
+                              style={{ backgroundColor: event.color, padding: '2px 4px', borderRadius: 3, cursor: 'pointer', fontSize: 10, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                              onClick={() => setSelectedEvent(event)}
+                            >
+                              {event.title}
+                            </div>
+                          </Tooltip>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+
                 <div className="week-header">
                   <div className="time-gutter"></div>
                   {(viewMode === 'day' ? [currentDate] : days).map((day, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`day-header ${day.toDateString() === new Date().toDateString() ? 'today' : ''}`}
-                    >
+                    <div key={idx} className={`day-header ${day.toDateString() === new Date().toDateString() ? 'today' : ''}`}>
                       <div className="day-name">{dayNames[day.getDay()]}</div>
                       <div className="day-number">{day.getDate()}</div>
                     </div>
                   ))}
                 </div>
                 
-                {/* Time Grid */}
                 <div className="time-grid">
                   {hours.map(hour => (
                     <div key={hour} className="time-row">
@@ -259,22 +301,18 @@ const CalendarView: React.FC = () => {
                       </div>
                       {(viewMode === 'day' ? [currentDate] : days).map((day, dayIdx) => {
                         const dayEvents = getEventsForDay(day).filter(e => {
-                          const eventHour = new Date(e.start).getHours();
-                          return eventHour === hour;
+                          if (e.isAllDay) return false;
+                          return new Date(e.start).getHours() === hour;
                         });
-                        
                         return (
                           <div key={dayIdx} className="time-cell">
                             {dayEvents.map(event => (
-                              <div 
-                                key={event.id}
-                                className="event-block"
-                                style={{ backgroundColor: event.color }}
-                                onClick={() => setSelectedEvent(event)}
-                              >
-                                <div className="event-time">{formatTime(event.start)}</div>
-                                <div className="event-title">{event.title}</div>
-                              </div>
+                              <Tooltip key={event.id} title={event.description || event.title}>
+                                <div className="event-block" style={{ backgroundColor: event.color }} onClick={() => setSelectedEvent(event)}>
+                                  <div className="event-time">{formatTime(event.start)}</div>
+                                  <div className="event-title">{event.title}</div>
+                                </div>
+                              </Tooltip>
                             ))}
                           </div>
                         );
@@ -288,39 +326,31 @@ const CalendarView: React.FC = () => {
             {/* Month View */}
             {viewMode === 'month' && (
               <div className="month-view">
-                {/* Day Names */}
                 <div className="month-header">
                   {dayNames.map(name => (
                     <div key={name} className="day-name-header">{name}</div>
                   ))}
                 </div>
-                
-                {/* Calendar Grid */}
                 <div className="month-grid">
                   {days.map((day, idx) => {
                     const dayEvents = getEventsForDay(day);
                     const isCurrentMonth = day.getMonth() === currentDate.getMonth();
                     const isToday = day.toDateString() === new Date().toDateString();
-                    
                     return (
-                      <div 
-                        key={idx} 
-                        className={`month-cell ${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}`}
-                      >
+                      <div key={idx} className={`month-cell ${!isCurrentMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}`}>
                         <div className="cell-date">{day.getDate()}</div>
                         <div className="cell-events">
                           {dayEvents.slice(0, 3).map(event => (
-                            <div 
-                              key={event.id}
-                              className="event-dot"
-                              style={{ backgroundColor: event.color }}
-                              onClick={() => setSelectedEvent(event)}
-                            >
-                              {event.title}
-                            </div>
+                            <Tooltip key={event.id} title={event.description || event.title}>
+                              <div className="event-dot" style={{ backgroundColor: event.color }} onClick={() => setSelectedEvent(event)}>
+                                {event.title}
+                              </div>
+                            </Tooltip>
                           ))}
                           {dayEvents.length > 3 && (
-                            <div className="more-events">+{dayEvents.length - 3} more</div>
+                            <div className="more-events" onClick={() => { setCurrentDate(day); setViewMode('day'); }}>
+                              +{dayEvents.length - 3} more
+                            </div>
                           )}
                         </div>
                       </div>
@@ -334,43 +364,61 @@ const CalendarView: React.FC = () => {
 
         {/* Sidebar */}
         <Col xs={24} lg={6}>
-          {/* Mini Calendar */}
-          <Card title="Quick Date" size="small" style={{ marginBottom: 16 }}>
-            <DatePicker 
-              style={{ width: '100%' }}
-              value={null}
-              onChange={(date) => date && setCurrentDate(date.toDate())}
-            />
-          </Card>
+          {/* Overdue Items */}
+          {overdueEvents.length > 0 && (
+            <Card 
+              title={<span style={{ color: '#f5222d' }}>Overdue ({overdueEvents.length})</span>} 
+              size="small" 
+              style={{ marginBottom: 12, borderColor: '#ffccc7' }}
+              styles={{ body: { padding: '8px 12px' } }}
+            >
+              {overdueEvents.slice(0, 4).map(event => (
+                <div key={event.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, cursor: 'pointer' }} onClick={() => setSelectedEvent(event)}>
+                  <div style={{ width: 4, height: 24, borderRadius: 2, backgroundColor: '#f5222d', flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={{ fontSize: 12, display: 'block' }} ellipsis>{event.title}</Text>
+                    <Text type="danger" style={{ fontSize: 10 }}>Due {formatDateShort(new Date(event.start))}</Text>
+                  </div>
+                  {getSourceTag(event.source)}
+                </div>
+              ))}
+            </Card>
+          )}
 
-          {/* Upcoming Events */}
-          <Card title="Upcoming Events" size="small" style={{ marginBottom: 16 }}>
-            <List
-              size="small"
-              dataSource={upcomingEvents}
-              renderItem={event => (
-                <List.Item 
-                  className="upcoming-event"
-                  onClick={() => setSelectedEvent(event)}
-                >
-                  <div className="event-indicator" style={{ backgroundColor: event.color }} />
-                  <div className="event-info">
-                    <Text strong className="event-name">{event.title}</Text>
-                    <Text type="secondary" className="event-time-text">
-                      {new Date(event.start).toLocaleDateString()} • {formatTime(event.start)}
+          {/* Upcoming This Week */}
+          <Card title="Upcoming (7 days)" size="small" style={{ marginBottom: 12 }} styles={{ body: { padding: '8px 12px' } }}>
+            {upcomingEvents.length === 0 ? (
+              <Text type="secondary" style={{ fontSize: 12 }}>No upcoming events</Text>
+            ) : (
+              upcomingEvents.map(event => (
+                <div key={event.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8, cursor: 'pointer' }} onClick={() => setSelectedEvent(event)}>
+                  <div style={{ width: 4, height: 28, borderRadius: 2, backgroundColor: event.color, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={{ fontSize: 12, display: 'block' }} ellipsis>{event.title}</Text>
+                    <Text type="secondary" style={{ fontSize: 10 }}>
+                      {formatDateShort(new Date(event.start))}
+                      {!event.isAllDay && ` \u2022 ${formatTime(new Date(event.start))}`}
                     </Text>
                   </div>
-                </List.Item>
-              )}
-            />
+                  {getSourceTag(event.source)}
+                </div>
+              ))
+            )}
           </Card>
 
-          {/* Legend */}
-          <Card title="Categories" size="small">
-            {Object.entries(typeColors).map(([type, color]) => (
-              <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <Badge color={color} />
-                <Text style={{ textTransform: 'capitalize' }}>{type}</Text>
+          {/* Jump to Date */}
+          <Card title="Jump to Date" size="small" style={{ marginBottom: 12 }}>
+            <DatePicker style={{ width: '100%' }} value={null} onChange={(date) => date && setCurrentDate(date.toDate())} />
+          </Card>
+
+          {/* Data Sources Legend */}
+          <Card title="Data Sources" size="small">
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>Auto-synced from:</div>
+            {Object.entries(sourceConfig).map(([key, cfg]) => (
+              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <Badge color={cfg.color} />
+                <Text style={{ fontSize: 12 }}>{cfg.label}s</Text>
+                <Text type="secondary" style={{ fontSize: 11, marginLeft: 'auto' }}>{sourceCounts[key] || 0}</Text>
               </div>
             ))}
           </Card>
@@ -379,22 +427,44 @@ const CalendarView: React.FC = () => {
 
       {/* Event Detail Modal */}
       <Modal
-        title={selectedEvent?.title}
+        title={
+          selectedEvent ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 4, height: 20, borderRadius: 2, backgroundColor: selectedEvent.color }} />
+              <span>{selectedEvent.title}</span>
+            </div>
+          ) : null
+        }
         open={!!selectedEvent}
         onCancel={() => setSelectedEvent(null)}
         footer={[
-          <Button key="edit" icon={<EditOutlined />}>Edit</Button>,
-          <Button key="delete" danger icon={<DeleteOutlined />}>Delete</Button>,
+          ...(selectedEvent && (selectedEvent.source === 'manual' || !selectedEvent.source) ? [
+            <Button key="delete" danger icon={<DeleteOutlined />} onClick={() => selectedEvent && handleDeleteEvent(selectedEvent.id)}>Delete</Button>
+          ] : []),
           <Button key="close" type="primary" onClick={() => setSelectedEvent(null)}>Close</Button>
         ]}
       >
         {selectedEvent && (
           <div className="event-details">
+            <div style={{ marginBottom: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {getSourceTag(selectedEvent.source)}
+              {selectedEvent.status && (
+                <Tag color={selectedEvent.status === 'completed' ? 'green' : selectedEvent.status === 'Not Started' ? 'orange' : 'blue'}>
+                  {selectedEvent.status}
+                </Tag>
+              )}
+              {selectedEvent.priority && (
+                <Tag color={selectedEvent.priority === 'high' ? 'red' : selectedEvent.priority === 'medium' ? 'orange' : 'green'}>
+                  {selectedEvent.priority} priority
+                </Tag>
+              )}
+            </div>
             <div className="detail-row">
               <ClockCircleOutlined />
               <span>
-                {formatTime(selectedEvent.start)} - {formatTime(selectedEvent.end)}
-                {selectedEvent.recurring && <Tag style={{ marginLeft: 8 }}>Recurring</Tag>}
+                {selectedEvent.isAllDay ? 'All day' : `${formatTime(selectedEvent.start)} - ${formatTime(selectedEvent.end)}`}
+                {' \u2022 '}
+                {new Date(selectedEvent.start).toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </span>
             </div>
             {selectedEvent.location && (
@@ -403,19 +473,20 @@ const CalendarView: React.FC = () => {
                 <span>{selectedEvent.location}</span>
               </div>
             )}
-            {selectedEvent.attendees && (
+            {selectedEvent.projectName && (
               <div className="detail-row">
-                <TeamOutlined />
-                <Avatar.Group maxCount={5} size="small">
-                  {selectedEvent.attendees.map((a, i) => (
-                    <Avatar key={i}>{a[0]}</Avatar>
-                  ))}
-                </Avatar.Group>
+                <ProjectOutlined />
+                <span>Project: {selectedEvent.projectName}</span>
               </div>
             )}
             {selectedEvent.description && (
-              <div className="detail-row">
-                <Text>{selectedEvent.description}</Text>
+              <div className="detail-row" style={{ marginTop: 8 }}>
+                <Text style={{ whiteSpace: 'pre-wrap' }}>{selectedEvent.description}</Text>
+              </div>
+            )}
+            {selectedEvent.source && selectedEvent.source !== 'manual' && (
+              <div style={{ marginTop: 12, padding: '8px 12px', background: '#f6f8fa', borderRadius: 6, fontSize: 12, color: '#666' }}>
+                This event is auto-synced from {sourceConfig[selectedEvent.source]?.label || 'system'} data. Changes should be made in the source module.
               </div>
             )}
           </div>
@@ -440,6 +511,7 @@ const CalendarView: React.FC = () => {
               <Select.Option value="task">Task</Select.Option>
               <Select.Option value="reminder">Reminder</Select.Option>
               <Select.Option value="project">Project Milestone</Select.Option>
+              <Select.Option value="holiday">Holiday / Leave</Select.Option>
             </Select>
           </Form.Item>
           <Form.Item name="dateRange" label="Date & Time" rules={[{ required: true }]}>
@@ -448,14 +520,11 @@ const CalendarView: React.FC = () => {
           <Form.Item name="location" label="Location">
             <Input prefix={<EnvironmentOutlined />} placeholder="Add location or video link" />
           </Form.Item>
-          <Form.Item name="attendees" label="Attendees">
-            <Select mode="tags" placeholder="Add attendees" />
-          </Form.Item>
           <Form.Item name="description" label="Description">
             <Input.TextArea rows={3} placeholder="Add description" />
           </Form.Item>
           <Form.Item name="reminder" label="Reminder">
-            <Select placeholder="Set reminder">
+            <Select placeholder="Set reminder" allowClear>
               <Select.Option value="5">5 minutes before</Select.Option>
               <Select.Option value="15">15 minutes before</Select.Option>
               <Select.Option value="30">30 minutes before</Select.Option>

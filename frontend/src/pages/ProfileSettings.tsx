@@ -1,650 +1,353 @@
 import React, { useState, useEffect } from 'react';
-import './ProfileSettings.css';
+import { Card, Form, Input, Button, Avatar, Select, Switch, Tabs, Tag, 
+         message, Divider, Typography, Space, Row, Col, Spin } from 'antd';
+import { UserOutlined, LockOutlined, BellOutlined, MailOutlined, 
+         SaveOutlined, SafetyOutlined } from '@ant-design/icons';
+import { useUser } from '../contexts/UserContext';
+import apiClient from '../services/api';
 
-interface UserProfile {
-  id: number;
-  email: string;
-  name: string;
-  phone?: string;
-  avatar?: string;
-  role: string;
-  emailVerified: boolean;
-  twoFactorEnabled: boolean;
-  timezone: string;
-  language: string;
-}
-
-interface EmailPreferences {
-  marketingEmails: boolean;
-  productUpdates: boolean;
-  securityAlerts: boolean;
-  paymentNotifications: boolean;
-  subscriptionNotifications: boolean;
-  inventoryAlerts: boolean;
-  teamNotifications: boolean;
-  systemNotifications: boolean;
-  digestFrequency: 'instant' | 'daily' | 'weekly' | 'never';
-}
-
-interface PasswordChange {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
-}
+const { Title, Text, Paragraph } = Typography;
+const { Option } = Select;
 
 const ProfileSettings: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'preferences' | 'notifications'>('profile');
+  const { currentUser } = useUser();
+  const [profileForm] = Form.useForm();
+  const [passwordForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
-  // Profile state
-  const [profile, setProfile] = useState<UserProfile>({
-    id: 0,
-    email: '',
-    name: '',
-    phone: '',
-    avatar: '',
-    role: '',
-    emailVerified: false,
-    twoFactorEnabled: false,
-    timezone: 'Africa/Johannesburg',
-    language: 'en',
-  });
-
-  // Password change state
-  const [passwordChange, setPasswordChange] = useState<PasswordChange>({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
-
-  // Email preferences state
-  const [emailPreferences, setEmailPreferences] = useState<EmailPreferences>({
-    marketingEmails: true,
-    productUpdates: true,
-    securityAlerts: true,
+  const [notifPrefs, setNotifPrefs] = useState({
     paymentNotifications: true,
-    subscriptionNotifications: true,
     inventoryAlerts: true,
     teamNotifications: true,
     systemNotifications: true,
+    securityAlerts: true,
+    productUpdates: true,
     digestFrequency: 'daily',
   });
 
+  const [avatarUrl, setAvatarUrl] = useState('');
+
   useEffect(() => {
-    fetchProfile();
-    fetchEmailPreferences();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
+    const loadProfile = async () => {
       setLoading(true);
-      const response = await fetch('/api/auth/profile', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setProfile(data.user);
+      try {
+        const res = await apiClient.get('/api/v2/profile');
+        if (res.data?.success && res.data.data) {
+          const p = res.data.data;
+          profileForm.setFieldsValue({
+            name: p.full_name || p.name || `${p.first_name || ''} ${p.last_name || ''}`.trim(),
+            email: p.email || '',
+            phone: p.phone || '',
+            role: p.role || '',
+            timezone: p.timezone || 'Africa/Johannesburg',
+            language: p.language || 'en',
+          });
+          setAvatarUrl(p.avatar_url || p.avatar || '');
+        }
+      } catch {
+        if (currentUser) {
+          profileForm.setFieldsValue({
+            name: currentUser.fullName || `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim(),
+            email: currentUser.email || '',
+            phone: (currentUser as any).phone || '',
+            role: typeof currentUser.role === 'string' ? currentUser.role : (currentUser.role as any)?.name || '',
+            timezone: 'Africa/Johannesburg',
+            language: 'en',
+          });
+        }
       }
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    } finally {
+
+      try {
+        const prefsRes = await apiClient.get('/api/v2/profile/notifications');
+        if (prefsRes.data?.success && prefsRes.data.data) {
+          setNotifPrefs(prev => ({ ...prev, ...prefsRes.data.data }));
+        }
+      } catch { /* use defaults */ }
+
       setLoading(false);
-    }
-  };
+    };
+    loadProfile();
+  }, [currentUser, profileForm]);
 
-  const fetchEmailPreferences = async () => {
+  const handleSaveProfile = async (values: any) => {
+    setSaving(true);
     try {
-      const response = await fetch('/api/email-preferences', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+      const res = await apiClient.put('/api/v2/profile', {
+        name: values.name,
+        phone: values.phone,
+        timezone: values.timezone,
+        language: values.language,
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setEmailPreferences(data.preferences);
-      }
-    } catch (error) {
-      console.error('Error fetching email preferences:', error);
-    }
-  };
-
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-
-    try {
-      const response = await fetch('/api/auth/profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          name: profile.name,
-          phone: profile.phone,
-          timezone: profile.timezone,
-          language: profile.language,
-        }),
-      });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Profile updated successfully!' });
-        setTimeout(() => setMessage(null), 3000);
+      if (res.data?.success) {
+        message.success('Profile updated successfully!');
       } else {
-        const data = await response.json();
-        setMessage({ type: 'error', text: data.error || 'Failed to update profile' });
+        message.error(res.data?.message || 'Failed to update profile');
       }
-    } catch {
-      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Failed to update profile');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage(null);
-
-    // Validation
-    if (passwordChange.newPassword !== passwordChange.confirmPassword) {
-      setMessage({ type: 'error', text: 'New passwords do not match' });
+  const handleChangePassword = async (values: any) => {
+    if (values.newPassword !== values.confirmPassword) {
+      message.error('New passwords do not match');
       return;
     }
-
-    if (passwordChange.newPassword.length < 8) {
-      setMessage({ type: 'error', text: 'Password must be at least 8 characters' });
-      return;
-    }
-
-    setLoading(true);
-
+    setChangingPassword(true);
     try {
-      const response = await fetch('/api/auth/change-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          currentPassword: passwordChange.currentPassword,
-          newPassword: passwordChange.newPassword,
-        }),
+      const res = await apiClient.put('/api/v2/profile/password', {
+        currentPassword: values.currentPassword,
+        newPassword: values.newPassword,
       });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Password changed successfully!' });
-        setPasswordChange({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        setTimeout(() => setMessage(null), 3000);
+      if (res.data?.success) {
+        message.success('Password changed successfully!');
+        passwordForm.resetFields();
       } else {
-        const data = await response.json();
-        setMessage({ type: 'error', text: data.error || 'Failed to change password' });
+        message.error(res.data?.message || 'Failed to change password');
       }
-    } catch {
-      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Failed to change password');
     } finally {
-      setLoading(false);
+      setChangingPassword(false);
     }
   };
 
-  const handleEmailPreferencesUpdate = async () => {
-    setLoading(true);
-    setMessage(null);
-
+  const handleSaveNotifications = async () => {
+    setSaving(true);
     try {
-      const response = await fetch('/api/email-preferences', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify(emailPreferences),
-      });
-
-      if (response.ok) {
-        setMessage({ type: 'success', text: 'Email preferences updated successfully!' });
-        setTimeout(() => setMessage(null), 3000);
-      } else {
-        const data = await response.json();
-        setMessage({ type: 'error', text: data.error || 'Failed to update preferences' });
-      }
+      await apiClient.put('/api/v2/profile/notifications', notifPrefs);
+      message.success('Notification preferences saved!');
     } catch {
-      setMessage({ type: 'error', text: 'Network error. Please try again.' });
+      message.error('Failed to save notification preferences');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // TODO: Implement avatar upload to S3 or file service
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfile({ ...profile, avatar: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
+  const userInitials = () => {
+    const name = profileForm.getFieldValue('name') || currentUser?.fullName || '';
+    const parts = name.split(' ');
+    return `${parts[0]?.[0] || ''}${parts[1]?.[0] || ''}`.toUpperCase() || 'U';
   };
 
-  const renderProfileTab = () => (
-    <div className="settings-section">
-      <h2>Profile Information</h2>
-      <form onSubmit={handleProfileUpdate}>
-        <div className="avatar-section">
-          <div className="avatar-preview">
-            {profile.avatar ? (
-              <img src={profile.avatar} alt="Profile" />
-            ) : (
-              <div className="avatar-placeholder">
-                {profile.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-          </div>
-          <div className="avatar-actions">
-            <label className="btn-secondary" htmlFor="avatar-upload">
-              Change Photo
-            </label>
-            <input
-              id="avatar-upload"
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              style={{ display: 'none' }}
-            />
-            <button type="button" className="btn-text" onClick={() => setProfile({ ...profile, avatar: '' })}>
-              Remove
-            </button>
+  const roleDisplay = typeof currentUser?.role === 'object' 
+    ? (currentUser?.role as any)?.displayName || (currentUser?.role as any)?.name || 'User'
+    : String(currentUser?.role || profileForm.getFieldValue('role') || 'User');
+
+  const roleColor: Record<string, string> = {
+    super_admin: '#e11d48', admin: '#667eea', director: '#667eea',
+    manager: '#f59e0b', accountant: '#3b82f6', staff: '#8b5cf6', user: '#8b5cf6',
+  };
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+        <Spin size="large" tip="Loading profile..." />
+      </div>
+    );
+  }
+
+  const profileTab = (
+    <Form form={profileForm} layout="vertical" onFinish={handleSaveProfile}>
+      <Card style={{ marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 24 }}>
+          <Avatar 
+            size={80}
+            src={avatarUrl || undefined}
+            style={{ 
+              background: `linear-gradient(135deg, ${roleColor[roleDisplay.toLowerCase()] || '#667eea'} 0%, #764ba2 100%)`,
+              fontSize: 28
+            }}
+          >
+            {!avatarUrl && userInitials()}
+          </Avatar>
+          <div>
+            <Title level={4} style={{ margin: 0 }}>{profileForm.getFieldValue('name') || currentUser?.fullName || 'User'}</Title>
+            <Text type="secondary">{profileForm.getFieldValue('email') || currentUser?.email}</Text>
+            <br />
+            <Tag color={roleColor[roleDisplay.toLowerCase()] || '#667eea'} style={{ marginTop: 4 }}>
+              {roleDisplay}
+            </Tag>
           </div>
         </div>
+      </Card>
 
-        <div className="form-grid">
-          <div className="form-group">
-            <label htmlFor="name">Full Name *</label>
-            <input
-              id="name"
-              type="text"
-              value={profile.name}
-              onChange={(e) => setProfile({ ...profile, name: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="email">Email Address</label>
-            <input
-              id="email"
-              type="email"
-              value={profile.email}
-              disabled
-              className="input-disabled"
-            />
-            <small>Email cannot be changed. Contact support if needed.</small>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="phone">Phone Number</label>
-            <input
-              id="phone"
-              type="tel"
-              value={profile.phone || ''}
-              onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-              placeholder="+27 XX XXX XXXX"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="role">Role</label>
-            <input
-              id="role"
-              type="text"
-              value={profile.role}
-              disabled
-              className="input-disabled"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="timezone">Timezone</label>
-            <select
-              id="timezone"
-              value={profile.timezone}
-              onChange={(e) => setProfile({ ...profile, timezone: e.target.value })}
-            >
-              <option value="Africa/Johannesburg">South Africa (GMT+2)</option>
-              <option value="Europe/London">London (GMT)</option>
-              <option value="America/New_York">New York (GMT-5)</option>
-              <option value="Asia/Dubai">Dubai (GMT+4)</option>
-              <option value="Australia/Sydney">Sydney (GMT+10)</option>
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="language">Language</label>
-            <select
-              id="language"
-              value={profile.language}
-              onChange={(e) => setProfile({ ...profile, language: e.target.value })}
-            >
-              <option value="en">English</option>
-              <option value="af">Afrikaans</option>
-              <option value="zu">Zulu</option>
-              <option value="xh">Xhosa</option>
-            </select>
-          </div>
+      <Card title="Personal Information">
+        <Row gutter={24}>
+          <Col xs={24} md={12}>
+            <Form.Item name="name" label="Full Name" rules={[{ required: true, message: 'Name is required' }]}>
+              <Input size="large" placeholder="Your full name" />
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={12}>
+            <Form.Item name="email" label="Email Address">
+              <Input size="large" disabled suffix={<MailOutlined />} />
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={12}>
+            <Form.Item name="phone" label="Phone Number">
+              <Input size="large" placeholder="+27 XX XXX XXXX" />
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={12}>
+            <Form.Item name="role" label="Role">
+              <Input size="large" disabled />
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={12}>
+            <Form.Item name="timezone" label="Timezone">
+              <Select size="large">
+                <Option value="Africa/Johannesburg">South Africa (SAST, GMT+2)</Option>
+                <Option value="Europe/London">London (GMT)</Option>
+                <Option value="America/New_York">New York (EST, GMT-5)</Option>
+                <Option value="Asia/Dubai">Dubai (GST, GMT+4)</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col xs={24} md={12}>
+            <Form.Item name="language" label="Language">
+              <Select size="large">
+                <Option value="en">English</Option>
+                <Option value="af">Afrikaans</Option>
+                <Option value="zu">isiZulu</Option>
+                <Option value="xh">isiXhosa</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+        </Row>
+        <div style={{ textAlign: 'right', marginTop: 16 }}>
+          <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving} size="large">
+            Save Changes
+          </Button>
         </div>
+      </Card>
+    </Form>
+  );
 
-        <div className="form-actions">
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
-      </form>
+  const securityTab = (
+    <div>
+      <Card title="Change Password" style={{ marginBottom: 24 }}>
+        <Form form={passwordForm} layout="vertical" onFinish={handleChangePassword} style={{ maxWidth: 500 }}>
+          <Form.Item name="currentPassword" label="Current Password" rules={[{ required: true }]}>
+            <Input.Password size="large" placeholder="Enter current password" />
+          </Form.Item>
+          <Form.Item name="newPassword" label="New Password" rules={[{ required: true, min: 8, message: 'Min 8 characters' }]}>
+            <Input.Password size="large" placeholder="Enter new password" />
+          </Form.Item>
+          <Form.Item name="confirmPassword" label="Confirm New Password" rules={[{ required: true }]}>
+            <Input.Password size="large" placeholder="Confirm new password" />
+          </Form.Item>
+          <Button type="primary" htmlType="submit" icon={<LockOutlined />} loading={changingPassword} size="large">
+            Change Password
+          </Button>
+        </Form>
+      </Card>
+
+      <Card title="Security Status">
+        <Space direction="vertical" size={16} style={{ width: '100%' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <Text strong>Email Verification</Text>
+              <br /><Text type="secondary">Your email address verification status</Text>
+            </div>
+            <Tag color="green" icon={<SafetyOutlined />}>Verified</Tag>
+          </div>
+          <Divider style={{ margin: '8px 0' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <Text strong>Two-Factor Authentication</Text>
+              <br /><Text type="secondary">Add an extra layer of security to your account</Text>
+            </div>
+            <Tag color="default">Coming Soon</Tag>
+          </div>
+          <Divider style={{ margin: '8px 0' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <Text strong>Last Login</Text>
+              <br /><Text type="secondary">{new Date().toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
+            </div>
+            <Tag color="blue">Active Session</Tag>
+          </div>
+        </Space>
+      </Card>
     </div>
   );
 
-  const renderSecurityTab = () => (
-    <div className="settings-section">
-      <h2>Security Settings</h2>
-
-      {/* Email Verification Status */}
-      <div className="security-item">
-        <div className="security-item-info">
-          <h3>Email Verification</h3>
-          <p>Verify your email address to enhance account security</p>
-        </div>
-        <div className="security-item-action">
-          {profile.emailVerified ? (
-            <span className="badge-success">✓ Verified</span>
-          ) : (
-            <button className="btn-secondary">Verify Email</button>
-          )}
-        </div>
-      </div>
-
-      {/* Password Change */}
-      <div className="security-item">
-        <div className="security-item-info">
-          <h3>Change Password</h3>
-          <p>Update your password regularly to keep your account secure</p>
-        </div>
-      </div>
-
-      <form onSubmit={handlePasswordChange} className="password-form">
-        <div className="form-group">
-          <label htmlFor="current-password">Current Password *</label>
-          <input
-            id="current-password"
-            type="password"
-            value={passwordChange.currentPassword}
-            onChange={(e) => setPasswordChange({ ...passwordChange, currentPassword: e.target.value })}
-            required
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="new-password">New Password *</label>
-          <input
-            id="new-password"
-            type="password"
-            value={passwordChange.newPassword}
-            onChange={(e) => setPasswordChange({ ...passwordChange, newPassword: e.target.value })}
-            required
-            minLength={8}
-          />
-          <small>Minimum 8 characters with uppercase, lowercase, number, and special character</small>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="confirm-password">Confirm New Password *</label>
-          <input
-            id="confirm-password"
-            type="password"
-            value={passwordChange.confirmPassword}
-            onChange={(e) => setPasswordChange({ ...passwordChange, confirmPassword: e.target.value })}
-            required
-          />
-        </div>
-
-        <div className="form-actions">
-          <button type="submit" className="btn-primary" disabled={loading}>
-            {loading ? 'Changing...' : 'Change Password'}
-          </button>
-        </div>
-      </form>
-
-      {/* Two-Factor Authentication */}
-      <div className="security-item">
-        <div className="security-item-info">
-          <h3>Two-Factor Authentication</h3>
-          <p>Add an extra layer of security to your account</p>
-        </div>
-        <div className="security-item-action">
-          {profile.twoFactorEnabled ? (
-            <>
-              <span className="badge-success">Enabled</span>
-              <button className="btn-secondary">Disable</button>
-            </>
-          ) : (
-            <button className="btn-primary">Enable 2FA</button>
-          )}
-        </div>
-      </div>
-
-      {/* Active Sessions */}
-      <div className="security-item">
-        <div className="security-item-info">
-          <h3>Active Sessions</h3>
-          <p>Manage your active sessions across devices</p>
-        </div>
-        <div className="security-item-action">
-          <button className="btn-secondary">View Sessions</button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderNotificationsTab = () => (
-    <div className="settings-section">
-      <h2>Email Notifications</h2>
-      <p className="section-description">
-        Choose what email notifications you want to receive. Security alerts cannot be disabled.
-      </p>
-
-      <div className="preferences-grid">
-        <div className="preference-item">
-          <div className="preference-info">
-            <h3>Security Alerts</h3>
-            <p>Login attempts, password changes, suspicious activity</p>
-          </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={emailPreferences.securityAlerts}
-              disabled
+  const notificationsTab = (
+    <Card title="Notification Preferences">
+      <Paragraph type="secondary" style={{ marginBottom: 24 }}>
+        Choose which notifications you want to receive. Security alerts cannot be disabled.
+      </Paragraph>
+      <Space direction="vertical" size={0} style={{ width: '100%' }}>
+        {[
+          { key: 'securityAlerts', label: 'Security Alerts', desc: 'Login attempts, password changes', disabled: true },
+          { key: 'paymentNotifications', label: 'Payment Notifications', desc: 'Payment confirmations, receipts, billing' },
+          { key: 'inventoryAlerts', label: 'Inventory Alerts', desc: 'Low stock warnings, reorder notifications' },
+          { key: 'teamNotifications', label: 'Team Notifications', desc: 'Invitations, mentions, collaborations' },
+          { key: 'systemNotifications', label: 'System Notifications', desc: 'Account updates, maintenance notices' },
+          { key: 'productUpdates', label: 'Product Updates', desc: 'New features, improvements, release notes' },
+        ].map(item => (
+          <div key={item.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid #f0f0f0' }}>
+            <div>
+              <Text strong>{item.label}</Text>
+              <br /><Text type="secondary" style={{ fontSize: 13 }}>{item.desc}</Text>
+            </div>
+            <Switch 
+              checked={(notifPrefs as any)[item.key]} 
+              disabled={item.disabled}
+              onChange={(checked) => setNotifPrefs(prev => ({ ...prev, [item.key]: checked }))} 
             />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-
-        <div className="preference-item">
-          <div className="preference-info">
-            <h3>Payment Notifications</h3>
-            <p>Payment confirmations, receipts, and billing updates</p>
           </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={emailPreferences.paymentNotifications}
-              onChange={(e) => setEmailPreferences({ ...emailPreferences, paymentNotifications: e.target.checked })}
-            />
-            <span className="toggle-slider"></span>
-          </label>
+        ))}
+
+        <div style={{ marginTop: 20 }}>
+          <Text strong>Email Digest Frequency</Text>
+          <br />
+          <Select 
+            value={notifPrefs.digestFrequency} 
+            onChange={(v) => setNotifPrefs(prev => ({ ...prev, digestFrequency: v }))}
+            style={{ width: 300, marginTop: 8 }}
+            size="large"
+          >
+            <Option value="instant">Instant (as they happen)</Option>
+            <Option value="daily">Daily Digest</Option>
+            <Option value="weekly">Weekly Digest</Option>
+            <Option value="never">Never (disable all)</Option>
+          </Select>
         </div>
 
-        <div className="preference-item">
-          <div className="preference-info">
-            <h3>Subscription Notifications</h3>
-            <p>Subscription renewals, upgrades, and cancellations</p>
-          </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={emailPreferences.subscriptionNotifications}
-              onChange={(e) => setEmailPreferences({ ...emailPreferences, subscriptionNotifications: e.target.checked })}
-            />
-            <span className="toggle-slider"></span>
-          </label>
+        <div style={{ textAlign: 'right', marginTop: 24 }}>
+          <Button type="primary" icon={<SaveOutlined />} onClick={handleSaveNotifications} loading={saving} size="large">
+            Save Preferences
+          </Button>
         </div>
-
-        <div className="preference-item">
-          <div className="preference-info">
-            <h3>Inventory Alerts</h3>
-            <p>Low stock warnings and reorder notifications</p>
-          </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={emailPreferences.inventoryAlerts}
-              onChange={(e) => setEmailPreferences({ ...emailPreferences, inventoryAlerts: e.target.checked })}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-
-        <div className="preference-item">
-          <div className="preference-info">
-            <h3>Team Notifications</h3>
-            <p>Team invitations, mentions, and collaborations</p>
-          </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={emailPreferences.teamNotifications}
-              onChange={(e) => setEmailPreferences({ ...emailPreferences, teamNotifications: e.target.checked })}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-
-        <div className="preference-item">
-          <div className="preference-info">
-            <h3>System Notifications</h3>
-            <p>Account updates, maintenance, and system messages</p>
-          </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={emailPreferences.systemNotifications}
-              onChange={(e) => setEmailPreferences({ ...emailPreferences, systemNotifications: e.target.checked })}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-
-        <div className="preference-item">
-          <div className="preference-info">
-            <h3>Product Updates</h3>
-            <p>New features, improvements, and release notes</p>
-          </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={emailPreferences.productUpdates}
-              onChange={(e) => setEmailPreferences({ ...emailPreferences, productUpdates: e.target.checked })}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-
-        <div className="preference-item">
-          <div className="preference-info">
-            <h3>Marketing Emails</h3>
-            <p>Newsletters, promotions, and special offers</p>
-          </div>
-          <label className="toggle">
-            <input
-              type="checkbox"
-              checked={emailPreferences.marketingEmails}
-              onChange={(e) => setEmailPreferences({ ...emailPreferences, marketingEmails: e.target.checked })}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-
-      <div className="form-group digest-frequency">
-        <label htmlFor="digest">Email Digest Frequency</label>
-        <select
-          id="digest"
-          value={emailPreferences.digestFrequency}
-          onChange={(e) => setEmailPreferences({ ...emailPreferences, digestFrequency: e.target.value as 'instant' | 'daily' | 'weekly' | 'never' })}
-        >
-          <option value="instant">Instant (as they happen)</option>
-          <option value="daily">Daily Digest</option>
-          <option value="weekly">Weekly Digest</option>
-          <option value="never">Never (disable all)</option>
-        </select>
-        <small>Choose how often you want to receive non-urgent notifications</small>
-      </div>
-
-      <div className="form-actions">
-        <button className="btn-primary" onClick={handleEmailPreferencesUpdate} disabled={loading}>
-          {loading ? 'Saving...' : 'Save Preferences'}
-        </button>
-      </div>
-    </div>
+      </Space>
+    </Card>
   );
 
   return (
-    <div className="profile-settings-page">
-      <div className="settings-header">
-        <h1>Profile Settings</h1>
-        <p>Manage your account settings and preferences</p>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px' }}>
+      <div style={{ 
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+        borderRadius: 12, padding: '32px 40px', marginBottom: 24, color: '#fff' 
+      }}>
+        <Title level={2} style={{ color: '#fff', margin: 0 }}>Profile Settings</Title>
+        <Text style={{ color: 'rgba(255,255,255,0.8)' }}>Manage your account settings and preferences</Text>
       </div>
 
-      {message && (
-        <div className={`alert alert-${message.type}`}>
-          {message.text}
-        </div>
-      )}
-
-      <div className="settings-container">
-        <nav className="settings-nav">
-          <button
-            className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-            onClick={() => setActiveTab('profile')}
-          >
-            <span className="icon">👤</span>
-            Profile
-          </button>
-          <button
-            className={`nav-item ${activeTab === 'security' ? 'active' : ''}`}
-            onClick={() => setActiveTab('security')}
-          >
-            <span className="icon">🔒</span>
-            Security
-          </button>
-          <button
-            className={`nav-item ${activeTab === 'notifications' ? 'active' : ''}`}
-            onClick={() => setActiveTab('notifications')}
-          >
-            <span className="icon">🔔</span>
-            Notifications
-          </button>
-        </nav>
-
-        <div className="settings-content">
-          {activeTab === 'profile' && renderProfileTab()}
-          {activeTab === 'security' && renderSecurityTab()}
-          {activeTab === 'notifications' && renderNotificationsTab()}
-        </div>
-      </div>
+      <Tabs
+        defaultActiveKey="profile"
+        size="large"
+        items={[
+          { key: 'profile', label: <span><UserOutlined /> Profile</span>, children: profileTab },
+          { key: 'security', label: <span><LockOutlined /> Security</span>, children: securityTab },
+          { key: 'notifications', label: <span><BellOutlined /> Notifications</span>, children: notificationsTab },
+        ]}
+      />
     </div>
   );
 };
