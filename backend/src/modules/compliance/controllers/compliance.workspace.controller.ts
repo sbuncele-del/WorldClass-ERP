@@ -901,21 +901,19 @@ function getCurrentTaxYearLabel(): string {
 }
 
 function getEmp501DueDate(): string {
-  const now = new Date();
-  const year = now.getMonth() >= 4 ? now.getFullYear() : now.getFullYear() - 1;
-  return toDateString(new Date(year, 4, 31));
+  return getNextAnnualDueDate(4, 31); // 31 May
 }
 
 function getIrp5DueDate(): string {
-  const now = new Date();
-  const year = now.getMonth() >= 4 ? now.getFullYear() : now.getFullYear() - 1;
-  return toDateString(new Date(year, 4, 31));
+  return getNextAnnualDueDate(4, 31); // 31 May
 }
 
 function computeCalendarNextDueDate(frequency: string | null, dueDayOfMonth: number | null, dueMonth: number | null): string | null {
   const now = new Date();
-  const day = Number(dueDayOfMonth || 1);
-  const monthFromInput = dueMonth ? Number(dueMonth) : null;
+  const f = (frequency || '').toUpperCase();
+  const annualLike = f.includes('ANNUAL') || f.includes('BI_ANNUAL');
+  const monthFromInput = dueMonth ? Number(dueMonth) : annualLike ? 5 : null;
+  const day = Number(dueDayOfMonth || (monthFromInput === 5 ? 31 : 1));
 
   const safeDate = (year: number, monthZeroBased: number, dayOfMonth: number): Date => {
     const d = new Date(year, monthZeroBased, dayOfMonth);
@@ -924,8 +922,6 @@ function computeCalendarNextDueDate(frequency: string | null, dueDayOfMonth: num
     }
     return d;
   };
-
-  const f = (frequency || '').toUpperCase();
 
   if (f.includes('MONTHLY')) {
     let candidate = safeDate(now.getFullYear(), now.getMonth(), day);
@@ -936,6 +932,13 @@ function computeCalendarNextDueDate(frequency: string | null, dueDayOfMonth: num
   if (f.includes('BI_MONTHLY')) {
     let candidate = safeDate(now.getFullYear(), now.getMonth(), day);
     if (candidate < now) candidate = safeDate(now.getFullYear(), now.getMonth() + 2, day);
+    return toDateString(candidate);
+  }
+
+  if (f.includes('BI_ANNUAL')) {
+    const monthZero = Math.max(0, (monthFromInput || 5) - 1);
+    let candidate = safeDate(now.getFullYear(), monthZero, day);
+    if (candidate < now) candidate = safeDate(now.getFullYear() + 1, monthZero, day);
     return toDateString(candidate);
   }
 
@@ -956,6 +959,15 @@ function normalizeCalendarFrequency(frequency: string | null): string {
   if (f.includes('ANNUAL')) return 'Annual';
   if (f.includes('BI_ANNUAL')) return 'Bi-Annual';
   return 'Ongoing';
+}
+
+function getNextAnnualDueDate(monthZeroBased: number, dayOfMonth: number): string {
+  const now = new Date();
+  let candidate = new Date(now.getFullYear(), monthZeroBased, dayOfMonth);
+  if (candidate < now) {
+    candidate = new Date(now.getFullYear() + 1, monthZeroBased, dayOfMonth);
+  }
+  return toDateString(candidate);
 }
 
 async function getActiveEmployeeCount(tenantId: string): Promise<number> {
