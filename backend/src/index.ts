@@ -122,9 +122,9 @@ const swaggerOptions = {
   definition: {
     openapi: '3.0.3',
     info: {
-      title: 'WorldClass ERP - Logistics API',
+      title: 'SiyaBusa ERP - Logistics API',
       version: '1.0.0',
-      description: 'Logistics module endpoints for WorldClass ERP'
+      description: 'Logistics module endpoints for SiyaBusa ERP'
     },
     servers: [
       {

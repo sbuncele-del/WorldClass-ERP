@@ -86,8 +86,39 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [authVersion, setAuthVersion] = useState(0);
 
-  // Initialize user session
+  // Helper to map raw user data (from API or localStorage) to User type
+  const mapUserData = (userData: any): User => ({
+    id: userData.id,
+    username: userData.username || userData.email,
+    email: userData.email,
+    firstName: userData.first_name || userData.firstName || '',
+    lastName: userData.last_name || userData.lastName || '',
+    fullName: (userData.first_name || userData.firstName) && (userData.last_name || userData.lastName)
+      ? `${userData.first_name || userData.firstName} ${userData.last_name || userData.lastName}`
+      : userData.fullName || userData.email || '',
+    avatar: userData.avatar || userData.avatar_url,
+    status: userData.status || 'ACTIVE',
+    lastLogin: userData.last_login || userData.lastLogin || userData.last_login_at,
+    passwordLastChanged: userData.password_last_changed || userData.passwordLastChanged,
+    mfaEnabled: userData.mfa_enabled || userData.mfaEnabled || false,
+    role: {
+      id: userData.role_id || 'role-001',
+      name: userData.role || 'admin',
+      displayName: userData.role === 'admin' ? 'Administrator' 
+        : userData.role === 'super_admin' ? 'Super Administrator'
+        : userData.role || 'User',
+      level: (userData.role === 'admin' || userData.role === 'super_admin') ? 'SYSTEM_ADMIN' : 'STAFF',
+      description: '',
+    },
+    tenantId: userData.tenant_id || userData.tenantId,
+    tenantName: userData.tenant_name || userData.tenantName,
+    companyName: userData.tenant_name || userData.tenantName || userData.companyName,
+    permissions: userData.permissions || [],
+  });
+
+  // Initialize user session — re-runs when authVersion bumps (after login)
   useEffect(() => {
     const initializeUser = async () => {
       setIsLoading(true);
@@ -103,8 +134,21 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           return;
         }
 
-        // Validate token with backend
-                const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+        // Immediately load user from localStorage so UI is populated right away
+        const cachedUser = localStorage.getItem('user');
+        if (cachedUser && !currentUser) {
+          try {
+            const parsed = JSON.parse(cachedUser);
+            const mapped = mapUserData(parsed);
+            if (mapped.firstName && mapped.lastName) {
+              setCurrentUser(mapped);
+              setIsAuthenticated(true);
+            }
+          } catch { /* ignore parse errors */ }
+        }
+
+        // Validate token with backend and get full user data
+        const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -115,33 +159,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           // API returns { success: true, data: { first_name, last_name, ... } }
           const userData = result.data || result;
           
-          // Map API field names to frontend User type
-          const mappedUser: User = {
-            id: userData.id,
-            username: userData.username || userData.email,
-            email: userData.email,
-            firstName: userData.first_name || userData.firstName,
-            lastName: userData.last_name || userData.lastName,
-            fullName: userData.first_name && userData.last_name 
-              ? `${userData.first_name} ${userData.last_name}` 
-              : userData.fullName || userData.email,
-            avatar: userData.avatar,
-            status: userData.status || 'ACTIVE',
-            lastLogin: userData.last_login || userData.lastLogin,
-            passwordLastChanged: userData.password_last_changed || userData.passwordLastChanged,
-            mfaEnabled: userData.mfa_enabled || userData.mfaEnabled || false,
-            role: {
-              id: userData.role_id || 'role-001',
-              name: userData.role || 'admin',
-              displayName: userData.role === 'admin' ? 'Administrator' : userData.role || 'User',
-              level: userData.role === 'admin' ? 'SYSTEM_ADMIN' : 'STAFF',
-              description: '',
-            },
-            tenantId: userData.tenant_id || userData.tenantId,
-            tenantName: userData.tenant_name || userData.tenantName,
-            companyName: userData.tenant_name || userData.tenantName || userData.companyName,
-            permissions: userData.permissions || [],
-          };
+          const mappedUser = mapUserData(userData);
           
           // Store tenant info for other components
           if (userData.tenant_name || userData.tenant_id) {
@@ -156,6 +174,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
               localStorage.setItem('tenantId', userData.tenant_id);
             }
           }
+
+          // Update cached user in localStorage with full data from /me
+          localStorage.setItem('user', JSON.stringify(userData));
           
           setCurrentUser(mappedUser);
           setIsAuthenticated(true);
@@ -175,6 +196,32 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     };
 
     initializeUser();
+  }, [authVersion]);
+
+  // Listen for login events from auth.service.ts (storage changes)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'authToken' && e.newValue) {
+        // Token was just set — trigger re-fetch
+        setAuthVersion(v => v + 1);
+      } else if (e.key === 'authToken' && !e.newValue) {
+        // Token was removed — log out
+        setCurrentUser(null);
+        setIsAuthenticated(false);
+      }
+    };
+
+    // Also listen for custom event dispatched from same tab
+    const handleLoginEvent = () => {
+      setAuthVersion(v => v + 1);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('auth:login', handleLoginEvent);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('auth:login', handleLoginEvent);
+    };
   }, []);
 
   const login = async (username: string, password: string): Promise<void> => {

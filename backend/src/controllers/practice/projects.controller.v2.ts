@@ -745,7 +745,7 @@ export const sendWeeklyPlan = async (req: TenantRequest, res: Response) => {
 
     // 3. Get tasks due this week
     const tasksRes = await pool.query(
-      `SELECT pt.task_id, pt.title, pt.due_date, pt.priority, pt.status, pt.project_id,
+      `SELECT pt.task_id, pt.task_name as title, pt.due_date, pt.priority, pt.status, pt.project_id,
               u.first_name || ' ' || u.last_name as assignee_name
        FROM project_tasks pt
        LEFT JOIN users u ON pt.assigned_to = u.id

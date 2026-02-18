@@ -626,7 +626,7 @@ export const checkBCEACompliance = async (req: TenantRequest, res: Response) => 
 
     // Check leave balances
     const leaveResult = await pool.query(`
-      SELECT lt.leave_name, b.closing_balance, lt.default_days
+      SELECT lt.leave_type_name as leave_name, b.closing_balance, lt.default_days_per_year as default_days
       FROM hr.employee_leave_balances b
       JOIN hr.leave_types lt ON b.leave_type_id = lt.leave_type_id AND lt.tenant_id = $1
       WHERE b.tenant_id = $1 AND b.employee_id = $2 AND b.year = EXTRACT(YEAR FROM CURRENT_DATE)

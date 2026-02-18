@@ -60,10 +60,11 @@ class SARSSentinelController {
           sc.*,
           sct.type_name,
           sct.category,
+          (sc.deadline_date - CURRENT_DATE) as days_to_deadline,
           CASE 
             WHEN sc.deadline_date < CURRENT_DATE THEN 'OVERDUE'
-            WHEN sc.days_to_deadline <= 3 THEN 'CRITICAL'
-            WHEN sc.days_to_deadline <= 7 THEN 'URGENT'
+            WHEN (sc.deadline_date - CURRENT_DATE) <= 3 THEN 'CRITICAL'
+            WHEN (sc.deadline_date - CURRENT_DATE) <= 7 THEN 'URGENT'
             ELSE 'NORMAL'
           END as deadline_status
         FROM sars_correspondence sc
@@ -367,7 +368,7 @@ class SARSSentinelController {
           COUNT(*) FILTER (WHERE status = 'NEW') as new_count,
           COUNT(*) FILTER (WHERE status = 'IN_PROGRESS') as in_progress_count,
           COUNT(*) FILTER (WHERE deadline_date < CURRENT_DATE AND status NOT IN ('COMPLETED', 'CLOSED')) as overdue_count,
-          COUNT(*) FILTER (WHERE days_to_deadline <= 7 AND status NOT IN ('COMPLETED', 'CLOSED')) as due_this_week,
+          COUNT(*) FILTER (WHERE (deadline_date - CURRENT_DATE) <= 7 AND status NOT IN ('COMPLETED', 'CLOSED')) as due_this_week,
           COUNT(*) FILTER (WHERE urgency_level = 'CRITICAL') as critical_count,
           COUNT(*) FILTER (WHERE urgency_level = 'HIGH') as high_count,
           COUNT(*) FILTER (WHERE status NOT IN ('COMPLETED', 'CLOSED')) as total_active

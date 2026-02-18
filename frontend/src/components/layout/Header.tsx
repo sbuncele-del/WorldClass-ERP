@@ -38,12 +38,12 @@ export const Header: React.FC = () => {
           <Bell size={20} />
         </button>
         <button className="header-btn user-profile-btn" title="User Profile">
-          {currentUser ? (
+          {currentUser && currentUser.firstName ? (
             <>
               <div className="user-avatar-small">
-                {currentUser.firstName[0]}{currentUser.lastName[0]}
+                {currentUser.firstName[0]}{(currentUser.lastName || '')[0] || ''}
               </div>
-              <span className="user-name-text">{currentUser.fullName}</span>
+              <span className="user-name-text">{currentUser.fullName || currentUser.email}</span>
             </>
           ) : (
             <User size={20} />

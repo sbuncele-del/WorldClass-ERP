@@ -1064,14 +1064,14 @@ export const sendEmail = async (req: TenantRequest, res: Response) => {
       `SELECT full_name, email FROM users WHERE id = $1`,
       [userId]
     );
-    const senderName = userResult.rows[0]?.full_name || 'WorldClass ERP';
+    const senderName = userResult.rows[0]?.full_name || 'SiyaBusa ERP';
 
     // Get tenant info for from domain
     const tenantResult = await pool.query(
       `SELECT name, settings FROM tenants WHERE id = $1`,
       [tenantId]
     );
-    const tenantName = tenantResult.rows[0]?.name || 'WorldClass ERP';
+    const tenantName = tenantResult.rows[0]?.name || 'SiyaBusa ERP';
 
     const fromDomain = process.env.RESEND_FROM_DOMAIN || 'siyabusaerp.co.za';
     const fromEmail = `${senderName.toLowerCase().replace(/\s+/g, '.')}@${fromDomain}`;
@@ -1263,7 +1263,7 @@ export const replyToEmail = async (req: TenantRequest, res: Response) => {
       `SELECT full_name FROM users WHERE id = $1`,
       [userId]
     );
-    const senderName = userResult.rows[0]?.full_name || 'WorldClass ERP';
+    const senderName = userResult.rows[0]?.full_name || 'SiyaBusa ERP';
 
     const fromDomain = process.env.RESEND_FROM_DOMAIN || 'siyabusaerp.co.za';
     const fromEmail = `${senderName.toLowerCase().replace(/\s+/g, '.')}@${fromDomain}`;

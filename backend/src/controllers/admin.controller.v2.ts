@@ -616,7 +616,7 @@ export class AdminControllerV2 {
       await client.query('COMMIT');
 
       // Send invitation email
-      const frontendUrl = process.env.FRONTEND_URL || 'http://primesources.site';
+      const frontendUrl = process.env.FRONTEND_URL || 'https://siyabusaerp.co.za';
       const acceptUrl = `${frontendUrl}/accept-invite?token=${invitationToken}`;
       
       try {
@@ -770,7 +770,7 @@ export class AdminControllerV2 {
       const inviterName = inviter ? `${inviter.first_name || ''} ${inviter.last_name || ''}`.trim() || inviter.email : 'Administrator';
 
       // Send email
-      const frontendUrl = process.env.FRONTEND_URL || 'http://primesources.site';
+      const frontendUrl = process.env.FRONTEND_URL || 'https://siyabusaerp.co.za';
       const acceptUrl = `${frontendUrl}/accept-invite?token=${invitationToken}`;
 
       try {

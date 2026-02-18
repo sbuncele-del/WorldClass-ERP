@@ -117,6 +117,15 @@ router.post('/auth/reset-password', AuthController.resetPassword);
 router.get('/auth/verify-email/:token', AuthController.verifyEmail);
 router.post('/auth/resend-verification', AuthController.resendVerification);
 
+// Password Reset V2 Routes - public access (no auth required)
+router.post('/auth/password/reset-request', PasswordResetV2.requestPasswordReset);
+router.post('/auth/password/verify-token', PasswordResetV2.verifyToken);
+router.post('/auth/password/reset', PasswordResetV2.resetPasswordHandler);
+router.post('/auth/password/validate', PasswordResetV2.validatePassword);
+
+// Accept user invitation - public access (user doesn't have an account yet)
+router.post('/admin/users/accept-invite', AdminControllerV2.acceptInvitation);
+
 // Driver App Authentication - These are public endpoints for mobile app login
 router.post('/driver/auth/request-code', DriverAppV2.requestAccessCode);
 router.post('/driver/auth/verify-code', DriverAppV2.verifyAccessCode);
@@ -1756,7 +1765,7 @@ router.get('/admin/users', AdminControllerV2.getAllUsers);
 router.get('/admin/users/:id', AdminControllerV2.getUserById);
 router.post('/admin/users', AdminControllerV2.createUser);
 router.post('/admin/users/invite', AdminControllerV2.inviteUser);
-router.post('/admin/users/accept-invite', AdminControllerV2.acceptInvitation);
+// accept-invite is registered in PUBLIC section above (no auth required)
 router.post('/admin/users/:id/resend-invite', AdminControllerV2.resendInvitation);
 router.put('/admin/users/:id', AdminControllerV2.updateUser);
 router.delete('/admin/users/:id', AdminControllerV2.deleteUser);
@@ -2837,12 +2846,8 @@ router.get('/email/verify/status/:userId', EmailVerificationV2.getStatus);
 router.get('/email/verify/check/:userId', EmailVerificationV2.checkVerified);
 
 // ============================================================================
-// PASSWORD RESET (V2)
+// PASSWORD RESET (V2) - Routes registered in PUBLIC section above
 // ============================================================================
-router.post('/auth/password/reset-request', PasswordResetV2.requestPasswordReset);
-router.post('/auth/password/verify-token', PasswordResetV2.verifyToken);
-router.post('/auth/password/reset', PasswordResetV2.resetPasswordHandler);
-router.post('/auth/password/validate', PasswordResetV2.validatePassword);
 
 // ============================================================================
 // SARS SENTINEL - SA Tax Compliance (V2)

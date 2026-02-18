@@ -90,21 +90,16 @@ const RoleBasedWorkspace: React.FC = () => {
     else if (hour < 17) setGreeting('Good afternoon');
     else setGreeting('Good evening');
     
-    // Check if this is a new tenant (created in last 24 hours)
+    // Check if this is a new tenant (show onboarding only if explicitly not completed)
     try {
       const tenantStr = localStorage.getItem('tenant');
       if (tenantStr) {
         const tenant = JSON.parse(tenantStr);
         setTenantName(tenant.name || '');
-        // Check if trial just started (within last day)
-        if (tenant.trialEndsAt) {
-          const trialEnd = new Date(tenant.trialEndsAt);
-          const trialStart = new Date(trialEnd.getTime() - (14 * 24 * 60 * 60 * 1000)); // 14 days before
-          const now = new Date();
-          const hoursSinceCreation = (now.getTime() - trialStart.getTime()) / (1000 * 60 * 60);
-          if (hoursSinceCreation < 24) {
-            setIsNewTenant(true);
-          }
+        // Only show onboarding if explicitly marked and not yet dismissed
+        const onboardingDismissed = localStorage.getItem('onboarding_dismissed');
+        if (!onboardingDismissed && tenant.onboarding_data?.onboarding_pending) {
+          setIsNewTenant(true);
         }
       }
     } catch (e) {
@@ -677,7 +672,7 @@ const RoleBasedWorkspace: React.FC = () => {
         </Card>
 
         <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <Button type="primary" size="large" onClick={() => setIsNewTenant(false)}>
+          <Button type="primary" size="large" onClick={() => { localStorage.setItem('onboarding_dismissed', 'true'); setIsNewTenant(false); }}>
             Skip Setup - Go to Dashboard
           </Button>
         </div>

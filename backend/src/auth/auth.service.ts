@@ -142,6 +142,29 @@ export class AuthService {
         console.error('Tenant provisioning failed (non-blocking):', err);
       });
 
+      // Send welcome email with login details (async, don't block signup)
+      (async () => {
+        try {
+          const { sendEmail } = await import('../services/email.service');
+          const frontendUrl = process.env.FRONTEND_URL || 'https://siyabusaerp.co.za';
+          await sendEmail({
+            to: user.email,
+            subject: `Welcome to SiyaBusa ERP - Your Account is Ready!`,
+            template: 'welcome',
+            variables: {
+              userName: user.first_name || user.email.split('@')[0],
+              companyName: tenant.name,
+              email: user.email,
+              dashboardUrl: frontendUrl,
+              frontendUrl: frontendUrl,
+            },
+          });
+          console.log(`✅ Welcome email sent to: ${user.email}`);
+        } catch (emailError) {
+          console.error('Failed to send welcome email (non-blocking):', emailError);
+        }
+      })();
+
       // Log signup
       await client.query(
         `INSERT INTO audit_log (tenant_id, user_id, action, resource_type, resource_id)
@@ -379,11 +402,11 @@ export class AuthService {
   }
 
   /**
-   * Forgot Password (generate reset token)
+   * Forgot Password (generate reset token and send email)
    */
   static async forgotPassword(email: string): Promise<{ resetToken: string }> {
     const userResult = await sharedPool.query(
-      'SELECT id, tenant_id FROM users WHERE email = $1 AND deleted_at IS NULL',
+      'SELECT id, tenant_id, first_name, email FROM users WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL',
       [email]
     );
 
@@ -405,8 +428,28 @@ export class AuthService {
       [resetToken, resetTokenExpiry, user.id]
     );
 
-    // TODO: Send email with reset link
-    // await EmailService.sendPasswordReset(email, resetToken);
+    // Send password reset email
+    const frontendUrl = process.env.FRONTEND_URL || 'https://siyabusaerp.co.za';
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
+
+    try {
+      const { sendEmail } = await import('../services/email.service');
+      await sendEmail({
+        to: user.email,
+        subject: 'Reset Your Password - SiyaBusa ERP',
+        template: 'reset-password',
+        variables: {
+          resetUrl,
+          userName: user.first_name || 'there',
+          email: user.email,
+          expiresIn: '1 hour',
+        },
+      });
+      console.log(`✅ Password reset email sent to: ${user.email}`);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+      // Don't fail the request if email fails - still return token
+    }
 
     return { resetToken };
   }

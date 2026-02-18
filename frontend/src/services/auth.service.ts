@@ -98,8 +98,11 @@ class AuthService {
       // Store IDs for API service
       if (response.data.data.tenant?.id) {
         localStorage.setItem('tenantId', response.data.data.tenant.id);
-        localStorage.setItem('workspaceId', response.data.data.tenant.id); // Using tenant ID as workspace ID
+        localStorage.setItem('workspaceId', response.data.data.tenant.id);
       }
+
+      // Notify UserContext to pick up the new user immediately (same-tab event)
+      window.dispatchEvent(new Event('auth:login'));
     }
     
     return response.data;

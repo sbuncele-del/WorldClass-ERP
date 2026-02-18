@@ -74,7 +74,8 @@ export async function sendPasswordResetEmail(email: string): Promise<{
     );
 
     // Generate reset URL
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'https://siyabusaerp.co.za';
+    const resetUrl = `${frontendUrl}/reset-password?token=${token}`;
 
     // Send email
     await sendEmail({

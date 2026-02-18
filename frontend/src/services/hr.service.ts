@@ -1,5 +1,8 @@
 import apiClient from './api';
 
+const HR_API_BASE = '/api/v2/hr';
+const HR_SETTINGS_STORAGE_KEY = 'hr_module_settings';
+
 // ─── Types ────────────────────────────────────────────────────────────────
 
 export interface HRStats {
@@ -111,74 +114,74 @@ export const hrService = {
 
   // ── Employees ─────────────────────────────────────────────────────────
   async getEmployees(params?: { limit?: number; department_id?: string; status?: string; search?: string; page?: number }): Promise<{ data: Employee[]; total: number }> {
-    const { data } = await apiClient.get('/api/hr/employees', { params });
+    const { data } = await apiClient.get(`${HR_API_BASE}/employees`, { params });
     return data;
   },
 
   async getEmployee(id: string | number): Promise<Employee> {
-    const { data } = await apiClient.get(`/api/hr/employees/${id}`);
+    const { data } = await apiClient.get(`${HR_API_BASE}/employees/${id}`);
     return extractData({ data });
   },
 
   async createEmployee(employee: Partial<Employee>): Promise<Employee> {
-    const { data } = await apiClient.post('/api/hr/employees', employee);
+    const { data } = await apiClient.post(`${HR_API_BASE}/employees`, employee);
     return extractData({ data });
   },
 
   async updateEmployee(id: string | number, employee: Partial<Employee>): Promise<Employee> {
-    const { data } = await apiClient.put(`/api/hr/employees/${id}`, employee);
+    const { data } = await apiClient.put(`${HR_API_BASE}/employees/${id}`, employee);
     return extractData({ data });
   },
 
   async deleteEmployee(id: string | number): Promise<void> {
-    await apiClient.delete(`/api/hr/employees/${id}`);
+    await apiClient.delete(`${HR_API_BASE}/employees/${id}`);
   },
 
   // ── Departments ───────────────────────────────────────────────────────
   async getDepartments(params?: { include_inactive?: boolean }): Promise<{ data: Department[]; total: number }> {
-    const { data } = await apiClient.get('/api/hr/departments', { params });
+    const { data } = await apiClient.get(`${HR_API_BASE}/departments`, { params });
     return data;
   },
 
   async getDepartment(id: string | number): Promise<Department> {
-    const { data } = await apiClient.get(`/api/hr/departments/${id}`);
+    const { data } = await apiClient.get(`${HR_API_BASE}/departments/${id}`);
     return extractData({ data });
   },
 
   async createDepartment(department: Partial<Department>): Promise<Department> {
-    const { data } = await apiClient.post('/api/hr/departments', department);
+    const { data } = await apiClient.post(`${HR_API_BASE}/departments`, department);
     return extractData({ data });
   },
 
   async updateDepartment(id: string | number, department: Partial<Department>): Promise<Department> {
-    const { data } = await apiClient.put(`/api/hr/departments/${id}`, department);
+    const { data } = await apiClient.put(`${HR_API_BASE}/departments/${id}`, department);
     return extractData({ data });
   },
 
   async deleteDepartment(id: string | number): Promise<void> {
-    await apiClient.delete(`/api/hr/departments/${id}`);
+    await apiClient.delete(`${HR_API_BASE}/departments/${id}`);
   },
 
   // ── Positions ─────────────────────────────────────────────────────────
   async getPositions(params?: { include_inactive?: boolean }): Promise<{ data: Position[] }> {
-    const { data } = await apiClient.get('/api/hr/positions', { params });
+    const { data } = await apiClient.get(`${HR_API_BASE}/positions`, { params });
     return data;
   },
 
   async createPosition(position: Partial<Position>): Promise<Position> {
-    const { data } = await apiClient.post('/api/hr/positions', position);
+    const { data } = await apiClient.post(`${HR_API_BASE}/positions`, position);
     return extractData({ data });
   },
 
   // ── Leave Types ───────────────────────────────────────────────────────
   async getLeaveTypes(): Promise<{ data: LeaveType[] }> {
-    const { data } = await apiClient.get('/api/hr/leave-types');
+    const { data } = await apiClient.get(`${HR_API_BASE}/leave-types`);
     return data;
   },
 
   // ── Leave Requests ────────────────────────────────────────────────────
   async getLeaveRequests(params?: { employee_id?: string; status?: string; from_date?: string; to_date?: string }): Promise<{ data: LeaveRequest[] }> {
-    const { data } = await apiClient.get('/api/hr/leave-requests', { params });
+    const { data } = await apiClient.get(`${HR_API_BASE}/leave-requests`, { params });
     return data;
   },
 
@@ -190,66 +193,119 @@ export const hrService = {
     days_requested?: number;
     reason?: string;
   }): Promise<LeaveRequest> {
-    const { data } = await apiClient.post('/api/hr/leave-requests', leaveRequest);
+    const { data } = await apiClient.post(`${HR_API_BASE}/leave-requests`, leaveRequest);
     return extractData({ data });
   },
 
   async processLeaveRequest(requestId: string | number, action: 'Approved' | 'Rejected', approver_comments?: string): Promise<any> {
-    const { data } = await apiClient.put(`/api/hr/leave-requests/${requestId}/process`, { action, approver_comments });
+    const { data } = await apiClient.put(`${HR_API_BASE}/leave-requests/${requestId}/process`, { action, approver_comments });
     return extractData({ data });
   },
 
   async getLeaveBalances(employeeId: string | number): Promise<{ data: LeaveBalance[] }> {
-    const { data } = await apiClient.get(`/api/hr/leave-balances/${employeeId}`);
+    const { data } = await apiClient.get(`${HR_API_BASE}/leave-balances/${employeeId}`);
     return data;
   },
 
   // ── Attendance ────────────────────────────────────────────────────────
   async recordAttendance(employeeId: string, clockType: 'In' | 'Out'): Promise<any> {
-    const { data } = await apiClient.post('/api/hr/attendance', { employee_id: employeeId, clock_type: clockType });
+    const { data } = await apiClient.post(`${HR_API_BASE}/attendance`, { employee_id: employeeId, clock_type: clockType });
     return extractData({ data });
   },
 
   async getAttendanceRecords(params?: { employee_id?: string; from_date?: string; to_date?: string }): Promise<any> {
-    const { data } = await apiClient.get('/api/hr/attendance', { params });
+    const { data } = await apiClient.get(`${HR_API_BASE}/attendance`, { params });
     return data;
   },
 
   // ── Payroll ───────────────────────────────────────────────────────────
   async getPayrollPeriods(params?: { year?: number; status?: string }): Promise<any> {
-    const { data } = await apiClient.get('/api/hr/payroll/periods', { params });
+    const { data } = await apiClient.get(`${HR_API_BASE}/payroll/periods`, { params });
     return data;
   },
 
   async createPayrollPeriod(period: {
-    period_code: string;
+    period_code?: string;
     period_name?: string;
     period_start_date: string;
     period_end_date: string;
     payment_date: string;
     frequency?: string;
+    period_type?: string;
   }): Promise<any> {
-    const { data } = await apiClient.post('/api/hr/payroll/periods', period);
+    const { data } = await apiClient.post(`${HR_API_BASE}/payroll/periods`, period);
     return extractData({ data });
   },
 
   async processPayroll(periodId: string | number, employeeIds?: string[]): Promise<any> {
-    const { data } = await apiClient.post('/api/hr/payroll/process', { period_id: periodId, employee_ids: employeeIds });
+    const { data } = await apiClient.post(`${HR_API_BASE}/payroll/process`, { period_id: periodId, employee_ids: employeeIds });
     return extractData({ data });
   },
 
   async getPayrollRunDetails(runId: string | number): Promise<any> {
-    const { data } = await apiClient.get(`/api/hr/payroll/${runId}`);
+    const { data } = await apiClient.get(`${HR_API_BASE}/payroll/${runId}`);
     return extractData({ data });
   },
 
   async getPayrollRuns(params?: { status?: string; year?: number; month?: number }): Promise<any> {
-    const { data } = await apiClient.get('/api/hr/payroll-runs', { params });
+    const { data } = await apiClient.get(`${HR_API_BASE}/payroll-runs`, { params });
     return data;
   },
 
   async postPayrollToGL(runId: string | number): Promise<any> {
-    const { data } = await apiClient.post('/api/hr/payroll/post-to-gl', { run_id: runId });
+    const { data } = await apiClient.post(`${HR_API_BASE}/payroll/post-to-gl`, { run_id: runId });
     return extractData({ data });
+  },
+
+  // ── Compliance & Reports (V1 HR routes currently host these endpoints) ──
+  async getIRP5(employeeId: string | number, taxYear: number): Promise<any> {
+    const { data } = await apiClient.get(`/api/hr/compliance/irp5/${employeeId}/${taxYear}`);
+    return extractData({ data });
+  },
+
+  async getEMP501(taxYear: number): Promise<any> {
+    const { data } = await apiClient.get(`/api/hr/compliance/emp501/${taxYear}`);
+    return extractData({ data });
+  },
+
+  async getComplianceReport(): Promise<any> {
+    const { data } = await apiClient.get('/api/hr/compliance/report');
+    return extractData({ data });
+  },
+
+  async getPayslipHtml(employeeId: string | number, runId: string | number): Promise<any> {
+    const { data } = await apiClient.get(`/api/hr/payslips/${employeeId}/${runId}/html`);
+    return extractData({ data });
+  },
+
+  // ── HR Module Settings ────────────────────────────────────────────────
+  async getHRModuleSettings(): Promise<any> {
+    const localSettingsRaw = localStorage.getItem(HR_SETTINGS_STORAGE_KEY);
+    const localSettings = localSettingsRaw ? JSON.parse(localSettingsRaw) : {};
+
+    try {
+      const { data } = await apiClient.get('/api/v2/settings/tenant/modules/hr');
+      const serverSettings = extractData({ data }) || {};
+      const merged = { ...localSettings, ...serverSettings };
+      localStorage.setItem(HR_SETTINGS_STORAGE_KEY, JSON.stringify(merged));
+      return merged;
+    } catch {
+      return localSettings;
+    }
+  },
+
+  async saveHRModuleSettings(settings: Record<string, any>): Promise<any> {
+    localStorage.setItem(HR_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+
+    try {
+      const { data } = await apiClient.put('/api/v2/settings/tenant/modules', {
+        moduleCode: 'hr',
+        enabled: true,
+        settings,
+      });
+      return extractData({ data }) || settings;
+    } catch {
+      return settings;
+    }
   },
 };

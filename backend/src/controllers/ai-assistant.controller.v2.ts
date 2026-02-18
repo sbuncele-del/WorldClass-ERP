@@ -857,7 +857,7 @@ export const executeCommand = async (req: TenantRequest, res: Response) => {
         success: true,
         data: {
           status: 'executed',
-          message: `👋 Hello! I'm your AI assistant for the WorldClass ERP system.\n\n**I can help you with:**\n\n📊 **Queries**: "Show me cash position", "What are outstanding invoices?"\n📝 **Invoices**: "Create invoice for ABC Company for R5000"\n💰 **Payments**: "Record payment of R1000 from XYZ Ltd"\n📋 **Tasks**: "Create task: Follow up with supplier"\n\nJust type what you need in plain English!`,
+          message: `👋 Hello! I'm your AI assistant for the SiyaBusa ERP system.\n\n**I can help you with:**\n\n📊 **Queries**: "Show me cash position", "What are outstanding invoices?"\n📝 **Invoices**: "Create invoice for ABC Company for R5000"\n💰 **Payments**: "Record payment of R1000 from XYZ Ltd"\n📋 **Tasks**: "Create task: Follow up with supplier"\n\nJust type what you need in plain English!`,
           aiPowered: false
         }
       });

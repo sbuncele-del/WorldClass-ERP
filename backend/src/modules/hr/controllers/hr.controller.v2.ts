@@ -12,8 +12,7 @@ import { TenantContext } from '../../../repositories/BaseRepository';
 import {
   departmentRepository,
   positionRepository,
-  employeeRepository,
-  payrollPeriodRepository
+  employeeRepository
 } from '../../../repositories/hr';
 import { calculatePAYE as calcAnnualPAYE, UIF_CEILING_MONTHLY, UIF_RATE } from '../services/tax-calculation.service';
 
@@ -438,7 +437,7 @@ export const getPayrollPeriods = async (req: TenantRequest, res: Response) => {
 
     if (year) {
       params.push(Number(year));
-      conditions.push(`EXTRACT(YEAR FROM period_start_date) = $${params.length}`);
+      conditions.push(`EXTRACT(YEAR FROM start_date) = $${params.length}`);
     }
 
     if (status) {
@@ -449,7 +448,7 @@ export const getPayrollPeriods = async (req: TenantRequest, res: Response) => {
     const sql = `
       SELECT * FROM hr.payroll_periods
       WHERE ${conditions.join(' AND ')}
-      ORDER BY period_start_date DESC
+      ORDER BY start_date DESC
     `;
 
     const result = await query(sql, params);
@@ -464,29 +463,34 @@ export const createPayrollPeriod = async (req: TenantRequest, res: Response) => 
   try {
     const ctx = getTenantContext(req);
     const {
-      period_code,
       period_name,
       period_start_date,
       period_end_date,
+      start_date,
+      end_date,
       payment_date,
       frequency,
+      period_type,
     } = req.body;
 
-    if (!period_code || !period_start_date || !period_end_date || !payment_date) {
-      return res.status(400).json({ success: false, message: 'period_code, start/end dates and payment_date are required' });
+    const resolvedStartDate = period_start_date || start_date;
+    const resolvedEndDate = period_end_date || end_date;
+    const resolvedPeriodType = period_type || frequency || 'Monthly';
+    const resolvedPeriodName = period_name || `${resolvedPeriodType} Payroll`;
+
+    if (!resolvedStartDate || !resolvedEndDate || !payment_date) {
+      return res.status(400).json({ success: false, message: 'start/end dates and payment_date are required' });
     }
 
-    const created = await payrollPeriodRepository.create(ctx, {
-      period_code,
-      period_name,
-      period_start_date,
-      period_end_date,
-      payment_date,
-      frequency,
-      status: 'Draft',
-    } as any);
+    const created = await query(
+      `INSERT INTO hr.payroll_periods (
+        tenant_id, period_name, period_type, start_date, end_date, payment_date, status, created_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, 'Draft', CURRENT_TIMESTAMP)
+      RETURNING *`,
+      [ctx.tenantId, resolvedPeriodName, resolvedPeriodType, resolvedStartDate, resolvedEndDate, payment_date]
+    );
 
-    res.status(201).json({ success: true, data: created, message: 'Payroll period created' });
+    res.status(201).json({ success: true, data: created.rows[0], message: 'Payroll period created' });
   } catch (error) {
     console.error('Error creating payroll period:', error);
     res.status(400).json({ success: false, message: 'Failed to create payroll period', error: error instanceof Error ? error.message : 'Unknown error' });
@@ -536,11 +540,25 @@ export const processPayroll = async (req: TenantRequest, res: Response) => {
 
     const runResult = await client.query(
       `INSERT INTO hr.payroll_runs (
-        tenant_id, period_id, run_date, status, total_employees,
-        total_gross, total_deductions, total_net, created_by, created_at
-      ) VALUES ($1, $2, CURRENT_DATE, 'Draft', $3, 0, 0, 0, $4, CURRENT_TIMESTAMP)
+        tenant_id, run_number, period_id, run_date, status, total_employees,
+        total_basic_salary, total_allowances, total_deductions, total_net_pay,
+        processed_date, created_at
+      ) VALUES (
+        $1,
+        'PR-' || TO_CHAR(CURRENT_DATE, 'YYYYMMDD') || '-' || LPAD($2::TEXT, 5, '0'),
+        $3,
+        CURRENT_DATE,
+        'Draft',
+        $4,
+        0,
+        0,
+        0,
+        0,
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+      )
       RETURNING *`,
-      [ctx.tenantId, period_id, employees.rowCount, ctx.userId]
+      [ctx.tenantId, period_id, period_id, employees.rowCount]
     );
 
     const run = runResult.rows[0];
@@ -561,7 +579,7 @@ export const processPayroll = async (req: TenantRequest, res: Response) => {
            AND (erc.effective_date IS NULL OR erc.effective_date <= $3)
            AND (erc.end_date IS NULL OR erc.end_date >= $3)
         `,
-        [ctx.tenantId, employee.employee_id, period.period_end_date]
+        [ctx.tenantId, employee.employee_id, period.end_date]
       );
 
       const earningLines: { component_id: number; amount: number; description: string }[] = [];
@@ -650,9 +668,15 @@ export const processPayroll = async (req: TenantRequest, res: Response) => {
 
     await client.query(
       `UPDATE hr.payroll_runs
-       SET total_gross = $1, total_deductions = $2, total_net = $3, status = 'Processed', updated_at = CURRENT_TIMESTAMP
-       WHERE tenant_id = $4 AND run_id = $5`,
-      [totalGross, totalDeductions, totalNet, ctx.tenantId, run.run_id]
+       SET total_basic_salary = $1,
+           total_allowances = $2,
+           total_deductions = $3,
+           total_net_pay = $4,
+           status = 'Processed',
+           processed_date = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE tenant_id = $5 AND run_id = $6`,
+      [totalGross, 0, totalDeductions, totalNet, ctx.tenantId, run.run_id]
     );
 
     await client.query('COMMIT');
@@ -683,9 +707,9 @@ export const getPayrollRunDetails = async (req: TenantRequest, res: Response) =>
     const { run_id } = req.params;
 
     const runDetails = await query(
-      `SELECT pr.*, pp.period_name, pp.period_start_date, pp.period_end_date, pp.payment_date
+      `SELECT pr.*, pp.period_name, pp.start_date as period_start_date, pp.end_date as period_end_date, pp.payment_date
        FROM hr.payroll_runs pr
-       JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id
+       JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id AND pr.tenant_id = pp.tenant_id
        WHERE pr.tenant_id = $1 AND pr.run_id = $2`,
       [ctx.tenantId, run_id]
     );
@@ -759,22 +783,209 @@ export const postPayrollToGL = async (req: TenantRequest, res: Response) => {
       [ctx.tenantId, run.period_id]
     );
 
-    // Simple GL posting stub (account selection should be configurable)
-    const jeResult = await client.query(
-      `INSERT INTO accounting.journal_entries (
-        tenant_id, entry_number, entry_date, entry_type, reference,
-        description, status, created_by, created_at
-      ) VALUES ($1, 'PAY' || TO_CHAR(CURRENT_DATE, 'YYYYMMDD') || LPAD($2::TEXT, 4, '0'), CURRENT_DATE, 'Payroll', $2, $3, 'Posted', $4, CURRENT_TIMESTAMP)
-      RETURNING entry_id`,
-      [ctx.tenantId, run_id, `Payroll for ${period.rows[0]?.period_name || ''}`, ctx.userId]
+    const totalsResult = await client.query(
+      `SELECT
+         COALESCE(SUM(paye_tax), 0) as total_paye,
+         COALESCE(SUM(uif_deduction), 0) as total_uif
+       FROM hr.payroll_run_details
+       WHERE tenant_id = $1 AND run_id = $2`,
+      [ctx.tenantId, run_id]
     );
 
-    const entryId = jeResult.rows[0].entry_id;
+    const totalBasic = Number(run.total_basic_salary || 0);
+    const totalAllowances = Number(run.total_allowances || 0);
+    const totalGross = totalBasic + totalAllowances;
+    const totalDeductions = Number(run.total_deductions || 0);
+    const totalNet = Number(run.total_net_pay || 0);
+    const totalPaye = Number(totalsResult.rows[0]?.total_paye || 0);
+    const totalUif = Number(totalsResult.rows[0]?.total_uif || 0);
+    const otherDeductions = Math.max(totalDeductions - totalPaye - totalUif, 0);
+
+    const accountResult = await client.query(
+      `SELECT id, account_code, account_name, account_type
+       FROM chart_of_accounts
+       WHERE tenant_id = $1 AND is_active = true`,
+      [ctx.tenantId]
+    );
+
+    const accounts = accountResult.rows;
+
+    const pickAccount = (predicate: (acc: any) => boolean, fallbackPredicate: (acc: any) => boolean) => {
+      return accounts.find(predicate) || accounts.find(fallbackPredicate) || null;
+    };
+
+    const salaryExpenseAccount = pickAccount(
+      (acc) => String(acc.account_name || '').toLowerCase().includes('salaries') || String(acc.account_code || '') === '5200',
+      (acc) => String(acc.account_type || '').toLowerCase() === 'expense'
+    );
+
+    const bankAccount = pickAccount(
+      (acc) => String(acc.account_name || '').toLowerCase().includes('cash') || String(acc.account_name || '').toLowerCase().includes('bank') || String(acc.account_code || '') === '1110',
+      (acc) => String(acc.account_type || '').toLowerCase() === 'asset'
+    );
+
+    const liabilityAccount = pickAccount(
+      (acc) => String(acc.account_name || '').toLowerCase().includes('payable') || String(acc.account_code || '') === '2110',
+      (acc) => String(acc.account_type || '').toLowerCase() === 'liability'
+    );
+
+    if (!salaryExpenseAccount || !bankAccount || !liabilityAccount) {
+      throw new Error('Required GL accounts not found (expense, asset/bank, liability)');
+    }
+
+    const jeResult = await client.query(
+      `INSERT INTO journal_entries (
+        id, tenant_id, entry_number, entry_date, journal_date,
+        description, reference, status, source_type,
+        total_debit, total_credit, created_by, created_at
+      ) VALUES (
+        gen_random_uuid(), $1,
+        'PAY-' || TO_CHAR(CURRENT_DATE, 'YYYYMMDD') || '-' || LPAD($2::TEXT, 4, '0'),
+        CURRENT_DATE,
+        CURRENT_DATE,
+        $3,
+        $4,
+        'posted',
+        'payroll',
+        $5,
+        $5,
+        $6,
+        NOW()
+      )
+      RETURNING id`,
+      [ctx.tenantId, run_id, `Payroll for ${period.rows[0]?.period_name || ''}`, `PAYROLL_RUN_${run_id}`, totalGross, ctx.userId]
+    );
+
+    const entryId = jeResult.rows[0].id;
+
+    let lineNumber = 1;
+
+    await client.query(
+      `INSERT INTO journal_entry_lines (
+        id, tenant_id, journal_entry_id, line_number,
+        account_id, account_code, account_name,
+        description, debit_amount, credit_amount, created_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3,
+        $4, $5, $6,
+        $7, $8, 0, NOW()
+      )`,
+      [
+        ctx.tenantId,
+        entryId,
+        lineNumber++,
+        salaryExpenseAccount.id,
+        salaryExpenseAccount.account_code,
+        salaryExpenseAccount.account_name,
+        'Salaries and wages expense',
+        totalGross,
+      ]
+    );
+
+    if (totalPaye > 0) {
+      await client.query(
+        `INSERT INTO journal_entry_lines (
+          id, tenant_id, journal_entry_id, line_number,
+          account_id, account_code, account_name,
+          description, debit_amount, credit_amount, created_at
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3,
+          $4, $5, $6,
+          $7, 0, $8, NOW()
+        )`,
+        [
+          ctx.tenantId,
+          entryId,
+          lineNumber++,
+          liabilityAccount.id,
+          liabilityAccount.account_code,
+          liabilityAccount.account_name,
+          'PAYE payable',
+          totalPaye,
+        ]
+      );
+    }
+
+    if (totalUif > 0) {
+      await client.query(
+        `INSERT INTO journal_entry_lines (
+          id, tenant_id, journal_entry_id, line_number,
+          account_id, account_code, account_name,
+          description, debit_amount, credit_amount, created_at
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3,
+          $4, $5, $6,
+          $7, 0, $8, NOW()
+        )`,
+        [
+          ctx.tenantId,
+          entryId,
+          lineNumber++,
+          liabilityAccount.id,
+          liabilityAccount.account_code,
+          liabilityAccount.account_name,
+          'UIF payable',
+          totalUif,
+        ]
+      );
+    }
+
+    if (otherDeductions > 0) {
+      await client.query(
+        `INSERT INTO journal_entry_lines (
+          id, tenant_id, journal_entry_id, line_number,
+          account_id, account_code, account_name,
+          description, debit_amount, credit_amount, created_at
+        ) VALUES (
+          gen_random_uuid(), $1, $2, $3,
+          $4, $5, $6,
+          $7, 0, $8, NOW()
+        )`,
+        [
+          ctx.tenantId,
+          entryId,
+          lineNumber++,
+          liabilityAccount.id,
+          liabilityAccount.account_code,
+          liabilityAccount.account_name,
+          'Other payroll deductions payable',
+          otherDeductions,
+        ]
+      );
+    }
+
+    await client.query(
+      `INSERT INTO journal_entry_lines (
+        id, tenant_id, journal_entry_id, line_number,
+        account_id, account_code, account_name,
+        description, debit_amount, credit_amount, created_at
+      ) VALUES (
+        gen_random_uuid(), $1, $2, $3,
+        $4, $5, $6,
+        $7, 0, $8, NOW()
+      )`,
+      [
+        ctx.tenantId,
+        entryId,
+        lineNumber,
+        bankAccount.id,
+        bankAccount.account_code,
+        bankAccount.account_name,
+        'Net payroll payable',
+        totalNet,
+      ]
+    );
 
     // Update payroll run status
     await client.query(
-      'UPDATE hr.payroll_runs SET status = $1, gl_entry_id = $2, posted_by = $3, posted_at = CURRENT_TIMESTAMP WHERE tenant_id = $4 AND run_id = $5',
-      ['Posted', entryId, ctx.userId, ctx.tenantId, run_id]
+      `UPDATE hr.payroll_runs
+       SET status = $1,
+           posted_to_gl = true,
+           notes = COALESCE(notes, '') || CASE WHEN COALESCE(notes, '') = '' THEN '' ELSE E'\n' END || $2,
+           processed_date = CURRENT_TIMESTAMP,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE tenant_id = $3 AND run_id = $4`,
+      ['Posted', `GL Journal Entry UUID: ${entryId}`, ctx.tenantId, run_id]
     );
 
     await client.query('COMMIT');
@@ -844,6 +1055,10 @@ export const createLeaveRequest = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
     const { employee_id, leave_type_id, start_date, end_date, days_requested, reason } = req.body;
+    const requestedDays = Number(days_requested || 0) || Math.max(
+      1,
+      Math.ceil((new Date(end_date).getTime() - new Date(start_date).getTime()) / (1000 * 60 * 60 * 24)) + 1
+    );
 
     if (!employee_id || !leave_type_id || !start_date || !end_date) {
       return res.status(400).json({ success: false, message: 'employee_id, leave_type_id, start_date and end_date are required' });
@@ -858,17 +1073,29 @@ export const createLeaveRequest = async (req: TenantRequest, res: Response) => {
       [ctx.tenantId, employee_id, leave_type_id]
     );
 
-    if (balance.rowCount === 0 || Number(balance.rows[0].closing_balance) < Number(days_requested || 0)) {
+    if (balance.rowCount === 0 || Number(balance.rows[0].closing_balance) < requestedDays) {
       throw new Error('Insufficient leave balance');
     }
 
     const created = await client.query(
       `INSERT INTO hr.leave_requests (
-        tenant_id, employee_id, leave_type_id, start_date, end_date, days_requested,
-        reason, status, request_date, created_by, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'Pending', CURRENT_DATE, $8, CURRENT_TIMESTAMP)
+        tenant_id, request_number, employee_id, leave_type_id, start_date, end_date, total_days,
+        reason, status, submitted_date, created_at
+      ) VALUES (
+        $1,
+        'LR-' || TO_CHAR(CURRENT_DATE, 'YYYYMMDD') || '-' || LPAD((COALESCE((SELECT MAX(request_id) + 1 FROM hr.leave_requests WHERE tenant_id = $1), 1))::text, 5, '0'),
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        'Pending',
+        CURRENT_DATE,
+        CURRENT_TIMESTAMP
+      )
       RETURNING *`,
-      [ctx.tenantId, employee_id, leave_type_id, start_date, end_date, days_requested, reason, ctx.userId]
+      [ctx.tenantId, employee_id, leave_type_id, start_date, end_date, requestedDays, reason]
     );
 
     await client.query('COMMIT');
@@ -911,9 +1138,9 @@ export const processLeaveRequest = async (req: TenantRequest, res: Response) => 
 
     await client.query(
       `UPDATE hr.leave_requests
-       SET status = $1, approver_comments = $2, approved_by = $3, approval_date = CURRENT_DATE, updated_at = CURRENT_TIMESTAMP
-       WHERE tenant_id = $4 AND request_id = $5`,
-      [action, approver_comments, ctx.userId, ctx.tenantId, request_id]
+       SET status = $1, review_comments = $2, reviewed_date = CURRENT_DATE, updated_at = CURRENT_TIMESTAMP
+       WHERE tenant_id = $3 AND request_id = $4`,
+      [action, approver_comments, ctx.tenantId, request_id]
     );
 
     if (action === 'Approved') {
@@ -922,7 +1149,7 @@ export const processLeaveRequest = async (req: TenantRequest, res: Response) => 
          SET taken = taken + $1, closing_balance = closing_balance - $1, updated_at = CURRENT_TIMESTAMP
          WHERE tenant_id = $2 AND employee_id = $3 AND leave_type_id = $4
            AND year = EXTRACT(YEAR FROM CURRENT_DATE)`,
-        [request.rows[0].days_requested, ctx.tenantId, request.rows[0].employee_id, request.rows[0].leave_type_id]
+        [request.rows[0].total_days, ctx.tenantId, request.rows[0].employee_id, request.rows[0].leave_type_id]
       );
     }
 
@@ -943,11 +1170,11 @@ export const getLeaveBalances = async (req: TenantRequest, res: Response) => {
     const { employee_id } = req.params;
 
     const balances = await query(
-      `SELECT lt.leave_name, b.opening_balance, b.accrued, b.taken, b.pending, b.closing_balance
+      `SELECT lt.leave_type_name as leave_name, b.opening_balance, b.accrued, b.taken, b.pending, b.closing_balance
        FROM hr.employee_leave_balances b
-       JOIN hr.leave_types lt ON b.leave_type_id = lt.leave_type_id
+       JOIN hr.leave_types lt ON b.leave_type_id = lt.leave_type_id AND b.tenant_id = lt.tenant_id
        WHERE b.tenant_id = $1 AND b.employee_id = $2
-       ORDER BY lt.leave_name`,
+       ORDER BY lt.leave_type_name`,
       [ctx.tenantId, employee_id]
     );
 
@@ -1121,20 +1348,31 @@ export const getPayrollRuns = async (req: TenantRequest, res: Response) => {
 
     if (year) {
       params.push(parseInt(year as string, 10));
-      conditions.push(`EXTRACT(YEAR FROM pr.period_start) = $${params.length}`);
+      conditions.push(`EXTRACT(YEAR FROM pp.start_date) = $${params.length}`);
     }
 
     if (month) {
       params.push(parseInt(month as string, 10));
-      conditions.push(`EXTRACT(MONTH FROM pr.period_start) = $${params.length}`);
+      conditions.push(`EXTRACT(MONTH FROM pp.start_date) = $${params.length}`);
     }
 
     const sql = `
       SELECT 
         pr.*,
-        pp.period_name
+        pp.period_name,
+        COALESCE(detail_totals.total_paye, 0) as total_paye,
+        COALESCE(detail_totals.total_uif, 0) as total_uif,
+        COALESCE(detail_totals.total_sdl, 0) as total_sdl
       FROM hr.payroll_runs pr
       LEFT JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id AND pr.tenant_id = pp.tenant_id
+      LEFT JOIN LATERAL (
+        SELECT
+          SUM(COALESCE(prd.paye_tax, 0)) as total_paye,
+          SUM(COALESCE(prd.uif_deduction, 0)) as total_uif,
+          SUM(COALESCE(prd.sdl_amount, 0)) as total_sdl
+        FROM hr.payroll_run_details prd
+        WHERE prd.tenant_id = pr.tenant_id AND prd.run_id = pr.run_id
+      ) detail_totals ON true
       WHERE ${conditions.join(' AND ')}
       ORDER BY pr.run_date DESC, pr.created_at DESC
     `;

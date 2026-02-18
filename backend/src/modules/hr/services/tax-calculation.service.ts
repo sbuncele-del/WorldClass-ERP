@@ -255,14 +255,14 @@ export async function generateIRP5Data(employeeId: number, taxYear: number, tena
         SUM(prd.net_pay) as total_net,
         COUNT(DISTINCT pr.run_id) as periods_paid
       FROM hr.payroll_run_details prd
-      JOIN hr.payroll_runs pr ON prd.run_id = pr.run_id
-      JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id
+      JOIN hr.payroll_runs pr ON prd.run_id = pr.run_id AND prd.tenant_id = pr.tenant_id
+      JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id AND pr.tenant_id = pp.tenant_id
       WHERE prd.tenant_id = $1 AND prd.employee_id = $2
         AND pr.status = 'Posted'
         AND (
-          (EXTRACT(MONTH FROM pp.period_end_date) >= 3 AND EXTRACT(YEAR FROM pp.period_end_date) = $3)
+          (EXTRACT(MONTH FROM pp.end_date) >= 3 AND EXTRACT(YEAR FROM pp.end_date) = $3)
           OR
-          (EXTRACT(MONTH FROM pp.period_end_date) <= 2 AND EXTRACT(YEAR FROM pp.period_end_date) = $3 + 1)
+          (EXTRACT(MONTH FROM pp.end_date) <= 2 AND EXTRACT(YEAR FROM pp.end_date) = $3 + 1)
         )
     `, [tenantId, employeeId, taxYear]);
 
@@ -341,14 +341,14 @@ export async function generateEMP501Data(taxYear: number, tenantId: string) {
         SUM(prd.paye_tax) as total_paye,
         SUM(prd.uif_deduction) as total_uif
       FROM hr.employees e
-      JOIN hr.payroll_run_details prd ON e.employee_id = prd.employee_id
-      JOIN hr.payroll_runs pr ON prd.run_id = pr.run_id
-      JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id
+      JOIN hr.payroll_run_details prd ON e.employee_id = prd.employee_id AND e.tenant_id = prd.tenant_id
+      JOIN hr.payroll_runs pr ON prd.run_id = pr.run_id AND prd.tenant_id = pr.tenant_id
+      JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id AND pr.tenant_id = pp.tenant_id
       WHERE pr.tenant_id = $1 AND e.tenant_id = $1 AND pr.status = 'Posted'
         AND (
-          (EXTRACT(MONTH FROM pp.period_end_date) >= 3 AND EXTRACT(YEAR FROM pp.period_end_date) = $2)
+          (EXTRACT(MONTH FROM pp.end_date) >= 3 AND EXTRACT(YEAR FROM pp.end_date) = $2)
           OR
-          (EXTRACT(MONTH FROM pp.period_end_date) <= 2 AND EXTRACT(YEAR FROM pp.period_end_date) = $2 + 1)
+          (EXTRACT(MONTH FROM pp.end_date) <= 2 AND EXTRACT(YEAR FROM pp.end_date) = $2 + 1)
         )
       GROUP BY e.employee_id, e.employee_number, e.id_number, e.first_name, e.last_name
       ORDER BY e.employee_number
