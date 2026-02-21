@@ -33,6 +33,7 @@ export interface Warehouse {
 export class WarehouseRepository extends BaseRepository<Warehouse> {
   protected tableName = 'warehouses';
   protected schema = 'inventory';
+  protected entityScoped = true;
 
   /**
    * Get the default warehouse for a tenant

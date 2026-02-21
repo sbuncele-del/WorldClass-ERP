@@ -9,12 +9,13 @@ import express from 'express';
 // V2 controller with Repository Pattern + direct tenant-safe queries for ALL endpoints
 import * as inventoryController from '../controllers/inventory.controller.v2';
 import * as inventoryWorkspaceController from '../modules/inventory/controllers/inventory.workspace.controller';
-import { tenantMiddleware } from '../middleware/tenant';
+import { tenantMiddleware, requireEntity } from '../middleware/tenant';
 
 const router = express.Router();
 
 // Apply tenant middleware to all inventory routes
 router.use(tenantMiddleware);
+router.use(requireEntity);
 
 // ============================================================================
 // WORKSPACE

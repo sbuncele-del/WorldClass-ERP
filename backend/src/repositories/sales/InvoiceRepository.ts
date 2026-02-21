@@ -58,6 +58,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
   protected tableName = 'sales_invoices';
   protected schema = 'public';
   protected softDelete = false;  // Table doesn't have deleted_at column
+  protected entityScoped = true;
 
   /**
    * Get invoices by status

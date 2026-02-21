@@ -2,12 +2,13 @@ import express from 'express';
 // All purchase routes now use v2 controllers exclusively
 import * as purchaseControllerV2 from '../controllers/purchase.controller.v2';
 import * as purchaseWorkspaceController from '../modules/purchase/controllers/purchase.workspace.controller';
-import { tenantMiddleware } from '../middleware/tenant';
+import { tenantMiddleware, requireEntity } from '../middleware/tenant';
 
 const router = express.Router();
 
 // Apply tenant middleware to all purchase routes
 router.use(tenantMiddleware);
+router.use(requireEntity);
 
 // ==================== WORKSPACE ====================
 router.get('/workspace', purchaseWorkspaceController.getPurchaseWorkspace);

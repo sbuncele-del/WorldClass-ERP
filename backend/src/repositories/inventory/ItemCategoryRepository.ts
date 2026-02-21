@@ -26,6 +26,7 @@ export interface ItemCategory {
 export class ItemCategoryRepository extends BaseRepository<ItemCategory> {
   protected tableName = 'item_categories';
   protected schema = 'inventory';
+  protected entityScoped = true;
 
   /**
    * Get all active categories for a tenant

@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGBS Group — Action Plan | Boikago Events &amp; Creatives</title>
+    <meta name="description" content="Tax Structuring Action Plan — School Fees &amp; Travel Allowance for Boikago Events &amp; Creatives">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a365d'/><text x='16' y='22' text-anchor='middle' fill='%23c9a84c' font-family='serif' font-size='16' font-weight='bold'>SG</text></svg>">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap');
+
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c9a84c;
+            --accent-light: #d4b966;
+            --text: #2d3748;
+            --text-light: #718096;
+            --bg: #f7f8fc;
+            --white: #ffffff;
+            --success: #38a169;
+            --danger: #e53e3e;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4; margin: 18mm; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, #0a1628 0%, #1a365d 100%);
+            color: white;
+            padding: 50px 40px;
+            text-align: center;
+        }
+
+        .header-logo {
+            width: 56px; height: 56px;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 22px; font-weight: 700; color: var(--accent);
+            margin: 0 auto 16px;
+        }
+
+        .header-firm {
+            font-size: 10px; text-transform: uppercase;
+            letter-spacing: 3px; color: rgba(255,255,255,0.4);
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 30px; font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .header-sub {
+            font-size: 14px; font-weight: 300;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .header-client {
+            display: inline-block;
+            margin-top: 16px;
+            background: rgba(201,168,76,0.15);
+            border: 1px solid rgba(201,168,76,0.3);
+            color: var(--accent);
+            font-size: 11px; font-weight: 700;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            padding: 6px 20px; border-radius: 30px;
+        }
+
+        /* ── Container ── */
+        .container {
+            max-width: 780px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* ── Card ── */
+        .card {
+            background: var(--white);
+            border-radius: 14px;
+            padding: 36px 40px;
+            margin: 24px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .card-label {
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 2.5px;
+            color: var(--accent); margin-bottom: 6px;
+        }
+
+        .card h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px; font-weight: 700;
+            color: var(--primary); margin-bottom: 4px;
+        }
+
+        .card-divider {
+            width: 40px; height: 3px;
+            background: var(--accent);
+            border-radius: 2px;
+            margin: 14px 0 20px;
+        }
+
+        .card h3 {
+            font-size: 15px; font-weight: 700;
+            color: var(--primary); margin: 24px 0 10px;
+        }
+
+        .card p {
+            margin-bottom: 12px; line-height: 1.8;
+        }
+
+        /* ── Advice Box (the main "do this" block) ── */
+        .advice {
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+            border-left: 4px solid var(--success);
+            border-radius: 0 10px 10px 0;
+            padding: 20px 24px;
+            margin: 16px 0;
+        }
+
+        .advice-label {
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 2px;
+            color: var(--success); margin-bottom: 6px;
+        }
+
+        .advice p {
+            color: #22543d; font-size: 14px; font-weight: 500;
+            margin: 0; line-height: 1.7;
+        }
+
+        /* ── Warning Box ── */
+        .warning {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+            border-left: 4px solid var(--danger);
+            border-radius: 0 10px 10px 0;
+            padding: 18px 24px; margin: 16px 0;
+        }
+
+        .warning p {
+            color: #742a2a; font-size: 13px; margin: 0; line-height: 1.7;
+        }
+
+        /* ── Steps ── */
+        .action-steps {
+            counter-reset: action-counter;
+            list-style: none; margin: 20px 0;
+        }
+
+        .action-steps li {
+            counter-increment: action-counter;
+            display: flex; gap: 16px;
+            padding: 18px 0;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .action-steps li:last-child { border-bottom: none; }
+
+        .action-steps li::before {
+            content: counter(action-counter);
+            flex-shrink: 0;
+            width: 36px; height: 36px;
+            background: var(--primary);
+            color: var(--accent);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 800;
+        }
+
+        .step-body { flex: 1; }
+        .step-body strong {
+            display: block; color: var(--primary);
+            font-size: 15px; margin-bottom: 4px;
+        }
+        .step-body p {
+            font-size: 13px; color: var(--text-light); margin: 0;
+        }
+
+        /* ── Document List ── */
+        .doc-list {
+            list-style: none; margin: 16px 0;
+        }
+
+        .doc-list li {
+            display: flex; align-items: flex-start;
+            gap: 12px; padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+
+        .doc-list li:last-child { border-bottom: none; }
+
+        .doc-icon {
+            flex-shrink: 0;
+            width: 28px; height: 28px;
+            background: var(--primary);
+            color: var(--accent);
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700;
+        }
+
+        .doc-info strong {
+            display: block; color: var(--primary);
+            font-size: 13px; margin-bottom: 2px;
+        }
+
+        .doc-info span {
+            font-size: 12px; color: var(--text-light);
+        }
+
+        .you-provide {
+            display: inline-block;
+            font-size: 9px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1px;
+            padding: 2px 8px; border-radius: 10px;
+            margin-left: 6px;
+        }
+
+        .tag-you {
+            background: rgba(201,168,76,0.15);
+            color: #92700c;
+            border: 1px solid rgba(201,168,76,0.3);
+        }
+
+        .tag-us {
+            background: rgba(49,130,206,0.1);
+            color: #2b6cb0;
+            border: 1px solid rgba(49,130,206,0.2);
+        }
+
+        /* ── Summary Box ── */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px; margin: 20px 0;
+        }
+
+        .summary-item {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .summary-item .num {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px; font-weight: 800;
+            color: var(--accent);
+        }
+
+        .summary-item .label {
+            font-size: 11px; color: var(--text-light);
+            text-transform: uppercase; letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* ── Footer ── */
+        .doc-footer {
+            text-align: center;
+            padding: 40px;
+            font-size: 11px;
+            color: var(--text-light);
+        }
+
+        .doc-footer a {
+            color: var(--accent); text-decoration: none;
+        }
+
+        /* ── FAB ── */
+        .fab-bar {
+            position: fixed; bottom: 30px; right: 30px;
+            display: flex; gap: 10px; z-index: 9999;
+        }
+
+        .fab-btn {
+            display: flex; align-items: center; gap: 8px;
+            padding: 14px 24px; border: none; border-radius: 50px;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.3s;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            text-decoration: none;
+        }
+
+        .fab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+        }
+
+        .fab-print { background: var(--primary); color: white; }
+        .fab-download { background: var(--accent); color: var(--primary); }
+
+        .fab-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+        /* ── Print ── */
+        @media print {
+            body { background: white; }
+            .header { padding: 40px; }
+            .card { box-shadow: none; border: 1px solid #e2e8f0; break-inside: avoid; page-break-inside: avoid; }
+            .fab-bar { display: none !important; }
+        }
+
+        /* ── Mobile ── */
+        @media (max-width: 600px) {
+            .header h1 { font-size: 22px; }
+            .card { padding: 24px 20px; }
+            .summary-grid { grid-template-columns: 1fr; }
+            .fab-bar { bottom: 16px; right: 16px; }
+            .fab-btn { padding: 12px 16px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<div class="header">
+    <div class="header-logo">SG</div>
+    <div class="header-firm">SGBS Group (Pty) Ltd</div>
+    <h1>Tax Structuring — Action Plan</h1>
+    <div class="header-sub">School Fees &amp; Travel Allowance</div>
+    <div class="header-client">Boikago Events &amp; Creatives (Pty) Ltd</div>
+</div>
+
+<div class="container">
+
+<!-- ── WHAT WE'RE DOING ── -->
+<div class="card">
+    <div class="card-label">The Plan</div>
+    <h2>Here's What We're Doing</h2>
+    <div class="card-divider"></div>
+
+    <p>We are restructuring your remuneration package so that your company, <strong>Boikago Events &amp; Creatives</strong>, pays your children's school fees <strong>tax-free</strong> through a company bursary scheme. We are also adding a <strong>travel allowance</strong> to further reduce your personal tax.</p>
+
+    <div class="advice">
+        <div class="advice-label">✅ Our Advice</div>
+        <p>Set up a formal company bursary scheme under Paragraph 12B of the Seventh Schedule to the Income Tax Act. Keep your cash salary at or below R600,000 per year. The school fees will then be <strong>100% exempt from tax</strong> in your hands — and still deductible as an expense for the company.</p>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="num">R0</div>
+            <div class="label">Tax on School Fees</div>
+        </div>
+        <div class="summary-item">
+            <div class="num">~R115k</div>
+            <div class="label">Annual Tax Saving</div>
+        </div>
+        <div class="summary-item">
+            <div class="num">R72k</div>
+            <div class="label">Travel Allowance (Tax-Free)</div>
+        </div>
+        <div class="summary-item">
+            <div class="num">100%</div>
+            <div class="label">SARS Compliant</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── WHAT YOU NEED TO DO ── -->
+<div class="card">
+    <div class="card-label">Your Action Items</div>
+    <h2>What You Need to Do</h2>
+    <div class="card-divider"></div>
+
+    <p>We handle the paperwork. You just need to provide us with the following and sign where indicated.</p>
+
+    <ol class="action-steps">
+        <li>
+            <div class="step-body">
+                <strong>Send us the documents listed below</strong>
+                <p>We need these to draft your employment contract, bursary policy, and board resolution. Send copies via email or WhatsApp.</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-body">
+                <strong>Sign the documents we prepare</strong>
+                <p>We will draft everything — your employment contract, bursary policy, board resolution, and bursary award letter. You just sign.</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-body">
+                <strong>Give the school the company's banking details</strong>
+                <p>School fees must be paid <strong>directly from the company bank account</strong> to the school. Not from your personal account. This is critical for SARS compliance.</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-body">
+                <strong>Start keeping a travel logbook</strong>
+                <p>Record every trip — business and personal — with date, destination, purpose, and kilometres. We'll provide a template. Start from <strong>1 March 2026</strong>.</p>
+            </div>
+        </li>
+    </ol>
+
+    <div class="warning">
+        <p><strong>⚠️ Important:</strong> Do not pay school fees from your personal bank account and then try to claim it back from the company. The company must pay the school directly. SARS will disallow the exemption if the payment trail is wrong.</p>
+    </div>
+</div>
+
+<!-- ── DOCUMENTS NEEDED FROM YOU ── -->
+<div class="card">
+    <div class="card-label">Documents</div>
+    <h2>What We Need From You</h2>
+    <div class="card-divider"></div>
+
+    <p>Please provide the following. We need these <strong>before we can start</strong>:</p>
+
+    <ul class="doc-list">
+        <li>
+            <div class="doc-icon">1</div>
+            <div class="doc-info">
+                <strong>Children's birth certificates <span class="you-provide tag-you">You Provide</span></strong>
+                <span>To prove the parent-child relationship (required for bursary qualification)</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon">2</div>
+            <div class="doc-info">
+                <strong>School fee statements / invoices <span class="you-provide tag-you">You Provide</span></strong>
+                <span>Latest invoices from each school showing the annual fees and amounts due</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon">3</div>
+            <div class="doc-info">
+                <strong>School registration proof <span class="you-provide tag-you">You Provide</span></strong>
+                <span>Confirmation that each child is registered (acceptance letter or account statement with school details)</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon">4</div>
+            <div class="doc-info">
+                <strong>Your ID document <span class="you-provide tag-you">You Provide</span></strong>
+                <span>Certified copy of your South African ID</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon">5</div>
+            <div class="doc-info">
+                <strong>Company registration documents (CoR 14.3) <span class="you-provide tag-you">You Provide</span></strong>
+                <span>CIPC registration certificate for Boikago Events &amp; Creatives (Pty) Ltd</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon">6</div>
+            <div class="doc-info">
+                <strong>Company bank account details <span class="you-provide tag-you">You Provide</span></strong>
+                <span>Bank confirmation letter or latest company bank statement (to set up school payments)</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon">7</div>
+            <div class="doc-info">
+                <strong>Vehicle details <span class="you-provide tag-you">You Provide</span></strong>
+                <span>For the travel allowance — registration papers and purchase invoice (or current market value) of the vehicle used for business</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon">8</div>
+            <div class="doc-info">
+                <strong>Current odometer reading <span class="you-provide tag-you">You Provide</span></strong>
+                <span>Take a photo of your vehicle's odometer on 1 March 2026 — this is the opening reading for the logbook</span>
+            </div>
+        </li>
+    </ul>
+</div>
+
+<!-- ── WHAT WE WILL PREPARE ── -->
+<div class="card">
+    <div class="card-label">We Handle This</div>
+    <h2>What SGBS Group Will Prepare</h2>
+    <div class="card-divider"></div>
+
+    <p>Once we receive your documents, we will draft and deliver the following within <strong>7 business days</strong>:</p>
+
+    <ul class="doc-list">
+        <li>
+            <div class="doc-icon" style="background:var(--primary-light);">✓</div>
+            <div class="doc-info">
+                <strong>Employment Contract <span class="you-provide tag-us">We Draft</span></strong>
+                <span>Formalises your role as employee-director, reflecting total CTC with bursary and travel allowance components</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon" style="background:var(--primary-light);">✓</div>
+            <div class="doc-info">
+                <strong>Company Bursary Policy <span class="you-provide tag-us">We Draft</span></strong>
+                <span>Formal written policy — this is the document SARS will ask for in an audit</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon" style="background:var(--primary-light);">✓</div>
+            <div class="doc-info">
+                <strong>Board Resolution <span class="you-provide tag-us">We Draft</span></strong>
+                <span>Resolution adopting the bursary policy and approving the specific bursary amounts for your children</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon" style="background:var(--primary-light);">✓</div>
+            <div class="doc-info">
+                <strong>Bursary Award Letter <span class="you-provide tag-us">We Draft</span></strong>
+                <span>Formal letter confirming the bursary granted per child, per year</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon" style="background:var(--primary-light);">✓</div>
+            <div class="doc-info">
+                <strong>Remuneration Restructuring Letter <span class="you-provide tag-us">We Draft</span></strong>
+                <span>Documents the change from your old CTC to the new structure with bursary &amp; travel components</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon" style="background:var(--primary-light);">✓</div>
+            <div class="doc-info">
+                <strong>Travel Allowance Addendum <span class="you-provide tag-us">We Draft</span></strong>
+                <span>Employment contract addendum specifically for the travel allowance</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon" style="background:var(--primary-light);">✓</div>
+            <div class="doc-info">
+                <strong>Travel Logbook Template <span class="you-provide tag-us">We Draft</span></strong>
+                <span>Ready-to-use logbook — just fill in your trips daily</span>
+            </div>
+        </li>
+        <li>
+            <div class="doc-icon" style="background:var(--primary-light);">✓</div>
+            <div class="doc-info">
+                <strong>IRP5 &amp; Payroll Setup <span class="you-provide tag-us">We Handle</span></strong>
+                <span>We update your payroll to reflect the bursary (code 3815) and travel allowance (code 3701) correctly</span>
+            </div>
+        </li>
+    </ul>
+</div>
+
+<!-- ── RULES TO FOLLOW ── -->
+<div class="card">
+    <div class="card-label">Golden Rules</div>
+    <h2>3 Rules — Don't Break These</h2>
+    <div class="card-divider"></div>
+
+    <ol class="action-steps">
+        <li>
+            <div class="step-body">
+                <strong>Company pays the school directly — always</strong>
+                <p>Every payment must come from the Boikago Events &amp; Creatives company bank account straight to the school. Never pay personally and claim back.</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-body">
+                <strong>Keep your cash salary at or below R600,000/year</strong>
+                <p>If your salary goes above R600k, the bursary exemption falls away and the school fees become taxable. If you need more money, take it as dividends (taxed at 20% vs up to 45% for salary).</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-body">
+                <strong>Fill in the logbook every single day</strong>
+                <p>No logbook = no travel deduction. SARS will reject it. It takes 30 seconds per trip. Do it daily — never try to fill it in at year-end from memory.</p>
+            </div>
+        </li>
+    </ol>
+
+    <div class="warning">
+        <p><strong>⚠️ If SARS audits you</strong>, they will ask for three things: the bursary policy, proof of payment from the company to the school, and the travel logbook. As long as you have these, you are fully protected. This is our job to make sure you're covered — but the logbook is on you.</p>
+    </div>
+</div>
+
+<!-- ── TIMELINE ── -->
+<div class="card">
+    <div class="card-label">Timeline</div>
+    <h2>When Does This Happen?</h2>
+    <div class="card-divider"></div>
+
+    <ol class="action-steps">
+        <li>
+            <div class="step-body">
+                <strong>This week — Send us your documents</strong>
+                <p>Email or WhatsApp the 8 items listed above to info@sgbsgroup.co.za or 074 012 6873.</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-body">
+                <strong>Within 7 days — We deliver all paperwork</strong>
+                <p>Employment contract, bursary policy, board resolution, award letters — everything ready for your signature.</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-body">
+                <strong>1 March 2026 — New tax year begins</strong>
+                <p>Bursary and travel allowance become effective. Company starts paying school fees. You start the logbook.</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-body">
+                <strong>Ongoing — We manage payroll &amp; compliance</strong>
+                <p>Monthly payslips, EMP201 submissions, mid-year reconciliation, and annual IRP5 — all handled by SGBS Group.</p>
+            </div>
+        </li>
+    </ol>
+</div>
+
+<!-- ── DETAILED REFERENCE ── -->
+<div class="card" style="text-align:center; background: linear-gradient(135deg, #f0f4ff, #edf2ff); border: 1px solid rgba(49,130,206,0.15);">
+    <p style="font-size: 13px; color: var(--text-light); margin-bottom: 14px;">Want the full technical breakdown with legislation and case law?</p>
+    <a href="tax-optimisation-plan" style="display:inline-block; padding: 12px 28px; background:var(--primary); color:white; border-radius:8px; text-decoration:none; font-size:13px; font-weight:600; transition: all 0.3s;">
+        View Full Tax Optimisation Plan →
+    </a>
+</div>
+
+<!-- ── FOOTER ── -->
+<div class="card" style="text-align:center; background: linear-gradient(135deg, #0f2440, #1a365d); color: white; border: none;">
+    <div style="width:46px; height:46px; border:2px solid var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-size:18px; color:var(--accent); margin:0 auto 12px;">SG</div>
+    <div style="font-family:'Playfair Display',serif; font-size:18px; margin-bottom:4px;">SGBS Group (Pty) Ltd</div>
+    <div style="font-size:11px; color:rgba(255,255,255,0.4); margin-bottom:20px;">Professional Accounting, Tax Advisory &amp; Technology Services</div>
+    <div style="font-size:12px; color:rgba(255,255,255,0.4); line-height:2;">
+        📧 info@sgbsgroup.co.za &nbsp;|&nbsp; 📞 074 012 6873 &nbsp;|&nbsp; 🌐 sgbsgroup.co.za
+    </div>
+    <div style="margin-top:20px; font-size:9px; color:rgba(255,255,255,0.2);">
+        Confidential — Prepared exclusively for Boikago Events &amp; Creatives (Pty) Ltd<br>
+        REF: SGBS/TAX/2026-BEC-001 &nbsp;|&nbsp; February 2026
+    </div>
+</div>
+
+</div><!-- end .container -->
+
+<!-- ── FLOATING BUTTONS ── -->
+<div class="fab-bar">
+    <button class="fab-btn fab-print" onclick="window.print()" title="Print or save as PDF">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        Print / Save PDF
+    </button>
+    <button class="fab-btn fab-download" onclick="window.print()" title="Download as PDF">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Download PDF
+    </button>
+</div>
+
+</body>
+</html>

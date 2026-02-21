@@ -9,13 +9,13 @@ import { Response } from 'express';
 import pool from '../config/database';
 import { TenantRequest } from '../types';
 
-// Helper to extract tenant context
-function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string } {
+// Helper to extract tenant + entity context
+function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string; entityId?: string } {
   const tenantId = req.tenant?.id;
   if (!tenantId) {
     throw new Error('Tenant context required');
   }
-  return { tenantId, userId: req.user?.id };
+  return { tenantId, userId: req.user?.id, entityId: req.entity?.id || req.entityId };
 }
 
 interface AccountBalance {
@@ -55,7 +55,7 @@ export class IncomeStatementControllerV2 {
    */
   static async generateIncomeStatement(req: TenantRequest, res: Response): Promise<void> {
     try {
-      const { tenantId } = getTenantContext(req);
+      const { tenantId, entityId } = getTenantContext(req);
       const { start_date, end_date, period = 'monthly' } = req.query;
 
       const dateRange = calculateDateRange(period as string, start_date as string, end_date as string);
@@ -82,7 +82,7 @@ export class IncomeStatementControllerV2 {
       res.json({
         success: true,
         data: incomeStatementData,
-        meta: { generated_at: new Date().toISOString(), tenant_id: tenantId }
+        meta: { generated_at: new Date().toISOString(), tenant_id: tenantId, entity_id: entityId || null }
       });
 
     } catch (error: any) {
@@ -105,10 +105,11 @@ export class IncomeStatementControllerV2 {
    */
   static async getRevenueBreakdown(req: TenantRequest, res: Response): Promise<void> {
     try {
-      const { tenantId } = getTenantContext(req);
+      const { tenantId, entityId } = getTenantContext(req);
       const { start_date, end_date, group_by = 'account' } = req.query;
 
       const dateRange = calculateDateRange('custom', start_date as string, end_date as string);
+      const entityParam = entityId || null;
 
       let groupByClause = 'coa.account_code, coa.account_name';
       let selectClause = 'coa.account_code as category, coa.account_name as label';
@@ -124,10 +125,11 @@ export class IncomeStatementControllerV2 {
           COALESCE(SUM(jel.credit_amount - jel.debit_amount), 0) as amount
         FROM journal_entry_lines jel
         JOIN chart_of_accounts coa ON jel.account_id = coa.account_id
-          AND coa.tenant_id = $1
+          AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $4)
         JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id
-          AND je.tenant_id = $1
+          AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $4)
         WHERE jel.tenant_id = $1
+          AND (jel.entity_id IS NULL OR jel.entity_id = $4)
           AND je.status = 'POSTED'
           AND je.journal_date >= $2
           AND je.journal_date <= $3
@@ -137,7 +139,7 @@ export class IncomeStatementControllerV2 {
         ORDER BY amount DESC
       `;
 
-      const result = await pool.query(query, [tenantId, dateRange.start_date, dateRange.end_date]);
+      const result = await pool.query(query, [tenantId, dateRange.start_date, dateRange.end_date, entityParam]);
 
       res.json({
         success: true,
@@ -164,10 +166,11 @@ export class IncomeStatementControllerV2 {
    */
   static async getExpenseBreakdown(req: TenantRequest, res: Response): Promise<void> {
     try {
-      const { tenantId } = getTenantContext(req);
+      const { tenantId, entityId } = getTenantContext(req);
       const { start_date, end_date, group_by = 'account' } = req.query;
 
       const dateRange = calculateDateRange('custom', start_date as string, end_date as string);
+      const entityParam = entityId || null;
 
       let groupByClause = 'coa.account_code, coa.account_name';
       let selectClause = 'coa.account_code as category, coa.account_name as label';
@@ -183,10 +186,11 @@ export class IncomeStatementControllerV2 {
           COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as amount
         FROM journal_entry_lines jel
         JOIN chart_of_accounts coa ON jel.account_id = coa.account_id
-          AND coa.tenant_id = $1
+          AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $4)
         JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id
-          AND je.tenant_id = $1
+          AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $4)
         WHERE jel.tenant_id = $1
+          AND (jel.entity_id IS NULL OR jel.entity_id = $4)
           AND je.status = 'POSTED'
           AND je.journal_date >= $2
           AND je.journal_date <= $3
@@ -196,7 +200,7 @@ export class IncomeStatementControllerV2 {
         ORDER BY amount DESC
       `;
 
-      const result = await pool.query(query, [tenantId, dateRange.start_date, dateRange.end_date]);
+      const result = await pool.query(query, [tenantId, dateRange.start_date, dateRange.end_date, entityParam]);
 
       res.json({
         success: true,
@@ -291,8 +295,10 @@ async function fetchAccountBalances(
   startDate: string,
   endDate: string,
   codeStart: string,
-  codeEnd: string
+  codeEnd: string,
+  entityId?: string | null
 ): Promise<AccountBalance[]> {
+  const entityParam = entityId || null;
   const query = `
     SELECT 
       coa.account_code,
@@ -306,12 +312,15 @@ async function fetchAccountBalances(
     FROM chart_of_accounts coa
     LEFT JOIN journal_entry_lines jel ON coa.account_id = jel.account_id
       AND jel.tenant_id = $1
+      AND (jel.entity_id IS NULL OR jel.entity_id = $6)
     LEFT JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id
       AND je.tenant_id = $1
+      AND (je.entity_id IS NULL OR je.entity_id = $6)
       AND je.status = 'POSTED'
       AND je.journal_date >= $2
       AND je.journal_date <= $3
     WHERE coa.tenant_id = $1
+      AND (coa.entity_id IS NULL OR coa.entity_id = $6)
       AND coa.account_code >= $4
       AND coa.account_code < $5
       AND coa.is_active = true
@@ -321,7 +330,7 @@ async function fetchAccountBalances(
     ORDER BY coa.account_code
   `;
 
-  const result = await pool.query(query, [tenantId, startDate, endDate, codeStart, codeEnd]);
+  const result = await pool.query(query, [tenantId, startDate, endDate, codeStart, codeEnd, entityParam]);
   return result.rows.map(row => ({
     account_code: row.account_code,
     account_name: row.account_name,

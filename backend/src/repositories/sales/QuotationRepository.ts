@@ -55,6 +55,7 @@ export class QuotationRepository extends BaseRepository<Quotation> {
   protected tableName = 'quotations';
   protected schema = 'sales';  // Table is in sales schema
   protected softDelete = false;  // Table doesn't have deleted_at column
+  protected entityScoped = true;
   protected primaryKey = 'quotation_id';  // Override default 'id'
 
   /**

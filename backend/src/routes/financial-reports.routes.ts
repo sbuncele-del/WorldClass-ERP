@@ -1,12 +1,13 @@
 import { Router } from 'express';
 // V2 controllers with tenant isolation - CRITICAL for data security
 import * as FinancialReportsV2 from '../controllers/v2/financial-reports.controller.v2';
-import { tenantMiddleware } from '../middleware/tenant';
+import { tenantMiddleware, requireEntity } from '../middleware/tenant';
 
 const router = Router();
 
-// Apply tenant middleware to all financial report routes
+// Apply tenant + entity middleware to all financial report routes
 router.use(tenantMiddleware);
+router.use(requireEntity);
 
 // ============================================================================
 // INCOME STATEMENT (V2 - Tenant Isolated)

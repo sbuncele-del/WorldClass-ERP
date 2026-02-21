@@ -18,6 +18,7 @@ import { pool } from '../config/database';
 export interface TenantContext {
   tenantId: string;
   userId?: string;
+  entityId?: string;
 }
 
 export interface PaginationOptions {
@@ -48,6 +49,8 @@ export abstract class BaseRepository<T> {
   protected abstract schema: string;
   protected primaryKey: string = 'id';
   protected softDelete: boolean = true;
+  protected entityScoped: boolean = false;
+  protected entityColumn: string = 'entity_id';
 
   /**
    * Get the fully qualified table name (schema.table)
@@ -84,6 +87,12 @@ export abstract class BaseRepository<T> {
     const conditions: string[] = ['tenant_id = $1'];
     const params: any[] = [ctx.tenantId];
     let paramIndex = 2;
+
+    if (this.entityScoped) {
+      conditions.push(`(${this.entityColumn} IS NULL OR ${this.entityColumn} = $${paramIndex})`);
+      params.push(ctx.entityId || null);
+      paramIndex++;
+    }
 
     // Add soft delete filter
     if (this.softDelete && !options?.includeDeleted) {
@@ -143,7 +152,14 @@ export abstract class BaseRepository<T> {
     options?: QueryOptions
   ): Promise<T | null> {
     const conditions = [`${this.primaryKey} = $1`, 'tenant_id = $2'];
-    const params = [id, ctx.tenantId];
+    const params: any[] = [id, ctx.tenantId];
+    let paramIndex = 3;
+
+    if (this.entityScoped) {
+      conditions.push(`(${this.entityColumn} IS NULL OR ${this.entityColumn} = $${paramIndex})`);
+      params.push(ctx.entityId || null);
+      paramIndex++;
+    }
 
     if (this.softDelete && !options?.includeDeleted) {
       conditions.push('deleted_at IS NULL');
@@ -168,7 +184,14 @@ export abstract class BaseRepository<T> {
     options?: QueryOptions
   ): Promise<T[]> {
     const conditions = [`${field} = $1`, 'tenant_id = $2'];
-    const params = [value, ctx.tenantId];
+    const params: any[] = [value, ctx.tenantId];
+    let paramIndex = 3;
+
+    if (this.entityScoped) {
+      conditions.push(`(${this.entityColumn} IS NULL OR ${this.entityColumn} = $${paramIndex})`);
+      params.push(ctx.entityId || null);
+      paramIndex++;
+    }
 
     if (this.softDelete && !options?.includeDeleted) {
       conditions.push('deleted_at IS NULL');
@@ -194,6 +217,12 @@ export abstract class BaseRepository<T> {
     const conditions: string[] = ['tenant_id = $1'];
     const params: any[] = [ctx.tenantId];
     let paramIndex = 2;
+
+    if (this.entityScoped) {
+      conditions.push(`(${this.entityColumn} IS NULL OR ${this.entityColumn} = $${paramIndex})`);
+      params.push(ctx.entityId || null);
+      paramIndex++;
+    }
 
     if (this.softDelete && !options?.includeDeleted) {
       conditions.push('deleted_at IS NULL');
@@ -232,6 +261,10 @@ export abstract class BaseRepository<T> {
       created_by: ctx.userId,
       created_at: new Date()
     };
+
+    if (this.entityScoped) {
+      recordData[this.entityColumn] = ctx.entityId || null;
+    }
 
     const columns = Object.keys(recordData);
     const values = Object.values(recordData);
@@ -331,19 +364,35 @@ export abstract class BaseRepository<T> {
     options?: QueryOptions
   ): Promise<boolean> {
     if (this.softDelete) {
+      const params: any[] = [ctx.userId, id, ctx.tenantId];
+      let condition = `${this.primaryKey} = $2 AND tenant_id = $3 AND deleted_at IS NULL`;
+
+      if (this.entityScoped) {
+        params.push(ctx.entityId || null);
+        condition += ` AND (${this.entityColumn} IS NULL OR ${this.entityColumn} = $4)`;
+      }
+
       const query = `
         UPDATE ${this.fullTableName}
         SET deleted_at = NOW(), deleted_by = $1
-        WHERE ${this.primaryKey} = $2 AND tenant_id = $3 AND deleted_at IS NULL
+        WHERE ${condition}
       `;
-      const result = await this.query(query, [ctx.userId, id, ctx.tenantId], options);
+      const result = await this.query(query, params, options);
       return (result.rowCount || 0) > 0;
     } else {
+      const params: any[] = [id, ctx.tenantId];
+      let condition = `${this.primaryKey} = $1 AND tenant_id = $2`;
+
+      if (this.entityScoped) {
+        params.push(ctx.entityId || null);
+        condition += ` AND (${this.entityColumn} IS NULL OR ${this.entityColumn} = $3)`;
+      }
+
       const query = `
         DELETE FROM ${this.fullTableName}
-        WHERE ${this.primaryKey} = $1 AND tenant_id = $2
+        WHERE ${condition}
       `;
-      const result = await this.query(query, [id, ctx.tenantId], options);
+      const result = await this.query(query, params, options);
       return (result.rowCount || 0) > 0;
     }
   }
@@ -359,6 +408,12 @@ export abstract class BaseRepository<T> {
     const conditions: string[] = ['tenant_id = $1'];
     const params: any[] = [ctx.tenantId];
     let paramIndex = 2;
+
+    if (this.entityScoped) {
+      conditions.push(`(${this.entityColumn} IS NULL OR ${this.entityColumn} = $${paramIndex})`);
+      params.push(ctx.entityId || null);
+      paramIndex++;
+    }
 
     if (this.softDelete && !options?.includeDeleted) {
       conditions.push('deleted_at IS NULL');

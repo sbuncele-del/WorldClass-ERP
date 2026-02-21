@@ -9,13 +9,13 @@ import { Response } from 'express';
 import pool from '../config/database';
 import { TenantRequest } from '../types';
 
-// Helper to extract tenant context
-function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string } {
+// Helper to extract tenant + entity context
+function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string; entityId?: string } {
   const tenantId = req.tenant?.id;
   if (!tenantId) {
     throw new Error('Tenant context required');
   }
-  return { tenantId, userId: req.user?.id };
+  return { tenantId, userId: req.user?.id, entityId: req.entity?.id || req.entityId };
 }
 
 interface AccountBalance {
@@ -54,7 +54,7 @@ export class BalanceSheetControllerV2 {
    */
   static async generateBalanceSheet(req: TenantRequest, res: Response): Promise<void> {
     try {
-      const { tenantId } = getTenantContext(req);
+      const { tenantId, entityId } = getTenantContext(req);
       const { as_of_date } = req.query;
 
       const asOfDate = (as_of_date as string) || new Date().toISOString().split('T')[0];
@@ -84,7 +84,7 @@ export class BalanceSheetControllerV2 {
       res.json({
         success: true,
         data: balanceSheetData,
-        meta: { generated_at: new Date().toISOString(), tenant_id: tenantId }
+        meta: { generated_at: new Date().toISOString(), tenant_id: tenantId, entity_id: entityId || null }
       });
 
     } catch (error: any) {
@@ -107,10 +107,11 @@ export class BalanceSheetControllerV2 {
    */
   static async getTrialBalance(req: TenantRequest, res: Response): Promise<void> {
     try {
-      const { tenantId } = getTenantContext(req);
+      const { tenantId, entityId } = getTenantContext(req);
       const { as_of_date } = req.query;
 
       const asOfDate = (as_of_date as string) || new Date().toISOString().split('T')[0];
+      const entityParam = entityId || null;
 
       const query = `
         SELECT 
@@ -127,11 +128,14 @@ export class BalanceSheetControllerV2 {
         FROM chart_of_accounts coa
         LEFT JOIN journal_entry_lines jel ON coa.id = jel.account_id
           AND jel.tenant_id = $1
+          AND (jel.entity_id IS NULL OR jel.entity_id = $3)
         LEFT JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
+          AND (je.entity_id IS NULL OR je.entity_id = $3)
           AND je.status = 'posted'
           AND je.posting_date <= $2
         WHERE coa.tenant_id = $1
+          AND (coa.entity_id IS NULL OR coa.entity_id = $3)
           AND coa.is_active = true
         GROUP BY coa.account_code, coa.account_name, coa.account_type
         HAVING COALESCE(SUM(jel.debit_amount), 0) != 0 
@@ -139,7 +143,7 @@ export class BalanceSheetControllerV2 {
         ORDER BY coa.account_code
       `;
 
-      const result = await pool.query(query, [tenantId, asOfDate]);
+      const result = await pool.query(query, [tenantId, asOfDate, entityParam]);
 
       const totalDebits = result.rows.reduce((sum, row) => sum + parseFloat(row.total_debits), 0);
       const totalCredits = result.rows.reduce((sum, row) => sum + parseFloat(row.total_credits), 0);
@@ -202,8 +206,10 @@ async function fetchBalanceSheetAccounts(
   tenantId: string,
   asOfDate: string,
   codeStart: string,
-  codeEnd: string
+  codeEnd: string,
+  entityId?: string | null
 ): Promise<AccountBalance[]> {
+  const entityParam = entityId || null;
   const query = `
     SELECT 
       coa.account_code,
@@ -219,11 +225,14 @@ async function fetchBalanceSheetAccounts(
     FROM chart_of_accounts coa
     LEFT JOIN journal_entry_lines jel ON coa.account_id = jel.account_id
       AND jel.tenant_id = $1
+      AND (jel.entity_id IS NULL OR jel.entity_id = $5)
     LEFT JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id
       AND je.tenant_id = $1
+      AND (je.entity_id IS NULL OR je.entity_id = $5)
       AND je.status = 'POSTED'
       AND je.journal_date <= $2
     WHERE coa.tenant_id = $1
+      AND (coa.entity_id IS NULL OR coa.entity_id = $5)
       AND coa.account_code >= $3
       AND coa.account_code < $4
       AND coa.is_active = true
@@ -233,7 +242,7 @@ async function fetchBalanceSheetAccounts(
     ORDER BY coa.account_code
   `;
 
-  const result = await pool.query(query, [tenantId, asOfDate, codeStart, codeEnd]);
+  const result = await pool.query(query, [tenantId, asOfDate, codeStart, codeEnd, entityParam]);
   return result.rows.map(row => ({
     account_code: row.account_code,
     account_name: row.account_name,
@@ -242,7 +251,8 @@ async function fetchBalanceSheetAccounts(
   }));
 }
 
-async function calculateRetainedEarnings(tenantId: string, asOfDate: string): Promise<number> {
+async function calculateRetainedEarnings(tenantId: string, asOfDate: string, entityId?: string | null): Promise<number> {
+  const entityParam = entityId || null;
   // Calculate net income for the current fiscal year
   const fiscalYearStart = `${asOfDate.substring(0, 4)}-01-01`;
 
@@ -259,17 +269,18 @@ async function calculateRetainedEarnings(tenantId: string, asOfDate: string): Pr
       ), 0) as net_income
     FROM journal_entry_lines jel
     JOIN chart_of_accounts coa ON jel.account_id = coa.account_id
-      AND coa.tenant_id = $1
+      AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $4)
     JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id
-      AND je.tenant_id = $1
+      AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $4)
     WHERE jel.tenant_id = $1
+      AND (jel.entity_id IS NULL OR jel.entity_id = $4)
       AND je.status = 'POSTED'
       AND je.journal_date >= $2
       AND je.journal_date <= $3
       AND coa.account_type IN ('REVENUE', 'EXPENSE')
   `;
 
-  const result = await pool.query(query, [tenantId, fiscalYearStart, asOfDate]);
+  const result = await pool.query(query, [tenantId, fiscalYearStart, asOfDate, entityParam]);
   return parseFloat(result.rows[0]?.net_income || '0');
 }
 

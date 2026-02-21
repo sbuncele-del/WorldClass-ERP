@@ -118,9 +118,23 @@ export interface UserPreferences {
 // REQUEST TYPES (Extended Express Request)
 // ================================================
 
+export interface EntityContext {
+  id: string;
+  tenant_id: string;
+  name: string;
+  code?: string;
+  type?: string;
+  parent_id?: string | null;
+  status?: string;
+  currency?: string;
+  country?: string;
+  level?: number;
+}
+
 export interface TenantRequest extends Request {
   tenantId?: string;  // Direct tenant ID for backwards compatibility
   userId?: string;    // Direct user ID for backwards compatibility
+  entityId?: string;  // Direct entity ID for multi-entity context
   tenant?: {
     id: string;
     slug: string;
@@ -139,6 +153,7 @@ export interface TenantRequest extends Request {
     first_name?: string;
     last_name?: string;
   };
+  entity?: EntityContext;
 }
 
 // ================================================

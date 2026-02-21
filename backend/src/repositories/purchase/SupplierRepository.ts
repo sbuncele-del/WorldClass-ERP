@@ -42,6 +42,8 @@ export class SupplierRepository extends BaseRepository<Supplier> {
   protected tableName = 'suppliers';
   protected schema = 'purchase';
   protected primaryKey = 'supplier_id';
+  protected softDelete = false;
+  protected entityScoped = true;
 
   private mapSupplier(row: any): Supplier {
     return {

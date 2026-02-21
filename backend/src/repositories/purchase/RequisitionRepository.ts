@@ -50,6 +50,7 @@ export class RequisitionRepository extends BaseRepository<Requisition> {
   protected schema = 'purchase';
   protected primaryKey = 'requisition_id';
   protected softDelete = false;
+  protected entityScoped = true;
 
   async getWithLines(ctx: TenantContext, requisitionId: string): Promise<Requisition | null> {
     const requisition = await this.findById(ctx, requisitionId);

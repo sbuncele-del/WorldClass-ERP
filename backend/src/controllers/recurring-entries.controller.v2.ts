@@ -9,13 +9,13 @@ import { Response } from 'express';
 import pool from '../config/database';
 import { TenantRequest } from '../types';
 
-// Helper to extract tenant context
-function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string } {
+// Helper to extract tenant + entity context
+function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string; entityId?: string } {
   const tenantId = req.tenant?.id;
   if (!tenantId) {
     throw new Error('Tenant context required');
   }
-  return { tenantId, userId: req.user?.id };
+  return { tenantId, userId: req.user?.id, entityId: req.entity?.id || req.entityId };
 }
 
 interface RecurringEntryLine {
@@ -401,14 +401,15 @@ export class RecurringEntriesControllerV2 {
       const jeQuery = `
         INSERT INTO journal_entries (
           tenant_id, entry_number, journal_date, description,
-          source_type, source_id, status, created_by
+          source_type, source_id, status, created_by, entity_id
         )
-        VALUES ($1, $2, $3, $4, 'RECURRING', $5, $6, $7)
+        VALUES ($1, $2, $3, $4, 'RECURRING', $5, $6, $7, $8)
         RETURNING *
       `;
 
       const entryNumber = `JE-REC-${Date.now()}`;
       const status = entry.auto_post ? 'POSTED' : 'DRAFT';
+      const entityId = (req as any).entity?.id || (req as any).entityId || null;
 
       const jeResult = await client.query(jeQuery, [
         tenantId,
@@ -417,7 +418,8 @@ export class RecurringEntriesControllerV2 {
         entry.description,
         id,
         status,
-        userId
+        userId,
+        entityId
       ]);
 
       const journalEntryId = jeResult.rows[0].id;
@@ -428,17 +430,18 @@ export class RecurringEntriesControllerV2 {
         const accountQuery = `
           SELECT id FROM chart_of_accounts
           WHERE tenant_id = $1 AND account_code = $2
+            AND (entity_id IS NULL OR entity_id = $3)
         `;
-        const accountResult = await client.query(accountQuery, [tenantId, line.account_code]);
+        const accountResult = await client.query(accountQuery, [tenantId, line.account_code, entityId]);
         const accountId = accountResult.rows[0]?.id;
 
         await client.query(`
           INSERT INTO journal_entry_lines (
             tenant_id, journal_entry_id, account_id, account_code,
             description, debit_amount, credit_amount,
-            cost_center, project_code, department
+            cost_center, project_code, department, entity_id
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         `, [
           tenantId,
           journalEntryId,
@@ -449,7 +452,8 @@ export class RecurringEntriesControllerV2 {
           line.credit_amount,
           line.cost_center,
           line.project_code,
-          line.department
+          line.department,
+          entityId
         ]);
       }
 

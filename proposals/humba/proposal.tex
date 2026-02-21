@@ -1,0 +1,925 @@
+% !TEX program = xelatex
+\documentclass[a4paper,11pt]{article}
+
+% ============================================================
+% PACKAGES
+% ============================================================
+\usepackage[a4paper, top=0mm, bottom=0mm, left=0mm, right=0mm]{geometry}
+\usepackage{fontspec}
+\usepackage[table]{xcolor}
+\usepackage{tikz}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{tcolorbox}
+\usepackage{parskip}
+\usepackage{multicol}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{amssymb}
+\usepackage{pifont}
+\usepackage{setspace}
+
+\tcbuselibrary{skins,breakable}
+
+% ============================================================
+% COLORS — HUMBA brand palette
+% ============================================================
+\definecolor{hblack}{HTML}{111111}
+\definecolor{hcream}{HTML}{F5F0E8}
+\definecolor{hbrown}{HTML}{6B4F3A}
+\definecolor{holive}{HTML}{4A5A3C}
+\definecolor{hnavy}{HTML}{1A2744}
+\definecolor{hdusty}{HTML}{C8A45C}
+\definecolor{hwhite}{HTML}{FAFAF8}
+\definecolor{textdark}{HTML}{1A1A1A}
+\definecolor{textbody}{HTML}{3D3D3D}
+\definecolor{textmuted}{HTML}{6B6B6B}
+\definecolor{textlight}{HTML}{9CA3AF}
+\definecolor{grayline}{HTML}{E0DCD4}
+\definecolor{graybg}{HTML}{F7F5F0}
+\definecolor{greenstatus}{HTML}{4A5A3C}
+\definecolor{goldaccent}{HTML}{C8A45C}
+
+% ============================================================
+% FONTS — Lato
+% ============================================================
+\setmainfont{Lato}[
+  UprightFont    = Lato-Regular,
+  BoldFont       = Lato-Bold,
+  ItalicFont     = Lato-Italic,
+  BoldItalicFont = Lato-BoldItalic,
+]
+\newfontfamily\latoheavy{Lato Heavy}[BoldFont = Lato-Heavy]
+\newfontfamily\latolight{Lato Light}[UprightFont = Lato-Light, ItalicFont = Lato-LightItalic]
+\newfontfamily\latosemibold{Lato Semibold}[UprightFont = Lato-Semibold]
+\newfontfamily\latoblack{Lato Black}[UprightFont = Lato-Black]
+\newfontfamily\latothin{Lato Thin}[UprightFont = Lato-Thin]
+\newfontfamily\latomedium{Lato Medium}[UprightFont = Lato-Medium]
+
+\hypersetup{hidelinks}
+
+% ============================================================
+% PAGE STYLE
+% ============================================================
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ============================================================
+% CUSTOM COMMANDS
+% ============================================================
+\newcommand{\sectionnum}[1]{%
+  \tikz[baseline=(char.base)]{
+    \node[fill=hblack, text=hcream, circle, inner sep=0pt, minimum size=20pt, font=\latosemibold\fontsize{9pt}{9pt}\selectfont] (char) {#1};
+  }%
+}
+
+\newcommand{\pageheader}[1]{%
+  \noindent
+  \begin{tikzpicture}[remember picture, overlay]
+    \draw[grayline, line width=0.8pt] ([yshift=-2pt]current page.north west) ++(25mm,-20mm) -- ++(165mm,0);
+  \end{tikzpicture}
+  \begin{minipage}[t]{0.5\textwidth}
+    {\fontsize{11pt}{11pt}\selectfont{\latosemibold\color{hblack}Masaphokati Designs} {\latolight\color{goldaccent}Pty Ltd}}
+  \end{minipage}%
+  \hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \raggedleft{\fontsize{7pt}{7pt}\selectfont\latolight\color{textlight}MD/HB/2026-002\;\textbullet\;HUMBA\texttrademark\;\textbullet\;February 2026}
+  \end{minipage}
+  \vspace{14pt}
+}
+
+\newcommand{\pagefooter}[1]{%
+  \vfill
+  \noindent\textcolor{grayline}{\rule{\textwidth}{0.4pt}}\\[4pt]
+  {\fontsize{7pt}{7pt}\selectfont\latolight\color{textlight}Masaphokati Designs Pty Ltd\;\textbullet\;Inspiring Dreams\hfill Page #1 of 10}
+}
+
+% ============================================================
+\begin{document}
+\thispagestyle{empty}
+
+% ============================================================
+% PAGE 1 — COVER PAGE
+% ============================================================
+\begin{tikzpicture}[remember picture, overlay]
+  % Full page dark background
+  \fill[hblack] (current page.north west) rectangle (current page.south east);
+  
+  % Subtle texture overlay
+  \fill[hbrown, opacity=0.06] ([yshift=0.5\paperheight]current page.south west) rectangle (current page.south east);
+  
+  % Olive accent strip on right edge
+  \fill[holive] ([xshift=-3.5pt]current page.north east) rectangle ([xshift=0pt]current page.south east);
+
+  % Subtle circle accents
+  \draw[hcream, opacity=0.03, line width=0.5pt] ([xshift=-50mm, yshift=-40mm]current page.north east) circle (70mm);
+  \draw[hcream, opacity=0.02, line width=0.5pt] ([xshift=-50mm, yshift=-40mm]current page.north east) circle (88mm);
+
+  % === TOP BAR ===
+  \draw[hcream, opacity=0.06, line width=0.4pt] ([yshift=-52mm]current page.north west) ++(25mm,0) -- ++(170mm,0);
+  
+  % Company Logo
+  \node[anchor=north west, text=hcream] at ([xshift=25mm, yshift=-18mm]current page.north west) {
+    {\latoheavy\fontsize{13pt}{13pt}\selectfont MASAPHOKATI DESIGNS}\;{\latolight\fontsize{13pt}{13pt}\selectfont\color{goldaccent}PTY LTD}
+  };
+  \node[anchor=north west, text=hcream, opacity=0.25] at ([xshift=25mm, yshift=-29mm]current page.north west) {
+    {\latolight\fontsize{7pt}{7pt}\selectfont\addfontfeature{LetterSpace=14}DIGITAL \& BRAND DEVELOPMENT}
+  };
+  
+  % Reference top right
+  \node[anchor=north east, text=hcream, opacity=0.30] at ([xshift=-18mm, yshift=-18mm]current page.north east) {
+    {\latolight\fontsize{8pt}{12pt}\selectfont
+    \begin{tabular}{@{}r@{}}
+      Proposal Ref: MD/HB/2026-002\\
+      Date: 18 February 2026
+    \end{tabular}}
+  };
+  
+  % === MAIN TITLE AREA ===
+  % Olive accent bar
+  \fill[holive] ([xshift=25mm, yshift=-86mm]current page.north west) rectangle ++(50pt, 2pt);
+  
+  % Brand name
+  \node[anchor=north west, text=hcream] at ([xshift=25mm, yshift=-96mm]current page.north west) {
+    {\latosemibold\fontsize{9pt}{9pt}\selectfont\addfontfeature{LetterSpace=14}\color{holive}FOR HUMBA\texttrademark}
+  };
+  
+  % Main title
+  \node[anchor=north west, text=hcream] at ([xshift=25mm, yshift=-114mm]current page.north west) {
+    {\latoblack\fontsize{40pt}{48pt}\selectfont
+    \begin{tabular}{@{}l@{}}
+      E-Commerce\\
+      Website\\
+      Development
+    \end{tabular}}
+  };
+  
+  % Tagline
+  \node[anchor=north west, text=hcream, opacity=0.40, text width=135mm] at ([xshift=25mm, yshift=-188mm]current page.north west) {
+    {\latolight\fontsize{12pt}{18pt}\selectfont
+    Move at your own pace in a world that's always rushing.}
+  };
+  
+  % Subtitle
+  \node[anchor=north west, text=hcream, opacity=0.55, text width=135mm] at ([xshift=25mm, yshift=-210mm]current page.north west) {
+    {\latolight\fontsize{10.5pt}{16pt}\selectfont
+    A complete custom-built e-commerce platform for culture-driven\\
+    premium streetwear --- designed to sell, tell your story, and build\\
+    The Snail Clan community.}
+  };
+  
+  % === BOTTOM STRIP ===
+  \draw[hcream, opacity=0.06, line width=0.4pt] ([yshift=55mm]current page.south west) ++(25mm,0) -- ++(170mm,0);
+  
+  % Prepared For
+  \node[anchor=south west, text=holive] at ([xshift=25mm, yshift=40mm]current page.south west) {
+    {\latosemibold\fontsize{7pt}{7pt}\selectfont\addfontfeature{LetterSpace=8}PREPARED FOR}
+  };
+  \node[anchor=south west, text=hcream, opacity=0.60] at ([xshift=25mm, yshift=22mm]current page.south west) {
+    {\latolight\fontsize{9.5pt}{14pt}\selectfont
+    \begin{tabular}{@{}l@{}}
+      Victor Gudluza\\
+      {\latosemibold HUMBA\texttrademark}
+    \end{tabular}}
+  };
+  
+  % Prepared By
+  \node[anchor=south east, text=holive] at ([xshift=-18mm, yshift=40mm]current page.south east) {
+    {\latosemibold\fontsize{7pt}{7pt}\selectfont\addfontfeature{LetterSpace=8}PREPARED BY}
+  };
+  \node[anchor=south east, text=hcream, opacity=0.60] at ([xshift=-18mm, yshift=22mm]current page.south east) {
+    {\latolight\fontsize{9.5pt}{14pt}\selectfont
+    \begin{tabular}{@{}r@{}}
+      Sibusiso Mavuso\\
+      {\latosemibold Masaphokati Designs Pty Ltd}
+    \end{tabular}}
+  };
+\end{tikzpicture}
+
+\clearpage
+
+% ============================================================
+% PAGE 2 — INTRODUCTION & BRAND UNDERSTANDING
+% ============================================================
+\newgeometry{top=20mm, bottom=20mm, left=25mm, right=25mm}
+\thispagestyle{empty}
+
+\pageheader{2}
+
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{1}\;\;Introduction}
+
+\vspace{8pt}
+{\color{textbody}\fontsize{10.5pt}{16pt}\selectfont
+This proposal is submitted by \textbf{Masaphokati Designs Pty Ltd} to Victor Gudluza in response to your brief for the design and development of a custom e-commerce website for \textbf{HUMBA\texttrademark}.
+
+The purpose of this document is to:}
+
+\vspace{6pt}
+\begin{tcolorbox}[colback=graybg, colframe=graybg, boxrule=0pt, left=4mm, right=4mm, top=3mm, bottom=3mm, borderline west={3pt}{0pt}{holive}]
+{\color{textdark}\fontsize{9.5pt}{16pt}\selectfont
+\textbf{1.}\;Demonstrate our understanding of the HUMBA\texttrademark{} brand and vision\\
+\textbf{2.}\;Define the website structure, features, and technical approach\\
+\textbf{3.}\;Present a clear scope with deliverables and timeline\\
+\textbf{4.}\;Provide a transparent, all-inclusive investment for Phase 1}
+\end{tcolorbox}
+
+\vspace{14pt}
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{2}\;\;Brand Understanding}
+
+\vspace{8pt}
+{\color{textbody}\fontsize{10.5pt}{16pt}\selectfont
+HUMBA\texttrademark{} is a \textbf{culture-driven premium streetwear} brand inspired by the snail --- a symbol of patience, resilience, and intentional movement across South African languages and cultures.
+
+The brand speaks to a generation of \textbf{creatives, thinkers, and slow-living individuals} aged 8--35 who reject the rush and choose to move with meaning. HUMBA\texttrademark{} is not built for speed. It is built for purpose.}
+
+\vspace{6pt}
+\begin{tcolorbox}[colback=hblack, colframe=hblack, arc=4pt, boxrule=0pt, left=6mm, right=6mm, top=5mm, bottom=5mm]
+{\color{hcream}\latolight\fontsize{14pt}{20pt}\selectfont\itshape
+``Move at your own pace in a world that's always rushing.''}\\[6pt]
+{\color{goldaccent}\latosemibold\fontsize{8pt}{8pt}\selectfont\addfontfeature{LetterSpace=6}--- HUMBA\texttrademark{} BRAND TAGLINE}
+\end{tcolorbox}
+
+\vspace{10pt}
+{\color{textbody}\fontsize{10.5pt}{16pt}\selectfont
+The community around the brand --- \textbf{The Snail Clan} --- connects the cultural significance of the snail across languages:}
+
+\vspace{4pt}
+\begin{center}
+{\color{hbrown}\latosemibold\fontsize{9pt}{16pt}\selectfont
+HUMBA\;\textbullet\;KHUMBA\;\textbullet\;UMNENKE\;\textbullet\;INKUMBA\;\textbullet\;KGOPA\;\textbullet\;KGOFU\;\textbullet\;KGOHU\;\textbullet\;SLAK\;\textbullet\;UMNENKHE\;\textbullet\;SGONOGONO}
+\end{center}
+
+\vspace{6pt}
+{\color{textbody}\fontsize{10.5pt}{16pt}\selectfont
+The website must be an extension of this identity: \textbf{calm, intentional, spacious, premium, and cultural}. Never loud. Never rushed. Never crowded.}
+
+\pagefooter{2}
+
+\clearpage
+
+% ============================================================
+% PAGE 3 — WEBSITE OBJECTIVES & TARGET AUDIENCE
+% ============================================================
+\thispagestyle{empty}
+
+\pageheader{3}
+
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{3}\;\;Website Objectives}
+
+\vspace{8pt}
+\begin{tcolorbox}[colback=graybg, colframe=graybg, boxrule=0pt, arc=4pt, left=5mm, right=5mm, top=4mm, bottom=4mm, borderline north={2pt}{0pt}{holive}]
+{\color{hblack}\latosemibold\fontsize{10.5pt}{10.5pt}\selectfont Primary Goal}\\[4pt]
+{\color{textbody}\fontsize{10.5pt}{16pt}\selectfont Sell HUMBA\texttrademark{} apparel through a seamless, premium e-commerce experience that reflects the brand.}
+\end{tcolorbox}
+
+\vspace{8pt}
+{\color{textbody}\fontsize{10.5pt}{16pt}\selectfont Secondary Goals:}
+\vspace{4pt}
+
+\begin{minipage}[t]{0.48\textwidth}
+\begin{tcolorbox}[colback=white, colframe=grayline, boxrule=0.5pt, arc=3pt, left=3mm, right=3mm, top=2.5mm, bottom=2.5mm, borderline north={2pt}{0pt}{holive}]
+{\color{holive}\fontsize{9pt}{9pt}\selectfont$\blacklozenge$}\;{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Build Brand Authority}\\[2pt]
+{\color{textmuted}\fontsize{8pt}{11pt}\selectfont Position HUMBA\texttrademark{} as a premium, culture-driven streetwear label through design and storytelling.}
+\end{tcolorbox}
+\vspace{4pt}
+\begin{tcolorbox}[colback=white, colframe=grayline, boxrule=0.5pt, arc=3pt, left=3mm, right=3mm, top=2.5mm, bottom=2.5mm, borderline north={2pt}{0pt}{holive}]
+{\color{holive}\fontsize{9pt}{9pt}\selectfont$\blacklozenge$}\;{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Tell the Cultural Story}\\[2pt]
+{\color{textmuted}\fontsize{8pt}{11pt}\selectfont Dedicated pages for The Snail Clan narrative and the linguistic heritage behind the brand.}
+\end{tcolorbox}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\begin{tcolorbox}[colback=white, colframe=grayline, boxrule=0.5pt, arc=3pt, left=3mm, right=3mm, top=2.5mm, bottom=2.5mm, borderline north={2pt}{0pt}{holive}]
+{\color{holive}\fontsize{9pt}{9pt}\selectfont$\blacklozenge$}\;{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Capture Emails}\\[2pt]
+{\color{textmuted}\fontsize{8pt}{11pt}\selectfont Build a mailing list of engaged fans for drops, stories, and community updates.}
+\end{tcolorbox}
+\vspace{4pt}
+\begin{tcolorbox}[colback=white, colframe=grayline, boxrule=0.5pt, arc=3pt, left=3mm, right=3mm, top=2.5mm, bottom=2.5mm, borderline north={2pt}{0pt}{holive}]
+{\color{holive}\fontsize{9pt}{9pt}\selectfont$\blacklozenge$}\;{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Build The Snail Clan}\\[2pt]
+{\color{textmuted}\fontsize{8pt}{11pt}\selectfont Create community identity that turns customers into members of a movement.}
+\end{tcolorbox}
+\end{minipage}
+
+\vspace{16pt}
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{4}\;\;Target Audience}
+
+\vspace{8pt}
+
+\begingroup
+\renewcommand{\arraystretch}{1.4}
+\fontsize{9.5pt}{13pt}\selectfont
+\arrayrulecolor{grayline}
+\begin{tabularx}{\textwidth}{p{32mm} X}
+\toprule
+\rowcolor{hblack}
+{\color{hcream}\latosemibold\footnotesize DIMENSION} &
+{\color{hcream}\latosemibold\footnotesize DETAIL} \\
+\midrule
+{\latosemibold Age Range} & 8--35 years \\
+\rowcolor{graybg}
+{\latosemibold Location} & South Africa (initially), with global expansion planned \\
+{\latosemibold Psychographics} & Creatives, thinkers, slow-living mindset, streetwear lovers, culture-driven buyers \\
+\rowcolor{graybg}
+{\latosemibold Buying Style} & Intentional purchases --- quality over quantity, limited drops over mass production \\
+{\latosemibold Platforms} & Instagram, TikTok, WhatsApp --- mobile-first digital behaviour \\
+\bottomrule
+\end{tabularx}
+\endgroup
+
+\vspace{8pt}
+\begin{tcolorbox}[colback=graybg, colframe=graybg, boxrule=0pt, left=4mm, right=4mm, top=3mm, bottom=3mm, borderline west={3pt}{0pt}{goldaccent}]
+{\color{textbody}\fontsize{9.5pt}{14pt}\selectfont\textbf{Design implication:} The website must be \textbf{mobile-first}, visually spacious, and load fast. Every element supports the slow, premium, intentional feel.}
+\end{tcolorbox}
+
+\pagefooter{3}
+
+\clearpage
+
+% ============================================================
+% PAGE 4 — SITEMAP & HOME PAGE
+% ============================================================
+\thispagestyle{empty}
+
+\pageheader{4}
+
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{5}\;\;Website Structure}
+
+\vspace{6pt}
+{\color{textbody}\fontsize{10pt}{14pt}\selectfont
+The website is structured around six core pages, with optional expansions in Phase 2:}
+
+\vspace{8pt}
+\begin{center}
+\begin{tikzpicture}[
+  node distance=0mm,
+  pagenode/.style={draw=grayline, fill=white, rounded corners=3pt, minimum width=26mm, minimum height=10mm, font=\latosemibold\fontsize{8pt}{8pt}\selectfont\color{hblack}, align=center},
+  optnode/.style={draw=grayline, fill=graybg, rounded corners=3pt, minimum width=24mm, minimum height=9mm, font=\latolight\fontsize{7pt}{7pt}\selectfont\color{textmuted}, align=center, dashed},
+]
+  % Core Pages
+  \node[pagenode, fill=hblack, text=hcream] (home) at (0,0) {HOME};
+  \node[pagenode] (shop) at (2.8,0) {SHOP};
+  \node[pagenode] (clan) at (5.6,0) {SNAIL CLAN};
+  \node[pagenode] (culture) at (8.4,0) {CULTURE};
+  \node[pagenode] (contact) at (11.2,0) {CONTACT};
+  \node[pagenode, fill=holive!15] (cart) at (14,0) {CART};
+  
+  % Optional
+  \node[optnode] (lookbook) at (4.2,-1.4) {Lookbook};
+  \node[optnode] (journal) at (7,-1.4) {Journal};
+  
+  % Lines
+  \draw[grayline, dashed, line width=0.5pt] (clan.south) -- (lookbook.north);
+  \draw[grayline, dashed, line width=0.5pt] (culture.south) -- (journal.north);
+  
+  % Labels
+  \node[font=\latolight\fontsize{6pt}{6pt}\selectfont\color{textlight}] at (5.6,-2.2) {Phase 2};
+\end{tikzpicture}
+\end{center}
+
+\vspace{12pt}
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{6}\;\;Page Breakdown --- Home}
+
+\vspace{6pt}
+{\color{textbody}\fontsize{10pt}{14pt}\selectfont
+The home page sets the tone for the entire brand experience. Five sections, each purposeful:}
+
+\vspace{6pt}
+
+\begingroup
+\renewcommand{\arraystretch}{1.45}
+\fontsize{9pt}{12.5pt}\selectfont
+\arrayrulecolor{grayline}
+\begin{tabularx}{\textwidth}{>{\centering\arraybackslash}p{10mm} p{26mm} X}
+\toprule
+\rowcolor{hblack}
+{\color{hcream}\latosemibold\footnotesize \#} &
+{\color{hcream}\latosemibold\footnotesize SECTION} &
+{\color{hcream}\latosemibold\footnotesize DESCRIPTION} \\
+\midrule
+{\tikz\node[fill=hblack, text=hcream, rounded corners=2pt, inner sep=2.5pt, font=\latosemibold\tiny]{1};} & {\latosemibold Hero} & {\color{textbody}Full-screen. Clean black or neutral background. ``HUMBA\texttrademark{} --- Move at your own pace.'' CTA: \textit{Shop The Drop}.} \\
+\rowcolor{graybg}
+{\tikz\node[fill=hblack, text=hcream, rounded corners=2pt, inner sep=2.5pt, font=\latosemibold\tiny]{2};} & {\latosemibold The Message} & {\color{textbody}Short brand paragraph: ``Inspired by the snail --- a symbol of patience, resilience, and intentional movement.''} \\
+{\tikz\node[fill=hblack, text=hcream, rounded corners=2pt, inner sep=2.5pt, font=\latosemibold\tiny]{3};} & {\latosemibold Featured Product} & {\color{textbody}Display 1--3 key items. ``Limited pieces. No rush.'' Clean product cards with minimal info.} \\
+\rowcolor{graybg}
+{\tikz\node[fill=hblack, text=hcream, rounded corners=2pt, inner sep=2.5pt, font=\latosemibold\tiny]{4};} & {\latosemibold Culture Preview} & {\color{textbody}Word grid across languages. Button: \textit{Discover The Snail Clan}. Cultural anchor before purchase.} \\
+{\tikz\node[fill=hblack, text=hcream, rounded corners=2pt, inner sep=2.5pt, font=\latosemibold\tiny]{5};} & {\latosemibold Footer} & {\color{textbody}Instagram, TikTok, WhatsApp links. Email signup. Policies. Minimal, consistent with brand feel.} \\
+\bottomrule
+\end{tabularx}
+\endgroup
+
+\vspace{10pt}
+\begin{tcolorbox}[colback=hblack, colframe=hblack, arc=4pt, boxrule=0pt, left=5mm, right=5mm, top=4mm, bottom=4mm]
+{\color{goldaccent}\latosemibold\fontsize{7.5pt}{7.5pt}\selectfont\addfontfeature{LetterSpace=6}DESIGN RULE}\\[4pt]
+{\color{hcream}\latolight\fontsize{9pt}{14pt}\selectfont The website must feel: \textbf{Calm. Intentional. Spacious. Premium. Cultural.}\\Never loud. Never rushed. Never crowded.}
+\end{tcolorbox}
+
+\pagefooter{4}
+
+\clearpage
+
+% ============================================================
+% PAGE 5 — SHOP, PRODUCT, SNAIL CLAN PAGES
+% ============================================================
+\thispagestyle{empty}
+
+\pageheader{5}
+
+{\fontsize{13pt}{13pt}\selectfont\latosemibold\color{hblack}\sectionnum{6}\;\;Page Breakdown --- Shop}
+
+\vspace{4pt}
+{\color{textbody}\fontsize{9.5pt}{14pt}\selectfont
+Minimal layout. Each product shows: name, meaning, fabric details, price, size selector, and a single Add to Cart CTA. No clutter --- products are the content, white space is the design.}
+
+\vspace{8pt}
+{\fontsize{13pt}{13pt}\selectfont\latosemibold\color{hblack}\sectionnum{6}\;\;Page Breakdown --- Product Detail}
+
+\vspace{4pt}
+\begin{tcolorbox}[colback=graybg, colframe=grayline, boxrule=0.5pt, arc=3pt, left=4mm, right=4mm, top=3mm, bottom=3mm]
+\begin{minipage}[t]{0.55\textwidth}
+{\color{hblack}\latosemibold\fontsize{10pt}{10pt}\selectfont HUMBA\texttrademark{} --- The Origin Tee}\\[2pt]
+{\color{textmuted}\fontsize{8.5pt}{12pt}\selectfont Inspired by the snail. Built for those who move differently.}\\[4pt]
+{\color{textbody}\fontsize{8pt}{12pt}\selectfont
+\textbullet\;300gsm heavyweight cotton
+\textbullet\;Relaxed fit
+\textbullet\;Unisex}\\[4pt]
+{\color{holive}\latosemibold\fontsize{8pt}{8pt}\selectfont [~Add to Cart~]}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.38\textwidth}
+\raggedleft{\color{textlight}\latolight\fontsize{7pt}{7pt}\selectfont High-quality lifestyle photography}
+\end{minipage}
+\end{tcolorbox}
+
+\vspace{8pt}
+{\fontsize{13pt}{13pt}\selectfont\latosemibold\color{hblack}\sectionnum{6}\;\;Page Breakdown --- The Snail Clan (About)}
+
+\vspace{3pt}
+{\color{textbody}\fontsize{9.5pt}{14pt}\selectfont
+The brand's soul page. Not a corporate ``About Us'' --- a cultural manifesto.}
+
+\vspace{3pt}
+\begin{tcolorbox}[colback=hblack, colframe=hblack, arc=4pt, boxrule=0pt, left=5mm, right=5mm, top=4mm, bottom=4mm]
+{\color{hcream}\latosemibold\fontsize{12pt}{12pt}\selectfont The Snail Clan}\\[4pt]
+{\color{hcream}\latolight\fontsize{9.5pt}{14pt}\selectfont
+Across South Africa, the snail has many names. Different languages. Same meaning.\\
+HUMBA\texttrademark{} represents patience in a fast world.\\
+We are not late. We are aligned. \textit{Still moving.}}
+\end{tcolorbox}
+
+\vspace{8pt}
+{\fontsize{13pt}{13pt}\selectfont\latosemibold\color{hblack}\sectionnum{6}\;\;Page Breakdown --- Culture}
+
+\vspace{3pt}
+{\color{textbody}\fontsize{9.5pt}{14pt}\selectfont
+A visual celebration of the snail across South African languages --- each word displayed with cultural context:}
+
+\vspace{4pt}
+\begin{center}
+{\fontsize{8.5pt}{14pt}\selectfont
+\begin{tabular}{p{22mm} p{22mm} p{22mm} p{22mm} p{22mm}}
+{\color{hbrown}\latosemibold HUMBA} & {\color{hbrown}\latosemibold KHUMBA} & {\color{hbrown}\latosemibold UMNENKE} & {\color{hbrown}\latosemibold INKUMBA} & {\color{hbrown}\latosemibold KGOPA} \\
+{\color{textmuted}\latolight\fontsize{7pt}{7pt}\selectfont Tsonga} & {\color{textmuted}\latolight\fontsize{7pt}{7pt}\selectfont Venda} & {\color{textmuted}\latolight\fontsize{7pt}{7pt}\selectfont Zulu} & {\color{textmuted}\latolight\fontsize{7pt}{7pt}\selectfont Xhosa} & {\color{textmuted}\latolight\fontsize{7pt}{7pt}\selectfont Setswana} \\[4pt]
+{\color{hbrown}\latosemibold KGOFU} & {\color{hbrown}\latosemibold KGOHU} & {\color{hbrown}\latosemibold SLAK} & {\color{hbrown}\latosemibold UMNENKHE} & {\color{hbrown}\latosemibold SGONOGONO} \\
+{\color{textmuted}\latolight\fontsize{7pt}{7pt}\selectfont Sesotho} & {\color{textmuted}\latolight\fontsize{7pt}{7pt}\selectfont Sepedi} & {\color{textmuted}\latolight\fontsize{7pt}{7pt}\selectfont Afrikaans} & {\color{textmuted}\latolight\fontsize{7pt}{7pt}\selectfont Swati} & {\color{textmuted}\latolight\fontsize{7pt}{7pt}\selectfont Ndebele}
+\end{tabular}}
+\end{center}
+
+\pagefooter{5}
+
+\clearpage
+
+% ============================================================
+% PAGE 6 — DESIGN DIRECTION
+% ============================================================
+\thispagestyle{empty}
+
+\pageheader{6}
+
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{7}\;\;Design Direction}
+
+\vspace{8pt}
+{\fontsize{11pt}{11pt}\selectfont\latosemibold\color{hblack}\hspace{2pt}\textcolor{holive}{\rule{2.5pt}{11pt}}\hspace{8pt}Colour Palette}
+
+\vspace{8pt}
+\begin{center}
+\begin{tikzpicture}
+  % Color swatches
+  \fill[hblack] (0,0) rectangle (1.8,1.8);
+  \node[text=hcream, font=\latolight\fontsize{6.5pt}{6.5pt}\selectfont] at (0.9,0.5) {Black};
+  \node[text=hcream, font=\latosemibold\fontsize{7pt}{7pt}\selectfont] at (0.9,1.1) {\#111111};
+  
+  \fill[hcream] (2.2,0) rectangle (4.0,1.8);
+  \draw[grayline, line width=0.5pt] (2.2,0) rectangle (4.0,1.8);
+  \node[text=hblack, font=\latolight\fontsize{6.5pt}{6.5pt}\selectfont] at (3.1,0.5) {Cream};
+  \node[text=hblack, font=\latosemibold\fontsize{7pt}{7pt}\selectfont] at (3.1,1.1) {\#F5F0E8};
+  
+  \fill[hbrown] (4.4,0) rectangle (6.2,1.8);
+  \node[text=hcream, font=\latolight\fontsize{6.5pt}{6.5pt}\selectfont] at (5.3,0.5) {Brown};
+  \node[text=hcream, font=\latosemibold\fontsize{7pt}{7pt}\selectfont] at (5.3,1.1) {\#6B4F3A};
+  
+  \fill[holive] (6.6,0) rectangle (8.4,1.8);
+  \node[text=hcream, font=\latolight\fontsize{6.5pt}{6.5pt}\selectfont] at (7.5,0.5) {Olive};
+  \node[text=hcream, font=\latosemibold\fontsize{7pt}{7pt}\selectfont] at (7.5,1.1) {\#4A5A3C};
+  
+  \fill[hnavy] (8.8,0) rectangle (10.6,1.8);
+  \node[text=hcream, font=\latolight\fontsize{6.5pt}{6.5pt}\selectfont] at (9.7,0.5) {Navy};
+  \node[text=hcream, font=\latosemibold\fontsize{7pt}{7pt}\selectfont] at (9.7,1.1) {\#1A2744};
+  
+  \fill[goldaccent] (11.0,0) rectangle (12.8,1.8);
+  \node[text=hblack, font=\latolight\fontsize{6.5pt}{6.5pt}\selectfont] at (11.9,0.5) {Dusty Yellow};
+  \node[text=hblack, font=\latosemibold\fontsize{7pt}{7pt}\selectfont] at (11.9,1.1) {\#C8A45C};
+\end{tikzpicture}
+\end{center}
+
+\vspace{4pt}
+{\color{textmuted}\fontsize{9pt}{13pt}\selectfont\centering No bright colours. Earth tones only. The palette reflects patience, nature, and premium quality.\par}
+
+\vspace{14pt}
+{\fontsize{11pt}{11pt}\selectfont\latosemibold\color{hblack}\hspace{2pt}\textcolor{holive}{\rule{2.5pt}{11pt}}\hspace{8pt}Typography}
+
+\vspace{6pt}
+\begin{itemize}[leftmargin=8mm, itemsep=3pt, label={\textcolor{holive}{$\circ$}}]
+  \item {\color{textbody}\fontsize{10pt}{14pt}\selectfont \textbf{Elegant serif} for the HUMBA\texttrademark{} wordmark and headings}
+  \item {\color{textbody}\fontsize{10pt}{14pt}\selectfont \textbf{Clean sans-serif} for body text and UI elements}
+  \item {\color{textbody}\fontsize{10pt}{14pt}\selectfont Large letter spacing throughout --- reflects the brand's breathing room}
+  \item {\color{textbody}\fontsize{10pt}{14pt}\selectfont Minimal text --- every word earns its place}
+\end{itemize}
+
+\vspace{14pt}
+{\fontsize{11pt}{11pt}\selectfont\latosemibold\color{hblack}\hspace{2pt}\textcolor{holive}{\rule{2.5pt}{11pt}}\hspace{8pt}Design Principles}
+
+\vspace{6pt}
+\begin{minipage}[t]{0.31\textwidth}
+\begin{tcolorbox}[colback=graybg, colframe=graybg, boxrule=0pt, arc=3pt, left=3mm, right=3mm, top=3mm, bottom=3mm]
+{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Spacious}\\[3pt]
+{\color{textmuted}\fontsize{8pt}{12pt}\selectfont Generous white space. Content breathes. Nothing competes for attention.}
+\end{tcolorbox}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.31\textwidth}
+\begin{tcolorbox}[colback=graybg, colframe=graybg, boxrule=0pt, arc=3pt, left=3mm, right=3mm, top=3mm, bottom=3mm]
+{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Mobile-First}\\[3pt]
+{\color{textmuted}\fontsize{8pt}{12pt}\selectfont Designed for phones first. The audience lives on mobile --- the site must too.}
+\end{tcolorbox}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.31\textwidth}
+\begin{tcolorbox}[colback=graybg, colframe=graybg, boxrule=0pt, arc=3pt, left=3mm, right=3mm, top=3mm, bottom=3mm]
+{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Premium Feel}\\[3pt]
+{\color{textmuted}\fontsize{8pt}{12pt}\selectfont Smooth animations, quality imagery, and refined micro-interactions.}
+\end{tcolorbox}
+\end{minipage}
+
+\vspace{14pt}
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{8}\;\;Technical Approach}
+
+\vspace{8pt}
+
+\begingroup
+\renewcommand{\arraystretch}{1.4}
+\fontsize{9.5pt}{13pt}\selectfont
+\arrayrulecolor{grayline}
+\begin{tabularx}{\textwidth}{p{30mm} X}
+\toprule
+\rowcolor{hblack}
+{\color{hcream}\latosemibold\footnotesize LAYER} &
+{\color{hcream}\latosemibold\footnotesize TECHNOLOGY} \\
+\midrule
+{\latosemibold Frontend} & React with TypeScript --- component-based, fast, SEO-friendly \\
+\rowcolor{graybg}
+{\latosemibold Backend} & Node.js with Express --- custom API, product management, order processing \\
+{\latosemibold Database} & PostgreSQL --- reliable, scalable, production-grade \\
+\rowcolor{graybg}
+{\latosemibold Payments} & PayFast integration (card, EFT, instant payments) \\
+{\latosemibold Hosting} & Cloud hosting (AWS/Vercel) --- fast load times, SSL, CDN \\
+\rowcolor{graybg}
+{\latosemibold Email} & Mailing list integration for drops and community updates \\
+\bottomrule
+\end{tabularx}
+\endgroup
+
+\pagefooter{6}
+
+\clearpage
+
+% ============================================================
+% PAGE 7 — SCOPE OF WORK
+% ============================================================
+\thispagestyle{empty}
+
+\pageheader{7}
+
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{9}\;\;Scope of Work --- Phase 1}
+
+\vspace{6pt}
+{\color{textbody}\fontsize{10pt}{15pt}\selectfont
+The engagement is structured in five delivery phases:}
+
+\vspace{8pt}
+
+\begingroup
+\renewcommand{\arraystretch}{1.5}
+\fontsize{9pt}{12.5pt}\selectfont
+\arrayrulecolor{grayline}
+\begin{tabularx}{\textwidth}{>{\centering\arraybackslash}p{14mm} p{28mm} X}
+\toprule
+\rowcolor{hblack}
+{\color{hcream}\latosemibold\footnotesize PHASE} &
+{\color{hcream}\latosemibold\footnotesize DELIVERABLE} &
+{\color{hcream}\latosemibold\footnotesize DETAIL} \\
+\midrule
+{\tikz\node[fill=hblack, text=hcream, rounded corners=2pt, inner sep=3pt, font=\latosemibold\tiny]{1};} & {\latosemibold Discovery \& Design} & {\color{textbody}Brand immersion, wireframes, design mockups for all 6 pages. Colour palette, typography, and component library defined.} \\
+\rowcolor{graybg}
+{\tikz\node[fill=hblack, text=hcream, rounded corners=2pt, inner sep=3pt, font=\latosemibold\tiny]{2};} & {\latosemibold Frontend Build} & {\color{textbody}React component development. Home, Shop, Product, Snail Clan, Culture, Contact pages. Fully responsive, mobile-first.} \\
+{\tikz\node[fill=hblack, text=hcream, rounded corners=2pt, inner sep=3pt, font=\latosemibold\tiny]{3};} & {\latosemibold Backend \& E-Commerce} & {\color{textbody}Product catalogue API, cart system, checkout flow, PayFast payment integration, order management.} \\
+\rowcolor{graybg}
+{\tikz\node[fill=hblack, text=hcream, rounded corners=2pt, inner sep=3pt, font=\latosemibold\tiny]{4};} & {\latosemibold Content \& Polish} & {\color{textbody}Product uploads, copy integration, image optimisation, SEO setup, email signup integration.} \\
+{\tikz\node[fill=hblack, text=hcream, rounded corners=2pt, inner sep=3pt, font=\latosemibold\tiny]{5};} & {\latosemibold Launch} & {\color{textbody}Testing, domain connection, SSL, deployment, performance optimisation, handover \& training.} \\
+\bottomrule
+\end{tabularx}
+\endgroup
+
+\vspace{18pt}
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{10}\;\;Timeline}
+
+\vspace{12pt}
+\begin{tikzpicture}
+  % Timeline line
+  \draw[grayline, line width=1.5pt] (0.35,-0.2) -- (0.35,-5.8);
+  
+  \fill[holive] (0.35,0) circle (5pt);
+  \draw[hblack, line width=1.5pt] (0.35,0) circle (5pt);
+  \node[anchor=west, text width=140mm] at (1.0,0) {
+    {\color{hblack}\latosemibold\fontsize{10pt}{10pt}\selectfont Week 1: Discovery \& Design}\\[2pt]
+    {\color{textmuted}\fontsize{8.5pt}{12pt}\selectfont Brand immersion, wireframes, design mockups, component library. Your sign-off before build begins.}
+  };
+  
+  \fill[holive] (0.35,-2.0) circle (5pt);
+  \draw[hblack, line width=1.5pt] (0.35,-2.0) circle (5pt);
+  \node[anchor=west, text width=140mm] at (1.0,-2.0) {
+    {\color{hblack}\latosemibold\fontsize{10pt}{10pt}\selectfont Weeks 2--3: Frontend \& Backend Development}\\[2pt]
+    {\color{textmuted}\fontsize{8.5pt}{12pt}\selectfont All pages built, e-commerce engine, cart, checkout, PayFast integration, product catalogue.}
+  };
+  
+  \fill[holive] (0.35,-4.0) circle (5pt);
+  \draw[hblack, line width=1.5pt] (0.35,-4.0) circle (5pt);
+  \node[anchor=west, text width=140mm] at (1.0,-4.0) {
+    {\color{hblack}\latosemibold\fontsize{10pt}{10pt}\selectfont Week 4: Content, Testing \& Polish}\\[2pt]
+    {\color{textmuted}\fontsize{8.5pt}{12pt}\selectfont Products uploaded, copy finalised, mobile testing, performance tuning, SEO configuration.}
+  };
+  
+  \fill[holive] (0.35,-6.0) circle (5pt);
+  \draw[hblack, line width=1.5pt] (0.35,-6.0) circle (5pt);
+  \node[anchor=west, text width=140mm] at (1.0,-6.0) {
+    {\color{hblack}\latosemibold\fontsize{10pt}{10pt}\selectfont Weeks 5--6: Launch \& Handover}\\[2pt]
+    {\color{textbody}\latosemibold\fontsize{8.5pt}{12pt}\selectfont Go live, domain setup, SSL, training session, 2 weeks post-launch support included.}
+  };
+\end{tikzpicture}
+
+\pagefooter{7}
+
+\clearpage
+
+% ============================================================
+% PAGE 8 — INVESTMENT & TERMS
+% ============================================================
+\thispagestyle{empty}
+
+\pageheader{8}
+
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{11}\;\;Your Investment}
+
+\vspace{10pt}
+\begin{tcolorbox}[colback=hblack, colframe=hblack, arc=6pt, boxrule=0pt, left=8mm, right=8mm, top=7mm, bottom=7mm]
+{\color{holive}\latosemibold\fontsize{7.5pt}{7.5pt}\selectfont\addfontfeature{LetterSpace=8}ALL-INCLUSIVE FIXED FEE --- PHASE 1}\\[10pt]
+{\color{hcream}\latoblack\fontsize{38pt}{38pt}\selectfont {\latolight\fontsize{16pt}{16pt}\selectfont\color{hcream!50}R\,}15,000}\\[5pt]
+{\color{hcream!45}\latolight\fontsize{8.5pt}{8.5pt}\selectfont VAT Exclusive\;\textbullet\;No hidden hourly charges}\\[14pt]
+{\color{hcream!80}\fontsize{9pt}{18pt}\selectfont
+{\color{holive}\latosemibold\checkmark}\;\,Custom-designed 6-page e-commerce website\\
+{\color{holive}\latosemibold\checkmark}\;\,React + Node.js custom build (no templates)\\
+{\color{holive}\latosemibold\checkmark}\;\,Full product catalogue with cart \& checkout\\
+{\color{holive}\latosemibold\checkmark}\;\,PayFast payment integration (card + EFT)\\
+{\color{holive}\latosemibold\checkmark}\;\,Mobile-first responsive design\\
+{\color{holive}\latosemibold\checkmark}\;\,Email signup integration\\
+{\color{holive}\latosemibold\checkmark}\;\,Domain setup, SSL, cloud hosting deployment\\
+{\color{holive}\latosemibold\checkmark}\;\,2 weeks post-launch support}
+\end{tcolorbox}
+
+\vspace{12pt}
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{12}\;\;Payment Milestones}
+
+\vspace{8pt}
+
+\begingroup
+\renewcommand{\arraystretch}{1.5}
+\fontsize{9.5pt}{13pt}\selectfont
+\arrayrulecolor{grayline}
+\begin{tabularx}{\textwidth}{>{\centering\arraybackslash}p{18mm} p{32mm} X >{\raggedleft\arraybackslash}p{20mm}}
+\toprule
+\rowcolor{hblack}
+{\color{hcream}\latosemibold\footnotesize \%} &
+{\color{hcream}\latosemibold\footnotesize MILESTONE} &
+{\color{hcream}\latosemibold\footnotesize TRIGGER} &
+{\color{hcream}\latosemibold\footnotesize AMOUNT} \\
+\midrule
+{\latosemibold\color{hblack}40\%} & {\latosemibold Deposit} & {\color{textbody}On acceptance of this proposal} & {\latosemibold R6,000} \\
+\rowcolor{graybg}
+{\latosemibold\color{hblack}30\%} & {\latosemibold Progress} & {\color{textbody}Design approved + development underway} & {\latosemibold R4,500} \\
+{\latosemibold\color{hblack}30\%} & {\latosemibold Delivery} & {\color{textbody}Website launched and handed over} & {\latosemibold R4,500} \\
+\bottomrule
+\end{tabularx}
+\endgroup
+
+\vspace{12pt}
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{13}\;\;What We Need From You}
+
+\vspace{6pt}
+\begin{itemize}[leftmargin=8mm, itemsep=3pt, label={\textcolor{holive}{$\circ$}}]
+  \item {\color{textbody}\fontsize{10pt}{14pt}\selectfont Brand assets --- logo files, any existing imagery or photography}
+  \item {\color{textbody}\fontsize{10pt}{14pt}\selectfont Product details --- names, descriptions, prices, sizes, images}
+  \item {\color{textbody}\fontsize{10pt}{14pt}\selectfont Copy for The Snail Clan and Culture pages (or approval of drafted content)}
+  \item {\color{textbody}\fontsize{10pt}{14pt}\selectfont PayFast merchant account details}
+  \item {\color{textbody}\fontsize{10pt}{14pt}\selectfont Domain name (existing or to be registered)}
+  \item {\color{textbody}\fontsize{10pt}{14pt}\selectfont Signed acceptance of this proposal}
+\end{itemize}
+
+\pagefooter{8}
+
+\clearpage
+
+% ============================================================
+% PAGE 9 — PHASE 2 & SUCCESS METRICS
+% ============================================================
+\thispagestyle{empty}
+
+\pageheader{9}
+
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{14}\;\;Phase 2 --- Future Features}
+
+\vspace{6pt}
+{\color{textbody}\fontsize{10pt}{15pt}\selectfont
+The following features are planned for Phase 2, quoted separately once Phase 1 is live:}
+
+\vspace{8pt}
+\begin{minipage}[t]{0.48\textwidth}
+\begin{tcolorbox}[colback=white, colframe=grayline, boxrule=0.5pt, arc=3pt, left=3mm, right=3mm, top=2.5mm, bottom=2.5mm, borderline north={2pt}{0pt}{holive}]
+{\color{holive}\fontsize{9pt}{9pt}\selectfont$\blacklozenge$}\;{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Lookbook Gallery}\\[2pt]
+{\color{textmuted}\fontsize{8pt}{11pt}\selectfont Visual storytelling --- editorial-style product photography and lifestyle imagery.}
+\end{tcolorbox}
+\vspace{4pt}
+\begin{tcolorbox}[colback=white, colframe=grayline, boxrule=0.5pt, arc=3pt, left=3mm, right=3mm, top=2.5mm, bottom=2.5mm, borderline north={2pt}{0pt}{holive}]
+{\color{holive}\fontsize{9pt}{9pt}\selectfont$\blacklozenge$}\;{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Still Moving Journal}\\[2pt]
+{\color{textmuted}\fontsize{8pt}{11pt}\selectfont Brand blog for storytelling, culture pieces, and behind-the-scenes content.}
+\end{tcolorbox}
+\vspace{4pt}
+\begin{tcolorbox}[colback=white, colframe=grayline, boxrule=0.5pt, arc=3pt, left=3mm, right=3mm, top=2.5mm, bottom=2.5mm, borderline north={2pt}{0pt}{holive}]
+{\color{holive}\fontsize{9pt}{9pt}\selectfont$\blacklozenge$}\;{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Drop Countdown}\\[2pt]
+{\color{textmuted}\fontsize{8pt}{11pt}\selectfont Subtle countdown timers for limited releases. No pressure --- aligned with brand feel.}
+\end{tcolorbox}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\begin{tcolorbox}[colback=white, colframe=grayline, boxrule=0.5pt, arc=3pt, left=3mm, right=3mm, top=2.5mm, bottom=2.5mm, borderline north={2pt}{0pt}{holive}]
+{\color{holive}\fontsize{9pt}{9pt}\selectfont$\blacklozenge$}\;{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Ambassador Sign-Up}\\[2pt]
+{\color{textmuted}\fontsize{8pt}{11pt}\selectfont Application portal for brand ambassadors to join The Snail Clan officially.}
+\end{tcolorbox}
+\vspace{4pt}
+\begin{tcolorbox}[colback=white, colframe=grayline, boxrule=0.5pt, arc=3pt, left=3mm, right=3mm, top=2.5mm, bottom=2.5mm, borderline north={2pt}{0pt}{holive}]
+{\color{holive}\fontsize{9pt}{9pt}\selectfont$\blacklozenge$}\;{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Wholesale Section}\\[2pt]
+{\color{textmuted}\fontsize{8pt}{11pt}\selectfont Private portal for stockists and bulk buyers with tiered pricing.}
+\end{tcolorbox}
+\end{minipage}
+
+\vspace{16pt}
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{15}\;\;Success Metrics}
+
+\vspace{8pt}
+{\color{textbody}\fontsize{10pt}{15pt}\selectfont
+We will track the following KPIs to measure the website's performance:}
+
+\vspace{6pt}
+
+\begingroup
+\renewcommand{\arraystretch}{1.4}
+\fontsize{9.5pt}{13pt}\selectfont
+\arrayrulecolor{grayline}
+\begin{tabularx}{\textwidth}{p{38mm} X}
+\toprule
+\rowcolor{hblack}
+{\color{hcream}\latosemibold\footnotesize METRIC} &
+{\color{hcream}\latosemibold\footnotesize WHY IT MATTERS} \\
+\midrule
+{\latosemibold Conversion Rate} & {\color{textbody}Visitors who become buyers --- the ultimate measure of the site's effectiveness.} \\
+\rowcolor{graybg}
+{\latosemibold Email Signups} & {\color{textbody}Community growth. Directly tied to future drop revenue and brand loyalty.} \\
+{\latosemibold Add-to-Cart Rate} & {\color{textbody}Product interest signal. Indicates whether product presentation is working.} \\
+\rowcolor{graybg}
+{\latosemibold Returning Visitors} & {\color{textbody}Brand stickiness. People coming back means the culture resonates.} \\
+{\latosemibold Drop Sell-Through Time} & {\color{textbody}Speed of limited release sales. Measures demand and community engagement.} \\
+\bottomrule
+\end{tabularx}
+\endgroup
+
+\vspace{10pt}
+\begin{tcolorbox}[colback=hblack, colframe=hblack, arc=4pt, boxrule=0pt, left=5mm, right=5mm, top=4mm, bottom=4mm]
+{\color{hcream}\latolight\fontsize{10pt}{15pt}\selectfont
+HUMBA\texttrademark{} is not built for speed. It is built for meaning.\\
+{\color{holive}\latosemibold The website will reflect exactly that.}}
+\end{tcolorbox}
+
+\pagefooter{9}
+
+\clearpage
+
+% ============================================================
+% PAGE 10 — ACCEPTANCE & SIGNATURES
+% ============================================================
+\thispagestyle{empty}
+
+\pageheader{10}
+
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{16}\;\;Terms \& Conditions}
+
+\vspace{8pt}
+\begin{minipage}[t]{0.31\textwidth}
+\begin{tcolorbox}[colback=graybg, colframe=graybg, boxrule=0pt, arc=3pt, left=3mm, right=3mm, top=3mm, bottom=3mm]
+{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Payment Terms}\\[3pt]
+{\color{textmuted}\fontsize{8pt}{12pt}\selectfont 40\% deposit on acceptance. 30\% on design approval. 30\% on delivery and launch.}
+\end{tcolorbox}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.31\textwidth}
+\begin{tcolorbox}[colback=graybg, colframe=graybg, boxrule=0pt, arc=3pt, left=3mm, right=3mm, top=3mm, bottom=3mm]
+{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont Validity}\\[3pt]
+{\color{textmuted}\fontsize{8pt}{12pt}\selectfont This proposal is valid for \textbf{30 days} from date of issue (18 February 2026).}
+\end{tcolorbox}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.31\textwidth}
+\begin{tcolorbox}[colback=graybg, colframe=graybg, boxrule=0pt, arc=3pt, left=3mm, right=3mm, top=3mm, bottom=3mm]
+{\color{hblack}\latosemibold\fontsize{9pt}{9pt}\selectfont IP \& Ownership}\\[3pt]
+{\color{textmuted}\fontsize{8pt}{12pt}\selectfont All code and design assets transfer to you upon final payment. Full ownership.}
+\end{tcolorbox}
+\end{minipage}
+
+\vspace{16pt}
+{\fontsize{15pt}{15pt}\selectfont\latosemibold\color{hblack}\sectionnum{17}\;\;Acceptance}
+
+\vspace{8pt}
+{\color{textbody}\fontsize{10.5pt}{16pt}\selectfont
+To accept this proposal, please sign below or reply to the accompanying email confirming your agreement. Upon acceptance, we will issue an invoice for the 40\% deposit and schedule the discovery session within three business days.
+
+We look forward to building something meaningful for HUMBA\texttrademark.}
+
+\vspace{20pt}
+\begin{minipage}[t]{0.46\textwidth}
+\begin{tcolorbox}[colback=graybg!40, colframe=grayline, boxrule=0.5pt, arc=3pt, left=5mm, right=5mm, top=5mm, bottom=5mm]
+{\color{hblack}\latosemibold\fontsize{8.5pt}{8.5pt}\selectfont\addfontfeature{LetterSpace=4}CLIENT --- HUMBA\texttrademark}\\[2pt]
+\textcolor{holive}{\rule{\linewidth}{1.5pt}}
+
+\vspace{28pt}
+\textcolor{grayline}{\rule{\linewidth}{0.5pt}}\\[2pt]
+{\color{textlight}\latolight\fontsize{7.5pt}{7.5pt}\selectfont Victor Gudluza}
+
+\vspace{28pt}
+\textcolor{grayline}{\rule{\linewidth}{0.5pt}}\\[2pt]
+{\color{textlight}\latolight\fontsize{7.5pt}{7.5pt}\selectfont Signature}
+
+\vspace{28pt}
+\textcolor{grayline}{\rule{\linewidth}{0.5pt}}\\[2pt]
+{\color{textlight}\latolight\fontsize{7.5pt}{7.5pt}\selectfont Date}
+\end{tcolorbox}
+\end{minipage}%
+\hfill
+\begin{minipage}[t]{0.46\textwidth}
+\begin{tcolorbox}[colback=graybg!40, colframe=grayline, boxrule=0.5pt, arc=3pt, left=5mm, right=5mm, top=5mm, bottom=5mm]
+{\color{hblack}\latosemibold\fontsize{8.5pt}{8.5pt}\selectfont\addfontfeature{LetterSpace=4}MASAPHOKATI DESIGNS PTY LTD}\\[2pt]
+\textcolor{holive}{\rule{\linewidth}{1.5pt}}
+
+\vspace{28pt}
+\textcolor{grayline}{\rule{\linewidth}{0.5pt}}\\[2pt]
+{\color{textlight}\latolight\fontsize{7.5pt}{7.5pt}\selectfont Sibusiso Mavuso}
+
+\vspace{28pt}
+\textcolor{grayline}{\rule{\linewidth}{0.5pt}}\\[2pt]
+{\color{textlight}\latolight\fontsize{7.5pt}{7.5pt}\selectfont Signature}
+
+\vspace{28pt}
+\textcolor{grayline}{\rule{\linewidth}{0.5pt}}\\[2pt]
+{\color{textlight}\latolight\fontsize{7.5pt}{7.5pt}\selectfont 18 February 2026}
+\end{tcolorbox}
+\end{minipage}
+
+\vspace{30pt}
+\begin{center}
+\textcolor{grayline}{\rule{0.8\textwidth}{0.4pt}}\\[8pt]
+{\color{textlight}\latolight\fontsize{7pt}{7pt}\selectfont\addfontfeature{LetterSpace=6}CONFIDENTIAL\;\textbullet\;MASAPHOKATI DESIGNS PTY LTD\;\textbullet\;INSPIRING DREAMS}
+\end{center}
+
+\pagefooter{10}
+
+\end{document}

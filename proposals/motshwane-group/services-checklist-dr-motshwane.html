@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Services Selection Checklist – Dr Motshwane & Motshwane Group</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+        :root {
+            --primary: #1a365d;
+            --accent: #c9a84c;
+            --text: #2d3748;
+            --text-light: #718096;
+            --border: #e2e8f0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        @page {
+            size: A4;
+            margin: 15mm 18mm;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            line-height: 1.5;
+            background: #f0f0f0;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 10px auto;
+            background: white;
+            padding: 35px 40px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+
+        @media print {
+            body { background: white; }
+            .page { margin: 0; padding: 0; box-shadow: none; page-break-after: always; }
+            .no-print { display: none !important; }
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header-bar h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            color: var(--primary);
+        }
+
+        .header-bar .ref {
+            font-size: 10px;
+            color: var(--text-light);
+            text-align: right;
+        }
+
+        .instructions {
+            background: #fffbeb;
+            border: 1px solid #f6e05e;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            font-size: 11.5px;
+        }
+
+        .instructions strong { color: var(--primary); }
+
+        .entity-section {
+            margin-bottom: 18px;
+        }
+
+        .entity-title {
+            background: var(--primary);
+            color: white;
+            padding: 8px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border-radius: 4px 4px 0 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        table thead th {
+            background: #f7fafc;
+            padding: 6px 10px;
+            text-align: left;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-light);
+            border-bottom: 2px solid var(--border);
+            font-weight: 600;
+        }
+
+        table thead th:first-child { width: 28px; text-align: center; }
+        table thead th:nth-child(3) { width: 75px; text-align: center; }
+        table thead th:last-child { width: 110px; text-align: right; }
+
+        table tbody td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #edf2f7;
+            vertical-align: middle;
+        }
+
+        table tbody td:first-child { text-align: center; }
+        table tbody td:nth-child(3) { text-align: center; color: var(--text-light); font-size: 10px; }
+        table tbody td:last-child { text-align: right; font-weight: 600; color: var(--primary); white-space: nowrap; }
+
+        .cb {
+            width: 14px;
+            height: 14px;
+            border: 1.5px solid #a0aec0;
+            border-radius: 2px;
+            display: inline-block;
+        }
+
+        .service-name { font-weight: 500; }
+
+        .sub-header {
+            background: #edf2f7;
+            padding: 5px 10px;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--primary);
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .subtotal-row td {
+            background: #f7fafc;
+            font-weight: 600;
+            font-size: 11px;
+            border-top: 2px solid var(--border);
+        }
+
+        .totals-box {
+            background: var(--primary);
+            color: white;
+            border-radius: 6px;
+            padding: 15px 20px;
+            margin: 20px 0;
+        }
+
+        .totals-box h3 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .totals-box .row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .totals-box .row:last-child {
+            border: none;
+            padding-top: 8px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .sig-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid var(--border);
+        }
+
+        .sig-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-light);
+            margin-bottom: 3px;
+        }
+
+        .sig-line {
+            border-bottom: 1px solid var(--text);
+            height: 30px;
+            margin-bottom: 4px;
+        }
+
+        .sig-name { font-size: 11px; font-weight: 500; }
+
+        .footer-note {
+            margin-top: 15px;
+            font-size: 9.5px;
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        .print-btn {
+            position: fixed;
+            top: 10px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: 600;
+            cursor: pointer;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">⬇ Save as PDF / Print</button>
+
+<!-- ===== PAGE 1: CHECKLIST ===== -->
+<div class="page">
+
+    <div class="header-bar">
+        <div>
+            <h1>Services Selection Checklist</h1>
+            <div style="font-size: 12px; color: var(--text-light); margin-top: 4px;">Dr Motshwane &amp; Motshwane Group</div>
+        </div>
+        <div class="ref">
+            REF: SGBS/PROP/2026-MOT-001<br>
+            Date: February 2026<br>
+            Valid for 30 days
+        </div>
+    </div>
+
+    <div class="instructions">
+        <strong>Instructions:</strong> Please tick (☑) the services you require. Write your <strong>monthly/annual total</strong> in the subtotal 
+        rows. Sign at the bottom and return to us. We will then prepare your engagement letter with the exact retainer amount.
+    </div>
+
+    <!-- ===== MEDICAL PRACTICE ===== -->
+    <div class="entity-section">
+        <div class="entity-title">🏥&nbsp; ENTITY 1 — DR MOTSHWANE MEDICAL PRACTICE</div>
+        <table>
+            <thead>
+                <tr><th>☑</th><th>Service</th><th>Frequency</th><th>Fee (excl. VAT)</th></tr>
+            </thead>
+            <tbody>
+                <tr class="sub-header"><td colspan="4">Accounting &amp; Bookkeeping</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Monthly Bookkeeping</td><td>Monthly</td><td>R 4,500 /mo</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Monthly Management Accounts</td><td>Monthly</td><td>R 2,500 /mo</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Annual Financial Statements</td><td>Annually</td><td>R 12,000 /yr</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Payroll Processing (up to 10 employees)</td><td>Monthly</td><td>R 2,000 /mo</td></tr>
+
+                <tr class="sub-header"><td colspan="4">Tax Compliance &amp; Returns</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Income Tax Return (ITR12/ITR14)</td><td>Annually</td><td>R 4,500 /yr</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Provisional Tax Returns (IRP6)</td><td>Bi-Annual</td><td>R 2,500 /yr</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">VAT Returns (VAT201)</td><td>Bi-Monthly</td><td>R 1,800 /return</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">SARS Correspondence &amp; Disputes</td><td>As needed</td><td>R 1,500 /hr</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Tax Planning &amp; Advisory</td><td>Annually</td><td>R 5,000 /yr</td></tr>
+
+                <tr class="sub-header"><td colspan="4">Assurance</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Independent Review (ISRE 2400)</td><td>Annually</td><td>R 10,000 /yr</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Agreed-Upon Procedures</td><td>As needed</td><td>R 8,000 /engagement</td></tr>
+
+                <tr class="subtotal-row">
+                    <td></td><td colspan="2" style="text-align:right;">MEDICAL PRACTICE SUBTOTAL:</td>
+                    <td style="text-align:right;">R __________ /mo</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== MOTSHWANE HOLDINGS ===== -->
+    <div class="entity-section">
+        <div class="entity-title">🏢&nbsp; ENTITY 2 — MOTSHWANE HOLDINGS (PTY) LTD</div>
+        <table>
+            <thead>
+                <tr><th>☑</th><th>Service</th><th>Frequency</th><th>Fee (excl. VAT)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><div class="cb"></div></td><td class="service-name">Monthly Bookkeeping</td><td>Monthly</td><td>R 3,000 /mo</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Monthly Management Accounts</td><td>Monthly</td><td>R 2,000 /mo</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Annual Financial Statements</td><td>Annually</td><td>R 10,000 /yr</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Income Tax Return (ITR14)</td><td>Annually</td><td>R 4,000 /yr</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Provisional Tax Returns (IRP6)</td><td>Bi-Annual</td><td>R 2,000 /yr</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">CIPC Annual Return</td><td>Annually</td><td>R 1,200 /yr</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Group Consolidated Reporting</td><td>Annually</td><td>R 8,000 /yr</td></tr>
+
+                <tr class="subtotal-row">
+                    <td></td><td colspan="2" style="text-align:right;">HOLDINGS SUBTOTAL:</td>
+                    <td style="text-align:right;">R __________ /mo</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== PROPERTY CO ===== -->
+    <div class="entity-section">
+        <div class="entity-title">🏠&nbsp; ENTITY 3 — MOTSHWANE PROPERTY CO. (PTY) LTD</div>
+        <table>
+            <thead>
+                <tr><th>☑</th><th>Service</th><th>Frequency</th><th>Fee (excl. VAT)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><div class="cb"></div></td><td class="service-name">Company Registration (CIPC + SARS)</td><td>Once-off</td><td>R 3,500</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Monthly Bookkeeping</td><td>Monthly</td><td>R 3,500 /mo</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Monthly Management Accounts</td><td>Monthly</td><td>R 2,000 /mo</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Annual Financial Statements (IAS 40)</td><td>Annually</td><td>R 10,000 /yr</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Income Tax Return (ITR14)</td><td>Annually</td><td>R 4,000 /yr</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">VAT Returns (VAT201)</td><td>Bi-Monthly</td><td>R 1,800 /return</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">CIPC Annual Return</td><td>Annually</td><td>R 1,200 /yr</td></tr>
+
+                <tr class="subtotal-row">
+                    <td></td><td colspan="2" style="text-align:right;">PROPERTY CO. SUBTOTAL:</td>
+                    <td style="text-align:right;">R __________ /mo</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- ===== PAGE 2: ADVISORY + TOTALS + SIGNATURE ===== -->
+<div class="page">
+
+    <div class="header-bar">
+        <div>
+            <h1>Services Selection Checklist</h1>
+            <div style="font-size: 12px; color: var(--text-light); margin-top: 4px;">Corporate Finance &amp; Capital Advisory</div>
+        </div>
+        <div class="ref">Page 2 of 2</div>
+    </div>
+
+    <!-- ===== CORPORATE FINANCE & CAPITAL ADVISORY ===== -->
+    <div class="entity-section">
+        <div class="entity-title">💼&nbsp; CORPORATE FINANCE &amp; CAPITAL ADVISORY</div>
+        <table>
+            <thead>
+                <tr><th>☑</th><th>Service</th><th>Frequency</th><th>Fee (excl. VAT)</th></tr>
+            </thead>
+            <tbody>
+                <tr class="sub-header"><td colspan="4">Funding &amp; Bank Finance</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Bank Loan Application &amp; Facilitation</td><td>Per application</td><td>R 12,000 /app</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Financial Projections &amp; Cash Flow Modelling</td><td>Per project</td><td>R 10,000 /model</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Business Plan Preparation</td><td>Per project</td><td>R 15,000 /plan</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Collateral &amp; Security Structuring</td><td>Per engagement</td><td>R 8,000</td></tr>
+
+                <tr class="sub-header"><td colspan="4">Property &amp; Investment Advisory</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Property Acquisition Due Diligence (Financial)</td><td>Per property</td><td>R 8,000 /property</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Property Portfolio Strategy</td><td>Annually</td><td>R 12,000 /yr</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Transaction Structuring</td><td>Per transaction</td><td>R 10,000 /deal</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Rental &amp; Lease Management Support</td><td>As needed</td><td>R 1,500 /hr</td></tr>
+
+                <tr class="sub-header"><td colspan="4">Group Strategic Advisory</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Group Tax Structuring &amp; Optimisation</td><td>Annually</td><td>R 8,000 /yr</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">CFO-on-Retainer (Virtual CFO)</td><td>Monthly</td><td>R 6,000 /mo</td></tr>
+                <tr><td><div class="cb"></div></td><td class="service-name">Ad-Hoc Financial Advisory</td><td>As needed</td><td>R 1,500 /hr</td></tr>
+
+                <tr class="subtotal-row">
+                    <td></td><td colspan="2" style="text-align:right;">ADVISORY SUBTOTAL:</td>
+                    <td style="text-align:right;">R __________ </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== TOTAL SUMMARY ===== -->
+    <div class="totals-box">
+        <h3>Your Selected Totals</h3>
+        <div class="row"><span>Medical Practice (monthly)</span><span>R __________</span></div>
+        <div class="row"><span>Motshwane Holdings (monthly)</span><span>R __________</span></div>
+        <div class="row"><span>Property Co. (monthly)</span><span>R __________</span></div>
+        <div class="row"><span>Advisory retainer (monthly)</span><span>R __________</span></div>
+        <div class="row"><span>Once-off / Project fees</span><span>R __________</span></div>
+        <div class="row"><span>TOTAL MONTHLY RETAINER</span><span>R __________</span></div>
+    </div>
+
+    <div style="font-size: 10px; color: var(--text-light); margin-bottom: 15px;">
+        All fees exclude VAT (15%). Annual fees can be spread monthly. Once-off fees billed at engagement. 
+        This proposal is valid for 30 days. Retainer terminable with 30 days' notice after initial 3-month period.
+    </div>
+
+    <!-- ===== SIGNATURE ===== -->
+    <div class="sig-section">
+        <div>
+            <div class="sig-label">Client Signature</div>
+            <div class="sig-line"></div>
+            <div class="sig-name">Dr Motshwane</div>
+            <div style="font-size: 10px; color: var(--text-light);">On behalf of the Motshwane Group</div>
+            <div style="margin-top: 12px;">
+                <div class="sig-label">Date</div>
+                <div class="sig-line" style="width: 180px;"></div>
+            </div>
+        </div>
+        <div>
+            <div class="sig-label">Service Provider Signature</div>
+            <div class="sig-line"></div>
+            <div class="sig-name">_________________________</div>
+            <div style="font-size: 10px; color: var(--text-light);">SGBS Group (Pty) Ltd</div>
+            <div style="margin-top: 12px;">
+                <div class="sig-label">Date</div>
+                <div class="sig-line" style="width: 180px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-note">
+        <strong>Note:</strong> This checklist forms part of the Professional Services Proposal (Ref: SGBS/PROP/2026-MOT-001). 
+        Upon return of this completed checklist, a formal engagement letter will be prepared reflecting the selected services 
+        and agreed fees. Please contact us with any questions regarding the services or pricing.
+    </div>
+
+</div>
+
+<script>
+    document.querySelectorAll('.cb').forEach(box => {
+        box.addEventListener('click', function() {
+            this.classList.toggle('checked');
+            if (this.classList.contains('checked')) {
+                this.style.background = '#c9a84c';
+                this.style.borderColor = '#c9a84c';
+                this.innerHTML = '✓';
+                this.style.color = 'white';
+                this.style.fontSize = '11px';
+                this.style.fontWeight = '700';
+                this.style.textAlign = 'center';
+                this.style.lineHeight = '14px';
+            } else {
+                this.style.background = 'transparent';
+                this.style.borderColor = '#a0aec0';
+                this.innerHTML = '';
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

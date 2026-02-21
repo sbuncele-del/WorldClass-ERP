@@ -9,13 +9,18 @@ import { Response } from 'express';
 import pool from '../config/database';
 import { TenantRequest } from '../types';
 
-// Helper to extract tenant context
-function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string } {
+// Helper to extract tenant + entity context
+function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string; entityId?: string } {
   const tenantId = req.tenant?.id;
   if (!tenantId) {
     throw new Error('Tenant context required');
   }
-  return { tenantId, userId: req.user?.id };
+
+  return {
+    tenantId,
+    userId: req.user?.id,
+    entityId: req.entity?.id || req.entityId
+  };
 }
 
 interface CashFlowItem {
@@ -57,7 +62,7 @@ export class CashFlowControllerV2 {
    */
   static async generateCashFlowStatement(req: TenantRequest, res: Response): Promise<void> {
     try {
-      const { tenantId } = getTenantContext(req);
+      const { tenantId, entityId } = getTenantContext(req);
       const { start_date, end_date, period = 'monthly', method = 'indirect' } = req.query;
 
       const dateRange = calculateDateRange(period as string, start_date as string, end_date as string);
@@ -87,7 +92,11 @@ export class CashFlowControllerV2 {
       res.json({
         success: true,
         data: cashFlowData,
-        meta: { generated_at: new Date().toISOString(), tenant_id: tenantId }
+        meta: {
+          generated_at: new Date().toISOString(),
+          tenant_id: tenantId,
+          entity_id: entityId || null
+        }
       });
 
     } catch (error: any) {
@@ -110,7 +119,7 @@ export class CashFlowControllerV2 {
    */
   static async getCashPosition(req: TenantRequest, res: Response): Promise<void> {
     try {
-      const { tenantId } = getTenantContext(req);
+      const { tenantId, entityId } = getTenantContext(req);
       const { start_date, end_date, interval = 'daily' } = req.query;
 
       const dateRange = calculateDateRange('custom', start_date as string, end_date as string);
@@ -132,9 +141,12 @@ export class CashFlowControllerV2 {
           FROM journal_entry_lines jel
           JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id
             AND je.tenant_id = $1
+            AND (je.entity_id IS NULL OR je.entity_id = $4)
           JOIN chart_of_accounts coa ON jel.account_id = coa.account_id
             AND coa.tenant_id = $1
+            AND (coa.entity_id IS NULL OR coa.entity_id = $4)
           WHERE jel.tenant_id = $1
+            AND (jel.entity_id IS NULL OR jel.entity_id = $4)
             AND je.status = 'POSTED'
             AND je.journal_date >= $2
             AND je.journal_date <= $3
@@ -150,7 +162,7 @@ export class CashFlowControllerV2 {
         ORDER BY period
       `;
 
-      const result = await pool.query(query, [tenantId, dateRange.start_date, dateRange.end_date]);
+      const result = await pool.query(query, [tenantId, dateRange.start_date, dateRange.end_date, entityId || null]);
 
       // Get opening balance
       const openingQuery = `
@@ -158,16 +170,19 @@ export class CashFlowControllerV2 {
         FROM journal_entry_lines jel
         JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id
           AND je.tenant_id = $1
+          AND (je.entity_id IS NULL OR je.entity_id = $3)
         JOIN chart_of_accounts coa ON jel.account_id = coa.account_id
           AND coa.tenant_id = $1
+          AND (coa.entity_id IS NULL OR coa.entity_id = $3)
         WHERE jel.tenant_id = $1
+          AND (jel.entity_id IS NULL OR jel.entity_id = $3)
           AND je.status = 'POSTED'
           AND je.journal_date < $2
           AND coa.account_code LIKE '1%'
           AND coa.account_name ILIKE '%cash%'
       `;
 
-      const openingResult = await pool.query(openingQuery, [tenantId, dateRange.start_date]);
+      const openingResult = await pool.query(openingQuery, [tenantId, dateRange.start_date, entityId || null]);
       const openingBalance = parseFloat(openingResult.rows[0]?.opening_balance || '0');
 
       res.json({
@@ -263,9 +278,10 @@ function calculateDateRange(period: string, startDate?: string, endDate?: string
   };
 }
 
-async function generateIndirectMethod(tenantId: string, dateRange: any): Promise<CashFlowData> {
+async function generateIndirectMethod(tenantId: string, entityId: string | null, dateRange: any): Promise<CashFlowData> {
+  const entityParam = entityId || null;
   // 1. Get Net Income for the period
-  const netIncome = await calculateNetIncome(tenantId, dateRange.start_date, dateRange.end_date);
+  const netIncome = await calculateNetIncome(tenantId, entityParam, dateRange.start_date, dateRange.end_date);
 
   // 2. Operating Activities adjustments
   const operatingItems: CashFlowItem[] = [
@@ -276,36 +292,37 @@ async function generateIndirectMethod(tenantId: string, dateRange: any): Promise
   const depreciationQuery = `
     SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as amount
     FROM journal_entry_lines jel
-    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $4)
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $4)
     WHERE jel.tenant_id = $1
+      AND (jel.entity_id IS NULL OR jel.entity_id = $4)
       AND je.status = 'POSTED'
       AND je.journal_date >= $2 AND je.journal_date <= $3
       AND coa.account_name ILIKE '%depreciation%'
   `;
-  const depResult = await pool.query(depreciationQuery, [tenantId, dateRange.start_date, dateRange.end_date]);
+  const depResult = await pool.query(depreciationQuery, [tenantId, dateRange.start_date, dateRange.end_date, entityParam]);
   const depreciation = parseFloat(depResult.rows[0]?.amount || '0');
   if (depreciation !== 0) {
     operatingItems.push({ description: 'Add: Depreciation & Amortization', amount: depreciation });
   }
 
   // Working capital changes
-  const workingCapitalChanges = await calculateWorkingCapitalChanges(tenantId, dateRange);
+  const workingCapitalChanges = await calculateWorkingCapitalChanges(tenantId, entityParam, dateRange);
   operatingItems.push(...workingCapitalChanges);
 
   const operatingSubtotal = operatingItems.reduce((sum, item) => sum + item.amount, 0);
 
   // 3. Investing Activities
-  const investingItems = await calculateInvestingActivities(tenantId, dateRange);
+  const investingItems = await calculateInvestingActivities(tenantId, entityParam, dateRange);
   const investingSubtotal = investingItems.reduce((sum, item) => sum + item.amount, 0);
 
   // 4. Financing Activities
-  const financingItems = await calculateFinancingActivities(tenantId, dateRange);
+  const financingItems = await calculateFinancingActivities(tenantId, entityParam, dateRange);
   const financingSubtotal = financingItems.reduce((sum, item) => sum + item.amount, 0);
 
   // 5. Cash balances
-  const beginningCash = await getCashBalance(tenantId, dateRange.start_date, true);
-  const endingCash = await getCashBalance(tenantId, dateRange.end_date, false);
+  const beginningCash = await getCashBalance(tenantId, entityParam, dateRange.start_date, true);
+  const endingCash = await getCashBalance(tenantId, entityParam, dateRange.end_date, false);
 
   const netCashFlow = operatingSubtotal + investingSubtotal + financingSubtotal;
 
@@ -343,7 +360,8 @@ async function generateIndirectMethod(tenantId: string, dateRange: any): Promise
   };
 }
 
-async function generateDirectMethod(tenantId: string, dateRange: any): Promise<CashFlowData> {
+async function generateDirectMethod(tenantId: string, entityId: string | null, dateRange: any): Promise<CashFlowData> {
+  const entityParam = entityId || null;
   // Direct method - show actual cash receipts and payments
   const operatingItems: CashFlowItem[] = [];
 
@@ -351,16 +369,17 @@ async function generateDirectMethod(tenantId: string, dateRange: any): Promise<C
   const customerReceiptsQuery = `
     SELECT COALESCE(SUM(jel.debit_amount), 0) as amount
     FROM journal_entry_lines jel
-    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $4)
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $4)
     WHERE jel.tenant_id = $1
+      AND (jel.entity_id IS NULL OR jel.entity_id = $4)
       AND je.status = 'POSTED'
       AND je.journal_date >= $2 AND je.journal_date <= $3
       AND coa.account_code LIKE '1%'
       AND coa.account_name ILIKE '%cash%'
       AND je.source_type = 'SALES'
   `;
-  const receiptsResult = await pool.query(customerReceiptsQuery, [tenantId, dateRange.start_date, dateRange.end_date]);
+  const receiptsResult = await pool.query(customerReceiptsQuery, [tenantId, dateRange.start_date, dateRange.end_date, entityParam]);
   operatingItems.push({
     description: 'Cash received from customers',
     amount: parseFloat(receiptsResult.rows[0]?.amount || '0')
@@ -370,16 +389,17 @@ async function generateDirectMethod(tenantId: string, dateRange: any): Promise<C
   const supplierPaymentsQuery = `
     SELECT COALESCE(SUM(jel.credit_amount), 0) as amount
     FROM journal_entry_lines jel
-    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $4)
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $4)
     WHERE jel.tenant_id = $1
+      AND (jel.entity_id IS NULL OR jel.entity_id = $4)
       AND je.status = 'POSTED'
       AND je.journal_date >= $2 AND je.journal_date <= $3
       AND coa.account_code LIKE '1%'
       AND coa.account_name ILIKE '%cash%'
       AND je.source_type = 'PURCHASE'
   `;
-  const paymentsResult = await pool.query(supplierPaymentsQuery, [tenantId, dateRange.start_date, dateRange.end_date]);
+  const paymentsResult = await pool.query(supplierPaymentsQuery, [tenantId, dateRange.start_date, dateRange.end_date, entityParam]);
   operatingItems.push({
     description: 'Cash paid to suppliers',
     amount: -parseFloat(paymentsResult.rows[0]?.amount || '0')
@@ -388,14 +408,14 @@ async function generateDirectMethod(tenantId: string, dateRange: any): Promise<C
   const operatingSubtotal = operatingItems.reduce((sum, item) => sum + item.amount, 0);
 
   // Use same investing and financing calculations
-  const investingItems = await calculateInvestingActivities(tenantId, dateRange);
-  const financingItems = await calculateFinancingActivities(tenantId, dateRange);
+  const investingItems = await calculateInvestingActivities(tenantId, entityParam, dateRange);
+  const financingItems = await calculateFinancingActivities(tenantId, entityParam, dateRange);
 
   const investingSubtotal = investingItems.reduce((sum, item) => sum + item.amount, 0);
   const financingSubtotal = financingItems.reduce((sum, item) => sum + item.amount, 0);
 
-  const beginningCash = await getCashBalance(tenantId, dateRange.start_date, true);
-  const endingCash = await getCashBalance(tenantId, dateRange.end_date, false);
+  const beginningCash = await getCashBalance(tenantId, entityParam, dateRange.start_date, true);
+  const endingCash = await getCashBalance(tenantId, entityParam, dateRange.end_date, false);
   const netCashFlow = operatingSubtotal + investingSubtotal + financingSubtotal;
 
   return {
@@ -432,7 +452,8 @@ async function generateDirectMethod(tenantId: string, dateRange: any): Promise<C
   };
 }
 
-async function calculateNetIncome(tenantId: string, startDate: string, endDate: string): Promise<number> {
+async function calculateNetIncome(tenantId: string, entityId: string | null, startDate: string, endDate: string): Promise<number> {
+  const entityParam = entityId || null;
   const query = `
     SELECT 
       COALESCE(SUM(
@@ -443,18 +464,20 @@ async function calculateNetIncome(tenantId: string, startDate: string, endDate: 
         END
       ), 0) as net_income
     FROM journal_entry_lines jel
-    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
-    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $4)
+    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $4)
     WHERE jel.tenant_id = $1
+      AND (jel.entity_id IS NULL OR jel.entity_id = $4)
       AND je.status = 'POSTED'
       AND je.journal_date >= $2 AND je.journal_date <= $3
       AND coa.account_type IN ('REVENUE', 'EXPENSE')
   `;
-  const result = await pool.query(query, [tenantId, startDate, endDate]);
+  const result = await pool.query(query, [tenantId, startDate, endDate, entityParam]);
   return parseFloat(result.rows[0]?.net_income || '0');
 }
 
-async function calculateWorkingCapitalChanges(tenantId: string, dateRange: any): Promise<CashFlowItem[]> {
+async function calculateWorkingCapitalChanges(tenantId: string, entityId: string | null, dateRange: any): Promise<CashFlowItem[]> {
+  const entityParam = entityId || null;
   const items: CashFlowItem[] = [];
 
   // Change in accounts receivable
@@ -463,13 +486,14 @@ async function calculateWorkingCapitalChanges(tenantId: string, dateRange: any):
       COALESCE(SUM(CASE WHEN je.journal_date < $2 THEN jel.debit_amount - jel.credit_amount ELSE 0 END), 0) as beginning,
       COALESCE(SUM(CASE WHEN je.journal_date <= $3 THEN jel.debit_amount - jel.credit_amount ELSE 0 END), 0) as ending
     FROM journal_entry_lines jel
-    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $4)
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $4)
     WHERE jel.tenant_id = $1
+      AND (jel.entity_id IS NULL OR jel.entity_id = $4)
       AND je.status = 'POSTED'
       AND coa.account_name ILIKE '%receivable%'
   `;
-  const arResult = await pool.query(arQuery, [tenantId, dateRange.start_date, dateRange.end_date]);
+  const arResult = await pool.query(arQuery, [tenantId, dateRange.start_date, dateRange.end_date, entityParam]);
   const arChange = parseFloat(arResult.rows[0]?.ending || '0') - parseFloat(arResult.rows[0]?.beginning || '0');
   if (arChange !== 0) {
     items.push({ description: 'Change in Accounts Receivable', amount: -arChange });
@@ -481,13 +505,14 @@ async function calculateWorkingCapitalChanges(tenantId: string, dateRange: any):
       COALESCE(SUM(CASE WHEN je.journal_date < $2 THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) as beginning,
       COALESCE(SUM(CASE WHEN je.journal_date <= $3 THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) as ending
     FROM journal_entry_lines jel
-    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $4)
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $4)
     WHERE jel.tenant_id = $1
+      AND (jel.entity_id IS NULL OR jel.entity_id = $4)
       AND je.status = 'POSTED'
       AND coa.account_name ILIKE '%payable%'
   `;
-  const apResult = await pool.query(apQuery, [tenantId, dateRange.start_date, dateRange.end_date]);
+  const apResult = await pool.query(apQuery, [tenantId, dateRange.start_date, dateRange.end_date, entityParam]);
   const apChange = parseFloat(apResult.rows[0]?.ending || '0') - parseFloat(apResult.rows[0]?.beginning || '0');
   if (apChange !== 0) {
     items.push({ description: 'Change in Accounts Payable', amount: apChange });
@@ -496,21 +521,23 @@ async function calculateWorkingCapitalChanges(tenantId: string, dateRange: any):
   return items;
 }
 
-async function calculateInvestingActivities(tenantId: string, dateRange: any): Promise<CashFlowItem[]> {
+async function calculateInvestingActivities(tenantId: string, entityId: string | null, dateRange: any): Promise<CashFlowItem[]> {
+  const entityParam = entityId || null;
   const items: CashFlowItem[] = [];
 
   // Purchase of fixed assets
   const assetPurchaseQuery = `
     SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as amount
     FROM journal_entry_lines jel
-    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $4)
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $4)
     WHERE jel.tenant_id = $1
+      AND (jel.entity_id IS NULL OR jel.entity_id = $4)
       AND je.status = 'POSTED'
       AND je.journal_date >= $2 AND je.journal_date <= $3
       AND coa.account_code >= '1500' AND coa.account_code < '2000'
   `;
-  const assetResult = await pool.query(assetPurchaseQuery, [tenantId, dateRange.start_date, dateRange.end_date]);
+  const assetResult = await pool.query(assetPurchaseQuery, [tenantId, dateRange.start_date, dateRange.end_date, entityParam]);
   const assetPurchase = parseFloat(assetResult.rows[0]?.amount || '0');
   if (assetPurchase !== 0) {
     items.push({ description: 'Purchase of Fixed Assets', amount: -assetPurchase });
@@ -519,21 +546,23 @@ async function calculateInvestingActivities(tenantId: string, dateRange: any): P
   return items.length > 0 ? items : [{ description: 'No investing activities', amount: 0 }];
 }
 
-async function calculateFinancingActivities(tenantId: string, dateRange: any): Promise<CashFlowItem[]> {
+async function calculateFinancingActivities(tenantId: string, entityId: string | null, dateRange: any): Promise<CashFlowItem[]> {
+  const entityParam = entityId || null;
   const items: CashFlowItem[] = [];
 
   // Long-term debt changes
   const debtQuery = `
     SELECT COALESCE(SUM(jel.credit_amount - jel.debit_amount), 0) as amount
     FROM journal_entry_lines jel
-    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $4)
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $4)
     WHERE jel.tenant_id = $1
+      AND (jel.entity_id IS NULL OR jel.entity_id = $4)
       AND je.status = 'POSTED'
       AND je.journal_date >= $2 AND je.journal_date <= $3
       AND coa.account_code >= '2500' AND coa.account_code < '3000'
   `;
-  const debtResult = await pool.query(debtQuery, [tenantId, dateRange.start_date, dateRange.end_date]);
+  const debtResult = await pool.query(debtQuery, [tenantId, dateRange.start_date, dateRange.end_date, entityParam]);
   const debtChange = parseFloat(debtResult.rows[0]?.amount || '0');
   if (debtChange !== 0) {
     items.push({ description: debtChange > 0 ? 'Proceeds from Long-term Debt' : 'Repayment of Long-term Debt', amount: debtChange });
@@ -542,20 +571,22 @@ async function calculateFinancingActivities(tenantId: string, dateRange: any): P
   return items.length > 0 ? items : [{ description: 'No financing activities', amount: 0 }];
 }
 
-async function getCashBalance(tenantId: string, asOfDate: string, beforeDate: boolean): Promise<number> {
+async function getCashBalance(tenantId: string, entityId: string | null, asOfDate: string, beforeDate: boolean): Promise<number> {
+  const entityParam = entityId || null;
   const operator = beforeDate ? '<' : '<=';
   const query = `
     SELECT COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0) as balance
     FROM journal_entry_lines jel
-    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1
-    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+    JOIN journal_entries je ON jel.journal_entry_id = je.journal_entry_id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $3)
+    JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $3)
     WHERE jel.tenant_id = $1
+      AND (jel.entity_id IS NULL OR jel.entity_id = $3)
       AND je.status = 'POSTED'
       AND je.journal_date ${operator} $2
       AND coa.account_code LIKE '1%'
       AND coa.account_name ILIKE '%cash%'
   `;
-  const result = await pool.query(query, [tenantId, asOfDate]);
+  const result = await pool.query(query, [tenantId, asOfDate, entityParam]);
   return parseFloat(result.rows[0]?.balance || '0');
 }
 

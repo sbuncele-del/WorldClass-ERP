@@ -2,12 +2,13 @@ import { Router } from 'express';
 // V2 controller with Repository Pattern + direct tenant-safe queries for ALL endpoints
 import * as salesController from '../controllers/sales.controller.v2';
 import * as salesWorkspaceController from '../modules/sales/controllers/sales.workspace.controller';
-import { tenantMiddleware } from '../middleware/tenant';
+import { tenantMiddleware, requireEntity } from '../middleware/tenant';
 
 const router = Router();
 
 // Apply tenant middleware to all sales routes
 router.use(tenantMiddleware);
+router.use(requireEntity);
 
 // ============================================================================
 // DASHBOARD (v2 - Repository Pattern)

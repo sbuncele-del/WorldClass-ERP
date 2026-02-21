@@ -63,6 +63,7 @@ export class PurchaseOrderRepository extends BaseRepository<PurchaseOrder> {
   protected schema = 'purchase';
   protected primaryKey = 'po_id';
   protected softDelete = false;
+  protected entityScoped = true;
 
   /**
    * Get orders by status

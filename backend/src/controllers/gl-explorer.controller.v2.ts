@@ -10,22 +10,22 @@ import pool from '../config/database';
 import { TenantRequest } from '../types';
 
 // Helper to extract tenant context
-function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string } {
+function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string; entityId?: string } {
   const tenantId = req.tenant?.id;
   if (!tenantId) {
     throw new Error('Tenant context required');
   }
-  return { tenantId, userId: req.user?.id };
+  return { tenantId, userId: req.user?.id, entityId: req.entity?.id };
 }
 
 export class GLExplorerControllerV2 {
   /**
-   * Advanced GL search with multiple filters
+   * Search GL entries
    * GET /api/v2/financial/gl-explorer/search
    */
   static async search(req: TenantRequest, res: Response): Promise<void> {
     try {
-      const { tenantId } = getTenantContext(req);
+      const { tenantId, entityId } = getTenantContext(req);
       const {
         account_codes,
         date_from,
@@ -48,6 +48,12 @@ export class GLExplorerControllerV2 {
       const conditions: string[] = ['jel.tenant_id = $1'];
       const params: any[] = [tenantId];
       let paramIndex = 2;
+
+      if (entityId) {
+        conditions.push(`(jel.entity_id IS NULL OR jel.entity_id = $${paramIndex})`);
+        params.push(entityId);
+        paramIndex++;
+      }
 
       // Account codes filter - use COA join for robustness
       if (account_codes) {
@@ -207,7 +213,7 @@ export class GLExplorerControllerV2 {
    */
   static async getAccountSummary(req: TenantRequest, res: Response): Promise<void> {
     try {
-      const { tenantId } = getTenantContext(req);
+      const { tenantId, entityId } = getTenantContext(req);
       const { as_of_date, account_type } = req.query;
 
       const asOfDate = (as_of_date as string) || new Date().toISOString().split('T')[0];
@@ -219,6 +225,14 @@ export class GLExplorerControllerV2 {
         typeFilter = 'AND coa.account_type = $3';
         params.push(account_type);
       }
+
+      if (entityId) {
+        const entityParam = account_type ? '$4' : '$3';
+        typeFilter += ` AND (coa.entity_id IS NULL OR coa.entity_id = ${entityParam})`;
+        params.push(entityId);
+      }
+
+      const entityParamIndex = entityId ? params.length : null;
 
       const query = `
         SELECT 
@@ -236,8 +250,10 @@ export class GLExplorerControllerV2 {
         FROM chart_of_accounts coa
         LEFT JOIN journal_entry_lines jel ON coa.id = jel.account_id
           AND jel.tenant_id = $1
+          ${entityParamIndex ? `AND (jel.entity_id IS NULL OR jel.entity_id = $${entityParamIndex})` : ''}
         LEFT JOIN journal_entries je ON jel.journal_entry_id = je.entry_id
           AND je.tenant_id = $1
+          ${entityParamIndex ? `AND (je.entity_id IS NULL OR je.entity_id = $${entityParamIndex})` : ''}
           AND LOWER(je.status) = 'posted'
           AND je.journal_date <= $2
         WHERE coa.tenant_id = $1
@@ -277,7 +293,7 @@ export class GLExplorerControllerV2 {
    */
   static async getAccountLedger(req: TenantRequest, res: Response): Promise<void> {
     try {
-      const { tenantId } = getTenantContext(req);
+      const { tenantId, entityId } = getTenantContext(req);
       const accountCode = req.params.accountCode || (req.params as any).account_code;
       const { date_from, date_to, page = 1, limit = 100 } = req.query;
 
@@ -286,12 +302,17 @@ export class GLExplorerControllerV2 {
       const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
       // Get account info
-      const accountQuery = `
+      let accountQuery = `
         SELECT account_code, account_name, account_type
         FROM chart_of_accounts
         WHERE tenant_id = $1 AND account_code = $2
       `;
-      const accountResult = await pool.query(accountQuery, [tenantId, accountCode]);
+      const accountParams: any[] = [tenantId, accountCode];
+      if (entityId) {
+        accountQuery += ' AND (entity_id IS NULL OR entity_id = $3)';
+        accountParams.push(entityId);
+      }
+      const accountResult = await pool.query(accountQuery, accountParams);
 
       if (accountResult.rows.length === 0) {
         res.status(404).json({ success: false, message: 'Account not found' });
@@ -301,7 +322,7 @@ export class GLExplorerControllerV2 {
       const account = accountResult.rows[0];
 
       // Get opening balance
-      const openingQuery = `
+      let openingQuery = `
         SELECT 
           CASE 
             WHEN $4 IN ('ASSET', 'EXPENSE') 
@@ -318,11 +339,17 @@ export class GLExplorerControllerV2 {
           AND je.journal_date < $2
           AND coa.account_code = $3
       `;
-      const openingResult = await pool.query(openingQuery, [tenantId, dateFrom, accountCode, account.account_type]);
+      const openingParams: any[] = [tenantId, dateFrom, accountCode, account.account_type];
+      if (entityId) {
+        const idx = openingParams.length + 1;
+        openingQuery += ` AND (jel.entity_id IS NULL OR jel.entity_id = $${idx}) AND (je.entity_id IS NULL OR je.entity_id = $${idx}) AND (coa.entity_id IS NULL OR coa.entity_id = $${idx})`;
+        openingParams.push(entityId);
+      }
+      const openingResult = await pool.query(openingQuery, openingParams);
       const openingBalance = parseFloat(openingResult.rows[0]?.opening_balance || '0');
 
       // Get transactions
-      const transQuery = `
+      let transQuery = `
         SELECT 
           je.entry_id as journal_entry_id,
           je.entry_number,
@@ -345,8 +372,16 @@ export class GLExplorerControllerV2 {
         ORDER BY je.journal_date, je.entry_id
         LIMIT $5 OFFSET $6
       `;
+      const transParams: any[] = [tenantId, dateFrom, dateTo, accountCode, limit, offset];
+      if (entityId) {
+        const idx = transParams.length + 1;
+        transQuery = transQuery.replace('WHERE jel.tenant_id = $1', `WHERE jel.tenant_id = $1 AND (jel.entity_id IS NULL OR jel.entity_id = $${idx})`);
+        transQuery = transQuery.replace('AND je.tenant_id = $1', `AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $${idx})`);
+        transQuery = transQuery.replace('AND coa.tenant_id = $1', `AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $${idx})`);
+        transParams.push(entityId);
+      }
 
-      const transResult = await pool.query(transQuery, [tenantId, dateFrom, dateTo, accountCode, limit, offset]);
+      const transResult = await pool.query(transQuery, transParams);
 
       // Calculate running balance
       let runningBalance = openingBalance;
@@ -393,25 +428,35 @@ export class GLExplorerControllerV2 {
    */
   static async getFilterOptions(req: TenantRequest, res: Response): Promise<void> {
     try {
-      const { tenantId } = getTenantContext(req);
+      const { tenantId, entityId } = getTenantContext(req);
 
       // Get accounts
-      const accountsQuery = `
+      let accountsQuery = `
         SELECT account_code, account_name, account_type
         FROM chart_of_accounts
         WHERE tenant_id = $1 AND is_active = true
-        ORDER BY account_code
       `;
-      const accounts = await pool.query(accountsQuery, [tenantId]);
+      const accountParams: any[] = [tenantId];
+      if (entityId) {
+        accountsQuery += ' AND (entity_id IS NULL OR entity_id = $2)';
+        accountParams.push(entityId);
+      }
+      accountsQuery += ' ORDER BY account_code';
+      const accounts = await pool.query(accountsQuery, accountParams);
 
       // Get source types
-      const sourceTypesQuery = `
+      let sourceTypesQuery = `
         SELECT DISTINCT COALESCE(source_type, source) as source_type
         FROM journal_entries
         WHERE tenant_id = $1 AND (source_type IS NOT NULL OR source IS NOT NULL)
-        ORDER BY source_type
       `;
-      const sourceTypes = await pool.query(sourceTypesQuery, [tenantId]);
+      const sourceParams: any[] = [tenantId];
+      if (entityId) {
+        sourceTypesQuery += ' AND (entity_id IS NULL OR entity_id = $2)';
+        sourceParams.push(entityId);
+      }
+      sourceTypesQuery += ' ORDER BY source_type';
+      const sourceTypes = await pool.query(sourceTypesQuery, sourceParams);
 
       // Return empty arrays for cost_centers and project_codes since journal_entry_lines may not have these columns
       res.json({

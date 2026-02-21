@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGBS Group — Client Proposals Portal</title>
+    <meta name="description" content="Secure client proposals portal for SGBS Group (Pty) Ltd — Professional accounting, advisory and technology services.">
+    <meta property="og:title" content="SGBS Group — Client Proposals Portal">
+    <meta property="og:description" content="Secure access to professional service proposals prepared by SGBS Group (Pty) Ltd.">
+    <meta property="og:type" content="website">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a365d'/><text x='16' y='22' text-anchor='middle' fill='%23c9a84c' font-family='serif' font-size='16' font-weight='bold'>SG</text></svg>">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap');
+
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c9a84c;
+            --accent-light: #d4b966;
+            --dark: #0f2440;
+            --text: #2d3748;
+            --text-light: #718096;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark);
+            min-height: 100vh;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* Background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(26,54,93,0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(201,168,76,0.08) 0%, transparent 40%),
+                linear-gradient(180deg, #0a1628 0%, #0f2440 30%, #132d52 70%, #0f2440 100%);
+            z-index: -1;
+        }
+
+        /* Top bar */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-logo {
+            width: 44px;
+            height: 44px;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .brand-text {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2.5px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .top-bar-right {
+            font-size: 11px;
+            color: rgba(255,255,255,0.35);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 80px 40px 50px;
+        }
+
+        .hero-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: var(--accent);
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero p {
+            font-size: 15px;
+            font-weight: 300;
+            color: rgba(255,255,255,0.5);
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.7;
+        }
+
+        /* Proposals grid */
+        .proposals-section {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px 40px 60px;
+        }
+
+        .section-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent);
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(201,168,76,0.2);
+        }
+
+        .proposal-card {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 28px 30px;
+            margin-bottom: 16px;
+            text-decoration: none;
+            color: white;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .proposal-card:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+        }
+
+        .proposal-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+            border: 1px solid rgba(201,168,76,0.2);
+        }
+
+        .proposal-info {
+            flex: 1;
+        }
+
+        .proposal-client {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .proposal-desc {
+            font-size: 12px;
+            color: rgba(255,255,255,0.45);
+            line-height: 1.5;
+        }
+
+        .proposal-meta {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .proposal-date {
+            font-size: 11px;
+            color: rgba(255,255,255,0.35);
+            margin-bottom: 6px;
+        }
+
+        .proposal-status {
+            display: inline-block;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .status-active {
+            background: rgba(56,161,105,0.15);
+            color: #68d391;
+            border: 1px solid rgba(56,161,105,0.3);
+        }
+
+        .status-sent {
+            background: rgba(201,168,76,0.15);
+            color: var(--accent-light);
+            border: 1px solid rgba(201,168,76,0.3);
+        }
+
+        .status-draft {
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .proposal-arrow {
+            font-size: 18px;
+            color: rgba(255,255,255,0.2);
+            transition: all 0.3s;
+        }
+
+        .proposal-card:hover .proposal-arrow {
+            color: var(--accent);
+            transform: translateX(4px);
+        }
+
+        /* Footer */
+        .portal-footer {
+            text-align: center;
+            padding: 40px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .footer-brand {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.3);
+            margin-bottom: 8px;
+        }
+
+        .footer-info {
+            font-size: 10px;
+            color: rgba(255,255,255,0.2);
+            line-height: 1.8;
+        }
+
+        .footer-info a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .divider {
+            width: 50px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            margin: 0 auto 30px;
+        }
+
+        /* Responsive */
+        @media (max-width: 700px) {
+            .top-bar { padding: 16px 20px; }
+            .hero { padding: 50px 20px 30px; }
+            .hero h1 { font-size: 28px; }
+            .proposals-section { padding: 20px; }
+            .proposal-card { flex-direction: column; text-align: center; gap: 14px; }
+            .proposal-meta { text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="brand">
+            <div class="brand-logo">SG</div>
+            <div class="brand-text">SGBS Group (Pty) Ltd</div>
+        </div>
+        <div class="top-bar-right">Secure Portal</div>
+    </div>
+
+    <div class="hero">
+        <div class="hero-label">Client Proposals</div>
+        <h1>Proposals Portal</h1>
+        <p>This is a secure portal for proposals prepared by SGBS Group (Pty) Ltd.</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="proposals-section" style="text-align:center; max-width:560px;">
+        <div style="font-size:56px; margin-bottom:24px;">🔒</div>
+        <h2 style="font-family:'Playfair Display',serif; font-size:22px; margin-bottom:14px; color:white;">Access Your Proposal</h2>
+        <p style="font-size:14px; color:rgba(255,255,255,0.5); line-height:1.8; margin-bottom:30px;">
+            Each proposal is shared via a private link sent directly to you.<br>
+            Please use the link provided by your SGBS Group representative to access your proposal.
+        </p>
+        <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:24px; font-size:13px; color:rgba(255,255,255,0.4); line-height:1.7;">
+            <strong style="color:var(--accent);">Need assistance?</strong><br>
+            Contact us at <a href="mailto:info@sgbsgroup.co.za" style="color:var(--accent); text-decoration:none;">info@sgbsgroup.co.za</a> or call <strong style="color:rgba(255,255,255,0.6);">074 012 6873</strong>
+        </div>
+    </div>
+
+    <div class="portal-footer">
+        <div class="footer-brand">SGBS Group (Pty) Ltd</div>
+        <div class="footer-info">
+            Professional Accounting, Advisory & Technology Services<br>
+            <a href="https://sgbsgroup.co.za">sgbsgroup.co.za</a> &nbsp;|&nbsp; info@sgbsgroup.co.za<br><br>
+            All proposals are confidential and prepared exclusively for the named recipient.
+        </div>
+    </div>
+
+</body>
+</html>

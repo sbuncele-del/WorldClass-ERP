@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import * as financialControllerV2 from '../modules/financial/controllers/financial.controller.v2';
 import * as financialWorkspaceController from '../modules/financial/controllers/financial.workspace.controller';
-import { tenantMiddleware } from '../middleware/tenant';
+import { tenantMiddleware, requireEntity } from '../middleware/tenant';
 import {
 	financialAccountLedgerByAccountCodeValidation,
 	financialAccountLedgerByCodeValidation,
@@ -25,6 +25,7 @@ const router = Router();
 
 // Apply tenant middleware to all financial routes
 router.use(tenantMiddleware);
+router.use(requireEntity);
 
 // ===== WORKSPACE =====
 router.get('/workspace', financialWorkspaceController.getFinancialWorkspace);

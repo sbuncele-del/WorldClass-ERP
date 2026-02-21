@@ -31,6 +31,7 @@ export interface StockMovement {
 export class StockMovementRepository extends BaseRepository<StockMovement> {
   protected tableName = 'stock_movements';
   protected schema = 'inventory';
+  protected entityScoped = true;
   protected softDelete = false;  // Don't soft delete movements - they're audit records
 
   /**

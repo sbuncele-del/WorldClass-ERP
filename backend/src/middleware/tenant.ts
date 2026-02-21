@@ -10,6 +10,51 @@ function getPool() {
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 
+// Attempt to resolve entity context from request headers and attach to req
+async function resolveEntityContext(req: TenantRequest, tenantId: string): Promise<void> {
+  const headerValue = (req.headers['x-entity-id'] || req.headers['x-entity']) as string | string[] | undefined;
+  if (!headerValue) {
+    return;
+  }
+
+  const entityId = Array.isArray(headerValue) ? headerValue[0] : headerValue;
+  if (!entityId) {
+    return;
+  }
+
+  const entityResult = await getPool().query(
+    `SELECT id, tenant_id, name, code, type, parent_id, status, currency, country, level
+     FROM legal_entities
+     WHERE id = $1 AND tenant_id = $2`,
+    [entityId, tenantId]
+  );
+
+  if (entityResult.rows.length === 0) {
+    throw new ForbiddenError('Entity not found for tenant');
+  }
+
+  const entity = entityResult.rows[0];
+
+  if (entity.status && entity.status !== 'active') {
+    throw new ForbiddenError('Entity is not active');
+  }
+
+  req.entity = {
+    id: entity.id,
+    tenant_id: entity.tenant_id,
+    name: entity.name,
+    code: entity.code,
+    type: entity.type,
+    parent_id: entity.parent_id,
+    status: entity.status,
+    currency: entity.currency,
+    country: entity.country,
+    level: entity.level,
+  };
+
+  (req as any).entityId = entity.id;
+}
+
 /**
  * Tenant Middleware
  * 
@@ -163,6 +208,9 @@ export const tenantMiddleware = async (
     // Also set userId directly for controllers that use req.userId
     (req as any).userId = user.id;
 
+    // Resolve and attach entity context when provided
+    await resolveEntityContext(req, tenant.id);
+
     // Log audit trail for sensitive actions
     if (req.method !== 'GET') {
       await logAuditTrail(req, 'api_access');
@@ -299,6 +347,25 @@ export const requireFeature = (featureName: string) => {
 };
 
 /**
+ * Require Entity Context Middleware
+ * Ensures that an entity has been selected and attached by tenantMiddleware.
+ */
+export const requireEntity = (
+  req: TenantRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  try {
+    if (!req.entity || !req.entity.id) {
+      throw new ForbiddenError('Entity context required');
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
  * Demo Mode Middleware
  * 
  * Blocks write operations in demo mode.
@@ -396,5 +463,6 @@ export default {
   requirePermission,
   requireFeature,
   blockDemoWrites,
-  superAdminOnly
+  superAdminOnly,
+  requireEntity
 };

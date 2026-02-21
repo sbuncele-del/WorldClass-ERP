@@ -9,13 +9,13 @@ import { Response } from 'express';
 import pool from '../config/database';
 import { TenantRequest } from '../types';
 
-// Helper to extract tenant context
-function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string } {
+// Helper to extract tenant + entity context
+function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string; entityId?: string } {
   const tenantId = req.tenant?.id;
   if (!tenantId) {
     throw new Error('Tenant context required');
   }
-  return { tenantId, userId: req.user?.id };
+  return { tenantId, userId: req.user?.id, entityId: req.entity?.id || req.entityId };
 }
 
 export class CustomReportsControllerV2 {
@@ -401,9 +401,10 @@ export class CustomReportsControllerV2 {
    */
   static async runReport(req: TenantRequest, res: Response): Promise<void> {
     try {
-      const { tenantId, userId } = getTenantContext(req);
+      const { tenantId, userId, entityId } = getTenantContext(req);
       const { id } = req.params;
       const { filter_values, sort_by, sort_order, limit = 1000, offset = 0 } = req.body;
+      const entityParam = entityId || null;
 
       // Get template
       const templateQuery = `
@@ -445,6 +446,14 @@ export class CustomReportsControllerV2 {
       let whereConditions: string[] = ['tenant_id = $1'];
       let params: any[] = [tenantId];
       let paramIndex = 2;
+
+      // Add entity isolation for entity-aware tables
+      const entityAwareTables = ['journal_entries', 'journal_entry_lines', 'chart_of_accounts'];
+      if (entityAwareTables.includes(template.base_table)) {
+        whereConditions.push(`(entity_id IS NULL OR entity_id = $${paramIndex})`);
+        params.push(entityParam);
+        paramIndex++;
+      }
 
       if (filter_values) {
         for (const filter of filters.rows) {

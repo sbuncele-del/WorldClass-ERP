@@ -28,11 +28,16 @@ apiClient.interceptors.request.use(
         // ignore parse error
       }
     }
+    const entityId = localStorage.getItem('currentEntityId') || localStorage.getItem('entityId');
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     if (tenantId) {
       config.headers['X-Tenant-ID'] = tenantId;
+    }
+    if (entityId) {
+      config.headers['X-Entity-ID'] = entityId;
     }
     return config;
   },

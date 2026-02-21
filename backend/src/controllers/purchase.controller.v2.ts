@@ -19,7 +19,7 @@ import {
 
 function getTenantContext(req: TenantRequest): TenantContext {
   if (!req.tenant) throw new Error('Tenant context not available');
-  return { tenantId: req.tenant.id, userId: req.user?.id };
+  return { tenantId: req.tenant.id, userId: req.user?.id, entityId: req.entity?.id };
 }
 
 // ============================================================================

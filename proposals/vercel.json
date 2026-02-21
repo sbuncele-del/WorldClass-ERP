@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      ]
+    },
+    {
+      "source": "/(.*).pdf",
+      "headers": [
+        { "key": "Content-Disposition", "value": "inline" },
+        { "key": "Cache-Control", "value": "public, max-age=3600" }
+      ]
+    }
+  ],
+  "redirects": [
+    { "source": "/motshwane", "destination": "/motshwane-group/", "statusCode": 302 },
+    { "source": "/motshwane/", "destination": "/motshwane-group/", "statusCode": 302 },
+    { "source": "/motshwane/proposal", "destination": "/motshwane-group/proposal-dr-motshwane", "statusCode": 302 },
+    { "source": "/motshwane/checklist", "destination": "/motshwane-group/services-checklist-dr-motshwane", "statusCode": 302 },
+    { "source": "/boikago", "destination": "/boikago-events/", "statusCode": 302 },
+    { "source": "/boikago/", "destination": "/boikago-events/", "statusCode": 302 },
+    { "source": "/boikago/tax-plan", "destination": "/boikago-events/tax-optimisation-plan", "statusCode": 302 }
+  ]
+}

@@ -10,13 +10,13 @@ import pool from '../config/database';
 import { TenantRequest } from '../types';
 import { parse } from 'csv-parse/sync';
 
-// Helper to extract tenant context
-function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string } {
+// Helper to extract tenant + entity context
+function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string; entityId?: string } {
   const tenantId = req.tenant?.id;
   if (!tenantId) {
     throw new Error('Tenant context required');
   }
-  return { tenantId, userId: req.user?.id };
+  return { tenantId, userId: req.user?.id, entityId: req.entity?.id || req.entityId };
 }
 
 interface ImportLine {
@@ -48,7 +48,8 @@ export class ImportEntriesControllerV2 {
    */
   static async validateImport(req: TenantRequest, res: Response): Promise<void> {
     try {
-      const { tenantId } = getTenantContext(req);
+      const { tenantId, entityId } = getTenantContext(req);
+      const entityParam = entityId || null;
       const { file_content, column_mapping } = req.body;
 
       if (!file_content) {
@@ -73,12 +74,13 @@ export class ImportEntriesControllerV2 {
         return;
       }
 
-      // Get valid account codes for tenant
+      // Get valid account codes for tenant + entity
       const accountsQuery = `
         SELECT account_code FROM chart_of_accounts
         WHERE tenant_id = $1 AND is_active = true
+          AND (entity_id IS NULL OR entity_id = $2)
       `;
-      const accountsResult = await pool.query(accountsQuery, [tenantId]);
+      const accountsResult = await pool.query(accountsQuery, [tenantId, entityParam]);
       const validAccounts = new Set(accountsResult.rows.map(r => r.account_code));
 
       // Validate lines
@@ -198,7 +200,7 @@ export class ImportEntriesControllerV2 {
   static async executeImport(req: TenantRequest, res: Response): Promise<void> {
     const client = await pool.connect();
     try {
-      const { tenantId, userId } = getTenantContext(req);
+      const { tenantId, userId, entityId } = getTenantContext(req);
       const { lines, auto_post = false, group_by_date = true } = req.body;
 
       if (!lines || lines.length === 0) {
@@ -230,7 +232,8 @@ export class ImportEntriesControllerV2 {
             date,
             `Imported entries for ${date}`,
             dateLines,
-            auto_post
+            auto_post,
+            entityId
           );
           createdEntries.push(entry);
         }
@@ -243,7 +246,8 @@ export class ImportEntriesControllerV2 {
           lines[0].journal_date,
           'Imported entries',
           lines,
-          auto_post
+          auto_post,
+          entityId
         );
         createdEntries.push(entry);
       }
@@ -423,7 +427,8 @@ async function createJournalEntry(
   journalDate: string,
   description: string,
   lines: any[],
-  autoPost: boolean
+  autoPost: boolean,
+  entityId?: string
 ): Promise<any> {
   // Calculate totals
   let totalDebit = 0;
@@ -436,34 +441,36 @@ async function createJournalEntry(
   // Create journal entry
   const entryNumber = `JE-IMP-${Date.now()}`;
   const status = autoPost ? 'POSTED' : 'DRAFT';
+  const entityParam = entityId || null;
 
   const jeResult = await client.query(`
     INSERT INTO journal_entries (
       tenant_id, entry_number, journal_date, description,
-      source_type, status, total_debit, total_credit, created_by
+      source_type, status, total_debit, total_credit, created_by, entity_id
     )
-    VALUES ($1, $2, $3, $4, 'IMPORT', $5, $6, $7, $8)
+    VALUES ($1, $2, $3, $4, 'IMPORT', $5, $6, $7, $8, $9)
     RETURNING *
-  `, [tenantId, entryNumber, journalDate, description, status, totalDebit, totalCredit, userId]);
+  `, [tenantId, entryNumber, journalDate, description, status, totalDebit, totalCredit, userId, entityParam]);
 
   const journalEntryId = jeResult.rows[0].id;
 
   // Create lines
   for (const line of lines) {
-    // Get account ID
+    // Get account ID (entity-scoped)
     const accountResult = await client.query(`
       SELECT id FROM chart_of_accounts
       WHERE tenant_id = $1 AND account_code = $2
-    `, [tenantId, line.account_code]);
+        AND (entity_id IS NULL OR entity_id = $3)
+    `, [tenantId, line.account_code, entityParam]);
     
     const accountId = accountResult.rows[0]?.id;
 
     await client.query(`
       INSERT INTO journal_entry_lines (
         tenant_id, journal_entry_id, account_id, account_code,
-        description, debit_amount, credit_amount
+        description, debit_amount, credit_amount, entity_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `, [
       tenantId,
       journalEntryId,
@@ -471,7 +478,8 @@ async function createJournalEntry(
       line.account_code,
       line.description,
       line.debit_amount || 0,
-      line.credit_amount || 0
+      line.credit_amount || 0,
+      entityParam
     ]);
   }
 

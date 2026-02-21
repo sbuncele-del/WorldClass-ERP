@@ -27,7 +27,8 @@ function getTenantContext(req: TenantRequest): TenantContext {
   }
   return {
     tenantId: req.tenant.id,
-    userId: req.user?.id
+    userId: req.user?.id,
+    entityId: req.entity?.id
   };
 }
 

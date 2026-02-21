@@ -4,7 +4,7 @@
  */
 import express from 'express';
 import { authenticateToken } from '../middleware/auth';
-import { tenantMiddleware } from '../middleware/tenant';
+import { tenantMiddleware, requireEntity } from '../middleware/tenant';
 import * as ApprovalControllerV2 from '../controllers/approval.controller.v2';
 
 const router = express.Router();
@@ -12,6 +12,7 @@ const router = express.Router();
 // All routes require authentication and tenant context
 router.use(authenticateToken);
 router.use(tenantMiddleware);
+router.use(requireEntity);
 
 // Approval Actions
 router.post('/submit/:journalEntryId', ApprovalControllerV2.submitForApproval);

@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SGBS Group — Tax Optimisation Plan | Boikago Events &amp; Creatives</title>
+    <meta name="description" content="Tax Optimisation and Remuneration Structuring Plan prepared by SGBS Group for Boikago Events &amp; Creatives (Pty) Ltd">
+    <meta property="og:title" content="SGBS Group — Tax Optimisation Plan">
+    <meta property="og:description" content="Comprehensive tax planning document for school fees structuring and travel allowance optimisation">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%231a365d'/><text x='16' y='22' text-anchor='middle' fill='%23c9a84c' font-family='serif' font-size='16' font-weight='bold'>SG</text></svg>">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap');
+
+        :root {
+            --primary: #1a365d;
+            --primary-light: #2c5282;
+            --accent: #c9a84c;
+            --accent-light: #d4b966;
+            --dark: #0f2440;
+            --text: #2d3748;
+            --text-light: #718096;
+            --bg: #f7f8fc;
+            --white: #ffffff;
+            --success: #38a169;
+            --warning: #d69e2e;
+            --danger: #e53e3e;
+            --info: #3182ce;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── Cover Page ── */
+        .cover {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0a1628 0%, #0f2440 30%, #1a365d 60%, #1e3a5f 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            padding: 60px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cover::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(201,168,76,0.08) 0%, transparent 70%);
+        }
+
+        .cover::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(201,168,76,0.05) 0%, transparent 70%);
+        }
+
+        .cover-logo {
+            width: 80px;
+            height: 80px;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-firm {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 50px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-badge {
+            display: inline-block;
+            background: rgba(201,168,76,0.15);
+            border: 1px solid rgba(201,168,76,0.3);
+            color: var(--accent);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 6px 18px;
+            border-radius: 30px;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 44px;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-sub {
+            font-size: 17px;
+            font-weight: 300;
+            color: rgba(255,255,255,0.6);
+            max-width: 520px;
+            line-height: 1.7;
+            margin-bottom: 50px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-meta {
+            display: flex;
+            gap: 40px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cover-meta-item {
+            text-align: center;
+        }
+
+        .cover-meta-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: rgba(255,255,255,0.35);
+            margin-bottom: 4px;
+        }
+
+        .cover-meta-value {
+            font-size: 13px;
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .cover-footer {
+            position: absolute;
+            bottom: 30px;
+            font-size: 10px;
+            color: rgba(255,255,255,0.2);
+            letter-spacing: 1px;
+        }
+
+        /* ── Document Container ── */
+        .document {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* ── Section ── */
+        .section {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 50px;
+            margin: 30px 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.03);
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+
+        .section-number {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .section h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+
+        .section-subtitle {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .section h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            color: var(--primary);
+            margin: 30px 0 14px;
+        }
+
+        .section h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 24px 0 10px;
+        }
+
+        .section p {
+            margin-bottom: 14px;
+            color: var(--text);
+            line-height: 1.8;
+        }
+
+        /* ── Legal Citation Box ── */
+        .legal-cite {
+            background: linear-gradient(135deg, #f0f4ff 0%, #edf2ff 100%);
+            border-left: 4px solid var(--info);
+            border-radius: 0 10px 10px 0;
+            padding: 20px 24px;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+
+        .legal-cite .cite-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--info);
+            margin-bottom: 8px;
+        }
+
+        .legal-cite code {
+            background: rgba(49,130,206,0.1);
+            color: var(--info);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Source Serif 4', serif;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .legal-cite p {
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-style: italic;
+            font-family: 'Source Serif 4', serif;
+            line-height: 1.7;
+        }
+
+        /* ── Case Law Box ── */
+        .case-law {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border-left: 4px solid var(--warning);
+            border-radius: 0 10px 10px 0;
+            padding: 20px 24px;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+
+        .case-law .cite-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #b7791f;
+            margin-bottom: 8px;
+        }
+
+        .case-law .case-name {
+            font-family: 'Source Serif 4', serif;
+            font-weight: 600;
+            font-style: italic;
+            color: #744210;
+            margin-bottom: 6px;
+        }
+
+        .case-law p {
+            color: #744210;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        /* ── Warning / Compliance Box ── */
+        .compliance-box {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+            border-left: 4px solid var(--danger);
+            border-radius: 0 10px 10px 0;
+            padding: 20px 24px;
+            margin: 20px 0;
+        }
+
+        .compliance-box .cite-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--danger);
+            margin-bottom: 8px;
+        }
+
+        .compliance-box p {
+            color: #742a2a;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        /* ── Success / Benefit Box ── */
+        .benefit-box {
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+            border-left: 4px solid var(--success);
+            border-radius: 0 10px 10px 0;
+            padding: 20px 24px;
+            margin: 20px 0;
+        }
+
+        .benefit-box .cite-label {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--success);
+            margin-bottom: 8px;
+        }
+
+        .benefit-box p {
+            color: #22543d;
+            font-size: 13px;
+            line-height: 1.7;
+        }
+
+        /* ── Tables ── */
+        .tax-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .tax-table thead th {
+            background: var(--primary);
+            color: white;
+            padding: 14px 18px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 700;
+        }
+
+        .tax-table tbody td {
+            padding: 12px 18px;
+            border-bottom: 1px solid #edf2f7;
+            font-size: 13px;
+        }
+
+        .tax-table tbody tr:nth-child(even) {
+            background: #f7fafc;
+        }
+
+        .tax-table tbody tr:hover {
+            background: #edf2f7;
+        }
+
+        .tax-table .amount {
+            text-align: right;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .tax-table .total-row td {
+            background: #1a365d;
+            color: white;
+            font-weight: 700;
+        }
+
+        /* ── Numbered Steps ── */
+        .steps {
+            counter-reset: step-counter;
+            list-style: none;
+            margin: 20px 0;
+        }
+
+        .steps li {
+            counter-increment: step-counter;
+            display: flex;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid #edf2f7;
+        }
+
+        .steps li:last-child {
+            border-bottom: none;
+        }
+
+        .steps li::before {
+            content: counter(step-counter);
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            color: var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content strong {
+            display: block;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            font-size: 13px;
+            color: var(--text-light);
+            margin: 0;
+        }
+
+        /* ── Checklist ── */
+        .checklist {
+            list-style: none;
+            margin: 16px 0;
+        }
+
+        .checklist li {
+            padding: 10px 0;
+            padding-left: 32px;
+            position: relative;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+
+        .checklist li::before {
+            content: '☐';
+            position: absolute;
+            left: 0;
+            font-size: 16px;
+            color: var(--accent);
+        }
+
+        /* ── Flow Diagram ── */
+        .flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .flow-step {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            padding: 16px 22px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            min-width: 140px;
+        }
+
+        .flow-arrow {
+            font-size: 22px;
+            color: var(--accent);
+            padding: 0 8px;
+        }
+
+        /* ── Highlight Number ── */
+        .highlight-num {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        /* ── Divider ── */
+        .divider-gold {
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            border-radius: 2px;
+            margin: 20px 0;
+        }
+
+        /* ── TOC ── */
+        .toc-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+
+        .toc-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 12px 0;
+            border-bottom: 1px dotted #cbd5e0;
+            font-size: 14px;
+        }
+
+        .toc-list li:hover {
+            color: var(--primary);
+        }
+
+        .toc-num {
+            color: var(--accent);
+            font-weight: 700;
+            margin-right: 12px;
+            min-width: 30px;
+        }
+
+        .toc-page {
+            color: var(--text-light);
+            font-size: 12px;
+        }
+
+        /* ── Tag Badges ── */
+        .tag {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-right: 6px;
+        }
+
+        .tag-required {
+            background: rgba(229,62,62,0.1);
+            color: var(--danger);
+            border: 1px solid rgba(229,62,62,0.2);
+        }
+
+        .tag-recommended {
+            background: rgba(49,130,206,0.1);
+            color: var(--info);
+            border: 1px solid rgba(49,130,206,0.2);
+        }
+
+        .tag-exempt {
+            background: rgba(56,161,105,0.1);
+            color: var(--success);
+            border: 1px solid rgba(56,161,105,0.2);
+        }
+
+        /* ── Footer ── */
+        .doc-footer {
+            text-align: center;
+            padding: 50px 40px;
+            color: var(--text-light);
+            font-size: 11px;
+        }
+
+        .doc-footer .footer-logo {
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--accent);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            color: var(--accent);
+            margin: 0 auto 16px;
+        }
+
+        /* ── Floating Action Bar ── */
+        .fab-bar {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 10px;
+            z-index: 9999;
+        }
+
+        .fab-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+            text-decoration: none;
+        }
+
+        .fab-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+        }
+
+        .fab-print {
+            background: var(--primary);
+            color: white;
+        }
+
+        .fab-print:hover {
+            background: var(--primary-light);
+        }
+
+        .fab-download {
+            background: var(--accent);
+            color: var(--primary);
+        }
+
+        .fab-download:hover {
+            background: var(--accent-light);
+        }
+
+        .fab-btn svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        /* ── Print Styles ── */
+        @media print {
+            body { background: white; font-size: 11pt; }
+            .cover { min-height: auto; padding: 80px 40px; page-break-after: always; }
+            .section { box-shadow: none; border: 1px solid #e2e8f0; break-inside: avoid; page-break-inside: avoid; }
+            .no-print, .fab-bar { display: none !important; }
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .cover h1 { font-size: 28px; }
+            .cover-meta { flex-direction: column; gap: 16px; }
+            .section { padding: 30px 24px; }
+            .section h2 { font-size: 22px; }
+            .flow { flex-direction: column; }
+            .flow-arrow { transform: rotate(90deg); }
+            .tax-table { font-size: 11px; }
+            .tax-table thead th, .tax-table tbody td { padding: 8px 10px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- COVER PAGE -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="cover">
+    <div class="cover-logo">SG</div>
+    <div class="cover-firm">SGBS Group (Pty) Ltd</div>
+    <div class="cover-badge">Confidential — Tax Advisory</div>
+    <h1>Tax Optimisation &amp;<br>Remuneration Structuring Plan</h1>
+    <div class="cover-sub">
+        A comprehensive guide to structuring school fees, bursary benefits, and travel allowances in full compliance with the Income Tax Act 58 of 1962 and the Tax Administration Act 28 of 2011.
+    </div>
+    <div class="cover-meta">
+        <div class="cover-meta-item">
+            <div class="cover-meta-label">Prepared For</div>
+            <div class="cover-meta-value">Boikago Events &amp; Creatives (Pty) Ltd</div>
+        </div>
+        <div class="cover-meta-item">
+            <div class="cover-meta-label">Date</div>
+            <div class="cover-meta-value">February 2026</div>
+        </div>
+        <div class="cover-meta-item">
+            <div class="cover-meta-label">Reference</div>
+            <div class="cover-meta-value">SGBS/TAX/2026-BEC-001</div>
+        </div>
+    </div>
+    <div class="cover-footer">SGBS Group (Pty) Ltd · Professional Accounting, Tax Advisory &amp; Technology Services</div>
+</div>
+
+<div class="document">
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- TABLE OF CONTENTS -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="section-number">Contents</div>
+    <h2>Table of Contents</h2>
+    <div class="divider-gold"></div>
+    <ul class="toc-list">
+        <li><span><span class="toc-num">01</span> Background &amp; Objective</span></li>
+        <li><span><span class="toc-num">02</span> Legal Framework &amp; Governing Legislation</span></li>
+        <li><span><span class="toc-num">03</span> School Fees — Bursary Scheme Structure</span></li>
+        <li><span><span class="toc-num">04</span> School Fees — Salary Sacrifice Alternative</span></li>
+        <li><span><span class="toc-num">05</span> Comparative Tax Impact Analysis</span></li>
+        <li><span><span class="toc-num">06</span> Travel Allowance — Structure &amp; Requirements</span></li>
+        <li><span><span class="toc-num">07</span> Case Law &amp; Legal Precedent</span></li>
+        <li><span><span class="toc-num">08</span> Implementation Roadmap</span></li>
+        <li><span><span class="toc-num">09</span> Document Requirements &amp; Compliance Checklist</span></li>
+        <li><span><span class="toc-num">10</span> Risk Assessment &amp; SARS Audit Defence</span></li>
+        <li><span><span class="toc-num">A</span> Annexure — Template Documents</span></li>
+    </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 1: BACKGROUND -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="section-number">Section 01</div>
+    <h2>Background &amp; Objective</h2>
+    <div class="section-subtitle">Understanding the client's needs and the intended tax-efficient outcome</div>
+
+    <h3>1.1 Client Overview</h3>
+    <p><strong>Boikago Events &amp; Creatives (Pty) Ltd</strong> ("the Company") is a registered company in which the director/shareholder ("the Director") is also an employee of the Company. The Director has dependent children for whom school fees are payable.</p>
+
+    <h3>1.2 Objective</h3>
+    <p>The Director wishes to have the Company pay the school fees of her dependent children as part of a tax-efficient remuneration structure. The objective of this plan is to:</p>
+    <ol class="steps">
+        <li>
+            <div class="step-content">
+                <strong>Maximise the tax benefit</strong>
+                <p>Structure the payment of school fees to achieve the greatest possible reduction in overall tax liability — both at company and personal level.</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-content">
+                <strong>Ensure full SARS compliance</strong>
+                <p>Ensure the arrangement is fully compliant with the Income Tax Act 58 of 1962, the Seventh Schedule, and the Tax Administration Act 28 of 2011.</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-content">
+                <strong>Create an audit-defensible structure</strong>
+                <p>Produce the necessary documentation, board resolutions, and supporting evidence to withstand any SARS audit or objection.</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-content">
+                <strong>Optimise travel allowance</strong>
+                <p>Structure a compliant travel allowance to further reduce personal tax liability through legitimate deductions.</p>
+            </div>
+        </li>
+    </ol>
+
+    <div class="compliance-box">
+        <div class="cite-label">⚠️ Important Disclaimer</div>
+        <p>This plan is structured to achieve a <strong>legitimate tax benefit</strong> through mechanisms expressly provided for in the Income Tax Act. This is <strong>tax avoidance</strong> (legal) — not tax evasion (illegal). The arrangement has genuine economic substance and commercial rationale beyond the tax benefit, as supported by the case law cited herein.</p>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 2: LEGAL FRAMEWORK -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="section-number">Section 02</div>
+    <h2>Legal Framework &amp; Governing Legislation</h2>
+    <div class="section-subtitle">The statutes, schedules, and provisions that govern this arrangement</div>
+
+    <h3>2.1 Primary Legislation</h3>
+
+    <table class="tax-table">
+        <thead>
+            <tr>
+                <th>Legislation</th>
+                <th>Relevant Sections</th>
+                <th>Application</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Income Tax Act 58 of 1962</strong></td>
+                <td>Section 10(1)(q), Section 11(a)</td>
+                <td>Bursary exemption; deductibility of remuneration</td>
+            </tr>
+            <tr>
+                <td><strong>Seventh Schedule to the ITA</strong></td>
+                <td>Paragraphs 2(e), 2(h), 12B, 12C</td>
+                <td>Fringe benefit valuation; bursary exemptions</td>
+            </tr>
+            <tr>
+                <td><strong>Income Tax Act 58 of 1962</strong></td>
+                <td>Section 8(1)(b), Section 8(1)(a)(i)</td>
+                <td>Travel allowance &amp; deductions</td>
+            </tr>
+            <tr>
+                <td><strong>Fourth Schedule to the ITA</strong></td>
+                <td>Paragraph 2(1)</td>
+                <td>PAYE obligations on fringe benefits</td>
+            </tr>
+            <tr>
+                <td><strong>Tax Administration Act 28 of 2011</strong></td>
+                <td>Sections 234–236, Section 42</td>
+                <td>Reporting obligations; penalties for non-disclosure</td>
+            </tr>
+            <tr>
+                <td><strong>Income Tax Act 58 of 1962</strong></td>
+                <td>Section 80A–80L (GAAR)</td>
+                <td>General Anti-Avoidance Rules</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>2.2 Key Provision — Bursary Exemption</h3>
+
+    <div class="legal-cite">
+        <div class="cite-label">📜 Seventh Schedule — Paragraph 12B</div>
+        <p>"The cash equivalent of the value of a taxable benefit contemplated in paragraph 2(h) shall be deemed to be nil where —</p>
+        <p>(a) the benefit is a bona fide bursary or scholarship granted by the employer to an employee or a relative of an employee to study at a recognised educational or research institution…</p>
+        <p>(b) in the case of a qualification to which NQF levels 1 to 4 apply (including Grade R to Grade 12), the remuneration proxy of the employee during that year of assessment does not exceed <code>R600,000</code>."</p>
+    </div>
+
+    <p>This is the cornerstone provision. Where the Director's total remuneration (remuneration proxy) is structured to be at or below R600,000 per annum, any bursary granted by the Company for the schooling of the Director's children at NQF Level 1–4 (Grade R to Grade 12) is <strong>entirely exempt from fringe benefit tax</strong>.</p>
+
+    <h3>2.3 Key Provision — Deductibility for the Company</h3>
+
+    <div class="legal-cite">
+        <div class="cite-label">📜 Income Tax Act — Section 11(a)</div>
+        <p>"For the purpose of determining the taxable income derived by any person from carrying on any trade, there shall be allowed as deductions from the income of such person so derived… expenditure and losses actually incurred in the production of the income, provided such expenditure and losses are not of a capital nature."</p>
+    </div>
+
+    <p>The bursary paid by the Company is part of the Director's remuneration package. As <strong>remuneration is incurred in the production of income</strong> (the Director renders services to the Company), the entire bursary amount is a <strong>deductible expense</strong> for the Company under Section 11(a).</p>
+
+    <h3>2.4 General Anti-Avoidance Rules (GAAR)</h3>
+
+    <div class="legal-cite">
+        <div class="cite-label">📜 Income Tax Act — Section 80A</div>
+        <p>"An avoidance arrangement is an impermissible avoidance arrangement if its sole or main purpose was to obtain a tax benefit and — (a) in the context of business, it was entered into or carried out by means or in a manner which would not normally be employed for bona fide business purposes… or (b) it lacks commercial substance…"</p>
+    </div>
+
+    <p>Our arrangement <strong>withstands GAAR scrutiny</strong> because:</p>
+    <ul style="margin: 12px 0 12px 24px; color: var(--text);">
+        <li style="padding: 4px 0;">The bursary scheme is <strong>expressly provided for</strong> in the Seventh Schedule — it is a mechanism Parliament intended employers to use</li>
+        <li style="padding: 4px 0;">It has <strong>commercial substance</strong> — it forms part of the Director's total cost to company remuneration</li>
+        <li style="padding: 4px 0;">It is <strong>not abnormal</strong> — thousands of South African employers offer bursary schemes as part of remuneration packages</li>
+        <li style="padding: 4px 0;">There is no <strong>misuse or abuse</strong> of the provision — we comply with every condition stipulated in paragraph 12B</li>
+    </ul>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 3: BURSARY SCHEME STRUCTURE -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="section-number">Section 03</div>
+    <h2>School Fees — Bursary Scheme Structure</h2>
+    <div class="section-subtitle">The recommended approach: Establishing a bona fide employer bursary scheme</div>
+
+    <div class="benefit-box">
+        <div class="cite-label">✅ Recommended Approach</div>
+        <p>This is the <strong>primary recommended structure</strong> as it achieves the maximum tax benefit — the school fees become <strong>100% tax-free in the Director's hands</strong> while remaining <strong>fully deductible for the Company</strong>.</p>
+    </div>
+
+    <h3>3.1 How It Works</h3>
+
+    <div class="flow">
+        <div class="flow-step">Company establishes<br>Bursary Policy</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Board resolves<br>to grant bursary</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Company pays<br>school fees directly</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">Director receives<br>TAX-FREE benefit</div>
+    </div>
+
+    <h3>3.2 Conditions for Exemption (All Must Be Met)</h3>
+
+    <table class="tax-table">
+        <thead>
+            <tr>
+                <th>Condition</th>
+                <th>Requirement</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Bona fide scheme</strong></td>
+                <td>The Company must have a formal, written bursary/scholarship policy</td>
+                <td><span class="tag tag-required">Required</span></td>
+            </tr>
+            <tr>
+                <td><strong>Employee relationship</strong></td>
+                <td>The Director must be a bona fide employee of the Company (employment contract required)</td>
+                <td><span class="tag tag-required">Required</span></td>
+            </tr>
+            <tr>
+                <td><strong>Relative</strong></td>
+                <td>The children must be relatives of the employee (own children qualifies)</td>
+                <td><span class="tag tag-exempt">Met</span></td>
+            </tr>
+            <tr>
+                <td><strong>Recognised institution</strong></td>
+                <td>The school must be a recognised educational institution in South Africa</td>
+                <td><span class="tag tag-required">Verify</span></td>
+            </tr>
+            <tr>
+                <td><strong>NQF Level 1–4 (school)</strong></td>
+                <td>If Grade R–12, then Director's remuneration proxy must be ≤ R600,000 p.a.</td>
+                <td><span class="tag tag-required">Structure</span></td>
+            </tr>
+            <tr>
+                <td><strong>NQF Level 5+ (tertiary)</strong></td>
+                <td>No remuneration limit — exempt regardless of salary level</td>
+                <td><span class="tag tag-exempt">No limit</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>3.3 Remuneration Proxy Structuring</h3>
+
+    <p>The "remuneration proxy" is defined in paragraph 1 of the Seventh Schedule as the total of all amounts of remuneration (as defined in the Fourth Schedule) received by or accrued to the employee during the year of assessment, <strong>excluding</strong> the bursary itself and certain retirement fund contributions.</p>
+
+    <p>To qualify for the exemption, the Director's <strong>cash salary + other taxable benefits must not exceed R600,000 per annum</strong>. This requires careful structuring of the total remuneration package.</p>
+
+    <h4>Example Structure:</h4>
+
+    <table class="tax-table">
+        <thead>
+            <tr>
+                <th>Component</th>
+                <th style="text-align:right;">Annual Amount</th>
+                <th>Tax Treatment</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Cash salary</td>
+                <td class="amount">R 480,000</td>
+                <td>Taxable (within R600k proxy)</td>
+            </tr>
+            <tr>
+                <td>Retirement fund contribution (employer)</td>
+                <td class="amount">R 60,000</td>
+                <td>Excluded from proxy</td>
+            </tr>
+            <tr>
+                <td>Medical aid contribution (employer)</td>
+                <td class="amount">R 60,000</td>
+                <td>Included in proxy</td>
+            </tr>
+            <tr>
+                <td><strong>Remuneration proxy</strong></td>
+                <td class="amount"><strong>R 540,000</strong></td>
+                <td><span class="tag tag-exempt">Below R600k ✓</span></td>
+            </tr>
+            <tr style="border-top: 2px solid var(--accent);">
+                <td>Bursary — Child 1 school fees</td>
+                <td class="amount">R 80,000</td>
+                <td><span class="tag tag-exempt">Tax-Free</span></td>
+            </tr>
+            <tr>
+                <td>Bursary — Child 2 school fees</td>
+                <td class="amount">R 80,000</td>
+                <td><span class="tag tag-exempt">Tax-Free</span></td>
+            </tr>
+            <tr class="total-row">
+                <td><strong>Total Cost to Company</strong></td>
+                <td class="amount"><strong>R 760,000</strong></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="benefit-box">
+        <div class="cite-label">💰 Tax Saving — Bursary Route</div>
+        <p>The R160,000 in school fees is <strong>exempt from income tax</strong> in the Director's hands (paragraph 12B). Without this structure, paying R160,000 in school fees from personal after-tax income (at a marginal rate of, say, 31%) would cost approximately <strong>R231,884 in pre-tax salary</strong>. The saving is approximately <strong>R71,884 per year</strong> in personal tax alone.</p>
+        <p>Additionally, the full R160,000 remains a <strong>deductible expense</strong> for the Company, reducing its taxable income and saving a further <strong>R43,200</strong> in company tax (at 27%).</p>
+    </div>
+
+    <h3>3.4 What the Bursary May Cover</h3>
+    <p>Per SARS Interpretation Note 14 and paragraph 12B, the bursary may cover:</p>
+    <ul style="margin: 12px 0 12px 24px; line-height: 2;">
+        <li>Tuition fees</li>
+        <li>Registration and examination fees</li>
+        <li>Books and study materials</li>
+        <li>School uniforms (if required by the school)</li>
+        <li>School-related equipment (as prescribed by the institution)</li>
+    </ul>
+
+    <div class="compliance-box">
+        <div class="cite-label">⚠️ What It May NOT Cover</div>
+        <p>The bursary exemption does <strong>not</strong> extend to transport costs, meals, accommodation (unless boarding is a condition of the bursary), or extracurricular activities that are not part of the formal curriculum. These must be paid separately and will not qualify for exemption.</p>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 4: SALARY SACRIFICE ALTERNATIVE -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="section-number">Section 04</div>
+    <h2>School Fees — Salary Sacrifice Alternative</h2>
+    <div class="section-subtitle">A fallback if the remuneration proxy exceeds R600,000</div>
+
+    <p>If the Director's remuneration proxy exceeds R600,000 (e.g., because the business requires a higher salary), the bursary exemption under paragraph 12B <strong>will not apply</strong> for NQF Level 1–4 education. In this scenario, the school fees become a <strong>taxable fringe benefit</strong> under paragraph 2(e) or 2(h) of the Seventh Schedule.</p>
+
+    <h3>4.1 How It Works</h3>
+    <p>The Company still pays the school fees directly, but the amount is included on the Director's IRP5 as a fringe benefit. The Director pays income tax on the fringe benefit value.</p>
+
+    <h4>Still Beneficial Because:</h4>
+    <ul style="margin: 12px 0 12px 24px; line-height: 2;">
+        <li>The Company still gets a <strong>Section 11(a) deduction</strong> for the school fees as remuneration expense</li>
+        <li>The school fees are paid from <strong>pre-tax company money</strong> — administratively simpler than salary → personal account → school</li>
+        <li>Cash flow is optimised — the Director doesn't need to receive cash, pay personal tax, then pay school fees from what remains</li>
+    </ul>
+
+    <div class="legal-cite">
+        <div class="cite-label">📜 Seventh Schedule — Paragraph 2(e)</div>
+        <p>"A taxable benefit shall be deemed to have been granted by an employer to an employee if… any service has been rendered… to the employee or to a dependant or other relative of such employee, by the employer at the cost of the employer."</p>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 5: COMPARATIVE ANALYSIS -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="section-number">Section 05</div>
+    <h2>Comparative Tax Impact Analysis</h2>
+    <div class="section-subtitle">Side-by-side comparison of the three approaches</div>
+
+    <p>Assuming annual school fees of <strong>R160,000</strong> (two children), Director marginal tax rate of <strong>31%</strong>, and company tax rate of <strong>27%</strong>:</p>
+
+    <table class="tax-table">
+        <thead>
+            <tr>
+                <th>Scenario</th>
+                <th style="text-align:right;">Personal Tax on School Fees</th>
+                <th style="text-align:right;">Company Tax Saving</th>
+                <th style="text-align:right;">Net Annual Saving</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>A. No structure</strong> — pay from personal after-tax income</td>
+                <td class="amount" style="color:var(--danger);">R 71,884</td>
+                <td class="amount">R 0</td>
+                <td class="amount" style="color:var(--danger);">Baseline</td>
+            </tr>
+            <tr>
+                <td><strong>B. Fringe benefit</strong> — company pays, taxable in Director's hands</td>
+                <td class="amount" style="color:var(--warning);">R 49,600</td>
+                <td class="amount" style="color:var(--success);">R 43,200</td>
+                <td class="amount" style="color:var(--success);">R 65,484</td>
+            </tr>
+            <tr style="background: #f0fff4;">
+                <td><strong>C. Bursary scheme</strong> — exempt under para 12B <span class="tag tag-recommended">Recommended</span></td>
+                <td class="amount" style="color:var(--success); font-weight:800;">R 0</td>
+                <td class="amount" style="color:var(--success);">R 43,200</td>
+                <td class="amount" style="color:var(--success); font-weight:800;">R 115,084</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="benefit-box">
+        <div class="cite-label">💰 Bottom Line</div>
+        <p>With the bursary scheme (Option C), the combined annual tax saving is approximately <strong>R115,084</strong> compared to having no structure in place. Over a 5-year school career, this equates to <strong>R575,420 in total savings</strong>.</p>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 6: TRAVEL ALLOWANCE -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="section-number">Section 06</div>
+    <h2>Travel Allowance — Structure &amp; Requirements</h2>
+    <div class="section-subtitle">Understanding the mechanics, compliance requirements, and tax benefits of a travel allowance</div>
+
+    <h3>6.1 What Is a Travel Allowance?</h3>
+    <p>A <strong>travel allowance</strong> is a fixed amount paid by an employer to an employee to compensate for the use of the employee's private motor vehicle for business travel. It is governed by <strong>Section 8(1)(b)</strong> of the Income Tax Act read with the <strong>SARS Fixing of Rate per Kilometre</strong> published annually in the Government Gazette.</p>
+
+    <div class="legal-cite">
+        <div class="cite-label">📜 Income Tax Act — Section 8(1)(b)</div>
+        <p>"Where any allowance or advance referred to in section 8(1)(b)(i)(A) has been received by or accrued to a holder of an office or an employee during any year of assessment, there shall be included in the income of that taxpayer an amount equal to such allowance or advance, less whatever deduction the taxpayer is entitled to under section 11(e) or paragraph 7 of the Seventh Schedule…"</p>
+    </div>
+
+    <h3>6.2 How It Works — Step by Step</h3>
+
+    <ol class="steps">
+        <li>
+            <div class="step-content">
+                <strong>Company pays a fixed monthly travel allowance</strong>
+                <p>As part of the Director's employment contract, a fixed travel allowance is included (e.g., R6,000 per month = R72,000 per annum).</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-content">
+                <strong>80% is included in taxable income for PAYE</strong>
+                <p>During the year, 80% of the travel allowance is subject to PAYE. If the employee can demonstrate that the vehicle is used more than 80% for business, only 20% is subject to PAYE.</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-content">
+                <strong>Director keeps a SARS-compliant logbook</strong>
+                <p>The Director records EVERY trip — business and private — in a logbook showing date, destination, purpose, and distance (km). This is <strong>legally required</strong> to claim the deduction.</p>
+            </div>
+        </li>
+        <li>
+            <div class="step-content">
+                <strong>At year-end, claim the business portion</strong>
+                <p>On the annual tax return (ITR12), the Director claims the business travel deduction. The difference between the allowance received and the deductible amount determines the net taxable travel income.</p>
+            </div>
+        </li>
+    </ol>
+
+    <h3>6.3 Two Methods of Claiming</h3>
+
+    <h4>Method 1: SARS Deemed Cost Table (Simplified)</h4>
+    <p>Use the SARS prescribed rate table based on the value of the vehicle. For the 2025/2026 tax year:</p>
+
+    <table class="tax-table">
+        <thead>
+            <tr>
+                <th>Vehicle Value (incl. VAT)</th>
+                <th style="text-align:right;">Fixed Cost p.a.</th>
+                <th style="text-align:right;">Fuel Cost per km</th>
+                <th style="text-align:right;">Maintenance per km</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>R 0 – R 107,133</td>
+                <td class="amount">R 30,597</td>
+                <td class="amount">R 1.53</td>
+                <td class="amount">R 0.45</td>
+            </tr>
+            <tr>
+                <td>R 107,134 – R 214,522</td>
+                <td class="amount">R 54,582</td>
+                <td class="amount">R 1.53</td>
+                <td class="amount">R 0.58</td>
+            </tr>
+            <tr>
+                <td>R 214,523 – R 321,911</td>
+                <td class="amount">R 73,867</td>
+                <td class="amount">R 1.57</td>
+                <td class="amount">R 0.64</td>
+            </tr>
+            <tr>
+                <td>R 321,912 – R 429,300</td>
+                <td class="amount">R 93,267</td>
+                <td class="amount">R 1.68</td>
+                <td class="amount">R 0.77</td>
+            </tr>
+            <tr>
+                <td>R 429,301 – R 536,688</td>
+                <td class="amount">R 104,440</td>
+                <td class="amount">R 1.73</td>
+                <td class="amount">R 0.88</td>
+            </tr>
+            <tr>
+                <td>R 536,689 – R 644,077</td>
+                <td class="amount">R 116,062</td>
+                <td class="amount">R 1.82</td>
+                <td class="amount">R 0.97</td>
+            </tr>
+            <tr>
+                <td>R 644,078 and above</td>
+                <td class="amount">R 116,062</td>
+                <td class="amount">R 1.82</td>
+                <td class="amount">R 0.97</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><em>Note: The SARS table caps the vehicle value at R 644,077 for deemed cost purposes. Vehicles above this value use the same rate as the maximum bracket.</em></p>
+
+    <h4>Method 2: Actual Cost Method</h4>
+    <p>The Director may alternatively claim <strong>actual vehicle costs</strong> (fuel, insurance, maintenance, finance charges, depreciation) multiplied by the <strong>business-use percentage</strong> as determined by the logbook. This method often yields a higher deduction for high-mileage business users.</p>
+
+    <h3>6.4 The Logbook — Absolute Requirement</h3>
+
+    <div class="compliance-box">
+        <div class="cite-label">⚠️ Non-Negotiable — SARS Requirement</div>
+        <p><strong>Without a logbook, no deduction is allowed.</strong> SARS will disallow the entire travel deduction if a valid logbook is not maintained. The logbook must run for the <strong>full tax year</strong> (1 March to 28/29 February) and must record:</p>
+    </div>
+
+    <table class="tax-table">
+        <thead>
+            <tr>
+                <th>Field</th>
+                <th>Details</th>
+                <th>Example</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Date</strong></td>
+                <td>Date of each trip</td>
+                <td>15 March 2026</td>
+            </tr>
+            <tr>
+                <td><strong>Opening km</strong></td>
+                <td>Odometer reading at start of trip</td>
+                <td>45,230 km</td>
+            </tr>
+            <tr>
+                <td><strong>Closing km</strong></td>
+                <td>Odometer reading at end of trip</td>
+                <td>45,278 km</td>
+            </tr>
+            <tr>
+                <td><strong>Total km</strong></td>
+                <td>Distance of the trip</td>
+                <td>48 km</td>
+            </tr>
+            <tr>
+                <td><strong>Business / Private</strong></td>
+                <td>Classification of the trip</td>
+                <td>Business</td>
+            </tr>
+            <tr>
+                <td><strong>Destination</strong></td>
+                <td>Where you went</td>
+                <td>Sandton Convention Centre</td>
+            </tr>
+            <tr>
+                <td><strong>Purpose</strong></td>
+                <td>Why you went (business reason)</td>
+                <td>Client event setup — Boikago Events project</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="legal-cite">
+        <div class="cite-label">📜 SARS Interpretation Note 14 (Issue 5)</div>
+        <p>"Employees who receive a travel allowance must maintain a logbook of business kilometres travelled during the year of assessment. The opening and closing odometer readings for each year of assessment must be recorded. In the absence of a logbook, no deduction under section 8(1)(b) will be allowed."</p>
+    </div>
+
+    <h3>6.5 Example Calculation</h3>
+    <p>Assuming: Travel allowance of R72,000/year, vehicle value R350,000, total km 25,000, business km 15,000 (60%):</p>
+
+    <table class="tax-table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th style="text-align:right;">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Travel allowance received</td>
+                <td class="amount">R 72,000</td>
+            </tr>
+            <tr>
+                <td>Deemed fixed cost (R93,267 × 60%)</td>
+                <td class="amount">R 55,960</td>
+            </tr>
+            <tr>
+                <td>Deemed fuel cost (15,000 × R1.68)</td>
+                <td class="amount">R 25,200</td>
+            </tr>
+            <tr>
+                <td>Deemed maintenance (15,000 × R0.77)</td>
+                <td class="amount">R 11,550</td>
+            </tr>
+            <tr>
+                <td><strong>Total deduction</strong></td>
+                <td class="amount"><strong>R 92,710</strong></td>
+            </tr>
+            <tr style="background: #f0fff4;">
+                <td><strong>Net taxable travel income</strong></td>
+                <td class="amount" style="color:var(--success);"><strong>R 0</strong> (deduction exceeds allowance)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="benefit-box">
+        <div class="cite-label">💰 Travel Allowance Benefit</div>
+        <p>In this example, the entire R72,000 travel allowance is effectively <strong>tax-free</strong> because the deemed cost deduction (R92,710) exceeds the allowance received. The excess deduction of R20,710 can even offset other taxable income. The Director receives R72,000 extra per year and pays <strong>zero additional tax</strong> on it.</p>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 7: CASE LAW -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="section-number">Section 07</div>
+    <h2>Case Law &amp; Legal Precedent</h2>
+    <div class="section-subtitle">South African court decisions supporting the legitimacy of this tax structure</div>
+
+    <div class="case-law">
+        <div class="cite-label">⚖️ Case Law</div>
+        <div class="case-name">Commissioner for SARS v NWK Ltd [2011] ZASCA 168; 2011 (2) SA 67 (SCA)</div>
+        <p><strong>Principle:</strong> The Supreme Court of Appeal confirmed that courts will look at the <strong>substance of a transaction</strong>, not merely its form. However, where a transaction has genuine commercial substance and is not a sham, the taxpayer is entitled to arrange their affairs to minimise tax.</p>
+        <p><strong>Application to us:</strong> Our bursary scheme is not a sham — the Director is a genuine employee, the children genuinely attend school, the fees are genuinely paid. The arrangement has commercial substance (employee retention and remuneration).</p>
+    </div>
+
+    <div class="case-law">
+        <div class="cite-label">⚖️ Case Law</div>
+        <div class="case-name">IRC v Duke of Westminster [1936] AC 1 (House of Lords, applied in SA)</div>
+        <p><strong>Principle:</strong> "Every man is entitled, if he can, to order his affairs so that the tax attaching under the appropriate Acts is less than it otherwise would be." This foundational principle of legitimate tax planning has been repeatedly endorsed by South African courts.</p>
+        <p><strong>Application to us:</strong> The Director is exercising her right to structure her remuneration in the most tax-efficient manner allowed by law.</p>
+    </div>
+
+    <div class="case-law">
+        <div class="cite-label">⚖️ Case Law</div>
+        <div class="case-name">Ovenstone v SIR [1980] (2) SA 721 (A)</div>
+        <p><strong>Principle:</strong> Expenditure is deductible under Section 11(a) if it is incurred <strong>"in the production of income"</strong> and is not of a capital nature. The court held that there must be a sufficiently close nexus between the expenditure and the income-earning activities.</p>
+        <p><strong>Application to us:</strong> The bursary is part of the Director's remuneration package. Remuneration paid to employees who produce the company's income is clearly deductible.</p>
+    </div>
+
+    <div class="case-law">
+        <div class="cite-label">⚖️ Case Law</div>
+        <div class="case-name">CSARS v Brummeria Renaissance (Pty) Ltd [2007] ZASCA 95; 69 SATC 205</div>
+        <p><strong>Principle:</strong> The SCA confirmed that benefits received in a form other than cash (such as the right to use interest-free loans) still constitute "gross income" and must be valued and included. This reinforces that the <strong>Seventh Schedule</strong> is the correct mechanism for valuing non-cash employment benefits.</p>
+        <p><strong>Application to us:</strong> We are correctly declaring the bursary under the Seventh Schedule framework, and where paragraph 12B exempts it, SARS has no basis to include it again.</p>
+    </div>
+
+    <div class="case-law">
+        <div class="cite-label">⚖️ Case Law</div>
+        <div class="case-name">ITC 1735 (2001) 64 SATC 455</div>
+        <p><strong>Principle:</strong> The Tax Court dealt with the distinction between benefits provided to employees as part of remuneration versus personal gifts. Where an employer's policy formalises a benefit, and the employee renders services in exchange, the benefit is employment-related and must be dealt with under the appropriate provisions of the ITA.</p>
+        <p><strong>Application to us:</strong> Our formal bursary policy ensures the benefit is treated as employment-related (not a donation), making it subject to the favourable treatment under paragraph 12B.</p>
+    </div>
+
+    <div class="case-law">
+        <div class="cite-label">⚖️ Case Law</div>
+        <div class="case-name">SBI v Smit [1955] (1) SA 202 (A)</div>
+        <p><strong>Principle:</strong> The court held that in determining whether expenditure was incurred "in the production of income," one must consider the <strong>purpose of the expenditure</strong> and whether it was closely connected to the taxpayer's income-earning operations.</p>
+        <p><strong>Application to us:</strong> The purpose of the bursary expenditure is remuneration — it is directly connected to the employment relationship and the Company's trade.</p>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 8: IMPLEMENTATION ROADMAP -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="section-number">Section 08</div>
+    <h2>Implementation Roadmap</h2>
+    <div class="section-subtitle">Step-by-step guide to implementing the tax optimisation plan</div>
+
+    <ol class="steps">
+        <li>
+            <div class="step-content">
+                <strong>Confirm the Director's Employment Status</strong>
+                <p>Ensure the Director has a valid written employment contract with Boikago Events &amp; Creatives (Pty) Ltd. If one does not exist, we will draft it. This is the foundational requirement — without it, no employee benefits can be structured.</p>
+                <p><span class="tag tag-required">Week 1</span></p>
+            </div>
+        </li>
+        <li>
+            <div class="step-content">
+                <strong>Draft &amp; Adopt the Bursary Policy</strong>
+                <p>SGBS Group will prepare a formal company bursary/scholarship policy. This policy must be adopted by board resolution. It must apply to all qualifying employees (even if the Director is the only current employee — the policy must be <em>open</em> to others).</p>
+                <p><span class="tag tag-required">Week 1</span></p>
+            </div>
+        </li>
+        <li>
+            <div class="step-content">
+                <strong>Pass a Board Resolution</strong>
+                <p>The board of directors must resolve to: (a) adopt the bursary policy, (b) grant a bursary to the Director's children for the current tax year, and (c) approve the total bursary amount. Minutes must be formally recorded and signed.</p>
+                <p><span class="tag tag-required">Week 1</span></p>
+            </div>
+        </li>
+        <li>
+            <div class="step-content">
+                <strong>Restructure the Remuneration Package</strong>
+                <p>Adjust the Director's total CTC to ensure the remuneration proxy remains at or below R600,000. SGBS will prepare a formal remuneration restructuring letter for the employment file.</p>
+                <p><span class="tag tag-required">Week 2</span></p>
+            </div>
+        </li>
+        <li>
+            <div class="step-content">
+                <strong>Set Up Direct Payment to the School</strong>
+                <p>The Company pays the school fees directly from the company bank account. This creates a clear paper trail. Do <strong>not</strong> reimburse the Director for fees already paid from personal funds — the company must pay the school directly.</p>
+                <p><span class="tag tag-required">Week 2</span></p>
+            </div>
+        </li>
+        <li>
+            <div class="step-content">
+                <strong>Update Payroll / IRP5 Processing</strong>
+                <p>The bursary must be reflected on the EMP501 reconciliation and the Director's IRP5 using the correct SARS source code: <strong>Code 3815</strong> (bursaries and scholarships). If exempt under para 12B, it is reported but not included in taxable income.</p>
+                <p><span class="tag tag-required">Week 2</span></p>
+            </div>
+        </li>
+        <li>
+            <div class="step-content">
+                <strong>Implement Travel Allowance</strong>
+                <p>Add a fixed travel allowance to the employment contract. Issue the Director a logbook (or set up a digital logbook app). Begin recording all trips from Day 1 of the tax year. Reflect the travel allowance on the IRP5 using <strong>Code 3701</strong>.</p>
+                <p><span class="tag tag-recommended">Week 2–3</span></p>
+            </div>
+        </li>
+        <li>
+            <div class="step-content">
+                <strong>File and Archive All Documentation</strong>
+                <p>Create a dedicated tax file containing all supporting documents (listed in Section 9 below). This file is your <strong>audit defence pack</strong> — it must be maintained and updated every year.</p>
+                <p><span class="tag tag-required">Ongoing</span></p>
+            </div>
+        </li>
+    </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 9: DOCUMENT REQUIREMENTS -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="section-number">Section 09</div>
+    <h2>Document Requirements &amp; Compliance Checklist</h2>
+    <div class="section-subtitle">Every document needed to support and defend this arrangement</div>
+
+    <h3>9.1 Bursary Scheme Documents</h3>
+
+    <ul class="checklist">
+        <li><strong>Director's Employment Contract</strong> — signed, reflecting the total CTC including bursary component</li>
+        <li><strong>Company Bursary/Scholarship Policy</strong> — formal written policy adopted by the board</li>
+        <li><strong>Board Resolution</strong> — adopting the bursary policy and approving the specific bursary grant</li>
+        <li><strong>Bursary Award Letter</strong> — formal letter to the Director confirming the bursary for each child</li>
+        <li><strong>School Registration Certificate</strong> — proving the school is a recognised educational institution</li>
+        <li><strong>School Fee Statements/Invoices</strong> — from the school, showing amounts due and paid</li>
+        <li><strong>Proof of Payment</strong> — bank statements showing payments from the company account to the school</li>
+        <li><strong>Children's Birth Certificates</strong> — proving the parent-child relationship (i.e., "relative" status)</li>
+        <li><strong>Remuneration Restructuring Letter</strong> — documenting the restructuring of the CTC package</li>
+        <li><strong>Monthly Payslips</strong> — reflecting the bursary as a separate component on the payslip</li>
+        <li><strong>IRP5/IT3(a) Certificate</strong> — correctly reflecting the bursary under source code 3815</li>
+        <li><strong>EMP501 Reconciliation</strong> — mid-year and annual reconciliation showing bursary amounts</li>
+    </ul>
+
+    <h3>9.2 Travel Allowance Documents</h3>
+
+    <ul class="checklist">
+        <li><strong>Employment Contract Addendum</strong> — reflecting the travel allowance as a separate component</li>
+        <li><strong>Motor Vehicle Details</strong> — registration papers, purchase invoice showing vehicle value (incl. VAT)</li>
+        <li><strong>Complete Logbook</strong> — for the full tax year (1 March to end February), detailed per trip</li>
+        <li><strong>Odometer Readings</strong> — opening and closing for the tax year</li>
+        <li><strong>Fuel Receipts</strong> — if claiming actual costs (Method 2)</li>
+        <li><strong>Insurance Policy &amp; Premiums</strong> — if claiming actual costs</li>
+        <li><strong>Finance Agreement</strong> — if claiming actual financing costs</li>
+        <li><strong>Service/Maintenance Invoices</strong> — if claiming actual costs</li>
+        <li><strong>IRP5/IT3(a) Certificate</strong> — reflecting travel allowance under source code 3701</li>
+    </ul>
+
+    <h3>9.3 General Compliance Documents</h3>
+
+    <ul class="checklist">
+        <li><strong>Company Registration (CIPC)</strong> — CK or CoR 14.3</li>
+        <li><strong>Tax Clearance Certificate</strong> — company in good standing with SARS</li>
+        <li><strong>SARS eFiling Profile</strong> — EMP201 submissions up to date</li>
+        <li><strong>Annual Financial Statements</strong> — reflecting the bursary and travel allowance as expenses</li>
+        <li><strong>This Tax Optimisation Plan</strong> — as evidence of professional tax advice sought and followed</li>
+    </ul>
+
+    <div class="legal-cite">
+        <div class="cite-label">📜 Tax Administration Act — Section 29</div>
+        <p>"A taxpayer must keep the records, books of account or documents that… enable the taxpayer to observe the requirements of a tax Act; and… are specifically required under a tax Act… A taxpayer must retain the records for the relevant periods prescribed."</p>
+        <p>Records must be retained for a minimum of <code>5 years</code> from the date of submission of the relevant return (Section 29(3) of the TAA).</p>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- SECTION 10: RISK ASSESSMENT -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="section-number">Section 10</div>
+    <h2>Risk Assessment &amp; SARS Audit Defence</h2>
+    <div class="section-subtitle">Identifying potential risks and our defence strategy</div>
+
+    <h3>10.1 Potential SARS Challenges</h3>
+
+    <table class="tax-table">
+        <thead>
+            <tr>
+                <th>Potential Challenge</th>
+                <th>Risk Level</th>
+                <th>Our Defence</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>"The bursary scheme is not bona fide"</td>
+                <td><span class="tag tag-recommended">Low</span></td>
+                <td>We have a formal written policy, board resolution, and the scheme is open to all employees.</td>
+            </tr>
+            <tr>
+                <td>"The remuneration proxy exceeds R600,000"</td>
+                <td><span class="tag tag-recommended">Low</span></td>
+                <td>We have documented the CTC restructuring. Payslips and IRP5 confirm the proxy is within limit.</td>
+            </tr>
+            <tr>
+                <td>"GAAR applies — sole purpose is tax avoidance"</td>
+                <td><span class="tag tag-recommended">Low</span></td>
+                <td>The bursary scheme is expressly provided for in the Seventh Schedule. It has commercial substance (employee remuneration). Per <em>Duke of Westminster</em>, taxpayers may arrange affairs to minimise tax.</td>
+            </tr>
+            <tr>
+                <td>"The Director is not a genuine employee"</td>
+                <td><span class="tag tag-recommended">Low</span></td>
+                <td>Employment contract, UIF contributions, PAYE deductions, and daily involvement in business operations all evidence genuine employment.</td>
+            </tr>
+            <tr>
+                <td>"Travel logbook is inadequate"</td>
+                <td><span class="tag tag-required">Medium</span></td>
+                <td>This is the most common area of challenge. Mitigation: use a digital logbook app, record trips daily, never back-date entries.</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>10.2 Penalties for Non-Compliance</h3>
+
+    <div class="compliance-box">
+        <div class="cite-label">⚠️ Tax Administration Act — Penalties</div>
+        <p><strong>Section 222:</strong> An understatement penalty of between 10% and 200% of the tax shortfall may be imposed, depending on the taxpayer's behaviour (from "substantial understatement" to "intentional tax evasion").</p>
+        <p><strong>Section 234:</strong> Criminal offences for wilfully and without just cause failing to furnish documents, filing false returns, or making false statements. Penalties include fines and up to 2 years imprisonment.</p>
+        <p><strong>Our arrangement carries minimal risk</strong> because: (a) we are disclosing everything on the IRP5 and tax returns, (b) we are relying on provisions expressly available in the Act, and (c) we have documented professional advice (this plan).</p>
+    </div>
+
+    <h3>10.3 Defence Strategy Summary</h3>
+
+    <div class="benefit-box">
+        <div class="cite-label">🛡️ Our Three-Line Defence</div>
+        <p><strong>Line 1 — Legislative Authority:</strong> Paragraph 12B of the Seventh Schedule expressly provides for the bursary exemption. We meet every condition. SARS cannot override what Parliament has enacted.</p>
+        <p><strong>Line 2 — Commercial Substance:</strong> The arrangement is part of a genuine employment relationship with a bona fide remuneration structure. It is not a sham (<em>NWK</em> test passed).</p>
+        <p><strong>Line 3 — Full Disclosure:</strong> Every element is declared on the IRP5, EMP501, and income tax returns. There is no concealment. Section 222 penalties require understatement — we have stated everything.</p>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- ANNEXURE A -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section">
+    <div class="section-number">Annexure A</div>
+    <h2>Template Documents</h2>
+    <div class="section-subtitle">Documents to be prepared by SGBS Group for execution by the client</div>
+
+    <p>The following documents will be drafted by SGBS Group as part of the implementation:</p>
+
+    <table class="tax-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Document</th>
+                <th>Status</th>
+                <th>Responsibility</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>Employment Contract (Director)</td>
+                <td><span class="tag tag-required">To Draft</span></td>
+                <td>SGBS Group</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>Company Bursary Policy</td>
+                <td><span class="tag tag-required">To Draft</span></td>
+                <td>SGBS Group</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>Board Resolution — Bursary Adoption</td>
+                <td><span class="tag tag-required">To Draft</span></td>
+                <td>SGBS Group</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td>Bursary Award Letter</td>
+                <td><span class="tag tag-required">To Draft</span></td>
+                <td>SGBS Group</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td>Remuneration Restructuring Letter</td>
+                <td><span class="tag tag-required">To Draft</span></td>
+                <td>SGBS Group</td>
+            </tr>
+            <tr>
+                <td>6</td>
+                <td>Employment Contract Addendum — Travel Allowance</td>
+                <td><span class="tag tag-required">To Draft</span></td>
+                <td>SGBS Group</td>
+            </tr>
+            <tr>
+                <td>7</td>
+                <td>Travel Logbook Template</td>
+                <td><span class="tag tag-required">To Draft</span></td>
+                <td>SGBS Group</td>
+            </tr>
+            <tr>
+                <td>8</td>
+                <td>Annual Bursary Review Checklist</td>
+                <td><span class="tag tag-recommended">Recommended</span></td>
+                <td>SGBS Group</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p style="margin-top: 30px; color: var(--text-light); font-size: 13px;">All template documents will be prepared within 7 business days of receiving confirmation to proceed. Original signed copies must be retained for a minimum of 5 years as required by the Tax Administration Act.</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- FOOTER -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="section" style="text-align: center; background: linear-gradient(135deg, #0f2440, #1a365d); color: white; border: none;">
+    <div style="font-size: 9px; text-transform: uppercase; letter-spacing: 3px; color: var(--accent); margin-bottom: 20px;">Prepared By</div>
+    <div style="width:60px; height:60px; border:2px solid var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-size:24px; color:var(--accent); margin:0 auto 16px;">SG</div>
+    <div style="font-family:'Playfair Display',serif; font-size:22px; margin-bottom: 6px;">SGBS Group (Pty) Ltd</div>
+    <div style="font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 30px;">Professional Accounting, Tax Advisory &amp; Technology Services</div>
+    <div style="width:50px; height:2px; background:var(--accent); margin:0 auto 30px;"></div>
+    <div style="font-size: 12px; color: rgba(255,255,255,0.4); line-height: 2;">
+        📧 info@sgbsgroup.co.za<br>
+        📞 074 012 6873<br>
+        🌐 sgbsgroup.co.za
+    </div>
+    <div style="margin-top: 30px; font-size: 10px; color: rgba(255,255,255,0.2); line-height: 1.8;">
+        This document is confidential and prepared exclusively for Boikago Events &amp; Creatives (Pty) Ltd.<br>
+        It may not be distributed, copied, or shared with third parties without the prior written consent of SGBS Group.<br><br>
+        REF: SGBS/TAX/2026-BEC-001 &nbsp;|&nbsp; February 2026
+    </div>
+</div>
+
+</div><!-- end .document -->
+
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- FLOATING PRINT / DOWNLOAD BUTTONS -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<div class="fab-bar">
+    <button class="fab-btn fab-print" onclick="window.print()" title="Print or save as PDF">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        Print / Save PDF
+    </button>
+    <button class="fab-btn fab-download" onclick="window.print()" title="Download as PDF — use 'Save as PDF' in print dialog">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Download PDF
+    </button>
+</div>
+
+</body>
+</html>

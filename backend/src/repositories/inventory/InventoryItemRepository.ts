@@ -54,6 +54,8 @@ export interface StockLevel {
 export class InventoryItemRepository extends BaseRepository<InventoryItem> {
   protected tableName = 'items';
   protected schema = 'inventory';
+  protected softDelete = false;
+  protected entityScoped = true;
 
   /**
    * Get items with stock levels
