@@ -18,10 +18,11 @@ interface TenantRequest extends Request {
   user?: { id: string; email: string; role: string; first_name?: string; last_name?: string };
 }
 
-async function getTenantContext(req: TenantRequest): Promise<{ tenantId: string; userId: string; userRole: string; userName: string }> {
+async function getTenantContext(req: TenantRequest): Promise<{ tenantId: string; userId: string; userRole: string; userName: string; entityId: string | null }> {
   const tenantId = req.tenant?.id;
   const userId = req.user?.id || '';
   const userRole = req.user?.role || 'staff';
+  const entityId = (req as any).entityId || (req as any).entity?.id || req.headers['x-entity-id'] as string || null;
   let userName = `${req.user?.first_name || ''} ${req.user?.last_name || ''}`.trim();
   // If JWT doesn't have name, look it up from the DB
   if (!userName && userId) {
@@ -30,7 +31,7 @@ async function getTenantContext(req: TenantRequest): Promise<{ tenantId: string;
   }
   userName = userName || 'User';
   if (!tenantId) throw new Error('Tenant context required');
-  return { tenantId, userId, userRole, userName };
+  return { tenantId, userId, userRole, userName, entityId };
 }
 
 // Safe query helper — returns fallback on error (table doesn't exist, etc.)
@@ -71,7 +72,7 @@ function getTimeAgo(date: Date): string {
  */
 export async function getExecutiveDashboard(req: TenantRequest, res: Response): Promise<void> {
   try {
-    const { tenantId, userId, userRole, userName } = await getTenantContext(req);
+    const { tenantId, userId, userRole, userName, entityId } = await getTenantContext(req);
     
     const hour = new Date().getHours();
     let greeting = 'Good morning';
@@ -87,7 +88,7 @@ export async function getExecutiveDashboard(req: TenantRequest, res: Response): 
       complianceStatus,
       revenueTrend,
     ] = await Promise.all([
-      getFinancialMetrics(tenantId),
+      getFinancialMetrics(tenantId, entityId),
       getOperationalMetrics(tenantId),
       getPendingActions(tenantId),
       getRecentActivity(tenantId),
@@ -154,7 +155,7 @@ export async function getExecutiveDashboard(req: TenantRequest, res: Response): 
 // FINANCIAL METRICS — queries sales_invoices, bank_accounts, journal_entries
 // ============================================================================
 
-async function getFinancialMetrics(tenantId: string) {
+async function getFinancialMetrics(tenantId: string, entityId: string | null = null) {
   // Revenue from real invoices (sales_invoices table, case-insensitive status)
   const revenueData = await safeQuery(`
     SELECT 
@@ -166,12 +167,14 @@ async function getFinancialMetrics(tenantId: string) {
     WHERE tenant_id = $1 AND LOWER(status) NOT IN ('void', 'cancelled', 'draft')
   `, [tenantId], { mtd_revenue: 0, ytd_revenue: 0, mtd_invoices: 0, total_invoices: 0 });
 
-  // Cash from bank_accounts
+  // Cash from bank_accounts — entity-scoped when entityId is provided
+  const cashParams = entityId ? [tenantId, entityId] : [tenantId];
+  const cashEntityFilter = entityId ? ' AND (entity_id IS NULL OR entity_id = $2)' : '';
   const cashData = await safeQuery(`
     SELECT COALESCE(SUM(current_balance), 0) as total_cash
     FROM bank_accounts
-    WHERE tenant_id = $1 AND is_active = true
-  `, [tenantId], { total_cash: 0 });
+    WHERE tenant_id = $1 AND is_active = true${cashEntityFilter}
+  `, cashParams, { total_cash: 0 });
 
   // Receivables — outstanding invoice balances
   const arData = await safeQuery(`

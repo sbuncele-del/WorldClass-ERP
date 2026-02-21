@@ -34,6 +34,8 @@ import {
 } from '@ant-design/icons';
 import '../styles/executive-dashboard.css';
 import { useUser } from '../contexts/UserContext';
+import { useEntity } from '../contexts/EntityContext';
+import apiClient from '../services/api';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -131,6 +133,7 @@ interface TeamMetrics {
 const ExecutiveDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { currentUser } = useUser();
+  const { currentEntity } = useEntity();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<DashboardData | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole>('director');
@@ -138,11 +141,8 @@ const ExecutiveDashboard: React.FC = () => {
 
   const fetchDashboard = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/v2/executive-dashboard', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const result = await response.json();
+      const response = await apiClient.get('/api/v2/executive-dashboard');
+      const result = response.data;
       if (result.success) {
         const dashData = result.data;
         // Override API user name with actual logged-in user name
@@ -172,7 +172,7 @@ const ExecutiveDashboard: React.FC = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [currentEntity?.id]);
 
   useEffect(() => {
     fetchDashboard();
