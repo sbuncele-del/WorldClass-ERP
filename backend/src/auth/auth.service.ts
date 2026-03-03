@@ -118,6 +118,18 @@ export class AuthService {
 
       const user = userResult.rows[0];
 
+      // Create default legal entity for new tenant
+      try {
+        await client.query(
+          `INSERT INTO legal_entities (tenant_id, name, code, type, status, currency, country, level)
+           VALUES ($1::uuid, $2::text, $3::text, 'company', 'active', 'ZAR', 'ZA', 1)`,
+          [tenant.id, data.companyName, tenantCode]
+        );
+      } catch (entityErr) {
+        // Non-blocking — table might not exist yet in some environments
+        console.warn('Could not create default legal entity (non-blocking):', entityErr);
+      }
+
       // Generate tokens
       const tokens = await this.generateTokens(user.id, tenant.id, user.email, user.role);
 
@@ -592,6 +604,13 @@ export class AuthService {
         advanced_reporting: true,
         api_access: true,
         custom_branding: true
+      },
+      'founding-member': {
+        ai_automation: true,
+        multi_currency: true,
+        advanced_reporting: true,
+        api_access: true,
+        custom_branding: true
       }
     };
 
@@ -605,7 +624,8 @@ export class AuthService {
     const limits = {
       starter: { maxUsers: 5, maxStorageGb: 5 },
       professional: { maxUsers: 25, maxStorageGb: 50 },
-      enterprise: { maxUsers: 9999, maxStorageGb: 9999 }
+      enterprise: { maxUsers: 9999, maxStorageGb: 9999 },
+      'founding-member': { maxUsers: 10, maxStorageGb: 100 }
     };
 
     return limits[plan as keyof typeof limits] || limits.starter;

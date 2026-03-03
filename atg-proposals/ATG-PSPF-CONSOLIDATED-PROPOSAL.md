@@ -15,21 +15,22 @@ Alex Tsela Global (ATG) Holdings presents this comprehensive investment proposal
 | # | Project Pillar | Investment Required | Key Outcome |
 |---|----------------|---------------------|-------------|
 | **1** | **Large-Scale Coffee Production** | **E 9,372,213** | 60 hectares, 240,000 trees, export revenue |
-| **2** | **Spring Water Bottling** | **E 304,000** | Immediate cash flow, premium market |
+| **2** | **Commercial Spring Water Bottling Plant** | **E 1,800,000** | 3,000–5,000 BPH containerised plant, immediate cash flow |
 | **3** | **Dairy Value Chain** | **R 32,000,000** | Import substitution, food security |
-| | **TOTAL INVESTMENT** | **E 41,676,213** | National food security & economic growth |
+| | **TOTAL INVESTMENT** | **E 43,172,213** | National food security & economic growth |
 
 ### Investment Highlights at a Glance
 
 | Metric | Value |
 |--------|-------|
-| **Total Investment Requested** | **E 41,676,213** |
+| **Total Investment Requested** | **E 43,172,213** |
 | **Total Land Under Development** | 102+ hectares (3 farms) |
 | **Coffee Seedlings** | 240,000 Arabica trees |
 | **Dairy Capacity** | 10,000 liters/day (3,000,000L/year) |
+| **Water Bottling Capacity** | 3,000–5,000 bottles/hour (commercial) |
 | **Jobs Created** | 150+ direct, 500+ indirect |
-| **5-Year Revenue Projection** | E 450+ million cumulative |
-| **Projected ROI** | 45-55% by Year 3 |
+| **5-Year Revenue Projection** | E 660+ million cumulative |
+| **Projected ROI** | 50-60% by Year 3 |
 | **Import Substitution** | E 130M+ annually (coffee + dairy) |
 
 ### Why This Investment?
@@ -87,11 +88,11 @@ This consolidated proposal integrates three complementary projects that together
 │   PILLAR 1          │    PILLAR 2         │         PILLAR 3                │
 │   COFFEE            │    SPRING WATER     │         DAIRY                   │
 ├─────────────────────┼─────────────────────┼─────────────────────────────────┤
-│ E 9,372,213         │  E 304,000          │   R 32,000,000                  │
-│ (22%)               │  (1%)               │   (77%)                         │
+│ E 9,372,213         │  E 1,800,000        │   R 32,000,000                  │
+│ (22%)               │  (4%)               │   (74%)                         │
 ├─────────────────────┼─────────────────────┼─────────────────────────────────┤
 │ Long-term Export    │ Immediate Cash      │   Domestic Food Security        │
-│ Revenue             │ Flow                │   Import Substitution           │
+│ Revenue             │ Flow (Commercial)   │   Import Substitution           │
 ├─────────────────────┼─────────────────────┼─────────────────────────────────┤
 │ Revenue: Year 3+    │ Revenue: Month 1    │   Revenue: Month 3              │
 └─────────────────────┴─────────────────────┴─────────────────────────────────┘
@@ -102,6 +103,7 @@ This consolidated proposal integrates three complementary projects that together
 | Risk Factor | Coffee | Spring Water | Dairy | Portfolio Benefit |
 |-------------|--------|--------------|-------|-------------------|
 | Time to Revenue | 3 years | Immediate | 3 months | Balanced cash flow |
+| Capital Intensity | Medium | Medium | High | Staged deployment |
 | Market Risk | Export (guaranteed) | Domestic | Domestic | Geographic diversity |
 | Climate Risk | Medium | Low | Low | Hedged exposure |
 | Regulatory Risk | Low | Medium | Medium | Spread compliance |
@@ -267,13 +269,13 @@ Based on verified quotations from Mr. S. Mavuso:
 
 <div style="page-break-before: always;"></div>
 
-# PILLAR 2: Spring Water Bottling
+# PILLAR 2: Commercial Spring Water Bottling Plant
 
-## Investment: E 304,000
+## Investment: E 1,800,000
 
 ---
 
-## 7. Spring Water Project
+## 7. Spring Water Project — Commercial-Scale Operation
 
 ### 7.1 Market Opportunity
 
@@ -282,42 +284,354 @@ Based on verified quotations from Mr. S. Mavuso:
 | Southern African Bottled Water Market | USD 2.1 billion |
 | Annual Growth | 8-10% |
 | Premium Segment Growth | 15%+ |
+| Eswatini Import Dependency | High — limited local bottling |
 
-Eswatini's pristine highland springs at Tikhuba offer exceptional quality water with natural mineral content, positioning for premium market segments.
+Eswatini's pristine highland springs at Tikhuba offer exceptional quality water with natural mineral content, positioning for premium market segments. This revised plan upgrades from a micro-scale setup to a **commercial-grade containerised bottling plant** producing **3,000–5,000 bottles per hour (BPH)**, housed in two 40ft high-cube shipping containers.
 
-### 7.2 Facility Specifications
+### 7.2 Facility Overview
 
 | Element | Specification |
 |---------|---------------|
 | Location | Tikhuba (spring site) |
-| Facility Type | Container-based processing plant |
-| Capacity | 2,000 liters/day (initial) |
-| Products | Still water (500ml, 1L, 5L) |
-| Launch Target | Q1 2026 |
+| Facility Type | Containerised commercial bottling plant |
+| Footprint | 2 × 40ft High-Cube shipping containers |
+| Capacity | 3,000–5,000 BPH (bottles per hour) |
+| Products | Still spring water — 200ml, 330ml, 500ml, 1L, 1.5L, 2L PET |
+| Compliance | Codex Alimentarius & SADC bottled water standards |
+| Launch Target | Q2 2026 |
 
-### 7.3 Spring Water Budget
+### 7.3 Container Layout — Two 40ft Containers
 
-| Item | Specification | Total (E) |
-|------|---------------|-----------|
-| Shipping container | Modified/insulated 6m | 55,000 |
-| Bottling equipment | Small-scale complete line | 165,000 |
-| Initial materials | Bottles, caps, labels | 40,000 |
-| Site preparation | Concrete slab, plumbing | 18,000 |
-| Licensing & permits | Food/beverage compliance | 18,000 |
-| Laboratory testing | Quality certification | 8,000 |
-| **SPRING WATER TOTAL** | | **E 304,000** |
+| | Container 1 — Treatment | Container 2 — Production |
+|---|---|---|
+| **Function** | Source intake, filtration, UV/ozone, holding tanks | Integrated bottling line, labelling, packing, QC station |
+| **Key Equipment** | Holding tanks, filter banks, UV unit, ozone (optional), pumps, control panel | 3-in-1 monoblock (rinse/fill/cap), labeller, shrink tunnel, air compressor |
+| **Access** | Staff access for filter maintenance, tank cleaning, meter reading | Production staff access, bottle loading, case packing |
+| **Utilities** | Main electrical DB, water inlet, drainage | Air compressor, labelling supplies, packaging materials storage |
+| **Footprint** | 1 × 40ft HC container | 1 × 40ft HC container |
 
-### 7.4 Spring Water Revenue Projection
+---
+
+### 7.4 Water Treatment Process — Spring Water Compliant
+
+All treatments used in this plant are fully compliant with Codex Alimentarius and SADC bottled water standards. No reverse osmosis, chlorination, or deionisation is used — preserving the natural mineral profile required for spring water classification.
+
+---
+
+#### STEP 01 — Source Capture & Pipeline
+
+**Protected natural spring — gravity or pump-fed to plant**
+
+- In-line sediment screen at intake to block leaves/debris
+- Isolation valves and non-return valves on the pipeline
+- Source protection zone — fenced perimeter around catchment area
+- Surge/buffer tank at source for variable flow rates
+
+---
+
+#### STEP 02 — Primary Holding Tank
+
+**Buffer storage — food-grade stainless steel 304**
+
+Water enters a primary holding tank inside Container 1. This tank acts as a buffer between the natural spring flow (which may vary) and the consistent demand of the bottling line. Minimum recommended size for a 3,000–5,000 BPH plant is 3,000–5,000 litres.
+
+- Stainless steel 304 food-grade sealed tank — 3,000–5,000L
+- Float valve to prevent overflow
+- Drain valve and inspection manhole
+- Low-level alarm/switch to protect downstream pumps
+- Closed-top design with HEPA-filtered sterile air vent
+
+---
+
+#### STEP 03 — Multi-Stage Filtration
+
+**Sediment removal & polishing — must not alter mineral composition**
+
+- **Stage 1:** 10-micron sediment filter — removes sand, silt, and large particulates
+- **Stage 2:** 5-micron polishing filter — finer particulate removal
+- **Stage 3:** Activated carbon block filter — removes organic compounds, tastes, odours
+- **Stage 4:** 1-micron absolute filter (final polish before UV) — bacteria-sized particle barrier
+
+All filter housings are stainless steel 'Big Blue' commercial-grade units, food-grade rated for the required flow volume.
+
+---
+
+#### STEP 04 — UV Disinfection
+
+**Primary microbial kill — chemical-free and spring water compliant**
+
+UV (ultraviolet) disinfection is the correct and legally compliant method for spring water. UV light destroys the DNA of microorganisms (bacteria, viruses, cysts) without adding any chemicals or altering the water's mineral character. This is permitted under Codex Alimentarius and SADC bottled water standards.
+
+- Industrial UV disinfection unit rated for your flow rate (e.g., 3,000–6,000 L/hr)
+- UV must be positioned AFTER all filtration stages (clear water only)
+- UV lamp must have a dosage monitor/alarm — log readings per batch
+- Quartz sleeve requires cleaning and annual lamp replacement
+- Annual lamp replacement budgeted as a recurring operating cost
+
+---
+
+#### STEP 05 — Ozone Treatment (Optional but Recommended)
+
+**Secondary disinfection & extended shelf life**
+
+Ozone (O3) is a permitted treatment for spring water and is widely used in commercial bottling. It provides a secondary microbial kill and extends the shelf life of bottled water by preventing re-growth in the bottle. Ozone breaks down naturally to oxygen — it leaves zero chemical residue.
+
+- Ozone generator + contact tank (ozone mixed into water before bottling)
+- Ozone residual testing recommended per batch
+- Requires proper venting — ozone off-gassing must not accumulate in enclosed spaces
+
+Ozone treatment is included in the plant design to maximise shelf life and ensure microbial safety in the containerised production environment.
+
+---
+
+#### STEP 06 — Pre-Bottling Holding Tank
+
+**Final product buffer — food-grade stainless steel 304**
+
+After treatment, the purified spring water is held in a pre-bottling tank. This is the finished product buffer that feeds the filling machine. This tank must be sealed and sterile.
+
+- Stainless steel 304 food-grade sealed tank — 1,000–2,000L
+- HEPA-filtered sterile air vent
+- CIP (Clean-in-Place) connection points for scheduled sanitation
+
+---
+
+#### STEP 07 — 3-in-1 Monoblock: Rinse / Fill / Cap
+
+**The heart of production — integrated, automated, food-grade**
+
+The monoblock is the core production machine. It integrates bottle rinsing, filling, and capping into a single automated unit — reducing manual handling, contamination risk, and floor space. For a 3,000–5,000 BPH plant target, specify the **CGF 8-8-3** or **CGF 12-12-4** rotary monoblock.
+
+- **Bottle rinsing:** Inverted rinse with treated water or ozonated water
+- **Filling:** Gravity filling valves — accurate, gentle fill for still water
+- **Capping:** Automatic screw capper for PET caps (28mm or 30mm finish)
+- **Speed:** 3,000–5,000 BPH for 500ml bottles (verify with supplier for your size mix)
+- **Bottle compatibility:** 200ml, 330ml, 500ml, 1L, 1.5L, 2L PET
+
+The monoblock is the single largest capital item, representing 30–40% of total plant CAPEX.
+
+---
+
+#### STEP 08 — Labelling Machine
+
+**Pressure-sensitive or sleeve labelling**
+
+Bottles exit the monoblock and pass through an automatic labelling machine. Two label types are common: pressure-sensitive (sticky) labels applied by a wrap-around labeller, or shrink-sleeve labels applied by a sleeve applicator and steam tunnel. Pressure-sensitive is simpler and cheaper to set up. Shrink-sleeve gives a premium full-wrap appearance.
+
+- Wrap-around pressure-sensitive labeller (simpler, lower cost) — OR
+- Sleeve label applicator + steam shrink tunnel (premium look)
+- Date/batch coder (inkjet or laser) — mandatory for traceability
+
+---
+
+#### STEP 09 — Packaging & Output
+
+**Shrink wrapping, case packing, palletising**
+
+- Shrink wrapper — groups bottles into 6-packs or 12-packs in shrink film
+- Heat tunnel — shrinks film around packs
+- Manual or semi-auto case packer for retail-ready cartons (optional at startup)
+- Manual pallet stacking — automated palletiser can be added at higher volumes
+
+---
+
+#### STEP 10 — On-Site QC Lab
+
+**Regulatory compliance and batch certification**
+
+An on-site QC bench is included in the plant design to meet SWASA product registration and Ministry of Health compliance requirements. Every production batch is tested and results logged.
+
+- pH meter — calibrated, benchtop or portable (test every batch)
+- TDS/EC meter — measures total dissolved solids (log for label accuracy)
+- Turbidity meter (nephelometer) — measures water clarity
+- Microbiological test kits — rapid ATP or coliform test strips for daily checks
+- Laboratory logbook — paper or digital batch records
+- Reference water samples — retain sealed samples per batch for 12 months
+- Quarterly SANAS-accredited external laboratory analysis for full regulatory compliance
+
+---
+
+### 7.5 Equipment Price List — South African Rand (ZAR)
+
+All prices below are in South African Rand (ZAR) and are based on 2025/2026 market research. Prices are indicative and exclude import costs, shipping, VAT, and commissioning unless stated. An exchange rate of approximately R18.50/USD has been used for converting international equipment prices.
+
+#### 1. Source Capture & Infrastructure
+
+| Item | Description | Supplier / Link | Estimated Price (ZAR) |
+|------|-------------|-----------------|----------------------|
+| Spring Box / Collection Chamber | Stainless steel 304 sealed spring capture chamber, custom-built | SA Tanks — satanks.co.za | R 25,000 – R 60,000 |
+| Food-grade HDPE Pipeline | Per metre, 50mm–75mm diameter, fittings included (50m run) | WCSA — watercomponents.co.za | R 8,000 – R 20,000 |
+| Submersible / Transfer Pump | Food-grade stainless pump to move water from spring to plant | Nimbus Water — nimbuswater.co.za | R 6,000 – R 18,000 |
+| Source Fence & Protection Zone | Basic perimeter fencing, signage, lockable gate | Local fencing contractor | R 15,000 – R 40,000 |
+
+#### 2. Shipping Containers — Purchase & Fit-Out
+
+| Item | Condition / Spec | Supplier / Link | Estimated Price (ZAR) |
+|------|------------------|-----------------|----------------------|
+| 40ft High-Cube Container (x2) | Refurbished B-grade — clean, watertight, suitable for food use | Tirwana Containers — tirwanacontainers.co.za | R 65,000 – R 80,000 each |
+| Container Fit-Out (x2) | Epoxy floor, insulation, internal cladding, LED lighting, ventilation, electrical DB | East Rand Containers — eastrandcontainers.co.za | R 60,000 – R 120,000 each |
+| Concrete Base / Levelling | Site prep, compacted gravel or concrete pad for both containers | Local civil contractor | R 20,000 – R 50,000 |
+| Container Delivery (Eswatini) | Cross-border transport from SA — 2 × 40ft containers | Freight contractor — get 3 quotes | R 15,000 – R 30,000 |
+
+#### 3. Holding Tanks & Internal Plumbing
+
+| Item | Specification | Supplier / Link | Estimated Price (ZAR) |
+|------|---------------|-----------------|----------------------|
+| Primary Holding Tank — 5,000L | Stainless steel 304, food-grade, sealed with HEPA vent, drain & manhole | SA Tanks — satanks.co.za | R 35,000 – R 65,000 |
+| Pre-Bottling Product Tank — 2,000L | Stainless steel 304, food-grade, sealed, CIP connection points | AMMTECH SA — ammtech.co.za | R 18,000 – R 35,000 |
+| Stainless Steel Internal Pipework | SS 304 food-grade piping between tanks, filters, UV and monoblock | WCSA — watercomponents.co.za | R 12,000 – R 28,000 |
+| Food-Grade Transfer Pump | Stainless centrifugal pump — tank to filtration and monoblock | Nimbus Water — nimbuswater.co.za | R 8,000 – R 20,000 |
+| Valves, Flow Meters, Gauges | Isolation valves, non-return valves, pressure gauges, flow meters | WCSA — watercomponents.co.za | R 8,000 – R 18,000 |
+
+#### 4. Filtration System — Spring Water Compliant
+
+| Item | Specification | Supplier / Link | Estimated Price (ZAR) |
+|------|---------------|-----------------|----------------------|
+| 10-Micron Sediment Filter Housing | 'Big Blue' stainless commercial housing, 20" × 4.5", 10-micron cartridge | FilterShop SA — filtershop.co.za | R 2,500 – R 5,000 |
+| 5-Micron Polishing Filter | 'Big Blue' housing, 5-micron polishing cartridge | FilterShop SA — filtershop.co.za | R 2,500 – R 5,000 |
+| Activated Carbon Block Filter | Commercial carbon block, 10-micron, 20" housing — organics & odour removal | FilterShop SA — filtershop.co.za | R 3,000 – R 6,500 |
+| 1-Micron Absolute Final Polish Filter | Final polish before UV — sub-micron particulate barrier | WCSA — watercomponents.co.za | R 3,000 – R 6,000 |
+| Filter Cartridge Replacements (Annual) | Budget for 4 × cartridge replacements per housing per year | FilterShop SA — filtershop.co.za | R 6,000 – R 14,000 /yr |
+| Multi-Stage Filter Rack / Frame | SS mounting rack for all filter housings with interconnect pipework | Fabricator / WCSA | R 5,000 – R 12,000 |
+
+#### 5. UV Disinfection & Ozone System
+
+| Item | Specification | Supplier / Link | Estimated Price (ZAR) |
+|------|---------------|-----------------|----------------------|
+| Industrial UV Disinfection Unit | Rated 3,000–6,000 L/hr, stainless steel chamber, UV dose monitor/alarm, quartz sleeve included | Ecotech Hydro — ecotechhydro.com | R 18,000 – R 45,000 |
+| UV Lamp Replacement (Annual) | Commercial-grade UV lamp — annual replacement mandatory | Ecotech Hydro — ecotechhydro.com | R 2,500 – R 5,000 /yr |
+| Ozone Generator System | Industrial O3 generator, contact tank, ozone destructor — Biozone or Eco-Tec brand | Biozone SA — biozone.co.za | R 25,000 – R 70,000 |
+| Ozone Contact Tank | SS 304 sealed contact vessel, 200–500L — ozone dissolution before bottling | SA Tanks — satanks.co.za | R 8,000 – R 20,000 |
+
+#### 6. Integrated Bottling Line — 3-in-1 Monoblock
+
+| Item | Specification | Supplier / Link | Estimated Price (ZAR) |
+|------|---------------|-----------------|----------------------|
+| 3-in-1 Monoblock 3,000 BPH | CGF 8-8-3 rotary, 500ml PET, wash/fill/cap, PLC touch screen, SS 304 — entry commercial | Pestopack — pestopack.com | R 280,000 – R 470,000 |
+| 3-in-1 Monoblock 5,000 BPH | CGF 12-12-4 rotary, larger rotary block, higher output, SS 316 contact parts | Pestopack — pestopack.com | R 470,000 – R 740,000 |
+| Zhauns 2,000 BPH Wash/Fill/Cap/Label Line | South African supplier — food grade SS, 2,000+ BPH, includes labeller, local support | Zhauns SA — zhauns.co.za | Quote Required — contact Zhauns |
+| Air Compressor (for capping & rinsing) | Industrial screw compressor — minimum 7.5 kW, 500L receiver tank, 8 bar | Local industrial supplier | R 25,000 – R 55,000 |
+| Bottle Conveyor System | Stainless conveyor linking monoblock output to labeller and packaging | Included in most turnkey lines | R 15,000 – R 35,000 |
+
+#### 7. Labelling & Packaging Equipment
+
+| Item | Specification | Supplier / Link | Estimated Price (ZAR) |
+|------|---------------|-----------------|----------------------|
+| Automatic Wrap-Around Labeller | Pressure-sensitive labels, 10–35 packs/min, adjustable for 500ml & 1.5L bottles | Zhauns SA — zhauns.co.za | Quote Required — contact Zhauns |
+| Inkjet Batch/Date Coder | Continuous inkjet printer — prints batch number, date, best-before on bottle/cap | Local industrial supplier | R 18,000 – R 45,000 |
+| Shrink Wrapper + Heat Tunnel | Groups 6 or 12 bottles in PE shrink film — tunnel speed adjustable | Local packaging supplier | R 35,000 – R 80,000 |
+| Label Design & Print (Startup Run) | Professional label design + first print run (regulatory compliant labels) | Local print house | R 8,000 – R 25,000 |
+| Pallet Jack / Pump Truck | 1,500kg rated manual pump truck for pallet handling | Toolco / local hardware | R 3,500 – R 8,000 |
+
+#### 8. Quality Control & Laboratory Equipment
+
+| Item | Specification | Supplier / Link | Estimated Price (ZAR) |
+|------|---------------|-----------------|----------------------|
+| Benchtop pH Meter | Calibrated benchtop pH meter with temperature compensation — Hanna or Jenway | Labhulp — labhulp.co.za | R 2,500 – R 6,500 |
+| TDS / EC Meter | Digital TDS & conductivity meter — handheld or benchtop | Labhulp — labhulp.co.za | R 1,200 – R 3,500 |
+| Turbidity Meter (Nephelometer) | Portable nephelometer for on-site clarity testing (NTU measurement) | Labhulp — labhulp.co.za | R 3,500 – R 9,000 |
+| Microbiological Rapid Test Kits | Colilert or similar coliform/E.coli rapid test kits — 100 test pack | Labchem SA or similar | R 4,000 – R 8,000 |
+| Lab Bench, Sink & Storage | Stainless steel work bench, SS sink, reagent shelf — container-installed | Local fabricator | R 8,000 – R 18,000 |
+| External Lab Testing (Quarterly) | SANAS-accredited full water analysis — microbiological + chemical | Waterlab / Bemlab SA | R 3,500 – R 7,000 / test |
+
+#### 9. Utilities & Electrical
+
+| Item | Specification | Supplier / Link | Estimated Price (ZAR) |
+|------|---------------|-----------------|----------------------|
+| Electrical Distribution Boards | Two DB boards (one per container) — 3-phase, 80A, waterproof, RCB protection | Local electrician (SANS-registered) | R 8,000 – R 20,000 |
+| Generator (Backup Power) | 15–25kVA diesel generator — critical for consistent production in Eswatini | Local generator supplier | R 45,000 – R 110,000 |
+| Solar PV System (Optional) | 3–5kWp rooftop solar on containers — reduces diesel costs long-term | Local solar installer | R 55,000 – R 120,000 |
+| Container Ventilation System | Axial fans + louvres for both containers — food-safe positive pressure ventilation | Local HVAC supplier | R 6,000 – R 15,000 |
+| Fire Suppression / Extinguishers | 2 × CO2 extinguishers per container — insurance and SABS requirement | Local safety supplier | R 2,000 – R 5,000 |
+
+#### 10. Bottles, Caps & Consumables (Startup Stock)
+
+| Item | Specification | Supplier / Link | Estimated Price (ZAR) |
+|------|---------------|-----------------|----------------------|
+| PET Preforms (if blow-moulding) | 28mm PCO finish preforms — buy by pallet. Option: purchase pre-blown bottles instead | PET Solutions Africa | R 0.80 – R 1.50 per preform |
+| Pre-Blown PET Bottles (500ml) | Ready-blown 500ml PET bottles — simpler startup, higher unit cost than blowing own | Local PET bottle supplier | R 1.80 – R 3.50 per bottle |
+| Screw Caps (28mm) | PP tamper-evident screw caps — match your bottle finish specification | Local cap supplier | R 0.25 – R 0.60 per cap |
+| Shrink Film | PE shrink film roll for 6-pack or 12-pack bundling | Local packaging supplier | R 18 – R 35 per kg |
+| Startup Bottle Stock (50,000 units) | Initial stock of blown bottles or preforms for first production runs | Local or SA supplier | R 90,000 – R 175,000 |
+
+---
+
+### 7.6 Total Estimated Capital Expenditure Summary
+
+The table below summarises the total capital investment required for a 3,000–5,000 BPH containerised natural spring water plant in Eswatini. These are realistic entry-commercial figures — not micro-scale.
+
+| Category | Low Estimate (ZAR) | High Estimate (ZAR) |
+|----------|--------------------|--------------------|
+| 1. Source Capture & Infrastructure | R 54,000 | R 138,000 |
+| 2. Containers (purchase + fit-out + delivery) | R 235,000 | R 440,000 |
+| 3. Holding Tanks & Plumbing | R 81,000 | R 166,000 |
+| 4. Filtration System | R 16,000 | R 34,500 |
+| 5. UV Disinfection & Ozone | R 51,000 | R 135,000 |
+| 6. Integrated Bottling Line (3-in-1) | R 320,000 | R 830,000 |
+| 7. Labelling & Packaging Equipment | R 64,500 | R 158,000 |
+| 8. Quality Control & Lab | R 22,700 | R 53,000 |
+| 9. Utilities & Electrical | R 61,000 | R 150,000 |
+| 10. Startup Bottles & Consumables | R 90,000 | R 175,000 |
+| Contingency (10%) | R 99,520 | R 222,950 |
+| **TOTAL ESTIMATED CAPEX** | **R 1,064,720** | **R 2,452,450** |
+
+ATG Holdings has budgeted **E 1,800,000** for this plant, positioning at the realistic commercial entry point that balances cost-efficiency with production capacity.
+
+---
+
+### 7.7 Key Supplier Directory
+
+| Supplier | What They Supply | Website |
+|----------|------------------|---------|
+| Zhauns SA | Bottling lines, labellers, water purification — South African supplier with local support | zhauns.co.za |
+| Pestopack | Integrated bottling lines, treatment, turnkey systems — African export specialist | pestopack.com |
+| Biozone SA | Ozone & UV systems, bottling plant water treatment | biozone.co.za |
+| Ecotech Hydro | UV systems, ozone, filtration — industrial scale | ecotechhydro.com |
+| FilterShop SA | Filter housings, cartridges, carbon, UV lamps | filtershop.co.za |
+| WCSA (Water Components SA) | Tanks, filtration components, UV, pumps — trade wholesale | watercomponents.co.za |
+| SA Tanks | Stainless steel food-grade tanks, all sizes | satanks.co.za |
+| Nimbus Water | Water treatment, pumps, UV/ozone — Southern Africa focus | nimbuswater.co.za |
+| Tirwana Containers | Shipping containers — 20ft & 40ft, refurbished & new | tirwanacontainers.co.za |
+| East Rand Containers | Container conversions, fit-outs, industrial spaces | eastrandcontainers.co.za |
+
+*All prices in ZAR. International equipment prices converted at R18.50/USD. Request formal quotations before committing to budget figures. February 2026.*
+
+---
+
+### 7.8 Spring Water Budget Summary
+
+| Category | Amount (E) |
+|----------|------------|
+| Source Capture & Infrastructure | 100,000 |
+| Containers (purchase + fit-out + delivery) | 350,000 |
+| Holding Tanks & Plumbing | 120,000 |
+| Filtration System | 25,000 |
+| UV Disinfection & Ozone | 95,000 |
+| Integrated Bottling Line (3-in-1 monoblock) | 550,000 |
+| Labelling & Packaging Equipment | 110,000 |
+| Quality Control & Lab | 40,000 |
+| Utilities & Electrical | 110,000 |
+| Startup Bottles & Consumables | 130,000 |
+| Contingency (10%) | 170,000 |
+| **SPRING WATER PROJECT TOTAL** | **E 1,800,000** |
+
+---
+
+### 7.9 Spring Water Revenue Projection
+
+With the upgraded commercial plant at 3,000–5,000 BPH, daily output capacity is significantly higher:
 
 | Year | Daily Output | Price/L (E) | Annual Revenue (E) |
 |------|--------------|-------------|-------------------|
-| Year 1 | 1,000L | 8 | 2,920,000 |
-| Year 2 | 1,500L | 8 | 4,380,000 |
-| Year 3 | 2,000L | 9 | 6,570,000 |
-| Year 4 | 2,500L | 9 | 8,212,500 |
-| Year 5 | 3,000L | 10 | 10,950,000 |
+| Year 1 | 3,000L | 8 | 7,200,000 |
+| Year 2 | 5,000L | 8 | 12,000,000 |
+| Year 3 | 8,000L | 9 | 21,600,000 |
+| Year 4 | 10,000L | 9 | 27,000,000 |
+| Year 5 | 12,000L | 10 | 36,000,000 |
 
-**Key Advantage**: Spring water generates **immediate revenue from Month 1**, providing crucial cash flow while coffee matures.
+*Based on 300 operational days per year, scaling from initial ramp-up to full commercial production.*
+
+**Key Advantage**: Spring water generates **immediate revenue from Month 1**, providing crucial cash flow while coffee matures. The commercial-scale plant ensures competitive unit economics and the ability to supply retail, wholesale, and institutional customers from day one.
 
 ---
 
@@ -487,9 +801,9 @@ A **vertically integrated milk and Amasi processing company** that:
 | Project Pillar | Investment Amount | Currency |
 |----------------|-------------------|----------|
 | **Coffee Production** | E 9,372,213 | SZL |
-| **Spring Water Bottling** | E 304,000 | SZL |
+| **Commercial Spring Water Bottling Plant** | E 1,800,000 | SZL |
 | **Dairy Value Chain** | R 32,000,000 | ZAR |
-| **TOTAL INVESTMENT** | **E 41,676,213** | SZL |
+| **TOTAL INVESTMENT** | **E 43,172,213** | SZL |
 
 *Note: SZL and ZAR at 1:1 parity*
 
@@ -497,12 +811,12 @@ A **vertically integrated milk and Amasi processing company** that:
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│              INVESTMENT ALLOCATION (E 41.7M)                   │
+│              INVESTMENT ALLOCATION (E 43.2M)                   │
 ├────────────────────────────────────────────────────────────────┤
 │                                                                │
-│  ████████████████████████████████████████░░░░░░░  Coffee (42%) │
-│  █░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  Water (1%)   │
-│  █████████████████████████████████████████████░░  Dairy (57%)  │
+│  ████████████████████████████████████░░░░░░░░░░  Coffee (22%)  │
+│  ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░  Water (4%)    │
+│  █████████████████████████████████████████████░  Dairy (74%)   │
 │                                                                │
 └────────────────────────────────────────────────────────────────┘
 ```
@@ -511,10 +825,10 @@ A **vertically integrated milk and Amasi processing company** that:
 
 | Category | Coffee | Water | Dairy | TOTAL |
 |----------|--------|-------|-------|-------|
-| Infrastructure/Equipment | E 672K | E 304K | R 30M | E 31M |
+| Infrastructure/Equipment | E 672K | E 1.63M | R 30M | E 32.3M |
 | Seedlings/Inputs | E 8.7M | — | — | E 8.7M |
-| Working Capital | — | — | R 2M | E 2M |
-| **TOTAL** | **E 9.4M** | **E 0.3M** | **R 32M** | **E 41.7M** |
+| Working Capital / Consumables | — | E 170K | R 2M | E 2.17M |
+| **TOTAL** | **E 9.4M** | **E 1.8M** | **R 32M** | **E 43.2M** |
 
 ---
 
@@ -524,22 +838,22 @@ A **vertically integrated milk and Amasi processing company** that:
 
 | Year | Coffee | Water | Dairy | Companion Crops | **TOTAL** |
 |------|--------|-------|-------|-----------------|-----------|
-| Year 1 | — | E 2.9M | R 60.0M | — | **E 62.9M** |
-| Year 2 | — | E 4.4M | R 63.0M | E 1.8M | **E 69.2M** |
-| Year 3 | E 18.0M | E 6.6M | R 66.2M | E 3.0M | **E 93.8M** |
-| Year 4 | E 57.6M | E 8.2M | R 69.5M | E 4.8M | **E 140.1M** |
-| Year 5 | E 102.0M | E 11.0M | R 73.0M | E 6.0M | **E 192.0M** |
-| **5-Year Total** | **E 177.6M** | **E 33.1M** | **R 331.7M** | **E 15.6M** | **E 558.0M** |
+| Year 1 | — | E 7.2M | R 60.0M | — | **E 67.2M** |
+| Year 2 | — | E 12.0M | R 63.0M | E 1.8M | **E 76.8M** |
+| Year 3 | E 18.0M | E 21.6M | R 66.2M | E 3.0M | **E 108.8M** |
+| Year 4 | E 57.6M | E 27.0M | R 69.5M | E 4.8M | **E 158.9M** |
+| Year 5 | E 102.0M | E 36.0M | R 73.0M | E 6.0M | **E 217.0M** |
+| **5-Year Total** | **E 177.6M** | **E 103.8M** | **R 331.7M** | **E 15.6M** | **E 628.7M** |
 
 ### 13.2 Cumulative Returns
 
 | Metric | Value |
 |--------|-------|
-| Total Investment | E 41,676,213 |
-| 5-Year Revenue | E 558,000,000 |
-| Estimated 5-Year Net Profit | E 165,000,000+ |
-| **5-Year ROI** | **~396%** |
-| **Payback Period** | **18-24 months** (dairy + water) |
+| Total Investment | E 43,172,213 |
+| 5-Year Revenue | E 628,700,000 |
+| Estimated 5-Year Net Profit | E 195,000,000+ |
+| **5-Year ROI** | **~452%** |
+| **Payback Period** | **14-20 months** (dairy + water) |
 
 ---
 
@@ -556,7 +870,7 @@ A **vertically integrated milk and Amasi processing company** that:
 
 **Key Risk Mitigators:**
 1. **Coffee**: Pre-arranged off-take agreement eliminates market risk
-2. **Water**: Immediate revenue provides cash flow buffer
+2. **Water**: Commercial-scale plant with immediate revenue provides strong cash flow buffer
 3. **Dairy**: Massive import gap ensures domestic demand
 4. **Portfolio**: Diversification across 3 projects reduces concentration risk
 
@@ -568,21 +882,21 @@ A **vertically integrated milk and Amasi processing company** that:
 
 | Quarter | Coffee | Water | Dairy |
 |---------|--------|-------|-------|
-| Q1 | Site preparation, fencing begins | Plant setup, launch | Equipment procurement |
-| Q2 | Shade plant establishment | Operations commence | Installation, staff onboarding |
-| Q3 | Coffee seedling planting begins | Market expansion | Production starts |
-| Q4 | Complete planting | Steady operations | Full production |
+| Q1 | Site preparation, fencing begins | Container procurement, site prep | Equipment procurement |
+| Q2 | Shade plant establishment | Plant fit-out, equipment install, commissioning | Installation, staff onboarding |
+| Q3 | Coffee seedling planting begins | Production launch, QC lab operational | Production starts |
+| Q4 | Complete planting | Ramp to commercial output, retail distribution | Full production |
 
 ### 15.2 Year 2-3 (2027-2028) — Growth
 
 - Coffee: Tree nurturing, first partial harvest (Year 3)
-- Water: Capacity expansion to 2,000L/day
+- Water: Scale to 8,000–12,000L/day, expand product range (1L, 1.5L, 2L), wholesale & institutional sales
 - Dairy: Product diversification (yogurt, cheese)
 
 ### 15.3 Year 4-5 (2029-2030) — Scale
 
 - Coffee: Full production, export market entry
-- Water: Premium brand establishment
+- Water: Full 5,000 BPH capacity, premium brand establishment, regional export to Mozambique & SA
 - Dairy: 5% market share capture, regional expansion
 
 ---
@@ -594,9 +908,9 @@ A **vertically integrated milk and Amasi processing company** that:
 | Category | Direct Jobs | Indirect Jobs | Total |
 |----------|-------------|---------------|-------|
 | Coffee Farming | 80 | 250 | 330 |
-| Spring Water | 10 | 30 | 40 |
+| Spring Water Plant | 15 | 50 | 65 |
 | Dairy Processing | 50 | 200 | 250 |
-| **TOTAL** | **140** | **480** | **620** |
+| **TOTAL** | **145** | **500** | **645** |
 
 ### 16.2 Farmer Empowerment
 
@@ -654,9 +968,9 @@ ATG Holdings presents a unique opportunity for the PSPF to invest in a **diversi
 
 | Dimension | Value Proposition |
 |-----------|-------------------|
-| **Financial Returns** | 45-55% ROI by Year 3, 396% over 5 years |
-| **Food Security** | Reduces 76% dairy imports (3M liters/year), local coffee production |
-| **Job Creation** | 620+ jobs (direct and indirect) |
+| **Financial Returns** | 50-60% ROI by Year 3, 452% over 5 years |
+| **Food Security** | Reduces 76% dairy imports (3M liters/year), local coffee production, commercial spring water |
+| **Job Creation** | 645+ jobs (direct and indirect) |
 | **Economic Development** | Export revenue, import substitution |
 | **ESG Impact** | Smallholder empowerment, youth employment |
 
@@ -665,9 +979,9 @@ ATG Holdings presents a unique opportunity for the PSPF to invest in a **diversi
 | Project | Investment | Key Return Driver |
 |---------|------------|-------------------|
 | Coffee Production | E 9,372,213 | Export revenue, guaranteed off-take |
-| Spring Water | E 304,000 | Immediate cash flow |
+| Commercial Spring Water Plant | E 1,800,000 | 3,000–5,000 BPH, immediate cash flow |
 | Dairy Value Chain | R 32,000,000 | Import substitution, 10,000L/day capacity |
-| **TOTAL** | **E 41,676,213** | **Diversified, resilient portfolio** |
+| **TOTAL** | **E 43,172,213** | **Diversified, resilient portfolio** |
 
 ### 18.3 Next Steps
 

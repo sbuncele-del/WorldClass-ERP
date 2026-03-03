@@ -91,7 +91,7 @@ export const getAnnouncements = async (req: TenantRequest, res: Response) => {
     const { priority, includeExpired } = req.query;
 
     let queryStr = `
-      SELECT a.*, u.full_name as author_name
+      SELECT a.*, COALESCE(u.first_name || ' ' || u.last_name, u.display_name, u.email) as author_name
       FROM announcements a
       LEFT JOIN users u ON a.created_by_user_id = u.id
       WHERE a.tenant_id = $1 AND a.is_active = true
@@ -294,7 +294,7 @@ export const getChannelMessages = async (req: TenantRequest, res: Response) => {
     const { limit = 50, before } = req.query;
 
     let queryStr = `
-      SELECT m.*, u.full_name as author_name, u.email as author_email
+      SELECT m.*, COALESCE(u.first_name || ' ' || u.last_name, u.display_name, u.email) as author_name, u.email as author_email
       FROM chat_messages m
       LEFT JOIN users u ON m.sender_id = u.id
       WHERE m.tenant_id = $1 AND m.channel_id = $2
@@ -354,7 +354,7 @@ export const getDirectConversations = async (req: TenantRequest, res: Response) 
     const result = await pool.query(
       `SELECT DISTINCT ON (other_user_id)
         CASE WHEN sender_id = $2 THEN recipient_id ELSE sender_id END as other_user_id,
-        u.full_name as other_user_name,
+        COALESCE(u.first_name || ' ' || u.last_name, u.display_name, u.email) as other_user_name,
         dm.content as last_message,
         dm.created_at as last_message_at
       FROM direct_messages dm
@@ -564,7 +564,7 @@ export const getMeetings = async (req: TenantRequest, res: Response) => {
     const { upcoming, past } = req.query;
 
     let queryStr = `
-      SELECT m.*, u.full_name as organizer_name
+      SELECT m.*, COALESCE(u.first_name || ' ' || u.last_name, u.display_name, u.email) as organizer_name
       FROM video_meetings m
       LEFT JOIN users u ON m.host_id = u.id
       WHERE m.tenant_id = $1
@@ -599,25 +599,34 @@ export const createMeeting = async (req: TenantRequest, res: Response) => {
     const { tenantId, userId } = getTenantContext(req);
     const { title, scheduledStart, scheduledEnd, participantUserIds } = req.body;
 
-    // Generate meeting room name and URL
-    const roomName = `meeting-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 9)}`;
-    const roomUrl = `https://meet.daily.co/${roomName}`; // Daily.co URL pattern
+    // Generate meeting room name
+    const roomName = `wc-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 6)}`;
+
+    // Calculate room expiry: 30 min after scheduled end, or 2 hours from now
+    let expiryMinutes = 150; // default 2.5 hours
+    if (scheduledEnd) {
+      const endTime = new Date(scheduledEnd).getTime();
+      expiryMinutes = Math.max(30, Math.ceil((endTime - Date.now()) / 60000) + 30);
+    }
+
+    // Create actual Daily.co room via API
+    const roomData = await createDailyRoom(roomName, expiryMinutes);
 
     const meetingResult = await pool.query(
       `INSERT INTO video_meetings (tenant_id, host_id, title, room_name, room_url,
         scheduled_start, scheduled_end, status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, 'scheduled')
       RETURNING *`,
-      [tenantId, userId, title, roomName, roomUrl, scheduledStart, scheduledEnd]
+      [tenantId, userId, title, roomData.name, roomData.url, scheduledStart, scheduledEnd]
     );
 
     const meeting = meetingResult.rows[0];
 
     // Add host as participant
     await pool.query(
-      `INSERT INTO video_meeting_participants (tenant_id, meeting_id, user_id, role, status)
-      VALUES ($1, $2, $3, 'host', 'accepted')`,
-      [tenantId, meeting.id, userId]
+      `INSERT INTO video_meeting_participants (meeting_id, user_id, role, invite_status)
+      VALUES ($1, $2, 'host', 'accepted')`,
+      [meeting.id, userId]
     );
 
     // Add other participants
@@ -625,9 +634,9 @@ export const createMeeting = async (req: TenantRequest, res: Response) => {
       for (const participantId of participantUserIds) {
         if (participantId !== userId) {
           await pool.query(
-            `INSERT INTO video_meeting_participants (tenant_id, meeting_id, user_id, role, status)
-            VALUES ($1, $2, $3, 'participant', 'pending')`,
-            [tenantId, meeting.id, participantId]
+            `INSERT INTO video_meeting_participants (meeting_id, user_id, role, invite_status)
+            VALUES ($1, $2, 'participant', 'pending')`,
+            [meeting.id, participantId]
           );
         }
       }
@@ -711,7 +720,7 @@ export const getMessages = async (req: TenantRequest, res: Response) => {
     // Try to get messages from messages table if it exists, otherwise return sample data
     try {
       let queryStr = `
-        SELECT m.*, u.full_name as sender_name
+        SELECT m.*, COALESCE(u.first_name || ' ' || u.last_name, u.display_name, u.email) as sender_name
         FROM messages m
         LEFT JOIN users u ON m.sender_id = u.id
         WHERE m.tenant_id = $1
@@ -1061,7 +1070,7 @@ export const sendEmail = async (req: TenantRequest, res: Response) => {
 
     // Get sender info
     const userResult = await pool.query(
-      `SELECT full_name, email FROM users WHERE id = $1`,
+      `SELECT COALESCE(first_name || ' ' || last_name, display_name, email) AS full_name, email FROM users WHERE id = $1`,
       [userId]
     );
     const senderName = userResult.rows[0]?.full_name || 'SiyaBusa ERP';
@@ -1127,7 +1136,7 @@ export const getSentEmails = async (req: TenantRequest, res: Response) => {
     const { limit = 50, offset = 0 } = req.query;
 
     const result = await pool.query(
-      `SELECT e.*, u.full_name as sender_name
+      `SELECT e.*, COALESCE(u.first_name || ' ' || u.last_name, u.display_name, u.email) as sender_name
       FROM email_sent e
       LEFT JOIN users u ON e.user_id = u.id
       WHERE e.tenant_id = $1
@@ -1260,7 +1269,7 @@ export const replyToEmail = async (req: TenantRequest, res: Response) => {
 
     // Get sender info
     const userResult = await pool.query(
-      `SELECT full_name FROM users WHERE id = $1`,
+      `SELECT COALESCE(first_name || ' ' || last_name, display_name, email) AS full_name FROM users WHERE id = $1`,
       [userId]
     );
     const senderName = userResult.rows[0]?.full_name || 'SiyaBusa ERP';
@@ -1321,48 +1330,54 @@ interface DailyRoomResponse {
  */
 const createDailyRoom = async (roomName: string, expiryMinutes: number = 60): Promise<DailyRoomResponse> => {
   const dailyApiKey = process.env.DAILY_API_KEY;
+  const dailyDomain = process.env.DAILY_DOMAIN || 'aetheros.daily.co';
   
   if (!dailyApiKey) {
     // Return mock data if no API key configured
+    console.warn('[Daily] No API key configured - returning mock room URL');
     return {
       name: roomName,
-      url: `https://meet.daily.co/${roomName}`,
+      url: `https://${dailyDomain}/${roomName}`,
       privacy: 'public'
     };
   }
 
-  const response = await fetch('https://api.daily.co/v1/rooms', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${dailyApiKey}`
-    },
-    body: JSON.stringify({
-      name: roomName,
-      privacy: 'public',
-      properties: {
-        exp: Math.floor(Date.now() / 1000) + (expiryMinutes * 60),
-        enable_chat: true,
-        enable_screenshare: true,
-        enable_recording: 'cloud',
-        start_video_off: false,
-        start_audio_off: false
-      }
-    })
-  });
+  try {
+    const response = await fetch('https://api.daily.co/v1/rooms', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${dailyApiKey}`
+      },
+      body: JSON.stringify({
+        name: roomName,
+        privacy: 'public',
+        properties: {
+          exp: Math.floor(Date.now() / 1000) + (expiryMinutes * 60),
+          enable_chat: true,
+          enable_screenshare: true,
+          enable_recording: 'cloud',
+          start_video_off: false,
+          start_audio_off: false,
+          eject_at_room_exp: true,
+          lang: 'en'
+        }
+      })
+    });
 
-  if (!response.ok) {
-    const error = await response.text();
-    console.error('Daily.co room creation failed:', error);
-    // Return fallback URL
-    return {
-      name: roomName,
-      url: `https://meet.daily.co/${roomName}`,
-      privacy: 'public'
-    };
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Daily] Room creation failed:', response.status, errorText);
+      throw new Error(`Daily.co API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json() as DailyRoomResponse;
+    console.log(`[Daily] Room created: ${data.name} -> ${data.url}`);
+    return data;
+  } catch (error: any) {
+    console.error('[Daily] Room creation error:', error.message);
+    throw new Error(`Failed to create video meeting room: ${error.message}`);
   }
-
-  return await response.json() as DailyRoomResponse;
 };
 
 /**
@@ -1392,9 +1407,9 @@ export const startInstantMeeting = async (req: TenantRequest, res: Response) => 
 
     // Add host as participant
     await pool.query(
-      `INSERT INTO video_meeting_participants (tenant_id, meeting_id, user_id, role, status, joined_at)
-      VALUES ($1, $2, $3, 'host', 'joined', NOW())`,
-      [tenantId, meeting.id, userId]
+      `INSERT INTO video_meeting_participants (meeting_id, user_id, role, invite_status, joined_at)
+      VALUES ($1, $2, 'host', 'accepted', NOW())`,
+      [meeting.id, userId]
     );
 
     // Send invites to participants
@@ -1402,9 +1417,9 @@ export const startInstantMeeting = async (req: TenantRequest, res: Response) => 
       for (const participantId of participantUserIds) {
         if (participantId !== userId) {
           await pool.query(
-            `INSERT INTO video_meeting_participants (tenant_id, meeting_id, user_id, role, status)
-            VALUES ($1, $2, $3, 'participant', 'invited')`,
-            [tenantId, meeting.id, participantId]
+            `INSERT INTO video_meeting_participants (meeting_id, user_id, role, invite_status)
+            VALUES ($1, $2, 'participant', 'pending')`,
+            [meeting.id, participantId]
           );
 
           // Create notification
@@ -1457,17 +1472,17 @@ export const joinMeeting = async (req: TenantRequest, res: Response) => {
 
     // Update participant status
     await pool.query(
-      `UPDATE video_meeting_participants SET status = 'joined', joined_at = NOW()
+      `UPDATE video_meeting_participants SET invite_status = 'accepted', joined_at = NOW()
       WHERE meeting_id = $1 AND user_id = $2`,
       [id, userId]
     );
 
     // If not already a participant, add them
     await pool.query(
-      `INSERT INTO video_meeting_participants (tenant_id, meeting_id, user_id, role, status, joined_at)
-      VALUES ($1, $2, $3, 'participant', 'joined', NOW())
-      ON CONFLICT (meeting_id, user_id) DO UPDATE SET status = 'joined', joined_at = NOW()`,
-      [tenantId, id, userId]
+      `INSERT INTO video_meeting_participants (meeting_id, user_id, role, invite_status, joined_at)
+      VALUES ($1, $2, 'participant', 'accepted', NOW())
+      ON CONFLICT (meeting_id, user_id) DO UPDATE SET invite_status = 'accepted', joined_at = NOW()`,
+      [id, userId]
     );
 
     res.json({ 
@@ -1514,7 +1529,7 @@ export const endMeeting = async (req: TenantRequest, res: Response) => {
 
     // Update all participants
     await pool.query(
-      `UPDATE video_meeting_participants SET status = 'left', left_at = NOW() WHERE meeting_id = $1`,
+      `UPDATE video_meeting_participants SET left_at = NOW() WHERE meeting_id = $1`,
       [id]
     );
 
@@ -1537,10 +1552,11 @@ export const getMeetingParticipants = async (req: TenantRequest, res: Response) 
     const { id } = req.params;
 
     const result = await pool.query(
-      `SELECT p.*, u.full_name, u.email
+      `SELECT p.*, COALESCE(u.first_name || ' ' || u.last_name, u.display_name, u.email), u.email
       FROM video_meeting_participants p
+      JOIN video_meetings m ON p.meeting_id = m.id
       LEFT JOIN users u ON p.user_id = u.id
-      WHERE p.meeting_id = $1 AND p.tenant_id = $2
+      WHERE p.meeting_id = $1 AND m.tenant_id = $2
       ORDER BY p.joined_at`,
       [id, tenantId]
     );

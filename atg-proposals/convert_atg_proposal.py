@@ -206,7 +206,7 @@ cover_page = """
                         <td style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; text-align: center; width: 33%; border: 1px solid rgba(255,255,255,0.2);">
                             <div style="font-size: 10pt; color: #d4af37; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Pillar 2</div>
                             <div style="font-size: 20pt; font-weight: bold; color: #fff;">Water</div>
-                            <div style="font-size: 11pt; color: #ccc; margin-top: 5px;">E 0.3M</div>
+                            <div style="font-size: 11pt; color: #ccc; margin-top: 5px;">E 1.8M</div>
                         </td>
                         <td style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 8px; text-align: center; width: 33%; border: 1px solid rgba(255,255,255,0.2);">
                             <div style="font-size: 10pt; color: #d4af37; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Pillar 3</div>
@@ -220,11 +220,11 @@ cover_page = """
                 <table style="width: 80%; margin: 0 auto 50px auto; border-spacing: 20px; border-collapse: separate; border: 0;">
                     <tr>
                         <td style="background: #d4af37; padding: 20px; border-radius: 8px; text-align: center; width: 50%;">
-                            <div style="font-size: 32pt; font-weight: bold; color: #1a472a;">E 41.7M</div>
+                            <div style="font-size: 32pt; font-weight: bold; color: #1a472a;">E 43.2M</div>
                             <div style="font-size: 10pt; color: #1a472a; text-transform: uppercase; letter-spacing: 1px;">Total Investment</div>
                         </td>
                         <td style="background: #d4af37; padding: 20px; border-radius: 8px; text-align: center; width: 50%;">
-                            <div style="font-size: 32pt; font-weight: bold; color: #1a472a;">396%</div>
+                            <div style="font-size: 32pt; font-weight: bold; color: #1a472a;">452%</div>
                             <div style="font-size: 10pt; color: #1a472a; text-transform: uppercase; letter-spacing: 1px;">5-Year ROI</div>
                         </td>
                     </tr>
@@ -254,19 +254,19 @@ investment_summary = """
     <table style="width: 100%; border-spacing: 15px; border-collapse: separate; margin-top: 20px;">
         <tr>
             <td style="background: #1a472a; color: white; padding: 20px; border-radius: 8px; text-align: center; width: 25%; border: none;">
-                <div style="font-size: 24pt; font-weight: bold;">E 41.7M</div>
+                <div style="font-size: 24pt; font-weight: bold;">E 43.2M</div>
                 <div style="font-size: 9pt; opacity: 0.9; margin-top: 5px;">Total Investment</div>
             </td>
             <td style="background: #2d5a3d; color: white; padding: 20px; border-radius: 8px; text-align: center; width: 25%; border: none;">
-                <div style="font-size: 24pt; font-weight: bold;">620+</div>
+                <div style="font-size: 24pt; font-weight: bold;">645+</div>
                 <div style="font-size: 9pt; opacity: 0.9; margin-top: 5px;">Jobs Created</div>
             </td>
             <td style="background: #d4af37; color: #1a472a; padding: 20px; border-radius: 8px; text-align: center; width: 25%; border: none;">
-                <div style="font-size: 24pt; font-weight: bold;">396%</div>
+                <div style="font-size: 24pt; font-weight: bold;">452%</div>
                 <div style="font-size: 9pt; opacity: 0.9; margin-top: 5px;">5-Year ROI</div>
             </td>
             <td style="background: #28a745; color: white; padding: 20px; border-radius: 8px; text-align: center; width: 25%; border: none;">
-                <div style="font-size: 24pt; font-weight: bold;">E 558M</div>
+                <div style="font-size: 24pt; font-weight: bold;">E 629M</div>
                 <div style="font-size: 9pt; opacity: 0.9; margin-top: 5px;">5-Year Revenue</div>
             </td>
         </tr>
@@ -288,13 +288,13 @@ pillar_allocation = """
             </td>
             <td style="width: 33%; background: #e3f2fd; border-top: 5px solid #1976d2; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
                 <div style="font-size: 10pt; font-weight: bold; color: #1976d2; text-transform: uppercase; letter-spacing: 1px;">Spring Water</div>
-                <div style="font-size: 28pt; font-weight: bold; color: #1976d2; margin: 10px 0;">1%</div>
-                <div style="font-size: 14pt; color: #333; font-weight: bold;">E 0.3M</div>
-                <div style="font-size: 9pt; color: #666; margin-top: 5px;">Immediate cash flow</div>
+                <div style="font-size: 28pt; font-weight: bold; color: #1976d2; margin: 10px 0;">4%</div>
+                <div style="font-size: 14pt; color: #333; font-weight: bold;">E 1.8M</div>
+                <div style="font-size: 9pt; color: #666; margin-top: 5px;">3,000–5,000 BPH plant</div>
             </td>
             <td style="width: 33%; background: #fff8e1; border-top: 5px solid #d4af37; padding: 20px; text-align: center; border-radius: 0 0 8px 8px;">
                 <div style="font-size: 10pt; font-weight: bold; color: #997e2f; text-transform: uppercase; letter-spacing: 1px;">Dairy</div>
-                <div style="font-size: 28pt; font-weight: bold; color: #d4af37; margin: 10px 0;">77%</div>
+                <div style="font-size: 28pt; font-weight: bold; color: #d4af37; margin: 10px 0;">74%</div>
                 <div style="font-size: 14pt; color: #333; font-weight: bold;">R 32M</div>
                 <div style="font-size: 9pt; color: #666; margin-top: 5px;">3M L/year capacity</div>
             </td>
@@ -311,31 +311,31 @@ revenue_chart = """
         <tr>
             <td style="width: 70px; font-weight: bold; padding: 10px 0; border: none;">Year 1</td>
             <td style="padding: 10px 0; border: none;"><div style="background: linear-gradient(90deg, #1a472a, #2d5a3d); width: 33%; height: 28px; border-radius: 4px;"></div></td>
-            <td style="width: 80px; text-align: right; font-weight: bold; color: #1a472a; border: none;">E 62.9M</td>
+            <td style="width: 80px; text-align: right; font-weight: bold; color: #1a472a; border: none;">E 67.2M</td>
         </tr>
         <tr>
             <td style="width: 70px; font-weight: bold; padding: 10px 0; border: none;">Year 2</td>
-            <td style="padding: 10px 0; border: none;"><div style="background: linear-gradient(90deg, #1a472a, #2d5a3d); width: 36%; height: 28px; border-radius: 4px;"></div></td>
-            <td style="width: 80px; text-align: right; font-weight: bold; color: #1a472a; border: none;">E 69.2M</td>
+            <td style="padding: 10px 0; border: none;"><div style="background: linear-gradient(90deg, #1a472a, #2d5a3d); width: 35%; height: 28px; border-radius: 4px;"></div></td>
+            <td style="width: 80px; text-align: right; font-weight: bold; color: #1a472a; border: none;">E 76.8M</td>
         </tr>
         <tr>
             <td style="width: 70px; font-weight: bold; padding: 10px 0; border: none;">Year 3</td>
-            <td style="padding: 10px 0; border: none;"><div style="background: linear-gradient(90deg, #1a472a, #2d5a3d); width: 49%; height: 28px; border-radius: 4px;"></div></td>
-            <td style="width: 80px; text-align: right; font-weight: bold; color: #1a472a; border: none;">E 93.8M</td>
+            <td style="padding: 10px 0; border: none;"><div style="background: linear-gradient(90deg, #1a472a, #2d5a3d); width: 50%; height: 28px; border-radius: 4px;"></div></td>
+            <td style="width: 80px; text-align: right; font-weight: bold; color: #1a472a; border: none;">E 108.8M</td>
         </tr>
         <tr>
             <td style="width: 70px; font-weight: bold; padding: 10px 0; border: none;">Year 4</td>
             <td style="padding: 10px 0; border: none;"><div style="background: linear-gradient(90deg, #1a472a, #2d5a3d); width: 73%; height: 28px; border-radius: 4px;"></div></td>
-            <td style="width: 80px; text-align: right; font-weight: bold; color: #1a472a; border: none;">E 140.1M</td>
+            <td style="width: 80px; text-align: right; font-weight: bold; color: #1a472a; border: none;">E 158.9M</td>
         </tr>
         <tr>
             <td style="width: 70px; font-weight: bold; padding: 10px 0; border: none;">Year 5</td>
             <td style="padding: 10px 0; border: none;"><div style="background: linear-gradient(90deg, #d4af37, #e8c252); width: 100%; height: 28px; border-radius: 4px;"></div></td>
-            <td style="width: 80px; text-align: right; font-weight: bold; color: #d4af37; border: none;">E 192.0M</td>
+            <td style="width: 80px; text-align: right; font-weight: bold; color: #d4af37; border: none;">E 217.0M</td>
         </tr>
     </table>
     <div style="text-align: center; margin-top: 15px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
-        <strong>5-Year Cumulative Revenue: </strong><span style="color: #1a472a; font-size: 14pt; font-weight: bold;">E 558 Million</span>
+        <strong>5-Year Cumulative Revenue: </strong><span style="color: #1a472a; font-size: 14pt; font-weight: bold;">E 629 Million</span>
     </div>
 </div>
 """
@@ -348,22 +348,22 @@ roi_visual = """
         <tr>
             <td style="background: white; border: 2px solid #1a472a; padding: 20px; text-align: center; border-radius: 8px; width: 30%;">
                 <div style="font-size: 10pt; color: #666; font-weight: bold; text-transform: uppercase;">Investment</div>
-                <div style="font-size: 26pt; font-weight: bold; color: #1a472a; margin-top: 8px;">E 41.7M</div>
+                <div style="font-size: 26pt; font-weight: bold; color: #1a472a; margin-top: 8px;">E 43.2M</div>
             </td>
             <td style="text-align: center; font-size: 28pt; color: #d4af37; width: 10%; border: none;">→</td>
             <td style="background: white; border: 2px solid #28a745; padding: 20px; text-align: center; border-radius: 8px; width: 30%;">
                 <div style="font-size: 10pt; color: #666; font-weight: bold; text-transform: uppercase;">5-Year Net Profit</div>
-                <div style="font-size: 26pt; font-weight: bold; color: #28a745; margin-top: 8px;">E 165M+</div>
+                <div style="font-size: 26pt; font-weight: bold; color: #28a745; margin-top: 8px;">E 195M+</div>
             </td>
             <td style="text-align: center; font-size: 28pt; color: #d4af37; width: 10%; border: none;">→</td>
             <td style="background: #d4af37; padding: 20px; text-align: center; border-radius: 8px; width: 20%;">
                 <div style="font-size: 10pt; color: #1a472a; font-weight: bold; text-transform: uppercase;">5-Year ROI</div>
-                <div style="font-size: 30pt; font-weight: bold; color: #1a472a; margin-top: 8px;">396%</div>
+                <div style="font-size: 30pt; font-weight: bold; color: #1a472a; margin-top: 8px;">452%</div>
             </td>
         </tr>
     </table>
     <div style="text-align: center; margin-top: 15px; font-size: 12pt; color: #555;">
-        <strong>Payback Period:</strong> 18-24 months (Dairy + Spring Water provide early cash flow)
+        <strong>Payback Period:</strong> 14-20 months (Dairy + Commercial Spring Water provide early cash flow)
     </div>
 </div>
 """

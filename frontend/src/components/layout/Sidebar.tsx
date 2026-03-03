@@ -103,6 +103,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed = false }) => {
             <span className="sidebar-icon">📈</span>
             <span className="sidebar-label">Reports & Analytics</span>
           </Link>
+          <Link to="/accountant-portal" className={`sidebar-item ${isActive('/accountant-portal') ? 'active' : ''}`}>
+            <span className="sidebar-icon">🧾</span>
+            <span className="sidebar-label">Accountant Portal</span>
+          </Link>
         </div>
 
         {/* Compliance & Governance */}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Zap, Shield, BarChart3, Users, Building2, Factory,
   ChevronRight, Check, X, Moon, Sun, Play, ArrowRight, Sparkles,
@@ -178,7 +178,13 @@ export const Navigation: React.FC<{ isDark: boolean; toggleTheme: () => void }> 
     >
       <div className="nav-container">
         <Link to="/" className="nav-brand" onClick={() => setMobileMenuOpen(false)}>
-          <div className="logo-icon"><Layers size={24} /></div>
+          <div className="logo-icon">
+            <svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs><linearGradient id="navGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#00D4AA"/><stop offset="100%" stopColor="#0A1F3E"/></linearGradient></defs>
+              <rect width="64" height="64" rx="14" fill="url(#navGrad)"/>
+              <text x="32" y="45" fontFamily="system-ui,-apple-system,sans-serif" fontSize="34" fontWeight="800" fill="white" textAnchor="middle" letterSpacing="-1">SB</text>
+            </svg>
+          </div>
           <span className="logo-text">SiyaBusa</span>
         </Link>
 
@@ -209,123 +215,253 @@ export const Navigation: React.FC<{ isDark: boolean; toggleTheme: () => void }> 
   );
 };
 
-// Hero Section
-export const HeroSection: React.FC = () => {
+
+// EmotionalHero — Solutions-focused, emotionally engaging hero
+const EmotionalHero: React.FC = () => {
   const navigate = useNavigate();
-  const { scrollY } = useScroll();
-  const opacity = useTransform(scrollY, [0, 400], [1, 0]);
-  const scale = useTransform(scrollY, [0, 400], [1, 0.9]);
+  const [spotsLeft] = useState(50);
 
   return (
-    <motion.section className="hero" style={{ opacity, scale }}>
+    <section
+      style={{
+        position: 'relative',
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'linear-gradient(160deg, #0A1F3E 0%, #0D2B4E 40%, #0A1F3E 100%)',
+        overflow: 'hidden',
+        padding: '120px 24px 80px',
+      }}
+    >
       <ParticleBackground />
-      <div className="hero-content">
-        <motion.div className="hero-badge" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Sparkles size={14} />
-          <span>AI-Native ERP for South African Business</span>
-        </motion.div>
+      <div style={{ position: 'relative', zIndex: 2, maxWidth: '800px', textAlign: 'center' }}>
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          {/* Founding member badge */}
+          <motion.div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'rgba(0,212,170,0.12)',
+              border: '1px solid rgba(0,212,170,0.3)',
+              padding: '8px 20px',
+              borderRadius: '50px',
+              marginBottom: '2rem',
+            }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Sparkles size={16} style={{ color: '#00D4AA' }} />
+            <span style={{ color: '#00D4AA', fontSize: '0.9rem', fontWeight: 600 }}>
+              Founding Member — {spotsLeft} spots left
+            </span>
+          </motion.div>
 
-        <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          One System.<br />
-          Every Department.<br />
-          <span className="gradient-text">Total Clarity.</span>
-        </motion.h1>
+          <h1
+            style={{
+              fontSize: 'clamp(2.2rem, 5.5vw, 3.8rem)',
+              fontWeight: 800,
+              color: '#fff',
+              lineHeight: 1.15,
+              marginBottom: '1.5rem',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            Your business is complex.<br />
+            <span style={{ color: '#00D4AA' }}>Managing it shouldn't be.</span>
+          </h1>
 
-        <motion.p className="hero-subtitle" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
-          The AI-native business operating system built for South African enterprises.
-          From financials to compliance, projects to payroll — fully integrated, audit-ready from day one.
-        </motion.p>
+          <p
+            style={{
+              fontSize: 'clamp(1.05rem, 2vw, 1.25rem)',
+              color: 'rgba(255,255,255,0.75)',
+              lineHeight: 1.7,
+              maxWidth: '600px',
+              margin: '0 auto 2.5rem',
+            }}
+          >
+            Finances, people, inventory, projects, compliance — one platform that
+            handles it all. So you can stop juggling and start growing.
+          </p>
 
-        <motion.div className="hero-ctas" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
-          <button className="btn-primary large" onClick={() => navigate('/demo')}>
-            <Play size={18} />
-            Request a Demo
-          </button>
-          <button className="btn-ghost large" onClick={() => navigate('/features')}>
-            Explore Modules
-            <ArrowRight size={18} />
-          </button>
-        </motion.div>
-
-        <motion.div className="hero-stats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}>
-          <div className="stat">
-            <span className="stat-value">15+</span>
-            <span className="stat-label">Integrated Modules</span>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' as const }}>
+            <motion.button
+              onClick={() => navigate('/pricing')}
+              style={{
+                padding: '16px 36px',
+                borderRadius: '14px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #00D4AA, #00A884)',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: '1.1rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '10px',
+                boxShadow: '0 8px 32px rgba(0,212,170,0.3)',
+              }}
+              whileHover={{ scale: 1.04, boxShadow: '0 12px 40px rgba(0,212,170,0.4)' }}
+              whileTap={{ scale: 0.97 }}
+            >
+              Become a Founding Member <ArrowRight size={20} />
+            </motion.button>
+            <motion.button
+              onClick={() => navigate('/demo')}
+              style={{
+                padding: '16px 36px',
+                borderRadius: '14px',
+                border: '2px solid rgba(255,255,255,0.2)',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                fontWeight: 600,
+                fontSize: '1.1rem',
+                cursor: 'pointer',
+                backdropFilter: 'blur(8px)',
+              }}
+              whileHover={{ scale: 1.04, borderColor: 'rgba(0,212,170,0.5)' }}
+              whileTap={{ scale: 0.97 }}
+            >
+              See It in Action
+            </motion.button>
           </div>
-          <div className="stat-divider" />
-          <div className="stat">
-            <span className="stat-value">100%</span>
-            <span className="stat-label">Audit Ready</span>
-          </div>
-          <div className="stat-divider" />
-          <div className="stat">
-            <span className="stat-value">SARS</span>
-            <span className="stat-label">Compliant</span>
-          </div>
+
+          {/* Trust strip */}
+          <motion.div
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '2rem',
+              marginTop: '3rem',
+              flexWrap: 'wrap' as const,
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+          >
+            {['R1,499/mo — everything included', 'First 50 companies', '14-day free trial'].map((item, i) => (
+              <span
+                key={i}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  color: 'rgba(255,255,255,0.6)',
+                  fontSize: '0.9rem',
+                }}
+              >
+                <Check size={16} style={{ color: '#00D4AA' }} /> {item}
+              </span>
+            ))}
+          </motion.div>
         </motion.div>
       </div>
-
-      <motion.div className="hero-visual" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5, duration: 0.8 }}>
-        <PlatformVisualization />
-      </motion.div>
-
-      <div className="hero-scroll-indicator">
-        <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
-          <ChevronDown size={24} />
-        </motion.div>
-      </div>
-    </motion.section>
+    </section>
   );
 };
 
-// Value Proposition
-export const ValueProposition: React.FC = () => {
+// PainToSolution — Emotional problem→solution cards
+const PainToSolution: React.FC = () => {
+  const painCards = [
+    {
+      emoji: '😩',
+      pain: 'Tired of juggling 10 different systems?',
+      solution: 'One platform. Everything connected. Your finances talk to your inventory, your projects talk to your calendar. No more copy-pasting between spreadsheets at midnight.',
+      icon: <Layers size={24} />,
+      color: '#00D4AA',
+    },
+    {
+      emoji: '😰',
+      pain: 'Audit season keeps you up at night?',
+      solution: 'Every transaction automatically creates an audit trail. VAT calculated. SARS ready. Walk into any audit with confidence — not anxiety.',
+      icon: <Shield size={24} />,
+      color: '#7C3AED',
+    },
+    {
+      emoji: '🏃',
+      pain: 'Your business runs you — instead of the other way around?',
+      solution: 'Real-time dashboards. AI that actually helps. Alerts before problems become crises. Finally feel in control of your numbers, your people, and your growth.',
+      icon: <TrendingUp size={24} />,
+      color: '#3B82F6',
+    },
+  ];
+
   return (
-    <section className="value-prop" id="features">
-      <div className="container">
-        <motion.div className="section-header" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          <span className="section-badge">Why SiyaBusa</span>
-          <h2>Where Business Operations Meet Accounting Compliance</h2>
-          <p>Every transaction automatically flows into compliant financials — IFRS, SARS, and audit-ready</p>
+    <section style={{ padding: '100px 24px', background: '#fff' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        <motion.div
+          style={{ textAlign: 'center', marginBottom: '4rem' }}
+          variants={fadeInUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          <h2
+            style={{
+              fontSize: 'clamp(1.8rem, 3.5vw, 2.6rem)',
+              fontWeight: 800,
+              color: '#0A1F3E',
+              marginBottom: '0.75rem',
+            }}
+          >
+            Sound familiar?
+          </h2>
+          <p style={{ color: '#64748b', fontSize: '1.1rem' }}>
+            You're not alone. Every business owner feels this.
+          </p>
         </motion.div>
 
-        <motion.div className="value-flow" variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          <motion.div className="flow-step" variants={fadeInUp}>
-            <div className="flow-icon business"><TrendingUp size={28} /></div>
-            <h3>Business Action</h3>
-            <p>Record a sale, manage inventory, approve a purchase, run payroll</p>
-          </motion.div>
-          <div className="flow-arrow">
-            <motion.div className="arrow-line" initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.3 }} />
-            <Sparkles className="ai-spark" size={20} />
-          </div>
-          <motion.div className="flow-step" variants={fadeInUp}>
-            <div className="flow-icon ai"><Cpu size={28} /></div>
-            <h3>AI Translation</h3>
-            <p>Instant conversion to proper accounting entries and compliance checks</p>
-          </motion.div>
-          <div className="flow-arrow">
-            <motion.div className="arrow-line" initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 0.6 }} />
-            <Sparkles className="ai-spark" size={20} />
-          </div>
-          <motion.div className="flow-step" variants={fadeInUp}>
-            <div className="flow-icon compliance"><Shield size={28} /></div>
-            <h3>Compliance Output</h3>
-            <p>IFRS-ready entries, SARS submissions, audit trails — automatically</p>
-          </motion.div>
-        </motion.div>
-
-        <motion.div className="value-cards" variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          {[
-            { icon: <Zap />, title: 'AI-Native Architecture', desc: 'Built from the ground up with AI — natural language queries, smart automation' },
-            { icon: <Clock />, title: 'Real-Time Sync', desc: 'Business operations and accounting always in perfect harmony' },
-            { icon: <Shield />, title: 'Audit-Ready by Default', desc: 'Complete audit trails, regulatory compliance, SARS integration built-in' },
-            { icon: <FolderKanban />, title: 'Project Intelligence', desc: 'Tasks, milestones, deadlines — auto-synced to your calendar and financials' }
-          ].map((card, i) => (
-            <motion.div key={i} className="value-card" variants={scaleIn}>
-              <div className="card-icon">{card.icon}</div>
-              <h4>{card.title}</h4>
-              <p>{card.desc}</p>
+        <motion.div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '2rem',
+          }}
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          {painCards.map((card, i) => (
+            <motion.div
+              key={i}
+              variants={fadeInUp}
+              style={{
+                background: '#f8fafc',
+                borderRadius: '20px',
+                padding: '2.5rem 2rem',
+                border: '1px solid #e2e8f0',
+                transition: 'all 0.3s ease',
+              }}
+              whileHover={{ y: -6, boxShadow: '0 20px 60px rgba(0,0,0,0.08)' }}
+            >
+              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>{card.emoji}</div>
+              <h3
+                style={{
+                  fontSize: '1.3rem',
+                  fontWeight: 700,
+                  color: '#0A1F3E',
+                  marginBottom: '1rem',
+                  lineHeight: 1.3,
+                }}
+              >
+                {card.pain}
+              </h3>
+              <p
+                style={{
+                  color: '#475569',
+                  lineHeight: 1.7,
+                  fontSize: '1rem',
+                }}
+              >
+                {card.solution}
+              </p>
             </motion.div>
           ))}
         </motion.div>
@@ -333,6 +469,330 @@ export const ValueProposition: React.FC = () => {
     </section>
   );
 };
+
+// TrustStrip — Quick credibility signals
+const TrustStrip: React.FC = () => {
+  const signals = [
+    { icon: <Shield size={20} />, label: 'SARS Compliant' },
+    { icon: <FileCheck size={20} />, label: 'IFRS Aligned' },
+    { icon: <Lock size={20} />, label: 'POPIA Ready' },
+    { icon: <Cpu size={20} />, label: 'AI-Powered' },
+    { icon: <Globe size={20} />, label: 'Cloud-Based' },
+  ];
+
+  return (
+    <section
+      style={{
+        padding: '40px 24px',
+        background: 'linear-gradient(135deg, #0A1F3E, #0D2B4E)',
+      }}
+    >
+      <motion.div
+        style={{
+          maxWidth: '900px',
+          margin: '0 auto',
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '2.5rem',
+          flexWrap: 'wrap' as const,
+        }}
+        variants={staggerContainer}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+      >
+        {signals.map((s, i) => (
+          <motion.div
+            key={i}
+            variants={fadeInUp}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              color: 'rgba(255,255,255,0.8)',
+              fontSize: '0.95rem',
+              fontWeight: 500,
+            }}
+          >
+            <span style={{ color: '#00D4AA' }}>{s.icon}</span>
+            {s.label}
+          </motion.div>
+        ))}
+      </motion.div>
+    </section>
+  );
+};
+
+// SimpleSteps — Clean 3-step onboarding
+const SimpleSteps: React.FC = () => {
+  const steps = [
+    { num: '01', title: 'Sign up', desc: 'Takes 60 seconds. No credit card.', icon: <Zap size={28} /> },
+    { num: '02', title: 'Set up your business', desc: 'Import your data or start fresh. We help.', icon: <Settings size={28} /> },
+    { num: '03', title: 'Run everything from one place', desc: 'Every module. One dashboard. Total clarity.', icon: <TrendingUp size={28} /> },
+  ];
+
+  return (
+    <section style={{ padding: '100px 24px', background: '#f8fafc' }}>
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <motion.div
+          style={{ textAlign: 'center', marginBottom: '3.5rem' }}
+          variants={fadeInUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.4rem)', fontWeight: 800, color: '#0A1F3E' }}>
+            Up and running in minutes
+          </h2>
+          <p style={{ color: '#64748b', fontSize: '1.05rem', marginTop: '0.5rem' }}>
+            No consultants. No 6-month implementation. Just start.
+          </p>
+        </motion.div>
+
+        <motion.div
+          style={{ display: 'flex', justifyContent: 'center', gap: '2rem', flexWrap: 'wrap' as const }}
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          {steps.map((step, i) => (
+            <React.Fragment key={i}>
+              <motion.div
+                variants={fadeInUp}
+                style={{ textAlign: 'center', flex: '1 1 220px', maxWidth: '280px', padding: '2rem 1.5rem' }}
+              >
+                <div
+                  style={{
+                    width: '72px',
+                    height: '72px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, rgba(0,212,170,0.12), rgba(0,212,170,0.04))',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 1.25rem',
+                    color: '#00D4AA',
+                  }}
+                >
+                  {step.icon}
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    color: '#00D4AA',
+                    textTransform: 'uppercase' as const,
+                    letterSpacing: '2px',
+                    marginBottom: '0.5rem',
+                  }}
+                >
+                  Step {step.num}
+                </div>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#0A1F3E', marginBottom: '0.5rem' }}>
+                  {step.title}
+                </h3>
+                <p style={{ color: '#94a3b8', fontSize: '0.95rem', lineHeight: 1.6 }}>{step.desc}</p>
+              </motion.div>
+              {i < steps.length - 1 && (
+                <div style={{ display: 'flex', alignItems: 'center', color: '#cbd5e1', alignSelf: 'center', fontSize: '1.5rem' }}>
+                  <ArrowRight size={24} />
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+// WhatYouGet — Quick visual of what's included (not module names, outcomes)
+const WhatYouGet: React.FC = () => {
+  const outcomes = [
+    { icon: <BarChart3 size={24} />, title: 'Know your numbers', desc: 'Real-time financials, cash flow, and profitability — always up to date', color: '#F4B400' },
+    { icon: <Users size={24} />, title: 'Pay your people right', desc: 'Payroll, leave, PAYE, UIF — calculated and compliant automatically', color: '#EC4899' },
+    { icon: <Package size={24} />, title: 'Never run out of stock', desc: 'Track inventory across locations with smart reorder alerts', color: '#3B82F6' },
+    { icon: <ShoppingCart size={24} />, title: 'Win more business', desc: 'Quotes, invoices, CRM — from first contact to payment received', color: '#00D4AA' },
+    { icon: <FolderKanban size={24} />, title: 'Deliver on time', desc: 'Projects, tasks, deadlines — all synced to your calendar and budget', color: '#7C3AED' },
+    { icon: <Cpu size={24} />, title: 'Ask your AI anything', desc: '"Create an invoice" "Run payroll" "Show me cash flow" — just type it', color: '#6366F1' },
+  ];
+
+  return (
+    <section style={{ padding: '100px 24px', background: '#fff' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+        <motion.div
+          style={{ textAlign: 'center', marginBottom: '3.5rem' }}
+          variants={fadeInUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          <h2 style={{ fontSize: 'clamp(1.8rem, 3.5vw, 2.4rem)', fontWeight: 800, color: '#0A1F3E' }}>
+            Everything your business needs.<br />
+            <span style={{ color: '#00D4AA' }}>Nothing it doesn't.</span>
+          </h2>
+        </motion.div>
+
+        <motion.div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '1.5rem',
+          }}
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+        >
+          {outcomes.map((item, i) => (
+            <motion.div
+              key={i}
+              variants={fadeInUp}
+              style={{
+                display: 'flex',
+                gap: '1rem',
+                padding: '1.5rem',
+                borderRadius: '16px',
+                border: '1px solid #f1f5f9',
+                transition: 'all 0.3s ease',
+              }}
+              whileHover={{ background: '#f8fafc', borderColor: '#e2e8f0' }}
+            >
+              <div
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: `${item.color}15`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: item.color,
+                  flexShrink: 0,
+                }}
+              >
+                {item.icon}
+              </div>
+              <div>
+                <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#0A1F3E', marginBottom: '0.25rem' }}>
+                  {item.title}
+                </h4>
+                <p style={{ color: '#64748b', fontSize: '0.9rem', lineHeight: 1.5 }}>{item.desc}</p>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+// FoundingMemberCTA — Urgency-driven closing CTA
+const FoundingMemberCTA: React.FC = () => {
+  const navigate = useNavigate();
+  const [spotsLeft] = useState(50);
+
+  return (
+    <section
+      style={{
+        padding: '100px 24px',
+        background: 'linear-gradient(160deg, #0A1F3E 0%, #0D2B4E 40%, #0A1F3E 100%)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <ParticleBackground />
+      <motion.div
+        style={{
+          maxWidth: '700px',
+          margin: '0 auto',
+          textAlign: 'center',
+          position: 'relative',
+          zIndex: 2,
+        }}
+        variants={fadeInUp}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }}
+      >
+        <motion.div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'rgba(0,212,170,0.12)',
+            border: '1px solid rgba(0,212,170,0.3)',
+            padding: '8px 20px',
+            borderRadius: '50px',
+            marginBottom: '2rem',
+          }}
+        >
+          <Award size={16} style={{ color: '#00D4AA' }} />
+          <span style={{ color: '#00D4AA', fontSize: '0.9rem', fontWeight: 600 }}>
+            Only {spotsLeft} founding spots available
+          </span>
+        </motion.div>
+
+        <h2
+          style={{
+            fontSize: 'clamp(1.8rem, 3.5vw, 2.8rem)',
+            fontWeight: 800,
+            color: '#fff',
+            marginBottom: '1rem',
+            lineHeight: 1.2,
+          }}
+        >
+          Stop paying for potential.<br />
+          <span style={{ color: '#00D4AA' }}>Pay for everything. R1,499/mo.</span>
+        </h2>
+
+        <p
+          style={{
+            color: 'rgba(255,255,255,0.7)',
+            fontSize: '1.1rem',
+            lineHeight: 1.7,
+            maxWidth: '550px',
+            margin: '0 auto 2.5rem',
+          }}
+        >
+          Every module. 10 users. Price locked for 12 months.
+          No surprises. No upgrades needed. Just everything you need to run your business.
+        </p>
+
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' as const }}>
+          <motion.button
+            onClick={() => navigate('/pricing')}
+            style={{
+              padding: '18px 40px',
+              borderRadius: '14px',
+              border: 'none',
+              background: 'linear-gradient(135deg, #00D4AA, #00A884)',
+              color: '#fff',
+              fontWeight: 700,
+              fontSize: '1.1rem',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '10px',
+              boxShadow: '0 8px 32px rgba(0,212,170,0.3)',
+            }}
+            whileHover={{ scale: 1.04, boxShadow: '0 12px 40px rgba(0,212,170,0.4)' }}
+            whileTap={{ scale: 0.97 }}
+          >
+            Claim Your Founding Spot <ArrowRight size={20} />
+          </motion.button>
+        </div>
+
+        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.85rem', marginTop: '1.5rem' }}>
+          14-day free trial · No credit card required · Cancel anytime
+        </p>
+      </motion.div>
+    </section>
+  );
+};
+
+// QuickShowcase removed — replaced by PainToSolution and WhatYouGet on homepage
 
 // Module Showcase — Real modules only
 export const ModuleShowcase: React.FC = () => {
@@ -1194,7 +1654,14 @@ export const Footer: React.FC = () => {
       <div className="container">
         <div className="footer-grid">
           <div className="footer-brand">
-            <div className="logo"><Layers size={28} /><span>SiyaBusa</span></div>
+            <div className="logo">
+              <svg width="32" height="32" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs><linearGradient id="footGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#00D4AA"/><stop offset="100%" stopColor="#0A1F3E"/></linearGradient></defs>
+                <rect width="64" height="64" rx="14" fill="url(#footGrad)"/>
+                <text x="32" y="45" fontFamily="system-ui,-apple-system,sans-serif" fontSize="34" fontWeight="800" fill="white" textAnchor="middle" letterSpacing="-1">SB</text>
+              </svg>
+              <span>SiyaBusa</span>
+            </div>
             <p>The AI-native business operating system built for South African enterprises.</p>
             <p className="footer-company">A product of Masaphokati Technologies (Pty) Ltd</p>
           </div>
@@ -1259,104 +1726,17 @@ export const WebsiteLayout: React.FC<{ children: React.ReactNode; title?: string
   );
 };
 
-// Modules Preview — compact grid for Home page
-const ModulesPreview: React.FC = () => {
-  const navigate = useNavigate();
-  const modules = [
-    { icon: <BarChart3 size={24} />, name: 'Financial Hub', color: '#F4B400' },
-    { icon: <ShoppingCart size={24} />, name: 'Sales & CRM', color: '#00D4AA' },
-    { icon: <FolderKanban size={24} />, name: 'Projects Hub', color: '#7C3AED' },
-    { icon: <Users size={24} />, name: 'HR & Payroll', color: '#EC4899' },
-    { icon: <Package size={24} />, name: 'Inventory', color: '#3B82F6' },
-    { icon: <Building2 size={24} />, name: 'Assets Hub', color: '#F59E0B' },
-    { icon: <Briefcase size={24} />, name: 'Purchase Hub', color: '#EF4444' },
-    { icon: <Factory size={24} />, name: 'Manufacturing', color: '#6366F1' },
-    { icon: <Landmark size={24} />, name: 'Banking Hub', color: '#0EA5E9' },
-    { icon: <ClipboardCheck size={24} />, name: 'Audit-Ready', color: '#22C55E' },
-    { icon: <Shield size={24} />, name: 'Regulatory', color: '#A855F7' },
-    { icon: <Sparkles size={24} />, name: 'AI Assistant', color: '#F97316' }
-  ];
 
-  return (
-    <section className="modules-preview">
-      <div className="container">
-        <motion.div className="section-header" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          <span className="section-badge">15+ Integrated Modules</span>
-          <h2>Everything Your Business Needs. One Platform.</h2>
-        </motion.div>
-        <motion.div className="modules-preview-grid" variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          {modules.map((mod, i) => (
-            <motion.div key={i} className="module-preview-card" variants={fadeInUp} onClick={() => navigate('/features')} style={{ cursor: 'pointer' }}>
-              <div className="module-preview-icon" style={{ color: mod.color }}>{mod.icon}</div>
-              <span>{mod.name}</span>
-            </motion.div>
-          ))}
-        </motion.div>
-        <motion.div style={{ textAlign: 'center', marginTop: '2rem' }} variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          <button className="btn-primary btn-large" onClick={() => navigate('/features')}>
-            Explore All Features <ArrowRight size={18} />
-          </button>
-        </motion.div>
-      </div>
-    </section>
-  );
-};
-
-// Compliance Banner — teaser for Home page
-const ComplianceBanner: React.FC = () => {
-  const navigate = useNavigate();
-  return (
-    <section className="compliance-banner">
-      <div className="container">
-        <motion.div className="compliance-banner-content" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          <div className="compliance-banner-badges">
-            <span className="cbadge"><ClipboardCheck size={16} /> Audit-Ready Hub</span>
-            <span className="cbadge"><Shield size={16} /> Regulatory Hub</span>
-            <span className="cbadge"><Landmark size={16} /> SARS Sentinel</span>
-          </div>
-          <h2>Audit-Ready & SARS Compliant — By Design</h2>
-          <p>Most ERPs bolt compliance on as an afterthought. SiyaBusa was built with audit readiness, regulatory compliance, and SARS integration at its core. This is what makes us different.</p>
-          <button className="btn-primary btn-large" onClick={() => navigate('/compliance')}>
-            See Our Compliance Suite <ArrowRight size={18} />
-          </button>
-        </motion.div>
-      </div>
-    </section>
-  );
-};
-
-// CTA Strip for Home page
-const CTAStrip: React.FC = () => {
-  const navigate = useNavigate();
-  return (
-    <section className="cta-strip">
-      <div className="container">
-        <motion.div className="cta-strip-content" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          <h2>Ready to Transform Your Business?</h2>
-          <p>See SiyaBusa in action with a personalised demo — tailored to your industry and needs.</p>
-          <div className="cta-strip-buttons">
-            <button className="btn-primary btn-large" onClick={() => navigate('/demo')}>
-              <Play size={18} /> Request a Demo
-            </button>
-            <button className="btn-ghost btn-large" onClick={() => navigate('/pricing')}>
-              View Pricing <ArrowRight size={18} />
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-};
-
-// Home Page — concise overview
+// Home Page — emotional, solutions-focused design
 const LandingPage: React.FC = () => {
   return (
-    <WebsiteLayout title="SiyaBusa ERP — AI-Native Business Operating System for South Africa">
-      <HeroSection />
-      <ValueProposition />
-      <ModulesPreview />
-      <ComplianceBanner />
-      <CTAStrip />
+    <WebsiteLayout title="SiyaBusa ERP — Your Business is Complex. Managing It Shouldn't Be.">
+      <EmotionalHero />
+      <PainToSolution />
+      <TrustStrip />
+      <WhatYouGet />
+      <SimpleSteps />
+      <FoundingMemberCTA />
     </WebsiteLayout>
   );
 };

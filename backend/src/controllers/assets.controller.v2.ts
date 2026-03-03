@@ -183,7 +183,7 @@ export async function getAssetById(req: TenantRequest, res: Response) {
 
     // Get depreciation schedule
     const depreciationResult = await pool.query(`
-      SELECT * FROM assets.depreciation_schedule
+      SELECT * FROM assets.asset_depreciation_schedule
       WHERE asset_id = $1 AND tenant_id = $2
       ORDER BY period_number ASC
     `, [id, tenantId]);
@@ -878,6 +878,96 @@ export async function createAssetMaintenance(req: TenantRequest, res: Response) 
 // DEPRECIATION
 // =====================================================
 
+export async function getDepreciationSchedule(req: TenantRequest, res: Response) {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { page = '1', limit = '50', asset_id, posted } = req.query;
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.max(1, Math.min(200, parseInt(limit as string, 10) || 50));
+    const offset = (pageNum - 1) * limitNum;
+
+    const postedFilter = posted === 'true' ? true : posted === 'false' ? false : null;
+
+    try {
+      const where: string[] = ['ds.tenant_id = $1'];
+      const params: any[] = [tenantId];
+      let paramIndex = 2;
+
+      if (asset_id) {
+        where.push(`ds.asset_id = $${paramIndex++}`);
+        params.push(asset_id);
+      }
+
+      if (postedFilter !== null) {
+        where.push(`ds.posted_to_gl = $${paramIndex++}`);
+        params.push(postedFilter);
+      }
+
+      params.push(limitNum, offset);
+
+      const result = await pool.query(
+        `SELECT ds.*, ds.posted_to_gl AS is_posted, fa.asset_number, fa.asset_name
+         FROM assets.asset_depreciation_schedule ds
+         JOIN assets.fixed_assets fa ON ds.asset_id = fa.asset_id
+         WHERE ${where.join(' AND ')}
+         ORDER BY ds.depreciation_date DESC, ds.period_number DESC
+         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+        params
+      );
+
+      return res.json({
+        success: true,
+        data: result.rows,
+        page: pageNum,
+        limit: limitNum
+      });
+    } catch {
+      const where: string[] = ['fa.tenant_id = $1'];
+      const params: any[] = [tenantId];
+      let paramIndex = 2;
+
+      if (asset_id) {
+        where.push(`ads.asset_id = $${paramIndex++}`);
+        params.push(asset_id);
+      }
+
+      if (postedFilter !== null) {
+        where.push(`ads.posted_to_gl = $${paramIndex++}`);
+        params.push(postedFilter);
+      }
+
+      params.push(limitNum, offset);
+
+      const result = await pool.query(
+        `SELECT ads.*, ads.posted_to_gl AS is_posted, fa.asset_number, fa.asset_name
+         FROM asset_depreciation_schedule ads
+         JOIN fixed_assets fa ON ads.asset_id = fa.asset_id
+         WHERE ${where.join(' AND ')}
+         ORDER BY ads.depreciation_date DESC
+         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+        params
+      );
+
+      return res.json({
+        success: true,
+        data: result.rows,
+        page: pageNum,
+        limit: limitNum
+      });
+    }
+  } catch (error: any) {
+    if (error.message === 'Tenant ID not found') {
+      return res.status(401).json({ success: false, message: 'Unauthorized - tenant not found' });
+    }
+    console.error('Error fetching depreciation schedule:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to fetch depreciation schedule',
+      error: error.message
+    });
+  }
+}
+
 export async function runDepreciation(req: TenantRequest, res: Response) {
   try {
     const { tenantId, userId } = getTenantContext(req);
@@ -895,7 +985,7 @@ export async function runDepreciation(req: TenantRequest, res: Response) {
       SELECT * FROM assets.fixed_assets
       WHERE tenant_id = $1 
       AND asset_status = 'ACTIVE'
-      AND in_service_date <= $2
+      AND depreciation_start_date <= $2
     `, [tenantId, period_end_date]);
 
     let processedCount = 0;
@@ -904,8 +994,8 @@ export async function runDepreciation(req: TenantRequest, res: Response) {
     for (const asset of assetsResult.rows) {
       // Get next depreciation period for this asset
       const nextPeriod = await pool.query(`
-        SELECT * FROM assets.depreciation_schedule
-        WHERE asset_id = $1 AND tenant_id = $2 AND is_posted = false
+        SELECT * FROM assets.asset_depreciation_schedule
+        WHERE asset_id = $1 AND tenant_id = $2 AND status != 'posted'
         ORDER BY period_number ASC
         LIMIT 1
       `, [asset.asset_id, tenantId]);
@@ -915,16 +1005,17 @@ export async function runDepreciation(req: TenantRequest, res: Response) {
         
         // Mark as posted
         await pool.query(`
-          UPDATE assets.depreciation_schedule
-          SET is_posted = true, posted_date = CURRENT_DATE, posted_by = $1
-          WHERE schedule_id = $2 AND tenant_id = $3
-        `, [userId, period.schedule_id, tenantId]);
+          UPDATE assets.asset_depreciation_schedule
+          SET status = 'posted', posted_at = CURRENT_TIMESTAMP, posted_to_gl = true
+          WHERE schedule_id = $1 AND tenant_id = $2
+        `, [period.schedule_id, tenantId]);
 
         // Update asset book value
         await pool.query(`
           UPDATE assets.fixed_assets
           SET accumulated_depreciation = accumulated_depreciation + $1,
-              book_value = purchase_cost - accumulated_depreciation - $1,
+              net_book_value = COALESCE(initial_cost, purchase_price, 0) - accumulated_depreciation - $1,
+              last_depreciation_date = CURRENT_DATE,
               updated_by = $2,
               updated_at = CURRENT_TIMESTAMP
           WHERE asset_id = $3 AND tenant_id = $4
@@ -965,29 +1056,110 @@ export async function getAssetDashboard(req: TenantRequest, res: Response) {
   try {
     const { tenantId } = getTenantContext(req);
 
-    // Simplified dashboard - count from fixed_assets
-    const assetsResult = await pool.query(`
-      SELECT COUNT(*) as total FROM assets.fixed_assets WHERE tenant_id = $1
-    `, [tenantId]);
+    let summary: any;
+    let byCategory: any[] = [];
+    let upcomingMaintenance: any[] = [];
 
-    const categoriesResult = await pool.query(`
-      SELECT COUNT(*) as total FROM assets.asset_categories WHERE tenant_id = $1
-    `, [tenantId]);
+    try {
+      const summaryResult = await pool.query(`
+        SELECT
+          COUNT(*) AS total_assets,
+          COALESCE(SUM(acquisition_cost), 0) AS total_acquisition_cost,
+          COALESCE(SUM(book_value), 0) AS total_book_value,
+          COALESCE(SUM(accumulated_depreciation), 0) AS total_accumulated_depreciation,
+          COUNT(*) FILTER (WHERE asset_status = 'ACTIVE') AS active_assets,
+          COUNT(*) FILTER (WHERE asset_status = 'UNDER_MAINTENANCE') AS under_maintenance
+        FROM assets.fixed_assets
+        WHERE tenant_id = $1
+      `, [tenantId]);
+
+      const categoriesResult = await pool.query(`
+        SELECT COUNT(*) AS total_categories
+        FROM assets.asset_categories
+        WHERE tenant_id = $1
+      `, [tenantId]);
+
+      byCategory = (await pool.query(`
+        SELECT
+          ac.category_name,
+          COUNT(fa.asset_id) AS asset_count,
+          COALESCE(SUM(fa.book_value), 0) AS total_book_value
+        FROM assets.asset_categories ac
+        LEFT JOIN assets.fixed_assets fa ON ac.category_id = fa.category_id AND fa.tenant_id = $1
+        WHERE ac.tenant_id = $1
+        GROUP BY ac.category_name
+        ORDER BY asset_count DESC
+      `, [tenantId])).rows;
+
+      upcomingMaintenance = (await pool.query(`
+        SELECT am.*, fa.asset_number, fa.asset_name
+        FROM assets.asset_maintenance am
+        JOIN assets.fixed_assets fa ON am.asset_id = fa.asset_id
+        WHERE am.tenant_id = $1
+          AND am.next_maintenance_date IS NOT NULL
+          AND am.next_maintenance_date >= CURRENT_DATE
+        ORDER BY am.next_maintenance_date ASC
+        LIMIT 10
+      `, [tenantId])).rows;
+
+      summary = {
+        ...summaryResult.rows[0],
+        total_categories: parseInt(categoriesResult.rows[0]?.total_categories || '0', 10)
+      };
+    } catch {
+      const summaryResult = await pool.query(`
+        SELECT
+          COUNT(*) AS total_assets,
+          COALESCE(SUM(initial_cost), 0) AS total_acquisition_cost,
+          COALESCE(SUM(net_book_value), 0) AS total_book_value,
+          COALESCE(SUM(accumulated_depreciation), 0) AS total_accumulated_depreciation,
+          COUNT(*) FILTER (WHERE asset_status = 'ACTIVE') AS active_assets,
+          COUNT(*) FILTER (WHERE asset_status = 'UNDER_MAINTENANCE') AS under_maintenance
+        FROM fixed_assets
+        WHERE tenant_id = $1
+      `, [tenantId]);
+
+      const categoriesResult = await pool.query(`
+        SELECT COUNT(*) AS total_categories
+        FROM asset_categories
+        WHERE tenant_id = $1
+      `, [tenantId]);
+
+      byCategory = (await pool.query(`
+        SELECT
+          ac.category_name,
+          COUNT(fa.asset_id) AS asset_count,
+          COALESCE(SUM(fa.net_book_value), 0) AS total_book_value
+        FROM asset_categories ac
+        LEFT JOIN fixed_assets fa ON ac.category_id = fa.category_id AND fa.tenant_id = $1
+        WHERE ac.tenant_id = $1
+        GROUP BY ac.category_name
+        ORDER BY asset_count DESC
+      `, [tenantId])).rows;
+
+      upcomingMaintenance = (await pool.query(`
+        SELECT am.*, fa.asset_number, fa.asset_name
+        FROM asset_maintenance am
+        JOIN fixed_assets fa ON am.asset_id = fa.asset_id
+        WHERE fa.tenant_id = $1
+          AND am.next_maintenance_date IS NOT NULL
+          AND am.next_maintenance_date >= CURRENT_DATE
+        ORDER BY am.next_maintenance_date ASC
+        LIMIT 10
+      `, [tenantId])).rows;
+
+      summary = {
+        ...summaryResult.rows[0],
+        total_categories: parseInt(categoriesResult.rows[0]?.total_categories || '0', 10)
+      };
+    }
 
     res.json({
       success: true,
       data: {
-        summary: {
-          total_assets: parseInt(assetsResult.rows[0]?.total || '0'),
-          total_categories: parseInt(categoriesResult.rows[0]?.total || '0'),
-          total_acquisition_cost: 0,
-          total_book_value: 0,
-          total_accumulated_depreciation: 0,
-          active_assets: parseInt(assetsResult.rows[0]?.total || '0'),
-          under_maintenance: 0
-        },
-        byCategory: [],
-        upcomingMaintenance: []
+        summary,
+        byCategory,
+        upcomingMaintenance
       }
     });
 
@@ -1022,6 +1194,7 @@ export default {
   createAssetTransfer,
   getAssetMaintenance,
   createAssetMaintenance,
+  getDepreciationSchedule,
   runDepreciation,
   getAssetDashboard
 };

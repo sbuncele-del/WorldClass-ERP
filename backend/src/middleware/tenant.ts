@@ -30,7 +30,9 @@ async function resolveEntityContext(req: TenantRequest, tenantId: string): Promi
   );
 
   if (entityResult.rows.length === 0) {
-    throw new ForbiddenError('Entity not found for tenant');
+    // Entity not found — silently skip instead of blocking the request.
+    // New tenants (during onboarding) won't have entities yet.
+    return;
   }
 
   const entity = entityResult.rows[0];

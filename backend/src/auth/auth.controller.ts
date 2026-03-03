@@ -81,7 +81,7 @@ export class AuthController {
       }
 
       // Plan validation
-      const validPlans = ['starter', 'professional', 'enterprise'];
+      const validPlans = ['starter', 'professional', 'enterprise', 'founding-member'];
       if (!validPlans.includes(plan)) {
         res.status(400).json({ error: 'Invalid plan', validPlans });
         return;

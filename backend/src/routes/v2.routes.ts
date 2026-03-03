@@ -1446,15 +1446,18 @@ router.post('/healthcare/automation/full-journey', async (req: any, res) => {
 // Inbound email webhook from Resend
 router.post('/webhooks/email/inbound', CommunicationsControllerV2.receiveInboundEmail);
 
+// ============================================================================
+// ACCOUNTANT PORTAL - Public endpoint (no auth/tenant middleware)
+// ============================================================================
+import AccountantPortalV2 from '../controllers/accountant-portal.controller.v2';
+router.post('/accountant-portal/invitations/accept', AccountantPortalV2.acceptInvitation);
+
 // Apply tenant middleware to remaining v2 routes
 router.use(tenantMiddleware);
 
 // ============================================================================
 // FIX BROKEN ENDPOINTS FIRST (priority over controller routes)
 // ============================================================================
-router.get('/assets/disposals', async (req: any, res) => {
-  res.json({ success: true, data: [] });
-});
 router.get('/audit/logs', async (req: any, res) => {
   try {
     const tenantId = req.tenant?.id || req.headers['x-tenant-id'] || 1;
@@ -1975,15 +1978,7 @@ router.get('/assets/disposals', AssetsControllerV2.getAssetDisposals);
 router.post('/assets/disposals', AssetsControllerV2.createAssetDisposal);
 router.get('/assets/transfers', AssetsControllerV2.getAssetTransfers);
 router.post('/assets/transfers', AssetsControllerV2.createAssetTransfer);
-router.get('/assets/depreciation', async (req: any, res) => {
-  try {
-    const tenantId = req.tenant?.id || req.user?.tenantId || req.headers['x-tenant-id'] || 1;
-    const result = await query('SELECT * FROM asset_depreciation_schedule LIMIT 100', []);
-    res.json({ success: true, data: result.rows || [] });
-  } catch (e) {
-    res.json({ success: true, data: [] });
-  }
-});
+router.get('/assets/depreciation', AssetsControllerV2.getDepreciationSchedule);
 router.post('/assets/depreciation/run', AssetsControllerV2.runDepreciation);
 router.get('/assets/:id', AssetsControllerV2.getAssetById);
 router.post('/assets', AssetsControllerV2.createAsset);
@@ -5274,5 +5269,35 @@ Respond ONLY with valid JSON array, no other text.`;
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// ============================================================================
+// ACCOUNTANT PORTAL (authenticated routes)
+// ============================================================================
+
+// Firm management
+router.get('/accountant-portal/firm', AccountantPortalV2.getFirmProfile);
+router.put('/accountant-portal/firm', AccountantPortalV2.createOrUpdateFirm);
+router.get('/accountant-portal/dashboard', AccountantPortalV2.getFirmDashboard);
+
+// Client management
+router.get('/accountant-portal/clients', AccountantPortalV2.getClients);
+router.get('/accountant-portal/clients/:clientTenantId', AccountantPortalV2.getClientDetail);
+router.post('/accountant-portal/clients', AccountantPortalV2.addExistingClient);
+router.delete('/accountant-portal/clients/:clientTenantId', AccountantPortalV2.removeClient);
+router.put('/accountant-portal/clients/:clientTenantId', AccountantPortalV2.updateClientEngagement);
+
+// Client context switching
+router.post('/accountant-portal/switch/:clientTenantId', AccountantPortalV2.switchToClient);
+router.post('/accountant-portal/switch-back', AccountantPortalV2.switchBackToFirm);
+
+// Invitations (authenticated)
+router.post('/accountant-portal/invitations/client', AccountantPortalV2.inviteClient);
+router.post('/accountant-portal/invitations/team', AccountantPortalV2.inviteTeamMember);
+router.get('/accountant-portal/invitations', AccountantPortalV2.getInvitations);
+router.delete('/accountant-portal/invitations/:id', AccountantPortalV2.cancelInvitation);
+
+// Activity & Reports
+router.get('/accountant-portal/activity', AccountantPortalV2.getActivityLog);
+router.get('/accountant-portal/financial-summary', AccountantPortalV2.getClientFinancialSummary);
 
 export default router;

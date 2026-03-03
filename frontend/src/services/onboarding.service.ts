@@ -51,19 +51,21 @@ class OnboardingService {
    * Get current onboarding status
    */
   async getOnboardingStatus(): Promise<OnboardingStatus> {
-    const response = await apiClient.get<OnboardingStatus>('/api/onboarding/status');
-    return response.data;
+    const response = await apiClient.get('/api/onboarding/status');
+    // Backend returns { success, data: { completed, currentStep, completedSteps, data } }
+    return response.data?.data || response.data;
   }
 
   /**
    * Update onboarding data
    */
   async updateOnboarding(step: number, data: Partial<OnboardingData>): Promise<OnboardingStatus> {
-    const response = await apiClient.patch<OnboardingStatus>('/api/onboarding', {
+    const response = await apiClient.patch('/api/onboarding', {
       step,
       data,
     });
-    return response.data;
+    // Backend returns { success, data: { completed, currentStep, ... } }
+    return response.data?.data || response.data;
   }
 
   /**

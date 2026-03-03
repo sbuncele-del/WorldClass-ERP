@@ -122,6 +122,7 @@ const CommunicationsHub = lazy(() => import('./modules/communication/Communicati
 const AuditReadyHub = lazy(() => import('./modules/compliance/AuditReadyHub'));
 const RegulatoryHub = lazy(() => import('./modules/compliance/RegulatoryHub'));
 const AdminHub = lazy(() => import('./modules/admin/AdminHub'));
+const AccountantPortalHub = lazy(() => import('./modules/accountant-portal/AccountantPortalHub'));
 
 // Financial Sub-Pages
 const Dimensions = lazy(() => import('./pages/Dimensions'));
@@ -227,6 +228,7 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
             <Route path="/sars/*" element={<SARSSentinel />} />
             <Route path="/admin/*" element={<AdminHub />} />
             <Route path="/admin-hub/*" element={<AdminHub />} />
+            <Route path="/accountant-portal/*" element={<AccountantPortalHub />} />
             <Route path="/multi-entity" element={<MultiEntityHub />} />
             <Route path="/multi-entity/:entityId" element={<EntityDetails />} />
             <Route path="/profile" element={<ProfileSettings />} />

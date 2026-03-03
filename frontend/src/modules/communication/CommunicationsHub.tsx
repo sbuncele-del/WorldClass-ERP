@@ -182,6 +182,37 @@ interface RealEmail {
   attachments_json?: string;
 }
 
+const normalizeMeeting = (record: any): Meeting => {
+  const rawStatus = record?.status || 'scheduled';
+  const normalizedStatus: Meeting['status'] =
+    rawStatus === 'in_progress' ? 'live' :
+    rawStatus === 'completed' ? 'ended' :
+    (['scheduled', 'live', 'ended', 'cancelled'].includes(rawStatus) ? rawStatus : 'scheduled');
+
+  const rawType = record?.type || record?.meeting_type || 'video';
+  const normalizedType: Meeting['type'] =
+    rawType === 'instant' ? 'video' :
+    (['video', 'audio', 'webinar'].includes(rawType) ? rawType : 'video');
+
+  const scheduledStart = record?.scheduledStart || record?.scheduled_start || record?.actual_start || new Date().toISOString();
+  const scheduledEnd = record?.scheduledEnd || record?.scheduled_end || record?.actual_end || scheduledStart;
+
+  return {
+    id: String(record?.id || ''),
+    title: record?.title || 'Meeting',
+    description: record?.description || '',
+    host: record?.organizer_name || record?.host_name || record?.host || 'Host',
+    participants: Array.isArray(record?.participants) ? record.participants : [],
+    externalGuests: Array.isArray(record?.externalGuests) ? record.externalGuests : [],
+    scheduledStart,
+    scheduledEnd,
+    status: normalizedStatus,
+    type: normalizedType,
+    meetingLink: record?.meetingLink || record?.room_url || record?.joinUrl || '',
+    recordingUrl: record?.recording_url || record?.recordingUrl
+  };
+};
+
 const CommunicationsHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [composeModalVisible, setComposeModalVisible] = useState(false);
@@ -239,7 +270,8 @@ const CommunicationsHub: React.FC = () => {
         setTemplates(Array.isArray(templatesRes.data?.data) ? templatesRes.data.data : templatesRes.data?.templates || []);
         setCampaigns(Array.isArray(campaignsRes.data?.data) ? campaignsRes.data.data : campaignsRes.data?.campaigns || []);
         setAnnouncements(Array.isArray(announcementsRes.data?.data) ? announcementsRes.data.data : announcementsRes.data?.announcements || []);
-        setMeetings(Array.isArray(meetingsRes.data?.data) ? meetingsRes.data.data : meetingsRes.data?.meetings || []);
+        const rawMeetings = Array.isArray(meetingsRes.data?.data) ? meetingsRes.data.data : meetingsRes.data?.meetings || [];
+        setMeetings(rawMeetings.map((meeting: any) => normalizeMeeting(meeting)));
         setNotifications(Array.isArray(notificationsRes.data?.data) ? notificationsRes.data.data : notificationsRes.data?.notifications || []);
       } catch (error) {
         console.error('Failed to fetch communications data:', error);
@@ -493,42 +525,29 @@ const CommunicationsHub: React.FC = () => {
   const createInstantMeeting = useCallback(async () => {
     setMeetingLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/meetings/instant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+      const response = await apiClient.post('/api/v2/communications/meetings/instant', {
+        title: 'Instant Meeting'
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create meeting');
-      }
-      
-      const data = await response.json();
-      
-      if (data.success && data.meeting) {
+      const data = response.data;
+
+      if (data.success && data.data) {
+        const meetingData = data.data;
+        const joinUrl = meetingData.joinUrl || meetingData.room_url;
+
         // Add the new meeting to the list
-        const newMeeting: Meeting = {
-          id: data.meeting.id,
-          title: 'Instant Meeting',
-          description: 'Quick video meeting',
-          host: 'You',
-          participants: [],
-          externalGuests: [],
-          scheduledStart: new Date().toISOString(),
-          scheduledEnd: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-          status: 'live',
-          type: 'video',
-          meetingLink: data.meeting.hostUrl
-        };
+        const newMeeting: Meeting = normalizeMeeting({
+          ...meetingData,
+          status: 'in_progress',
+          room_url: joinUrl
+        });
         
         setMeetings(prev => [newMeeting, ...prev]);
         message.success('Meeting created! Opening video call...');
         
         // Open the meeting in a new tab
-        window.open(data.meeting.hostUrl, '_blank');
+        if (joinUrl) {
+          window.open(joinUrl, '_blank');
+        }
         
         // Show meeting link for sharing
         Modal.info({
@@ -537,7 +556,7 @@ const CommunicationsHub: React.FC = () => {
             <div>
               <p>Your meeting is ready! Share this link with participants:</p>
               <Input.TextArea 
-                value={data.meeting.guestUrl} 
+                value={joinUrl} 
                 readOnly 
                 autoSize 
                 style={{ marginBottom: 16 }}
@@ -545,7 +564,7 @@ const CommunicationsHub: React.FC = () => {
               <Button 
                 icon={<CopyOutlined />}
                 onClick={() => {
-                  navigator.clipboard.writeText(data.meeting.guestUrl);
+                  navigator.clipboard.writeText(joinUrl);
                   message.success('Link copied!');
                 }}
               >
@@ -568,42 +587,38 @@ const CommunicationsHub: React.FC = () => {
   const scheduleMeeting = useCallback(async (values: any) => {
     setMeetingLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('/api/meetings/schedule', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          title: values.title,
-          startTime: values.startTime.toISOString(),
-          durationMinutes: values.duration || 60,
-          maxParticipants: values.maxParticipants || 10,
-          enableWaitingRoom: values.enableWaitingRoom || false
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to schedule meeting');
+      const title = values.title || values.meetingTitle;
+      const description = values.description || values.meetingDescription || '';
+      const durationMinutes = Number(values.duration || 60);
+
+      let startDateTime = new Date();
+      if (values.meetingDate) {
+        const selectedDate = values.meetingDate.toDate ? values.meetingDate.toDate() : new Date(values.meetingDate);
+        startDateTime = new Date(selectedDate);
+        if (values.meetingTime) {
+          const selectedTime = values.meetingTime.toDate ? values.meetingTime.toDate() : new Date(values.meetingTime);
+          startDateTime.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
+        }
       }
+      const endDateTime = new Date(startDateTime.getTime() + durationMinutes * 60 * 1000);
+
+      const participantUserIds = Array.isArray(values.participants) ? values.participants : [];
+
+      const response = await apiClient.post('/api/v2/communications/meetings', {
+        title,
+        scheduledStart: startDateTime.toISOString(),
+        scheduledEnd: endDateTime.toISOString(),
+        participantUserIds
+      });
+      const data = response.data;
       
-      const data = await response.json();
-      
-      if (data.success && data.meeting) {
-        const newMeeting: Meeting = {
-          id: data.meeting.id,
-          title: data.meeting.title,
-          description: values.description,
-          host: 'You',
-          participants: values.participants || [],
-          externalGuests: values.externalGuests || [],
-          scheduledStart: data.meeting.startTime,
-          scheduledEnd: data.meeting.endTime,
-          status: 'scheduled',
-          type: 'video',
-          meetingLink: data.meeting.hostUrl
-        };
+      if (data.success && data.data) {
+        const newMeeting: Meeting = normalizeMeeting({
+          ...data.data,
+          description,
+          participants: participantUserIds,
+          externalGuests: values.externalGuests || []
+        });
         
         setMeetings(prev => [newMeeting, ...prev]);
         message.success('Meeting scheduled successfully!');
@@ -617,7 +632,7 @@ const CommunicationsHub: React.FC = () => {
           okText: 'Copy Link',
           cancelText: 'Later',
           onOk: () => {
-            navigator.clipboard.writeText(data.meeting.guestUrl);
+            navigator.clipboard.writeText(newMeeting.meetingLink);
             message.success('Meeting link copied to clipboard!');
           }
         });
@@ -1640,8 +1655,8 @@ const CommunicationsHub: React.FC = () => {
               key: 'participants',
               render: (_, record) => (
                 <div>
-                  <Text>{record.participants.length} internal</Text>
-                  {record.externalGuests.length > 0 && (
+                  <Text>{Array.isArray(record.participants) ? record.participants.length : 0} internal</Text>
+                  {Array.isArray(record.externalGuests) && record.externalGuests.length > 0 && (
                     <><br /><Text type="secondary" style={{ fontSize: 12 }}>{record.externalGuests.length} external guests</Text></>
                   )}
                 </div>
@@ -1650,13 +1665,21 @@ const CommunicationsHub: React.FC = () => {
             {
               title: 'Schedule',
               key: 'schedule',
-              render: (_, record) => (
-                <div>
-                  <Tag icon={<CalendarOutlined />}>{record.scheduledStart.split(' ')[0]}</Tag>
-                  <br />
-                  <Text type="secondary" style={{ fontSize: 11 }}>{record.scheduledStart.split(' ')[1]} - {record.scheduledEnd.split(' ')[1]}</Text>
-                </div>
-              )
+              render: (_, record) => {
+                const start = new Date(record.scheduledStart);
+                const end = new Date(record.scheduledEnd);
+                const startDate = Number.isNaN(start.getTime()) ? record.scheduledStart : start.toLocaleDateString('en-ZA');
+                const startTime = Number.isNaN(start.getTime()) ? '' : start.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+                const endTime = Number.isNaN(end.getTime()) ? '' : end.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+
+                return (
+                  <div>
+                    <Tag icon={<CalendarOutlined />}>{startDate}</Tag>
+                    <br />
+                    <Text type="secondary" style={{ fontSize: 11 }}>{startTime && endTime ? `${startTime} - ${endTime}` : 'Time TBD'}</Text>
+                  </div>
+                );
+              }
             },
             {
               title: 'Status',
@@ -2322,32 +2345,19 @@ const CommunicationsHub: React.FC = () => {
         width={700}
         footer={[
           <Button key="cancel" onClick={() => setMeetingModalVisible(false)}>Cancel</Button>,
-          <Button key="instant" type="default" icon={<PlayCircleOutlined />} onClick={() => {
-            message.success('Instant meeting started! Link: meet.worldclass-erp.com/instant-' + Date.now().toString(36));
+          <Button key="instant" type="default" icon={<PlayCircleOutlined />} loading={meetingLoading} onClick={async () => {
+            await createInstantMeeting();
             setMeetingModalVisible(false);
           }}>
             Start Now
           </Button>,
-          <Button key="schedule" type="primary" icon={<CalendarOutlined />} onClick={() => {
-            const newMeeting: Meeting = {
-              id: 'MTG-' + Date.now().toString(36).toUpperCase(),
-              title: form.getFieldValue('meetingTitle') || 'New Meeting',
-              description: form.getFieldValue('meetingDescription') || '',
-              host: 'Current User',
-              participants: ['Invited Team Members'],
-              externalGuests: form.getFieldValue('externalGuests') || [],
-              scheduledStart: '2024-06-16 10:00',
-              scheduledEnd: '2024-06-16 11:00',
-              status: 'scheduled',
-              type: form.getFieldValue('meetingType') || 'video',
-              meetingLink: 'https://meet.worldclass-erp.com/' + Date.now().toString(36),
-              passcode: Math.random().toString(36).substring(2, 8).toUpperCase(),
-              recording: form.getFieldValue('recordMeeting') || false
-            };
-            setMeetings(prev => [newMeeting, ...prev]);
-            message.success('Meeting scheduled! Link copied to clipboard.');
-            navigator.clipboard.writeText(newMeeting.meetingLink);
-            setMeetingModalVisible(false);
+          <Button key="schedule" type="primary" icon={<CalendarOutlined />} loading={meetingLoading} onClick={async () => {
+            try {
+              const values = await form.validateFields();
+              await scheduleMeeting(values);
+            } catch (error) {
+              // Validation errors are surfaced by the form
+            }
           }}>
             Schedule Meeting
           </Button>
@@ -2410,7 +2420,7 @@ const CommunicationsHub: React.FC = () => {
           <Form.Item label="Internal Participants" name="participants">
             <Select mode="multiple" placeholder="Select team members">
               {(contacts || []).filter(c => c?.type === 'employee').map(c => (
-                <Option key={c.id} value={c.name}>{c.name} ({c.company})</Option>
+                <Option key={c.id} value={c.id}>{c.name} ({c.company})</Option>
               ))}
             </Select>
           </Form.Item>

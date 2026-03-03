@@ -1,6 +1,7 @@
 /**
  * SiyaBusa ERP - Pricing Page
- * Competitive positioning against Xero, QuickBooks, Sage
+ * Founding Member Launch Pricing — R1,499/mo, everything included
+ * First 50 companies only, price locked for 12 months
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -12,7 +13,7 @@ import {
   ChevronDown, Minus, TrendingDown, Globe2,
   Puzzle, HeartHandshake, Lock, BarChart3,
   Calculator, AlertTriangle, RefreshCw, Clock,
-  DollarSign, Layers, FileCheck
+  DollarSign, Layers, FileCheck, Star, Gift, Flame
 } from 'lucide-react';
 import { WebsiteLayout, fadeInUp, staggerContainer } from './LandingPage/LandingPage';
 import './Pricing.css';
@@ -38,114 +39,15 @@ function useCounter(end: number, duration = 2000, startOnView = true) {
   return { count, ref };
 }
 
-/* ── Pricing tiers ── */
-interface PricingTier {
-  id: string;
-  name: string;
-  tagline: string;
-  monthlyPrice: number;
-  yearlyPrice: number;
-  perUserPrice: number;
-  maxUsers: number | 'unlimited';
-  popular?: boolean;
-  features: string[];
-  notIncluded?: string[];
-  cta: string;
-  icon: React.ReactNode;
-  gradient: string;
-}
-
-const pricingTiers: PricingTier[] = [
-  {
-    id: 'starter',
-    name: 'Starter',
-    tagline: 'For small businesses getting started',
-    monthlyPrice: 1499,
-    yearlyPrice: 14990,
-    perUserPrice: 299,
-    maxUsers: 10,
-    icon: <Zap size={24} />,
-    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    features: [
-      'Financial Accounting (GL, AP, AR)',
-      'Sales & Invoicing',
-      'Basic Inventory',
-      'HR Essentials',
-      'Up to 10 users',
-      '1 Warehouse',
-      'Email support',
-    ],
-    notIncluded: ['Multi-Entity', 'Asset Management', 'API Access'],
-    cta: 'Start Free Trial',
-  },
-  {
-    id: 'professional',
-    name: 'Professional',
-    tagline: 'For growing companies that need more',
-    monthlyPrice: 3999,
-    yearlyPrice: 39990,
-    perUserPrice: 449,
-    maxUsers: 50,
-    popular: true,
-    icon: <Building2 size={24} />,
-    gradient: 'linear-gradient(135deg, #00D4AA 0%, #00A884 100%)',
-    features: [
-      'Everything in Starter, plus:',
-      'Purchase Management',
-      'Full Inventory & Warehousing',
-      'Complete HR & Payroll',
-      'Cash Management & Banking',
-      'Projects Hub',
-      'Up to 50 users · 5 Warehouses',
-      'Phone & email support',
-    ],
-    notIncluded: ['Multi-Entity', 'Custom Integrations'],
-    cta: 'Start Free Trial',
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    tagline: 'Full power for established businesses',
-    monthlyPrice: 9999,
-    yearlyPrice: 99990,
-    perUserPrice: 599,
-    maxUsers: 200,
-    icon: <Rocket size={24} />,
-    gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    features: [
-      'Everything in Professional, plus:',
-      'All 25+ Modules Included',
-      'Multi-Entity & Consolidation',
-      'Asset Management (IAS 16)',
-      'Audit-Ready Hub & SARS Sentinel',
-      'Manufacturing · Practice Mgmt',
-      'Up to 200 users · Unlimited WHs',
-      'Priority support (4hr SLA)',
-    ],
-    cta: 'Contact Sales',
-  },
-  {
-    id: 'corporate',
-    name: 'Corporate',
-    tagline: 'Custom-tailored for large organisations',
-    monthlyPrice: 24999,
-    yearlyPrice: 249990,
-    perUserPrice: 499,
-    maxUsers: 'unlimited',
-    icon: <Crown size={24} />,
-    gradient: 'linear-gradient(135deg, #F6D242 0%, #FF6B6B 100%)',
-    features: [
-      'Everything in Enterprise, plus:',
-      'Unlimited Users & Entities',
-      'Custom Integrations & API',
-      'White-labeling Available',
-      'On-premise Option',
-      '24/7 Support (2hr SLA)',
-      'Dedicated Implementation Team',
-      'Custom Development Hours',
-    ],
-    cta: 'Contact Sales',
-  },
+/* ── What's included (every module) ── */
+const allModules = [
+  { category: 'Financial', items: ['General Ledger (GL)', 'Accounts Payable (AP)', 'Accounts Receivable (AR)', 'Cash Management & Banking', 'Asset Management (IAS 16)', 'Multi-Entity & Consolidation'] },
+  { category: 'Sales & CRM', items: ['Invoicing & Quotes', 'Customer Management', 'Sales Pipeline', 'Proposals & Pitch Builder'] },
+  { category: 'Operations', items: ['Purchase Management', 'Inventory Management', 'Warehouse Management', 'Manufacturing (BOM, Work Orders)', 'Logistics & Fleet'] },
+  { category: 'People', items: ['HR Management', 'Full Payroll Processing', 'Leave & Attendance', 'Employee Self-Service'] },
+  { category: 'Projects', items: ['Projects Hub', 'Practice Management', 'Time Tracking', 'Resource Allocation'] },
+  { category: 'Compliance & Audit', items: ['SARS Sentinel (VAT, EMP501, IT14)', 'Audit-Ready Hub', 'Audit Trail', 'IFRS/IAS Compliant Reports'] },
+  { category: 'Platform', items: ['AI Assistant', 'Communications Hub (Video, Chat)', 'Dashboard & Analytics', 'API Access'] },
 ];
 
 /* ── Competitor comparison data ── */
@@ -176,19 +78,25 @@ const competitorRows = [
 const hiddenCosts = [
   { tool: 'Typical Accounting Platform', base: '~R900', addons: ['Payroll add-on: ~R500+', 'Inventory add-on: ~R1,500+', 'Projects add-on: ~R350+', 'Receipt capture: ~R400+'], total: '~R3,650+' },
   { tool: 'Alternative Platform', base: '~R750', addons: ['Payroll add-on: ~R600+', 'Limited inventory', 'No project management', 'Third-party CRM: ~R500+'], total: '~R2,500+' },
-  { tool: 'SiyaBusa Professional', base: 'R3,999', addons: ['Payroll: Included', 'Inventory & WH: Included', 'Projects: Included', 'CRM & Banking: Included'], total: 'R3,999', highlight: true },
+  { tool: 'SiyaBusa (Founding Member)', base: 'R1,499', addons: ['Payroll: Included', 'Inventory & WH: Included', 'Projects: Included', 'Every module: Included'], total: 'R1,499', highlight: true },
 ];
 
 /* ── FAQs ── */
 const faqs = [
-  { q: 'How do you compare to other accounting platforms?', a: 'SiyaBusa includes payroll, inventory, warehouse management, projects, and SARS compliance in one platform as standard. Many competing platforms require separate paid add-ons or third-party integrations for these features. We also price exclusively in Rands.' },
-  { q: 'Is there a free trial?', a: 'Yes! All plans include a 14-day free trial with full access to every feature. No credit card required.' },
-  { q: 'Can I migrate from another platform?', a: 'Yes. We provide guided migration support. Our team will help import your chart of accounts, customer/supplier data, and opening balances. Migration timelines vary depending on data volume and complexity.' },
-  { q: 'What payment methods do you accept?', a: 'We accept all major credit cards, EFT, and debit orders for South African customers. All billing is in ZAR.' },
-  { q: 'Is my data secure?', a: 'Yes. We use AES-256 encryption, and your data is hosted on secure AWS infrastructure with regular backups and high-availability architecture.' },
-  { q: 'Can I change plans later?', a: 'Of course. Upgrade or downgrade at any time. Changes take effect on your next billing cycle with no penalties.' },
-  { q: 'What modules are included?', a: 'Core modules (Financial, Sales, HR, Inventory) are in all plans. Advanced modules like Audit-Ready Hub, SARS Sentinel, Manufacturing, and Practice Management are available from Enterprise.' },
+  { q: 'What is Founding Member pricing?', a: 'Our Founding Member offer gives the first 50 companies full access to every SiyaBusa module at R1,499/month — with 10 users included. This rate is locked for 12 months from your sign-up date, regardless of future price changes. After 12 months, you\'ll transition to standard pricing (with advance notice), but founding members always receive priority treatment.' },
+  { q: 'What\'s included in R1,499/month?', a: 'Everything. Every module — Financial Accounting, Sales & CRM, HR & Payroll, Inventory, Warehouse Management, Manufacturing, Projects, Cash Management, Asset Management, Audit-Ready Hub, SARS Sentinel, AI Assistant, and more. No gated features. No premium tiers. 10 users are included; additional users are R149/month each.' },
+  { q: 'Is there a free trial?', a: 'Yes! Every Founding Member gets a 14-day free trial with full access to all features. No credit card required to start.' },
+  { q: 'How do you compare to other accounting platforms?', a: 'Many platforms charge R900+ for basic accounting, then R500+ for payroll, R1,500+ for inventory, R350+ for projects — totalling R3,650+/month. SiyaBusa gives you everything for R1,499/month. That\'s a potential saving of over R2,000/month.' },
+  { q: 'Can I migrate from Xero, Sage, or QuickBooks?', a: 'Yes. We provide guided migration support. Our team will help import your chart of accounts, customer/supplier data, and opening balances. For Founding Members, migration assistance is included at no extra charge.' },
+  { q: 'What payment methods do you accept?', a: 'We accept all major credit cards, EFT, and debit orders for South African customers. All billing is in ZAR — no forex surprises.' },
+  { q: 'Is my data secure?', a: 'Yes. We use AES-256 encryption, and your data is hosted on secure infrastructure in South Africa with regular backups and high-availability architecture.' },
+  { q: 'What happens after the 12-month lock-in?', a: 'After your Founding Member period, we\'ll transition you to our standard pricing with at least 30 days\' notice. Founding Members will always receive preferential rates and priority support as a thank-you for believing in us early.' },
+  { q: 'How many spots are left?', a: 'We\'re limiting Founding Member pricing to the first 50 companies. Once all 50 spots are taken, standard pricing will apply for new sign-ups. Secure your spot now.' },
 ];
+
+/* ── Founding Member spots ── */
+const TOTAL_FOUNDING_SPOTS = 50;
+const SPOTS_CLAIMED = 0; // Update as customers sign up
 
 /* ── Component ── */
 const Pricing: React.FC = () => {
@@ -198,10 +106,13 @@ const Pricing: React.FC = () => {
 
   const stat1 = useCounter(25, 1500);
   const stat2 = useCounter(99, 2000);
+  const spotsLeft = TOTAL_FOUNDING_SPOTS - SPOTS_CLAIMED;
 
-  const getPrice = (tier: PricingTier) => billingCycle === 'monthly' ? tier.monthlyPrice : Math.round(tier.yearlyPrice / 12);
-  const getSavings = (tier: PricingTier) => { const m = tier.monthlyPrice * 12; return Math.round(((m - tier.yearlyPrice) / m) * 100); };
-  const handleSelectPlan = (id: string) => id === 'enterprise' || id === 'corporate' ? navigate('/demo') : navigate('/signup?plan=' + id);
+  const monthlyPrice = 1499;
+  const yearlyPrice = 14990; // ~R1,249/mo — save 17%
+  const extraUserPrice = 149;
+  const getDisplayPrice = () => billingCycle === 'monthly' ? monthlyPrice : Math.round(yearlyPrice / 12);
+  const getYearlySavings = () => Math.round(((monthlyPrice * 12 - yearlyPrice) / (monthlyPrice * 12)) * 100);
 
   const renderCellValue = (val: boolean | string) => {
     if (val === true) return <Check size={16} className="tbl-check" />;
@@ -210,7 +121,7 @@ const Pricing: React.FC = () => {
   };
 
   return (
-    <WebsiteLayout title="Pricing — SiyaBusa ERP | South Africa's Complete Business Platform">
+    <WebsiteLayout title="Founding Member Pricing — SiyaBusa ERP | Every Module for R1,499/mo">
 
       {/* ═══ HERO ═══ */}
       <section className="pricing-hero">
@@ -222,17 +133,17 @@ const Pricing: React.FC = () => {
         <div className="container">
           <motion.div className="pricing-hero-content" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <div className="pricing-hero-badges">
+              <span className="pricing-hero-badge accent">
+                <Flame size={14} /> Founding Member Pricing — First 50 Companies Only
+              </span>
               <span className="pricing-hero-badge">
                 <Shield size={14} /> SARS Compliant
               </span>
-              <span className="pricing-hero-badge accent">
-                <TrendingDown size={14} /> Significant savings vs multiple add-ons*
-              </span>
             </div>
-            <h1>Stop Paying for<br /><span className="pricing-gradient-text">Multiple Tools</span> When You Need <span className="pricing-gradient-text">One</span></h1>
+            <h1>One Price.<br /><span className="pricing-gradient-text">Everything Included.</span><br />No Hidden Fees.</h1>
             <p className="pricing-hero-sub">
-              Many accounting platforms charge extra for payroll, inventory, projects, and compliance.
-              SiyaBusa gives you <strong>everything in one platform</strong> — built for South African businesses, priced in Rands.
+              Get <strong>every module</strong> — Financial Accounting, HR & Payroll, Inventory, CRM, Manufacturing,
+              Compliance, AI Assistant, and more — for one simple price. Built for South African businesses, priced in Rands.
             </p>
 
             {/* Billing Toggle */}
@@ -242,7 +153,7 @@ const Pricing: React.FC = () => {
                 <span className="pricing-toggle-indicator" />
               </button>
               <span className={billingCycle === 'yearly' ? 'active' : ''}>
-                Yearly <span className="pricing-save-badge">Save up to 17%</span>
+                Yearly <span className="pricing-save-badge">Save {getYearlySavings()}%</span>
               </span>
             </div>
           </motion.div>
@@ -262,8 +173,8 @@ const Pricing: React.FC = () => {
               <span className="pricing-trust-label">Uptime Target</span>
             </motion.div>
             <motion.div className="pricing-trust-stat" variants={fadeInUp}>
-              <span className="pricing-trust-number">Fast</span>
-              <span className="pricing-trust-label">Guided Migration</span>
+              <span className="pricing-trust-number">{spotsLeft}</span>
+              <span className="pricing-trust-label">Founding Spots Left</span>
             </motion.div>
             <motion.div className="pricing-trust-stat" variants={fadeInUp}>
               <span className="pricing-trust-number">ZAR</span>
@@ -273,51 +184,79 @@ const Pricing: React.FC = () => {
         </div>
       </section>
 
-      {/* ═══ PRICING CARDS ═══ */}
+      {/* ═══ SINGLE PRICING CARD ═══ */}
       <section className="pricing-cards-section">
         <div className="container">
-          <motion.div className="pricing-cards-grid" variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-            {pricingTiers.map((tier) => (
-              <motion.div key={tier.id} className={`pricing-card ${tier.popular ? 'popular' : ''}`} variants={fadeInUp}>
-                {tier.popular && <div className="pricing-popular-badge">Most Popular</div>}
-                <div className="pricing-card-icon-wrap" style={{ background: tier.gradient }}>
-                  {tier.icon}
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} style={{ maxWidth: 600, margin: '0 auto' }}>
+            <div className="pricing-card popular" style={{ position: 'relative' }}>
+              <div className="pricing-popular-badge" style={{ background: 'linear-gradient(135deg, #F6D242 0%, #FF6B6B 100%)' }}>
+                <Star size={14} style={{ marginRight: 6 }} /> Founding Member — {spotsLeft} of {TOTAL_FOUNDING_SPOTS} Spots Left
+              </div>
+              <div className="pricing-card-icon-wrap" style={{ background: 'linear-gradient(135deg, #00D4AA 0%, #00A884 100%)' }}>
+                <Crown size={24} />
+              </div>
+              <div className="pricing-card-header">
+                <h3>SiyaBusa ERP — Complete Platform</h3>
+                <p>Every module. Every feature. One price. Locked for 12 months.</p>
+              </div>
+              <div className="pricing-card-price">
+                <div className="pricing-amount">
+                  <span className="pricing-currency">R</span>
+                  <span className="pricing-value">{getDisplayPrice().toLocaleString()}</span>
+                  <span className="pricing-period">/mo</span>
                 </div>
-                <div className="pricing-card-header">
-                  <h3>{tier.name}</h3>
-                  <p>{tier.tagline}</p>
-                </div>
-                <div className="pricing-card-price">
-                  <div className="pricing-amount">
-                    <span className="pricing-currency">R</span>
-                    <span className="pricing-value">{getPrice(tier).toLocaleString()}</span>
-                    <span className="pricing-period">/mo</span>
-                  </div>
-                  {billingCycle === 'yearly' && (
-                    <p className="pricing-yearly-note">
-                      R{tier.yearlyPrice.toLocaleString()}/yr <span className="pricing-savings">Save {getSavings(tier)}%</span>
-                    </p>
-                  )}
-                  <p className="pricing-per-user">+ R{tier.perUserPrice}/user/month</p>
-                </div>
-                <ul className="pricing-features-list">
-                  {tier.features.map((f, i) => (
-                    <li key={i}><Check size={14} className="pricing-check" />{f}</li>
-                  ))}
-                  {tier.notIncluded?.map((f, i) => (
-                    <li key={`n-${i}`} className="pricing-not-included"><X size={14} className="pricing-x" />{f}</li>
-                  ))}
-                </ul>
-                <button className={`pricing-cta-btn ${tier.popular ? 'primary' : 'secondary'}`} onClick={() => handleSelectPlan(tier.id)}>
-                  {tier.cta} <ArrowRight size={16} />
-                </button>
-              </motion.div>
-            ))}
+                {billingCycle === 'yearly' && (
+                  <p className="pricing-yearly-note">
+                    R{yearlyPrice.toLocaleString()}/yr <span className="pricing-savings">Save {getYearlySavings()}%</span>
+                  </p>
+                )}
+                <p className="pricing-per-user" style={{ marginTop: 8 }}>
+                  <Users size={14} style={{ marginRight: 4 }} /> 10 users included · R{extraUserPrice}/additional user/mo
+                </p>
+              </div>
+
+              {/* Key highlights */}
+              <ul className="pricing-features-list">
+                <li><Check size={14} className="pricing-check" /><strong>Every Module Included</strong> — nothing gated or locked</li>
+                <li><Check size={14} className="pricing-check" />Financial Accounting, Sales & CRM, HR & Payroll</li>
+                <li><Check size={14} className="pricing-check" />Inventory, Warehouse, Manufacturing, Projects</li>
+                <li><Check size={14} className="pricing-check" />Cash Management, Asset Management (IAS 16)</li>
+                <li><Check size={14} className="pricing-check" />Audit-Ready Hub, SARS Sentinel, Compliance</li>
+                <li><Check size={14} className="pricing-check" />AI Assistant, Communications Hub, API Access</li>
+                <li><Check size={14} className="pricing-check" />Multi-Entity & Consolidation</li>
+                <li><Check size={14} className="pricing-check" />10 users included · Unlimited warehouses</li>
+                <li><Check size={14} className="pricing-check" />Phone & email support · Guided migration</li>
+                <li><Check size={14} className="pricing-check" /><strong>Price locked for 12 months</strong></li>
+              </ul>
+
+              <button className="pricing-cta-btn primary" onClick={() => navigate('/signup?plan=founding-member')} style={{ width: '100%', fontSize: '1.1rem', padding: '16px 24px' }}>
+                Claim Your Founding Member Spot <ArrowRight size={18} />
+              </button>
+
+              <div style={{ marginTop: 16, display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', opacity: 0.7, fontSize: '0.85rem' }}>
+                <span><Lock size={12} /> No credit card required</span>
+                <span><Gift size={12} /> 14-day free trial</span>
+                <span><RefreshCw size={12} /> Cancel anytime</span>
+              </div>
+            </div>
           </motion.div>
-          <p className="pricing-trial-note">
-            <Lock size={14} /> All plans include a <strong>14-day free trial</strong>. No credit card required.
+
+          <p className="pricing-vat-note" style={{ marginTop: 24 }}>
+            All prices exclude VAT. Founding Member rate is locked for 12 months from signup.
+            After 12 months, standard pricing applies with 30 days' notice. See <a href="/terms">Terms & Conditions</a>.
           </p>
-          <p className="pricing-vat-note">All prices exclude VAT. Prices are subject to change. See <a href="/terms">Terms & Conditions</a> for full details.</p>
+
+          {/* Need more? */}
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}
+            style={{ maxWidth: 600, margin: '32px auto 0', padding: '24px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
+            <h4 style={{ margin: '0 0 8px', fontSize: '1.1rem' }}>Need more than 10 users or custom requirements?</h4>
+            <p style={{ margin: '0 0 16px', opacity: 0.7, fontSize: '0.9rem' }}>
+              Additional users are just R149/user/month. For 50+ users, dedicated infrastructure, white-labelling, or on-premise — let's talk.
+            </p>
+            <button className="pricing-cta-btn secondary" onClick={() => navigate('/demo')}>
+              <Phone size={16} /> Talk to Sales
+            </button>
+          </motion.div>
         </div>
       </section>
 
@@ -406,8 +345,34 @@ const Pricing: React.FC = () => {
         </div>
       </section>
 
-      {/* ═══ SA ADVANTAGES ═══ */}
+      {/* ═══ WHAT'S INCLUDED — ALL MODULES ═══ */}
       <section className="pricing-sa-section">
+        <div className="container">
+          <motion.div className="section-header" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            <span className="section-badge sa-badge">Everything Included</span>
+            <h2>Every Module — All Yours at R1,499/mo</h2>
+            <p className="section-subtitle">No premium tiers. No locked features. Every Founding Member gets the full platform.</p>
+          </motion.div>
+
+          <motion.div className="pricing-sa-grid" variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            {allModules.map((group, i) => (
+              <motion.div key={i} className="pricing-sa-card" variants={fadeInUp}>
+                <h4>{group.category}</h4>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                  {group.items.map((item, j) => (
+                    <li key={j} style={{ padding: '4px 0', display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}>
+                      <Check size={14} className="pricing-check" />{item}
+                    </li>
+                  ))}
+                </ul>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══ SA ADVANTAGES ═══ */}
+      <section className="pricing-comparison-section">
         <div className="container">
           <motion.div className="section-header" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             <span className="section-badge sa-badge">🇿🇦 Built for South Africa</span>
@@ -421,7 +386,7 @@ const Pricing: React.FC = () => {
               { icon: <HeartHandshake size={28} />, title: 'Local Support Team', desc: 'Real people in South Africa who understand BEE, CIPC, and how SA businesses operate.', color: '#f5576c' },
               { icon: <Layers size={28} />, title: 'One Platform, Not Five', desc: 'Consolidate your accounting, payroll, inventory, projects, and compliance tools into one integrated system.', color: '#F6D242' },
               { icon: <BarChart3 size={28} />, title: 'Audit-Ready Reports', desc: 'IAS/IFRS-compliant reports that your auditors will love. No more year-end panic.', color: '#00A884' },
-              { icon: <RefreshCw size={28} />, title: 'Guided Migration Support', desc: 'We help you import your chart of accounts, customer and supplier data, and opening balances with dedicated support.', color: '#764ba2' },
+              { icon: <RefreshCw size={28} />, title: 'Free Migration Support', desc: 'Founding Members get guided migration at no extra charge — we import your data for you.', color: '#764ba2' },
             ].map((item, i) => (
               <motion.div key={i} className="pricing-sa-card" variants={fadeInUp}>
                 <div className="pricing-sa-icon" style={{ background: `${item.color}15`, color: item.color }}>
@@ -431,67 +396,6 @@ const Pricing: React.FC = () => {
                 <p>{item.desc}</p>
               </motion.div>
             ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* ═══ PLAN COMPARISON TABLE ═══ */}
-      <section className="pricing-comparison-section">
-        <div className="container">
-          <motion.div className="section-header" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-            <span className="section-badge">Compare Plans</span>
-            <h2>Detailed Plan Comparison</h2>
-          </motion.div>
-
-          <motion.div className="pricing-table-wrapper" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-            <table className="pricing-comparison-table">
-              <thead>
-                <tr>
-                  <th className="pricing-table-feature-col">Feature</th>
-                  <th>Starter</th>
-                  <th className="pricing-table-popular">Professional</th>
-                  <th>Enterprise</th>
-                  <th>Corporate</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="pricing-table-category"><td colSpan={5}>Core Modules</td></tr>
-                <tr><td>Financial Accounting (GL, AP, AR)</td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-                <tr><td>Sales & Invoicing</td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-                <tr><td>Inventory Management</td><td>Basic</td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-                <tr><td>HR Essentials</td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-                <tr><td>Purchase Management</td><td><Minus size={16} className="tbl-minus" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-
-                <tr className="pricing-table-category"><td colSpan={5}>Operations</td></tr>
-                <tr><td>Full Payroll Processing</td><td><Minus size={16} className="tbl-minus" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-                <tr><td>Warehouse Management</td><td>1 Location</td><td>5 Locations</td><td>Unlimited</td><td>Unlimited</td></tr>
-                <tr><td>Cash Management & Banking</td><td><Minus size={16} className="tbl-minus" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-                <tr><td>Projects Hub</td><td><Minus size={16} className="tbl-minus" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-                <tr><td>Manufacturing (BOM, Work Orders)</td><td><Minus size={16} className="tbl-minus" /></td><td><Minus size={16} className="tbl-minus" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-
-                <tr className="pricing-table-category"><td colSpan={5}>Compliance & Audit</td></tr>
-                <tr><td>Audit Trail</td><td>Basic</td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-                <tr><td>Audit-Ready Hub</td><td><Minus size={16} className="tbl-minus" /></td><td><Minus size={16} className="tbl-minus" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-                <tr><td>SARS Sentinel (Regulatory)</td><td><Minus size={16} className="tbl-minus" /></td><td><Minus size={16} className="tbl-minus" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-                <tr><td>Asset Management (IAS 16)</td><td><Minus size={16} className="tbl-minus" /></td><td><Minus size={16} className="tbl-minus" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-                <tr><td>Multi-Entity & Consolidation</td><td><Minus size={16} className="tbl-minus" /></td><td><Minus size={16} className="tbl-minus" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-
-                <tr className="pricing-table-category"><td colSpan={5}>Support & Access</td></tr>
-                <tr><td>Max Users</td><td>10</td><td>50</td><td>200</td><td>Unlimited</td></tr>
-                <tr><td>Support Level</td><td>Email</td><td>Phone & Email</td><td>Priority (4hr SLA)</td><td>24/7 (2hr SLA)</td></tr>
-                <tr><td>Account Manager</td><td><Minus size={16} className="tbl-minus" /></td><td><Minus size={16} className="tbl-minus" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-                <tr><td>API Access</td><td><Minus size={16} className="tbl-minus" /></td><td><Minus size={16} className="tbl-minus" /></td><td><Check size={16} className="tbl-check" /></td><td><Check size={16} className="tbl-check" /></td></tr>
-              </tbody>
-              <tfoot>
-                <tr>
-                  <td></td>
-                  <td><button className="pricing-table-btn secondary" onClick={() => navigate('/signup?plan=starter')}>Start Trial</button></td>
-                  <td><button className="pricing-table-btn primary" onClick={() => navigate('/signup?plan=professional')}>Start Trial</button></td>
-                  <td><button className="pricing-table-btn secondary" onClick={() => navigate('/demo')}>Contact Sales</button></td>
-                  <td><button className="pricing-table-btn secondary" onClick={() => navigate('/demo')}>Contact Sales</button></td>
-                </tr>
-              </tfoot>
-            </table>
           </motion.div>
         </div>
       </section>
@@ -528,11 +432,11 @@ const Pricing: React.FC = () => {
         </div>
         <div className="container">
           <motion.div className="pricing-final-cta-content" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-            <h2>Ready to Simplify Your Business Operations?</h2>
-            <p>Discover how SiyaBusa can streamline your operations with one integrated platform.</p>
+            <h2>Join the First 50. Shape the Future.</h2>
+            <p>Founding Members get every module at R1,499/mo — locked for 12 months. Only {spotsLeft} spots remaining.</p>
             <div className="pricing-final-cta-buttons">
-              <button className="pricing-cta-btn primary large" onClick={() => navigate('/signup')}>
-                Start 14-Day Free Trial <ArrowRight size={18} />
+              <button className="pricing-cta-btn primary large" onClick={() => navigate('/signup?plan=founding-member')}>
+                Claim Your Founding Member Spot <ArrowRight size={18} />
               </button>
               <button className="pricing-cta-btn ghost large" onClick={() => navigate('/demo')}>
                 <Phone size={18} /> Talk to Sales
@@ -540,7 +444,8 @@ const Pricing: React.FC = () => {
             </div>
             <div className="pricing-final-trust">
               <span><Lock size={14} /> No credit card required</span>
-              <span><Clock size={14} /> Quick & easy setup</span>
+              <span><Gift size={14} /> 14-day free trial</span>
+              <span><Star size={14} /> Price locked 12 months</span>
               <span><RefreshCw size={14} /> Cancel anytime</span>
             </div>
           </motion.div>

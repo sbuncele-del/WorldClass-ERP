@@ -22,9 +22,7 @@ const COUNTRIES = [
 ];
 
 const PLANS = [
-  { id: 'starter', name: 'Starter', price: 'R499', priceUSD: '$29', users: 3 },
-  { id: 'professional', name: 'Professional', price: 'R999', priceUSD: '$59', users: 10 },
-  { id: 'enterprise', name: 'Enterprise', price: 'R2499', priceUSD: '$149', users: 'Unlimited' },
+  { id: 'founding-member', name: 'Founding Member', price: 'R1,499', priceUSD: '$89', users: 10 },
 ];
 
 const Signup = () => {
@@ -37,7 +35,7 @@ const Signup = () => {
     lastName: '',
     companyName: '',
     country: 'ZA',
-    plan: 'starter',
+    plan: 'founding-member',
   });
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});

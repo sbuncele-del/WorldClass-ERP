@@ -1,0 +1,66 @@
+# SiyaBusa ERP — robots.txt
+# https://siyabusaerp.co.za
+
+User-agent: *
+Allow: /
+
+# Public marketing pages — crawl these
+Allow: /
+Allow: /pricing
+Allow: /features
+Allow: /about
+Allow: /contact
+Allow: /blog
+Allow: /case-studies
+Allow: /demo
+Allow: /compliance
+Allow: /careers
+Allow: /partners
+Allow: /documentation
+Allow: /support
+Allow: /security
+Allow: /concept-document
+
+# Auth/app pages — do NOT index
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /resend-verification
+Disallow: /accept-invite
+Disallow: /onboarding
+Disallow: /dashboard
+Disallow: /workspace
+Disallow: /platform-admin
+Disallow: /preview/
+Disallow: /portal/
+Disallow: /driver
+Disallow: /sales/*
+Disallow: /sales-hub/*
+Disallow: /purchase/*
+Disallow: /purchase-hub/*
+Disallow: /inventory/*
+Disallow: /inventory-hub/*
+Disallow: /warehouse/*
+Disallow: /warehouse-hub/*
+Disallow: /manufacturing/*
+Disallow: /manufacturing-hub/*
+Disallow: /financial/*
+Disallow: /financial-hub/*
+Disallow: /hr/*
+Disallow: /hr-hub/*
+Disallow: /projects/*
+Disallow: /projects-hub/*
+Disallow: /communications/*
+Disallow: /communications-hub/*
+Disallow: /proposals/*
+Disallow: /proposals-hub/*
+Disallow: /audit-ready/*
+Disallow: /regulatory/*
+Disallow: /admin/*
+Disallow: /settings/*
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://siyabusaerp.co.za/sitemap.xml
