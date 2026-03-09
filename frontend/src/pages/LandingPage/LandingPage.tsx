@@ -216,10 +216,32 @@ export const Navigation: React.FC<{ isDark: boolean; toggleTheme: () => void }> 
 };
 
 
-// EmotionalHero — Solutions-focused, emotionally engaging hero
+// EmotionalHero — Persona-based hero with Accountant / Business Owner choice
 const EmotionalHero: React.FC = () => {
   const navigate = useNavigate();
   const [spotsLeft] = useState(50);
+  const [persona, setPersona] = useState<'none' | 'accountant' | 'business'>('none');
+
+  const content = {
+    accountant: {
+      badge: 'Free for Accounting Firms',
+      headline: <>Manage all your clients.<br /><span style={{ color: '#00D4AA' }}>From one powerful platform.</span></>,
+      subtitle: 'Multi-client accounting, automated SARS filings, practice management, and real-time collaboration — designed for firms that want to scale without the chaos.',
+      cta: 'Start Free — For Firms',
+      ctaLink: '/signup?plan=accountant',
+      trust: ['Free for accounting firms', 'Unlimited clients', 'SARS auto-filing'],
+    },
+    business: {
+      badge: `Founding Member — ${spotsLeft} spots left`,
+      headline: <>Your business is complex.<br /><span style={{ color: '#00D4AA' }}>Managing it shouldn't be.</span></>,
+      subtitle: 'Finances, people, inventory, projects, compliance — one platform that handles it all. So you can stop juggling and start growing.',
+      cta: 'Become a Founding Member',
+      ctaLink: '/pricing',
+      trust: ['R1,499/mo — everything included', 'First 50 companies', '14-day free trial'],
+    },
+  };
+
+  const active = persona !== 'none' ? content[persona] : null;
 
   return (
     <section
@@ -235,132 +257,284 @@ const EmotionalHero: React.FC = () => {
       }}
     >
       <ParticleBackground />
-      <div style={{ position: 'relative', zIndex: 2, maxWidth: '800px', textAlign: 'center' }}>
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          {/* Founding member badge */}
-          <motion.div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'rgba(0,212,170,0.12)',
-              border: '1px solid rgba(0,212,170,0.3)',
-              padding: '8px 20px',
-              borderRadius: '50px',
-              marginBottom: '2rem',
-            }}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Sparkles size={16} style={{ color: '#00D4AA' }} />
-            <span style={{ color: '#00D4AA', fontSize: '0.9rem', fontWeight: 600 }}>
-              Founding Member — {spotsLeft} spots left
-            </span>
-          </motion.div>
-
-          <h1
-            style={{
-              fontSize: 'clamp(2.2rem, 5.5vw, 3.8rem)',
-              fontWeight: 800,
-              color: '#fff',
-              lineHeight: 1.15,
-              marginBottom: '1.5rem',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Your business is complex.<br />
-            <span style={{ color: '#00D4AA' }}>Managing it shouldn't be.</span>
-          </h1>
-
-          <p
-            style={{
-              fontSize: 'clamp(1.05rem, 2vw, 1.25rem)',
-              color: 'rgba(255,255,255,0.75)',
-              lineHeight: 1.7,
-              maxWidth: '600px',
-              margin: '0 auto 2.5rem',
-            }}
-          >
-            Finances, people, inventory, projects, compliance — one platform that
-            handles it all. So you can stop juggling and start growing.
-          </p>
-
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' as const }}>
-            <motion.button
-              onClick={() => navigate('/pricing')}
-              style={{
-                padding: '16px 36px',
-                borderRadius: '14px',
-                border: 'none',
-                background: 'linear-gradient(135deg, #00D4AA, #00A884)',
-                color: '#fff',
-                fontWeight: 700,
-                fontSize: '1.1rem',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '10px',
-                boxShadow: '0 8px 32px rgba(0,212,170,0.3)',
-              }}
-              whileHover={{ scale: 1.04, boxShadow: '0 12px 40px rgba(0,212,170,0.4)' }}
-              whileTap={{ scale: 0.97 }}
+      <div style={{ position: 'relative', zIndex: 2, maxWidth: '860px', textAlign: 'center' }}>
+        <AnimatePresence mode="wait">
+          {persona === 'none' ? (
+            /* === PERSONA SELECTION STATE === */
+            <motion.div
+              key="selector"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
             >
-              Become a Founding Member <ArrowRight size={20} />
-            </motion.button>
-            <motion.button
-              onClick={() => navigate('/demo')}
-              style={{
-                padding: '16px 36px',
-                borderRadius: '14px',
-                border: '2px solid rgba(255,255,255,0.2)',
-                background: 'rgba(255,255,255,0.05)',
-                color: '#fff',
-                fontWeight: 600,
-                fontSize: '1.1rem',
-                cursor: 'pointer',
-                backdropFilter: 'blur(8px)',
-              }}
-              whileHover={{ scale: 1.04, borderColor: 'rgba(0,212,170,0.5)' }}
-              whileTap={{ scale: 0.97 }}
-            >
-              See It in Action
-            </motion.button>
-          </div>
-
-          {/* Trust strip */}
-          <motion.div
-            style={{
-              display: 'flex',
-              justifyContent: 'center',
-              gap: '2rem',
-              marginTop: '3rem',
-              flexWrap: 'wrap' as const,
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-          >
-            {['R1,499/mo — everything included', 'First 50 companies', '14-day free trial'].map((item, i) => (
-              <span
-                key={i}
+              <motion.div
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  color: 'rgba(255,255,255,0.6)',
-                  fontSize: '0.9rem',
+                  gap: '8px',
+                  background: 'rgba(0,212,170,0.12)',
+                  border: '1px solid rgba(0,212,170,0.3)',
+                  padding: '8px 20px',
+                  borderRadius: '50px',
+                  marginBottom: '2rem',
+                }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Sparkles size={16} style={{ color: '#00D4AA' }} />
+                <span style={{ color: '#00D4AA', fontSize: '0.9rem', fontWeight: 600 }}>
+                  South Africa's All-in-One Business Platform
+                </span>
+              </motion.div>
+
+              <h1
+                style={{
+                  fontSize: 'clamp(2rem, 5vw, 3.4rem)',
+                  fontWeight: 800,
+                  color: '#fff',
+                  lineHeight: 1.15,
+                  marginBottom: '1rem',
+                  letterSpacing: '-0.02em',
                 }}
               >
-                <Check size={16} style={{ color: '#00D4AA' }} /> {item}
-              </span>
-            ))}
-          </motion.div>
-        </motion.div>
+                Welcome to <span style={{ color: '#00D4AA' }}>SiyaBusa</span>
+              </h1>
+              <p
+                style={{
+                  fontSize: 'clamp(1.05rem, 2vw, 1.3rem)',
+                  color: 'rgba(255,255,255,0.7)',
+                  marginBottom: '3rem',
+                  lineHeight: 1.6,
+                }}
+              >
+                Tell us who you are, and we'll show you exactly how SiyaBusa works for you.
+              </p>
+
+              <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' as const }}>
+                {/* Accountant Card */}
+                <motion.button
+                  onClick={() => setPersona('accountant')}
+                  style={{
+                    width: '280px',
+                    padding: '2.5rem 2rem',
+                    borderRadius: '20px',
+                    border: '2px solid rgba(0,212,170,0.25)',
+                    background: 'rgba(0,212,170,0.06)',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    backdropFilter: 'blur(12px)',
+                  }}
+                  whileHover={{
+                    scale: 1.04,
+                    borderColor: 'rgba(0,212,170,0.6)',
+                    background: 'rgba(0,212,170,0.12)',
+                    boxShadow: '0 12px 40px rgba(0,212,170,0.15)',
+                  }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🧮</div>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
+                    I'm an Accountant
+                  </h3>
+                  <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                    Manage multiple clients, automate SARS filings, and scale your practice
+                  </p>
+                  <div style={{ marginTop: '1rem', color: '#00D4AA', fontSize: '0.85rem', fontWeight: 600 }}>
+                    Free for firms →
+                  </div>
+                </motion.button>
+
+                {/* Business Owner Card */}
+                <motion.button
+                  onClick={() => setPersona('business')}
+                  style={{
+                    width: '280px',
+                    padding: '2.5rem 2rem',
+                    borderRadius: '20px',
+                    border: '2px solid rgba(244,180,0,0.25)',
+                    background: 'rgba(244,180,0,0.06)',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    backdropFilter: 'blur(12px)',
+                  }}
+                  whileHover={{
+                    scale: 1.04,
+                    borderColor: 'rgba(244,180,0,0.6)',
+                    background: 'rgba(244,180,0,0.12)',
+                    boxShadow: '0 12px 40px rgba(244,180,0,0.15)',
+                  }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🏢</div>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
+                    I'm a Business Owner
+                  </h3>
+                  <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                    Run your entire business from one platform — finances, people, stock, projects
+                  </p>
+                  <div style={{ marginTop: '1rem', color: '#F4B400', fontSize: '0.85rem', fontWeight: 600 }}>
+                    From R1,499/mo →
+                  </div>
+                </motion.button>
+              </div>
+            </motion.div>
+          ) : (
+            /* === PERSONA-SPECIFIC HERO === */
+            <motion.div
+              key={persona}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5 }}
+            >
+              {/* Back button */}
+              <motion.button
+                onClick={() => setPersona('none')}
+                style={{
+                  position: 'absolute',
+                  top: '-40px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  color: 'rgba(255,255,255,0.6)',
+                  padding: '6px 16px',
+                  borderRadius: '50px',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                }}
+                whileHover={{ color: '#fff', borderColor: 'rgba(255,255,255,0.4)' }}
+              >
+                ← Choose differently
+              </motion.button>
+
+              {/* Badge */}
+              <motion.div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: persona === 'accountant' ? 'rgba(0,212,170,0.12)' : 'rgba(244,180,0,0.12)',
+                  border: `1px solid ${persona === 'accountant' ? 'rgba(0,212,170,0.3)' : 'rgba(244,180,0,0.3)'}`,
+                  padding: '8px 20px',
+                  borderRadius: '50px',
+                  marginBottom: '2rem',
+                }}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Sparkles size={16} style={{ color: persona === 'accountant' ? '#00D4AA' : '#F4B400' }} />
+                <span style={{ color: persona === 'accountant' ? '#00D4AA' : '#F4B400', fontSize: '0.9rem', fontWeight: 600 }}>
+                  {active!.badge}
+                </span>
+              </motion.div>
+
+              <h1
+                style={{
+                  fontSize: 'clamp(2.2rem, 5.5vw, 3.8rem)',
+                  fontWeight: 800,
+                  color: '#fff',
+                  lineHeight: 1.15,
+                  marginBottom: '1.5rem',
+                  letterSpacing: '-0.02em',
+                }}
+              >
+                {active!.headline}
+              </h1>
+
+              <p
+                style={{
+                  fontSize: 'clamp(1.05rem, 2vw, 1.25rem)',
+                  color: 'rgba(255,255,255,0.75)',
+                  lineHeight: 1.7,
+                  maxWidth: '620px',
+                  margin: '0 auto 2.5rem',
+                }}
+              >
+                {active!.subtitle}
+              </p>
+
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' as const }}>
+                <motion.button
+                  onClick={() => navigate(active!.ctaLink)}
+                  style={{
+                    padding: '16px 36px',
+                    borderRadius: '14px',
+                    border: 'none',
+                    background: persona === 'accountant'
+                      ? 'linear-gradient(135deg, #00D4AA, #00A884)'
+                      : 'linear-gradient(135deg, #F4B400, #E5A800)',
+                    color: persona === 'accountant' ? '#fff' : '#0A1F3E',
+                    fontWeight: 700,
+                    fontSize: '1.1rem',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    boxShadow: persona === 'accountant'
+                      ? '0 8px 32px rgba(0,212,170,0.3)'
+                      : '0 8px 32px rgba(244,180,0,0.3)',
+                  }}
+                  whileHover={{ scale: 1.04 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  {active!.cta} <ArrowRight size={20} />
+                </motion.button>
+                <motion.button
+                  onClick={() => navigate('/demo')}
+                  style={{
+                    padding: '16px 36px',
+                    borderRadius: '14px',
+                    border: '2px solid rgba(255,255,255,0.2)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    fontWeight: 600,
+                    fontSize: '1.1rem',
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(8px)',
+                  }}
+                  whileHover={{ scale: 1.04, borderColor: 'rgba(0,212,170,0.5)' }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  See It in Action
+                </motion.button>
+              </div>
+
+              {/* Trust strip */}
+              <motion.div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: '2rem',
+                  marginTop: '3rem',
+                  flexWrap: 'wrap' as const,
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                {active!.trust.map((item, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      color: 'rgba(255,255,255,0.6)',
+                      fontSize: '0.9rem',
+                    }}
+                  >
+                    <Check size={16} style={{ color: '#00D4AA' }} /> {item}
+                  </span>
+                ))}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   );
