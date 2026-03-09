@@ -1,13 +1,14 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Settings, Wrench, Handshake, BarChart3 } from 'lucide-react';
+import { WebsiteLayout, fadeInUp } from './LandingPage/LandingPage';
 import './FooterPages.css';
 
 const Partners: React.FC = () => {
   const partnerTypes = [
     {
       type: 'Technology Partners',
-      icon: '🔧',
+      icon: <Settings size={28} />,
       description: 'Integrate your software with SiyaBusa to create seamless workflows for shared customers.',
       benefits: [
         'API access and technical documentation',
@@ -18,7 +19,7 @@ const Partners: React.FC = () => {
     },
     {
       type: 'Implementation Partners',
-      icon: '🛠️',
+      icon: <Wrench size={28} />,
       description: 'Help businesses implement and customize SiyaBusa while growing your consulting practice.',
       benefits: [
         'Implementation certification training',
@@ -29,7 +30,7 @@ const Partners: React.FC = () => {
     },
     {
       type: 'Reseller Partners',
-      icon: '🤝',
+      icon: <Handshake size={28} />,
       description: 'Sell SiyaBusa to your client base and earn recurring revenue on subscriptions.',
       benefits: [
         'Competitive partner pricing',
@@ -40,7 +41,7 @@ const Partners: React.FC = () => {
     },
     {
       type: 'Accounting Firms',
-      icon: '📊',
+      icon: <BarChart3 size={28} />,
       description: 'Recommend SiyaBusa to your clients and benefit from streamlined collaboration.',
       benefits: [
         'Free accountant portal access',
@@ -52,25 +53,20 @@ const Partners: React.FC = () => {
   ];
 
   return (
-    <div className="footer-page">
-      <nav className="footer-page-nav">
-        <Link to="/" className="logo">
-          <span className="logo-icon">◈</span>
-          <span>SiyaBusa</span>
-        </Link>
-        <Link to="/" className="back-link">← Back to Home</Link>
-      </nav>
-
-      <main className="footer-page-content">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <header className="page-header">
+    <WebsiteLayout title="Partner Program — SiyaBusa ERP">
+      <section className="page-hero">
+        <div className="container">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <span className="section-badge">Partnerships</span>
             <h1>Partner Program</h1>
-            <p className="subtitle">Grow your business with SiyaBusa</p>
-          </header>
+            <p className="page-hero-subtitle">Grow your business with SiyaBusa</p>
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="website-section">
+        <div className="container">
+          <motion.div variants={fadeInUp} initial="initial" whileInView="animate" viewport={{ once: true }}>
 
           <section className="content-section">
             <h2>Why Partner With Us?</h2>
@@ -102,13 +98,13 @@ const Partners: React.FC = () => {
             <div className="partner-types">
               {partnerTypes.map((partner, index) => (
                 <div key={index} className="partner-type-card">
-                  <div className="partner-icon">{partner.icon}</div>
+                  <div className="partner-icon-wrapper" style={{ color: 'var(--accent-teal, #00D4AA)', marginBottom: '0.75rem' }}>{partner.icon}</div>
                   <h3>{partner.type}</h3>
                   <p>{partner.description}</p>
                   <h4>Benefits:</h4>
                   <ul>
                     {partner.benefits.map((benefit, i) => (
-                      <li key={i}>✓ {benefit}</li>
+                      <li key={i}>{benefit}</li>
                     ))}
                   </ul>
                 </div>
@@ -179,21 +175,19 @@ const Partners: React.FC = () => {
               transform their operations.
             </p>
             <div className="cta-buttons">
-              <a href="mailto:partners@siyabusa.co.za?subject=Partnership Inquiry" className="btn-primary">
+              <a href="mailto:hello@siyabusaerp.co.za?subject=Partnership Inquiry" className="btn-primary">
                 Apply Now
               </a>
-              <a href="mailto:partners@siyabusa.co.za" className="btn-secondary">
+              <a href="mailto:hello@siyabusaerp.co.za" className="btn-secondary">
                 Contact Partner Team
               </a>
             </div>
           </section>
-        </motion.div>
-      </main>
 
-      <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
-      </footer>
-    </div>
+          </motion.div>
+        </div>
+      </section>
+    </WebsiteLayout>
   );
 };
 

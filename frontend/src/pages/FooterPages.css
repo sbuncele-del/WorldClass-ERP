@@ -1470,3 +1470,140 @@
     transform: none;
   }
 }
+
+/* ============================================
+   Theme-aware overrides for WebsiteLayout
+   ============================================ */
+
+/* Icon wrappers for Lucide icons replacing emojis */
+.contact-icon-wrapper,
+.step-icon-wrapper,
+.partner-icon-wrapper {
+  color: var(--fp-secondary);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: rgba(0, 212, 170, 0.1);
+  border-radius: 12px;
+}
+
+/* Dark mode overrides when inside WebsiteLayout */
+.landing-page.dark .content-section h2 {
+  color: #e2e8f0;
+}
+
+.landing-page.dark .content-section h3 {
+  color: #cbd5e1;
+}
+
+.landing-page.dark .content-section p,
+.landing-page.dark .content-section ul li {
+  color: #94a3b8;
+}
+
+.landing-page.dark .security-card,
+.landing-page.dark .security-item,
+.landing-page.dark .support-card:not(.primary),
+.landing-page.dark .benefit-card,
+.landing-page.dark .partner-type-card,
+.landing-page.dark .faq-item,
+.landing-page.dark .plan-card:not(.featured),
+.landing-page.dark .job-card,
+.landing-page.dark .process-step,
+.landing-page.dark .sdlc-step,
+.landing-page.dark .compliance-item,
+.landing-page.dark .tier.registered,
+.landing-page.dark .testimonial,
+.landing-page.dark .company-info-box,
+.landing-page.dark .status-box,
+.landing-page.dark .partner-stats,
+.landing-page.dark .info-block {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.landing-page.dark .legal-content {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.landing-page.dark .cta-section {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.landing-page.dark .legal-section h2 {
+  color: #e2e8f0;
+}
+
+.landing-page.dark .legal-section p,
+.landing-page.dark .legal-section li {
+  color: #94a3b8;
+}
+
+.landing-page.dark .legal-section.acknowledgment {
+  background: rgba(0, 212, 170, 0.1);
+}
+
+.landing-page.dark .contact-method a,
+.landing-page.dark .contact-method p {
+  color: #94a3b8;
+}
+
+.landing-page.dark .faq-item summary {
+  color: #e2e8f0;
+}
+
+.landing-page.dark .form-group label {
+  color: #e2e8f0;
+}
+
+.landing-page.dark .form-group input,
+.landing-page.dark .form-group select,
+.landing-page.dark .form-group textarea {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+}
+
+.landing-page.dark .form-success {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.landing-page.dark .tier.silver {
+  background: rgba(148, 163, 184, 0.1);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.landing-page.dark .tier.gold {
+  background: rgba(244, 180, 0, 0.1);
+  border-color: rgba(244, 180, 0, 0.3);
+}
+
+.landing-page.dark .job-header h4,
+.landing-page.dark .department-title {
+  color: #e2e8f0;
+}
+
+.landing-page.dark .btn-secondary {
+  color: #e2e8f0;
+  border-color: #e2e8f0;
+}
+
+.landing-page.dark .btn-secondary:hover {
+  background: #e2e8f0;
+  color: var(--fp-primary);
+}
+
+.landing-page.dark .btn-apply {
+  background: var(--fp-secondary);
+}
+
+.landing-page.dark .doc-list a strong {
+  color: #e2e8f0;
+}
+
+.landing-page.dark .doc-list a {
+  background: rgba(255, 255, 255, 0.05);
+}

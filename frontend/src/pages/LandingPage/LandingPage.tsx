@@ -1672,6 +1672,7 @@ export const Footer: React.FC = () => {
             <Link to="/compliance">Audit & Compliance</Link>
             <Link to="/pricing">Pricing</Link>
             <Link to="/demo">Request a Demo</Link>
+            <Link to="/switch">Switch to SiyaBusa</Link>
           </div>
 
           <div className="footer-links">

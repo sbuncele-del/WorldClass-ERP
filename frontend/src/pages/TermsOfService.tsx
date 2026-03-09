@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { WebsiteLayout, fadeInUp } from './LandingPage/LandingPage';
 import './FooterPages.css';
 
 const TermsOfService: React.FC = () => {
@@ -8,27 +8,20 @@ const TermsOfService: React.FC = () => {
   const effectiveDate = 'December 9, 2025';
 
   return (
-    <div className="footer-page legal-page">
-      <nav className="footer-page-nav">
-        <Link to="/" className="logo">
-          <span className="logo-icon">◈</span>
-          <span>SiyaBusa</span>
-        </Link>
-        <Link to="/" className="back-link">← Back to Home</Link>
-      </nav>
-
-      <main className="footer-page-content">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <header className="page-header">
+    <WebsiteLayout title="Terms of Service — SiyaBusa ERP">
+      <section className="page-hero">
+        <div className="container">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <span className="section-badge">Legal</span>
             <h1>Terms of Service</h1>
-            <p className="subtitle">Last Updated: {lastUpdated} | Effective: {effectiveDate}</p>
-          </header>
+            <p className="page-hero-subtitle">Last Updated: {lastUpdated} | Effective: {effectiveDate}</p>
+          </motion.div>
+        </div>
+      </section>
 
-          <div className="legal-content">
+      <section className="website-section">
+        <div className="container">
+          <motion.div className="legal-content" variants={fadeInUp} initial="initial" whileInView="animate" viewport={{ once: true }}>
             <section className="legal-section">
               <h2>1. Agreement to Terms</h2>
               <p>
@@ -445,14 +438,10 @@ const TermsOfService: React.FC = () => {
                 DO NOT USE THE SERVICES.
               </p>
             </section>
-          </div>
-        </motion.div>
-      </main>
-
-      <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
-      </footer>
-    </div>
+          </motion.div>
+        </div>
+      </section>
+    </WebsiteLayout>
   );
 };
 

@@ -1,34 +1,31 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { MessageCircle, Mail, BookOpen, GraduationCap, CheckCircle } from 'lucide-react';
+import { WebsiteLayout, fadeInUp } from './LandingPage/LandingPage';
 import './FooterPages.css';
 
 const Support: React.FC = () => {
   return (
-    <div className="footer-page">
-      <nav className="footer-page-nav">
-        <Link to="/" className="logo">
-          <span className="logo-icon">◈</span>
-          <span>SiyaBusa</span>
-        </Link>
-        <Link to="/" className="back-link">← Back to Home</Link>
-      </nav>
-
-      <main className="footer-page-content">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <header className="page-header">
+    <WebsiteLayout title="Support Center — SiyaBusa ERP">
+      <section className="page-hero">
+        <div className="container">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <span className="section-badge">Help & Support</span>
             <h1>Support Center</h1>
-            <p className="subtitle">We're here to help you succeed</p>
-          </header>
+            <p className="page-hero-subtitle">We're here to help you succeed</p>
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="website-section">
+        <div className="container">
+          <motion.div variants={fadeInUp} initial="initial" whileInView="animate" viewport={{ once: true }}>
 
           <section className="content-section">
             <div className="support-options">
               <div className="support-card primary">
-                <div className="support-icon">💬</div>
+                <MessageCircle size={32} style={{ color: 'var(--accent-teal, #00D4AA)', marginBottom: '0.75rem' }} />
                 <h2>Live Chat</h2>
                 <p>Get instant help from our support team during business hours.</p>
                 <p className="availability">Mon-Fri, 8:00 - 17:00 SAST</p>
@@ -36,16 +33,16 @@ const Support: React.FC = () => {
               </div>
 
               <div className="support-card">
-                <div className="support-icon">📧</div>
+                <Mail size={32} style={{ color: 'var(--accent-teal, #00D4AA)', marginBottom: '0.75rem' }} />
                 <h2>Email Support</h2>
                 <p>Send us a detailed message and we'll respond within 24 hours.</p>
-                <a href="mailto:support@siyabusa.co.za" className="btn-secondary">
-                  support@siyabusa.co.za
+                <a href="mailto:hello@siyabusaerp.co.za" className="btn-secondary">
+                  hello@siyabusaerp.co.za
                 </a>
               </div>
 
               <div className="support-card">
-                <div className="support-icon">📚</div>
+                <BookOpen size={32} style={{ color: 'var(--accent-teal, #00D4AA)', marginBottom: '0.75rem' }} />
                 <h2>Documentation</h2>
                 <p>Browse our comprehensive guides, tutorials, and FAQs.</p>
                 <Link to="/documentation" className="btn-secondary">
@@ -54,10 +51,10 @@ const Support: React.FC = () => {
               </div>
 
               <div className="support-card">
-                <div className="support-icon">🎓</div>
+                <GraduationCap size={32} style={{ color: 'var(--accent-teal, #00D4AA)', marginBottom: '0.75rem' }} />
                 <h2>Training</h2>
                 <p>Schedule a training session for you and your team.</p>
-                <a href="mailto:training@siyabusa.co.za" className="btn-secondary">
+                <a href="mailto:hello@siyabusaerp.co.za" className="btn-secondary">
                   Request Training
                 </a>
               </div>
@@ -149,10 +146,10 @@ const Support: React.FC = () => {
                 <h3>Standard</h3>
                 <p className="plan-included">Included with all plans</p>
                 <ul>
-                  <li>✓ Email support (24-hour response)</li>
-                  <li>✓ Documentation access</li>
-                  <li>✓ Community forums</li>
-                  <li>✓ System status updates</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />Email support (24-hour response)</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />Documentation access</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />Community forums</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />System status updates</li>
                 </ul>
               </div>
 
@@ -160,11 +157,11 @@ const Support: React.FC = () => {
                 <h3>Priority</h3>
                 <p className="plan-price">From R2,500/month</p>
                 <ul>
-                  <li>✓ Everything in Standard</li>
-                  <li>✓ Live chat support</li>
-                  <li>✓ 4-hour response time</li>
-                  <li>✓ Phone support</li>
-                  <li>✓ Quarterly business reviews</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />Everything in Standard</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />Live chat support</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />4-hour response time</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />Phone support</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />Quarterly business reviews</li>
                 </ul>
               </div>
 
@@ -172,12 +169,12 @@ const Support: React.FC = () => {
                 <h3>Enterprise</h3>
                 <p className="plan-price">Custom pricing</p>
                 <ul>
-                  <li>✓ Everything in Priority</li>
-                  <li>✓ Dedicated account manager</li>
-                  <li>✓ 1-hour response time</li>
-                  <li>✓ 24/7 emergency support</li>
-                  <li>✓ On-site training</li>
-                  <li>✓ Custom SLA</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />Everything in Priority</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />Dedicated account manager</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />1-hour response time</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />24/7 emergency support</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />On-site training</li>
+                  <li><CheckCircle size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} />Custom SLA</li>
                 </ul>
               </div>
             </div>
@@ -189,28 +186,21 @@ const Support: React.FC = () => {
               <div className="status-indicator"></div>
               <span>All Systems Operational</span>
             </div>
-            <p className="status-link">
-              <a href="#" target="_blank" rel="noopener noreferrer">
-                View detailed status page →
-              </a>
-            </p>
           </section>
 
           <section className="content-section cta-section">
             <h2>Still Need Help?</h2>
             <p>Our team is ready to assist you with any questions or issues.</p>
             <div className="cta-buttons">
-              <a href="mailto:support@siyabusa.co.za" className="btn-primary">Email Support</a>
+              <a href="mailto:hello@siyabusaerp.co.za" className="btn-primary">Email Support</a>
               <Link to="/contact" className="btn-secondary">Contact Us</Link>
             </div>
           </section>
-        </motion.div>
-      </main>
 
-      <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
-      </footer>
-    </div>
+          </motion.div>
+        </div>
+      </section>
+    </WebsiteLayout>
   );
 };
 

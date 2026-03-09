@@ -46,6 +46,8 @@ const Blog = lazy(() => import('./pages/Blog'));
 const CaseStudies = lazy(() => import('./pages/CaseStudies'));
 const Pricing = lazy(() => import('./pages/Pricing'));
 const ConceptDocument = lazy(() => import('./pages/public/ConceptDocument'));
+const SwitchToSiyaBusa = lazy(() => import('./pages/website/SwitchToSiyaBusa'));
+const MigrationPage = lazy(() => import('./pages/MigrationPage'));
 
 // Lazy-loaded Authentication Pages
 const Signup = lazy(() => import('./pages/Signup'));
@@ -238,6 +240,7 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
             <Route path="/audit-logs" element={<AuditLogs />} />
             <Route path="/help" element={<HelpCenter />} />
             <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/migration" element={<MigrationPage />} />
             <Route path="/billing" element={<Billing />} />
             <Route path="/api-test" element={<APITestDashboard />} />
           </Routes>
@@ -313,6 +316,8 @@ function App() {
                       <Route path="/case-studies" element={<CaseStudies />} />
                       <Route path="/concept-document" element={<ConceptDocument />} />
                       <Route path="/stakeholders" element={<ConceptDocument />} />
+                      <Route path="/switch" element={<SwitchToSiyaBusa />} />
+                      <Route path="/migrate" element={<SwitchToSiyaBusa />} />
                       
                       {/* Public Client Portal - Access with code (no login required) */}
                       <Route path="/portal/:id" element={<PortalAccess />} />

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Mail, Briefcase, Wrench, MapPin, CheckCircle, Building } from 'lucide-react';
+import { WebsiteLayout, fadeInUp } from './LandingPage/LandingPage';
 import './FooterPages.css';
 
 const Contact: React.FC = () => {
@@ -15,66 +16,57 @@ const Contact: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In production, this would send to backend
     console.log('Contact form submitted:', formData);
     setSubmitted(true);
   };
 
   return (
-    <div className="footer-page">
-      <nav className="footer-page-nav">
-        <Link to="/" className="logo">
-          <span className="logo-icon">◈</span>
-          <span>SiyaBusa</span>
-        </Link>
-        <Link to="/" className="back-link">← Back to Home</Link>
-      </nav>
-
-      <main className="footer-page-content">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <header className="page-header">
+    <WebsiteLayout title="Contact Us — SiyaBusa ERP">
+      <section className="page-hero">
+        <div className="container">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <span className="section-badge">Get in Touch</span>
             <h1>Contact Us</h1>
-            <p className="subtitle">We'd love to hear from you</p>
-          </header>
+            <p className="page-hero-subtitle">
+              Have questions about SiyaBusa? Want to schedule a demo? Our team is here to help.
+            </p>
+          </motion.div>
+        </div>
+      </section>
 
+      <section className="website-section">
+        <div className="container">
           <div className="contact-grid">
-            <section className="contact-info">
+            <motion.section className="contact-info" variants={fadeInUp} initial="initial" whileInView="animate" viewport={{ once: true }}>
               <h2>Get in Touch</h2>
-              <p>
-                Have questions about SiyaBusa? Want to schedule a demo? Our team is here to help.
-              </p>
 
               <div className="contact-methods">
                 <div className="contact-method">
-                  <div className="contact-icon">📧</div>
+                  <div className="contact-icon-wrapper"><Mail size={24} /></div>
                   <div>
                     <h3>General Inquiries</h3>
-                    <a href="mailto:hello@siyabusa.co.za">hello@siyabusa.co.za</a>
+                    <a href="mailto:hello@siyabusaerp.co.za">hello@siyabusaerp.co.za</a>
                   </div>
                 </div>
 
                 <div className="contact-method">
-                  <div className="contact-icon">💼</div>
+                  <div className="contact-icon-wrapper"><Briefcase size={24} /></div>
                   <div>
                     <h3>Sales</h3>
-                    <a href="mailto:sales@siyabusa.co.za">sales@siyabusa.co.za</a>
+                    <a href="mailto:demo@siyabusaerp.co.za">demo@siyabusaerp.co.za</a>
                   </div>
                 </div>
 
                 <div className="contact-method">
-                  <div className="contact-icon">🛠️</div>
+                  <div className="contact-icon-wrapper"><Wrench size={24} /></div>
                   <div>
                     <h3>Support</h3>
-                    <a href="mailto:support@siyabusa.co.za">support@siyabusa.co.za</a>
+                    <a href="mailto:hello@siyabusaerp.co.za">hello@siyabusaerp.co.za</a>
                   </div>
                 </div>
 
                 <div className="contact-method">
-                  <div className="contact-icon">📍</div>
+                  <div className="contact-icon-wrapper"><MapPin size={24} /></div>
                   <div>
                     <h3>Office</h3>
                     <p>Centurion, Gauteng<br />South Africa</p>
@@ -83,18 +75,19 @@ const Contact: React.FC = () => {
               </div>
 
               <div className="company-info-box">
+                <Building size={20} style={{ marginBottom: '0.5rem', opacity: 0.7 }} />
                 <h3>Masaphokati Technologies (Pty) Ltd</h3>
                 <p>
                   The company behind SiyaBusa, dedicated to transforming how African 
                   businesses manage their operations.
                 </p>
               </div>
-            </section>
+            </motion.section>
 
-            <section className="contact-form-section">
+            <motion.section className="contact-form-section" variants={fadeInUp} initial="initial" whileInView="animate" viewport={{ once: true }}>
               {submitted ? (
                 <div className="form-success">
-                  <div className="success-icon">✓</div>
+                  <CheckCircle size={48} style={{ color: 'var(--accent-teal, #00D4AA)' }} />
                   <h2>Message Sent!</h2>
                   <p>Thank you for reaching out. We'll get back to you within 24 hours.</p>
                   <button onClick={() => setSubmitted(false)} className="btn-secondary">
@@ -172,15 +165,11 @@ const Contact: React.FC = () => {
                   </form>
                 </>
               )}
-            </section>
+            </motion.section>
           </div>
-        </motion.div>
-      </main>
-
-      <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
-      </footer>
-    </div>
+        </div>
+      </section>
+    </WebsiteLayout>
   );
 };
 

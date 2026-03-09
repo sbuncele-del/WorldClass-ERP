@@ -1,11 +1,11 @@
 {
-  "name": "SiyaBusa Driver",
-  "short_name": "Driver",
-  "description": "SiyaBusa ERP - Driver Delivery App with POD capture",
-  "start_url": "/driver",
+  "name": "SiyaBusa ERP",
+  "short_name": "SiyaBusa",
+  "description": "SiyaBusa ERP — The AI-native business operating system built for South African enterprises",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#1e40af",
-  "theme_color": "#3b82f6",
+  "background_color": "#0A1F3E",
+  "theme_color": "#0A1F3E",
   "orientation": "portrait",
   "icons": [
     {
@@ -58,18 +58,5 @@
     }
   ],
   "categories": ["business", "productivity"],
-  "screenshots": [
-    {
-      "src": "/screenshots/driver-trip.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "label": "Trip Management"
-    },
-    {
-      "src": "/screenshots/driver-pod.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "label": "POD Capture"
-    }
-  ]
+  "screenshots": []
 }

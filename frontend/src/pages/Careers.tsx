@@ -1,6 +1,7 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { DollarSign, HeartPulse, Home, BookOpen, Palmtree, Rocket, MapPin } from 'lucide-react';
+import { WebsiteLayout, fadeInUp } from './LandingPage/LandingPage';
 import './FooterPages.css';
 
 interface JobListing {
@@ -166,29 +167,42 @@ const jobListings: JobListing[] = [
   }
 ];
 
+const benefitIcons = [
+  <DollarSign size={24} />,
+  <HeartPulse size={24} />,
+  <Home size={24} />,
+  <BookOpen size={24} />,
+  <Palmtree size={24} />,
+  <Rocket size={24} />,
+];
+
+const benefits = [
+  { title: 'Competitive Compensation', desc: 'Market-rate salaries with equity options for all full-time employees.' },
+  { title: 'Health & Wellness', desc: 'Comprehensive medical aid contribution and wellness programs.' },
+  { title: 'Flexible Work', desc: 'Remote-friendly culture with flexible hours for most roles.' },
+  { title: 'Learning & Growth', desc: 'Annual learning budget and mentorship opportunities.' },
+  { title: 'Generous Leave', desc: '20+ days annual leave plus public holidays and family leave.' },
+  { title: 'Impact', desc: 'Work that matters—help thousands of businesses thrive.' },
+];
+
 const Careers: React.FC = () => {
   const departments = [...new Set(jobListings.map(job => job.department))];
 
   return (
-    <div className="footer-page">
-      <nav className="footer-page-nav">
-        <Link to="/" className="logo">
-          <span className="logo-icon">◈</span>
-          <span>SiyaBusa</span>
-        </Link>
-        <Link to="/" className="back-link">← Back to Home</Link>
-      </nav>
-
-      <main className="footer-page-content">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <header className="page-header">
+    <WebsiteLayout title="Careers — SiyaBusa ERP">
+      <section className="page-hero">
+        <div className="container">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <span className="section-badge">Join Our Team</span>
             <h1>Careers at SiyaBusa</h1>
-            <p className="subtitle">Join us in transforming how businesses operate</p>
-          </header>
+            <p className="page-hero-subtitle">Join us in transforming how businesses operate</p>
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="website-section">
+        <div className="container">
+          <motion.div variants={fadeInUp} initial="initial" whileInView="animate" viewport={{ once: true }}>
 
           <section className="content-section">
             <h2>Why Work With Us?</h2>
@@ -200,36 +214,13 @@ const Careers: React.FC = () => {
             </p>
             
             <div className="benefits-grid">
-              <div className="benefit-card">
-                <div className="benefit-icon">💰</div>
-                <h3>Competitive Compensation</h3>
-                <p>Market-rate salaries with equity options for all full-time employees.</p>
-              </div>
-              <div className="benefit-card">
-                <div className="benefit-icon">🏥</div>
-                <h3>Health & Wellness</h3>
-                <p>Comprehensive medical aid contribution and wellness programs.</p>
-              </div>
-              <div className="benefit-card">
-                <div className="benefit-icon">🏠</div>
-                <h3>Flexible Work</h3>
-                <p>Remote-friendly culture with flexible hours for most roles.</p>
-              </div>
-              <div className="benefit-card">
-                <div className="benefit-icon">📚</div>
-                <h3>Learning & Growth</h3>
-                <p>Annual learning budget and mentorship opportunities.</p>
-              </div>
-              <div className="benefit-card">
-                <div className="benefit-icon">🌴</div>
-                <h3>Generous Leave</h3>
-                <p>20+ days annual leave plus public holidays and family leave.</p>
-              </div>
-              <div className="benefit-card">
-                <div className="benefit-icon">🚀</div>
-                <h3>Impact</h3>
-                <p>Work that matters—help thousands of businesses thrive.</p>
-              </div>
+              {benefits.map((benefit, i) => (
+                <div key={i} className="benefit-card">
+                  <div style={{ color: 'var(--accent-teal, #00D4AA)', marginBottom: '0.75rem' }}>{benefitIcons[i]}</div>
+                  <h3>{benefit.title}</h3>
+                  <p>{benefit.desc}</p>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -238,7 +229,7 @@ const Careers: React.FC = () => {
             <p className="section-intro">
               We're always looking for talented individuals who share our passion for 
               building exceptional software. Don't see a perfect fit? Send your CV to{' '}
-              <a href="mailto:careers@siyabusa.co.za">careers@siyabusa.co.za</a>
+              <a href="mailto:careers@siyabusaerp.co.za">careers@siyabusaerp.co.za</a>
             </p>
 
             {departments.map(department => (
@@ -252,7 +243,7 @@ const Careers: React.FC = () => {
                         <div className="job-header">
                           <h4>{job.title}</h4>
                           <div className="job-meta">
-                            <span className="job-location">📍 {job.location}</span>
+                            <span className="job-location"><MapPin size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.25rem' }} />{job.location}</span>
                             <span className="job-type">{job.type}</span>
                           </div>
                         </div>
@@ -266,7 +257,7 @@ const Careers: React.FC = () => {
                           </ul>
                         </div>
                         <a 
-                          href={`mailto:careers@siyabusa.co.za?subject=Application: ${job.title} (${job.id})`}
+                          href={`mailto:careers@siyabusaerp.co.za?subject=Application: ${job.title} (${job.id})`}
                           className="btn-apply"
                         >
                           Apply Now
@@ -315,17 +306,15 @@ const Careers: React.FC = () => {
               We're building something special. If you're passionate about creating 
               technology that makes a real difference, we want to hear from you.
             </p>
-            <a href="mailto:careers@siyabusa.co.za" className="btn-primary">
+            <a href="mailto:careers@siyabusaerp.co.za" className="btn-primary">
               Send Your CV
             </a>
           </section>
-        </motion.div>
-      </main>
 
-      <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
-      </footer>
-    </div>
+          </motion.div>
+        </div>
+      </section>
+    </WebsiteLayout>
   );
 };
 
