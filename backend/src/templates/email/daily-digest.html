@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Digest — SiyaBusa ERP</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6; color: #333; background-color: #f5f5f5; padding: 20px;
+    }
+    .email-container {
+      max-width: 600px; margin: 0 auto; background-color: #ffffff;
+      border-radius: 8px; overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .email-header {
+      background: linear-gradient(135deg, #00D4AA 0%, #00B894 100%);
+      color: #ffffff; padding: 30px; text-align: center;
+    }
+    .email-header h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    .email-header .date { font-size: 14px; opacity: 0.9; }
+    .email-body { padding: 24px 30px; }
+    .greeting { font-size: 18px; color: #1f2937; margin-bottom: 16px; }
+    .section { margin-bottom: 20px; border-bottom: 1px solid #f0f0f0; padding-bottom: 16px; }
+    .section:last-child { border-bottom: none; }
+    .section-title {
+      font-size: 14px; font-weight: 600; text-transform: uppercase;
+      color: #00B894; margin-bottom: 8px; letter-spacing: 0.5px;
+    }
+    .metric {
+      display: inline-block; text-align: center; padding: 10px 16px;
+      margin: 4px; background: #f8f9fa; border-radius: 6px; min-width: 100px;
+    }
+    .metric .value { font-size: 22px; font-weight: 700; color: #1f2937; }
+    .metric .label { font-size: 11px; color: #666; text-transform: uppercase; }
+    .metric.red .value { color: #e74c3c; }
+    .metric.orange .value { color: #f39c12; }
+    .metric.green .value { color: #27ae60; }
+    .alert-row {
+      padding: 8px 12px; margin: 4px 0; border-radius: 4px;
+      font-size: 14px; background: #fff8e1;
+    }
+    .alert-row.critical { background: #fde8e8; color: #e74c3c; }
+    .alert-row.info { background: #e8f4fd; color: #2980b9; }
+    .cta-button {
+      display: inline-block; background: #00D4AA; color: #ffffff !important;
+      padding: 12px 24px; border-radius: 6px; text-decoration: none;
+      font-weight: 600; font-size: 14px; margin-top: 8px;
+    }
+    .email-footer {
+      padding: 20px 30px; background: #f8f9fa; text-align: center;
+      font-size: 12px; color: #999;
+    }
+    .email-footer a { color: #00B894; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="email-header">
+      <h1>☀️ Good Morning, {{firstName}}</h1>
+      <div class="date">{{dateFormatted}} — Your Daily Digest</div>
+    </div>
+
+    <div class="email-body">
+      <!-- Tasks Section -->
+      {{#if hasTasks}}
+      <div class="section">
+        <div class="section-title">📋 Tasks</div>
+        <div>
+          <div class="metric{{#if overdueTaskClass}} {{overdueTaskClass}}{{/if}}">
+            <div class="value">{{overdueTasks}}</div>
+            <div class="label">Overdue</div>
+          </div>
+          <div class="metric">
+            <div class="value">{{dueTodayTasks}}</div>
+            <div class="label">Due Today</div>
+          </div>
+        </div>
+      </div>
+      {{/if}}
+
+      <!-- Approvals Section -->
+      {{#if hasApprovals}}
+      <div class="section">
+        <div class="section-title">✅ Pending Approvals</div>
+        <div>
+          <div class="metric{{#if staleApprovalClass}} {{staleApprovalClass}}{{/if}}">
+            <div class="value">{{pendingApprovals}}</div>
+            <div class="label">Waiting</div>
+          </div>
+          {{#if staleApprovals}}
+          <div class="metric orange">
+            <div class="value">{{staleApprovals}}</div>
+            <div class="label">Stale (&gt;3d)</div>
+          </div>
+          {{/if}}
+        </div>
+      </div>
+      {{/if}}
+
+      <!-- Invoices Section -->
+      {{#if hasInvoices}}
+      <div class="section">
+        <div class="section-title">💰 Overdue Invoices</div>
+        <div class="alert-row critical">
+          <strong>{{overdueInvoiceCount}}</strong> invoices overdue — total <strong>{{overdueInvoiceTotal}}</strong>
+        </div>
+      </div>
+      {{/if}}
+
+      <!-- Compliance Section -->
+      {{#if hasDeadlines}}
+      <div class="section">
+        <div class="section-title">📅 Upcoming Deadlines (7 days)</div>
+        {{#each deadlines}}
+        <div class="alert-row info">
+          <strong>{{this.name}}</strong> — {{this.dueDate}}
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+
+      <!-- Bank Reconciliation -->
+      {{#if hasUnreconciled}}
+      <div class="section">
+        <div class="section-title">🏦 Bank Reconciliation</div>
+        <div class="metric orange">
+          <div class="value">{{unreconciledCount}}</div>
+          <div class="label">Unreconciled</div>
+        </div>
+      </div>
+      {{/if}}
+
+      <!-- Low Stock -->
+      {{#if hasLowStock}}
+      <div class="section">
+        <div class="section-title">📦 Inventory</div>
+        <div class="metric red">
+          <div class="value">{{lowStockCount}}</div>
+          <div class="label">Below Reorder</div>
+        </div>
+      </div>
+      {{/if}}
+
+      <!-- Financial KPIs (managers only) -->
+      {{#if hasFinancials}}
+      <div class="section">
+        <div class="section-title">📊 Financial Snapshot</div>
+        <div>
+          <div class="metric green">
+            <div class="value">{{cashBalance}}</div>
+            <div class="label">Cash</div>
+          </div>
+          <div class="metric">
+            <div class="value">{{receivables}}</div>
+            <div class="label">Receivables</div>
+          </div>
+          <div class="metric red">
+            <div class="value">{{payables}}</div>
+            <div class="label">Payables</div>
+          </div>
+        </div>
+      </div>
+      {{/if}}
+
+      <div style="text-align: center; margin-top: 20px;">
+        <a href="{{dashboardUrl}}" class="cta-button">Open Dashboard →</a>
+      </div>
+    </div>
+
+    <div class="email-footer">
+      <p>SiyaBusa ERP — Work Smart, Not Hard</p>
+      <p style="margin-top: 4px">
+        <a href="{{settingsUrl}}">Email Settings</a> · 
+        <a href="{{unsubscribeUrl}}">Unsubscribe</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

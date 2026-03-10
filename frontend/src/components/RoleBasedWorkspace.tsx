@@ -68,6 +68,8 @@ const RoleBasedWorkspace: React.FC = () => {
   const [greeting, setGreeting] = useState('Good morning');
   const [isNewTenant, setIsNewTenant] = useState(false);
   const [tenantName, setTenantName] = useState('');
+  const [complianceDeadlines, setComplianceDeadlines] = useState<{date: string; filings: {name: string; authority: string; type: string}[]}[]>([]);
+  const [nextDeadlineDays, setNextDeadlineDays] = useState<{days: number; label: string}>({days: 0, label: '-'});
   
   // Real dashboard data from API
   const [dashboardData, setDashboardData] = useState<DashboardData>({
@@ -108,7 +110,25 @@ const RoleBasedWorkspace: React.FC = () => {
     
     // Fetch real dashboard data
     fetchDashboardData();
+    fetchComplianceDeadlines();
   }, []);
+
+  const fetchComplianceDeadlines = async () => {
+    try {
+      const res = await apiClient.get('/api/compliance/regulatory/deadlines').catch(() => null);
+      const deadlines = res?.data?.data || res?.data || [];
+      if (Array.isArray(deadlines)) {
+        setComplianceDeadlines(deadlines.slice(0, 6));
+        if (deadlines.length > 0 && deadlines[0].date) {
+          const daysUntil = Math.max(0, Math.ceil((new Date(deadlines[0].date).getTime() - Date.now()) / 86400000));
+          const firstName = deadlines[0].filings?.[0]?.name || 'Filing';
+          setNextDeadlineDays({ days: daysUntil, label: firstName });
+        }
+      }
+    } catch (e) {
+      // Silently fail — dashboard still works with defaults
+    }
+  };
   
   const fetchDashboardData = async () => {
     try {
@@ -405,11 +425,11 @@ const RoleBasedWorkspace: React.FC = () => {
           <Card className="kpi-card gradient-amber">
             <Statistic 
               title="Next Tax Deadline" 
-              value="5" 
-              suffix="days" 
+              value={nextDeadlineDays.days || '-'} 
+              suffix={nextDeadlineDays.days ? 'days' : ''} 
               valueStyle={{ color: '#f59e0b' }}
             />
-            <div className="kpi-change">VAT201 December</div>
+            <div className="kpi-change">{nextDeadlineDays.label}</div>
           </Card>
         </Col>
       </Row>
@@ -451,16 +471,27 @@ const RoleBasedWorkspace: React.FC = () => {
         <Col xs={24} lg={12}>
           <Card 
             title={<><AuditOutlined /> Compliance Calendar</>}
+            extra={<Button type="link" onClick={() => navigate('/app/regulatory')}>View All →</Button>}
             className="workspace-card"
           >
-            <Timeline
-              items={[
-                { color: 'red', children: <><Text strong>VAT201</Text> - Due 25 Dec 2025</> },
-                { color: 'orange', children: <><Text strong>EMP201</Text> - Due 7 Jan 2026</> },
-                { color: 'blue', children: <><Text strong>Annual Returns</Text> - Due 31 Jan 2026</> },
-                { color: 'green', children: <><Text strong>Provisional Tax</Text> - Due 28 Feb 2026</> },
-              ]}
-            />
+            {complianceDeadlines.length > 0 ? (
+              <Timeline
+                items={complianceDeadlines.map((d, i) => {
+                  const daysUntil = Math.ceil((new Date(d.date).getTime() - Date.now()) / 86400000);
+                  const color = daysUntil < 0 ? 'red' : daysUntil <= 7 ? 'orange' : daysUntil <= 30 ? 'blue' : 'green';
+                  return {
+                    color,
+                    children: <><Text strong>{d.filings.map(f => f.name).join(', ')}</Text> - Due {d.date}</>,
+                  };
+                })}
+              />
+            ) : (
+              <Timeline
+                items={[
+                  { color: 'green', children: <Text type="secondary">No upcoming deadlines</Text> },
+                ]}
+              />
+            )}
           </Card>
         </Col>
       </Row>

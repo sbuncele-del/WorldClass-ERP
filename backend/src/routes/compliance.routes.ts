@@ -17,6 +17,7 @@ router.get('/regulatory/filings', complianceWorkspaceController.getRegulatoryFil
 router.get('/regulatory/requirements', complianceWorkspaceController.getRegulatoryRequirements);
 router.get('/regulatory/deadlines', complianceWorkspaceController.getRegulatoryDeadlines);
 router.get('/regulatory/auto-sync/status', complianceWorkspaceController.getRegulatoryAutoSyncStatus);
+router.get('/regulatory/enhanced-status', complianceWorkspaceController.getRegulatoryEnhancedStatus);
 router.post('/regulatory/filings', complianceWorkspaceController.createRegulatoryFiling);
 router.post('/regulatory/filings/:id/submit', complianceWorkspaceController.submitRegulatoryFiling);
 

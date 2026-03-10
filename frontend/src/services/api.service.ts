@@ -70,6 +70,11 @@ const buildHeaders = (customHeaders: Record<string, string> = {}): HeadersInit =
     headers['X-Tenant-ID'] = tenantId;
   }
 
+  const entityId = localStorage.getItem('currentEntityId') || localStorage.getItem('entityId');
+  if (entityId) {
+    headers['X-Entity-ID'] = entityId;
+  }
+
   return headers;
 };
 

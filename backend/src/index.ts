@@ -21,6 +21,7 @@ import authRoutes from './auth/auth.routes';
 import onboardingRoutes from './routes/onboarding.routes';
 import emailPreferencesRoutes from './routes/email-preferences.routes';
 import emailQueueRoutes from './routes/email-queue.routes';
+import schedulerRoutes from './routes/scheduler.routes';
 import tenantSettingsRoutes from './routes/tenant-settings.routes';
 import paymentRoutes from './routes/payment.routes';
 import webhookRoutes from './routes/webhook.routes';
@@ -38,6 +39,7 @@ import manufacturingRoutes from './modules/manufacturing/routes/manufacturing.ro
 import warehouseRoutes from './routes/warehouse.routes';
 import sarsSentinelRoutes from './routes/sars-sentinel.routes';
 import cashManagementRoutes from './routes/cash-management.routes';
+import yodleeRoutes from './routes/yodlee.routes';
 import financialReportsRoutes from './routes/financial-reports.routes';
 import recurringEntriesRoutes from './routes/recurring-entries.routes';
 import importEntriesRoutes from './routes/import-entries.routes';
@@ -1560,6 +1562,9 @@ v1Router.use('/email-preferences', apiLimiter, emailPreferencesRoutes);
 // Email queue admin routes (protected with admin rate limiting) - DISABLED - uses Bull/Redis
 // v1Router.use('/admin/email-queue', adminLimiter, emailQueueRoutes);
 
+// Scheduler admin routes (list jobs, manual trigger)
+v1Router.use('/scheduler', apiLimiter, schedulerRoutes);
+
 // Tenant settings routes (protected with API rate limiting)
 v1Router.use('/tenant', apiLimiter, tenantSettingsRoutes);
 
@@ -1603,6 +1608,7 @@ v1Router.use('/manufacturing', manufacturingRoutes);
 v1Router.use('/warehouse', warehouseRoutes);
 v1Router.use('/sars-sentinel', sarsSentinelRoutes);
 v1Router.use('/cash-management', cashManagementRoutes);
+v1Router.use('/yodlee', apiLimiter, yodleeRoutes); // Yodlee Open Banking Integration
 // Old financial reports routes - replaced by new module routes below
 // v1Router.use('/financial/reports', financialReportsRoutes);
 v1Router.use('/financial/recurring-entries', recurringEntriesRoutes);
@@ -1667,16 +1673,19 @@ app.use(errorHandler);
 initializeLogisticsGateway(httpServer);
 
 // Listen on all interfaces (0.0.0.0) to accept external connections
-httpServer.listen(PORT, '0.0.0.0', () => {
+httpServer.listen(PORT, '0.0.0.0', async () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌐 Accepting connections on all interfaces (0.0.0.0:${PORT})`);
   console.log(`📊 ERP System initialized`);
   console.log(`🔌 Socket.IO gateway active at /logistics-ws`);
   
-  // Initialize demo tenant auto-reset cron job (DISABLED - Redis not configured)
-  // DemoResetService.initializeCronJob();
-  // console.log(`🔄 Demo reset service initialized - Daily reset at 2:00 AM`);
-  console.log(`⚠️  Demo reset service disabled (Redis not configured)`);
+  // Initialize background scheduler (daily digest, invoice reminders, bank recon, etc.)
+  try {
+    const { initializeScheduler } = await import('./services/scheduler.service');
+    await initializeScheduler();
+  } catch (err) {
+    console.error('⚠️  Scheduler initialization failed (non-fatal):', err);
+  }
 });
 
 export default app;

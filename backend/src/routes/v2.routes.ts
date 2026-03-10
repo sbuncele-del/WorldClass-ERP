@@ -1681,6 +1681,84 @@ router.post('/financial/journal-entries/:id/reverse', FinancialV2.reverseJournal
 router.get('/financial/fiscal-periods', FinancialV2.getFiscalPeriods);
 router.get('/financial/fiscal-years', FinancialV2.getFiscalYears);
 router.get('/financial/balance-sheet', BalanceSheetControllerV2.generateBalanceSheet); // Direct access
+
+// Fiscal routes (aliased for frontend financial.service.ts)
+import * as PeriodController from '../modules/financial/controllers/period.controller';
+router.get('/fiscal/current-year', async (req: any, res) => {
+  try {
+    const { query: dbQuery } = await import('../config/database');
+    const tenantId = req.tenant?.id || 1;
+    // Get current fiscal year
+    const fyResult = await dbQuery(
+      `SELECT fiscal_year_id as id, tenant_id, year_code, year_name, start_date, end_date, status, is_current, created_at
+       FROM fiscal_years WHERE tenant_id = $1 AND is_current = true LIMIT 1`, [tenantId]);
+    let fy = fyResult.rows[0];
+    if (!fy) {
+      // Try any open fiscal year
+      const anyFy = await dbQuery(
+        `SELECT fiscal_year_id as id, tenant_id, year_code, year_name, start_date, end_date, status, is_current, created_at
+         FROM fiscal_years WHERE tenant_id = $1 AND status = 'OPEN' ORDER BY start_date DESC LIMIT 1`, [tenantId]);
+      fy = anyFy.rows[0];
+    }
+    if (!fy) {
+      // Auto-create a fiscal year for the current SA tax year (March-Feb)
+      const now = new Date();
+      const startMonth = now.getMonth() >= 2 ? 2 : 2; // March = month 2
+      const startYear = now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
+      const startDate = new Date(startYear, startMonth, 1).toISOString().split('T')[0];
+      const endDate = new Date(startYear + 1, startMonth - 1, 28).toISOString().split('T')[0]; // end of Feb
+      const yearCode = `FY${startYear}/${(startYear + 1).toString().slice(-2)}`;
+      const yearName = `Financial Year ${startYear}/${startYear + 1}`;
+      const createResult = await dbQuery(
+        `INSERT INTO fiscal_years (tenant_id, year_code, year_name, start_date, end_date, status, is_current, created_by)
+         VALUES ($1, $2, $3, $4, $5, 'OPEN', true, 'system') RETURNING fiscal_year_id as id`, 
+        [tenantId, yearCode, yearName, startDate, endDate]);
+      const fyId = createResult.rows[0].id;
+      // Create 12 monthly periods
+      for (let i = 0; i < 12; i++) {
+        const pStart = new Date(startYear, startMonth + i, 1);
+        const pEnd = new Date(startYear, startMonth + i + 1, 0);
+        const pNum = i + 1;
+        const pCode = `P${String(pNum).padStart(2, '0')}`;
+        const pName = pStart.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+        const pStatus = pStart <= now && pEnd >= now ? 'OPEN' : pEnd < now ? 'CLOSED' : 'FUTURE';
+        await dbQuery(
+          `INSERT INTO fiscal_periods (tenant_id, fiscal_year_id, period_number, period_code, period_name, start_date, end_date, status, is_current)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [tenantId, fyId, pNum, pCode, pName, pStart.toISOString().split('T')[0], pEnd.toISOString().split('T')[0], pStatus, pStatus === 'OPEN']);
+      }
+      const newFy = await dbQuery(
+        `SELECT fiscal_year_id as id, tenant_id, year_code, year_name, start_date, end_date, status, is_current, created_at
+         FROM fiscal_years WHERE fiscal_year_id = $1`, [fyId]);
+      fy = newFy.rows[0];
+    }
+    // Get periods for this fiscal year
+    const periodsResult = await dbQuery(
+      `SELECT period_id, tenant_id, fiscal_year_id, period_number, period_code, period_name, start_date, end_date, status, is_current, closed_by, closed_at
+       FROM fiscal_periods WHERE fiscal_year_id = $1 AND tenant_id = $2 ORDER BY period_number`, [fy.id, tenantId]);
+    const periods = periodsResult.rows;
+    const closedCount = periods.filter((p: any) => p.status === 'CLOSED').length;
+    const openCount = periods.filter((p: any) => p.status === 'OPEN').length;
+    const futureCount = periods.filter((p: any) => p.status === 'FUTURE').length;
+    const currentPeriod = periods.find((p: any) => p.status === 'OPEN');
+    res.json({ success: true, data: {
+      ...fy,
+      periods,
+      summary: {
+        totalPeriods: periods.length,
+        closedCount, openCount, futureCount,
+        currentPeriod: currentPeriod?.period_name || 'None',
+        progress: periods.length > 0 ? Math.round((closedCount / periods.length) * 100) : 0
+      }
+    }});
+  } catch (error: any) {
+    console.error('Fiscal current-year error:', error);
+    res.status(500).json({ success: false, message: error.message || 'Failed to fetch fiscal year' });
+  }
+});
+router.get('/fiscal/years', PeriodController.getAllFiscalYears);
+router.post('/fiscal/periods/:id/close', PeriodController.closePeriod);
+router.post('/fiscal/periods/:id/reopen', PeriodController.openPeriod);
 router.get('/financial/income-statement', IncomeStatementControllerV2.generateIncomeStatement); // Direct access
 router.get('/reports/balance-sheet', BalanceSheetControllerV2.generateBalanceSheet);
 router.get('/reports/income-statement', IncomeStatementControllerV2.generateIncomeStatement);
@@ -1768,6 +1846,7 @@ router.get('/admin/users', AdminControllerV2.getAllUsers);
 router.get('/admin/users/:id', AdminControllerV2.getUserById);
 router.post('/admin/users', AdminControllerV2.createUser);
 router.post('/admin/users/invite', AdminControllerV2.inviteUser);
+router.post('/admin/invite-accountant', AdminControllerV2.inviteAccountant);
 // accept-invite is registered in PUBLIC section above (no auth required)
 router.post('/admin/users/:id/resend-invite', AdminControllerV2.resendInvitation);
 router.put('/admin/users/:id', AdminControllerV2.updateUser);
@@ -1775,6 +1854,7 @@ router.delete('/admin/users/:id', AdminControllerV2.deleteUser);
 router.get('/admin/roles', AdminControllerV2.getRoles);
 router.post('/admin/roles', AdminControllerV2.createRole);
 router.get('/admin/audit-log', AdminControllerV2.getAuditLog);
+router.get('/admin/audit-logs', AdminControllerV2.getAuditLog); // plural alias
 router.get('/admin/settings', AdminControllerV2.getSettings);
 router.put('/admin/settings', AdminControllerV2.updateSettings);
 router.get('/admin/modules', ModuleManagementControllerV2.getModules);

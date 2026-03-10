@@ -173,14 +173,17 @@ function normalizeReportData(reportCode: string, raw: any, startDate: string, en
         const debits = parseFloat(a.total_debits ?? a.debit ?? 0);
         const credits = parseFloat(a.total_credits ?? a.credit ?? 0);
         const balance = parseFloat(a.balance ?? (debits - credits));
+        const accountType = (a.account_type || a.type || '').toLowerCase();
+        // Assets and expenses have natural debit balances; liabilities, equity, and revenue have natural credit balances
+        const isNaturalDebit = accountType === 'asset' || accountType === 'expense';
         return {
           code: a.account_code || a.code || '',
           name: a.account_name || a.name || '',
-          accountType: (a.account_type || a.type || '').toLowerCase(),
+          accountType,
           periodDebits: debits,
           periodCredits: credits,
-          debitBalance: balance > 0 ? balance : 0,
-          creditBalance: balance < 0 ? Math.abs(balance) : 0,
+          debitBalance: isNaturalDebit ? (balance > 0 ? balance : 0) : (balance < 0 ? Math.abs(balance) : 0),
+          creditBalance: isNaturalDebit ? (balance < 0 ? Math.abs(balance) : 0) : (balance > 0 ? balance : 0),
         };
       });
       const totalDebits = accounts.reduce((s: number, a: any) => s + a.debitBalance, 0);

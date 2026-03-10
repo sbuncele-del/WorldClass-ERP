@@ -38,7 +38,7 @@ const SettingsDropdown: React.FC<SettingsDropdownProps> = ({ onClose }) => {
           <span className="item-icon">🔐</span>
           <span className="item-label">Security & Privacy</span>
         </button>
-        <button className="settings-item" onClick={() => alert('Import/Export')}>
+        <button className="settings-item" onClick={() => handleNavigate('/migration')}>
           <span className="item-icon">📥</span>
           <span className="item-label">Import/Export Data</span>
         </button>

@@ -25,7 +25,12 @@ import {
   UserAddOutlined,
   MailOutlined,
   SendOutlined,
+  AuditOutlined,
+  CheckCircleOutlined,
+  LinkOutlined,
 } from '@ant-design/icons';
+import { Typography } from 'antd';
+const { Text } = Typography;
 import { HubLayout, HubHeader, StatusBanner, HubTabs } from '../components/hub';
 import { workspaceApi } from '../services/api.service';
 import apiClient from '../services/api';
@@ -63,6 +68,9 @@ const UserManagement: React.FC = () => {
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [inviteForm] = Form.useForm();
+  const [accountantModalVisible, setAccountantModalVisible] = useState(false);
+  const [invitingAccountant, setInvitingAccountant] = useState(false);
+  const [accountantForm] = Form.useForm();
 
   const loadRoles = async () => {
     try {
@@ -71,6 +79,28 @@ const UserManagement: React.FC = () => {
       setRoles(Array.isArray(roleList) ? roleList : []);
     } catch (err) {
       console.error('Failed to load roles:', err);
+    }
+  };
+
+  const handleInviteAccountant = async (values: any) => {
+    setInvitingAccountant(true);
+    try {
+      const response = await apiClient.post('/api/v2/admin/invite-accountant', values);
+      if (response.data.success) {
+        if (response.data.linked) {
+          message.success(response.data.message || 'Accountant firm linked successfully!');
+        } else {
+          message.success(response.data.message || `Invitation sent to ${values.email}`);
+        }
+        setAccountantModalVisible(false);
+        accountantForm.resetFields();
+      } else {
+        message.error(response.data.message || 'Failed to invite accountant');
+      }
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Failed to invite accountant');
+    } finally {
+      setInvitingAccountant(false);
     }
   };
 
@@ -316,6 +346,137 @@ const UserManagement: React.FC = () => {
           { title: 'Roles Defined', value: stats.roles },
         ]}
       />
+
+      {/* Invite My Accountant Card */}
+      <Card
+        style={{
+          marginBottom: 16,
+          background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 100%)',
+          border: '1px solid #91caff',
+          borderRadius: 12,
+        }}
+      >
+        <Row align="middle" gutter={16}>
+          <Col flex="none">
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #0a1f3e, #1e3a5f)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <AuditOutlined style={{ fontSize: 28, color: '#fff' }} />
+            </div>
+          </Col>
+          <Col flex="auto">
+            <div style={{ fontWeight: 700, fontSize: 16, color: '#0a1f3e' }}>Invite My Accountant</div>
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              Give your accountant direct access to your books via their Accountant Portal.
+              If they're already on SiyaBusa, they'll be auto-linked — no extra sign-up.
+            </Text>
+          </Col>
+          <Col flex="none">
+            <Button
+              type="primary"
+              icon={<AuditOutlined />}
+              size="large"
+              onClick={() => setAccountantModalVisible(true)}
+              style={{ background: '#0a1f3e', borderColor: '#0a1f3e' }}
+            >
+              Invite Accountant
+            </Button>
+          </Col>
+        </Row>
+      </Card>
+
+      {/* Invite Accountant Modal */}
+      <Modal
+        title={
+          <Space>
+            <div style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #0a1f3e, #1e3a5f)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <AuditOutlined style={{ fontSize: 16, color: '#fff' }} />
+            </div>
+            <span>Invite My Accountant</span>
+          </Space>
+        }
+        open={accountantModalVisible}
+        onCancel={() => { setAccountantModalVisible(false); accountantForm.resetFields(); }}
+        footer={null}
+        destroyOnClose
+        width={520}
+      >
+        <Alert
+          message="Your accountant will manage your books from their Accountant Portal"
+          description="If they already have a SiyaBusa account, they'll be auto-linked instantly. Otherwise, they'll receive an invitation to set up their account."
+          type="info"
+          showIcon
+          icon={<LinkOutlined />}
+          style={{ marginBottom: 20 }}
+        />
+        <Form
+          form={accountantForm}
+          layout="vertical"
+          onFinish={handleInviteAccountant}
+        >
+          <Form.Item
+            name="email"
+            label="Accountant's Email"
+            rules={[
+              { required: true, message: 'Please enter your accountant\'s email' },
+              { type: 'email', message: 'Please enter a valid email' },
+            ]}
+          >
+            <Input placeholder="accountant@firm.co.za" prefix={<MailOutlined />} size="large" />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="name" label="Contact Name">
+                <Input placeholder="e.g. James Mokoena" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="firm_name" label="Firm Name (optional)">
+                <Input placeholder="e.g. JM Accounting" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item
+            name="engagement_type"
+            label="Engagement Type"
+            initialValue="full_service"
+          >
+            <Select size="large">
+              <Select.Option value="full_service">Full Service (GL, Tax, Payroll)</Select.Option>
+              <Select.Option value="tax_only">Tax Only</Select.Option>
+              <Select.Option value="bookkeeping">Bookkeeping</Select.Option>
+              <Select.Option value="audit">Audit</Select.Option>
+              <Select.Option value="advisory">Advisory</Select.Option>
+              <Select.Option value="payroll">Payroll Only</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="message" label="Personal Message (Optional)">
+            <Input.TextArea rows={3} placeholder="Hi, we'd like you to manage our accounts..." />
+          </Form.Item>
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => { setAccountantModalVisible(false); accountantForm.resetFields(); }}>
+                Cancel
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={invitingAccountant}
+                icon={<SendOutlined />}
+                style={{ background: '#0a1f3e', borderColor: '#0a1f3e' }}
+              >
+                Send Invitation
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
 
       <HubTabs
         theme="blue"

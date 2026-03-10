@@ -140,10 +140,128 @@ export const reverseJournalEntry = async (req: TenantRequest, res: Response) => 
 // CHART OF ACCOUNTS
 // ==========================================================================
 
+/**
+ * Auto-seed the default South African Chart of Accounts for a tenant
+ * Called when a tenant's CoA is empty on first access
+ */
+async function seedDefaultChartOfAccounts(tenantId: string): Promise<void> {
+  const defaultAccounts = [
+    // ASSETS (1xxx)
+    { code: '1000', name: 'Current Assets', type: 'ASSET', balance: 'DEBIT', header: true },
+    { code: '1100', name: 'Bank Accounts', type: 'ASSET', balance: 'DEBIT', header: false },
+    { code: '1110', name: 'FNB Current Account', type: 'ASSET', balance: 'DEBIT', header: false },
+    { code: '1120', name: 'FNB Savings Account', type: 'ASSET', balance: 'DEBIT', header: false },
+    { code: '1130', name: 'ABSA Current Account', type: 'ASSET', balance: 'DEBIT', header: false },
+    { code: '1140', name: 'Standard Bank Account', type: 'ASSET', balance: 'DEBIT', header: false },
+    { code: '1150', name: 'Nedbank Account', type: 'ASSET', balance: 'DEBIT', header: false },
+    { code: '1160', name: 'Capitec Account', type: 'ASSET', balance: 'DEBIT', header: false },
+    { code: '1200', name: 'Accounts Receivable (Debtors)', type: 'ASSET', balance: 'DEBIT', header: false },
+    { code: '1300', name: 'Inventory', type: 'ASSET', balance: 'DEBIT', header: false },
+    { code: '1400', name: 'Prepaid Expenses', type: 'ASSET', balance: 'DEBIT', header: false },
+    { code: '1500', name: 'Fixed Assets', type: 'ASSET', balance: 'DEBIT', header: true },
+    { code: '1510', name: 'Property, Plant & Equipment', type: 'ASSET', balance: 'DEBIT', header: false },
+    { code: '1520', name: 'Accumulated Depreciation', type: 'ASSET', balance: 'CREDIT', header: false },
+    { code: '1600', name: 'Intangible Assets', type: 'ASSET', balance: 'DEBIT', header: false },
+    // LIABILITIES (2xxx)
+    { code: '2000', name: 'Current Liabilities', type: 'LIABILITY', balance: 'CREDIT', header: true },
+    { code: '2100', name: 'Accounts Payable (Creditors)', type: 'LIABILITY', balance: 'CREDIT', header: false },
+    { code: '2200', name: 'PAYE Payable', type: 'LIABILITY', balance: 'CREDIT', header: false },
+    { code: '2210', name: 'UIF Payable', type: 'LIABILITY', balance: 'CREDIT', header: false },
+    { code: '2220', name: 'SDL Payable', type: 'LIABILITY', balance: 'CREDIT', header: false },
+    { code: '2230', name: 'VAT Payable', type: 'LIABILITY', balance: 'CREDIT', header: false },
+    { code: '2240', name: 'Provisional Tax Payable', type: 'LIABILITY', balance: 'CREDIT', header: false },
+    { code: '2250', name: 'Salaries Payable', type: 'LIABILITY', balance: 'CREDIT', header: false },
+    { code: '2300', name: 'Accrued Expenses', type: 'LIABILITY', balance: 'CREDIT', header: false },
+    { code: '2400', name: 'Unearned Revenue', type: 'LIABILITY', balance: 'CREDIT', header: false },
+    { code: '2500', name: 'Long-term Liabilities', type: 'LIABILITY', balance: 'CREDIT', header: true },
+    { code: '2510', name: 'Bank Loans', type: 'LIABILITY', balance: 'CREDIT', header: false },
+    { code: '2520', name: 'Mortgage Payable', type: 'LIABILITY', balance: 'CREDIT', header: false },
+    // EQUITY (3xxx)
+    { code: '3000', name: 'Equity', type: 'EQUITY', balance: 'CREDIT', header: true },
+    { code: '3100', name: 'Share Capital', type: 'EQUITY', balance: 'CREDIT', header: false },
+    { code: '3200', name: 'Retained Earnings', type: 'EQUITY', balance: 'CREDIT', header: false },
+    { code: '3300', name: 'Current Year Profit/Loss', type: 'EQUITY', balance: 'CREDIT', header: false },
+    { code: '3400', name: 'Drawings', type: 'EQUITY', balance: 'DEBIT', header: false },
+    // REVENUE (4xxx)
+    { code: '4000', name: 'Revenue', type: 'REVENUE', balance: 'CREDIT', header: true },
+    { code: '4100', name: 'Sales Revenue', type: 'REVENUE', balance: 'CREDIT', header: false },
+    { code: '4110', name: 'Service Revenue', type: 'REVENUE', balance: 'CREDIT', header: false },
+    { code: '4120', name: 'Product Sales', type: 'REVENUE', balance: 'CREDIT', header: false },
+    { code: '4200', name: 'Interest Income', type: 'REVENUE', balance: 'CREDIT', header: false },
+    { code: '4300', name: 'Other Income', type: 'REVENUE', balance: 'CREDIT', header: false },
+    { code: '4400', name: 'Salary/Wages Received', type: 'REVENUE', balance: 'CREDIT', header: false },
+    { code: '4500', name: 'Commission Income', type: 'REVENUE', balance: 'CREDIT', header: false },
+    { code: '4600', name: 'Rental Income', type: 'REVENUE', balance: 'CREDIT', header: false },
+    { code: '4900', name: 'Discounts Received', type: 'REVENUE', balance: 'CREDIT', header: false },
+    // COST OF SALES (5xxx)
+    { code: '5000', name: 'Cost of Sales', type: 'EXPENSE', balance: 'DEBIT', header: true },
+    { code: '5100', name: 'Cost of Goods Sold', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '5200', name: 'Purchases', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '5300', name: 'Freight & Delivery', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    // OPERATING EXPENSES (6xxx)
+    { code: '6000', name: 'Operating Expenses', type: 'EXPENSE', balance: 'DEBIT', header: true },
+    { code: '6100', name: 'Salaries & Wages Expense', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6110', name: 'Employee Benefits', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6120', name: 'Employer UIF Contributions', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6130', name: 'Employer SDL Contributions', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6200', name: 'Rent Expense', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6210', name: 'Utilities - Electricity', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6220', name: 'Utilities - Water', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6300', name: 'Telephone & Internet', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6400', name: 'Insurance', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6500', name: 'Bank Charges', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6600', name: 'Professional Fees', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6610', name: 'Accounting Fees', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6620', name: 'Legal Fees', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6630', name: 'Consulting Fees', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6700', name: 'Office Expenses', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6710', name: 'Office Supplies', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6720', name: 'Printing & Stationery', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6800', name: 'Travel & Entertainment', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6810', name: 'Motor Vehicle Expenses', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6820', name: 'Meals & Entertainment', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '6900', name: 'Advertising & Marketing', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    // OTHER EXPENSES (7xxx)
+    { code: '7000', name: 'Other Expenses', type: 'EXPENSE', balance: 'DEBIT', header: true },
+    { code: '7100', name: 'General Expenses', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '7200', name: 'Repairs & Maintenance', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '7300', name: 'Depreciation Expense', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '7400', name: 'Amortization Expense', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '7500', name: 'Bad Debts', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '7600', name: 'Interest Expense', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '7700', name: 'Foreign Exchange Loss', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    { code: '7800', name: 'Tax Expense', type: 'EXPENSE', balance: 'DEBIT', header: false },
+    // SUSPENSE (9xxx)
+    { code: '9000', name: 'Suspense Accounts', type: 'EXPENSE', balance: 'DEBIT', header: true },
+    { code: '9999', name: 'Uncategorized - Review Required', type: 'EXPENSE', balance: 'DEBIT', header: false },
+  ];
+
+  for (const acc of defaultAccounts) {
+    await query(
+      `INSERT INTO chart_of_accounts (
+        tenant_id, code, name, account_type, 
+        normal_balance, is_header, account_level, is_active,
+        allows_manual_entries, is_system_account, currency,
+        current_balance
+      ) VALUES ($1, $2, $3, $4, $5, $6, 1, true, true, false, 'ZAR', 0)
+      ON CONFLICT DO NOTHING`,
+      [tenantId, acc.code, acc.name, acc.type, acc.balance, acc.header]
+    );
+  }
+  console.log(`Auto-seeded ${defaultAccounts.length} default SA Chart of Accounts for tenant ${tenantId}`);
+}
+
 export const getChartOfAccounts = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
-    const accounts = await accountRepository.getChartOfAccounts(ctx);
+    let accounts = await accountRepository.getChartOfAccounts(ctx);
+    
+    // Auto-seed default SA Chart of Accounts if empty for this tenant
+    if (accounts.length === 0) {
+      await seedDefaultChartOfAccounts(ctx.tenantId);
+      accounts = await accountRepository.getChartOfAccounts(ctx);
+    }
+    
     res.json({ success: true, data: accounts });
   } catch (error) {
     console.error('Error fetching chart of accounts:', error);
@@ -297,20 +415,21 @@ export const getTrialBalance = async (req: TenantRequest, res: Response) => {
     // Direct SQL trial balance - bypass broken repository
     const result = await query(
       `SELECT 
-        coa.code as account_code,
-        COALESCE(coa.name, coa.account_name) as account_name,
+        COALESCE(NULLIF(coa.account_code, ''), coa.code) as account_code,
+        COALESCE(NULLIF(coa.account_name, ''), coa.name) as account_name,
         coa.account_type,
         COALESCE(SUM(jel.debit_amount), 0) as debit,
         COALESCE(SUM(jel.credit_amount), 0) as credit,
         COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as balance
        FROM chart_of_accounts coa
-       LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id AND jel.tenant_id = coa.tenant_id AND (jel.entity_id IS NULL OR jel.entity_id = $2)
-       LEFT JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id AND (je.entity_id IS NULL OR je.entity_id = $2) AND je.status = 'posted'
-       WHERE coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $2) AND coa.is_header = false AND coa.deleted_at IS NULL
-       GROUP BY coa.id, coa.code, coa.name, coa.account_name, coa.account_type
+       LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id AND jel.tenant_id = coa.tenant_id
+       LEFT JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id AND je.status = 'posted'
+       WHERE coa.tenant_id = $1 AND coa.is_active = true
+         AND (je.id IS NOT NULL OR jel.journal_entry_id IS NULL)
+       GROUP BY coa.id, coa.code, coa.account_code, coa.name, coa.account_name, coa.account_type
        HAVING COALESCE(SUM(jel.debit_amount), 0) != 0 OR COALESCE(SUM(jel.credit_amount), 0) != 0
-       ORDER BY coa.code`,
-      [ctx.tenantId, ctx.entityId || null]
+       ORDER BY COALESCE(NULLIF(coa.account_code, ''), coa.code)`,
+      [ctx.tenantId]
     );
     res.json({ success: true, data: result.rows });
   } catch (error) {
@@ -432,9 +551,9 @@ export const getGeneralLedger = async (req: TenantRequest, res: Response) => {
     const ctx = getTenantContext(req);
     const { from_date, to_date, account_code, limit = 100, offset = 0 } = req.query;
 
-    const conditions = ["je.tenant_id = $1", "LOWER(je.status) = 'posted'", '(je.entity_id IS NULL OR je.entity_id = $2)'];
-    const params: any[] = [ctx.tenantId, ctx.entityId || null];
-    let idx = 3;
+    const conditions = ["je.tenant_id = $1", "LOWER(je.status) = 'posted'"];
+    const params: any[] = [ctx.tenantId];
+    let idx = 2;
 
     if (from_date) {
       conditions.push(`COALESCE(je.journal_date, je.entry_date, je.posting_date) >= $${idx}`);
@@ -468,8 +587,8 @@ export const getGeneralLedger = async (req: TenantRequest, res: Response) => {
         je.id AS journal_entry_id,
         je.status
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id AND (jel.entity_id IS NULL OR jel.entity_id = $2)
-      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id AND (coa.entity_id IS NULL OR coa.entity_id = $2)
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
       WHERE ${conditions.join(' AND ')}
       ORDER BY COALESCE(je.journal_date, je.entry_date, je.posting_date) DESC, COALESCE(je.entry_number, je.journal_number), jel.line_number
       LIMIT $${idx} OFFSET $${idx + 1}
@@ -491,9 +610,9 @@ export const getAccountLedgerByCode = async (req: TenantRequest, res: Response) 
     const { accountCode } = req.params;
     const { from_date, to_date, limit = 100, offset = 0 } = req.query;
 
-    const conditions = ["je.tenant_id = $1", "LOWER(je.status) = 'posted'", "COALESCE(NULLIF(coa.account_code, ''), coa.code) = $2", '(je.entity_id IS NULL OR je.entity_id = $3)'];
-    const params: any[] = [ctx.tenantId, accountCode, ctx.entityId || null];
-    let idx = 4;
+    const conditions = ["je.tenant_id = $1", "LOWER(je.status) = 'posted'", "COALESCE(NULLIF(coa.account_code, ''), coa.code) = $2"];
+    const params: any[] = [ctx.tenantId, accountCode];
+    let idx = 3;
 
     if (from_date) {
       conditions.push(`COALESCE(je.journal_date, je.entry_date, je.posting_date) >= $${idx}`);
@@ -519,8 +638,8 @@ export const getAccountLedgerByCode = async (req: TenantRequest, res: Response) 
           ORDER BY COALESCE(je.journal_date, je.entry_date, je.posting_date), COALESCE(je.entry_number, je.journal_number), jel.line_number
         ) AS running_balance
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id AND (jel.entity_id IS NULL OR jel.entity_id = $3)
-      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id AND (coa.entity_id IS NULL OR coa.entity_id = $3)
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
       WHERE ${conditions.join(' AND ')}
       ORDER BY COALESCE(je.journal_date, je.entry_date, je.posting_date), COALESCE(je.entry_number, je.journal_number), jel.line_number
       LIMIT $${idx} OFFSET $${idx + 1}
@@ -1140,49 +1259,49 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
 
     // Journal counts
     const journalCount = await query(
-      `SELECT COUNT(*) as total FROM journal_entries WHERE tenant_id = $1 AND (entity_id IS NULL OR entity_id = $2)`,
-      [ctx.tenantId, ctx.entityId || null]
+      `SELECT COUNT(*) as total FROM journal_entries WHERE tenant_id = $1`,
+      [ctx.tenantId]
     );
     const postedCount = await query(
-      `SELECT COUNT(*) as total FROM journal_entries WHERE tenant_id = $1 AND (entity_id IS NULL OR entity_id = $2) AND status = 'posted'`,
-      [ctx.tenantId, ctx.entityId || null]
+      `SELECT COUNT(*) as total FROM journal_entries WHERE tenant_id = $1 AND status = 'posted'`,
+      [ctx.tenantId]
     );
 
     // Calculate actual financial balances from posted journal entry lines
-    // Cash balance: Sum of debits minus credits on cash/bank accounts (1000-1099 range)
+    // Cash balance: Sum of debits minus credits on cash/bank accounts (1xxx range with cash/bank in name)
     const cashResult = await query(
       `SELECT COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as balance
        FROM journal_entry_lines jel
-       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id AND (je.entity_id IS NULL OR je.entity_id = $2)
-       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-       WHERE jel.tenant_id = $1 AND (jel.entity_id IS NULL OR jel.entity_id = $2) AND je.status = 'posted'
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
          AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '1%')
          AND (LOWER(COALESCE(coa.name, coa.account_name, '')) LIKE '%cash%' OR LOWER(COALESCE(coa.name, coa.account_name, '')) LIKE '%bank%')`,
-      [ctx.tenantId, ctx.entityId || null]
+      [ctx.tenantId]
     ).catch(() => ({ rows: [{ balance: 0 }] }));
 
-    // Accounts Receivable (1200-1299 range or 'receivable' in name)
+    // Accounts Receivable (12xx range or 'receivable' in name)
     const arResult = await query(
       `SELECT COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as balance
        FROM journal_entry_lines jel
-       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id AND (je.entity_id IS NULL OR je.entity_id = $2)
-       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-       WHERE jel.tenant_id = $1 AND (jel.entity_id IS NULL OR jel.entity_id = $2) AND je.status = 'posted'
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
          AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '12%'
               OR LOWER(COALESCE(coa.name, coa.account_name, '')) LIKE '%receivable%')`,
-      [ctx.tenantId, ctx.entityId || null]
+      [ctx.tenantId]
     ).catch(() => ({ rows: [{ balance: 0 }] }));
 
-    // Accounts Payable (2000-2099 range or 'payable' in name) - credit balance
+    // Accounts Payable (20xx range or 'payable' in name) - credit balance
     const apResult = await query(
       `SELECT COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0) as balance
        FROM journal_entry_lines jel
-       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id AND (je.entity_id IS NULL OR je.entity_id = $2)
-       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-       WHERE jel.tenant_id = $1 AND (jel.entity_id IS NULL OR jel.entity_id = $2) AND je.status = 'posted'
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
          AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '20%'
               OR LOWER(COALESCE(coa.name, coa.account_name, '')) LIKE '%payable%')`,
-      [ctx.tenantId, ctx.entityId || null]
+      [ctx.tenantId]
     ).catch(() => ({ rows: [{ balance: 0 }] }));
 
     // Monthly Revenue (4xxx accounts) - current month
@@ -1193,62 +1312,60 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
     const revenueResult = await query(
       `SELECT COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0) as balance
        FROM journal_entry_lines jel
-       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id AND (je.entity_id IS NULL OR je.entity_id = $2)
-       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-       WHERE jel.tenant_id = $1 AND (jel.entity_id IS NULL OR jel.entity_id = $2) AND je.status = 'posted'
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
          AND COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '4%'
-         AND je.entry_date >= $3 AND je.entry_date <= $4`,
-      [ctx.tenantId, ctx.entityId || null, monthStart, monthEnd]
+         AND je.entry_date >= $2 AND je.entry_date <= $3`,
+      [ctx.tenantId, monthStart, monthEnd]
     ).catch(() => ({ rows: [{ balance: 0 }] }));
 
     // Monthly Expenses (5xxx-6xxx accounts) - current month
     const expenseResult = await query(
       `SELECT COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as balance
        FROM journal_entry_lines jel
-       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id AND (je.entity_id IS NULL OR je.entity_id = $2)
-       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-       WHERE jel.tenant_id = $1 AND (jel.entity_id IS NULL OR jel.entity_id = $2) AND je.status = 'posted'
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
          AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '5%'
               OR COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '6%')
-         AND je.entry_date >= $3 AND je.entry_date <= $4`,
-      [ctx.tenantId, ctx.entityId || null, monthStart, monthEnd]
+         AND je.entry_date >= $2 AND je.entry_date <= $3`,
+      [ctx.tenantId, monthStart, monthEnd]
     ).catch(() => ({ rows: [{ balance: 0 }] }));
 
     // Recent posted journal entries
     const recentResult = await query(
-      `SELECT je.id, je.reference_number as reference, je.entry_date as date,
+      `SELECT je.id, COALESCE(je.reference, je.journal_number, je.entry_number) as reference, je.entry_date as date,
               je.description, je.status,
-              COALESCE(SUM(jel.debit_amount), 0) as total_debit,
-              COALESCE(SUM(jel.credit_amount), 0) as total_credit
+              COALESCE(je.total_debit, 0) as total_debit,
+              COALESCE(je.total_credit, 0) as total_credit
        FROM journal_entries je
-       LEFT JOIN journal_entry_lines jel ON jel.journal_entry_id = je.id AND jel.tenant_id = je.tenant_id AND (jel.entity_id IS NULL OR jel.entity_id = $2)
-       WHERE je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $2) AND je.status = 'posted'
-       GROUP BY je.id, je.reference_number, je.entry_date, je.description, je.status
+       WHERE je.tenant_id = $1 AND je.status = 'posted'
        ORDER BY je.entry_date DESC, je.created_at DESC LIMIT 10`,
-      [ctx.tenantId, ctx.entityId || null]
+      [ctx.tenantId]
     ).catch(() => ({ rows: [] }));
 
     // All-time Revenue (4xxx accounts)
     const allTimeRevenueResult = await query(
       `SELECT COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0) as balance
        FROM journal_entry_lines jel
-       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id AND (je.entity_id IS NULL OR je.entity_id = $2)
-       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-       WHERE jel.tenant_id = $1 AND (jel.entity_id IS NULL OR jel.entity_id = $2) AND je.status = 'posted'
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
          AND COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '4%'`,
-      [ctx.tenantId, ctx.entityId || null]
+      [ctx.tenantId]
     ).catch(() => ({ rows: [{ balance: 0 }] }));
 
     // All-time Expenses (5xxx-6xxx accounts)
     const allTimeExpenseResult = await query(
       `SELECT COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as balance
        FROM journal_entry_lines jel
-       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id AND (je.entity_id IS NULL OR je.entity_id = $2)
-       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-       WHERE jel.tenant_id = $1 AND (jel.entity_id IS NULL OR jel.entity_id = $2) AND je.status = 'posted'
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'
          AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '5%'
               OR COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '6%')`,
-      [ctx.tenantId, ctx.entityId || null]
+      [ctx.tenantId]
     ).catch(() => ({ rows: [{ balance: 0 }] }));
 
     // Balance Sheet aggregates
@@ -1258,10 +1375,10 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
          COALESCE(SUM(CASE WHEN LOWER(coa.account_type) IN ('liability') THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) as total_liabilities,
          COALESCE(SUM(CASE WHEN LOWER(coa.account_type) = 'equity' THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) as total_equity
        FROM journal_entry_lines jel
-       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id AND (je.entity_id IS NULL OR je.entity_id = $2)
-       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-       WHERE jel.tenant_id = $1 AND (jel.entity_id IS NULL OR jel.entity_id = $2) AND je.status = 'posted'`,
-      [ctx.tenantId, ctx.entityId || null]
+       JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+       JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
+       WHERE jel.tenant_id = $1 AND je.status = 'posted'`,
+      [ctx.tenantId]
     ).catch(() => ({ rows: [{ total_assets: 0, total_liabilities: 0, total_equity: 0 }] }));
 
     const monthlyRevenue = parseFloat(revenueResult.rows[0]?.balance || '0');

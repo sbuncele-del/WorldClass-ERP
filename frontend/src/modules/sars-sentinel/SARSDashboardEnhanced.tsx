@@ -270,15 +270,15 @@ const SARSDashboardEnhanced: React.FC = () => {
                   title: 'Due Date', 
                   dataIndex: 'due_date', 
                   key: 'due_date',
-                  render: (date: string) => new Date(date).toLocaleDateString('en-ZA')
+                  render: (date: string) => date ? new Date(date).toLocaleDateString('en-ZA') : '—'
                 },
                 { 
                   title: 'Days Remaining', 
                   dataIndex: 'days_remaining', 
                   key: 'days_remaining',
-                  render: (days: number) => (
-                    <span style={{ color: getUrgencyColor(days), fontWeight: 600 }}>
-                      {days < 0 ? `${Math.abs(days)} days overdue` : `${days} days`}
+                  render: (days: number | null) => (
+                    <span style={{ color: getUrgencyColor(days ?? 0), fontWeight: 600 }}>
+                      {days == null ? '—' : days < 0 ? `${Math.abs(days)} days overdue` : `${days} days`}
                     </span>
                   )
                 },
@@ -328,36 +328,27 @@ const SARSDashboardEnhanced: React.FC = () => {
 
           <Card title="🔔 Alerts">
             <Timeline
-              items={[
-                {
-                  color: 'red',
+              items={(stats?.upcoming_deadlines || [])
+                .filter((d: { days_remaining: number }) => d.days_remaining <= 14)
+                .slice(0, 5)
+                .map((d: { type: string; days_remaining: number; client_count: number }) => ({
+                  color: d.days_remaining < 0 ? 'red' : d.days_remaining <= 3 ? 'red' : 'orange',
                   children: (
                     <>
-                      <div><strong>EMP201</strong> overdue</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>42 clients affected</div>
+                      <div><strong>{d.type}</strong> {d.days_remaining < 0 ? 'overdue' : 'due soon'}</div>
+                      <div style={{ fontSize: 12, color: '#999' }}>
+                        {d.days_remaining < 0
+                          ? `${Math.abs(d.days_remaining)} days overdue`
+                          : `${d.days_remaining} days remaining`}
+                        {d.client_count > 0 ? ` · ${d.client_count} clients` : ''}
+                      </div>
                     </>
                   )
-                },
-                {
-                  color: 'red',
-                  children: (
-                    <>
-                      <div><strong>PAYE Monthly</strong> overdue</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>42 clients affected</div>
-                    </>
-                  )
-                },
-                {
-                  color: 'orange',
-                  children: (
-                    <>
-                      <div><strong>VAT201</strong> due soon</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>17 days remaining</div>
-                    </>
-                  )
-                }
-              ]}
+                }))}
             />
+            {(!stats?.upcoming_deadlines || stats.upcoming_deadlines.filter((d: { days_remaining: number }) => d.days_remaining <= 14).length === 0) && (
+              <div style={{ color: '#999', textAlign: 'center' }}>No urgent alerts</div>
+            )}
           </Card>
         </Col>
       </Row>

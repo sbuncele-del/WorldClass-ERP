@@ -87,6 +87,40 @@ interface AutoSyncStatus {
   byType: AutoSyncTypeStatus[];
 }
 
+interface VATSnapshot {
+  period: string;
+  dueDate: string;
+  outputVat: number;
+  inputVat: number;
+  netVat: number;
+}
+
+interface BBBEEScorecard {
+  totalEmployees: number;
+  demographics: { black: number; coloured: number; indian: number; white: number; unspecified: number };
+  gender: { male: number; female: number; other: number };
+  disabilityCount: number;
+  blackOwnershipPercent: number;
+  managementControlPercent: number;
+  estimatedLevel: number;
+}
+
+interface CIPCEntity {
+  entityName: string;
+  registrationNumber: string;
+  entityType: string;
+  vatNumber?: string;
+  taxNumber?: string;
+}
+
+interface EnhancedStatus {
+  vat: VATSnapshot | null;
+  bbbee: BBBEEScorecard | null;
+  cipc: CIPCEntity[];
+  fica: { status: string; customersDueDiligence: number; customersVerified: number; suspiciousReports: number } | null;
+  popia: { status: string; dataSubjectRequests: number; consentRecordsCount: number; breachIncidents: number; dataProcessingAgreements: number } | null;
+}
+
 const RegulatoryHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [filingModalVisible, setFilingModalVisible] = useState(false);
@@ -102,6 +136,9 @@ const RegulatoryHub: React.FC = () => {
     lastSyncAt: null,
     byType: [],
   });
+  const [enhanced, setEnhanced] = useState<EnhancedStatus>({
+    vat: null, bbbee: null, cipc: [], fica: null, popia: null,
+  });
 
   const normalizeArrayResponse = (response: any): any[] => {
     if (Array.isArray(response?.data)) return response.data;
@@ -114,11 +151,12 @@ const RegulatoryHub: React.FC = () => {
   const fetchRegulatoryData = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const [filingsRes, requirementsRes, deadlinesRes, autoSyncRes] = await Promise.all([
+      const [filingsRes, requirementsRes, deadlinesRes, autoSyncRes, enhancedRes] = await Promise.all([
         apiClient.get('/api/compliance/regulatory/filings'),
         apiClient.get('/api/compliance/regulatory/requirements'),
         apiClient.get('/api/compliance/regulatory/deadlines'),
-        apiClient.get('/api/compliance/regulatory/auto-sync/status')
+        apiClient.get('/api/compliance/regulatory/auto-sync/status'),
+        apiClient.get('/api/compliance/regulatory/enhanced-status').catch(() => null),
       ]);
 
       setFilings(normalizeArrayResponse(filingsRes));
@@ -132,6 +170,15 @@ const RegulatoryHub: React.FC = () => {
         hasTrigger: autoSyncData.hasTrigger,
         lastSyncAt: autoSyncData.lastSyncAt || null,
         byType: Array.isArray(autoSyncData.byType) ? autoSyncData.byType : [],
+      });
+
+      const eData = enhancedRes?.data?.data || {};
+      setEnhanced({
+        vat: eData.vat || null,
+        bbbee: eData.bbbee || null,
+        cipc: Array.isArray(eData.cipc) ? eData.cipc : [],
+        fica: eData.fica || null,
+        popia: eData.popia || null,
       });
     } catch (error) {
       console.error('Failed to fetch regulatory data:', error);
@@ -367,8 +414,8 @@ const RegulatoryHub: React.FC = () => {
 
       {/* Authority Cards */}
       <Card title={<><GlobalOutlined /> Regulatory Authorities</>} style={{ marginTop: 16 }}>
-        <Row gutter={16}>
-          <Col span={6}>
+        <Row gutter={[16, 16]}>
+          <Col xs={12} md={6}>
             <Card size="small" style={{ borderLeft: '4px solid #1890ff' }}>
               <Space>
                 <Avatar style={{ background: '#1890ff' }}>🇿🇦</Avatar>
@@ -376,23 +423,44 @@ const RegulatoryHub: React.FC = () => {
                   <Text strong>SARS</Text>
                   <br />
                   <Text type="secondary" style={{ fontSize: 12 }}>{filings.filter(f => f.authority === 'SARS').length} filings</Text>
+                  {enhanced.vat && (
+                    <>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: 11 }}>VAT Net: R{enhanced.vat.netVat.toLocaleString()}</Text>
+                    </>
+                  )}
                 </div>
               </Space>
             </Card>
           </Col>
-          <Col span={6}>
+          <Col xs={12} md={6}>
             <Card size="small" style={{ borderLeft: '4px solid #52c41a' }}>
               <Space>
                 <Avatar style={{ background: '#52c41a' }}>🏛️</Avatar>
                 <div>
                   <Text strong>CIPC</Text>
                   <br />
-                  <Text type="secondary" style={{ fontSize: 12 }}>{filings.filter(f => f.authority === 'CIPC').length} filings</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {enhanced.cipc.length > 0
+                      ? `${enhanced.cipc.length} ${enhanced.cipc.length === 1 ? 'entity' : 'entities'}`
+                      : `${filings.filter(f => f.authority === 'CIPC').length} filings`
+                    }
+                  </Text>
+                  {enhanced.cipc.length > 0 && (
+                    <>
+                      <br />
+                      <Tooltip title={enhanced.cipc.map(e => `${e.entityName}: ${e.registrationNumber}`).join('\n')}>
+                        <Text type="secondary" style={{ fontSize: 11, cursor: 'help' }}>
+                          {enhanced.cipc[0].registrationNumber}
+                        </Text>
+                      </Tooltip>
+                    </>
+                  )}
                 </div>
               </Space>
             </Card>
           </Col>
-          <Col span={6}>
+          <Col xs={12} md={6}>
             <Card size="small" style={{ borderLeft: '4px solid #722ed1' }}>
               <Space>
                 <Avatar style={{ background: '#722ed1' }}>⚖️</Avatar>
@@ -404,20 +472,161 @@ const RegulatoryHub: React.FC = () => {
               </Space>
             </Card>
           </Col>
-          <Col span={6}>
+          <Col xs={12} md={6}>
             <Card size="small" style={{ borderLeft: '4px solid #fa8c16' }}>
               <Space>
                 <Avatar style={{ background: '#fa8c16' }}>🏆</Avatar>
                 <div>
                   <Text strong>B-BBEE</Text>
                   <br />
-                  <Text type="secondary" style={{ fontSize: 12 }}>Level 3 Certified</Text>
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {enhanced.bbbee
+                      ? `Level ${enhanced.bbbee.estimatedLevel} (est.)`
+                      : 'Not assessed'
+                    }
+                  </Text>
+                  {enhanced.bbbee && (
+                    <>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: 11 }}>
+                        {enhanced.bbbee.totalEmployees} employees
+                      </Text>
+                    </>
+                  )}
+                </div>
+              </Space>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Second row: FICA, POPIA */}
+        <Row gutter={[16, 16]} style={{ marginTop: 12 }}>
+          <Col xs={12} md={6}>
+            <Card size="small" style={{ borderLeft: `4px solid ${enhanced.fica?.status === 'compliant' ? '#52c41a' : enhanced.fica?.status === 'non-compliant' ? '#ff4d4f' : '#d9d9d9'}` }}>
+              <Space>
+                <Avatar style={{ background: '#13c2c2' }}>🔍</Avatar>
+                <div>
+                  <Text strong>FICA</Text>
+                  <br />
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {enhanced.fica
+                      ? `${enhanced.fica.customersVerified}/${enhanced.fica.customersDueDiligence} verified`
+                      : 'Not configured'
+                    }
+                  </Text>
+                </div>
+              </Space>
+            </Card>
+          </Col>
+          <Col xs={12} md={6}>
+            <Card size="small" style={{ borderLeft: `4px solid ${enhanced.popia?.status === 'compliant' ? '#52c41a' : enhanced.popia?.status === 'non-compliant' ? '#ff4d4f' : '#d9d9d9'}` }}>
+              <Space>
+                <Avatar style={{ background: '#2f54eb' }}>🛡️</Avatar>
+                <div>
+                  <Text strong>POPIA</Text>
+                  <br />
+                  <Text type="secondary" style={{ fontSize: 12 }}>
+                    {enhanced.popia
+                      ? `${enhanced.popia.consentRecordsCount} consents, ${enhanced.popia.dataProcessingAgreements} DPAs`
+                      : 'Not configured'
+                    }
+                  </Text>
                 </div>
               </Space>
             </Card>
           </Col>
         </Row>
       </Card>
+
+      {/* VAT Breakdown Card */}
+      {enhanced.vat && (
+        <Card title={<><BankOutlined /> VAT201 — GL Auto-Calculation</>} style={{ marginTop: 16 }}>
+          <Row gutter={16}>
+            <Col xs={8}>
+              <Statistic title="Output VAT (Sales)" value={enhanced.vat.outputVat} prefix="R" valueStyle={{ color: '#ff4d4f' }} />
+            </Col>
+            <Col xs={8}>
+              <Statistic title="Input VAT (Purchases)" value={enhanced.vat.inputVat} prefix="R" valueStyle={{ color: '#52c41a' }} />
+            </Col>
+            <Col xs={8}>
+              <Statistic title="Net VAT Payable" value={enhanced.vat.netVat} prefix="R" valueStyle={{ color: enhanced.vat.netVat > 0 ? '#ff4d4f' : '#52c41a' }} />
+            </Col>
+          </Row>
+          <div style={{ marginTop: 12 }}>
+            <Text type="secondary">Period: {enhanced.vat.period} • Due: {enhanced.vat.dueDate} • Calculated from posted journal entries</Text>
+          </div>
+        </Card>
+      )}
+
+      {/* B-BBEE Scorecard */}
+      {enhanced.bbbee && (
+        <Card title={<><TeamOutlined /> B-BBEE Scorecard (Estimated)</>} style={{ marginTop: 16 }}>
+          <Row gutter={[16, 16]}>
+            <Col xs={12} md={4}>
+              <Statistic title="Est. Level" value={enhanced.bbbee.estimatedLevel} valueStyle={{ color: enhanced.bbbee.estimatedLevel <= 3 ? '#52c41a' : enhanced.bbbee.estimatedLevel <= 5 ? '#faad14' : '#ff4d4f', fontSize: 36 }} />
+            </Col>
+            <Col xs={12} md={5}>
+              <Statistic title="Total Employees" value={enhanced.bbbee.totalEmployees} />
+            </Col>
+            <Col xs={12} md={5}>
+              <Statistic title="Designated %" value={enhanced.bbbee.blackOwnershipPercent} suffix="%" valueStyle={{ color: '#1890ff' }} />
+            </Col>
+            <Col xs={12} md={5}>
+              <Statistic title="Mgmt Control %" value={enhanced.bbbee.managementControlPercent} suffix="%" valueStyle={{ color: '#722ed1' }} />
+            </Col>
+            <Col xs={12} md={5}>
+              <Statistic title="Disability" value={enhanced.bbbee.disabilityCount} />
+            </Col>
+          </Row>
+          <Divider style={{ margin: '12px 0' }} />
+          <Row gutter={16}>
+            <Col span={12}>
+              <Text type="secondary" strong>Demographics:</Text>
+              <div style={{ marginTop: 4 }}>
+                <Tag>Black: {enhanced.bbbee.demographics.black}</Tag>
+                <Tag>Coloured: {enhanced.bbbee.demographics.coloured}</Tag>
+                <Tag>Indian: {enhanced.bbbee.demographics.indian}</Tag>
+                <Tag>White: {enhanced.bbbee.demographics.white}</Tag>
+                {enhanced.bbbee.demographics.unspecified > 0 && <Tag color="orange">Unspecified: {enhanced.bbbee.demographics.unspecified}</Tag>}
+              </div>
+            </Col>
+            <Col span={12}>
+              <Text type="secondary" strong>Gender Split:</Text>
+              <div style={{ marginTop: 4 }}>
+                <Tag color="blue">Male: {enhanced.bbbee.gender.male}</Tag>
+                <Tag color="magenta">Female: {enhanced.bbbee.gender.female}</Tag>
+                {enhanced.bbbee.gender.other > 0 && <Tag>Other: {enhanced.bbbee.gender.other}</Tag>}
+              </div>
+            </Col>
+          </Row>
+        </Card>
+      )}
+
+      {/* CIPC Entities Card */}
+      {enhanced.cipc.length > 0 && (
+        <Card title={<><SafetyCertificateOutlined /> CIPC Registered Entities</>} style={{ marginTop: 16 }}>
+          <List
+            size="small"
+            dataSource={enhanced.cipc}
+            renderItem={(entity) => (
+              <List.Item>
+                <List.Item.Meta
+                  avatar={<Avatar style={{ background: '#52c41a' }}>🏛️</Avatar>}
+                  title={entity.entityName}
+                  description={
+                    <Space>
+                      <Tag>Reg: {entity.registrationNumber}</Tag>
+                      <Tag>{entity.entityType}</Tag>
+                      {entity.vatNumber && <Tag color="blue">VAT: {entity.vatNumber}</Tag>}
+                      {entity.taxNumber && <Tag color="purple">Tax: {entity.taxNumber}</Tag>}
+                    </Space>
+                  }
+                />
+              </List.Item>
+            )}
+          />
+        </Card>
+      )}
     </div>
   );
 

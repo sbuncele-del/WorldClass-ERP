@@ -144,7 +144,29 @@ export const getRegulatoryFilings = async (req: TenantRequest, res: Response) =>
       });
     }
 
-    // 3) SARS Sentinel submission history (if table exists)
+    // 3) VAT201 derived from Financial GL
+    const vatSnapshot = await getLatestVATSnapshot(tenantId);
+    if (vatSnapshot) {
+      const vatSubmission = await getLatestSubmissionFor(tenantId, 'VAT201', vatSnapshot.period);
+      const vatStatus = vatSubmission
+        ? 'submitted'
+        : normalizeFilingStatus('pending', vatSnapshot.dueDate);
+
+      filings.push({
+        id: `GL-VAT201-${vatSnapshot.period}`,
+        name: 'VAT201 Return',
+        authority: 'SARS',
+        type: 'VAT201',
+        dueDate: vatSnapshot.dueDate,
+        status: vatStatus,
+        period: vatSnapshot.period,
+        submittedDate: vatSubmission?.submittedDate,
+        reference: vatSubmission?.reference,
+        amount: vatSnapshot.netVat,
+      });
+    }
+
+    // 4) SARS Sentinel submission history (if table exists)
     if (await tableExists('public', 'sars_submission_history')) {
       const submissions = await query(
         `
@@ -253,6 +275,69 @@ export const getRegulatoryRequirements = async (req: TenantRequest, res: Respons
       description: 'Annual employee tax certificates generated from payroll records.',
     });
 
+    // VAT201 requirement from Financial GL
+    const vatSnapshot = await getLatestVATSnapshot(tenantId);
+    const vat201Submission = vatSnapshot
+      ? await getLatestSubmissionFor(tenantId, 'VAT201', vatSnapshot.period)
+      : null;
+    requirements.push({
+      id: 'REQ-VAT201',
+      name: 'VAT201 Monthly Return',
+      authority: 'SARS',
+      frequency: 'Monthly',
+      nextDue: vatSnapshot?.dueDate || '-',
+      status: vatSnapshot
+        ? vat201Submission ? 'compliant' : normalizeRequirementStatus(normalizeFilingStatus('pending', vatSnapshot.dueDate))
+        : 'attention',
+      lastFiled: vat201Submission?.submittedDate,
+      description: vatSnapshot
+        ? `Auto-calculated from GL: Output VAT R${vatSnapshot.outputVat.toLocaleString()} – Input VAT R${vatSnapshot.inputVat.toLocaleString()} = Net R${vatSnapshot.netVat.toLocaleString()}.`
+        : 'VAT201 return. No journal entries found for the previous period.',
+    });
+
+    // B-BBEE requirement from HR Demographics
+    const bbbeeScorecard = await getBBBEEScorecard(tenantId);
+    requirements.push({
+      id: 'REQ-BBBEE',
+      name: 'B-BBEE Compliance Certificate',
+      authority: 'B-BBEE Commission',
+      frequency: 'Annual',
+      nextDue: getNextAnnualDueDate(8, 30), // 30 September typical verification
+      status: bbbeeScorecard
+        ? bbbeeScorecard.estimatedLevel <= 4 ? 'compliant' : 'attention'
+        : 'attention',
+      description: bbbeeScorecard
+        ? `Level ${bbbeeScorecard.estimatedLevel} (est.) — ${bbbeeScorecard.totalEmployees} employees, ${bbbeeScorecard.demographics.black + bbbeeScorecard.demographics.coloured + bbbeeScorecard.demographics.indian} designated (${bbbeeScorecard.blackOwnershipPercent}%), Mgmt control ${bbbeeScorecard.managementControlPercent}%.`
+        : 'B-BBEE verification. Add employee demographics in HR module for automatic scoring.',
+    });
+
+    // FICA requirement
+    const ficaPopia = await getFICAPOPIAStatus(tenantId);
+    requirements.push({
+      id: 'REQ-FICA',
+      name: 'FICA Customer Due Diligence',
+      authority: 'Financial Intelligence Centre',
+      frequency: 'Ongoing',
+      nextDue: '-',
+      status: ficaPopia.ficaStatus === 'not-applicable' ? 'attention' : ficaPopia.ficaStatus,
+      description: ficaPopia.ficaDetails.customersDueDiligence > 0
+        ? `${ficaPopia.ficaDetails.customersVerified}/${ficaPopia.ficaDetails.customersDueDiligence} customers verified. ${ficaPopia.ficaDetails.suspiciousReports} open suspicious transaction reports.`
+        : 'FICA requires Customer Due Diligence (CDD) for all clients. Create fica_customer_due_diligence records to track.',
+    });
+
+    // POPIA requirement
+    requirements.push({
+      id: 'REQ-POPIA',
+      name: 'POPIA Data Protection Compliance',
+      authority: 'Information Regulator',
+      frequency: 'Ongoing',
+      nextDue: '-',
+      status: ficaPopia.popiaStatus === 'not-applicable' ? 'attention' : ficaPopia.popiaStatus,
+      description: ficaPopia.popiaDetails.consentRecordsCount > 0 || ficaPopia.popiaDetails.dataProcessingAgreements > 0
+        ? `${ficaPopia.popiaDetails.consentRecordsCount} consent records, ${ficaPopia.popiaDetails.dataProcessingAgreements} DPAs active. ${ficaPopia.popiaDetails.breachIncidents} open breach incidents. ${ficaPopia.popiaDetails.dataSubjectRequests} data subject requests.`
+        : 'POPIA compliance tracking. Set up consent records and data processing agreements to monitor.',
+    });
+
     // SARS Sentinel correspondence requirement
     if (await tableExists('public', 'sars_correspondence')) {
       const corrStats = await query(
@@ -309,16 +394,33 @@ export const getRegulatoryRequirements = async (req: TenantRequest, res: Respons
       }
     }
 
-    // CIPC baseline requirement (manual/compliance operations)
-    requirements.push({
-      id: 'REQ-CIPC',
-      name: 'CIPC Annual Return',
-      authority: 'CIPC',
-      frequency: 'Annual',
-      nextDue: '-',
-      status: 'attention',
-      description: 'Company annual return filing managed through Regulatory Hub workflow.',
-    });
+    // CIPC requirement — pull real entity data from Multi-Entity module
+    const cipcEntities = await getCIPCEntityDetails(tenantId);
+    if (cipcEntities.length > 0) {
+      for (const entity of cipcEntities) {
+        const cipcSubmission = await getLatestSubmissionFor(tenantId, 'CIPC');
+        requirements.push({
+          id: `REQ-CIPC-${entity.registrationNumber.replace(/[^a-zA-Z0-9]/g, '')}`,
+          name: `CIPC Annual Return — ${entity.entityName}`,
+          authority: 'CIPC',
+          frequency: 'Annual',
+          nextDue: getNextAnnualDueDate(entity.registrationNumber ? getAnniversaryMonth(entity.registrationNumber) : 0, 28),
+          status: cipcSubmission ? 'compliant' : 'attention',
+          lastFiled: cipcSubmission?.submittedDate,
+          description: `Reg: ${entity.registrationNumber} (${entity.entityType})${entity.vatNumber ? ', VAT: ' + entity.vatNumber : ''}.`,
+        });
+      }
+    } else {
+      requirements.push({
+        id: 'REQ-CIPC',
+        name: 'CIPC Annual Return',
+        authority: 'CIPC',
+        frequency: 'Annual',
+        nextDue: '-',
+        status: 'attention',
+        description: 'No entities with registration numbers found. Add company details in Multi-Entity module.',
+      });
+    }
 
     return res.json({ success: true, data: requirements });
   } catch (error: any) {
@@ -388,6 +490,34 @@ export const getRegulatoryDeadlines = async (req: TenantRequest, res: Response) 
       authority: 'SARS',
       type: 'EMP501',
     });
+
+    // VAT201 deadline from GL
+    const vatSnapshotForDeadlines = await getLatestVATSnapshot(tenantId);
+    if (vatSnapshotForDeadlines?.dueDate) {
+      addDeadline(vatSnapshotForDeadlines.dueDate, {
+        name: 'VAT201 Return',
+        authority: 'SARS',
+        type: 'VAT201',
+      });
+    }
+
+    // B-BBEE annual verification deadline
+    addDeadline(getNextAnnualDueDate(8, 30), {
+      name: 'B-BBEE Verification',
+      authority: 'B-BBEE Commission',
+      type: 'BBBEE',
+    });
+
+    // CIPC entity anniversary deadlines
+    const cipcEntitiesForDeadlines = await getCIPCEntityDetails(tenantId);
+    for (const entity of cipcEntitiesForDeadlines) {
+      const month = getAnniversaryMonth(entity.registrationNumber);
+      addDeadline(getNextAnnualDueDate(month, 28), {
+        name: `CIPC Annual Return — ${entity.entityName}`,
+        authority: 'CIPC',
+        type: 'CIPC',
+      });
+    }
 
     if (await tableExists('public', 'sars_correspondence')) {
       const corr = await query(
@@ -675,6 +805,46 @@ export const submitRegulatoryFiling = async (req: TenantRequest, res: Response) 
   } catch (error: any) {
     console.error('Submit regulatory filing error:', error);
     return res.status(500).json({ success: false, error: 'Failed to submit filing' });
+  }
+};
+
+/**
+ * GET /api/compliance/regulatory/enhanced-status
+ * Returns enhanced regulatory data: VAT snapshot, B-BBEE scorecard, CIPC entities, FICA/POPIA
+ */
+export const getRegulatoryEnhancedStatus = async (req: TenantRequest, res: Response) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+
+    const [vatSnapshot, bbbeeScorecard, cipcEntities, ficaPopia] = await Promise.all([
+      getLatestVATSnapshot(tenantId),
+      getBBBEEScorecard(tenantId),
+      getCIPCEntityDetails(tenantId),
+      getFICAPOPIAStatus(tenantId),
+    ]);
+
+    return res.json({
+      success: true,
+      data: {
+        vat: vatSnapshot,
+        bbbee: bbbeeScorecard,
+        cipc: cipcEntities,
+        fica: ficaPopia.ficaStatus !== 'not-applicable' ? {
+          status: ficaPopia.ficaStatus,
+          ...ficaPopia.ficaDetails,
+        } : null,
+        popia: ficaPopia.popiaStatus !== 'not-applicable' ? {
+          status: ficaPopia.popiaStatus,
+          ...ficaPopia.popiaDetails,
+        } : null,
+      },
+    });
+  } catch (error: any) {
+    console.error('Enhanced regulatory status error:', error);
+    return res.status(500).json({ success: false, error: 'Failed to fetch enhanced regulatory status' });
   }
 };
 
@@ -970,6 +1140,26 @@ function getNextAnnualDueDate(monthZeroBased: number, dayOfMonth: number): strin
   return toDateString(candidate);
 }
 
+/**
+ * CIPC annual returns are due within 30 days of the anniversary of registration.
+ * We hash the registration number to derive the anniversary month (0-11).
+ */
+function getAnniversaryMonth(registrationNumber: string): number {
+  // CIPC reg format is typically YYYY/NNNNNN/NN — extract year if possible
+  const match = registrationNumber.match(/^(\d{4})\//);
+  if (match) {
+    // Use the registration year's month component as a proxy
+    const regYear = parseInt(match[1], 10);
+    return regYear % 12; // Distribute across months
+  }
+  // Fallback: hash chars to derive month
+  let hash = 0;
+  for (let i = 0; i < registrationNumber.length; i++) {
+    hash = ((hash << 5) - hash + registrationNumber.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) % 12;
+}
+
 async function getActiveEmployeeCount(tenantId: string): Promise<number> {
   if (!(await tableExists('hr', 'employees'))) return 0;
   const result = await query(
@@ -982,6 +1172,372 @@ async function getActiveEmployeeCount(tenantId: string): Promise<number> {
     [tenantId]
   );
   return Number(result.rows[0]?.cnt || 0);
+}
+
+// ============================================================================
+// VAT INTEGRATION — Financial GL Module
+// ============================================================================
+
+interface VATSnapshot {
+  period: string;
+  dueDate: string;
+  outputVat: number;
+  inputVat: number;
+  netVat: number;
+}
+
+/**
+ * Pull the latest month's VAT output & input from journal_entry_lines
+ * linked to known VAT accounts (codes 2200 = Output, 2210/1230 = Input).
+ */
+async function getLatestVATSnapshot(tenantId: string): Promise<VATSnapshot | null> {
+  const hasJournalEntries = await tableExists('public', 'journal_entries');
+  const hasJournalLines = await tableExists('public', 'journal_entry_lines');
+  if (!hasJournalEntries || !hasJournalLines) return null;
+
+  const result = await query(
+    `
+    SELECT
+      TO_CHAR(DATE_TRUNC('month', je.journal_date), 'YYYY-MM') AS period,
+      COALESCE(SUM(jel.credit_amount) FILTER (
+        WHERE UPPER(COALESCE(jel.tax_code, '')) LIKE '%OUTPUT%'
+           OR jel.account_code IN (
+              SELECT code FROM chart_of_accounts
+              WHERE tenant_id = $1 AND UPPER(COALESCE(tax_type,'')) = 'VAT_OUTPUT'
+           )
+      ), 0) AS output_vat,
+      COALESCE(SUM(jel.debit_amount) FILTER (
+        WHERE UPPER(COALESCE(jel.tax_code, '')) LIKE '%INPUT%'
+           OR jel.account_code IN (
+              SELECT code FROM chart_of_accounts
+              WHERE tenant_id = $1 AND UPPER(COALESCE(tax_type,'')) = 'VAT_INPUT'
+           )
+      ), 0) AS input_vat
+    FROM journal_entries je
+    JOIN journal_entry_lines jel ON je.journal_entry_id = jel.journal_entry_id
+                                 AND je.tenant_id = jel.tenant_id
+    WHERE je.tenant_id = $1
+      AND je.status IN ('posted', 'approved')
+      AND je.journal_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+      AND je.journal_date < DATE_TRUNC('month', CURRENT_DATE)
+    GROUP BY DATE_TRUNC('month', je.journal_date)
+    ORDER BY period DESC
+    LIMIT 1
+    `,
+    [tenantId]
+  );
+
+  if (!result.rows[0]) return null;
+
+  const row = result.rows[0];
+  const outputVat = Number(row.output_vat || 0);
+  const inputVat = Number(row.input_vat || 0);
+  const periodDate = new Date(row.period + '-01');
+  const dueDate = new Date(periodDate.getFullYear(), periodDate.getMonth() + 1, 25); // VAT201 due 25th
+
+  return {
+    period: row.period,
+    dueDate: toDateString(dueDate),
+    outputVat,
+    inputVat,
+    netVat: outputVat - inputVat,
+  };
+}
+
+// ============================================================================
+// B-BBEE INTEGRATION — HR Demographics
+// ============================================================================
+
+interface BBBEEScorecard {
+  totalEmployees: number;
+  demographics: {
+    black: number;
+    coloured: number;
+    indian: number;
+    white: number;
+    unspecified: number;
+  };
+  gender: {
+    male: number;
+    female: number;
+    other: number;
+  };
+  disabilityCount: number;
+  blackOwnershipPercent: number;
+  managementControlPercent: number;
+  estimatedLevel: number;
+}
+
+/**
+ * Calculate B-BBEE scorecard from HR employee demographics.
+ * Uses race, gender, disability_status fields from hr.employees.
+ */
+async function getBBBEEScorecard(tenantId: string): Promise<BBBEEScorecard | null> {
+  if (!(await tableExists('hr', 'employees'))) return null;
+
+  const result = await query(
+    `
+    SELECT
+      COUNT(*) AS total,
+      COUNT(*) FILTER (WHERE UPPER(COALESCE(race,'')) IN ('BLACK','AFRICAN')) AS black,
+      COUNT(*) FILTER (WHERE UPPER(COALESCE(race,'')) = 'COLOURED') AS coloured,
+      COUNT(*) FILTER (WHERE UPPER(COALESCE(race,'')) IN ('INDIAN','ASIAN')) AS indian,
+      COUNT(*) FILTER (WHERE UPPER(COALESCE(race,'')) = 'WHITE') AS white,
+      COUNT(*) FILTER (WHERE COALESCE(race,'') = '' OR race IS NULL) AS unspecified,
+      COUNT(*) FILTER (WHERE UPPER(COALESCE(gender,'')) IN ('MALE','M')) AS male,
+      COUNT(*) FILTER (WHERE UPPER(COALESCE(gender,'')) IN ('FEMALE','F')) AS female,
+      COUNT(*) FILTER (WHERE UPPER(COALESCE(gender,'')) NOT IN ('MALE','M','FEMALE','F','')) AS gender_other,
+      COUNT(*) FILTER (WHERE UPPER(COALESCE(disability_status,'')) IN ('YES','Y','TRUE','DISABLED')) AS disabled
+    FROM hr.employees
+    WHERE tenant_id = $1
+      AND COALESCE(employment_status, 'Active') ILIKE 'active%'
+    `,
+    [tenantId]
+  );
+
+  if (!result.rows[0] || Number(result.rows[0].total) === 0) return null;
+
+  const r = result.rows[0];
+  const total = Number(r.total);
+  const black = Number(r.black);
+  const coloured = Number(r.coloured);
+  const indian = Number(r.indian);
+  const designated = black + coloured + indian;
+
+  // Management control: check designated groups in management positions
+  const mgmtResult = await query(
+    `
+    SELECT
+      COUNT(*) AS total_mgmt,
+      COUNT(*) FILTER (
+        WHERE UPPER(COALESCE(race,'')) IN ('BLACK','AFRICAN','COLOURED','INDIAN','ASIAN')
+      ) AS designated_mgmt
+    FROM hr.employees
+    WHERE tenant_id = $1
+      AND COALESCE(employment_status, 'Active') ILIKE 'active%'
+      AND (
+        UPPER(COALESCE(job_title,'')) LIKE '%MANAGER%'
+        OR UPPER(COALESCE(job_title,'')) LIKE '%DIRECTOR%'
+        OR UPPER(COALESCE(job_title,'')) LIKE '%HEAD%'
+        OR UPPER(COALESCE(job_title,'')) LIKE '%EXECUTIVE%'
+        OR UPPER(COALESCE(job_title,'')) LIKE '%CEO%'
+        OR UPPER(COALESCE(job_title,'')) LIKE '%CFO%'
+        OR UPPER(COALESCE(job_title,'')) LIKE '%COO%'
+      )
+    `,
+    [tenantId]
+  );
+
+  const totalMgmt = Number(mgmtResult.rows[0]?.total_mgmt || 0);
+  const designatedMgmt = Number(mgmtResult.rows[0]?.designated_mgmt || 0);
+  const mgmtPercent = totalMgmt > 0 ? Math.round((designatedMgmt / totalMgmt) * 100) : 0;
+  const designatedPercent = total > 0 ? Math.round((designated / total) * 100) : 0;
+
+  // Simplified B-BBEE level estimation based on designated group % and management control
+  // Real B-BBEE has 5 pillars; this covers the two biggest: Ownership proxy + Management Control
+  const combinedScore = (designatedPercent * 0.6) + (mgmtPercent * 0.4);
+  let level = 8;
+  if (combinedScore >= 95) level = 1;
+  else if (combinedScore >= 85) level = 2;
+  else if (combinedScore >= 75) level = 3;
+  else if (combinedScore >= 65) level = 4;
+  else if (combinedScore >= 55) level = 5;
+  else if (combinedScore >= 45) level = 6;
+  else if (combinedScore >= 35) level = 7;
+
+  return {
+    totalEmployees: total,
+    demographics: {
+      black,
+      coloured,
+      indian,
+      white: Number(r.white),
+      unspecified: Number(r.unspecified),
+    },
+    gender: {
+      male: Number(r.male),
+      female: Number(r.female),
+      other: Number(r.gender_other),
+    },
+    disabilityCount: Number(r.disabled),
+    blackOwnershipPercent: designatedPercent, // Proxy: designated group % of workforce
+    managementControlPercent: mgmtPercent,
+    estimatedLevel: level,
+  };
+}
+
+// ============================================================================
+// CIPC INTEGRATION — Multi-Entity Module
+// ============================================================================
+
+interface CIPCEntityInfo {
+  entityName: string;
+  registrationNumber: string;
+  entityType: string;
+  vatNumber?: string;
+  taxNumber?: string;
+}
+
+/**
+ * Pull company registration details from legal_entities / entities tables.
+ */
+async function getCIPCEntityDetails(tenantId: string): Promise<CIPCEntityInfo[]> {
+  // Try legal_entities (V2) first, fall back to entities (legacy)
+  if (await tableExists('public', 'legal_entities')) {
+    const result = await query(
+      `
+      SELECT name, registration_number, type, vat_number, tax_number
+      FROM legal_entities
+      WHERE tenant_id = $1
+        AND registration_number IS NOT NULL
+        AND registration_number != ''
+      ORDER BY name
+      `,
+      [tenantId]
+    );
+    if (result.rows.length > 0) {
+      return result.rows.map((r: any) => ({
+        entityName: r.name,
+        registrationNumber: r.registration_number,
+        entityType: r.type || 'company',
+        vatNumber: r.vat_number || undefined,
+        taxNumber: r.tax_number || undefined,
+      }));
+    }
+  }
+
+  if (await tableExists('public', 'entities')) {
+    const result = await query(
+      `
+      SELECT entity_name, registration_number, entity_type, tax_number, vat_number
+      FROM entities
+      WHERE tenant_id = $1
+        AND registration_number IS NOT NULL
+        AND registration_number != ''
+      ORDER BY entity_name
+      `,
+      [tenantId]
+    );
+    return result.rows.map((r: any) => ({
+      entityName: r.entity_name,
+      registrationNumber: r.registration_number,
+      entityType: r.entity_type || 'company',
+      vatNumber: r.vat_number || undefined,
+      taxNumber: r.tax_number || undefined,
+    }));
+  }
+
+  return [];
+}
+
+// ============================================================================
+// FICA / POPIA TRACKING
+// ============================================================================
+
+interface FICAPOPIAStatus {
+  ficaStatus: 'compliant' | 'attention' | 'non-compliant' | 'not-applicable';
+  popiaStatus: 'compliant' | 'attention' | 'non-compliant' | 'not-applicable';
+  ficaDetails: {
+    customersDueDiligence: number;
+    customersVerified: number;
+    suspiciousReports: number;
+  };
+  popiaDetails: {
+    dataSubjectRequests: number;
+    consentRecordsCount: number;
+    breachIncidents: number;
+    dataProcessingAgreements: number;
+  };
+}
+
+/**
+ * Aggregate FICA and POPIA compliance status from compliance tables.
+ */
+async function getFICAPOPIAStatus(tenantId: string): Promise<FICAPOPIAStatus> {
+  const defaults: FICAPOPIAStatus = {
+    ficaStatus: 'not-applicable',
+    popiaStatus: 'not-applicable',
+    ficaDetails: { customersDueDiligence: 0, customersVerified: 0, suspiciousReports: 0 },
+    popiaDetails: { dataSubjectRequests: 0, consentRecordsCount: 0, breachIncidents: 0, dataProcessingAgreements: 0 },
+  };
+
+  // FICA: Check fica_customer_due_diligence table
+  if (await tableExists('public', 'fica_customer_due_diligence')) {
+    const ficaResult = await query(
+      `
+      SELECT
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE UPPER(COALESCE(verification_status,'')) IN ('VERIFIED','COMPLETE')) AS verified,
+        COUNT(*) FILTER (WHERE UPPER(COALESCE(risk_rating,'')) IN ('HIGH','CRITICAL')) AS high_risk
+      FROM fica_customer_due_diligence
+      WHERE tenant_id = $1
+      `,
+      [tenantId]
+    );
+    const r = ficaResult.rows[0];
+    const total = Number(r?.total || 0);
+    const verified = Number(r?.verified || 0);
+    defaults.ficaDetails.customersDueDiligence = total;
+    defaults.ficaDetails.customersVerified = verified;
+    defaults.ficaStatus = total === 0 ? 'attention' : verified >= total * 0.9 ? 'compliant' : 'attention';
+  }
+
+  // FICA: Check suspicious transaction reports
+  if (await tableExists('public', 'fica_suspicious_reports')) {
+    const strResult = await query(
+      `SELECT COUNT(*) AS cnt FROM fica_suspicious_reports WHERE tenant_id = $1 AND status = 'open'`,
+      [tenantId]
+    );
+    defaults.ficaDetails.suspiciousReports = Number(strResult.rows[0]?.cnt || 0);
+    if (defaults.ficaDetails.suspiciousReports > 0) defaults.ficaStatus = 'non-compliant';
+  }
+
+  // POPIA: Check data subject requests
+  if (await tableExists('public', 'popia_data_subject_requests')) {
+    const dsrResult = await query(
+      `
+      SELECT
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE UPPER(COALESCE(status,'')) NOT IN ('COMPLETED','CLOSED')) AS open_requests
+      FROM popia_data_subject_requests
+      WHERE tenant_id = $1
+      `,
+      [tenantId]
+    );
+    defaults.popiaDetails.dataSubjectRequests = Number(dsrResult.rows[0]?.total || 0);
+    const openReqs = Number(dsrResult.rows[0]?.open_requests || 0);
+    defaults.popiaStatus = openReqs > 0 ? 'attention' : 'compliant';
+  }
+
+  // POPIA: consent records
+  if (await tableExists('public', 'popia_consent_records')) {
+    const consentResult = await query(
+      `SELECT COUNT(*) AS cnt FROM popia_consent_records WHERE tenant_id = $1`,
+      [tenantId]
+    );
+    defaults.popiaDetails.consentRecordsCount = Number(consentResult.rows[0]?.cnt || 0);
+  }
+
+  // POPIA: breach incidents
+  if (await tableExists('public', 'popia_breach_incidents')) {
+    const breachResult = await query(
+      `SELECT COUNT(*) AS cnt FROM popia_breach_incidents WHERE tenant_id = $1 AND UPPER(COALESCE(status,'')) != 'CLOSED'`,
+      [tenantId]
+    );
+    defaults.popiaDetails.breachIncidents = Number(breachResult.rows[0]?.cnt || 0);
+    if (defaults.popiaDetails.breachIncidents > 0) defaults.popiaStatus = 'non-compliant';
+  }
+
+  // POPIA: data processing agreements
+  if (await tableExists('public', 'popia_processing_agreements')) {
+    const dpaResult = await query(
+      `SELECT COUNT(*) AS cnt FROM popia_processing_agreements WHERE tenant_id = $1 AND COALESCE(is_active, true) = true`,
+      [tenantId]
+    );
+    defaults.popiaDetails.dataProcessingAgreements = Number(dpaResult.rows[0]?.cnt || 0);
+  }
+
+  return defaults;
 }
 
 /**

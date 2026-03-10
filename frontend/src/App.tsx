@@ -176,13 +176,26 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
       return next;
     });
   }, []);
+  // Track entity version to force remount all routes when entity switches
+  const [entityKey, setEntityKey] = useState(() => localStorage.getItem('currentEntityId') || '0');
+  useEffect(() => {
+    const handleEntityChange = () => {
+      setEntityKey(localStorage.getItem('currentEntityId') || String(Date.now()));
+    };
+    window.addEventListener('entityChanged', handleEntityChange);
+    window.addEventListener('entityDataRefresh', handleEntityChange);
+    return () => {
+      window.removeEventListener('entityChanged', handleEntityChange);
+      window.removeEventListener('entityDataRefresh', handleEntityChange);
+    };
+  }, []);
   return (
     <div className={`app premium-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
       <PremiumTopBar />
       <PremiumSidebar isCollapsed={sidebarCollapsed} onToggleCollapse={toggleSidebar} />
       <main className="main-content-v2">
         <Suspense fallback={<PageLoader />}>
-          <Routes>
+          <Routes key={entityKey}>
             <Route path="/" element={<RoleBasedWorkspace />} />
             <Route path="/dashboard" element={<RoleBasedWorkspace />} />
             <Route path="/workspace" element={<RoleBasedWorkspace />} />

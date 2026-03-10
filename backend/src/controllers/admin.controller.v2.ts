@@ -808,6 +808,303 @@ export class AdminControllerV2 {
       res.status(500).json({ success: false, message: 'Failed to resend invitation' });
     }
   }
+
+  /**
+   * Invite an accountant for this business
+   * POST /api/v2/admin/invite-accountant
+   * 
+   * If the accountant already has a firm on the platform → auto-link.
+   * If new → create firm tenant + user + mapping, send invitation email.
+   */
+  static async inviteAccountant(req: TenantRequest, res: Response): Promise<void> {
+    const client = await pool.connect();
+    try {
+      const { tenantId, userId } = getTenantContext(req);
+      const { email, name, firm_name, engagement_type = 'full_service', message: personalMessage } = req.body;
+
+      if (!email) {
+        res.status(400).json({ success: false, message: 'Accountant email is required' });
+        return;
+      }
+
+      await client.query('BEGIN');
+
+      // Get business info
+      const tenantResult = await client.query('SELECT name FROM tenants WHERE id = $1', [tenantId]);
+      const businessName = tenantResult.rows[0]?.name || 'Your Business';
+
+      const inviterResult = await client.query(
+        'SELECT first_name, last_name, email FROM users WHERE id = $1', [userId]
+      );
+      const inviter = inviterResult.rows[0];
+      const inviterName = inviter
+        ? `${inviter.first_name || ''} ${inviter.last_name || ''}`.trim() || inviter.email
+        : 'Business Admin';
+
+      // ── CASE 1: Accountant already has a firm on the platform ──
+      const existingFirm = await client.query(`
+        SELECT af.id AS firm_id, af.firm_name, af.tenant_id AS firm_tenant_id,
+               u.id AS user_id, u.first_name, u.last_name, u.email
+        FROM users u
+        JOIN accountant_firms af ON u.tenant_id = af.tenant_id
+        WHERE u.email = $1 AND af.is_active = true
+        LIMIT 1
+      `, [email]);
+
+      if (existingFirm.rows.length > 0) {
+        const firm = existingFirm.rows[0];
+
+        // Check if already linked
+        const existingMapping = await client.query(`
+          SELECT id, status FROM accountant_client_mappings
+          WHERE firm_id = $1 AND client_tenant_id = $2
+        `, [firm.firm_id, tenantId]);
+
+        if (existingMapping.rows.length > 0 && existingMapping.rows[0].status === 'active') {
+          await client.query('ROLLBACK');
+          res.status(400).json({
+            success: false,
+            message: `${firm.firm_name} is already linked as your accountant`
+          });
+          return;
+        }
+
+        // Create or reactivate mapping
+        await client.query(`
+          INSERT INTO accountant_client_mappings
+            (id, firm_id, client_tenant_id, engagement_type, status, start_date)
+          VALUES (gen_random_uuid(), $1, $2, $3, 'active', CURRENT_DATE)
+          ON CONFLICT (firm_id, client_tenant_id)
+          DO UPDATE SET status = 'active', engagement_type = $3, updated_at = NOW()
+        `, [firm.firm_id, tenantId, engagement_type]);
+
+        // Log activity
+        await client.query(`
+          INSERT INTO accountant_activity_log
+            (id, firm_id, user_id, action, resource_type, details, created_at)
+          VALUES (gen_random_uuid(), $1, $2, 'client_added_by_business',
+                  'accountant_client_mappings',
+                  $3::jsonb, NOW())
+        `, [firm.firm_id, firm.user_id, JSON.stringify({
+          business_name: businessName,
+          business_tenant_id: tenantId,
+          engagement_type,
+          invited_by: inviterName
+        })]);
+
+        await client.query('COMMIT');
+
+        // Send notification email to accountant
+        try {
+          const { sendEmail } = require('../services/email.service');
+          await sendEmail({
+            to: email,
+            subject: `New Client: ${businessName} has added your firm`,
+            template: 'accountant-new-client',
+            variables: {
+              accountantName: `${firm.first_name || ''} ${firm.last_name || ''}`.trim() || 'there',
+              firmName: firm.firm_name,
+              businessName: businessName,
+              engagementType: engagement_type.replace(/_/g, ' '),
+              inviterName: inviterName,
+              personalMessage: personalMessage
+                ? `<div class="personal-message"><p>"${personalMessage}"</p><p class="from">— ${inviterName}</p></div>`
+                : '',
+              loginUrl: `${process.env.FRONTEND_URL || 'https://siyabusaerp.co.za'}/login`
+            }
+          });
+        } catch (emailError) {
+          console.error('Failed to send accountant notification email:', emailError);
+        }
+
+        res.json({
+          success: true,
+          linked: true,
+          message: `${firm.firm_name} has been linked as your accountant. They can now access your books.`,
+          firm_name: firm.firm_name
+        });
+        return;
+      }
+
+      // ── CASE 2: Accountant exists as a user but has no firm ──
+      const existingUser = await client.query(
+        'SELECT id, tenant_id, first_name, last_name FROM users WHERE email = $1 LIMIT 1',
+        [email]
+      );
+
+      if (existingUser.rows.length > 0) {
+        const accountant = existingUser.rows[0];
+        const accountantTenantId = accountant.tenant_id;
+        const firmDisplayName = firm_name || `${accountant.first_name || ''} ${accountant.last_name || ''} Practice`.trim();
+
+        // Create a firm record for this existing user's tenant
+        const existingFirmCheck = await client.query(
+          'SELECT id, firm_name FROM accountant_firms WHERE tenant_id = $1 LIMIT 1', [accountantTenantId]
+        );
+        let firmId: string;
+        let resolvedFirmName: string;
+        if (existingFirmCheck.rows.length > 0) {
+          firmId = existingFirmCheck.rows[0].id;
+          resolvedFirmName = existingFirmCheck.rows[0].firm_name;
+        } else {
+          const newFirm = await client.query(`
+            INSERT INTO accountant_firms (id, tenant_id, firm_name, contact_email, is_active)
+            VALUES (gen_random_uuid(), $1, $2, $3, true)
+            RETURNING id, firm_name
+          `, [accountantTenantId, firmDisplayName, email]);
+          firmId = newFirm.rows[0].id;
+          resolvedFirmName = newFirm.rows[0].firm_name;
+        }
+
+        // Create client mapping
+        await client.query(`
+          INSERT INTO accountant_client_mappings
+            (id, firm_id, client_tenant_id, assigned_accountant_id, engagement_type, status, start_date)
+          VALUES (gen_random_uuid(), $1, $2, $3, $4, 'active', CURRENT_DATE)
+          ON CONFLICT (firm_id, client_tenant_id) DO UPDATE SET status = 'active', engagement_type = $4
+        `, [firmId, tenantId, accountant.id, engagement_type]);
+
+        await client.query('COMMIT');
+
+        // Send notification email
+        try {
+          const { sendEmail } = require('../services/email.service');
+          await sendEmail({
+            to: email,
+            subject: `${businessName} has appointed you as their accountant`,
+            template: 'accountant-new-client',
+            variables: {
+              accountantName: `${accountant.first_name || ''} ${accountant.last_name || ''}`.trim() || 'there',
+              firmName: firmDisplayName,
+              businessName: businessName,
+              engagementType: engagement_type.replace(/_/g, ' '),
+              inviterName: inviterName,
+              personalMessage: personalMessage
+                ? `<div class="personal-message"><p>"${personalMessage}"</p><p class="from">— ${inviterName}</p></div>`
+                : '',
+              loginUrl: `${process.env.FRONTEND_URL || 'https://siyabusaerp.co.za'}/login`
+            }
+          });
+        } catch (emailError) {
+          console.error('Failed to send accountant notification email:', emailError);
+        }
+
+        res.json({
+          success: true,
+          linked: true,
+          message: `${firmDisplayName} has been linked as your accountant.`,
+          firm_name: firmDisplayName
+        });
+        return;
+      }
+
+      // ── CASE 3: Brand new accountant — create everything ──
+      const crypto = require('crypto');
+      const invitationToken = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const firmDisplayName = firm_name || (name ? `${name} Practice` : `${email.split('@')[0]} Practice`);
+      const slug = firmDisplayName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+        + '-' + Date.now().toString(36);
+
+      // Create firm tenant
+      const newTenant = await client.query(`
+        INSERT INTO tenants (name, slug, status, subscription_plan)
+        VALUES ($1, $2, 'active', 'professional')
+        RETURNING id, name, slug
+      `, [firmDisplayName, slug]);
+      const firmTenantId = newTenant.rows[0].id;
+
+      // Create the accountant user in the firm's tenant
+      const displayName = name || email.split('@')[0];
+      const nameParts = (name || '').split(' ');
+      const firstName = nameParts[0] || null;
+      const lastName = nameParts.slice(1).join(' ') || null;
+
+      const newUser = await client.query(`
+        INSERT INTO users (
+          tenant_id, email, first_name, last_name, display_name, password_hash,
+          status, invitation_token, invitation_expires_at, is_active
+        )
+        VALUES ($1, $2, $3, $4, $5, 'pending_invite', 'invited', $6, $7, false)
+        RETURNING id
+      `, [firmTenantId, email, firstName, lastName, displayName, invitationToken, expiresAt]);
+
+      // Assign Accountant role if it exists
+      const accountantRole = await client.query(
+        "SELECT role_id FROM roles WHERE role_name ILIKE 'accountant' OR role_code ILIKE 'accountant' LIMIT 1"
+      );
+      if (accountantRole.rows.length > 0) {
+        await client.query(
+          'INSERT INTO user_roles (user_id, role_id, is_active) VALUES ($1, $2, true)',
+          [newUser.rows[0].id, accountantRole.rows[0].role_id]
+        );
+      }
+
+      // Create accountant_firms record
+      const newFirm = await client.query(`
+        INSERT INTO accountant_firms (id, tenant_id, firm_name, contact_email, is_active)
+        VALUES (gen_random_uuid(), $1, $2, $3, true)
+        RETURNING id
+      `, [firmTenantId, firmDisplayName, email]);
+
+      // Create client mapping
+      await client.query(`
+        INSERT INTO accountant_client_mappings
+          (id, firm_id, client_tenant_id, assigned_accountant_id, engagement_type, status, start_date)
+        VALUES (gen_random_uuid(), $1, $2, $3, $4, 'active', CURRENT_DATE)
+      `, [newFirm.rows[0].id, tenantId, newUser.rows[0].id, engagement_type]);
+
+      await client.query('COMMIT');
+
+      // Send invitation email
+      const frontendUrl = process.env.FRONTEND_URL || 'https://siyabusaerp.co.za';
+      const acceptUrl = `${frontendUrl}/accept-invite?token=${invitationToken}`;
+
+      try {
+        const { sendEmail } = require('../services/email.service');
+        await sendEmail({
+          to: email,
+          subject: `${businessName} has invited you as their accountant on SiyaBusa ERP`,
+          template: 'accountant-invitation',
+          variables: {
+            accountantName: displayName,
+            businessName: businessName,
+            firmName: firmDisplayName,
+            engagementType: engagement_type.replace(/_/g, ' '),
+            inviterName: inviterName,
+            personalMessage: personalMessage
+              ? `<div class="personal-message"><p>"${personalMessage}"</p><p class="from">— ${inviterName}</p></div>`
+              : '',
+            acceptUrl: acceptUrl,
+            expiryDate: expiresAt.toLocaleDateString('en-ZA', {
+              weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            })
+          }
+        });
+        console.log(`✅ Accountant invitation email sent to ${email}`);
+      } catch (emailError) {
+        console.error('Failed to send accountant invitation email:', emailError);
+      }
+
+      res.status(201).json({
+        success: true,
+        invited: true,
+        message: `Invitation sent to ${email}. Once they accept, they'll have access to your books via their Accountant Portal.`,
+        inviteUrl: acceptUrl
+      });
+
+    } catch (error: any) {
+      await client.query('ROLLBACK');
+      if (error.message === 'Tenant context required') {
+        res.status(401).json({ success: false, message: 'Unauthorized: Tenant context required' });
+        return;
+      }
+      console.error('[Admin] Invite accountant error:', error);
+      res.status(500).json({ success: false, message: 'Failed to invite accountant' });
+    } finally {
+      client.release();
+    }
+  }
 }
 
 export default AdminControllerV2;

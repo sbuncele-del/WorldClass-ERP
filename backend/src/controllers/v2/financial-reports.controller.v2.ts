@@ -1032,40 +1032,40 @@ export async function generateGeneralLedger(req: TenantRequest, res: Response): 
     const endDate = end_date || new Date().toISOString().split('T')[0];
 
     // Build query - optionally filter by account
-    let query = `
+    let queryStr = `
       SELECT 
-        coa.account_code,
-        coa.account_name,
+        COALESCE(NULLIF(coa.account_code, ''), coa.code) as account_code,
+        COALESCE(NULLIF(coa.account_name, ''), coa.name) as account_name,
         coa.account_type,
-        je.entry_number,
-        je.posting_date,
+        COALESCE(je.entry_number, je.journal_number) as entry_number,
+        COALESCE(je.journal_date, je.entry_date, je.posting_date) as posting_date,
         je.description as journal_description,
         jel.description as line_description,
         jel.debit_amount,
         jel.credit_amount
       FROM journal_entry_lines jel
-      INNER JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = jel.tenant_id
-      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = jel.tenant_id
+      INNER JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = jel.tenant_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = jel.tenant_id
       WHERE jel.tenant_id = $1
-        AND je.posting_date BETWEEN $2 AND $3
+        AND COALESCE(je.journal_date, je.entry_date, je.posting_date) BETWEEN $2 AND $3
         AND je.status = 'posted'
     `;
 
     const params: any[] = [tenantId, startDate, endDate];
 
     if (account_code) {
-      query += ` AND coa.account_code = $4`;
+      queryStr += ` AND COALESCE(NULLIF(coa.account_code, ''), coa.code) = $4`;
       params.push(account_code);
     }
 
-    query += ` ORDER BY coa.account_code, je.posting_date, je.entry_number`;
+    queryStr += ` ORDER BY COALESCE(NULLIF(coa.account_code, ''), coa.code), COALESCE(je.journal_date, je.entry_date, je.posting_date), COALESCE(je.entry_number, je.journal_number)`;
 
     let entries: any[] = [];
     try {
-      const result = await pool.query(query, params);
+      const result = await pool.query(queryStr, params);
       entries = result.rows;
     } catch (err) {
-      console.log('General ledger query failed, returning sample data');
+      console.error('General ledger query failed:', err);
     }
 
     // Group by account
@@ -1096,21 +1096,6 @@ export async function generateGeneralLedger(req: TenantRequest, res: Response): 
     });
 
     const accounts = Array.from(accountMap.values());
-
-    // If no data, provide sample
-    if (accounts.length === 0) {
-      accounts.push({
-        account_code: '1110',
-        account_name: 'Cash and Bank',
-        account_type: 'asset',
-        transactions: [
-          { date: '2026-01-15', entry_number: 'JE-000001', description: 'Opening Balance', debit: 50000, credit: 0 },
-          { date: '2026-01-20', entry_number: 'JE-000002', description: 'Customer Payment', debit: 10000, credit: 0 },
-        ],
-        total_debit: 60000,
-        total_credit: 0
-      });
-    }
 
     res.json({
       success: true,

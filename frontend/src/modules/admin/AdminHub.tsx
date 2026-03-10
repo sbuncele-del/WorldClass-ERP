@@ -79,10 +79,16 @@ interface Integration {
 const AdminHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [userModalVisible, setUserModalVisible] = useState(false);
+  const [accountantModalVisible, setAccountantModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [companyForm] = Form.useForm();
+  const [settingsForm] = Form.useForm();
+  const [accountantForm] = Form.useForm();
   const [loading, setLoading] = useState(true);
   const [savingCompany, setSavingCompany] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [invitingUser, setInvitingUser] = useState(false);
+  const [invitingAccountant, setInvitingAccountant] = useState(false);
 
   // Data state
   const [users, setUsers] = useState<User[]>([]);
@@ -92,20 +98,32 @@ const AdminHub: React.FC = () => {
   // Company settings state
   const [companySettings, setCompanySettings] = useState<any>(null);
 
+  // Theme state
+  const [themeSettings, setThemeSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('erp_theme');
+      return saved ? JSON.parse(saved) : { primaryColor: '#1890ff', accentColor: '#52c41a', mode: 'light', sidebar: 'default', fontSize: 'medium' };
+    } catch { return { primaryColor: '#1890ff', accentColor: '#52c41a', mode: 'light', sidebar: 'default', fontSize: 'medium' }; }
+  });
+
   // Fetch data from API
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [usersRes, auditLogsRes, integrationsRes, tenantRes] = await Promise.all([
+        const [usersRes, auditLogsRes, tenantRes] = await Promise.all([
           apiClient.get('/api/v2/admin/users'),
-          apiClient.get('/api/admin/audit-logs'),
-          apiClient.get('/api/admin/integrations'),
+          apiClient.get('/api/v2/admin/audit-log').catch(() => ({ data: { data: [] } })),
           apiClient.get('/api/v2/settings/tenant')
         ]);
         setUsers(usersRes.data?.users || usersRes.data?.data || usersRes.data || []);
-        setAuditLogs(auditLogsRes.data || []);
-        setIntegrations(integrationsRes.data || []);
+        setAuditLogs(auditLogsRes.data?.data || auditLogsRes.data?.auditLogs || auditLogsRes.data || []);
+        // Set placeholder integrations
+        setIntegrations([
+          { id: '1', name: 'SARS eFiling', type: 'Tax', status: 'disconnected', description: 'South African Revenue Service integration' },
+          { id: '2', name: 'Bank Feeds', type: 'Banking', status: 'disconnected', description: 'Automated bank statement imports' },
+          { id: '3', name: 'Payroll (PaySpace)', type: 'Payroll', status: 'disconnected', description: 'Payroll processing integration' }
+        ] as any[]);
         
         // Load company settings
         if (tenantRes.data?.success && tenantRes.data?.data) {
@@ -171,9 +189,75 @@ const AdminHub: React.FC = () => {
     }
   };
 
+  // Invite user handler
+  const handleInviteUser = async () => {
+    try {
+      const values = await form.validateFields();
+      setInvitingUser(true);
+      await apiClient.post('/api/v2/admin/users/invite', {
+        email: values.email,
+        first_name: values.firstName,
+        last_name: values.lastName,
+        role_id: values.role,
+      });
+      message.success(`Invitation sent to ${values.email}`);
+      setUserModalVisible(false);
+      form.resetFields();
+      // Refresh users
+      const usersRes = await apiClient.get('/api/v2/admin/users');
+      setUsers(usersRes.data?.users || usersRes.data?.data || usersRes.data || []);
+    } catch (error: any) {
+      if (error.errorFields) return; // form validation
+      message.error(error.response?.data?.message || 'Failed to send invitation');
+    } finally {
+      setInvitingUser(false);
+    }
+  };
+
+  // Invite accountant handler
+  const handleInviteAccountant = async (values: any) => {
+    setInvitingAccountant(true);
+    try {
+      const response = await apiClient.post('/api/v2/admin/invite-accountant', values);
+      if (response.data.success) {
+        message.success(response.data.message || `Invitation sent to ${values.email}`);
+        setAccountantModalVisible(false);
+        accountantForm.resetFields();
+      } else {
+        message.error(response.data.message || 'Failed to invite accountant');
+      }
+    } catch (err: any) {
+      message.error(err.response?.data?.message || 'Failed to invite accountant');
+    } finally {
+      setInvitingAccountant(false);
+    }
+  };
+
+  // Save system settings handler
+  const handleSaveSettings = async () => {
+    try {
+      setSavingSettings(true);
+      const values = settingsForm.getFieldsValue();
+      await apiClient.put('/api/v2/settings/tenant', {
+        timezone: values.timezone,
+        dateFormat: values.dateFormat,
+        currency: values.currency,
+        language: values.language,
+        requireMfa: values.requireMfa,
+        sessionTimeout: values.sessionTimeout,
+      });
+      message.success('System settings saved successfully');
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      message.error('Failed to save system settings');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   // Calculations
-  const activeUsers = users.filter(u => u.status === 'active').length;
-  const mfaEnabledUsers = users.filter(u => u.mfaEnabled).length;
+  const activeUsers = users.filter((u: any) => u.status === 'active' || u.is_active !== false).length;
+  const mfaEnabledUsers = users.filter((u: any) => u.mfaEnabled || u.mfa_enabled).length;
   const connectedIntegrations = integrations.filter(i => i.status === 'connected').length;
 
   // Overview Tab
@@ -207,7 +291,7 @@ const AdminHub: React.FC = () => {
               suffix={`/ ${users.length}`}
               prefix={<LockOutlined />} 
             />
-            <Progress percent={Math.round((mfaEnabledUsers / users.length) * 100)} size="small" />
+            <Progress percent={users.length > 0 ? Math.round((mfaEnabledUsers / users.length) * 100) : 0} size="small" />
           </Card>
         </Col>
         <Col xs={24} md={6}>
@@ -422,6 +506,45 @@ const AdminHub: React.FC = () => {
   // User Management Tab
   const renderUserManagement = () => (
     <div style={{ padding: '24px' }}>
+      {/* Invite Accountant Card */}
+      <Card
+        style={{
+          marginBottom: 16,
+          background: 'linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 100%)',
+          border: '1px solid #91caff',
+          borderRadius: 12,
+        }}
+      >
+        <Row align="middle" gutter={16}>
+          <Col flex="none">
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #0a1f3e, #1e3a5f)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <SafetyCertificateOutlined style={{ fontSize: 24, color: '#fff' }} />
+            </div>
+          </Col>
+          <Col flex="auto">
+            <Text strong style={{ fontSize: 15 }}>Invite My Accountant</Text>
+            <br />
+            <Text type="secondary" style={{ fontSize: 13 }}>
+              Give your accountant direct access to your books. If they're already on SiyaBusa, they'll be auto-linked.
+            </Text>
+          </Col>
+          <Col flex="none">
+            <Button
+              type="primary"
+              icon={<SafetyCertificateOutlined />}
+              onClick={() => setAccountantModalVisible(true)}
+              style={{ background: '#0a1f3e', borderColor: '#0a1f3e' }}
+            >
+              Invite Accountant
+            </Button>
+          </Col>
+        </Row>
+      </Card>
+
       <Card
         title={<><TeamOutlined /> User Management</>}
         extra={
@@ -435,56 +558,61 @@ const AdminHub: React.FC = () => {
       >
         <Table
           dataSource={users}
-          rowKey="id"
+          rowKey={(record: any) => record.id || record.user_id || record.email}
           columns={[
             {
               title: 'User',
               key: 'user',
-              render: (_, record) => (
-                <Space>
-                  <Avatar style={{ background: record.status === 'active' ? '#1890ff' : '#999' }}>
-                    {record.name.split(' ').map(n => n[0]).join('')}
-                  </Avatar>
-                  <div>
-                    <Text strong>{record.name}</Text>
-                    <br />
-                    <Text type="secondary" style={{ fontSize: 12 }}>{record.email}</Text>
-                  </div>
-                </Space>
-              )
+              render: (_: any, record: any) => {
+                const name = record.display_name || record.name || `${record.first_name || ''} ${record.last_name || ''}`.trim() || record.email;
+                const isActive = record.status === 'active' || record.is_active !== false;
+                return (
+                  <Space>
+                    <Avatar style={{ background: isActive ? '#1890ff' : '#999' }}>
+                      {name ? name.split(' ').map((n: string) => n[0]).join('').substring(0, 2) : '?'}
+                    </Avatar>
+                    <div>
+                      <Text strong>{name}</Text>
+                      <br />
+                      <Text type="secondary" style={{ fontSize: 12 }}>{record.email}</Text>
+                    </div>
+                  </Space>
+                );
+              }
             },
             {
               title: 'Role',
-              dataIndex: 'role',
               key: 'role',
-              render: (role: string) => <Tag color="blue">{role}</Tag>
-            },
-            {
-              title: 'Department',
-              dataIndex: 'department',
-              key: 'department'
+              render: (_: any, record: any) => {
+                const roles = record.roles || [];
+                const role = roles.length > 0 ? roles[0].role_name : record.role || 'User';
+                return <Tag color="blue">{role}</Tag>;
+              }
             },
             {
               title: 'Status',
-              dataIndex: 'status',
               key: 'status',
-              render: (status: string) => (
-                <Badge status={status === 'active' ? 'success' : status === 'pending' ? 'processing' : 'default'} text={status} />
-              )
+              render: (_: any, record: any) => {
+                if (record.status === 'invited') return <Badge status="processing" text="Pending Invite" />;
+                const active = record.status === 'active' || record.is_active !== false;
+                return <Badge status={active ? 'success' : 'default'} text={active ? 'Active' : 'Inactive'} />;
+              }
             },
             {
               title: 'MFA',
-              dataIndex: 'mfaEnabled',
               key: 'mfa',
-              render: (enabled: boolean) => (
-                enabled ? <Tag color="green"><LockOutlined /> Enabled</Tag> : <Tag>Disabled</Tag>
-              )
+              render: (_: any, record: any) => {
+                const enabled = record.mfaEnabled || record.mfa_enabled;
+                return enabled ? <Tag color="green"><LockOutlined /> Enabled</Tag> : <Tag>Disabled</Tag>;
+              }
             },
             {
               title: 'Last Login',
-              dataIndex: 'lastLogin',
               key: 'lastLogin',
-              render: (login?: string) => login || '-'
+              render: (_: any, record: any) => {
+                const login = record.lastLogin || record.last_login_at;
+                return login ? new Date(login).toLocaleDateString() : '-';
+              }
             },
             {
               title: 'Actions',
@@ -515,7 +643,7 @@ const AdminHub: React.FC = () => {
             </Paragraph>
           </Col>
           <Col span={8} style={{ textAlign: 'right' }}>
-            <Title level={2} style={{ color: '#fff', margin: 0 }}>R 4,999</Title>
+            <Title level={2} style={{ color: '#fff', margin: 0 }}>R 1,499</Title>
             <Text style={{ color: 'rgba(255,255,255,0.7)' }}>per month</Text>
           </Col>
         </Row>
@@ -524,30 +652,49 @@ const AdminHub: React.FC = () => {
       <Row gutter={[16, 16]}>
         <Col xs={24} md={8}>
           <Card>
-            <Statistic title="Current Period" value="Dec 1 - Dec 31, 2025" prefix={<CalendarOutlined />} />
+            <Statistic title="Current Period" value={`${new Date(new Date().getFullYear(), new Date().getMonth(), 1).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric' })} - ${new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric', year: 'numeric' })}`} prefix={<CalendarOutlined />} />
           </Card>
         </Col>
         <Col xs={24} md={8}>
           <Card>
-            <Statistic title="Next Payment" value="R 4,999" prefix={<DollarOutlined />} />
-            <Text type="secondary">Due: Jan 1, 2026</Text>
+            <Statistic title="Next Payment" value="R 1,499" prefix={<DollarOutlined />} />
+            <Text type="secondary">Due: {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString('en-ZA', { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
           </Card>
         </Col>
         <Col xs={24} md={8}>
           <Card>
-            <Statistic title="Payment Method" value="•••• 4242" prefix={<CreditCardOutlined />} />
-            <Text type="secondary">Visa</Text>
+            <Statistic title="Payment Method" value="EFT / Bank Transfer" prefix={<BankOutlined />} />
+            <Text type="secondary">Masaphokati Technologies • Standard Bank</Text>
           </Card>
         </Col>
       </Row>
 
+      <Card style={{ marginTop: 16 }}>
+        <Title level={5}><BankOutlined /> Banking Details for EFT Payment</Title>
+        <Descriptions bordered column={1} size="small">
+          <Descriptions.Item label="Account Holder">Masaphokati Technologies (Pty) Ltd</Descriptions.Item>
+          <Descriptions.Item label="Bank">Standard Bank</Descriptions.Item>
+          <Descriptions.Item label="Account Number">310341434</Descriptions.Item>
+          <Descriptions.Item label="Branch Code">051 001</Descriptions.Item>
+          <Descriptions.Item label="Account Type">Business Current</Descriptions.Item>
+          <Descriptions.Item label="Reference">Your Company Name / Tenant ID</Descriptions.Item>
+        </Descriptions>
+        <Text type="secondary" style={{ display: 'block', marginTop: 8 }}>
+          Please use your company name as the payment reference. Payments are due on the 1st of each month.
+        </Text>
+      </Card>
+
       <Card title={<><HistoryOutlined /> Billing History</>} style={{ marginTop: 16 }}>
         <Table
-          dataSource={[
-            { id: 'INV-001', date: '2025-12-01', amount: 4999, status: 'paid' },
-            { id: 'INV-002', date: '2025-11-01', amount: 4999, status: 'paid' },
-            { id: 'INV-003', date: '2025-10-01', amount: 4999, status: 'paid' }
-          ]}
+          dataSource={(() => {
+            const invoices = [];
+            const now = new Date();
+            for (let i = 0; i < 3; i++) {
+              const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+              invoices.push({ id: `INV-${String(invoices.length + 1).padStart(3, '0')}`, date: d.toISOString().slice(0, 10), amount: 1499, status: 'paid' });
+            }
+            return invoices;
+          })()}
           rowKey="id"
           columns={[
             { title: 'Invoice', dataIndex: 'id', key: 'id' },
@@ -578,19 +725,19 @@ const AdminHub: React.FC = () => {
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item label="Primary Color">
-                <ColorPicker defaultValue="#1890ff" />
+                <ColorPicker value={themeSettings.primaryColor} onChange={(_, hex) => setThemeSettings((p: any) => ({ ...p, primaryColor: typeof hex === 'string' ? hex : '#1890ff' }))} />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item label="Accent Color">
-                <ColorPicker defaultValue="#52c41a" />
+                <ColorPicker value={themeSettings.accentColor} onChange={(_, hex) => setThemeSettings((p: any) => ({ ...p, accentColor: typeof hex === 'string' ? hex : '#52c41a' }))} />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item label="Theme Mode">
-                <Select defaultValue="light">
+                <Select value={themeSettings.mode} onChange={(v) => setThemeSettings((p: any) => ({ ...p, mode: v }))}>
                   <Option value="light">Light Mode</Option>
                   <Option value="dark">Dark Mode</Option>
                   <Option value="auto">System Default</Option>
@@ -599,7 +746,7 @@ const AdminHub: React.FC = () => {
             </Col>
             <Col span={12}>
               <Form.Item label="Sidebar Style">
-                <Select defaultValue="default">
+                <Select value={themeSettings.sidebar} onChange={(v) => setThemeSettings((p: any) => ({ ...p, sidebar: v }))}>
                   <Option value="default">Default</Option>
                   <Option value="compact">Compact</Option>
                   <Option value="collapsed">Collapsed by Default</Option>
@@ -608,14 +755,29 @@ const AdminHub: React.FC = () => {
             </Col>
           </Row>
           <Form.Item label="Font Size">
-            <Select defaultValue="medium">
+            <Select value={themeSettings.fontSize} onChange={(v) => setThemeSettings((p: any) => ({ ...p, fontSize: v }))}>
               <Option value="small">Small</Option>
               <Option value="medium">Medium</Option>
               <Option value="large">Large</Option>
             </Select>
           </Form.Item>
           <Divider />
-          <Button type="primary">Apply Theme</Button>
+          <Button type="primary" onClick={() => {
+            localStorage.setItem('erp_theme', JSON.stringify(themeSettings));
+            const root = document.documentElement;
+            root.style.setProperty('--primary-color', themeSettings.primaryColor);
+            root.style.setProperty('--accent-color', themeSettings.accentColor);
+            const fontMap: Record<string, string> = { small: '13px', medium: '14px', large: '16px' };
+            root.style.fontSize = fontMap[themeSettings.fontSize] || '14px';
+            if (themeSettings.mode === 'dark') {
+              document.body.classList.add('dark-theme');
+              document.body.classList.remove('light-theme');
+            } else {
+              document.body.classList.remove('dark-theme');
+              document.body.classList.add('light-theme');
+            }
+            message.success('Theme applied successfully!');
+          }}>Apply Theme</Button>
         </Form>
       </Card>
     </div>
@@ -837,7 +999,7 @@ const AdminHub: React.FC = () => {
           </Form.Item>
 
           <Divider />
-          <Button type="primary">Save Settings</Button>
+          <Button type="primary" loading={savingSettings} onClick={handleSaveSettings}>Save Settings</Button>
         </Form>
       </Card>
     </div>
@@ -868,7 +1030,7 @@ const AdminHub: React.FC = () => {
         stats={[
           { title: 'Total Users', value: users.length },
           { title: 'Active Users', value: activeUsers },
-          { title: 'MFA Enabled', value: `${Math.round((mfaEnabledUsers / users.length) * 100)}%` },
+          { title: 'MFA Enabled', value: users.length > 0 ? `${Math.round((mfaEnabledUsers / users.length) * 100)}%` : '0%' },
           { title: 'Integrations', value: `${connectedIntegrations}/${integrations.length}` },
           { title: 'System Status', value: 'Healthy' }
         ]}
@@ -890,14 +1052,68 @@ const AdminHub: React.FC = () => {
         onChange={setActiveTab}
       />
 
+      {/* Invite Accountant Modal */}
+      <Modal
+        title={<><SafetyCertificateOutlined /> Invite My Accountant</>}
+        open={accountantModalVisible}
+        onCancel={() => { setAccountantModalVisible(false); accountantForm.resetFields(); }}
+        footer={null}
+        destroyOnClose
+        width={520}
+      >
+        <Alert
+          message="Your accountant will manage your books from their Accountant Portal"
+          description="If they already have a SiyaBusa account, they'll be auto-linked instantly."
+          type="info"
+          showIcon
+          style={{ marginBottom: 20 }}
+        />
+        <Form form={accountantForm} layout="vertical" onFinish={handleInviteAccountant}>
+          <Form.Item name="email" label="Accountant's Email" rules={[{ required: true, type: 'email', message: 'Enter a valid email' }]}>
+            <Input placeholder="accountant@firm.co.za" prefix={<MailOutlined />} size="large" />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="name" label="Contact Name">
+                <Input placeholder="e.g. James Mokoena" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="firm_name" label="Firm Name">
+                <Input placeholder="e.g. JM Accounting" />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="engagement_type" label="Engagement Type" initialValue="full_service">
+            <Select>
+              <Option value="full_service">Full Service (GL, Tax, Payroll)</Option>
+              <Option value="tax_only">Tax Only</Option>
+              <Option value="bookkeeping">Bookkeeping</Option>
+              <Option value="audit">Audit</Option>
+              <Option value="advisory">Advisory</Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="message" label="Personal Message (Optional)">
+            <TextArea rows={3} placeholder="Hi, we'd like you to manage our accounts..." />
+          </Form.Item>
+          <Form.Item style={{ marginBottom: 0, textAlign: 'right' }}>
+            <Space>
+              <Button onClick={() => { setAccountantModalVisible(false); accountantForm.resetFields(); }}>Cancel</Button>
+              <Button type="primary" htmlType="submit" loading={invitingAccountant} icon={<SendOutlined />}
+                style={{ background: '#0a1f3e', borderColor: '#0a1f3e' }}>Send Invitation</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
       {/* Add User Modal */}
       <Modal
         title={<><UserOutlined /> Add New User</>}
         open={userModalVisible}
-        onCancel={() => setUserModalVisible(false)}
+        onCancel={() => { setUserModalVisible(false); form.resetFields(); }}
         footer={[
-          <Button key="cancel" onClick={() => setUserModalVisible(false)}>Cancel</Button>,
-          <Button key="invite" type="primary" icon={<SendOutlined />} onClick={() => { message.success('Invitation sent!'); setUserModalVisible(false); }}>
+          <Button key="cancel" onClick={() => { setUserModalVisible(false); form.resetFields(); }}>Cancel</Button>,
+          <Button key="invite" type="primary" icon={<SendOutlined />} loading={invitingUser} onClick={handleInviteUser}>
             Send Invitation
           </Button>
         ]}

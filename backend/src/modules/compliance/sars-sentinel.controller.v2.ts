@@ -362,13 +362,14 @@ export const getSARSDashboard = async (req: TenantRequest, res: Response) => {
       [tenantId]
     );
 
-    // Get upcoming deadlines
+    // Get upcoming deadlines - handle all frequencies
     const upcomingDeadlines = await pool.query(
       `SELECT 
         deadline_type as type,
         description,
         frequency,
         due_day_of_month,
+        due_month,
         CASE 
           WHEN frequency = 'MONTHLY' AND due_day_of_month IS NOT NULL THEN
             CASE 
@@ -376,16 +377,49 @@ export const getSARSDashboard = async (req: TenantRequest, res: Response) => {
                 make_date(
                   EXTRACT(YEAR FROM CURRENT_DATE + interval '1 month')::int,
                   EXTRACT(MONTH FROM CURRENT_DATE + interval '1 month')::int,
-                  due_day_of_month
+                  LEAST(due_day_of_month, 28)
                 )
               ELSE
                 make_date(
                   EXTRACT(YEAR FROM CURRENT_DATE)::int,
                   EXTRACT(MONTH FROM CURRENT_DATE)::int,
-                  due_day_of_month
+                  LEAST(due_day_of_month, 28)
                 )
             END
-          ELSE NULL
+          WHEN frequency = 'BI_MONTHLY' AND due_day_of_month IS NOT NULL THEN
+            CASE 
+              WHEN EXTRACT(DAY FROM CURRENT_DATE) > due_day_of_month OR MOD(EXTRACT(MONTH FROM CURRENT_DATE)::int, 2) != 0 THEN
+                make_date(
+                  EXTRACT(YEAR FROM (CURRENT_DATE + interval '2 months'))::int,
+                  (FLOOR((EXTRACT(MONTH FROM CURRENT_DATE)::int - 1) / 2) * 2 + 2)::int,
+                  LEAST(due_day_of_month, 28)
+                )
+              ELSE
+                make_date(
+                  EXTRACT(YEAR FROM CURRENT_DATE)::int,
+                  EXTRACT(MONTH FROM CURRENT_DATE)::int,
+                  LEAST(due_day_of_month, 28)
+                )
+            END
+          WHEN frequency = 'ANNUALLY' THEN
+            CASE 
+              WHEN due_month IS NOT NULL THEN
+                CASE 
+                  WHEN EXTRACT(MONTH FROM CURRENT_DATE) > due_month 
+                    OR (EXTRACT(MONTH FROM CURRENT_DATE) = due_month AND EXTRACT(DAY FROM CURRENT_DATE) > COALESCE(due_day_of_month, 1))
+                  THEN make_date((EXTRACT(YEAR FROM CURRENT_DATE) + 1)::int, due_month, LEAST(COALESCE(due_day_of_month, 1), 28))
+                  ELSE make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int, due_month, LEAST(COALESCE(due_day_of_month, 1), 28))
+                END
+              ELSE make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int, 10, 31)
+            END
+          WHEN frequency = 'BI_ANNUALLY' THEN
+            CASE 
+              WHEN EXTRACT(MONTH FROM CURRENT_DATE) <= 2 THEN make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int, 2, 28)
+              WHEN EXTRACT(MONTH FROM CURRENT_DATE) <= 8 THEN make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int, 8, 31)
+              ELSE make_date(EXTRACT(YEAR FROM CURRENT_DATE)::int + 1, 2, 28)
+            END
+          ELSE 
+            (CURRENT_DATE + interval '30 days')::date
         END as next_due_date
        FROM sars_deadline_calendar
        WHERE is_active = true
@@ -395,6 +429,32 @@ export const getSARSDashboard = async (req: TenantRequest, res: Response) => {
 
     const correspondence = correspondenceStats.rows[0] || {};
     const submissions = submissionStats.rows[0] || {};
+
+    // Get actual client compliance data from submissions
+    const clientCompliance = await pool.query(
+      `SELECT
+        COUNT(DISTINCT client_id) as total_clients,
+        COUNT(DISTINCT client_id) FILTER (WHERE status NOT IN ('REJECTED', 'PENDING') OR status IS NULL) as fully_compliant,
+        COUNT(DISTINCT client_id) FILTER (WHERE status = 'PENDING') as at_risk,
+        COUNT(DISTINCT client_id) FILTER (WHERE status = 'REJECTED') as non_compliant
+       FROM sars_submission_history
+       WHERE tenant_id = $1 AND client_id IS NOT NULL`,
+      [tenantId]
+    );
+    const compliance = clientCompliance.rows[0] || {};
+
+    // Count affected clients per deadline type
+    const affectedClients = await pool.query(
+      `SELECT submission_type, COUNT(DISTINCT client_id) as cnt
+       FROM sars_submission_history
+       WHERE tenant_id = $1 AND status IN ('PENDING', 'SUBMITTED') AND client_id IS NOT NULL
+       GROUP BY submission_type`,
+      [tenantId]
+    );
+    const clientCounts: Record<string, number> = {};
+    for (const row of affectedClients.rows) {
+      clientCounts[row.submission_type] = parseInt(row.cnt) || 0;
+    }
 
     res.json({
       success: true,
@@ -415,18 +475,18 @@ export const getSARSDashboard = async (req: TenantRequest, res: Response) => {
           it14_pending: parseInt(submissions.it14_pending) || 0
         },
         client_compliance: {
-          total_clients: 1,
-          fully_compliant: 1,
-          at_risk: 0,
-          non_compliant: 0
+          total_clients: parseInt(compliance.total_clients) || 0,
+          fully_compliant: parseInt(compliance.fully_compliant) || 0,
+          at_risk: parseInt(compliance.at_risk) || 0,
+          non_compliant: parseInt(compliance.non_compliant) || 0
         },
         upcoming_deadlines: upcomingDeadlines.rows.map(d => ({
-          type: d.deadline_type,
+          type: d.type,
           description: d.description,
           due_date: d.next_due_date,
           days_remaining: d.next_due_date ? 
-            Math.ceil((new Date(d.next_due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null,
-          client_count: 1
+            Math.ceil((new Date(d.next_due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0,
+          client_count: clientCounts[d.type] || 0
         }))
       }
     });

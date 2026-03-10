@@ -34,16 +34,18 @@ const ChartOfAccountsEnhanced: React.FC = () => {
     { id: 'approvals', label: 'Approval Workflows', path: '/financial/approvals' }
   ];
 
+  const countByType = (type: string) => accounts.filter(a => a.account_type === type).length;
+
   const secondaryNav: SecondaryNavSection[] = [
     {
       title: 'Account Types',
       items: [
-        { id: 'all', label: 'All Accounts', path: '/financial/chart-of-accounts', icon: <FolderTree size={16} />, badge: 156 },
-        { id: 'assets', label: 'Assets', path: '/financial/chart-of-accounts?type=ASSET', icon: <Tag size={16} />, badge: 45 },
-        { id: 'liabilities', label: 'Liabilities', path: '/financial/chart-of-accounts?type=LIABILITY', icon: <Tag size={16} />, badge: 28 },
-        { id: 'equity', label: 'Equity', path: '/financial/chart-of-accounts?type=EQUITY', icon: <Tag size={16} />, badge: 12 },
-        { id: 'revenue', label: 'Revenue', path: '/financial/chart-of-accounts?type=REVENUE', icon: <Tag size={16} />, badge: 35 },
-        { id: 'expenses', label: 'Expenses', path: '/financial/chart-of-accounts?type=EXPENSE', icon: <Tag size={16} />, badge: 36 }
+        { id: 'all', label: 'All Accounts', path: '/financial/chart-of-accounts', icon: <FolderTree size={16} />, badge: accounts.length },
+        { id: 'assets', label: 'Assets', path: '/financial/chart-of-accounts?type=ASSET', icon: <Tag size={16} />, badge: countByType('ASSET') },
+        { id: 'liabilities', label: 'Liabilities', path: '/financial/chart-of-accounts?type=LIABILITY', icon: <Tag size={16} />, badge: countByType('LIABILITY') },
+        { id: 'equity', label: 'Equity', path: '/financial/chart-of-accounts?type=EQUITY', icon: <Tag size={16} />, badge: countByType('EQUITY') },
+        { id: 'revenue', label: 'Revenue', path: '/financial/chart-of-accounts?type=REVENUE', icon: <Tag size={16} />, badge: countByType('REVENUE') },
+        { id: 'expenses', label: 'Expenses', path: '/financial/chart-of-accounts?type=EXPENSE', icon: <Tag size={16} />, badge: countByType('EXPENSE') }
       ]
     },
     {
@@ -67,7 +69,17 @@ const ChartOfAccountsEnhanced: React.FC = () => {
       const response = await fetch('/api/financial/chart-of-accounts');
       if (!response.ok) throw new Error('Failed to fetch');
       const result = await response.json();
-      setAccounts(result.data || []);
+      // Map backend fields (account_number) to frontend fields (code)
+      const mapped = (result.data || []).map((a: any) => ({
+        id: a.id,
+        code: a.code || a.account_number || a.account_code || '',
+        name: a.name || a.account_name || '',
+        account_type: (a.account_type || '').toUpperCase(),
+        category: a.category || a.account_type || '',
+        normal_balance: (a.normal_balance || '').toUpperCase(),
+        is_active: a.is_active !== false,
+      }));
+      setAccounts(mapped);
     } catch (error) {
       console.error('Error fetching accounts:', error);
       setAccounts([]);
