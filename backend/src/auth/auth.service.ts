@@ -58,8 +58,13 @@ export class AuthService {
       console.log('=== END SIGNUP DEBUG ===');
 
       // Determine plan features
-      const features = this.getPlanFeatures(data.plan);
-      const limits = this.getPlanLimits(data.plan);
+      // If industry is accounting-firm and plan isn't explicitly accountant, auto-upgrade
+      let effectivePlan = data.plan;
+      if (data.industry === 'accounting-firm' && data.plan !== 'accountant') {
+        effectivePlan = 'accountant';
+      }
+      const features = this.getPlanFeatures(effectivePlan);
+      const limits = this.getPlanLimits(effectivePlan);
 
       // Generate tenant code from slug
       const tenantCode = slug.toUpperCase().replace(/-/g, '').substring(0, 10);
@@ -77,7 +82,7 @@ export class AuthService {
           tenantCode,
           slug,
           'trial',
-          data.plan,
+          effectivePlan,
           'trialing',
           new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 days trial
           data.email,
@@ -87,7 +92,8 @@ export class AuthService {
             currency: 'ZAR',
             date_format: 'DD/MM/YYYY',
             timezone: 'Africa/Johannesburg',
-            financial_year_end: '02-28'
+            financial_year_end: '02-28',
+            industry: data.industry || 'general'
           })
         ]
       );
@@ -154,28 +160,8 @@ export class AuthService {
         console.error('Tenant provisioning failed (non-blocking):', err);
       });
 
-      // Send welcome email with login details (async, don't block signup)
-      (async () => {
-        try {
-          const { sendEmail } = await import('../services/email.service');
-          const frontendUrl = process.env.FRONTEND_URL || 'https://siyabusaerp.co.za';
-          await sendEmail({
-            to: user.email,
-            subject: `Welcome to SiyaBusa ERP - Your Account is Ready!`,
-            template: 'welcome',
-            variables: {
-              userName: user.first_name || user.email.split('@')[0],
-              companyName: tenant.name,
-              email: user.email,
-              dashboardUrl: frontendUrl,
-              frontendUrl: frontendUrl,
-            },
-          });
-          console.log(`✅ Welcome email sent to: ${user.email}`);
-        } catch (emailError) {
-          console.error('Failed to send welcome email (non-blocking):', emailError);
-        }
-      })();
+      // Welcome email is now sent from AuthController via WelcomeEmailService
+      // (removed duplicate send from here to prevent double emails)
 
       // Log signup
       await client.query(
@@ -611,6 +597,15 @@ export class AuthService {
         advanced_reporting: true,
         api_access: true,
         custom_branding: true
+      },
+      accountant: {
+        ai_automation: true,
+        multi_currency: true,
+        advanced_reporting: true,
+        api_access: true,
+        custom_branding: true,
+        multi_client: true,
+        accountant_portal: true
       }
     };
 
@@ -625,7 +620,8 @@ export class AuthService {
       starter: { maxUsers: 5, maxStorageGb: 5 },
       professional: { maxUsers: 25, maxStorageGb: 50 },
       enterprise: { maxUsers: 9999, maxStorageGb: 9999 },
-      'founding-member': { maxUsers: 10, maxStorageGb: 100 }
+      'founding-member': { maxUsers: 10, maxStorageGb: 100 },
+      accountant: { maxUsers: 50, maxStorageGb: 200 }
     };
 
     return limits[plan as keyof typeof limits] || limits.starter;

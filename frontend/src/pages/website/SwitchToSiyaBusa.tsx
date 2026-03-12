@@ -70,7 +70,7 @@ const SwitchToSiyaBusa: React.FC = () => {
   }, []);
 
   return (
-    <WebsiteLayout title="Switch to SiyaBusa — Migrate from QuickBooks, Xero, Sage & More">
+    <WebsiteLayout title="Switch to SiyaBusa — Migrate from QuickBooks, Xero, Sage & More" description="Switch from QuickBooks, Xero, Sage, or Pastel to SiyaBusa ERP. AI-powered migration, zero data loss, complete in days. South Africa's affordable all-in-one ERP alternative." canonical="https://siyabusaerp.co.za/switch-to-siyabusa">
       {/* Hero */}
       <section className="switch-hero">
         <div className="container">
@@ -258,7 +258,7 @@ const SwitchToSiyaBusa: React.FC = () => {
                   <td><strong>Real monthly cost</strong></td>
                   <td><strong className="text-danger">~R3,850</strong></td>
                   <td><strong className="text-danger">~R2,700</strong></td>
-                  <td className="highlight"><strong className="text-success">R1,499</strong></td>
+                  <td className="highlight"><strong className="text-success">R299/user</strong></td>
                 </tr>
               </tbody>
             </table>

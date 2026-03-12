@@ -65,6 +65,7 @@ import ForecastingControllerV2 from '../controllers/forecasting.controller.v2';
 
 // AI & Specialized Controllers
 import AIAssistantControllerV2 from '../controllers/ai-assistant.controller.v2';
+import UsageCapControllerV2 from '../controllers/usage-cap.controller.v2';
 import SalesLiveControllerV2 from '../controllers/sales-live.controller.v2';
 import HealthcareControllerV2 from '../controllers/healthcare.controller.v2';
 import OnboardingControllerV2 from '../controllers/onboarding.controller.v2';
@@ -1508,67 +1509,67 @@ router.get('/executive-dashboard', ExecutiveDashboardV2.getExecutiveDashboard);
 router.get('/executive-dashboard/quick-stats', ExecutiveDashboardV2.getQuickStats);
 router.get('/executive-dashboard/chart/:type', ExecutiveDashboardV2.getChartData);
 
-// Legacy dashboard endpoints (fallback) - entity-scoped
-router.get('/dashboard/stats', requireEntity, DashboardControllerV2.getDashboardStats);
-router.get('/dashboard/summary', requireEntity, DashboardControllerV2.getDashboardStats);
-router.get('/dashboard/revenue-trend', requireEntity, DashboardControllerV2.getRevenueTrend);
-router.get('/dashboard/expense-breakdown', requireEntity, DashboardControllerV2.getExpenseBreakdown);
-router.get('/dashboard/recent-entries', requireEntity, DashboardControllerV2.getRecentEntries);
-router.get('/dashboard/cash-position', requireEntity, DashboardControllerV2.getCashPosition);
-router.get('/dashboard/aging-summary', requireEntity, DashboardControllerV2.getAgingSummary);
-router.get('/dashboard/kpis', requireEntity, DashboardControllerV2.getKPIs);
+// Legacy dashboard endpoints (fallback)
+router.get('/dashboard/stats', DashboardControllerV2.getDashboardStats);
+router.get('/dashboard/summary', DashboardControllerV2.getDashboardStats);
+router.get('/dashboard/revenue-trend', DashboardControllerV2.getRevenueTrend);
+router.get('/dashboard/expense-breakdown', DashboardControllerV2.getExpenseBreakdown);
+router.get('/dashboard/recent-entries', DashboardControllerV2.getRecentEntries);
+router.get('/dashboard/cash-position', DashboardControllerV2.getCashPosition);
+router.get('/dashboard/aging-summary', DashboardControllerV2.getAgingSummary);
+router.get('/dashboard/kpis', DashboardControllerV2.getKPIs);
 
 // ============================================================================
 // FINANCIAL REPORTS (entity-scoped)
 // ============================================================================
-router.get('/financial/reports/balance-sheet', requireEntity, BalanceSheetControllerV2.generateBalanceSheet);
-router.get('/financial/reports/trial-balance', requireEntity, BalanceSheetControllerV2.getTrialBalance);
-router.post('/financial/reports/balance-sheet/export', requireEntity, BalanceSheetControllerV2.exportToPDF);
+router.get('/financial/reports/balance-sheet', BalanceSheetControllerV2.generateBalanceSheet);
+router.get('/financial/reports/trial-balance', BalanceSheetControllerV2.getTrialBalance);
+router.post('/financial/reports/balance-sheet/export', BalanceSheetControllerV2.exportToPDF);
 
-router.get('/financial/reports/income-statement', requireEntity, IncomeStatementControllerV2.generateIncomeStatement);
-router.get('/financial/reports/revenue-breakdown', requireEntity, IncomeStatementControllerV2.getRevenueBreakdown);
-router.get('/financial/reports/expense-breakdown', requireEntity, IncomeStatementControllerV2.getExpenseBreakdown);
-router.post('/financial/reports/income-statement/export', requireEntity, IncomeStatementControllerV2.exportToPDF);
+router.get('/financial/reports/income-statement', IncomeStatementControllerV2.generateIncomeStatement);
+router.get('/financial/reports/revenue-breakdown', IncomeStatementControllerV2.getRevenueBreakdown);
+router.get('/financial/reports/expense-breakdown', IncomeStatementControllerV2.getExpenseBreakdown);
+router.post('/financial/reports/income-statement/export', IncomeStatementControllerV2.exportToPDF);
 
-router.get('/financial/reports/cash-flow', requireEntity, CashFlowControllerV2.generateCashFlowStatement);
-router.get('/financial/reports/cash-position', requireEntity, CashFlowControllerV2.getCashPosition);
-router.post('/financial/reports/cash-flow/export', requireEntity, CashFlowControllerV2.exportToPDF);
+router.get('/financial/reports/cash-flow', CashFlowControllerV2.generateCashFlowStatement);
+router.get('/financial/reports/cash-position', CashFlowControllerV2.getCashPosition);
+router.post('/financial/reports/cash-flow/export', CashFlowControllerV2.exportToPDF);
 
 // Additional Financial Reports (entity-scoped)
-router.get('/financial/reports/aged-receivables', requireEntity, FinancialReportsV2.generateAgedReceivables);
-router.get('/financial/reports/aged-payables', requireEntity, FinancialReportsV2.generateAgedPayables);
-router.get('/financial/reports/vat-report', requireEntity, FinancialReportsV2.generateVATReport);
-router.get('/financial/reports/general-ledger', requireEntity, FinancialReportsV2.generateGeneralLedger);
+router.get('/financial/reports/aged-receivables', FinancialReportsV2.generateAgedReceivables);
+router.get('/financial/reports/aged-payables', FinancialReportsV2.generateAgedPayables);
+router.get('/financial/reports/vat-report', FinancialReportsV2.generateVATReport);
+router.get('/financial/reports/general-ledger', FinancialReportsV2.generateGeneralLedger);
 
 // ============================================================================
 // GL EXPLORER (entity-scoped)
 // ============================================================================
-router.get('/financial/gl-explorer/search', requireEntity, GLExplorerControllerV2.search);
-router.get('/financial/gl-explorer/account-summary', requireEntity, GLExplorerControllerV2.getAccountSummary);
-router.get('/financial/gl-explorer/account-ledger/:accountCode', requireEntity, GLExplorerControllerV2.getAccountLedger);
-router.get('/financial/gl-explorer/filter-options', requireEntity, GLExplorerControllerV2.getFilterOptions);
-router.post('/financial/gl-explorer/export', requireEntity, GLExplorerControllerV2.exportResults);
+router.get('/financial/gl-explorer/search', GLExplorerControllerV2.search);
+router.get('/financial/gl-explorer/account-summary', GLExplorerControllerV2.getAccountSummary);
+router.get('/financial/gl-explorer/account-ledger/:accountCode', GLExplorerControllerV2.getAccountLedger);
+router.get('/financial/gl-explorer/filter-options', GLExplorerControllerV2.getFilterOptions);
+router.post('/financial/gl-explorer/export', GLExplorerControllerV2.exportResults);
 
 // ============================================================================
 // RECURRING ENTRIES (entity-scoped)
 // ============================================================================
-router.get('/financial/recurring-entries', requireEntity, RecurringEntriesControllerV2.getRecurringEntries);
-router.get('/financial/recurring-entries/pending', requireEntity, RecurringEntriesControllerV2.getPendingEntries);
-router.get('/financial/recurring-entries/:id', requireEntity, RecurringEntriesControllerV2.getRecurringEntryById);
-router.post('/financial/recurring-entries', requireEntity, RecurringEntriesControllerV2.createRecurringEntry);
-router.put('/financial/recurring-entries/:id', requireEntity, RecurringEntriesControllerV2.updateRecurringEntry);
-router.delete('/financial/recurring-entries/:id', requireEntity, RecurringEntriesControllerV2.deleteRecurringEntry);
-router.post('/financial/recurring-entries/:id/generate', requireEntity, RecurringEntriesControllerV2.generateEntry);
+router.get('/financial/recurring-entries', RecurringEntriesControllerV2.getRecurringEntries);
+router.get('/financial/recurring-entries/pending', RecurringEntriesControllerV2.getPendingEntries);
+router.get('/financial/recurring-entries/:id', RecurringEntriesControllerV2.getRecurringEntryById);
+router.post('/financial/recurring-entries', RecurringEntriesControllerV2.createRecurringEntry);
+router.put('/financial/recurring-entries/:id', RecurringEntriesControllerV2.updateRecurringEntry);
+router.delete('/financial/recurring-entries/:id', RecurringEntriesControllerV2.deleteRecurringEntry);
+router.post('/financial/recurring-entries/:id/generate', RecurringEntriesControllerV2.generateEntry);
 
 // ============================================================================
 // IMPORT ENTRIES (entity-scoped)
 // ============================================================================
-router.post('/financial/import-entries/validate', requireEntity, ImportEntriesControllerV2.validateImport);
-router.post('/financial/import-entries/execute', requireEntity, ImportEntriesControllerV2.executeImport);
-router.get('/financial/import-entries/templates', requireEntity, ImportEntriesControllerV2.getImportTemplates);
-router.post('/financial/import-entries/templates', requireEntity, ImportEntriesControllerV2.saveImportTemplate);
-router.get('/financial/import-entries/history', requireEntity, ImportEntriesControllerV2.getImportHistory);
-router.get('/financial/import-entries/sample', requireEntity, ImportEntriesControllerV2.downloadSample);
+router.post('/financial/import-entries/validate', ImportEntriesControllerV2.validateImport);
+router.post('/financial/import-entries/execute', ImportEntriesControllerV2.executeImport);
+router.get('/financial/import-entries/templates', ImportEntriesControllerV2.getImportTemplates);
+router.post('/financial/import-entries/templates', ImportEntriesControllerV2.saveImportTemplate);
+router.get('/financial/import-entries/history', ImportEntriesControllerV2.getImportHistory);
+router.get('/financial/import-entries/sample', ImportEntriesControllerV2.downloadSample);
 
 // ============================================================================
 // FINANCIAL CORE (Chart of Accounts, Journal Entries, Fiscal Periods)
@@ -1821,13 +1822,13 @@ router.delete('/reports/schedules/:id', ReportsControllerV2.deleteSchedule);
 // ============================================================================
 // CUSTOM REPORTS (entity-scoped)
 // ============================================================================
-router.get('/custom-reports/templates', requireEntity, CustomReportsControllerV2.getReportTemplates);
-router.get('/custom-reports/templates/:id', requireEntity, CustomReportsControllerV2.getReportTemplateById);
-router.post('/custom-reports/templates', requireEntity, CustomReportsControllerV2.createReportTemplate);
-router.put('/custom-reports/templates/:id', requireEntity, CustomReportsControllerV2.updateReportTemplate);
-router.delete('/custom-reports/templates/:id', requireEntity, CustomReportsControllerV2.deleteReportTemplate);
-router.post('/custom-reports/run/:id', requireEntity, CustomReportsControllerV2.runReport);
-router.get('/custom-reports/categories', requireEntity, CustomReportsControllerV2.getCategories);
+router.get('/custom-reports/templates', CustomReportsControllerV2.getReportTemplates);
+router.get('/custom-reports/templates/:id', CustomReportsControllerV2.getReportTemplateById);
+router.post('/custom-reports/templates', CustomReportsControllerV2.createReportTemplate);
+router.put('/custom-reports/templates/:id', CustomReportsControllerV2.updateReportTemplate);
+router.delete('/custom-reports/templates/:id', CustomReportsControllerV2.deleteReportTemplate);
+router.post('/custom-reports/run/:id', CustomReportsControllerV2.runReport);
+router.get('/custom-reports/categories', CustomReportsControllerV2.getCategories);
 
 // ============================================================================
 // TREASURY
@@ -2060,6 +2061,7 @@ router.get('/assets/transfers', AssetsControllerV2.getAssetTransfers);
 router.post('/assets/transfers', AssetsControllerV2.createAssetTransfer);
 router.get('/assets/depreciation', AssetsControllerV2.getDepreciationSchedule);
 router.post('/assets/depreciation/run', AssetsControllerV2.runDepreciation);
+router.get('/assets/register', AssetsControllerV2.getAllAssets);
 router.get('/assets/:id', AssetsControllerV2.getAssetById);
 router.post('/assets', AssetsControllerV2.createAsset);
 router.put('/assets/:id', AssetsControllerV2.updateAsset);
@@ -2751,6 +2753,7 @@ router.get('/ai/conversations/:conversationId', AIAssistantControllerV2.getConve
 router.delete('/ai/conversations/:conversationId', AIAssistantControllerV2.archiveConversation);
 router.get('/ai/suggestions', AIAssistantControllerV2.getSuggestions);
 router.put('/ai/suggestions/:suggestionId', AIAssistantControllerV2.updateSuggestionStatus);
+router.post('/ai/confirm-tool-action', AIAssistantControllerV2.confirmToolAction);
 // Specialized AI Assistants
 router.post('/ai/sales/analyze-customer', AIAssistantControllerV2.salesAnalyzeCustomer);
 router.post('/ai/sales/generate-quotation', AIAssistantControllerV2.salesGenerateQuotation);
@@ -2761,6 +2764,14 @@ router.post('/ai/finance/explain-variance', AIAssistantControllerV2.financeExpla
 router.post('/ai/finance/reconcile', AIAssistantControllerV2.financeReconcile);
 // Actionable AI - Execute natural language commands
 router.post('/ai/execute-command', AIAssistantControllerV2.executeCommand);
+
+// ============================================================================
+// USAGE CAPS & LIMITS
+// ============================================================================
+router.get('/usage', UsageCapControllerV2.getUsageSummary);
+router.get('/usage/history', UsageCapControllerV2.getUsageHistory);
+router.get('/usage/:resourceType', UsageCapControllerV2.getResourceUsage);
+router.put('/usage/limits/:resourceType', UsageCapControllerV2.updateUsageLimit);
 
 // ============================================================================
 // SALES LIVE (POS/CRM)

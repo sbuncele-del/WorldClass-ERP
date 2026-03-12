@@ -35,23 +35,23 @@ export class ProfileControllerV2 {
 
       const query = `
         SELECT 
-          u.user_id, u.email, u.username, u.first_name, u.last_name,
+          u.id as user_id, u.email, u.username, u.first_name, u.last_name,
           u.display_name, u.phone, u.avatar_url, u.email_verified,
-          u.mfa_enabled, u.last_login_at, u.created_at, u.timezone,
-          u.locale, u.date_format, u.currency_preference,
+          u.mfa_enabled, u.last_login_at, u.created_at, u.role,
+          u.preferences,
           COALESCE(
             json_agg(
               DISTINCT jsonb_build_object('role_id', r.role_id, 'role_name', r.role_name, 'role_code', r.role_code)
             ) FILTER (WHERE r.role_id IS NOT NULL),
             '[]'
           ) as roles,
-          t.tenant_name, t.tenant_code
+          t.name as tenant_name, t.tenant_code
         FROM users u
-        LEFT JOIN user_roles ur ON u.user_id = ur.user_id AND ur.is_active = true
+        LEFT JOIN user_roles ur ON u.id = ur.user_id AND ur.is_active = true
         LEFT JOIN roles r ON ur.role_id = r.role_id
-        LEFT JOIN tenants t ON u.tenant_id = t.tenant_id
-        WHERE u.user_id = $1 AND u.tenant_id = $2
-        GROUP BY u.user_id, t.tenant_name, t.tenant_code
+        LEFT JOIN tenants t ON u.tenant_id = t.id
+        WHERE u.id = $1 AND u.tenant_id = $2
+        GROUP BY u.id, t.name, t.tenant_code
       `;
 
       const result = await pool.query(query, [userId, tenantId]);
@@ -93,11 +93,7 @@ export class ProfileControllerV2 {
         first_name,
         last_name,
         display_name,
-        phone,
-        timezone,
-        locale,
-        date_format,
-        currency_preference
+        phone
       } = req.body;
 
       const query = `
@@ -107,19 +103,13 @@ export class ProfileControllerV2 {
           last_name = COALESCE($2, last_name),
           display_name = COALESCE($3, display_name),
           phone = COALESCE($4, phone),
-          timezone = COALESCE($5, timezone),
-          locale = COALESCE($6, locale),
-          date_format = COALESCE($7, date_format),
-          currency_preference = COALESCE($8, currency_preference),
           updated_at = NOW()
-        WHERE user_id = $9 AND tenant_id = $10
-        RETURNING user_id, email, first_name, last_name, display_name, phone, 
-                  timezone, locale, date_format, currency_preference
+        WHERE id = $5 AND tenant_id = $6
+        RETURNING id as user_id, email, first_name, last_name, display_name, phone
       `;
 
       const result = await pool.query(query, [
         first_name, last_name, display_name, phone,
-        timezone, locale, date_format, currency_preference,
         userId, tenantId
       ]);
 
@@ -165,7 +155,7 @@ export class ProfileControllerV2 {
 
       // Get current password hash
       const userResult = await pool.query(
-        'SELECT password_hash FROM users WHERE user_id = $1 AND tenant_id = $2',
+        'SELECT password_hash FROM users WHERE id = $1 AND tenant_id = $2',
         [userId, tenantId]
       );
 
@@ -188,7 +178,7 @@ export class ProfileControllerV2 {
       await pool.query(`
         UPDATE users
         SET password_hash = $1, password_changed_at = NOW(), updated_at = NOW()
-        WHERE user_id = $2 AND tenant_id = $3
+        WHERE id = $2 AND tenant_id = $3
       `, [newPasswordHash, userId, tenantId]);
 
       // Log password change
@@ -230,8 +220,8 @@ export class ProfileControllerV2 {
       const result = await pool.query(`
         UPDATE users
         SET avatar_url = $1, updated_at = NOW()
-        WHERE user_id = $2 AND tenant_id = $3
-        RETURNING user_id, avatar_url
+        WHERE id = $2 AND tenant_id = $3
+        RETURNING id as user_id, avatar_url
       `, [avatar_url, userId, tenantId]);
 
       if (result.rows.length === 0) {

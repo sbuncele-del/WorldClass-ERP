@@ -189,7 +189,7 @@ const Careers: React.FC = () => {
   const departments = [...new Set(jobListings.map(job => job.department))];
 
   return (
-    <WebsiteLayout title="Careers — SiyaBusa ERP">
+    <WebsiteLayout title="Careers — SiyaBusa ERP" description="Join the SiyaBusa team. We're building South Africa's most comprehensive cloud ERP platform. View open positions in engineering, sales, support, and more." canonical="https://siyabusaerp.co.za/careers">
       <section className="page-hero">
         <div className="container">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>

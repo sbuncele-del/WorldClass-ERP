@@ -58,7 +58,7 @@ export const getItemCategories = async (req: TenantRequest, res: Response) => {
       result = await itemCategoryRepository.findAll(ctx, {}, {
         page: Number(page) || 1,
         limit: Number(limit) || 50,
-        sortBy: 'name',
+        sortBy: 'category_name',
         sortOrder: 'ASC'
       });
     }
@@ -349,16 +349,40 @@ export const createItem = async (req: TenantRequest, res: Response) => {
     const ctx = getTenantContext(req);
     const itemData = req.body;
     
+    // Map incoming field names to DB column names
+    const dbData: Record<string, any> = {
+      item_code: itemData.item_code || itemData.code || itemData.sku,
+      item_name: itemData.item_name || itemData.name,
+      description: itemData.description,
+      category: itemData.category,
+      unit_of_measure: itemData.unit_of_measure || 'each',
+      cost_price: itemData.cost_price || 0,
+      selling_price: itemData.selling_price || itemData.unit_price || 0,
+      quantity_on_hand: itemData.quantity_on_hand || itemData.quantity || 0,
+      reorder_level: itemData.reorder_level || itemData.min_stock_level || 0,
+      reorder_quantity: itemData.reorder_quantity || 0,
+      sku: itemData.sku,
+      barcode: itemData.barcode,
+      is_active: itemData.is_active !== false,
+      is_serialized: itemData.is_serialized || false,
+      is_batch_tracked: itemData.is_batch_tracked || false,
+    };
+
+    // Remove undefined values
+    Object.keys(dbData).forEach(k => dbData[k] === undefined && delete dbData[k]);
+    
     // Check if code is unique
-    const isUnique = await inventoryItemRepository.isCodeUnique(ctx, itemData.code);
-    if (!isUnique) {
-      return res.status(400).json({
-        success: false,
-        message: 'Item code already exists'
-      });
+    if (dbData.item_code) {
+      const isUnique = await inventoryItemRepository.isCodeUnique(ctx, dbData.item_code);
+      if (!isUnique) {
+        return res.status(400).json({
+          success: false,
+          message: 'Item code already exists'
+        });
+      }
     }
     
-    const item = await inventoryItemRepository.create(ctx, itemData);
+    const item = await inventoryItemRepository.create(ctx, dbData as any);
     
     res.status(201).json({
       success: true,
@@ -382,8 +406,9 @@ export const updateItem = async (req: TenantRequest, res: Response) => {
     const itemData = req.body;
     
     // Check if code is unique (excluding this item)
-    if (itemData.code) {
-      const isUnique = await inventoryItemRepository.isCodeUnique(ctx, itemData.code, id);
+    const codeToCheck = itemData.item_code || itemData.code;
+    if (codeToCheck) {
+      const isUnique = await inventoryItemRepository.isCodeUnique(ctx, codeToCheck, id);
       if (!isUnique) {
         return res.status(400).json({
           success: false,

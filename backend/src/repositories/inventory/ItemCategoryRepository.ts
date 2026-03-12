@@ -25,8 +25,9 @@ export interface ItemCategory {
 
 export class ItemCategoryRepository extends BaseRepository<ItemCategory> {
   protected tableName = 'item_categories';
-  protected schema = 'inventory';
-  protected entityScoped = true;
+  protected schema = 'public';
+  protected softDelete = false;
+  protected entityScoped = false;
 
   /**
    * Get all active categories for a tenant
@@ -44,16 +45,16 @@ export class ItemCategoryRepository extends BaseRepository<ItemCategory> {
       WITH RECURSIVE category_tree AS (
         SELECT *, 0 as level
         FROM ${this.fullTableName}
-        WHERE tenant_id = $1 AND parent_id IS NULL AND deleted_at IS NULL
+        WHERE tenant_id = $1 AND parent_category_id IS NULL AND is_active = true
         
         UNION ALL
         
         SELECT c.*, ct.level + 1
         FROM ${this.fullTableName} c
-        INNER JOIN category_tree ct ON c.parent_id = ct.id
-        WHERE c.tenant_id = $1 AND c.deleted_at IS NULL
+        INNER JOIN category_tree ct ON c.parent_category_id = ct.category_id
+        WHERE c.tenant_id = $1 AND c.is_active = true
       )
-      SELECT * FROM category_tree ORDER BY level, name
+      SELECT * FROM category_tree ORDER BY level, category_name
     `;
 
     return this.rawQuery(ctx, sql);
@@ -63,16 +64,16 @@ export class ItemCategoryRepository extends BaseRepository<ItemCategory> {
    * Get subcategories of a parent category
    */
   async getSubcategories(ctx: TenantContext, parentId: string): Promise<ItemCategory[]> {
-    return this.findBy(ctx, 'parent_id', parentId);
+    return this.findBy(ctx, 'parent_category_id', parentId);
   }
 
   /**
    * Check if category code is unique for tenant
    */
   async isCodeUnique(ctx: TenantContext, code: string, excludeId?: string): Promise<boolean> {
-    const existing = await this.findOne(ctx, { code });
+    const existing = await this.findOne(ctx, { category_code: code });
     if (!existing) return true;
-    if (excludeId && existing.id === excludeId) return true;
+    if (excludeId && (existing as any).category_id === excludeId) return true;
     return false;
   }
 
@@ -87,17 +88,17 @@ export class ItemCategoryRepository extends BaseRepository<ItemCategory> {
     const sql = `
       SELECT * FROM ${this.fullTableName}
       WHERE tenant_id = $1 
-        AND deleted_at IS NULL
-        AND (name ILIKE $2 OR code ILIKE $2 OR description ILIKE $2)
-      ORDER BY name
+        AND is_active = true
+        AND (category_name ILIKE $2 OR category_code ILIKE $2 OR description ILIKE $2)
+      ORDER BY category_name
       LIMIT $3 OFFSET $4
     `;
 
     const countSql = `
       SELECT COUNT(*) FROM ${this.fullTableName}
       WHERE tenant_id = $1 
-        AND deleted_at IS NULL
-        AND (name ILIKE $2 OR code ILIKE $2 OR description ILIKE $2)
+        AND is_active = true
+        AND (category_name ILIKE $2 OR category_code ILIKE $2 OR description ILIKE $2)
     `;
 
     const { page = 1, limit = 50 } = pagination || {};

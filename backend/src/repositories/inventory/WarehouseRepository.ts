@@ -31,9 +31,10 @@ export interface Warehouse {
 }
 
 export class WarehouseRepository extends BaseRepository<Warehouse> {
-  protected tableName = 'warehouses';
-  protected schema = 'inventory';
-  protected entityScoped = true;
+  protected tableName = 'inventory_warehouses';
+  protected schema = 'public';
+  protected softDelete = false;
+  protected entityScoped = false;
 
   /**
    * Get the default warehouse for a tenant
@@ -60,7 +61,7 @@ export class WarehouseRepository extends BaseRepository<Warehouse> {
       await client.query(`
         UPDATE ${this.fullTableName}
         SET is_default = true, updated_at = NOW()
-        WHERE tenant_id = $1 AND id = $2
+        WHERE tenant_id = $1 AND warehouse_id = $2
       `, [ctx.tenantId, warehouseId]);
 
       await this.commitTransaction(client);
@@ -89,12 +90,12 @@ export class WarehouseRepository extends BaseRepository<Warehouse> {
       SELECT 
         w.*,
         COUNT(DISTINCT sl.item_id) as total_items,
-        COALESCE(SUM(sl.quantity_on_hand * i.cost_price), 0) as total_stock_value
+        COALESCE(SUM(sl.quantity_on_hand * i.standard_cost), 0) as total_stock_value
       FROM ${this.fullTableName} w
-      LEFT JOIN inventory.stock_levels sl ON sl.warehouse_id = w.id
-      LEFT JOIN inventory.items i ON i.id = sl.item_id
-      WHERE w.tenant_id = $1 AND w.id = $2 AND w.deleted_at IS NULL
-      GROUP BY w.id
+      LEFT JOIN inventory.stock_levels sl ON sl.warehouse_id = w.warehouse_id
+      LEFT JOIN inventory.items i ON i.item_id = sl.item_id
+      WHERE w.tenant_id = $1 AND w.warehouse_id = $2 AND w.is_active = true
+      GROUP BY w.warehouse_id
     `;
 
     const result = await this.rawQuery(ctx, sql, [warehouseId]);

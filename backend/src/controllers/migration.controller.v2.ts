@@ -133,9 +133,9 @@ export class MigrationController {
 
       // Record migration history
       await client.query(`
-        INSERT INTO migration_history (tenant_id, entity_id, data_type, source_platform, file_name, total_rows, imported_rows, error_rows, error_details, imported_by)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      `, [tenantId, entityId || null, dataType, sourcePlatform, file.originalname, records.length, imported, errors, JSON.stringify(errorDetails.slice(0, 50)), userId || null]);
+        INSERT INTO migration_history (tenant_id, data_type, source_platform, file_name, total_rows, imported_rows, error_rows, error_details, imported_by)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `, [tenantId, dataType, sourcePlatform, file.originalname, records.length, imported, errors, JSON.stringify(errorDetails.slice(0, 50)), userId || null]);
 
       await client.query('COMMIT');
 
@@ -280,13 +280,13 @@ async function importChartOfAccounts(
     }
     try {
       await client.query(`
-        INSERT INTO chart_of_accounts (tenant_id, entity_id, account_code, account_name, account_type, parent_account_code, tax_code, currency, description, is_active)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)
+        INSERT INTO chart_of_accounts (tenant_id, account_code, account_name, account_type, parent_account_code, tax_code, currency, description, is_active)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
         ON CONFLICT (tenant_id, account_code) DO UPDATE SET
           account_name = EXCLUDED.account_name,
           account_type = COALESCE(EXCLUDED.account_type, chart_of_accounts.account_type),
           description = COALESCE(EXCLUDED.description, chart_of_accounts.description)
-      `, [tenantId, entityId || null, r.account_code, r.account_name, r.account_type || 'Other', r.parent_code || null, r.tax_code || null, r.currency || 'ZAR', r.description || null]);
+      `, [tenantId, r.account_code, r.account_name, r.account_type || 'Other', r.parent_code || null, r.tax_code || null, r.currency || 'ZAR', r.description || null]);
       imported++;
     } catch (e: any) {
       errorDetails.push(`Row ${i + 1}: ${e.message}`);
@@ -310,14 +310,14 @@ async function importContacts(
     }
     try {
       await client.query(`
-        INSERT INTO contacts (tenant_id, entity_id, contact_type, name, contact_name, email, phone, tax_number, address_line1, city, payment_terms_days, is_active)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true)
+        INSERT INTO contacts (tenant_id, contact_type, name, contact_name, email, phone, tax_number, address_line1, city, payment_terms_days, is_active)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true)
         ON CONFLICT (tenant_id, contact_type, name) DO UPDATE SET
           contact_name = COALESCE(EXCLUDED.contact_name, contacts.contact_name),
           email = COALESCE(EXCLUDED.email, contacts.email),
           phone = COALESCE(EXCLUDED.phone, contacts.phone),
           tax_number = COALESCE(EXCLUDED.tax_number, contacts.tax_number)
-      `, [tenantId, entityId || null, contactType, r.name, r.contact_name || null, r.email || null, r.phone || null, r.tax_number || null, r.address_line1 || null, r.city || null, r.payment_terms ? parseInt(r.payment_terms, 10) : 30]);
+      `, [tenantId, contactType, r.name, r.contact_name || null, r.email || null, r.phone || null, r.tax_number || null, r.address_line1 || null, r.city || null, r.payment_terms ? parseInt(r.payment_terms, 10) : 30]);
       imported++;
     } catch (e: any) {
       errorDetails.push(`Row ${i + 1}: ${e.message}`);
@@ -348,11 +348,11 @@ async function importInvoices(
     try {
       await client.query(`
         INSERT INTO ${docType === 'invoice' ? 'invoices' : 'bills'} 
-        (tenant_id, entity_id, ${numberField}, ${contactField.replace('_name', '')}_name, date, due_date, description, amount, tax_amount, status, account_code)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        (tenant_id, ${numberField}, ${contactField.replace('_name', '')}_name, date, due_date, description, amount, tax_amount, status, account_code)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT DO NOTHING
       `, [
-        tenantId, entityId || null, docNumber, contactName || null,
+        tenantId, docNumber, contactName || null,
         r.date || new Date().toISOString().slice(0, 10),
         r.due_date || null, r.description || null,
         parseFloat(r.amount) || 0, parseFloat(r.tax_amount || '0'),
@@ -381,15 +381,15 @@ async function importProducts(
     }
     try {
       await client.query(`
-        INSERT INTO products (tenant_id, entity_id, sku, name, description, category, unit_price, cost_price, quantity_on_hand, tax_code, is_active)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true)
+        INSERT INTO products (tenant_id, sku, name, description, category, unit_price, cost_price, quantity_on_hand, tax_code, is_active)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)
         ON CONFLICT (tenant_id, sku) DO UPDATE SET
           name = COALESCE(EXCLUDED.name, products.name),
           unit_price = COALESCE(EXCLUDED.unit_price, products.unit_price),
           cost_price = COALESCE(EXCLUDED.cost_price, products.cost_price),
           quantity_on_hand = COALESCE(EXCLUDED.quantity_on_hand, products.quantity_on_hand)
       `, [
-        tenantId, entityId || null, r.sku || `IMPORT-${i+1}`, r.name || r.sku,
+        tenantId, r.sku || `IMPORT-${i+1}`, r.name || r.sku,
         r.description || null, r.category || null,
         r.unit_price ? parseFloat(r.unit_price) : null,
         r.cost_price ? parseFloat(r.cost_price) : null,
@@ -419,10 +419,10 @@ async function importBankTransactions(
     }
     try {
       await client.query(`
-        INSERT INTO cash_bank_statement_lines (tenant_id, entity_id, transaction_date, description, amount, reference, transaction_type, bank_account_name, category, source)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'migration')
+        INSERT INTO cash_bank_statement_lines (tenant_id, transaction_date, description, amount, reference, transaction_type, bank_account_name, category, source)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'migration')
       `, [
-        tenantId, entityId || null, r.date,
+        tenantId, r.date,
         r.description || 'Imported transaction',
         parseFloat(r.amount) || 0, r.reference || null,
         r.type || (parseFloat(r.amount) < 0 ? 'debit' : 'credit'),
@@ -451,8 +451,8 @@ async function importEmployees(
     }
     try {
       await client.query(`
-        INSERT INTO employees (tenant_id, entity_id, employee_number, first_name, last_name, email, id_number, tax_number, department, basic_salary, start_date, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'active')
+        INSERT INTO employees (tenant_id, employee_number, first_name, last_name, email, id_number, tax_number, department, basic_salary, start_date, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active')
         ON CONFLICT (tenant_id, employee_number) DO UPDATE SET
           first_name = EXCLUDED.first_name,
           last_name = EXCLUDED.last_name,
@@ -460,7 +460,7 @@ async function importEmployees(
           department = COALESCE(EXCLUDED.department, employees.department),
           basic_salary = COALESCE(EXCLUDED.basic_salary, employees.basic_salary)
       `, [
-        tenantId, entityId || null, r.employee_id || `EMP-${i+1}`,
+        tenantId, r.employee_id || `EMP-${i+1}`,
         r.first_name, r.last_name, r.email || null,
         r.id_number || null, r.tax_number || null,
         r.department || null,
@@ -490,14 +490,14 @@ async function importAssets(
     }
     try {
       await client.query(`
-        INSERT INTO assets (tenant_id, entity_id, asset_code, name, category, purchase_date, purchase_cost, accumulated_depreciation, useful_life_years, depreciation_method, location, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'active')
+        INSERT INTO assets (tenant_id, asset_code, name, category, purchase_date, purchase_cost, accumulated_depreciation, useful_life_years, depreciation_method, location, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'active')
         ON CONFLICT (tenant_id, asset_code) DO UPDATE SET
           name = EXCLUDED.name,
           purchase_cost = EXCLUDED.purchase_cost,
           accumulated_depreciation = COALESCE(EXCLUDED.accumulated_depreciation, assets.accumulated_depreciation)
       `, [
-        tenantId, entityId || null, r.asset_code || `AST-${i+1}`,
+        tenantId, r.asset_code || `AST-${i+1}`,
         r.name, r.category || 'General',
         r.purchase_date || new Date().toISOString().slice(0, 10),
         parseFloat(r.purchase_cost) || 0,

@@ -40,7 +40,7 @@ export class PurchaseInvoiceRepository extends BaseRepository<PurchaseInvoice> {
   protected schema = 'purchase';
   protected primaryKey = 'invoice_id';
   protected softDelete = false;
-  protected entityScoped = true;
+  protected entityScoped = false;
 
   /**
    * Get invoices by status

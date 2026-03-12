@@ -43,7 +43,7 @@ function useCounter(end: number, duration = 2000, startOnView = true) {
 const allModules = [
   { category: 'Financial', items: ['General Ledger (GL)', 'Accounts Payable (AP)', 'Accounts Receivable (AR)', 'Cash Management & Banking', 'Asset Management (IAS 16)', 'Multi-Entity & Consolidation'] },
   { category: 'Sales & CRM', items: ['Invoicing & Quotes', 'Customer Management', 'Sales Pipeline', 'Proposals & Pitch Builder'] },
-  { category: 'Operations', items: ['Purchase Management', 'Inventory Management', 'Warehouse Management', 'Manufacturing (BOM, Work Orders)', 'Logistics & Fleet'] },
+  { category: 'Operations', items: ['Purchase Management', 'Inventory Management', 'Warehouse Management', 'Manufacturing (BOM, Work Orders)'] },
   { category: 'People', items: ['HR Management', 'Full Payroll Processing', 'Leave & Attendance', 'Employee Self-Service'] },
   { category: 'Projects', items: ['Projects Hub', 'Practice Management', 'Time Tracking', 'Resource Allocation'] },
   { category: 'Compliance & Audit', items: ['SARS Sentinel (VAT, EMP501, IT14)', 'Audit-Ready Hub', 'Audit Trail', 'IFRS/IAS Compliant Reports'] },
@@ -78,24 +78,24 @@ const competitorRows = [
 const hiddenCosts = [
   { tool: 'Typical Accounting Platform', base: '~R900', addons: ['Payroll add-on: ~R500+', 'Inventory add-on: ~R1,500+', 'Projects add-on: ~R350+', 'Receipt capture: ~R400+'], total: '~R3,650+' },
   { tool: 'Alternative Platform', base: '~R750', addons: ['Payroll add-on: ~R600+', 'Limited inventory', 'No project management', 'Third-party CRM: ~R500+'], total: '~R2,500+' },
-  { tool: 'SiyaBusa (Founding Member)', base: 'R1,499', addons: ['Payroll: Included', 'Inventory & WH: Included', 'Projects: Included', 'Every module: Included'], total: 'R1,499', highlight: true },
+  { tool: 'SiyaBusa (Founding Member)', base: 'R299/user', addons: ['Payroll: Included', 'Inventory & WH: Included', 'Projects: Included', 'Every module: Included'], total: 'R1,499 (10 users)', highlight: true },
 ];
 
 /* ── FAQs ── */
 const faqs = [
-  { q: 'What is Founding Member pricing?', a: 'Our Founding Member offer gives the first 50 companies full access to every SiyaBusa module at R1,499/month — with 10 users included. This rate is locked for 12 months from your sign-up date, regardless of future price changes. After 12 months, you\'ll transition to standard pricing (with advance notice), but founding members always receive priority treatment.' },
-  { q: 'What\'s included in R1,499/month?', a: 'Everything. Every module — Financial Accounting, Sales & CRM, HR & Payroll, Inventory, Warehouse Management, Manufacturing, Projects, Cash Management, Asset Management, Audit-Ready Hub, SARS Sentinel, AI Assistant, and more. No gated features. No premium tiers. 10 users are included; additional users are R149/month each.' },
+  { q: 'What is Founding Member pricing?', a: 'Our Founding Member offer gives early customers full access to every SiyaBusa module at R299/user/month, or R1,499/month for 10 users. This rate is locked for 12 months from your sign-up date. After 12 months, you\'ll transition to standard pricing (with advance notice); founding members will receive priority support.' },
+  { q: 'What\'s included?', a: 'Everything. Every module — Financial Accounting, Sales & CRM, HR & Payroll, Inventory, Warehouse Management, Manufacturing, Projects, Cash Management, Asset Management, Audit-Ready Hub, SARS Sentinel, AI Assistant, and more. No gated features. No premium tiers.' },
   { q: 'Is there a free trial?', a: 'Yes! Every Founding Member gets a 14-day free trial with full access to all features. No credit card required to start.' },
-  { q: 'How do you compare to other accounting platforms?', a: 'Many platforms charge R900+ for basic accounting, then R500+ for payroll, R1,500+ for inventory, R350+ for projects — totalling R3,650+/month. SiyaBusa gives you everything for R1,499/month. That\'s a potential saving of over R2,000/month.' },
+  { q: 'How do you compare to other accounting platforms?', a: 'Many platforms charge R900+ for basic accounting, then R500+ for payroll, R1,500+ for inventory, R350+ for projects — totalling R3,650+/month. SiyaBusa gives you everything from R299/user/month, or R1,499/mo for 10 users. That\'s a potential saving of over R2,000/month.' },
   { q: 'Can I migrate from Xero, Sage, or QuickBooks?', a: 'Yes. We provide guided migration support. Our team will help import your chart of accounts, customer/supplier data, and opening balances. For Founding Members, migration assistance is included at no extra charge.' },
   { q: 'What payment methods do you accept?', a: 'We accept all major credit cards, EFT, and debit orders for South African customers. All billing is in ZAR — no forex surprises.' },
   { q: 'Is my data secure?', a: 'Yes. We use AES-256 encryption, and your data is hosted on secure infrastructure in South Africa with regular backups and high-availability architecture.' },
   { q: 'What happens after the 12-month lock-in?', a: 'After your Founding Member period, we\'ll transition you to our standard pricing with at least 30 days\' notice. Founding Members will always receive preferential rates and priority support as a thank-you for believing in us early.' },
-  { q: 'How many spots are left?', a: 'We\'re limiting Founding Member pricing to the first 50 companies. Once all 50 spots are taken, standard pricing will apply for new sign-ups. Secure your spot now.' },
+  { q: 'How many spots are left?', a: 'Founding Member pricing is limited to 45 spots. Once all spots are taken, standard pricing will apply for new sign-ups. Secure your spot now.' },
 ];
 
 /* ── Founding Member spots ── */
-const TOTAL_FOUNDING_SPOTS = 50;
+const TOTAL_FOUNDING_SPOTS = 45;
 const SPOTS_CLAIMED = 0; // Update as customers sign up
 
 /* ── Component ── */
@@ -104,14 +104,16 @@ const Pricing: React.FC = () => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
-  const stat1 = useCounter(25, 1500);
+  const stat1 = useCounter(15, 1500);
   const stat2 = useCounter(99, 2000);
   const spotsLeft = TOTAL_FOUNDING_SPOTS - SPOTS_CLAIMED;
 
-  const monthlyPrice = 1499;
-  const yearlyPrice = 14990; // ~R1,249/mo — save 17%
-  const extraUserPrice = 149;
+  const monthlyPrice = 299;
+  const yearlyPrice = 2990; // ~R249/mo — save 17%
+  const tenUserPrice = 1500;
+  const tenUserYearly = 14990; // save ~17%
   const getDisplayPrice = () => billingCycle === 'monthly' ? monthlyPrice : Math.round(yearlyPrice / 12);
+  const getTenUserPrice = () => billingCycle === 'monthly' ? tenUserPrice : Math.round(tenUserYearly / 12);
   const getYearlySavings = () => Math.round(((monthlyPrice * 12 - yearlyPrice) / (monthlyPrice * 12)) * 100);
 
   const renderCellValue = (val: boolean | string) => {
@@ -121,7 +123,7 @@ const Pricing: React.FC = () => {
   };
 
   return (
-    <WebsiteLayout title="Founding Member Pricing — SiyaBusa ERP | Every Module for R1,499/mo">
+    <WebsiteLayout title="Founding Member Pricing — SiyaBusa ERP | R299/user/mo" description="SiyaBusa ERP Founding Member pricing: R299/user/mo or R1,499/mo for 10 users. All 17 modules included — Financial Accounting, HR & Payroll, Inventory, CRM, Manufacturing, SARS Compliance." canonical="https://siyabusaerp.co.za/pricing">
 
       {/* ═══ HERO ═══ */}
       <section className="pricing-hero">
@@ -134,16 +136,16 @@ const Pricing: React.FC = () => {
           <motion.div className="pricing-hero-content" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
             <div className="pricing-hero-badges">
               <span className="pricing-hero-badge accent">
-                <Flame size={14} /> Founding Member Pricing — First 50 Companies Only
+                <Flame size={14} /> Founding Member Pricing — Limited availability (45 spots)
               </span>
               <span className="pricing-hero-badge">
                 <Shield size={14} /> SARS Compliant
               </span>
             </div>
-            <h1>One Price.<br /><span className="pricing-gradient-text">Everything Included.</span><br />No Hidden Fees.</h1>
+            <h1>One Price.<br /><span className="pricing-gradient-text">Per User, Per Month.</span><br />No Hidden Fees.</h1>
             <p className="pricing-hero-sub">
               Get <strong>every module</strong> — Financial Accounting, HR & Payroll, Inventory, CRM, Manufacturing,
-              Compliance, AI Assistant, and more — for one simple price. Built for South African businesses, priced in Rands.
+              Compliance, AI Assistant, and more — from just <strong>R299/user/mo</strong>. Or get 10 users for <strong>R1,499/mo</strong>. Built for South African businesses, priced in Rands.
             </p>
 
             {/* Billing Toggle */}
@@ -197,22 +199,26 @@ const Pricing: React.FC = () => {
               </div>
               <div className="pricing-card-header">
                 <h3>SiyaBusa ERP — Complete Platform</h3>
-                <p>Every module. Every feature. One price. Locked for 12 months.</p>
+                <p>Every module. Every feature. Founders pricing. Locked for 12 months.</p>
               </div>
               <div className="pricing-card-price">
                 <div className="pricing-amount">
                   <span className="pricing-currency">R</span>
                   <span className="pricing-value">{getDisplayPrice().toLocaleString()}</span>
-                  <span className="pricing-period">/mo</span>
+                  <span className="pricing-period">/user/mo</span>
                 </div>
                 {billingCycle === 'yearly' && (
                   <p className="pricing-yearly-note">
-                    R{yearlyPrice.toLocaleString()}/yr <span className="pricing-savings">Save {getYearlySavings()}%</span>
+                    R{yearlyPrice.toLocaleString()}/user/yr <span className="pricing-savings">Save {getYearlySavings()}%</span>
                   </p>
                 )}
-                <p className="pricing-per-user" style={{ marginTop: 8 }}>
-                  <Users size={14} style={{ marginRight: 4 }} /> 10 users included · R{extraUserPrice}/additional user/mo
-                </p>
+                <div style={{ marginTop: 16, padding: '16px 20px', background: 'rgba(0,212,170,0.08)', borderRadius: 12, border: '1px solid rgba(0,212,170,0.2)' }}>
+                  <p style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#00D4AA' }}>
+                    <Users size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                    10-User Bundle: R{getTenUserPrice().toLocaleString()}/mo
+                  </p>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.85rem', opacity: 0.7 }}>Save R{((getDisplayPrice() * 10) - getTenUserPrice()).toLocaleString()}/mo vs individual pricing</p>
+                </div>
               </div>
 
               {/* Key highlights */}
@@ -224,7 +230,7 @@ const Pricing: React.FC = () => {
                 <li><Check size={14} className="pricing-check" />Audit-Ready Hub, SARS Sentinel, Compliance</li>
                 <li><Check size={14} className="pricing-check" />AI Assistant, Communications Hub, API Access</li>
                 <li><Check size={14} className="pricing-check" />Multi-Entity & Consolidation</li>
-                <li><Check size={14} className="pricing-check" />10 users included · Unlimited warehouses</li>
+                <li><Check size={14} className="pricing-check" />10-user bundle: R1,499/mo (save 50%)</li>
                 <li><Check size={14} className="pricing-check" />Phone & email support · Guided migration</li>
                 <li><Check size={14} className="pricing-check" /><strong>Price locked for 12 months</strong></li>
               </ul>
@@ -251,7 +257,7 @@ const Pricing: React.FC = () => {
             style={{ maxWidth: 600, margin: '32px auto 0', padding: '24px', borderRadius: 16, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
             <h4 style={{ margin: '0 0 8px', fontSize: '1.1rem' }}>Need more than 10 users or custom requirements?</h4>
             <p style={{ margin: '0 0 16px', opacity: 0.7, fontSize: '0.9rem' }}>
-              Additional users are just R149/user/month. For 50+ users, dedicated infrastructure, white-labelling, or on-premise — let's talk.
+              For 50+ users, dedicated infrastructure, white-labelling, or on-premise deployment — let's talk.
             </p>
             <button className="pricing-cta-btn secondary" onClick={() => navigate('/demo')}>
               <Phone size={16} /> Talk to Sales
@@ -350,7 +356,7 @@ const Pricing: React.FC = () => {
         <div className="container">
           <motion.div className="section-header" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             <span className="section-badge sa-badge">Everything Included</span>
-            <h2>Every Module — All Yours at R1,499/mo</h2>
+            <h2>Every Module — From R299/user/mo</h2>
             <p className="section-subtitle">No premium tiers. No locked features. Every Founding Member gets the full platform.</p>
           </motion.div>
 
@@ -433,7 +439,7 @@ const Pricing: React.FC = () => {
         <div className="container">
           <motion.div className="pricing-final-cta-content" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             <h2>Join the First 50. Shape the Future.</h2>
-            <p>Founding Members get every module at R1,499/mo — locked for 12 months. Only {spotsLeft} spots remaining.</p>
+            <p>Founding Members get every module from R299/user/mo — or R1,499/mo for 10 users. Locked for 12 months. Only {spotsLeft} spots remaining.</p>
             <div className="pricing-final-cta-buttons">
               <button className="pricing-cta-btn primary large" onClick={() => navigate('/signup?plan=founding-member')}>
                 Claim Your Founding Member Spot <ArrowRight size={18} />

@@ -17,7 +17,7 @@ const About: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <WebsiteLayout title="About — SiyaBusa ERP | Built for South African Business">
+    <WebsiteLayout title="About — SiyaBusa ERP | Built for South African Business" description="Meet SiyaBusa ERP by Masaphokati Technologies. Our mission, story, and the team building South Africa's most comprehensive cloud ERP platform." canonical="https://siyabusaerp.co.za/about">
 
       {/* ═══ HERO ═══ */}
       <section className="about-hero">

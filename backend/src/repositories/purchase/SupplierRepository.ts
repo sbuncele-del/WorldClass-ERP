@@ -43,7 +43,7 @@ export class SupplierRepository extends BaseRepository<Supplier> {
   protected schema = 'purchase';
   protected primaryKey = 'supplier_id';
   protected softDelete = false;
-  protected entityScoped = true;
+  protected entityScoped = false;
 
   private mapSupplier(row: any): Supplier {
     return {

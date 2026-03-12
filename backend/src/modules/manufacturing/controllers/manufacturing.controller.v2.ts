@@ -92,9 +92,9 @@ export const getBOMs = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
     
-    // Simplified query using public.boms or manufacturing.boms
+    // Simplified query using manufacturing.bill_of_materials
     const result = await pool.query(`
-      SELECT * FROM boms WHERE tenant_id = $1 ORDER BY created_at DESC
+      SELECT * FROM manufacturing.bill_of_materials WHERE tenant_id = $1 ORDER BY created_at DESC
     `, [tenantId]);
     
     res.json({ success: true, data: result.rows });
@@ -199,9 +199,9 @@ export const getProductionOrders = async (req: TenantRequest, res: Response) => 
     const { status } = req.query;
     const params: any[] = [tenantId];
     
-    // Simplified query - use work_orders table
+    // Simplified query - use manufacturing.production_orders table
     let query = `
-      SELECT * FROM work_orders WHERE tenant_id = $1
+      SELECT * FROM manufacturing.production_orders WHERE tenant_id = $1
     `;
     
     if (status) {
@@ -342,14 +342,14 @@ export const getDashboardStats = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
     
-    // Simplified dashboard - count from work_orders
+    // Simplified dashboard - count from manufacturing tables
     const workOrders = await pool.query(
-      `SELECT COUNT(*) as count FROM work_orders WHERE tenant_id = $1`,
+      `SELECT COUNT(*) as count FROM manufacturing.production_orders WHERE tenant_id = $1`,
       [tenantId]
     );
     
     const boms = await pool.query(
-      `SELECT COUNT(*) as count FROM boms WHERE tenant_id = $1`,
+      `SELECT COUNT(*) as count FROM manufacturing.bill_of_materials WHERE tenant_id = $1`,
       [tenantId]
     );
     

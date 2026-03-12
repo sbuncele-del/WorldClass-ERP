@@ -489,16 +489,20 @@ export async function createAssetCategory(req: TenantRequest, res: Response) {
     const result = await pool.query(`
       INSERT INTO assets.asset_categories (
         tenant_id, category_code, category_name, description,
-        default_useful_life_months, default_depreciation_method, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        default_useful_life_years, default_depreciation_method, 
+        default_residual_value_percentage, minimum_capitalization_amount,
+        is_active, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, $9)
       RETURNING *
     `, [
       tenantId,
       categoryData.category_code,
       categoryData.category_name,
       categoryData.description,
-      categoryData.default_useful_life_months,
+      categoryData.default_useful_life_years || Math.round((categoryData.default_useful_life_months || 60) / 12),
       categoryData.default_depreciation_method,
+      categoryData.default_residual_value_percentage || 0,
+      categoryData.minimum_capitalization_amount || 0,
       userId
     ]);
 

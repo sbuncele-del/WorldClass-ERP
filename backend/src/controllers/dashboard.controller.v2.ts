@@ -46,16 +46,15 @@ export class DashboardControllerV2 {
           SUM(CASE WHEN coa.account_type = 'REVENUE' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as total_revenue,
           SUM(CASE WHEN coa.account_type = 'EXPENSE' THEN jel.debit_amount - jel.credit_amount ELSE 0 END) as total_expenses
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $${currentPeriod ? 4 : 2})
-        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $${currentPeriod ? 4 : 2})
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
         WHERE je.status = 'POSTED'
-          AND (jel.entity_id IS NULL OR jel.entity_id = $${currentPeriod ? 4 : 2})
           ${currentPeriod ? `AND je.posting_date >= $2 AND je.posting_date <= $3` : ''}
       `;
 
       const financialParams = currentPeriod
-        ? [tenantId, currentPeriod.start_date, currentPeriod.end_date, entityParam]
-        : [tenantId, entityParam];
+        ? [tenantId, currentPeriod.start_date, currentPeriod.end_date]
+        : [tenantId];
       const financialResult = await client.query(financialQuery, financialParams);
       const financial = financialResult.rows[0];
 
@@ -70,22 +69,21 @@ export class DashboardControllerV2 {
           SUM(CASE WHEN coa.account_type = 'LIABILITY' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as total_liabilities,
           SUM(CASE WHEN coa.account_type = 'EQUITY' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as total_equity
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $2)
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
         WHERE je.status = 'POSTED'
-          AND (jel.entity_id IS NULL OR jel.entity_id = $2)
       `;
-      const balancesResult = await client.query(balancesQuery, [tenantId, entityParam]);
+      const balancesResult = await client.query(balancesQuery, [tenantId]);
       const balances = balancesResult.rows[0];
 
       // Get recent activity counts
       const activityQuery = `
         SELECT
-          (SELECT COUNT(*) FROM journal_entries WHERE tenant_id = $1 AND (entity_id IS NULL OR entity_id = $2) AND status = 'DRAFT') as draft_entries,
-          (SELECT COUNT(*) FROM journal_entries WHERE tenant_id = $1 AND (entity_id IS NULL OR entity_id = $2) AND status = 'PENDING') as pending_entries,
-          (SELECT COUNT(*) FROM journal_entries WHERE tenant_id = $1 AND (entity_id IS NULL OR entity_id = $2) AND created_at >= CURRENT_DATE - INTERVAL '7 days') as recent_entries
+          (SELECT COUNT(*) FROM journal_entries WHERE tenant_id = $1 AND status = 'DRAFT') as draft_entries,
+          (SELECT COUNT(*) FROM journal_entries WHERE tenant_id = $1 AND status = 'PENDING') as pending_entries,
+          (SELECT COUNT(*) FROM journal_entries WHERE tenant_id = $1 AND created_at >= CURRENT_DATE - INTERVAL '7 days') as recent_entries
       `;
-      const activityResult = await client.query(activityQuery, [tenantId, entityParam]);
+      const activityResult = await client.query(activityQuery, [tenantId]);
       const activity = activityResult.rows[0];
 
       res.json({
@@ -138,10 +136,9 @@ export class DashboardControllerV2 {
           DATE_TRUNC('month', je.journal_date) as month,
           SUM(jel.credit_amount - jel.debit_amount) as revenue
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $2)
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
         WHERE jel.tenant_id = $1
-          AND (jel.entity_id IS NULL OR jel.entity_id = $2)
           AND je.status = 'POSTED'
           AND coa.account_type = 'REVENUE'
           AND je.journal_date >= CURRENT_DATE - INTERVAL '${parseInt(months as string)} months'
@@ -149,7 +146,7 @@ export class DashboardControllerV2 {
         ORDER BY month
       `;
 
-      const result = await pool.query(query, [tenantId, entityParam]);
+      const result = await pool.query(query, [tenantId]);
 
       res.json({
         success: true,
@@ -192,10 +189,9 @@ export class DashboardControllerV2 {
           coa.account_name,
           SUM(jel.debit_amount - jel.credit_amount) as amount
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $2)
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
         WHERE jel.tenant_id = $1
-          AND (jel.entity_id IS NULL OR jel.entity_id = $2)
           AND je.status = 'POSTED'
           AND coa.account_type = 'EXPENSE'
           ${dateFilter}
@@ -205,7 +201,7 @@ export class DashboardControllerV2 {
         LIMIT 10
       `;
 
-      const result = await pool.query(query, [tenantId, entityParam]);
+      const result = await pool.query(query, [tenantId]);
 
       res.json({
         success: true,
@@ -248,15 +244,13 @@ export class DashboardControllerV2 {
           COALESCE(SUM(jel.debit_amount), 0) as total_amount
         FROM journal_entries je
         LEFT JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id AND jel.tenant_id = $1
-          AND (jel.entity_id IS NULL OR jel.entity_id = $3)
         WHERE je.tenant_id = $1
-          AND (je.entity_id IS NULL OR je.entity_id = $3)
         GROUP BY je.id
         ORDER BY je.created_at DESC
         LIMIT $2
       `;
 
-      const result = await pool.query(query, [tenantId, limit, entityParam]);
+      const result = await pool.query(query, [tenantId, limit]);
 
       res.json({
         success: true,
@@ -288,17 +282,16 @@ export class DashboardControllerV2 {
           coa.account_name,
           SUM(jel.debit_amount - jel.credit_amount) as balance
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $2)
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
         WHERE jel.tenant_id = $1
-          AND (jel.entity_id IS NULL OR jel.entity_id = $2)
           AND je.status = 'POSTED'
           AND (coa.account_name ILIKE '%cash%' OR coa.account_name ILIKE '%bank%')
         GROUP BY coa.account_code, coa.account_name
         ORDER BY balance DESC
       `;
 
-      const result = await pool.query(query, [tenantId, entityParam]);
+      const result = await pool.query(query, [tenantId]);
 
       const totalCash = result.rows.reduce((sum, row) => sum + parseFloat(row.balance), 0);
 
@@ -338,27 +331,25 @@ export class DashboardControllerV2 {
         SELECT 
           SUM(CASE WHEN jel.debit_amount - jel.credit_amount > 0 THEN jel.debit_amount - jel.credit_amount ELSE 0 END) as total
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $2)
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
         WHERE jel.tenant_id = $1
-          AND (jel.entity_id IS NULL OR jel.entity_id = $2)
           AND je.status = 'POSTED'
           AND coa.account_name ILIKE '%receivable%'
       `;
-      const arResult = await pool.query(arQuery, [tenantId, entityParam]);
+      const arResult = await pool.query(arQuery, [tenantId]);
 
       const apQuery = `
         SELECT 
           SUM(CASE WHEN jel.credit_amount - jel.debit_amount > 0 THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as total
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $2)
+        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
         WHERE jel.tenant_id = $1
-          AND (jel.entity_id IS NULL OR jel.entity_id = $2)
           AND je.status = 'POSTED'
           AND coa.account_name ILIKE '%payable%'
       `;
-      const apResult = await pool.query(apQuery, [tenantId, entityParam]);
+      const apResult = await pool.query(apQuery, [tenantId]);
 
       res.json({
         success: true,
@@ -407,14 +398,14 @@ export class DashboardControllerV2 {
             SUM(CASE WHEN coa.account_type = 'ASSET' THEN jel.debit_amount - jel.credit_amount ELSE 0 END) as assets,
             SUM(CASE WHEN coa.account_type = 'LIABILITY' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as liabilities
           FROM journal_entry_lines jel
-          JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1 AND (coa.entity_id IS NULL OR coa.entity_id = $2)
-          JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1 AND (je.entity_id IS NULL OR je.entity_id = $2)
-          WHERE jel.tenant_id = $1 AND (jel.entity_id IS NULL OR jel.entity_id = $2) AND je.status = 'POSTED'
+          JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+          JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
+          WHERE jel.tenant_id = $1 AND je.status = 'POSTED'
         )
         SELECT * FROM financials
       `;
 
-      const result = await pool.query(kpiQuery, [tenantId, entityParam]);
+      const result = await pool.query(kpiQuery, [tenantId]);
       const data = result.rows[0] || {};
 
       const revenue = parseFloat(data.revenue || '0');

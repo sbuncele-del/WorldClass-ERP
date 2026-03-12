@@ -194,7 +194,7 @@ export interface SignupData {
   password: string;
   
   // Subscription
-  plan: 'starter' | 'professional' | 'enterprise';
+  plan: 'starter' | 'professional' | 'enterprise' | 'founding-member' | 'accountant';
   billingCycle: 'monthly' | 'annual';
   
   // Optional

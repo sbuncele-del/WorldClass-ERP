@@ -23,6 +23,22 @@ const COUNTRIES = [
 
 const PLANS = [
   { id: 'founding-member', name: 'Founding Member', price: 'R1,499', priceUSD: '$89', users: 10 },
+  { id: 'accountant', name: 'Accounting Firm', price: 'R2,499', priceUSD: '$149', users: 50 },
+];
+
+const INDUSTRIES = [
+  { id: 'general', name: 'General Business' },
+  { id: 'accounting-firm', name: 'Accounting / Tax Firm' },
+  { id: 'retail', name: 'Retail & E-commerce' },
+  { id: 'manufacturing', name: 'Manufacturing' },
+  { id: 'construction', name: 'Construction' },
+  { id: 'healthcare', name: 'Healthcare' },
+  { id: 'agriculture', name: 'Agriculture' },
+  { id: 'mining', name: 'Mining' },
+  { id: 'property', name: 'Property Management' },
+  { id: 'logistics', name: 'Logistics & Transport' },
+  { id: 'professional-services', name: 'Professional Services' },
+  { id: 'other', name: 'Other' },
 ];
 
 const Signup = () => {
@@ -36,6 +52,7 @@ const Signup = () => {
     companyName: '',
     country: 'ZA',
     plan: 'founding-member',
+    industry: 'general',
   });
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -449,6 +466,34 @@ const Signup = () => {
                   ))}
                 </select>
                 {errors.country && <span className="error-message">{errors.country}</span>}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="industry" className="form-label">
+                  Industry
+                </label>
+                <select
+                  id="industry"
+                  name="industry"
+                  className={`form-input ${errors.industry ? 'input-error' : ''}`}
+                  value={formData.industry}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData((prev) => ({
+                      ...prev,
+                      industry: val,
+                      plan: val === 'accounting-firm' ? 'accountant' : prev.plan === 'accountant' ? 'founding-member' : prev.plan,
+                    }));
+                  }}
+                  disabled={isLoading}
+                >
+                  {INDUSTRIES.map((ind) => (
+                    <option key={ind.id} value={ind.id}>
+                      {ind.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.industry && <span className="error-message">{errors.industry}</span>}
               </div>
             </>
           )}

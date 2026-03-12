@@ -5,7 +5,7 @@
     <loc>https://siyabusaerp.co.za/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <lastmod>2026-03-03</lastmod>
+    <lastmod>2026-03-12</lastmod>
   </url>
 
   <!-- Pricing -->
@@ -13,7 +13,7 @@
     <loc>https://siyabusaerp.co.za/pricing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-03-03</lastmod>
+    <lastmod>2026-03-12</lastmod>
   </url>
 
   <!-- Features -->
@@ -21,7 +21,39 @@
     <loc>https://siyabusaerp.co.za/features</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
-    <lastmod>2026-03-03</lastmod>
+    <lastmod>2026-03-12</lastmod>
+  </url>
+
+  <!-- Demo / Book a Demo -->
+  <url>
+    <loc>https://siyabusaerp.co.za/demo</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-03-12</lastmod>
+  </url>
+
+  <!-- For Accountants -->
+  <url>
+    <loc>https://siyabusaerp.co.za/for-accountants</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <lastmod>2026-03-12</lastmod>
+  </url>
+
+  <!-- Switch to SiyaBusa -->
+  <url>
+    <loc>https://siyabusaerp.co.za/switch-to-siyabusa</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-03-12</lastmod>
+  </url>
+
+  <!-- Data Migration -->
+  <url>
+    <loc>https://siyabusaerp.co.za/data-migration</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+    <lastmod>2026-03-12</lastmod>
   </url>
 
   <!-- About -->
@@ -29,7 +61,7 @@
     <loc>https://siyabusaerp.co.za/about</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-03-03</lastmod>
+    <lastmod>2026-03-12</lastmod>
   </url>
 
   <!-- Contact -->
@@ -37,31 +69,39 @@
     <loc>https://siyabusaerp.co.za/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
-    <lastmod>2026-03-03</lastmod>
-  </url>
-
-  <!-- Demo / Book a Demo -->
-  <url>
-    <loc>https://siyabusaerp.co.za/demo</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-    <lastmod>2026-03-03</lastmod>
+    <lastmod>2026-03-12</lastmod>
   </url>
 
   <!-- Compliance -->
   <url>
     <loc>https://siyabusaerp.co.za/compliance</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-    <lastmod>2026-03-03</lastmod>
+    <priority>0.8</priority>
+    <lastmod>2026-03-12</lastmod>
   </url>
 
-  <!-- Blog -->
+  <!-- Partners -->
+  <url>
+    <loc>https://siyabusaerp.co.za/partners</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-03-12</lastmod>
+  </url>
+
+  <!-- Insights (formerly Blog) -->
+  <url>
+    <loc>https://siyabusaerp.co.za/insights</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-03-12</lastmod>
+  </url>
+
+  <!-- Blog (redirects to Insights) -->
   <url>
     <loc>https://siyabusaerp.co.za/blog</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-    <lastmod>2026-03-03</lastmod>
+    <priority>0.5</priority>
+    <lastmod>2026-03-12</lastmod>
   </url>
 
   <!-- Case Studies -->
@@ -69,23 +109,7 @@
     <loc>https://siyabusaerp.co.za/case-studies</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-03-03</lastmod>
-  </url>
-
-  <!-- Careers -->
-  <url>
-    <loc>https://siyabusaerp.co.za/careers</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-    <lastmod>2026-03-03</lastmod>
-  </url>
-
-  <!-- Partners -->
-  <url>
-    <loc>https://siyabusaerp.co.za/partners</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-    <lastmod>2026-03-03</lastmod>
+    <lastmod>2026-03-12</lastmod>
   </url>
 
   <!-- Documentation -->
@@ -93,15 +117,23 @@
     <loc>https://siyabusaerp.co.za/documentation</loc>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
-    <lastmod>2026-03-03</lastmod>
+    <lastmod>2026-03-12</lastmod>
   </url>
 
   <!-- Support -->
   <url>
     <loc>https://siyabusaerp.co.za/support</loc>
     <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+    <lastmod>2026-03-12</lastmod>
+  </url>
+
+  <!-- Careers -->
+  <url>
+    <loc>https://siyabusaerp.co.za/careers</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <lastmod>2026-03-03</lastmod>
+    <lastmod>2026-03-12</lastmod>
   </url>
 
   <!-- Security -->
@@ -109,23 +141,7 @@
     <loc>https://siyabusaerp.co.za/security</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-    <lastmod>2026-03-03</lastmod>
-  </url>
-
-  <!-- Privacy Policy -->
-  <url>
-    <loc>https://siyabusaerp.co.za/privacy</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
-    <lastmod>2026-03-03</lastmod>
-  </url>
-
-  <!-- Terms of Service -->
-  <url>
-    <loc>https://siyabusaerp.co.za/terms</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
-    <lastmod>2026-03-03</lastmod>
+    <lastmod>2026-03-12</lastmod>
   </url>
 
   <!-- Concept Document / Stakeholders -->
@@ -133,6 +149,22 @@
     <loc>https://siyabusaerp.co.za/concept-document</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
-    <lastmod>2026-03-03</lastmod>
+    <lastmod>2026-03-12</lastmod>
+  </url>
+
+  <!-- Privacy Policy -->
+  <url>
+    <loc>https://siyabusaerp.co.za/privacy</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+    <lastmod>2026-03-12</lastmod>
+  </url>
+
+  <!-- Terms of Service -->
+  <url>
+    <loc>https://siyabusaerp.co.za/terms</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.4</priority>
+    <lastmod>2026-03-12</lastmod>
   </url>
 </urlset>

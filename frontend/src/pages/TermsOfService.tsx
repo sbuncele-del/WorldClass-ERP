@@ -8,7 +8,7 @@ const TermsOfService: React.FC = () => {
   const effectiveDate = 'December 9, 2025';
 
   return (
-    <WebsiteLayout title="Terms of Service — SiyaBusa ERP">
+    <WebsiteLayout title="Terms of Service — SiyaBusa ERP" description="SiyaBusa ERP Terms of Service. Terms and conditions governing the use of the SiyaBusa ERP cloud platform by Masaphokati Technologies." canonical="https://siyabusaerp.co.za/terms">
       <section className="page-hero">
         <div className="container">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>

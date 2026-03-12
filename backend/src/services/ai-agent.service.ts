@@ -1,16 +1,22 @@
 /**
  * AI Agent Service
- * Core service for AI-powered assistants
+ * Core service for AI-powered assistants with function-calling (tool use).
  * Supports: Groq (FREE), x.ai/Grok, OpenAI, Anthropic
  */
 
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 import pool from '../config/database';
+import { getOpenAITools } from './ai-tools/tool-registry';
+import { executeTool, confirmAction, ToolResult } from './ai-tools/tool-executor';
+import { UsageCapService } from './usage-cap.service';
 
 interface Message {
-    role: 'system' | 'user' | 'assistant';
+    role: 'system' | 'user' | 'assistant' | 'tool';
     content: string;
+    tool_calls?: any[];
+    tool_call_id?: string;
+    name?: string;
 }
 
 interface AgentConfig {
@@ -94,20 +100,63 @@ class AIAgentService {
     }
 
     /**
-     * Get AI agent configuration
+     * Default agent configs — used when ai_agents table doesn't exist yet
+     */
+    private static DEFAULT_AGENTS: Record<string, AgentConfig> = {
+        general: {
+            agent_id: 'default-general',
+            agent_code: 'general',
+            agent_name: 'SiyaBusa AI Assistant',
+            module_name: 'General',
+            system_prompt: `You are SiyaBusa AI Assistant, an ERP helper for South African businesses. You have access to tools that let you query real business data (customers, invoices, products, employees, accounts, stock levels) and create records (invoices, quotes, journal entries, purchase orders, payments, stock adjustments). Always use your tools to get real data — never make up numbers. When a user asks about their data, call the appropriate tool. For write actions, preview first and ask for confirmation. Be concise and professional. Currency is ZAR (Rands). Mention SARS compliance where relevant.`,
+            capabilities: ['query_data', 'create_records', 'financial_reports'],
+            model_name: 'llama-3.3-70b-versatile',
+            temperature: 0.3,
+            max_tokens: 2048,
+        },
+        financial: {
+            agent_id: 'default-financial',
+            agent_code: 'financial',
+            agent_name: 'Financial Assistant',
+            module_name: 'Financial Accounting',
+            system_prompt: `You are SiyaBusa Financial Assistant specializing in accounting and finance. You can query chart of accounts, journal entries, account balances, invoices, and payments. You help with financial reporting, reconciliation, and SARS compliance. Always use tools to fetch real data. Currency is ZAR.`,
+            capabilities: ['financial_queries', 'journal_entries', 'reporting'],
+            model_name: 'llama-3.3-70b-versatile',
+            temperature: 0.2,
+            max_tokens: 2048,
+        },
+        sales: {
+            agent_id: 'default-sales',
+            agent_code: 'sales',
+            agent_name: 'Sales Assistant',
+            module_name: 'Sales & CRM',
+            system_prompt: `You are SiyaBusa Sales Assistant. You help with customer management, invoicing, quotes, and sales reporting. Always use tools to query real customer and invoice data. Currency is ZAR.`,
+            capabilities: ['customer_queries', 'invoicing', 'quotes'],
+            model_name: 'llama-3.3-70b-versatile',
+            temperature: 0.3,
+            max_tokens: 2048,
+        },
+    };
+
+    /**
+     * Get AI agent configuration — falls back to hardcoded defaults if DB table missing
      */
     async getAgent(agentCode: string): Promise<AgentConfig | null> {
-        const result = await pool.query(
-            'SELECT * FROM ai_agents WHERE agent_code = $1 AND is_active = true',
-            [agentCode]
-        );
-
-        if (result.rows.length === 0) return null;
-        return result.rows[0];
+        try {
+            const result = await pool.query(
+                'SELECT * FROM ai_agents WHERE agent_code = $1 AND is_active = true',
+                [agentCode]
+            );
+            if (result.rows.length > 0) return result.rows[0];
+        } catch (err: any) {
+            // Table doesn't exist — use defaults
+            if (err.code !== '42P01') console.error('[AI] getAgent DB error:', err.message);
+        }
+        return AIAgentService.DEFAULT_AGENTS[agentCode] || AIAgentService.DEFAULT_AGENTS['general'] || null;
     }
 
     /**
-     * Create or get conversation
+     * Create or get conversation — gracefully degrades if tables don't exist
      */
     async getOrCreateConversation(
         tenantId: string,
@@ -115,48 +164,55 @@ class AIAgentService {
         agentCode: string,
         contextData: any = {}
     ): Promise<string> {
-        const agent = await this.getAgent(agentCode);
-        if (!agent) throw new Error('Agent not found');
+        try {
+            const agent = await this.getAgent(agentCode);
+            const agentId = agent?.agent_id || 'default-general';
 
-        // Check for existing active conversation
-        const existingResult = await pool.query(
-            `SELECT conversation_id FROM ai_conversations 
-             WHERE tenant_id = $1 AND user_id = $2 AND agent_id = $3 
-             AND is_archived = false 
-             ORDER BY last_message_at DESC LIMIT 1`,
-            [tenantId, userId, agent.agent_id]
-        );
+            const existingResult = await pool.query(
+                `SELECT conversation_id FROM ai_conversations 
+                 WHERE tenant_id = $1 AND user_id = $2 AND agent_id = $3 
+                 AND is_archived = false 
+                 ORDER BY last_message_at DESC LIMIT 1`,
+                [tenantId, userId, agentId]
+            );
 
-        if (existingResult.rows.length > 0) {
-            return existingResult.rows[0].conversation_id;
+            if (existingResult.rows.length > 0) {
+                return existingResult.rows[0].conversation_id;
+            }
+
+            const newResult = await pool.query(
+                `INSERT INTO ai_conversations (tenant_id, agent_id, user_id, context_data)
+                 VALUES ($1, $2, $3, $4) RETURNING conversation_id`,
+                [tenantId, agentId, userId, JSON.stringify(contextData)]
+            );
+
+            return newResult.rows[0].conversation_id;
+        } catch (err: any) {
+            // Tables don't exist — return ephemeral ID, chat still works
+            return `ephemeral_${tenantId}_${Date.now()}`;
         }
-
-        // Create new conversation
-        const newResult = await pool.query(
-            `INSERT INTO ai_conversations (tenant_id, agent_id, user_id, context_data)
-             VALUES ($1, $2, $3, $4) RETURNING conversation_id`,
-            [tenantId, agent.agent_id, userId, JSON.stringify(contextData)]
-        );
-
-        return newResult.rows[0].conversation_id;
     }
 
     /**
-     * Get conversation history
+     * Get conversation history — returns empty if tables missing
      */
     async getConversationHistory(conversationId: string, limit: number = 50): Promise<Message[]> {
-        const result = await pool.query(
-            `SELECT role, content FROM ai_messages 
-             WHERE conversation_id = $1 
-             ORDER BY created_at ASC LIMIT $2`,
-            [conversationId, limit]
-        );
-
-        return result.rows;
+        if (conversationId.startsWith('ephemeral_')) return [];
+        try {
+            const result = await pool.query(
+                `SELECT role, content FROM ai_messages 
+                 WHERE conversation_id = $1 
+                 ORDER BY created_at ASC LIMIT $2`,
+                [conversationId, limit]
+            );
+            return result.rows;
+        } catch {
+            return [];
+        }
     }
 
     /**
-     * Save message to conversation
+     * Save message to conversation — silently skips if tables missing
      */
     async saveMessage(
         conversationId: string,
@@ -165,21 +221,24 @@ class AIAgentService {
         tokensUsed?: number,
         functionCalls?: any
     ): Promise<void> {
-        await pool.query(
-            `INSERT INTO ai_messages (conversation_id, role, content, tokens_used, function_calls)
-             VALUES ($1, $2, $3, $4, $5)`,
-            [conversationId, role, content, tokensUsed || null, functionCalls ? JSON.stringify(functionCalls) : null]
-        );
-
-        // Update last_message_at
-        await pool.query(
-            'UPDATE ai_conversations SET last_message_at = CURRENT_TIMESTAMP WHERE conversation_id = $1',
-            [conversationId]
-        );
+        if (conversationId.startsWith('ephemeral_')) return;
+        try {
+            await pool.query(
+                `INSERT INTO ai_messages (conversation_id, role, content, tokens_used, function_calls)
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [conversationId, role, content, tokensUsed || null, functionCalls ? JSON.stringify(functionCalls) : null]
+            );
+            await pool.query(
+                'UPDATE ai_conversations SET last_message_at = CURRENT_TIMESTAMP WHERE conversation_id = $1',
+                [conversationId]
+            );
+        } catch {
+            // Tables don't exist yet — that's OK, chat still works
+        }
     }
 
     /**
-     * Chat with agent using OpenAI
+     * Chat with agent — with function-calling tool loop
      */
     async chatWithAgent(
         agentCode: string,
@@ -187,7 +246,7 @@ class AIAgentService {
         userId: string,
         userMessage: string,
         contextData: any = {}
-    ): Promise<{ response: string; conversationId: string }> {
+    ): Promise<{ response: string; conversationId: string; pending_action_id?: string }> {
         if (!this.groqClient && !this.xaiClient && !this.openaiClient && !this.anthropicClient) {
             throw new Error('No AI provider configured. Set GROQ_API_KEY, XAI_API_KEY, OPENAI_API_KEY, or ANTHROPIC_API_KEY');
         }
@@ -195,7 +254,29 @@ class AIAgentService {
         const agent = await this.getAgent(agentCode);
         if (!agent) throw new Error('Agent not found');
 
+        // ── Usage cap check ──────────────────────────────────────
+        const usageCheck = await UsageCapService.checkUsage(tenantId, null, 'ai_queries');
+        if (usageCheck.blocked) {
+            return {
+                response: `You've reached your monthly AI query limit (${usageCheck.limit} queries). ` +
+                    `Upgrade your plan or contact support to increase your limit.`,
+                conversationId: '',
+            };
+        }
+
         const conversationId = await this.getOrCreateConversation(tenantId, userId, agentCode, contextData);
+
+        // Check if user is confirming a pending write action
+        const confirmMatch = userMessage.match(/^(?:yes|confirm|go ahead|do it|create it|record it|post it|adjust it)/i);
+        if (confirmMatch && contextData?.pending_action_id) {
+            const result = await confirmAction(contextData.pending_action_id);
+            const response = result.success
+                ? (result.data?.message || JSON.stringify(result.data))
+                : `Error: ${result.error}`;
+            await this.saveMessage(conversationId, 'user', userMessage);
+            await this.saveMessage(conversationId, 'assistant', response);
+            return { response, conversationId };
+        }
 
         // Save user message
         await this.saveMessage(conversationId, 'user', userMessage);
@@ -204,74 +285,108 @@ class AIAgentService {
         const history = await this.getConversationHistory(conversationId);
 
         // Build messages array
-        const messages: Message[] = [
-            { role: 'system', content: agent.system_prompt },
-            ...history.slice(-10), // Last 10 messages for context
+        const messages: any[] = [
+            { role: 'system', content: agent.system_prompt + '\n\nYou have access to real ERP tools. Use them to look up data and perform actions. Always use tools rather than guessing data.' },
+            ...history.slice(-10),
         ];
 
-        let assistantResponse: string;
-        let tokensUsed: number = 0;
+        // Select the OpenAI-compatible client + model
+        const client = this.groqClient || this.xaiClient || this.openaiClient;
+        let model: string;
+        if (this.groqClient) model = 'llama-3.3-70b-versatile';
+        else if (this.xaiClient) model = 'grok-4-latest';
+        else model = agent.model_name || 'gpt-4';
 
-        // Use Groq if available (FREE and fast!)
-        if (this.groqClient) {
-            const completion = await this.groqClient.chat.completions.create({
-                model: 'llama-3.3-70b-versatile',
-                messages: messages as any,
-                temperature: agent.temperature || 0.7,
-                max_tokens: agent.max_tokens || 2000,
-            });
+        const tools = getOpenAITools();
+        let totalTokens = 0;
+        let pendingActionId: string | undefined;
 
-            assistantResponse = completion.choices[0].message.content || '';
-            tokensUsed = completion.usage?.total_tokens || 0;
+        // Function-calling loop (max 5 iterations to prevent runaway)
+        const MAX_TOOL_ROUNDS = 5;
+        for (let round = 0; round < MAX_TOOL_ROUNDS; round++) {
+            let completion: any;
+
+            if (client) {
+                completion = await client.chat.completions.create({
+                    model,
+                    messages,
+                    temperature: agent.temperature || 0.7,
+                    max_tokens: agent.max_tokens || 2000,
+                    tools: tools.length > 0 ? tools : undefined,
+                    tool_choice: tools.length > 0 ? 'auto' : undefined,
+                });
+                totalTokens += completion.usage?.total_tokens || 0;
+            } else if (this.anthropicClient) {
+                // Anthropic uses a different API — fall back to plain chat
+                const anthropicResult = await this.anthropicClient.messages.create({
+                    model: 'claude-3-sonnet-20240229',
+                    max_tokens: agent.max_tokens || 2000,
+                    system: agent.system_prompt,
+                    messages: history.slice(-10).map(m => ({
+                        role: m.role === 'assistant' ? 'assistant' as const : 'user' as const,
+                        content: m.content
+                    })),
+                });
+                const anthropicText = anthropicResult.content[0].type === 'text' ? anthropicResult.content[0].text : '';
+                totalTokens += anthropicResult.usage.input_tokens + anthropicResult.usage.output_tokens;
+                await this.saveMessage(conversationId, 'assistant', anthropicText, totalTokens);
+                await this.updateUsageAnalytics(tenantId, agent.agent_id, totalTokens);
+                return { response: anthropicText, conversationId };
+            } else {
+                throw new Error('No AI provider available');
+            }
+
+            const choice = completion.choices[0];
+            const msg = choice.message;
+
+            // If the model wants to call tools
+            if (msg.tool_calls && msg.tool_calls.length > 0) {
+                // Add the assistant message (with tool_calls) to context
+                messages.push(msg);
+
+                // Execute each tool call
+                for (const toolCall of msg.tool_calls) {
+                    const fnName = toolCall.function.name;
+                    let fnArgs: Record<string, string> = {};
+                    try { fnArgs = JSON.parse(toolCall.function.arguments); } catch { /* empty */ }
+
+                    const toolResult: ToolResult = await executeTool(fnName, fnArgs, tenantId, userId);
+
+                    // If the tool needs confirmation, short-circuit — return preview to user
+                    if (toolResult.needs_confirmation) {
+                        const preview = toolResult.preview || 'Please confirm this action.';
+                        pendingActionId = toolResult.pending_action_id;
+                        await this.saveMessage(conversationId, 'assistant', preview, totalTokens, [{ tool: fnName, args: fnArgs }]);
+                        await this.updateUsageAnalytics(tenantId, agent.agent_id, totalTokens);
+                        return { response: preview, conversationId, pending_action_id: pendingActionId };
+                    }
+
+                    // Feed tool result back to the model
+                    messages.push({
+                        role: 'tool',
+                        tool_call_id: toolCall.id,
+                        content: JSON.stringify(toolResult.data ?? toolResult.error ?? 'No result'),
+                    });
+                }
+
+                // Continue loop — model will process tool results and may call more tools
+                continue;
+            }
+
+            // No tool calls — model is finished, return the text response
+            const assistantResponse = msg.content || '';
+            await this.saveMessage(conversationId, 'assistant', assistantResponse, totalTokens);
+            await this.updateUsageAnalytics(tenantId, agent.agent_id, totalTokens);
+            // Record AI usage
+            await UsageCapService.recordUsage(tenantId, userId, 'ai_queries', 1, { agent: agentCode, tokens: totalTokens });
+            return { response: assistantResponse, conversationId };
         }
-        // Use x.ai/Grok if available
-        else if (this.xaiClient) {
-            const completion = await this.xaiClient.chat.completions.create({
-                model: 'grok-4-latest',
-                messages: messages as any,
-                temperature: agent.temperature || 0.7,
-                max_tokens: agent.max_tokens || 2000,
-            });
 
-            assistantResponse = completion.choices[0].message.content || '';
-            tokensUsed = completion.usage?.total_tokens || 0;
-        }
-        // Use OpenAI if available
-        else if (this.openaiClient) {
-            const completion = await this.openaiClient.chat.completions.create({
-                model: agent.model_name || 'gpt-4',
-                messages: messages as any,
-                temperature: agent.temperature || 0.7,
-                max_tokens: agent.max_tokens || 2000,
-            });
-
-            assistantResponse = completion.choices[0].message.content || '';
-            tokensUsed = completion.usage?.total_tokens || 0;
-        } else if (this.anthropicClient) {
-            // Use Anthropic as fallback
-            const completion = await this.anthropicClient.messages.create({
-                model: 'claude-3-sonnet-20240229',
-                max_tokens: agent.max_tokens || 2000,
-                system: agent.system_prompt,
-                messages: history.slice(-10).map(m => ({
-                    role: m.role === 'assistant' ? 'assistant' : 'user',
-                    content: m.content
-                }))
-            });
-
-            assistantResponse = completion.content[0].type === 'text' ? completion.content[0].text : '';
-            tokensUsed = completion.usage.input_tokens + completion.usage.output_tokens;
-        } else {
-            throw new Error('No AI provider available');
-        }
-
-        // Save assistant response
-        await this.saveMessage(conversationId, 'assistant', assistantResponse, tokensUsed);
-
-        // Update usage analytics
-        await this.updateUsageAnalytics(tenantId, agent.agent_id, tokensUsed);
-
-        return { response: assistantResponse, conversationId };
+        // Safety: if we exceeded max rounds, return what we have
+        const fallback = 'I gathered the data but hit a processing limit. Please try a simpler question.';
+        await this.saveMessage(conversationId, 'assistant', fallback, totalTokens);
+        await UsageCapService.recordUsage(tenantId, userId, 'ai_queries', 1, { agent: agentCode, tokens: totalTokens });
+        return { response: fallback, conversationId };
     }
 
     /**
@@ -409,45 +524,56 @@ class AIAgentService {
     }
 
     /**
-     * List all available agents
+     * List all available agents — falls back to defaults if table missing
      */
     async listAgents(): Promise<AgentConfig[]> {
-        const result = await pool.query(
-            'SELECT * FROM ai_agents WHERE is_active = true ORDER BY module_name, agent_name'
-        );
-        return result.rows;
+        try {
+            const result = await pool.query(
+                'SELECT * FROM ai_agents WHERE is_active = true ORDER BY module_name, agent_name'
+            );
+            if (result.rows.length > 0) return result.rows;
+        } catch {
+            // Table doesn't exist
+        }
+        return Object.values(AIAgentService.DEFAULT_AGENTS);
     }
 
     /**
      * Archive conversation
      */
     async archiveConversation(conversationId: string): Promise<void> {
-        await pool.query(
-            'UPDATE ai_conversations SET is_archived = true WHERE conversation_id = $1',
-            [conversationId]
-        );
+        try {
+            await pool.query(
+                'UPDATE ai_conversations SET is_archived = true WHERE conversation_id = $1',
+                [conversationId]
+            );
+        } catch { /* table might not exist */ }
     }
 
     /**
-     * Get user's conversations
+     * Get user's conversations — returns empty if tables missing
      */
     async getUserConversations(tenantId: string, userId: string, includeArchived: boolean = false): Promise<any[]> {
-        const query = includeArchived
-            ? `SELECT c.*, a.agent_name, a.agent_code, a.module_name,
-                      (SELECT COUNT(*) FROM ai_messages WHERE conversation_id = c.conversation_id) as message_count
-               FROM ai_conversations c
-               JOIN ai_agents a ON c.agent_id = a.agent_id
-               WHERE c.tenant_id = $1 AND c.user_id = $2
-               ORDER BY c.last_message_at DESC`
-            : `SELECT c.*, a.agent_name, a.agent_code, a.module_name,
-                      (SELECT COUNT(*) FROM ai_messages WHERE conversation_id = c.conversation_id) as message_count
-               FROM ai_conversations c
-               JOIN ai_agents a ON c.agent_id = a.agent_id
-               WHERE c.tenant_id = $1 AND c.user_id = $2 AND c.is_archived = false
-               ORDER BY c.last_message_at DESC`;
+        try {
+            const query = includeArchived
+                ? `SELECT c.*, a.agent_name, a.agent_code, a.module_name,
+                          (SELECT COUNT(*) FROM ai_messages WHERE conversation_id = c.conversation_id) as message_count
+                   FROM ai_conversations c
+                   JOIN ai_agents a ON c.agent_id = a.agent_id
+                   WHERE c.tenant_id = $1 AND c.user_id = $2
+                   ORDER BY c.last_message_at DESC`
+                : `SELECT c.*, a.agent_name, a.agent_code, a.module_name,
+                          (SELECT COUNT(*) FROM ai_messages WHERE conversation_id = c.conversation_id) as message_count
+                   FROM ai_conversations c
+                   JOIN ai_agents a ON c.agent_id = a.agent_id
+                   WHERE c.tenant_id = $1 AND c.user_id = $2 AND c.is_archived = false
+                   ORDER BY c.last_message_at DESC`;
 
-        const result = await pool.query(query, [tenantId, userId]);
-        return result.rows;
+            const result = await pool.query(query, [tenantId, userId]);
+            return result.rows;
+        } catch {
+            return [];
+        }
     }
 }
 

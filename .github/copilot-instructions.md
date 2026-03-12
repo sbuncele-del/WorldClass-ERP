@@ -37,17 +37,16 @@ The system is **production-ready** and deployed on AWS.
 16. ✅ **Property Management** - Leases, tenant billing
 17. ✅ **Agriculture** - Crop management, farm operations
 
-### Operations & Logistics
-18. ✅ **Logistics & Fleet** - Vehicle tracking, fuel management
-19. ✅ **Project Management** - Tasks, timelines, resources
-20. ✅ **Practice Management** - Professional services, time tracking
+### Operations
+18. ✅ **Project Management** - Tasks, timelines, resources
+19. ✅ **Practice Management** - Professional services, time tracking
 
 ### Platform Features
-21. ✅ **Admin & Settings** - User management, tenant config
-22. ✅ **Communications Hub** - Video meetings (Daily.co), messaging
-23. ✅ **Proposals & Pitch** - Business proposals, presentations
-24. ✅ **AI Assistant** - Natural language queries, actionable agent
-25. ✅ **Dashboard & Reports** - KPIs, custom reports, analytics
+20. ✅ **Admin & Settings** - User management, tenant config
+21. ✅ **Communications Hub** - Video meetings (Daily.co), messaging
+22. ✅ **Proposals & Pitch** - Business proposals, presentations
+23. ✅ **AI Assistant** - Natural language queries, actionable agent
+24. ✅ **Dashboard & Reports** - KPIs, custom reports, analytics
 
 ## Multi-Tenant Architecture
 - All API endpoints require tenant context

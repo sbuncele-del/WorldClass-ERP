@@ -41,10 +41,10 @@ export const submitForApproval = async (req: TenantRequest, res: Response): Prom
     // Get journal entry details - tenant scoped
     const entryQuery = await client.query(`
             SELECT id, journal_number, status, approval_status,
-              (SELECT SUM(debit_amount) FROM journal_entry_lines WHERE journal_entry_id = $1 AND (entity_id IS NULL OR entity_id = $3)) as total_amount
+              (SELECT SUM(debit_amount) FROM journal_entry_lines WHERE journal_entry_id = $1) as total_amount
             FROM journal_entries
-            WHERE id = $1 AND tenant_id = $2 AND (entity_id IS NULL OR entity_id = $3)
-          `, [journalEntryId, tenantId, entityId || null]);
+            WHERE id = $1 AND tenant_id = $2
+          `, [journalEntryId, tenantId]);
 
     if (entryQuery.rows.length === 0) {
       res.status(404).json({ success: false, error: 'Journal entry not found' });
@@ -79,8 +79,8 @@ export const submitForApproval = async (req: TenantRequest, res: Response): Prom
         SUM(debit_amount) as total_debits,
         SUM(credit_amount) as total_credits
       FROM journal_entry_lines
-      WHERE journal_entry_id = $1 AND (entity_id IS NULL OR entity_id = $2)
-    `, [journalEntryId, entityId || null]);
+      WHERE journal_entry_id = $1
+    `, [journalEntryId]);
 
     const { total_debits, total_credits } = balanceCheck.rows[0];
     if (Math.abs(parseFloat(total_debits || '0') - parseFloat(total_credits || '0')) > 0.01) {
@@ -104,8 +104,8 @@ export const submitForApproval = async (req: TenantRequest, res: Response): Prom
       
       const wfResult = await client.query(`
         SELECT id FROM approval_workflows 
-        WHERE tenant_id = $1 AND (entity_id IS NULL OR entity_id = $3) AND name = $2 AND is_active = true
-      `, [tenantId, workflowName, entityId || null]);
+        WHERE tenant_id = $1 AND name = $2 AND is_active = true
+      `, [tenantId, workflowName]);
       selectedWorkflowId = wfResult.rows[0]?.id;
     }
 
@@ -119,8 +119,8 @@ export const submitForApproval = async (req: TenantRequest, res: Response): Prom
     const firstLevel = await client.query(`
       SELECT id, level_number, level_name
       FROM approval_levels
-      WHERE workflow_id = $1 AND tenant_id = $2 AND (entity_id IS NULL OR entity_id = $3) AND level_number = 1
-    `, [selectedWorkflowId, tenantId, entityId || null]);
+      WHERE workflow_id = $1 AND tenant_id = $2 AND level_number = 1
+    `, [selectedWorkflowId, tenantId]);
 
     if (firstLevel.rows.length === 0) {
       res.status(400).json({ success: false, error: 'Workflow has no approval levels configured' });
@@ -137,15 +137,15 @@ export const submitForApproval = async (req: TenantRequest, res: Response): Prom
           submitted_for_approval_at = NOW(),
           submitted_by = $2,
           updated_at = NOW()
-      WHERE id = $3 AND tenant_id = $4 AND (entity_id IS NULL OR entity_id = $5)
-    `, [selectedWorkflowId, performedBy, journalEntryId, tenantId, entityId || null]);
+      WHERE id = $3 AND tenant_id = $4
+    `, [selectedWorkflowId, performedBy, journalEntryId, tenantId]);
 
     // Create approval history record
     await client.query(`
       INSERT INTO approval_history (
-        tenant_id, entity_id, journal_entry_id, workflow_id, level_id, action, comments, performed_by
-      ) VALUES ($1, $2, $3, $4, $5, 'SUBMITTED', $6, $7)
-    `, [tenantId, entityId || null, journalEntryId, selectedWorkflowId, firstLevel.rows[0].id, comments, performedBy]);
+        tenant_id, journal_entry_id, workflow_id, level_id, action, comments, performed_by
+      ) VALUES ($1, $2, $3, $4, 'SUBMITTED', $5, $6)
+    `, [tenantId, journalEntryId, selectedWorkflowId, firstLevel.rows[0].id, comments, performedBy]);
 
     await client.query('COMMIT');
 
@@ -191,9 +191,9 @@ export const approveEntry = async (req: TenantRequest, res: Response): Promise<v
     const entryQuery = await client.query(`
       SELECT je.*, aw.name as workflow_name
       FROM journal_entries je
-      LEFT JOIN approval_workflows aw ON je.workflow_id = aw.id AND (aw.entity_id IS NULL OR aw.entity_id = $4)
-      WHERE je.entry_id = $1 AND je.tenant_id = $2 AND (je.entity_id IS NULL OR je.entity_id = $3)
-    `, [journalEntryId, tenantId, entityId || null]);
+      LEFT JOIN approval_workflows aw ON je.workflow_id = aw.id
+      WHERE je.entry_id = $1 AND je.tenant_id = $2
+    `, [journalEntryId, tenantId]);
 
     if (entryQuery.rows.length === 0) {
       res.status(404).json({ success: false, error: 'Journal entry not found' });
@@ -212,8 +212,8 @@ export const approveEntry = async (req: TenantRequest, res: Response): Promise<v
     // Get current level details - tenant scoped
     const currentLevel = await client.query(`
       SELECT * FROM approval_levels
-      WHERE workflow_id = $1 AND tenant_id = $2 AND (entity_id IS NULL OR entity_id = $4) AND level_number = $3
-    `, [entry.workflow_id, tenantId, entry.current_approval_level, entityId || null]);
+      WHERE workflow_id = $1 AND tenant_id = $2 AND level_number = $3
+    `, [entry.workflow_id, tenantId, entry.current_approval_level]);
 
     if (currentLevel.rows.length === 0) {
       res.status(400).json({ success: false, error: 'Approval level not found' });
@@ -224,23 +224,23 @@ export const approveEntry = async (req: TenantRequest, res: Response): Promise<v
     // Check if there's a next level
     const nextLevel = await client.query(`
       SELECT * FROM approval_levels
-      WHERE workflow_id = $1 AND tenant_id = $2 AND (entity_id IS NULL OR entity_id = $4) AND level_number = $3
-    `, [entry.workflow_id, tenantId, entry.current_approval_level + 1, entityId || null]);
+      WHERE workflow_id = $1 AND tenant_id = $2 AND level_number = $3
+    `, [entry.workflow_id, tenantId, entry.current_approval_level + 1]);
 
     // Record approval
     await client.query(`
       INSERT INTO approval_history (
-        tenant_id, entity_id, journal_entry_id, workflow_id, level_id, action, comments, performed_by
-      ) VALUES ($1, $2, $3, $4, $5, 'APPROVED', $6, $7)
-    `, [tenantId, entityId || null, journalEntryId, entry.workflow_id, currentLevel.rows[0].id, comments, performedBy]);
+        tenant_id, journal_entry_id, workflow_id, level_id, action, comments, performed_by
+      ) VALUES ($1, $2, $3, $4, 'APPROVED', $5, $6)
+    `, [tenantId, journalEntryId, entry.workflow_id, currentLevel.rows[0].id, comments, performedBy]);
 
     if (nextLevel.rows.length > 0) {
       // Move to next level
       await client.query(`
         UPDATE journal_entries
         SET current_approval_level = $1, updated_at = NOW()
-        WHERE id = $2 AND tenant_id = $3 AND (entity_id IS NULL OR entity_id = $4)
-      `, [entry.current_approval_level + 1, journalEntryId, tenantId, entityId || null]);
+        WHERE id = $2 AND tenant_id = $3
+      `, [entry.current_approval_level + 1, journalEntryId, tenantId]);
 
       await client.query('COMMIT');
 
@@ -260,8 +260,8 @@ export const approveEntry = async (req: TenantRequest, res: Response): Promise<v
             approved_at = NOW(),
             approved_by = $1,
             updated_at = NOW()
-        WHERE id = $2 AND tenant_id = $3 AND (entity_id IS NULL OR entity_id = $4)
-      `, [performedBy, journalEntryId, tenantId, entityId || null]);
+        WHERE id = $2 AND tenant_id = $3
+      `, [performedBy, journalEntryId, tenantId]);
 
       await client.query('COMMIT');
 
@@ -307,8 +307,8 @@ export const rejectEntry = async (req: TenantRequest, res: Response): Promise<vo
     // Get current entry - tenant scoped
     const entryQuery = await client.query(`
       SELECT * FROM journal_entries
-      WHERE id = $1 AND tenant_id = $2 AND (entity_id IS NULL OR entity_id = $3)
-    `, [journalEntryId, tenantId, entityId || null]);
+      WHERE id = $1 AND tenant_id = $2
+    `, [journalEntryId, tenantId]);
 
     if (entryQuery.rows.length === 0) {
       res.status(404).json({ success: false, error: 'Journal entry not found' });
@@ -327,15 +327,15 @@ export const rejectEntry = async (req: TenantRequest, res: Response): Promise<vo
     // Get current level
     const currentLevel = await client.query(`
       SELECT * FROM approval_levels
-      WHERE workflow_id = $1 AND tenant_id = $2 AND (entity_id IS NULL OR entity_id = $4) AND level_number = $3
-    `, [entry.workflow_id, tenantId, entry.current_approval_level, entityId || null]);
+      WHERE workflow_id = $1 AND tenant_id = $2 AND level_number = $3
+    `, [entry.workflow_id, tenantId, entry.current_approval_level]);
 
     // Record rejection
     await client.query(`
       INSERT INTO approval_history (
-        tenant_id, entity_id, journal_entry_id, workflow_id, level_id, action, comments, performed_by
-      ) VALUES ($1, $2, $3, $4, $5, 'REJECTED', $6, $7)
-    `, [tenantId, entityId || null, journalEntryId, entry.workflow_id, currentLevel.rows[0]?.id, comments || reason, performedBy]);
+        tenant_id, journal_entry_id, workflow_id, level_id, action, comments, performed_by
+      ) VALUES ($1, $2, $3, $4, 'REJECTED', $5, $6)
+    `, [tenantId, journalEntryId, entry.workflow_id, currentLevel.rows[0]?.id, comments || reason, performedBy]);
 
     // Update entry status
     await client.query(`
@@ -345,8 +345,8 @@ export const rejectEntry = async (req: TenantRequest, res: Response): Promise<vo
           rejected_by = $1,
           rejection_reason = $2,
           updated_at = NOW()
-      WHERE id = $3 AND tenant_id = $4 AND (entity_id IS NULL OR entity_id = $5)
-    `, [performedBy, comments || reason, journalEntryId, tenantId, entityId || null]);
+      WHERE id = $3 AND tenant_id = $4
+    `, [performedBy, comments || reason, journalEntryId, tenantId]);
 
     await client.query('COMMIT');
 
@@ -386,19 +386,18 @@ export const getPendingApprovals = async (req: TenantRequest, res: Response): Pr
              aw.name as workflow_name
       FROM journal_entries je
       LEFT JOIN approval_workflows aw ON je.workflow_id = aw.id
-      LEFT JOIN approval_levels al ON je.workflow_id = al.workflow_id AND je.current_approval_level = al.level_number AND (al.entity_id IS NULL OR al.entity_id = $4)
+      LEFT JOIN approval_levels al ON je.workflow_id = al.workflow_id AND je.current_approval_level = al.level_number
       WHERE je.tenant_id = $1 
-      AND (je.entity_id IS NULL OR je.entity_id = $4)
       AND je.approval_status = 'PENDING_APPROVAL'
       ORDER BY je.submitted_for_approval_at ASC
       LIMIT $2 OFFSET $3
-    `, [tenantId, parseInt(limit as string), offset, entityId || null]);
+    `, [tenantId, parseInt(limit as string), offset]);
 
     // Get count
     const countResult = await pool.query(`
       SELECT COUNT(*) FROM journal_entries 
-      WHERE tenant_id = $1 AND (entity_id IS NULL OR entity_id = $2) AND approval_status = 'PENDING_APPROVAL'
-    `, [tenantId, entityId || null]);
+      WHERE tenant_id = $1 AND approval_status = 'PENDING_APPROVAL'
+    `, [tenantId]);
 
     res.json({
       success: true,
@@ -432,11 +431,11 @@ export const getApprovalHistory = async (req: TenantRequest, res: Response): Pro
              al.level_name,
              aw.name as workflow_name
       FROM approval_history ah
-      LEFT JOIN approval_levels al ON ah.level_id = al.id AND (al.entity_id IS NULL OR al.entity_id = $3)
-      LEFT JOIN approval_workflows aw ON ah.workflow_id = aw.id AND (aw.entity_id IS NULL OR aw.entity_id = $3)
-      WHERE ah.journal_entry_id = $1 AND ah.tenant_id = $2 AND (ah.entity_id IS NULL OR ah.entity_id = $3)
+      LEFT JOIN approval_levels al ON ah.level_id = al.id
+      LEFT JOIN approval_workflows aw ON ah.workflow_id = aw.id
+      WHERE ah.journal_entry_id = $1 AND ah.tenant_id = $2
       ORDER BY ah.created_at ASC
-    `, [journalEntryId, tenantId, entityId || null]);
+    `, [journalEntryId, tenantId]);
 
     res.json({
       success: true,
@@ -466,13 +465,13 @@ export const getWorkflows = async (req: TenantRequest, res: Response): Promise<v
       SELECT aw.*,
              COUNT(al.id) as level_count
       FROM approval_workflows aw
-      LEFT JOIN approval_levels al ON aw.id = al.workflow_id AND (al.entity_id IS NULL OR al.entity_id = $2)
-      WHERE aw.tenant_id = $1 AND (aw.entity_id IS NULL OR aw.entity_id = $2)
+      LEFT JOIN approval_levels al ON aw.id = al.workflow_id
+      WHERE aw.tenant_id = $1
     `;
-    const values: any[] = [tenantId, entityId || null];
+    const values: any[] = [tenantId];
 
     if (is_active !== undefined) {
-      query += ` AND aw.is_active = $3`;
+      query += ` AND aw.is_active = $2`;
       values.push(is_active === 'true');
     }
 
@@ -502,12 +501,11 @@ export const createWorkflow = async (req: TenantRequest, res: Response): Promise
 
     const result = await pool.query(`
       INSERT INTO approval_workflows (
-        tenant_id, entity_id, name, description, is_active, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6)
+        tenant_id, name, description, is_active, created_by
+      ) VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `, [
       tenantId,
-      entityId || null,
       workflowData.name,
       workflowData.description,
       workflowData.is_active !== false,
@@ -537,9 +535,9 @@ export const getWorkflowLevels = async (req: TenantRequest, res: Response): Prom
 
     const result = await pool.query(`
       SELECT * FROM approval_levels
-      WHERE workflow_id = $1 AND tenant_id = $2 AND (entity_id IS NULL OR entity_id = $3)
+      WHERE workflow_id = $1 AND tenant_id = $2
       ORDER BY level_number ASC
-    `, [workflowId, tenantId, entityId || null]);
+    `, [workflowId, tenantId]);
 
     res.json({
       success: true,
@@ -564,8 +562,8 @@ export const createWorkflowLevel = async (req: TenantRequest, res: Response): Pr
 
     // Verify workflow belongs to tenant
     const workflowCheck = await pool.query(
-      'SELECT id FROM approval_workflows WHERE id = $1 AND tenant_id = $2 AND (entity_id IS NULL OR entity_id = $3)',
-      [workflowId, tenantId, entityId || null]
+      'SELECT id FROM approval_workflows WHERE id = $1 AND tenant_id = $2',
+      [workflowId, tenantId]
     );
 
     if (workflowCheck.rows.length === 0) {
@@ -575,13 +573,12 @@ export const createWorkflowLevel = async (req: TenantRequest, res: Response): Pr
 
     const result = await pool.query(`
       INSERT INTO approval_levels (
-        tenant_id, entity_id, workflow_id, level_number, level_name, 
+        tenant_id, workflow_id, level_number, level_name, 
         approver_role, min_approvers, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `, [
       tenantId,
-      entityId || null,
       workflowId,
       levelData.level_number,
       levelData.level_name,

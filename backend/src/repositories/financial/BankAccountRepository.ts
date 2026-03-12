@@ -33,6 +33,7 @@ export interface BankAccount {
 export class BankAccountRepository extends BaseRepository<BankAccount> {
   protected tableName = 'bank_accounts';
   protected schema = 'financial';
+  protected softDelete = false;
 
   /**
    * Get all active bank accounts

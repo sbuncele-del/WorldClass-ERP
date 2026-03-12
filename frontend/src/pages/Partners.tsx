@@ -53,7 +53,7 @@ const Partners: React.FC = () => {
   ];
 
   return (
-    <WebsiteLayout title="Partner Program — SiyaBusa ERP">
+    <WebsiteLayout title="Partner Program — SiyaBusa ERP" description="Join the SiyaBusa Partner Programme. Technology partners, reseller partners, and accounting firm partners. Earn commissions, get priority support, and grow your business with South Africa's ERP platform." canonical="https://siyabusaerp.co.za/partners">
       <section className="page-hero">
         <div className="container">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
@@ -77,20 +77,7 @@ const Partners: React.FC = () => {
               your business.
             </p>
 
-            <div className="partner-stats">
-              <div className="stat">
-                <span className="stat-number">200+</span>
-                <span className="stat-label">Active Partners</span>
-              </div>
-              <div className="stat">
-                <span className="stat-number">95%</span>
-                <span className="stat-label">Partner Satisfaction</span>
-              </div>
-              <div className="stat">
-                <span className="stat-number">30%</span>
-                <span className="stat-label">Avg. Revenue Growth</span>
-              </div>
-            </div>
+
           </section>
 
           <section className="content-section">
@@ -148,25 +135,7 @@ const Partners: React.FC = () => {
             </div>
           </section>
 
-          <section className="content-section">
-            <h2>Success Stories</h2>
-            <div className="partner-testimonials">
-              <blockquote className="testimonial">
-                <p>
-                  "Partnering with SiyaBusa has transformed our consulting practice. We've 
-                  increased revenue by 40% and our clients love the integrated solution."
-                </p>
-                <cite>— Partner, Johannesburg Consulting Firm</cite>
-              </blockquote>
-              <blockquote className="testimonial">
-                <p>
-                  "The partner program is genuinely collaborative. The team treats us as 
-                  true partners, not just resellers."
-                </p>
-                <cite>— Partner, Cape Town Accounting Practice</cite>
-              </blockquote>
-            </div>
-          </section>
+
 
           <section className="content-section cta-section">
             <h2>Ready to Partner?</h2>

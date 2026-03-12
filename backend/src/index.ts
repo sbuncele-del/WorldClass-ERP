@@ -71,6 +71,8 @@ import deliveryRoutes from './routes/delivery.routes';
 import meetingsRoutes from './routes/meetings.routes';
 import DemoResetService from './services/demo-reset.service';
 import demoRoutes from './routes/demo.routes';
+import contactRoutes from './routes/contact.routes';
+import waitlistRoutes from './routes/waitlist.routes';
 import { initializeLogisticsGateway } from './websocket/logistics.gateway';
 import { securityHeaders, securityLogger } from './middleware/security';
 import { apiLimiter, authLimiter, adminLimiter, webhookLimiter, demoLimiter } from './middleware/rateLimiter';
@@ -1647,6 +1649,8 @@ v1Router.use('/messages', apiLimiter, messagesRoutes); // Driver-Dispatch Messag
 v1Router.use('/delivery', apiLimiter, deliveryRoutes); // Delivery Verification & POD
 v1Router.use('/meetings', apiLimiter, meetingsRoutes); // Video Conferencing (Daily.co)
 v1Router.use('/demo', apiLimiter, demoRoutes); // Demo Lead Capture & Analytics
+v1Router.use('/contact', apiLimiter, contactRoutes); // Website Contact Form
+v1Router.use('/waitlist', apiLimiter, waitlistRoutes); // Founding Member Waitlist
 
 // NEW API ROUTES - December 2025
 v1Router.use('/projects', apiLimiter, projectsRoutes); // Project Management API

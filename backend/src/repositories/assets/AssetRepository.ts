@@ -44,6 +44,7 @@ export interface Asset {
 export class AssetRepository extends BaseRepository<Asset> {
   protected tableName = 'assets';
   protected schema = 'assets';
+  protected softDelete = false;
 
   async getActiveAssets(ctx: TenantContext): Promise<Asset[]> {
     const result = await this.findAll(ctx, { status: 'active' });

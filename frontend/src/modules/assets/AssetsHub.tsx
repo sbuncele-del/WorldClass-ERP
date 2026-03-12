@@ -246,23 +246,8 @@ const DEFAULT_POLICIES: AssetPolicy[] = [
   },
 ];
 
-// Pending policy change requests (static reference data)
-const pendingPolicyChanges = [
-  {
-    id: 'PCR-001',
-    policyId: 'POL-006',
-    category: 'IT Equipment',
-    changeType: 'Useful Life',
-    currentValue: '3 years',
-    proposedValue: '4 years',
-    reason: 'Extended hardware support contracts now available',
-    requestedBy: 'IT Manager',
-    requestDate: '2025-12-05',
-    status: 'pending',
-    approvers: ['Finance Manager', 'CFO'],
-    approvalStatus: [{ name: 'Finance Manager', status: 'approved', date: '2025-12-08' }],
-  },
-];
+// Pending policy change requests - will be populated from API when workflow is implemented
+const pendingPolicyChanges: any[] = [];
 
 const AssetsHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -541,7 +526,7 @@ const AssetsHub: React.FC = () => {
   const handleCategoryChange = (categoryId: string) => {
     const category = categories.find(c => c.category_id === categoryId);
     if (category) {
-      const usefulLifeYears = Math.round((category.default_useful_life_months || 60) / 12);
+      const usefulLifeYears = category.default_useful_life_years || Math.round((category.default_useful_life_months || 60) / 12);
       const method = (category.default_depreciation_method || 'STRAIGHT_LINE').toLowerCase();
 
       addAssetForm.setFieldsValue({
@@ -660,6 +645,31 @@ const AssetsHub: React.FC = () => {
       ),
     },
   ];
+
+  // Build policies from DB categories if available, otherwise fall back to static defaults
+  const activePolicies: AssetPolicy[] = categories.length > 0
+    ? categories.map(cat => {
+        // Try to find matching static policy for IAS 16 reference & SARS rates
+        const staticMatch = DEFAULT_POLICIES.find(p => p.categoryCode === cat.category_code);
+        return {
+          id: String(cat.category_id),
+          category: cat.category_name,
+          categoryCode: cat.category_code || '',
+          usefulLifeYears: cat.default_useful_life_years || 0,
+          residualValuePercent: cat.default_residual_value_percentage || 0,
+          depreciationMethod: (cat.default_depreciation_method || 'straight_line').toLowerCase() as any,
+          componentDepreciation: staticMatch?.componentDepreciation || false,
+          revaluationModel: staticMatch?.revaluationModel || false,
+          reviewFrequency: staticMatch?.reviewFrequency || 'annual',
+          lastReviewDate: staticMatch?.lastReviewDate || '',
+          nextReviewDate: staticMatch?.nextReviewDate || '',
+          approvedBy: staticMatch?.approvedBy || '',
+          status: (cat.is_active !== false ? 'active' : 'superseded') as any,
+          sarsWearAndTear: staticMatch?.sarsWearAndTear,
+          ias16Reference: cat.description || staticMatch?.ias16Reference || 'IAS 16',
+        };
+      })
+    : DEFAULT_POLICIES;
 
   const policyColumns = [
     {
@@ -1138,7 +1148,7 @@ const AssetsHub: React.FC = () => {
               }
             >
               <Table
-                dataSource={DEFAULT_POLICIES}
+                dataSource={activePolicies}
                 columns={policyColumns}
                 rowKey="id"
                 pagination={false}

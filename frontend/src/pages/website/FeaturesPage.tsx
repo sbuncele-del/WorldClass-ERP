@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
@@ -11,12 +11,8 @@ import {
 } from '../LandingPage/LandingPage';
 
 const FeaturesPage: React.FC = () => {
-  useEffect(() => {
-    document.title = 'Features & Modules — SiyaBusa ERP';
-  }, []);
-
   return (
-    <WebsiteLayout title="Features & Modules — SiyaBusa ERP">
+    <WebsiteLayout title="Features & Modules — SiyaBusa ERP" description="Explore 17 integrated ERP modules: Financial Accounting, HR & Payroll, Inventory, Sales & CRM, Manufacturing, Warehouse, Projects, SARS Compliance, and more. Built for South African businesses." canonical="https://siyabusaerp.co.za/features">
       <section className="page-hero">
         <div className="container">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
@@ -30,9 +26,9 @@ const FeaturesPage: React.FC = () => {
         </div>
       </section>
 
-      <ModuleShowcase />
-      <ProjectManagementShowcase />
-      <AdditionalModules />
+      <ModuleShowcase hideHeader />
+      <ProjectManagementShowcase hideHeader />
+      <AdditionalModules hideHeader />
 
       <section className="page-cta">
         <div className="container">

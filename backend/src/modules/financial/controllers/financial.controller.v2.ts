@@ -50,9 +50,9 @@ export const listJournalEntries = async (req: TenantRequest, res: Response) => {
     const offset = (pageNum - 1) * limitNum;
 
     // Build query directly to handle case-insensitive status and COALESCE dates
-    const params: any[] = [ctx.tenantId, ctx.entityId || null];
-    const conditions: string[] = ['tenant_id = $1', '(entity_id IS NULL OR entity_id = $2)'];
-    let paramIndex = 3;
+    const params: any[] = [ctx.tenantId];
+    const conditions: string[] = ['tenant_id = $1'];
+    let paramIndex = 2;
 
     if (status) {
       conditions.push(`LOWER(status) = LOWER($${paramIndex})`);
@@ -240,8 +240,8 @@ async function seedDefaultChartOfAccounts(tenantId: string): Promise<void> {
     await query(
       `INSERT INTO chart_of_accounts (
         tenant_id, code, name, account_type, 
-        normal_balance, is_header, account_level, is_active,
-        allows_manual_entries, is_system_account, currency,
+        normal_balance, is_header, level, is_active,
+        allow_manual_entry, is_system_account, currency_code,
         current_balance
       ) VALUES ($1, $2, $3, $4, $5, $6, 1, true, true, false, 'ZAR', 0)
       ON CONFLICT DO NOTHING`,
@@ -280,8 +280,8 @@ export const createAccount = async (req: TenantRequest, res: Response) => {
 
     // Check for duplicate account code
     const existing = await query(
-      `SELECT 1 FROM chart_of_accounts WHERE tenant_id = $1 AND code = $2 AND (entity_id IS NULL OR entity_id = $3)`,
-      [ctx.tenantId, account_code, ctx.entityId || null]
+      `SELECT 1 FROM chart_of_accounts WHERE tenant_id = $1 AND code = $2`,
+      [ctx.tenantId, account_code]
     );
     if (existing.rows.length > 0) {
       return res.status(400).json({ success: false, message: 'Account code already exists' });
@@ -292,8 +292,8 @@ export const createAccount = async (req: TenantRequest, res: Response) => {
     let parentCode = null;
     if (parent_id) {
       const parent = await query(
-        `SELECT code, level FROM chart_of_accounts WHERE tenant_id = $1 AND id = $2 AND (entity_id IS NULL OR entity_id = $3)`,
-        [ctx.tenantId, parent_id, ctx.entityId || null]
+        `SELECT code, level FROM chart_of_accounts WHERE tenant_id = $1 AND id = $2`,
+        [ctx.tenantId, parent_id]
       );
       if (parent.rows.length > 0) {
         level = parent.rows[0].level + 1;
@@ -317,8 +317,8 @@ export const createAccount = async (req: TenantRequest, res: Response) => {
       `INSERT INTO chart_of_accounts 
         (tenant_id, code, name, account_type, account_category, parent_code, level, is_header, 
          normal_balance, description, current_debit_balance, current_credit_balance, is_active, created_by,
-         account_code, account_name, entity_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 0, true, $12, $2, $3, $13)
+         account_code, account_name)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 0, true, $12, $2, $3)
        RETURNING *`,
       [
         ctx.tenantId,
@@ -332,8 +332,7 @@ export const createAccount = async (req: TenantRequest, res: Response) => {
         normalBal,
         description || null,
         opening_balance || 0,
-        ctx.userId || null,
-        ctx.entityId || null
+        ctx.userId || null
       ]
     );
 
@@ -373,10 +372,10 @@ export const updateAccount = async (req: TenantRequest, res: Response) => {
       return res.status(400).json({ success: false, message: 'No fields to update' });
     }
 
-    values.push(ctx.tenantId, ctx.entityId || null, id);
+    values.push(ctx.tenantId, id);
     const result = await query(
       `UPDATE chart_of_accounts SET ${updates.join(', ')} 
-       WHERE tenant_id = $${paramIndex++} AND (entity_id IS NULL OR entity_id = $${paramIndex++}) AND account_id = $${paramIndex}
+       WHERE tenant_id = $${paramIndex++} AND account_id = $${paramIndex}
        RETURNING *`,
       values
     );
@@ -482,8 +481,8 @@ export const applyCOATemplate = async (req: TenantRequest, res: Response) => {
 
     // Prevent template apply if posted entries exist for tenant
     const postedResult = await client.query(
-      `SELECT COUNT(*) AS count FROM journal_entries WHERE tenant_id = $1 AND (entity_id IS NULL OR entity_id = $2) AND status = 'posted'`,
-      [ctx.tenantId, ctx.entityId || null]
+      `SELECT COUNT(*) AS count FROM journal_entries WHERE tenant_id = $1 AND status = 'posted'`,
+      [ctx.tenantId]
     );
     const postedCount = parseInt(postedResult.rows[0]?.count || '0', 10);
     if (postedCount > 0) {
@@ -496,7 +495,7 @@ export const applyCOATemplate = async (req: TenantRequest, res: Response) => {
     }
 
     // Clear existing accounts for tenant
-    await client.query('DELETE FROM financial.accounts WHERE tenant_id = $1 AND (entity_id IS NULL OR entity_id = $2)', [ctx.tenantId, ctx.entityId || null]);
+    await client.query('DELETE FROM financial.accounts WHERE tenant_id = $1', [ctx.tenantId]);
 
     const parentMap = new Map<string, string>();
     let insertedCount = 0;
@@ -506,8 +505,8 @@ export const applyCOATemplate = async (req: TenantRequest, res: Response) => {
 
       const insertResult = await client.query(
         `INSERT INTO financial.accounts
-         (tenant_id, account_number, name, account_type, parent_id, is_header, is_active, is_system, created_by, entity_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, false, $8, $9)
+         (tenant_id, account_number, name, account_type, parent_id, is_header, is_active, is_system, created_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, false, $8)
          RETURNING id`,
         [
           ctx.tenantId,
@@ -518,7 +517,6 @@ export const applyCOATemplate = async (req: TenantRequest, res: Response) => {
           account.is_header || false,
           account.is_active !== false,
           ctx.userId || null,
-          ctx.entityId || null,
         ]
       );
 
@@ -666,12 +664,12 @@ export const getFiscalYears = async (req: TenantRequest, res: Response) => {
         COUNT(*) AS entry_count,
         CASE WHEN EXTRACT(YEAR FROM entry_date) = EXTRACT(YEAR FROM CURRENT_DATE) THEN true ELSE false END AS is_current
       FROM journal_entries
-      WHERE tenant_id = $1 AND (entity_id IS NULL OR entity_id = $2) AND status = 'posted'
+      WHERE tenant_id = $1 AND status = 'posted'
       GROUP BY EXTRACT(YEAR FROM entry_date)
       ORDER BY fiscal_year DESC
     `;
 
-    const result = await query(fiscalQuery, [ctx.tenantId, ctx.entityId || null]);
+    const result = await query(fiscalQuery, [ctx.tenantId]);
     res.json({ success: true, data: result.rows, count: result.rowCount });
   } catch (error) {
     console.error('Error fetching fiscal years:', error);
@@ -684,8 +682,8 @@ export const getFiscalPeriods = async (req: TenantRequest, res: Response) => {
     const ctx = getTenantContext(req);
     const { year } = req.query;
 
-    const params: any[] = [ctx.tenantId, ctx.entityId || null];
-    let idx = 3;
+    const params: any[] = [ctx.tenantId];
+    let idx = 2;
     let periodQuery = `
       SELECT 
         EXTRACT(YEAR FROM journal_date)::INTEGER AS fiscal_year,
@@ -696,7 +694,7 @@ export const getFiscalPeriods = async (req: TenantRequest, res: Response) => {
         COUNT(*) AS entry_count,
         'OPEN' AS status
       FROM journal_entries
-      WHERE tenant_id = $1 AND (entity_id IS NULL OR entity_id = $2) AND status = 'posted'
+      WHERE tenant_id = $1 AND status = 'posted'
     `;
 
     if (year) {
@@ -738,10 +736,9 @@ export const getCashFlowStatement = async (req: TenantRequest, res: Response) =>
         SUM(jel.credit_amount) AS credit_amount,
         SUM(jel.credit_amount - jel.debit_amount) AS net_amount
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id AND (jel.entity_id IS NULL OR jel.entity_id = $4)
-      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id AND (coa.entity_id IS NULL OR coa.entity_id = $4)
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
       WHERE je.tenant_id = $1
-        AND (je.entity_id IS NULL OR je.entity_id = $4)
         AND LOWER(je.status) = 'posted'
         AND COALESCE(je.journal_date, je.entry_date, je.posting_date) BETWEEN $2 AND $3
         AND LOWER(coa.account_type) IN ('revenue', 'expense')
@@ -757,10 +754,9 @@ export const getCashFlowStatement = async (req: TenantRequest, res: Response) =>
         SUM(jel.credit_amount) AS credit_amount,
         SUM(jel.debit_amount - jel.credit_amount) AS net_amount
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id AND (jel.entity_id IS NULL OR jel.entity_id = $4)
-      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id AND (coa.entity_id IS NULL OR coa.entity_id = $4)
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
       WHERE je.tenant_id = $1
-        AND (je.entity_id IS NULL OR je.entity_id = $4)
         AND LOWER(je.status) = 'posted'
         AND COALESCE(je.journal_date, je.entry_date, je.posting_date) BETWEEN $2 AND $3
         AND LOWER(coa.account_type) = 'asset'
@@ -777,10 +773,9 @@ export const getCashFlowStatement = async (req: TenantRequest, res: Response) =>
         SUM(jel.credit_amount) AS credit_amount,
         SUM(jel.credit_amount - jel.debit_amount) AS net_amount
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id AND (jel.entity_id IS NULL OR jel.entity_id = $4)
-      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id AND (coa.entity_id IS NULL OR coa.entity_id = $4)
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
       WHERE je.tenant_id = $1
-        AND (je.entity_id IS NULL OR je.entity_id = $4)
         AND LOWER(je.status) = 'posted'
         AND COALESCE(je.journal_date, je.entry_date, je.posting_date) BETWEEN $2 AND $3
         AND LOWER(coa.account_type) IN ('liability', 'equity')
@@ -789,9 +784,9 @@ export const getCashFlowStatement = async (req: TenantRequest, res: Response) =>
     `;
 
     const [operatingResult, investingResult, financingResult] = await Promise.all([
-      query(operatingQuery, [ctx.tenantId, fromDate, toDate, ctx.entityId || null]),
-      query(investingQuery, [ctx.tenantId, fromDate, toDate, ctx.entityId || null]),
-      query(financingQuery, [ctx.tenantId, fromDate, toDate, ctx.entityId || null])
+      query(operatingQuery, [ctx.tenantId, fromDate, toDate]),
+      query(investingQuery, [ctx.tenantId, fromDate, toDate]),
+      query(financingQuery, [ctx.tenantId, fromDate, toDate])
     ]);
 
     const operatingTotal = operatingResult.rows.reduce((sum, row) => sum + parseFloat(row.net_amount || 0), 0);
@@ -834,10 +829,9 @@ export const getIncomeStatement = async (req: TenantRequest, res: Response) => {
         SUM(jel.debit_amount) AS debits,
         SUM(jel.credit_amount - jel.debit_amount) AS balance
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id AND (jel.entity_id IS NULL OR jel.entity_id = $4)
-      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id AND (coa.entity_id IS NULL OR coa.entity_id = $4)
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
       WHERE je.tenant_id = $1
-        AND (je.entity_id IS NULL OR je.entity_id = $4)
         AND LOWER(je.status) = 'posted'
         AND COALESCE(je.journal_date, je.entry_date, je.posting_date) BETWEEN $2 AND $3
         AND LOWER(coa.account_type) = 'revenue'
@@ -854,10 +848,9 @@ export const getIncomeStatement = async (req: TenantRequest, res: Response) => {
         SUM(jel.credit_amount) AS credits,
         SUM(jel.debit_amount - jel.credit_amount) AS balance
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id AND (jel.entity_id IS NULL OR jel.entity_id = $4)
-      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id AND (coa.entity_id IS NULL OR coa.entity_id = $4)
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
       WHERE je.tenant_id = $1
-        AND (je.entity_id IS NULL OR je.entity_id = $4)
         AND LOWER(je.status) = 'posted'
         AND COALESCE(je.journal_date, je.entry_date, je.posting_date) BETWEEN $2 AND $3
         AND LOWER(coa.account_type) = 'expense'
@@ -866,8 +859,8 @@ export const getIncomeStatement = async (req: TenantRequest, res: Response) => {
     `;
 
     const [revenueResult, expenseResult] = await Promise.all([
-      query(revenueQuery, [ctx.tenantId, fromDate, toDate, ctx.entityId || null]),
-      query(expenseQuery, [ctx.tenantId, fromDate, toDate, ctx.entityId || null])
+      query(revenueQuery, [ctx.tenantId, fromDate, toDate]),
+      query(expenseQuery, [ctx.tenantId, fromDate, toDate])
     ]);
 
     const totalRevenue = revenueResult.rows.reduce((sum: number, r: any) => sum + parseFloat(r.balance || 0), 0);
@@ -939,20 +932,18 @@ export const getBalanceSheet = async (req: TenantRequest, res: Response) => {
           ELSE SUM(jel.credit_amount - jel.debit_amount)
         END AS balance
       FROM chart_of_accounts coa
-      LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id AND jel.tenant_id = $1 AND (jel.entity_id IS NULL OR jel.entity_id = $3)
+      LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id AND jel.tenant_id = $1
       LEFT JOIN journal_entries je ON je.id = jel.journal_entry_id 
         AND LOWER(je.status) = 'posted' 
-        AND (je.entity_id IS NULL OR je.entity_id = $3)
         AND COALESCE(je.journal_date, je.entry_date, je.posting_date) <= $2
       WHERE coa.tenant_id = $1 
-        AND (coa.entity_id IS NULL OR coa.entity_id = $3)
         AND LOWER(coa.account_type) IN ('asset', 'liability', 'equity')
       GROUP BY coa.code, coa.account_code, coa.name, coa.account_name, coa.account_type, coa.account_category
       HAVING SUM(COALESCE(jel.debit_amount, 0)) != 0 OR SUM(COALESCE(jel.credit_amount, 0)) != 0
       ORDER BY coa.code
     `;
 
-    const result = await query(balanceQuery, [ctx.tenantId, asOfDate, ctx.entityId || null]);
+    const result = await query(balanceQuery, [ctx.tenantId, asOfDate]);
     const rows = result.rows;
 
     const assets = rows.filter((r: any) => r.account_type === 'asset');
@@ -969,15 +960,14 @@ export const getBalanceSheet = async (req: TenantRequest, res: Response) => {
         COALESCE(SUM(CASE WHEN LOWER(coa.account_type) = 'revenue' THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) AS total_revenue,
         COALESCE(SUM(CASE WHEN LOWER(coa.account_type) = 'expense' THEN jel.debit_amount - jel.credit_amount ELSE 0 END), 0) AS total_expenses
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id AND (jel.entity_id IS NULL OR jel.entity_id = $3)
-      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id AND (coa.entity_id IS NULL OR coa.entity_id = $3)
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
       WHERE je.tenant_id = $1
-        AND (je.entity_id IS NULL OR je.entity_id = $3)
         AND LOWER(je.status) = 'posted'
         AND COALESCE(je.journal_date, je.entry_date, je.posting_date) <= $2
         AND LOWER(coa.account_type) IN ('revenue', 'expense')
     `;
-    const reResult = await query(retainedEarningsQuery, [ctx.tenantId, asOfDate, ctx.entityId || null]);
+    const reResult = await query(retainedEarningsQuery, [ctx.tenantId, asOfDate]);
     const retainedEarnings = parseFloat(reResult.rows[0]?.total_revenue || 0) - parseFloat(reResult.rows[0]?.total_expenses || 0);
 
     const totalEquityWithRE = totalEquity + retainedEarnings;

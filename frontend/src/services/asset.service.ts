@@ -44,8 +44,12 @@ export interface AssetCategory {
   category_code: string;
   category_name: string;
   description?: string;
+  default_useful_life_years?: number;
   default_useful_life_months?: number;
   default_depreciation_method?: string;
+  default_residual_value_percentage?: number;
+  minimum_capitalization_amount?: number;
+  is_active?: boolean;
   asset_count?: number | string;
   created_at?: string;
 }

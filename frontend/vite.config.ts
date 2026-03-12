@@ -32,14 +32,10 @@ export default defineConfig({
         },
       },
     },
-    // Minification settings
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.log in production
-        drop_debugger: true,
-      },
-    },
+    // Minification settings - use esbuild (faster, less memory than terser)
+    minify: 'esbuild',
+    // Skip gzip size reporting to save memory during build
+    reportCompressedSize: false,
   },
   // Force single React instance to prevent hooks errors
   resolve: {

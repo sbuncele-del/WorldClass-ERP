@@ -7,7 +7,7 @@ import './FooterPages.css';
 
 const Support: React.FC = () => {
   return (
-    <WebsiteLayout title="Support Center — SiyaBusa ERP">
+    <WebsiteLayout title="Support Center — SiyaBusa ERP" description="Get help with SiyaBusa ERP. Knowledge base, live chat, email support, video tutorials, and onboarding assistance. Our South African support team is here for you." canonical="https://siyabusaerp.co.za/support">
       <section className="page-hero">
         <div className="container">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
@@ -29,32 +29,32 @@ const Support: React.FC = () => {
                 <h2>Live Chat</h2>
                 <p>Get instant help from our support team during business hours.</p>
                 <p className="availability">Mon-Fri, 8:00 - 17:00 SAST</p>
-                <button className="btn-primary">Start Chat</button>
+                <a href="mailto:support@siyabusaerp.co.za?subject=Support%20Request" className="btn-primary">Email Support</a>
               </div>
 
               <div className="support-card">
                 <Mail size={32} style={{ color: 'var(--accent-teal, #00D4AA)', marginBottom: '0.75rem' }} />
                 <h2>Email Support</h2>
                 <p>Send us a detailed message and we'll respond within 24 hours.</p>
-                <a href="mailto:hello@siyabusaerp.co.za" className="btn-secondary">
-                  hello@siyabusaerp.co.za
+                <a href="mailto:support@siyabusaerp.co.za" className="btn-secondary">
+                  support@siyabusaerp.co.za
                 </a>
               </div>
 
               <div className="support-card">
                 <BookOpen size={32} style={{ color: 'var(--accent-teal, #00D4AA)', marginBottom: '0.75rem' }} />
-                <h2>Documentation</h2>
-                <p>Browse our comprehensive guides, tutorials, and FAQs.</p>
-                <Link to="/documentation" className="btn-secondary">
-                  Browse Docs
-                </Link>
+                <h2>Knowledge Base</h2>
+                <p>Browse our frequently asked questions and guides below.</p>
+                <a href="#faq" className="btn-secondary">
+                  Browse FAQs
+                </a>
               </div>
 
               <div className="support-card">
                 <GraduationCap size={32} style={{ color: 'var(--accent-teal, #00D4AA)', marginBottom: '0.75rem' }} />
                 <h2>Training</h2>
                 <p>Schedule a training session for you and your team.</p>
-                <a href="mailto:hello@siyabusaerp.co.za" className="btn-secondary">
+                <a href="mailto:support@siyabusaerp.co.za" className="btn-secondary">
                   Request Training
                 </a>
               </div>
@@ -63,7 +63,7 @@ const Support: React.FC = () => {
 
           <section className="content-section">
             <h2>Frequently Asked Questions</h2>
-            <div className="faq-list">
+            <div className="faq-list" id="faq">
               <details className="faq-item">
                 <summary>How do I reset my password?</summary>
                 <p>
@@ -192,7 +192,7 @@ const Support: React.FC = () => {
             <h2>Still Need Help?</h2>
             <p>Our team is ready to assist you with any questions or issues.</p>
             <div className="cta-buttons">
-              <a href="mailto:hello@siyabusaerp.co.za" className="btn-primary">Email Support</a>
+              <a href="mailto:support@siyabusaerp.co.za" className="btn-primary">Email Support</a>
               <Link to="/contact" className="btn-secondary">Contact Us</Link>
             </div>
           </section>

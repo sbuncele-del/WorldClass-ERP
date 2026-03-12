@@ -11,7 +11,7 @@ const SecurityIconWrapper: React.FC<{ children: React.ReactNode }> = ({ children
 
 const Security: React.FC = () => {
   return (
-    <WebsiteLayout title="Security — SiyaBusa ERP">
+    <WebsiteLayout title="Security — SiyaBusa ERP" description="Enterprise-grade security for your business data. AES-256 encryption, SOC 2 practices, POPIA compliance, role-based access control, and 99.9% uptime SLA. Your data is safe with SiyaBusa." canonical="https://siyabusaerp.co.za/security">
       <section className="page-hero">
         <div className="container">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
@@ -44,9 +44,9 @@ const Security: React.FC = () => {
               <div className="security-content">
                 <h3>Cloud Hosting</h3>
                 <p>
-                  SiyaBusa is hosted on Amazon Web Services (AWS), leveraging their world-class 
-                  infrastructure. AWS data centers maintain numerous compliance certifications 
-                  including ISO 27001, SOC 1/2/3, and PCI DSS Level 1.
+                  SiyaBusa is hosted on dedicated infrastructure in Johannesburg, South Africa — 
+                  meaning your data stays local. Our hosting provider maintains enterprise-grade 
+                  data centre security, redundant power, and 24/7 physical security.
                 </p>
               </div>
             </div>
@@ -56,10 +56,9 @@ const Security: React.FC = () => {
               <div className="security-content">
                 <h3>Data Residency</h3>
                 <p>
-                  We offer data residency options to meet your compliance requirements. Primary 
-                  hosting is available in South Africa (via AWS Cape Town region) and European 
-                  data centers. Your data never leaves the region you choose without your 
-                  explicit consent.
+                  Your data is hosted in Johannesburg, South Africa and never leaves the country 
+                  without your explicit consent. This ensures full compliance with POPIA data 
+                  residency requirements and keeps latency low for South African businesses.
                 </p>
               </div>
             </div>
@@ -255,7 +254,7 @@ const Security: React.FC = () => {
               potential vulnerabilities. If you discover a security issue:
             </p>
             <div className="info-block">
-              <p><strong>Email:</strong> <a href="mailto:hello@siyabusaerp.co.za">hello@siyabusaerp.co.za</a></p>
+              <p><strong>Email:</strong> <a href="mailto:support@siyabusaerp.co.za">support@siyabusaerp.co.za</a></p>
               <p><strong>PGP Key:</strong> Available upon request</p>
             </div>
             <p>
@@ -292,7 +291,7 @@ const Security: React.FC = () => {
               compliance information.
             </p>
             <div className="cta-buttons">
-              <a href="mailto:hello@siyabusaerp.co.za" className="btn-primary">Contact Security Team</a>
+              <a href="mailto:support@siyabusaerp.co.za" className="btn-primary">Contact Security Team</a>
               <Link to="/privacy" className="btn-secondary">View Privacy Policy</Link>
             </div>
           </section>

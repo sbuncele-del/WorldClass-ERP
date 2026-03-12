@@ -1607,6 +1607,31 @@ export const searchKnowledgeBase = async (req: TenantRequest, res: Response) => 
   }
 };
 
+/**
+ * Confirm a pending AI tool action (write operation)
+ */
+export const confirmToolAction = async (req: TenantRequest, res: Response) => {
+  try {
+    const { tenantId, userId } = getTenantContext(req);
+    const { action_id } = req.body;
+
+    if (!action_id) {
+      return res.status(400).json({ success: false, error: 'action_id is required' });
+    }
+
+    const { confirmAction } = require('../services/ai-tools/tool-executor');
+    const result = await confirmAction(action_id);
+
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      return res.status(401).json({ success: false, error: 'Unauthorized - tenant not found' });
+    }
+    console.error('Confirm tool action error:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to confirm action' });
+  }
+};
+
 export default {
   getAgents,
   getAgent,
@@ -1631,5 +1656,6 @@ export default {
   getFAQs,
   getAIAnalytics,
   getKnowledgeBase,
-  searchKnowledgeBase
+  searchKnowledgeBase,
+  confirmToolAction
 };

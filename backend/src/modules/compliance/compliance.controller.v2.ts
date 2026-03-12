@@ -126,37 +126,30 @@ export const createComplianceRequirement = async (req: TenantRequest, res: Respo
 export const getComplianceFilings = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
-    const { requirement_id, status, year, page = '1', limit = '50' } = req.query;
+    const { status, year, page = '1', limit = '50' } = req.query;
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
     let query = `
-      SELECT f.*, r.name as requirement_name
-      FROM compliance.filings f
-      LEFT JOIN compliance.requirements r ON f.requirement_id = r.id
-      WHERE f.tenant_id = $1
+      SELECT *
+      FROM regulatory_filings
+      WHERE tenant_id = $1
     `;
     const values: any[] = [tenantId];
     let paramCount = 2;
 
-    if (requirement_id) {
-      query += ` AND f.requirement_id = $${paramCount}`;
-      values.push(requirement_id);
-      paramCount++;
-    }
-
     if (status) {
-      query += ` AND f.status = $${paramCount}`;
+      query += ` AND status = $${paramCount}`;
       values.push(status);
       paramCount++;
     }
 
     if (year) {
-      query += ` AND EXTRACT(YEAR FROM f.filing_date) = $${paramCount}`;
+      query += ` AND EXTRACT(YEAR FROM due_date) = $${paramCount}`;
       values.push(year);
       paramCount++;
     }
 
-    query += ` ORDER BY f.filing_date DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    query += ` ORDER BY due_date DESC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     values.push(parseInt(limit as string), offset);
 
     const result = await pool.query(query, values);
@@ -176,21 +169,20 @@ export const createFiling = async (req: TenantRequest, res: Response) => {
     const filingData = req.body;
 
     const result = await pool.query(
-      `INSERT INTO compliance.filings (
-        tenant_id, requirement_id, filing_date, period_start, period_end,
-        status, submission_reference, notes, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO regulatory_filings (
+        tenant_id, filing_type, name, authority, period,
+        due_date, status, reference
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *`,
       [
         tenantId,
-        filingData.requirement_id,
-        filingData.filing_date,
-        filingData.period_start,
-        filingData.period_end,
+        filingData.filing_type,
+        filingData.name,
+        filingData.authority,
+        filingData.period,
+        filingData.due_date,
         filingData.status || 'DRAFT',
-        filingData.submission_reference,
-        filingData.notes,
-        userId
+        filingData.reference
       ]
     );
 

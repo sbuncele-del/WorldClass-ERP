@@ -28,6 +28,7 @@ export interface AssetCategory {
 export class AssetCategoryRepository extends BaseRepository<AssetCategory> {
   protected tableName = 'categories';
   protected schema = 'assets';
+  protected softDelete = false;
 
   async getActiveCategories(ctx: TenantContext): Promise<AssetCategory[]> {
     const result = await this.findAll(ctx, { is_active: true });

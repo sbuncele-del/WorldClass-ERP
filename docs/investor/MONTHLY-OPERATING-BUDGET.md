@@ -1,317 +1,155 @@
-# SiyaBusa ERP - Monthly Operating Budget
+# SiyaBusa ERP - Real Monthly Operating Budget
 
-## Year 1 Operating Budget (2026)
-
-### Starting: January 2, 2026 (Thursday)
+## March 2026 — Actual Costs
 
 ---
 
-## Summary
+## What We're Actually Paying Right Now
 
-| Category | Monthly | Annual | % of Total |
-|----------|---------|--------|------------|
-| **Personnel** | R195,000 | R2,340,000 | 47% |
-| **Infrastructure** | R85,000 | R1,020,000 | 20% |
-| **Sales & Marketing** | R105,000 | R1,260,000 | 25% |
-| **Operations** | R40,000 | R480,000 | 10% |
-| **Total** | **R425,000** | **R5,100,000** | 100% |
+### Infrastructure (R130/month)
 
-**Seed Funding**: R5,000,000  
-**Burn Rate**: R425,000/month  
-**Runway**: 11-12 months (breakeven target: Month 18)
+| Service | Plan | Monthly | Notes |
+|:--------|:-----|--------:|:------|
+| **Vultr VPS** | 2GB RAM, 1 vCPU, 55GB SSD (JHB) | R115 | Runs everything: Node.js, PostgreSQL, Redis, Nginx |
+| **Domain** | siyabusaerp.co.za | R15 | ~R180/year |
+| **SSL (Let's Encrypt)** | Auto-renew | R0 | Free |
+| **Subtotal** | | **R130** | |
 
----
+### SaaS Services (R340/month currently)
 
-## Detailed Monthly Budget
+| Service | Plan | Monthly | Notes |
+|:--------|:-----|--------:|:------|
+| **GitHub** | Pro/Team | R190 | Code hosting, CI/CD, Codespaces |
+| **Resend** | Free tier | R0 | 3,000 emails/month — enough for now |
+| **Daily.co** | Free tier | R0 | 2,000 participant minutes/month |
+| **AI (Groq)** | Free tier | R0 | Llama 3 — fast, free, good quality |
+| **Codespace** | Monthly usage | R150 | Dev environment (varies) |
+| **Subtotal** | | **R340** | |
 
-### 1. PERSONNEL COSTS (R195,000/month)
-
-| Role | Salary | Benefits | Total | Start Month |
-|------|--------|----------|-------|-------------|
-| **Founder/CEO** | R35,000 | R5,000 | R40,000 | Month 1 |
-| **CTO/Tech Lead** | R55,000 | R10,000 | R65,000 | Month 1 |
-| **Sales Manager** | R45,000 | R10,000 | R55,000 | Month 2 |
-| **Customer Success** | R25,000 | R10,000 | R35,000 | Month 4 |
-| **Contractors/Freelance** | - | - | R15,000 | Month 1 |
-
-**Personnel Notes:**
-- Benefits include: Medical aid, UIF, SDL, provident fund
-- Contractor budget for: Content writer, graphic designer, part-time accountant
-- Month 1-2: 2 people (Founder + CTO) = R105K/month
-- Month 2-4: 3 people (+ Sales Manager) = R160K/month
-- Month 4+: 4 people (+ Customer Success) = R195K/month
+### Current Total: R470/month
 
 ---
 
-### 2. INFRASTRUCTURE & HOSTING (R85,000/month)
+## Phase 1 Budget — First 10 Customers (1–100 users)
 
-| Item | Monthly Cost | Annual | Notes |
-|------|--------------|--------|-------|
-| **AWS Hosting** | R45,000 | R540,000 | EC2, RDS, S3, CloudFront |
-| **Development Tools** | R12,000 | R144,000 | GitHub, VS Code, Postman, etc. |
-| **SaaS Subscriptions** | R15,000 | R180,000 | Slack, Notion, Calendly, etc. |
-| **Security & Compliance** | R8,000 | R96,000 | SSL, penetration testing |
-| **Backup & DR** | R5,000 | R60,000 | Backups, disaster recovery |
+When we start getting paying customers, these services need upgrading:
 
-**Infrastructure Details:**
+| Service | Plan | Monthly | When |
+|:--------|:-----|--------:|:-----|
+| **Vultr VPS** | 4GB RAM, 2 vCPU, 80GB SSD | R230 | At 20+ users |
+| **Vultr Auto-Backup** | Weekly snapshots | R45 | Immediately (data safety) |
+| **Domain** | siyabusaerp.co.za | R15 | Ongoing |
+| **GitHub** | Team | R190 | Ongoing |
+| **Resend** | Pro (50K emails) | R380 | At 20+ users |
+| **Daily.co** | Free → Scale when needed | R0–550 | When video usage grows |
+| **Claude API (Haiku 3.5)** | Pay-as-you-go | R95–190 | Optional — Groq is free |
+| **Codespace** | Dev environment | R150 | Ongoing |
+| **Subtotal** | | **R1,105–R1,750** | |
 
-**AWS Breakdown:**
-- EC2 instances (production + staging): R20,000
-- RDS PostgreSQL: R15,000
-- S3 storage: R3,000
-- CloudFront CDN: R3,000
-- Backups & snapshots: R2,000
-- Data transfer: R2,000
+### Revenue vs Cost (Phase 1)
 
-**Development Tools:**
-- GitHub Enterprise: R3,000
-- Postman Team: R1,500
-- Figma Professional: R1,500
-- Sentry (error tracking): R1,500
-- DataDog (monitoring): R2,500
-- Auth0 (if using): R2,000
-
-**SaaS Subscriptions:**
-- Slack Business: R2,500
-- Notion Team: R1,000
-- Google Workspace: R1,500
-- Calendly Professional: R500
-- Zoom Business: R1,000
-- HubSpot CRM: R3,000
-- Mailchimp/SendGrid: R1,500
-- DocuSign: R1,000
-- 1Password Teams: R500
-- Buffer/Hootsuite: R1,000
-- Other misc: R2,000
+| Customers | Users | MRR | Infra Cost | Profit |
+|:----------|:------|:----|:-----------|:-------|
+| 1 (founding) | 10 | R1,499 | R470 | R1,029 |
+| 3 (founding) | 30 | R4,497 | R1,200 | R3,297 |
+| 5 (founding) | 50 | R7,495 | R1,400 | R6,095 |
+| 10 (mixed) | 80 | R12,000 | R1,750 | R10,250 |
 
 ---
 
-### 3. SALES & MARKETING (R105,000/month)
+## Phase 2 Budget — Growth (100–500 users)
 
-| Category | Monthly | Annual | Notes |
-|----------|---------|--------|-------|
-| **Digital Marketing** | R35,000 | R420,000 | Google Ads, LinkedIn Ads |
-| **Events & Trade Shows** | R25,000 | R300,000 | 2 events per quarter |
-| **Content Marketing** | R15,000 | R180,000 | Blog, case studies, videos |
-| **Lead Generation Tools** | R8,000 | R96,000 | LinkedIn Sales Nav, etc. |
-| **Brand & Creative** | R12,000 | R144,000 | Design, video, photography |
-| **PR & Communications** | R10,000 | R120,000 | Press releases, media |
+| Service | Plan | Monthly | Notes |
+|:--------|:-----|--------:|:------|
+| **Vultr VPS** | 8GB RAM, 4 vCPU, 160GB | R760 | Handles 200+ concurrent |
+| **Vultr Managed DB** | PostgreSQL dedicated | R570 | Separate DB for reliability |
+| **Vultr Auto-Backup** | Daily snapshots | R150 | Critical data protection |
+| **Domain + SSL** | Same | R15 | |
+| **GitHub** | Team | R190 | |
+| **Resend** | Business (100K emails) | R950 | Scale with users |
+| **Daily.co** | Scale plan | R550 | $29/mo |
+| **Claude API (Haiku)** | Pay-as-you-go | R475 | ~13K queries/month |
+| **Monitoring** | Uptime Robot or similar | R0–100 | Free tier available |
+| **Codespace** | Dev environment | R150 | |
+| **Subtotal** | | **~R3,910** | |
 
-**Marketing Details:**
+### Revenue vs Cost (Phase 2)
 
-**Digital Marketing (R35,000):**
-- LinkedIn Ads: R20,000 (primary channel)
-- Google Ads: R10,000 (search + display)
-- Retargeting: R3,000
-- A/B testing tools: R2,000
-
-**Events (R25,000 avg, lumpy):**
-- Mining Indaba (Feb): R50,000
-- AfricaCom (Nov): R40,000
-- Industry conferences (4x): R120,000
-- Local meetups/workshops (monthly): R90,000
-- = R300K annual / 12 = R25K monthly avg
-
-**Content (R15,000):**
-- Freelance writers: R6,000
-- Video production: R5,000
-- Graphic design: R2,500
-- Stock photos/assets: R1,500
-
-**Lead Gen Tools (R8,000):**
-- LinkedIn Sales Navigator: R4,000
-- Hunter.io / Apollo: R1,500
-- Clearbit / ZoomInfo: R2,500
+| Customers | Users | MRR | Infra Cost | Profit |
+|:----------|:------|:----|:-----------|:-------|
+| 15 | 150 | R44,850 | R3,500 | R41,350 |
+| 25 | 250 | R74,750 | R3,910 | R70,840 |
+| 50 | 500 | R149,500 | R4,500 | R145,000 |
 
 ---
 
-### 4. OPERATIONS & ADMIN (R40,000/month)
+## Phase 3 Budget — Scale (500+ users)
 
-| Category | Monthly | Annual | Notes |
-|----------|---------|--------|-------|
-| **Office & Equipment** | R12,000 | R144,000 | Laptops, monitors, etc. |
-| **Legal & Compliance** | R10,000 | R120,000 | Lawyer retainer, docs |
-| **Accounting & Bookkeeping** | R6,000 | R72,000 | Part-time accountant |
-| **Insurance** | R5,000 | R60,000 | Business, E&O, cyber |
-| **Travel & Meetings** | R4,000 | R48,000 | Client meetings, etc. |
-| **Misc & Contingency** | R3,000 | R36,000 | Buffer for unexpected |
+| Service | Plan | Monthly | Notes |
+|:--------|:-----|--------:|:------|
+| **Vultr/Cloud** | Multiple VPS or cluster | R3,000+ | Load balanced |
+| **Managed PostgreSQL** | High-availability | R2,000 | Primary + replica |
+| **Redis Managed** | Dedicated | R380 | Session cache + queues |
+| **Resend** | Enterprise | R1,900 | 500K+ emails |
+| **Daily.co** | Business | R1,900 | Unlimited |
+| **Claude API** | Higher usage | R1,900 | Premium model if needed |
+| **CDN** | Vultr/Cloudflare | R0–500 | Static assets |
+| **Backups** | Geo-redundant | R500 | Cross-region |
+| **Monitoring** | Paid (Sentry/similar) | R500 | Error tracking |
+| **Subtotal** | | **~R12,580** | |
 
-**Operations Details:**
-
-**Office & Equipment (R12,000):**
-- MacBooks/laptops: R60K (one-time), depreciate over 12 months = R5K/mo
-- Monitors, keyboards, etc.: R24K/year = R2K/mo
-- Office furniture (co-working): R18K/year = R1.5K/mo
-- Internet & mobile: R3K/mo
-- Misc equipment: R500/mo
-
-**Legal (R10,000):**
-- Lawyer retainer: R5,000/mo
-- SAFE agreements: R10K (one-time, Month 1)
-- Terms & conditions: R8K (one-time, Month 1)
-- Employment contracts: R5K (Month 1-2)
-- Trademark filing: R12K (Month 2)
-- Ongoing legal: R5K/mo from Month 3
-
-**Accounting (R6,000):**
-- Part-time bookkeeper: R4,000/mo
-- Accounting software (Xero): R1,000/mo
-- Year-end audit prep: R12K (Month 12)
+At this point, 500+ users at R299/user = R149,500+ MRR. Infra is <10% of revenue.
 
 ---
 
-## Quarterly Breakdown
+## AI Provider Strategy
 
-### Q1 2026 (January - March)
+Priority order (already coded in ai-agent.service.ts):
 
-| Month | Personnel | Infrastructure | Sales/Marketing | Operations | **Total** |
-|-------|-----------|----------------|----------------|------------|----------|
-| **Jan** | R105,000 | R85,000 | R105,000 | R60,000 | **R355,000** |
-| **Feb** | R160,000 | R85,000 | R155,000 | R45,000 | **R445,000** |
-| **Mar** | R160,000 | R85,000 | R105,000 | R40,000 | **R390,000** |
-| **Q1 Total** | **R425,000** | **R255,000** | **R365,000** | **R145,000** | **R1,190,000** |
+| Priority | Provider | Cost | Best For |
+|:---------|:---------|:-----|:---------|
+| 1st | **Groq** (Llama 3) | FREE | Day-to-day queries, reports, lookups |
+| 2nd | **Claude Haiku 3.5** | ~R95–190/mo | Better quality when Groq isn't enough |
+| 3rd | **Claude Sonnet 4** | ~R475–950/mo | Complex analysis, financial insights |
+| Fallback | **OpenAI GPT-4** | ~R950+/mo | Alternative if Anthropic has issues |
 
-**Q1 Notes:**
-- Jan: High operations (legal, setup costs)
-- Feb: Mining Indaba (R50K event spend)
-- CTO hired Month 1, Sales Manager Month 2
+**Recommendation:** Start with Groq (free). Add Claude Haiku when customers request better AI quality.
 
-### Q2 2026 (April - June)
+### Claude API Credits Reference
 
-| Month | Personnel | Infrastructure | Sales/Marketing | Operations | **Total** |
-|-------|-----------|----------------|----------------|------------|----------|
-| **Apr** | R195,000 | R85,000 | R105,000 | R40,000 | **R425,000** |
-| **May** | R195,000 | R85,000 | R105,000 | R40,000 | **R425,000** |
-| **Jun** | R195,000 | R85,000 | R105,000 | R40,000 | **R425,000** |
-| **Q2 Total** | **R585,000** | **R255,000** | **R315,000** | **R120,000** | **R1,275,000** |
-
-**Q2 Notes:**
-- Customer Success hired Month 4 (April)
-- Full team operational
-- Steady-state burn rate
-
-### Q3 2026 (July - September)
-
-| Month | Personnel | Infrastructure | Sales/Marketing | Operations | **Total** |
-|-------|-----------|----------------|----------------|------------|----------|
-| **Jul** | R195,000 | R85,000 | R105,000 | R40,000 | **R425,000** |
-| **Aug** | R195,000 | R85,000 | R105,000 | R40,000 | **R425,000** |
-| **Sep** | R195,000 | R85,000 | R105,000 | R40,000 | **R425,000** |
-| **Q3 Total** | **R585,000** | **R255,000** | **R315,000** | **R120,000** | **R1,275,000** |
-
-### Q4 2026 (October - December)
-
-| Month | Personnel | Infrastructure | Sales/Marketing | Operations | **Total** |
-|-------|-----------|----------------|----------------|------------|----------|
-| **Oct** | R195,000 | R85,000 | R105,000 | R40,000 | **R425,000** |
-| **Nov** | R195,000 | R85,000 | R145,000 | R40,000 | **R465,000** |
-| **Dec** | R195,000 | R85,000 | R105,000 | R55,000 | **R440,000** |
-| **Q4 Total** | **R585,000** | **R255,000** | **R355,000** | **R135,000** | **R1,330,000** |
-
-**Q4 Notes:**
-- Nov: AfricaCom conference (R40K event)
-- Dec: Year-end audit prep (R12K operations)
+| Monthly Spend | Haiku Queries | Per User (10 users) |
+|:-------------|:--------------|:--------------------|
+| R95 ($5) | ~2,600 | ~260/user |
+| R190 ($10) | ~5,300 | ~530/user |
+| R475 ($25) | ~13,300 | ~1,330/user |
+| R950 ($50) | ~26,600 | ~2,660/user |
 
 ---
 
-## Annual Summary 2026
+## Cost Per User Summary
 
-| Quarter | Total Spend | Running Total | Cash Remaining |
-|---------|-------------|---------------|----------------|
-| **Q1** | R1,190,000 | R1,190,000 | R3,810,000 |
-| **Q2** | R1,275,000 | R2,465,000 | R2,535,000 |
-| **Q3** | R1,275,000 | R3,740,000 | R1,260,000 |
-| **Q4** | R1,330,000 | R5,070,000 | **-R70,000** ⚠️ |
+| Phase | Users | Total Infra | Cost/User/Month | Price/User | Margin |
+|:------|:------|:------------|:----------------|:-----------|:-------|
+| Now | 10 | R470 | R47 | R150* | 69% |
+| Phase 1 | 50 | R1,400 | R28 | R150–299 | 81–91% |
+| Phase 2 | 250 | R3,910 | R16 | R299 | 95% |
+| Phase 3 | 500 | R12,580 | R25 | R299 | 92% |
 
-**Year-End Analysis:**
-- Total spend: R5,070,000
-- Seed funding: R5,000,000
-- **Shortfall: R70,000** ⚠️
-
-**Mitigation:**
-1. Revenue starts in Q2 (beta conversions)
-2. Projected Q4 revenue: R375K (30 customers × R12.5K avg)
-3. Actual runway: 13-14 months with revenue
-4. Breakeven target: Month 18-20
+*Founding Member rate: R1,499 ÷ 10 = R150/user
 
 ---
 
-## Revenue Projections (Optimistic)
+## Payment Summary — What We Pay Today
 
-| Quarter | Customers | MRR | QRR | Running ARR |
-|---------|-----------|-----|-----|-------------|
-| **Q1** | 10 beta | R0 | R0 | R0 |
-| **Q2** | 15 paying | R95K | R285K | R1.14M |
-| **Q3** | 25 total | R188K | R564K | R2.25M |
-| **Q4** | 30 total | R223K | R669K | R2.68M |
+| To | For | Monthly |
+|:---|:----|--------:|
+| Vultr | VPS hosting (JHB) | R115 |
+| Registrar | siyabusaerp.co.za domain | R15 |
+| GitHub | Code hosting + Codespaces | R340 |
+| **Total** | | **R470** |
 
-**Assumptions:**
-- Beta partners convert to paid Q2
-- Average deal: R6,250/month
-- 20% upgrade to higher tiers Q3-Q4
-- Implementation fees (one-time): R750K annual
+Everything else is on free tiers. First founding member covers 3x our costs.
 
 ---
 
-## Key Ratios & Metrics
-
-| Metric | Target | Actual (Track Monthly) |
-|--------|--------|------------------------|
-| **Burn Rate** | R425K/mo | Track actual |
-| **Runway** | 11-12 months | Recalculate monthly |
-| **Cash Balance** | >R500K buffer | Monitor weekly |
-| **Revenue Growth** | 30% MoM | Track from Q2 |
-| **CAC Payback** | <6 months | Track per customer |
-| **Gross Margin** | >80% | Should be 85%+ |
-
----
-
-## Cost Optimization Strategies
-
-**If Revenue Slower Than Expected:**
-
-1. **Reduce Personnel** (last resort)
-   - Delay Customer Success hire (save R35K/mo)
-   - Part-time Sales vs full-time (save R25K/mo)
-
-2. **Cut Marketing** (moderate impact)
-   - Reduce digital ads 50% (save R17K/mo)
-   - Skip one event (save R50K one-time)
-
-3. **Optimize Infrastructure** (low-hanging fruit)
-   - Right-size AWS instances (save R10K/mo)
-   - Negotiate annual SaaS contracts (save R3K/mo)
-
-4. **Operations**
-   - Co-working vs office (save R5K/mo)
-   - Reduce travel (save R2K/mo)
-
-**Total Potential Savings**: R92K/month = 2 extra months runway
-
----
-
-## Monitoring & Reporting
-
-**Weekly:**
-- Cash balance
-- MRR & ARR
-- Customer count
-- Pipeline value
-
-**Monthly:**
-- P&L vs budget
-- Runway calculation
-- Hiring vs plan
-- Marketing ROI
-
-**Quarterly:**
-- Board update
-- Reforecast rest of year
-- Fundraising prep (if needed)
-
----
-
-**Last Updated**: January 2, 2026  
-**Owner**: [Your Name], CEO  
-**Next Review**: End of January 2026
-
+*Updated March 2026. All ZAR amounts at ~R19/$1 USD.*

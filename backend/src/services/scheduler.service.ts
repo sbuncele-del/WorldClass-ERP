@@ -101,6 +101,7 @@ export async function initializeScheduler(): Promise<void> {
   await import('./jobs/approval-escalation.job');
   await import('./jobs/low-stock-alerts.job');
   await import('./jobs/payroll-reminder.job');
+  await import('./jobs/waitlist-drip.job');
 
   if (!isRedisDisabled) {
     await initBullScheduler();

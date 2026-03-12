@@ -13,6 +13,7 @@ export interface SignupData {
   companyName: string;
   country: string;
   plan?: string;
+  industry?: string;
 }
 
 export interface LoginData {

@@ -461,17 +461,17 @@ export class AdminControllerV2 {
       const { tenantId } = getTenantContext(req);
 
       const query = `
-        SELECT setting_key, setting_value, setting_type, description
+        SELECT id, tenant_id, settings, created_at, updated_at
         FROM tenant_settings
         WHERE tenant_id = $1
-        ORDER BY setting_key
+        LIMIT 1
       `;
 
       const result = await pool.query(query, [tenantId]);
 
       res.json({
         success: true,
-        settings: result.rows
+        settings: result.rows[0]?.settings || {}
       });
 
     } catch (error: any) {
@@ -498,14 +498,13 @@ export class AdminControllerV2 {
         return;
       }
 
-      for (const [key, value] of Object.entries(settings)) {
-        await pool.query(`
-          INSERT INTO tenant_settings (tenant_id, setting_key, setting_value, updated_by)
-          VALUES ($1, $2, $3, $4)
-          ON CONFLICT (tenant_id, setting_key)
-          DO UPDATE SET setting_value = $3, updated_by = $4, updated_at = NOW()
-        `, [tenantId, key, String(value), userId]);
-      }
+      const settingsJson = JSON.stringify(settings);
+      await pool.query(`
+        INSERT INTO tenant_settings (tenant_id, settings)
+        VALUES ($1, $2::jsonb)
+        ON CONFLICT (tenant_id)
+        DO UPDATE SET settings = tenant_settings.settings || $2::jsonb, updated_at = NOW()
+      `, [tenantId, settingsJson]);
 
       res.json({
         success: true,

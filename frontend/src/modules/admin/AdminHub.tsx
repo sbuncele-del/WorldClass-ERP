@@ -13,6 +13,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
   Input, Select, DatePicker, Modal, Form, Typography, Avatar,
@@ -32,7 +33,7 @@ import {
   CreditCardOutlined, DollarOutlined, ApiOutlined, DatabaseOutlined,
   CloudOutlined, MobileOutlined, DesktopOutlined, ShopOutlined,
   BgColorsOutlined, FormatPainterOutlined, HistoryOutlined,
-  SecurityScanOutlined, AuditOutlined, IdcardOutlined
+  SecurityScanOutlined, AuditOutlined, IdcardOutlined, SwapOutlined
 } from '@ant-design/icons';
 import HubLayout from '../../components/hub/HubLayout';
 import HubHeader from '../../components/hub/HubHeader';
@@ -77,6 +78,7 @@ interface Integration {
 }
 
 const AdminHub: React.FC = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [userModalVisible, setUserModalVisible] = useState(false);
   const [accountantModalVisible, setAccountantModalVisible] = useState(false);
@@ -308,8 +310,20 @@ const AdminHub: React.FC = () => {
 
       {/* Quick Actions */}
       <Card title={<><RocketOutlined /> Quick Actions</>} style={{ marginTop: 16 }}>
-        <Row gutter={16}>
-          <Col span={6}>
+        <Row gutter={[16, 16]}>
+          <Col xs={12} sm={8} md={6} lg={4}>
+            <Card size="small" hoverable onClick={() => navigate('/app/migration')} style={{ borderColor: '#eb2f96' }}>
+              <Space>
+                <Avatar style={{ background: '#eb2f96' }} icon={<SwapOutlined />} />
+                <div>
+                  <Text strong>Migrate Data</Text>
+                  <br />
+                  <Text type="secondary" style={{ fontSize: 12 }}>Xero, QuickBooks, Sage</Text>
+                </div>
+              </Space>
+            </Card>
+          </Col>
+          <Col xs={12} sm={8} md={6} lg={4}>
             <Card size="small" hoverable onClick={() => setUserModalVisible(true)}>
               <Space>
                 <Avatar style={{ background: '#1890ff' }} icon={<UserOutlined />} />
@@ -321,7 +335,7 @@ const AdminHub: React.FC = () => {
               </Space>
             </Card>
           </Col>
-          <Col span={6}>
+          <Col xs={12} sm={8} md={6} lg={4}>
             <Card size="small" hoverable>
               <Space>
                 <Avatar style={{ background: '#52c41a' }} icon={<DownloadOutlined />} />
@@ -333,7 +347,7 @@ const AdminHub: React.FC = () => {
               </Space>
             </Card>
           </Col>
-          <Col span={6}>
+          <Col xs={12} sm={8} md={6} lg={4}>
             <Card size="small" hoverable>
               <Space>
                 <Avatar style={{ background: '#722ed1' }} icon={<SecurityScanOutlined />} />
@@ -345,7 +359,7 @@ const AdminHub: React.FC = () => {
               </Space>
             </Card>
           </Col>
-          <Col span={6}>
+          <Col xs={12} sm={8} md={6} lg={4}>
             <Card size="small" hoverable>
               <Space>
                 <Avatar style={{ background: '#fa8c16' }} icon={<ApiOutlined />} />

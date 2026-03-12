@@ -13,15 +13,34 @@ const Contact: React.FC = () => {
     message: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Contact form submitted:', formData);
-    setSubmitted(true);
+    setSending(true);
+    setError('');
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSubmitted(true);
+      } else {
+        setError(data.error || 'Something went wrong. Please try again.');
+      }
+    } catch {
+      setError('Unable to send your message. Please email us directly at support@siyabusaerp.co.za');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
-    <WebsiteLayout title="Contact Us — SiyaBusa ERP">
+    <WebsiteLayout title="Contact Us — SiyaBusa ERP" description="Get in touch with the SiyaBusa ERP team. Sales inquiries, support requests, partnership opportunities. Based in Centurion, Gauteng, South Africa." canonical="https://siyabusaerp.co.za/contact">
       <section className="page-hero">
         <div className="container">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
@@ -53,7 +72,7 @@ const Contact: React.FC = () => {
                   <div className="contact-icon-wrapper"><Briefcase size={24} /></div>
                   <div>
                     <h3>Sales</h3>
-                    <a href="mailto:demo@siyabusaerp.co.za">demo@siyabusaerp.co.za</a>
+                    <a href="mailto:sales@siyabusaerp.co.za">sales@siyabusaerp.co.za</a>
                   </div>
                 </div>
 
@@ -61,7 +80,7 @@ const Contact: React.FC = () => {
                   <div className="contact-icon-wrapper"><Wrench size={24} /></div>
                   <div>
                     <h3>Support</h3>
-                    <a href="mailto:hello@siyabusaerp.co.za">hello@siyabusaerp.co.za</a>
+                    <a href="mailto:support@siyabusaerp.co.za">support@siyabusaerp.co.za</a>
                   </div>
                 </div>
 
@@ -159,8 +178,9 @@ const Contact: React.FC = () => {
                       />
                     </div>
 
-                    <button type="submit" className="btn-primary">
-                      Send Message
+                    {error && <p style={{ color: '#ef4444', marginBottom: '1rem' }}>{error}</p>}
+                    <button type="submit" className="btn-primary" disabled={sending}>
+                      {sending ? 'Sending...' : 'Send Message'}
                     </button>
                   </form>
                 </>

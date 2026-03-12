@@ -81,11 +81,13 @@ export class AuthController {
       }
 
       // Plan validation
-      const validPlans = ['starter', 'professional', 'enterprise', 'founding-member'];
+      const validPlans = ['starter', 'professional', 'enterprise', 'founding-member', 'accountant'];
       if (!validPlans.includes(plan)) {
         res.status(400).json({ error: 'Invalid plan', validPlans });
         return;
       }
+
+      const { industry } = req.body;
 
       const result = await AuthService.signup({
         companyName,
@@ -95,12 +97,16 @@ export class AuthController {
         firstName,
         lastName,
         plan,
-        billingCycle
+        billingCycle,
+        industry
       });
 
-      // Send welcome email (non-blocking)
-      WelcomeEmailService.sendWelcomeEmail(email, result.user.id)
-        .catch(err => console.error('Failed to send welcome email:', err));
+      // Send welcome email (non-blocking) — single send via WelcomeEmailService
+      // Intentional 2-second delay to ensure DB commit has propagated before querying user
+      setTimeout(() => {
+        WelcomeEmailService.sendWelcomeEmail(email, result.user.id)
+          .catch(err => console.error('Failed to send welcome email:', err));
+      }, 2000);
 
       res.status(201).json({
         success: true,

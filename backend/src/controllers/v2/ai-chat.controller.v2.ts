@@ -1,26 +1,17 @@
 /**
  * AI Chat Controller V2
  * 
- * Tenant-hardened AI assistant API
- * Handles chat, conversations, sessions, and suggestions
+ * Tenant-hardened AI assistant API using function-calling (tool use)
+ * Routes to the real AI Agent Service with Groq/OpenAI tools
  */
 
 import { Request, Response } from 'express';
 import pool from '../../config/database';
+import aiAgentService from '../../services/ai-agent.service';
 
-// Lazy import to avoid circular dependencies
-let aiAssistantService: any = null;
-function getAIService() {
-  if (!aiAssistantService) {
-    try {
-      const { createAIAssistant } = require('../../services/ai/AIAssistantService');
-      aiAssistantService = createAIAssistant();
-    } catch (error: any) {
-      console.error('[AIV2] AI service not available:', error.message);
-    }
-  }
-  return aiAssistantService;
-}
+// Legacy AI service stub — the main chat() uses aiAgentService directly
+// These secondary endpoints (confirm, cancel, etc.) gracefully handle null
+function getAIService(): any { return null; }
 
 // Tenant-aware request type
 interface TenantRequest extends Request {
@@ -38,7 +29,7 @@ function getTenantContext(req: TenantRequest): { tenantId: string; userId: strin
 
 /**
  * POST /api/v2/ai/chat
- * Send a message to the AI assistant (tenant-scoped)
+ * Send a message to the AI assistant with function-calling tools (tenant-scoped)
  */
 export async function chat(req: TenantRequest, res: Response): Promise<void> {
   try {
@@ -50,32 +41,33 @@ export async function chat(req: TenantRequest, res: Response): Promise<void> {
       return;
     }
 
-    const assistant = getAIService();
-    if (!assistant) {
-      res.status(503).json({ success: false, error: 'AI service not available' });
-      return;
-    }
-
-    const session = sessionId || `session_${tenantId}_${Date.now()}`;
-
-    const response = await assistant.processMessage(message, {
+    // Use the real AI agent service with function-calling tools
+    const result = await aiAgentService.chatWithAgent(
+      'general',
       tenantId,
       userId,
-      sessionId: session,
-      contextData
-    });
+      message,
+      contextData || {}
+    );
 
-    // Log the interaction
+    // Log the interaction (best-effort)
     await pool.query(`
       INSERT INTO ai_chat_logs (tenant_id, user_id, session_id, message, response, created_at)
       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
-    `, [tenantId, userId, session, message, response]).catch(() => {});
+    `, [tenantId, userId, sessionId || result.conversationId, message, result.response]).catch(() => {});
 
     res.json({
       success: true,
       data: {
-        sessionId: session,
-        message: response
+        sessionId: result.conversationId,
+        message: {
+          id: `msg_${Date.now()}`,
+          role: 'assistant',
+          content: result.response,
+          timestamp: new Date().toISOString(),
+          confirmationRequired: !!result.pending_action_id,
+          pendingActionId: result.pending_action_id || undefined,
+        }
       }
     });
   } catch (error: any) {

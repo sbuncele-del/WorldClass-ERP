@@ -20,6 +20,11 @@ Allow: /documentation
 Allow: /support
 Allow: /security
 Allow: /concept-document
+Allow: /for-accountants
+Allow: /data-migration
+Allow: /switch-to-siyabusa
+Allow: /privacy
+Allow: /terms
 
 # Auth/app pages — do NOT index
 Disallow: /login

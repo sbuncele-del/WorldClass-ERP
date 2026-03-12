@@ -34,19 +34,19 @@ const TryDemo = lazy(() => import('./pages/TryDemo'));
 
 // Footer Pages (lazy loaded)
 const About = lazy(() => import('./pages/About'));
-const Careers = lazy(() => import('./pages/Careers'));
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const TermsOfService = lazy(() => import('./pages/TermsOfService'));
 const Security = lazy(() => import('./pages/Security'));
 const Contact = lazy(() => import('./pages/Contact'));
-const Documentation = lazy(() => import('./pages/Documentation'));
 const Support = lazy(() => import('./pages/Support'));
 const Partners = lazy(() => import('./pages/Partners'));
 const Blog = lazy(() => import('./pages/Blog'));
-const CaseStudies = lazy(() => import('./pages/CaseStudies'));
+const BlogArticle = lazy(() => import('./pages/Blog').then(m => ({ default: m.BlogArticle })));
 const Pricing = lazy(() => import('./pages/Pricing'));
 const ConceptDocument = lazy(() => import('./pages/public/ConceptDocument'));
 const SwitchToSiyaBusa = lazy(() => import('./pages/website/SwitchToSiyaBusa'));
+const ForAccountants = lazy(() => import('./pages/website/ForAccountants'));
+const DataMigration = lazy(() => import('./pages/website/DataMigration'));
 const MigrationPage = lazy(() => import('./pages/MigrationPage'));
 
 // Lazy-loaded Authentication Pages
@@ -317,20 +317,22 @@ function App() {
                       
                       {/* Public Footer Pages - No Layout */}
                       <Route path="/about" element={<About />} />
-                      <Route path="/careers" element={<Careers />} />
                       <Route path="/privacy" element={<PrivacyPolicy />} />
                       <Route path="/terms" element={<TermsOfService />} />
                       <Route path="/security" element={<Security />} />
                       <Route path="/contact" element={<Contact />} />
-                      <Route path="/documentation" element={<Documentation />} />
                       <Route path="/support" element={<Support />} />
                       <Route path="/partners" element={<Partners />} />
                       <Route path="/blog" element={<Blog />} />
-                      <Route path="/case-studies" element={<CaseStudies />} />
+                      <Route path="/insights" element={<Blog />} />
+                      <Route path="/insights/:slug" element={<BlogArticle />} />
                       <Route path="/concept-document" element={<ConceptDocument />} />
                       <Route path="/stakeholders" element={<ConceptDocument />} />
                       <Route path="/switch" element={<SwitchToSiyaBusa />} />
+                      <Route path="/switch-to-siyabusa" element={<SwitchToSiyaBusa />} />
                       <Route path="/migrate" element={<SwitchToSiyaBusa />} />
+                      <Route path="/for-accountants" element={<ForAccountants />} />
+                      <Route path="/data-migration" element={<DataMigration />} />
                       
                       {/* Public Client Portal - Access with code (no login required) */}
                       <Route path="/portal/:id" element={<PortalAccess />} />

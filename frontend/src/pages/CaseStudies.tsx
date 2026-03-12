@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { WebsiteLayout, fadeInUp, staggerContainer } from './LandingPage/LandingPage';
 import './FooterPages.css';
 
 interface CaseStudy {
@@ -128,92 +129,77 @@ const caseStudies: CaseStudy[] = [
 
 const CaseStudies: React.FC = () => {
   return (
-    <div className="footer-page">
-      <nav className="footer-page-nav">
-        <Link to="/" className="logo">
-          <span className="logo-icon">◈</span>
-          <span>SiyaBusa</span>
-        </Link>
-        <Link to="/" className="back-link">← Back to Home</Link>
-      </nav>
+    <WebsiteLayout title="Case Studies — SiyaBusa ERP" description="Real results from real South African businesses. See how companies across industries transformed operations with SiyaBusa ERP." canonical="https://siyabusaerp.co.za/case-studies">
 
-      <main className="footer-page-content">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <header className="page-header">
+      {/* Hero */}
+      <section className="cs-hero">
+        <div className="container">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <span className="cs-badge">Customer Success</span>
             <h1>Case Studies</h1>
-            <p className="subtitle">Real results from real businesses</p>
-          </header>
+            <p className="cs-hero-sub">Real results from real businesses across South Africa</p>
+          </motion.div>
+        </div>
+      </section>
 
-          <section className="content-section">
-            <p>
-              Discover how businesses across industries are using SiyaBusa to transform their 
-              operations, improve efficiency, and drive growth. These are their stories.
-            </p>
-          </section>
+      <section className="cs-grid-section">
+        <div className="container">
+          <motion.div className="cs-grid" variants={staggerContainer} initial="hidden" whileInView="visible" viewport={{ once: true }}>
+            {caseStudies.map(study => (
+              <motion.article key={study.id} className="cs-card" variants={fadeInUp}>
+                <div className="cs-card-header">
+                  <span className="cs-industry">{study.industry}</span>
+                  <h2>{study.title}</h2>
+                  <p className="cs-company">{study.company}</p>
+                </div>
 
-          <section className="content-section">
-            <div className="case-studies-grid">
-              {caseStudies.map(study => (
-                <article key={study.id} className="case-study-card">
-                  <div className="case-study-header">
-                    <span className="case-study-industry">{study.industry}</span>
-                    <h2>{study.title}</h2>
-                    <p className="case-study-company">{study.company}</p>
+                <div className="cs-card-body">
+                  <div className="cs-section">
+                    <h3>The Challenge</h3>
+                    <p>{study.challenge}</p>
                   </div>
 
-                  <div className="case-study-body">
-                    <div className="case-study-section">
-                      <h3>The Challenge</h3>
-                      <p>{study.challenge}</p>
-                    </div>
-
-                    <div className="case-study-section">
-                      <h3>The Solution</h3>
-                      <p>{study.solution}</p>
-                    </div>
-
-                    <div className="case-study-section">
-                      <h3>The Results</h3>
-                      <ul className="results-list">
-                        {study.results.map((result, index) => (
-                          <li key={index}>✓ {result}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    {study.quote && (
-                      <blockquote className="case-study-quote">
-                        <p>"{study.quote.text}"</p>
-                        <cite>— {study.quote.author}, {study.quote.role}</cite>
-                      </blockquote>
-                    )}
+                  <div className="cs-section">
+                    <h3>The Solution</h3>
+                    <p>{study.solution}</p>
                   </div>
-                </article>
-              ))}
-            </div>
-          </section>
 
-          <section className="content-section cta-section">
+                  <div className="cs-section">
+                    <h3>Results</h3>
+                    <ul className="cs-results">
+                      {study.results.map((result, index) => (
+                        <li key={index}>{result}</li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {study.quote && (
+                    <blockquote className="cs-quote">
+                      <p>"{study.quote.text}"</p>
+                      <cite>— {study.quote.author}, {study.quote.role}</cite>
+                    </blockquote>
+                  )}
+                </div>
+              </motion.article>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      <section className="cs-cta-section">
+        <div className="container">
+          <motion.div className="cs-cta" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             <h2>Ready to Write Your Success Story?</h2>
-            <p>
-              Join hundreds of businesses that have transformed their operations with SiyaBusa.
-            </p>
-            <div className="cta-buttons">
-              <Link to="/#demo" className="btn-primary">Request a Demo</Link>
-              <Link to="/contact" className="btn-secondary">Contact Sales</Link>
+            <p>Join businesses that have transformed their operations with SiyaBusa.</p>
+            <div className="cs-cta-buttons">
+              <Link to="/demo" className="cs-cta-btn primary">Request a Demo</Link>
+              <Link to="/contact" className="cs-cta-btn secondary">Contact Sales</Link>
             </div>
-          </section>
-        </motion.div>
-      </main>
+          </motion.div>
+        </div>
+      </section>
 
-      <footer className="footer-page-footer">
-        <p>© {new Date().getFullYear()} SiyaBusa by Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
-      </footer>
-    </div>
+    </WebsiteLayout>
   );
 };
 

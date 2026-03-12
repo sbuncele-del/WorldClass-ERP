@@ -50,7 +50,7 @@ export class GoodsReceiptRepository extends BaseRepository<GoodsReceipt> {
   protected schema = 'purchase';
   protected primaryKey = 'gr_id';
   protected softDelete = false;
-  protected entityScoped = true;
+  protected entityScoped = false;
 
   async getWithLines(ctx: TenantContext, grId: string): Promise<GoodsReceipt | null> {
     const receipt = await this.findById(ctx, grId);
