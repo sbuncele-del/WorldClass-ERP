@@ -90,11 +90,12 @@ export class ProvisioningService {
     const template = this.getChartOfAccountsTemplate(country, industry);
 
     for (const account of template) {
+      const normalBalance = ['asset', 'expense'].includes(account.type.toLowerCase()) ? 'DEBIT' : 'CREDIT';
       await client.query(
         `INSERT INTO chart_of_accounts (
           tenant_id, code, name, account_type, account_category,
-          parent_code, is_active, allow_manual_entry, description
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          normal_balance, parent_code, is_active, allow_manual_entry, description
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         ON CONFLICT (tenant_id, code) DO NOTHING`,
         [
           tenantId,
@@ -102,6 +103,7 @@ export class ProvisioningService {
           account.name,
           account.type,
           account.category,
+          normalBalance,
           account.parent_code || null,
           true,
           account.allow_transactions !== false,
