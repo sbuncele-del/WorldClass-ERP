@@ -22,7 +22,7 @@ export interface Module {
 
 // ─── Animation Variants (Framer Motion) ───
 export const fadeInUp = {
-  hidden: { opacity: 0.01, y: 30 },
+  hidden: { opacity: 1, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
@@ -31,7 +31,7 @@ export const fadeInUp = {
 };
 
 export const staggerContainer = {
-  hidden: { opacity: 0.01 },
+  hidden: { opacity: 1 },
   visible: {
     opacity: 1,
     transition: { staggerChildren: 0.08 },
@@ -39,7 +39,7 @@ export const staggerContainer = {
 };
 
 export const scaleIn = {
-  hidden: { opacity: 0.01, scale: 0.9 },
+  hidden: { opacity: 1, scale: 0.95 },
   visible: { opacity: 1, scale: 1, transition: { duration: 0.4 } },
 };
 

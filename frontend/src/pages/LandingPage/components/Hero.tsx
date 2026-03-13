@@ -108,60 +108,36 @@ const Hero: React.FC = () => {
       <div className="hero-inner">
         {/* ─── Left: Copy ─── */}
         <div className="hero-content">
-          <motion.div
-            className="hero-badge"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1 }}
-          >
+          <div className="hero-badge">
             <Sparkles size={14} style={{ color: '#00D4AA' }} />
             <span>Enterprise Resource Planning for Africa</span>
-          </motion.div>
+          </div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
+          <h1>
             The operating system{' '}
             <span className="text-gradient">behind better-run businesses.</span>
-          </motion.h1>
+          </h1>
 
-          <motion.p
-            className="hero-subtitle"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.35 }}
-          >
+          <p className="hero-subtitle">
             Unified financials, HR, inventory, and compliance — IFRS-aligned,
             SARS-integrated, and built for the way South African businesses
             actually operate.
-          </motion.p>
+          </p>
 
-          <motion.div
-            className="hero-ctas"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-          >
+          <div className="hero-ctas">
             <button className="btn-primary" onClick={() => navigate('/pricing')}>
               Get Started <ArrowRight size={18} />
             </button>
             <button className="btn-ghost" onClick={() => navigate('/demo')}>
               <Play size={16} /> See It in Action
             </button>
-          </motion.div>
+          </div>
 
           {/* Inline Waitlist Form */}
           <WaitlistForm variant="hero" />
 
           {/* Trust Metrics */}
-          <motion.div
-            className="hero-metrics"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
-          >
+          <div className="hero-metrics">
             <div className="hero-metric" ref={m1.ref}>
               <div className="hero-metric-value">
                 <span className="metric-accent">{m1.count}+</span>
@@ -180,7 +156,7 @@ const Hero: React.FC = () => {
               </div>
               <div className="hero-metric-label">Modules Included</div>
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* ─── Right: Dashboard Mockup ─── */}
