@@ -7,6 +7,7 @@ import { authenticateToken } from '../middleware/auth';
 import { tenantMiddleware } from '../middleware/tenant';
 import * as AuditReadyControllerV2 from '../controllers/audit-ready.controller.v2';
 import * as auditWorkspaceController from '../modules/audit/controllers/audit.workspace.controller';
+import * as auditorPortalController from '../controllers/auditor-portal.controller';
 
 const router = express.Router();
 
@@ -39,5 +40,20 @@ router.get('/checklist-items/:templateId', AuditReadyControllerV2.getChecklistIt
 // Permanent Records
 router.get('/permanent-records', AuditReadyControllerV2.getPermanentRecords);
 router.post('/permanent-records', AuditReadyControllerV2.addPermanentRecord);
+
+// ─── Auditor Portal (packages, info requests, messages) ───
+router.get('/portal/packages', auditorPortalController.getPackages);
+router.get('/portal/packages/:id', auditorPortalController.getPackageById);
+router.post('/portal/packages', auditorPortalController.createPackage);
+
+router.get('/portal/requests', auditorPortalController.getRequests);
+router.post('/portal/requests', auditorPortalController.createRequest);
+router.put('/portal/requests/:id', auditorPortalController.updateRequest);
+
+router.get('/portal/messages', auditorPortalController.getMessages);
+router.post('/portal/messages', auditorPortalController.sendMessage);
+router.put('/portal/messages/mark-read', auditorPortalController.markMessagesRead);
+
+router.get('/portal/dashboard', auditorPortalController.getDashboard);
 
 export default router;

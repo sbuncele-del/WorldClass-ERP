@@ -15,7 +15,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Button, Space, Badge,
-  Input, Select, DatePicker, Modal, Form, Typography, Avatar,
+  Input, Select, DatePicker, Modal, Form, Typography, Avatar, Drawer,
   Timeline, Descriptions, Tooltip, Switch, Alert,
   List, Divider, Steps, Upload, message, Calendar, Empty, Spin
 } from 'antd';
@@ -27,7 +27,7 @@ import {
   SettingOutlined, SyncOutlined, FlagOutlined, SendOutlined,
   UserOutlined, BellOutlined, FileTextOutlined,
   SafetyCertificateOutlined, AuditOutlined, BankOutlined, RocketOutlined,
-  FileDoneOutlined, FileSearchOutlined, GlobalOutlined,
+  FileDoneOutlined, FileSearchOutlined, GlobalOutlined, FileProtectOutlined,
   ScheduleOutlined, AlertOutlined, CheckSquareOutlined
 } from '@ant-design/icons';
 import type { Dayjs } from 'dayjs';
@@ -59,9 +59,11 @@ interface ComplianceRequirement {
   authority: string;
   frequency: string;
   nextDue: string;
-  status: 'compliant' | 'attention' | 'non-compliant';
+  status: 'compliant' | 'attention' | 'non-compliant' | 'inactive';
   lastFiled?: string;
   description: string;
+  tracked?: boolean;
+  category?: string;
 }
 
 interface DeadlineEvent {
@@ -139,6 +141,7 @@ const RegulatoryHub: React.FC = () => {
   const [enhanced, setEnhanced] = useState<EnhancedStatus>({
     vat: null, bbbee: null, cipc: [], fica: null, popia: null,
   });
+  const [selectedRequirement, setSelectedRequirement] = useState<ComplianceRequirement | null>(null);
 
   const normalizeArrayResponse = (response: any): any[] => {
     if (Array.isArray(response?.data)) return response.data;
@@ -245,8 +248,11 @@ const RegulatoryHub: React.FC = () => {
   const submittedFilings = filings.filter(f => f.status === 'submitted').length;
   const pendingFilings = filings.filter(f => f.status === 'pending' || f.status === 'draft').length;
   const overdueFilings = filings.filter(f => f.status === 'overdue').length;
-  const compliantRequirements = requirements.filter(r => r.status === 'compliant').length;
-  const complianceRate = requirements.length > 0 ? Math.round((compliantRequirements / requirements.length) * 100) : 0;
+  const trackedRequirements = requirements.filter(r => r.tracked !== false);
+  const compliantRequirements = trackedRequirements.filter(r => r.status === 'compliant').length;
+  const complianceRate = trackedRequirements.length > 0 ? Math.round((compliantRequirements / trackedRequirements.length) * 100) : 0;
+  const today = new Date().toISOString().slice(0, 10);
+  const nextDeadline = upcomingDeadlines.find(d => d.date >= today)?.date || upcomingDeadlines[0]?.date || '-';
 
   // Overview Tab
   const renderOverview = () => (
@@ -746,10 +752,24 @@ const RegulatoryHub: React.FC = () => {
   );
 
   // Requirements Tab
-  const renderRequirements = () => (
+  const handleToggleRequirement = async (reqId: string, currentlyTracked: boolean) => {
+    try {
+      await apiClient.post('/api/compliance/regulatory/requirements/toggle', { requirementId: reqId, tracked: !currentlyTracked });
+      setRequirements(prev => prev.map(r => r.id === reqId ? { ...r, tracked: !currentlyTracked, status: !currentlyTracked ? 'attention' : 'inactive' } : r));
+      message.success(!currentlyTracked ? 'Requirement activated for tracking' : 'Requirement deactivated');
+    } catch {
+      message.error('Failed to update requirement');
+    }
+  };
+
+  const renderRequirements = () => {
+    const tracked = requirements.filter(r => r.tracked !== false);
+    const available = requirements.filter(r => r.tracked === false);
+    
+    return (
     <div style={{ padding: '24px' }}>
       <Card
-        title={<><CheckSquareOutlined /> Compliance Requirements</>}
+        title={<><CheckSquareOutlined /> Active Compliance Requirements</>}
         extra={
           <Space>
             <Badge status="success" text="Compliant" />
@@ -758,13 +778,20 @@ const RegulatoryHub: React.FC = () => {
           </Space>
         }
       >
+        {tracked.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px 0', color: '#8c8c8c' }}>
+            <FileProtectOutlined style={{ fontSize: 48, color: '#d9d9d9', display: 'block', marginBottom: 16 }} />
+            <Text type="secondary">No requirements activated yet. Browse requirements below and activate the ones relevant to your business.</Text>
+          </div>
+        ) : (
         <List
-          dataSource={requirements}
+          dataSource={tracked}
           renderItem={req => (
             <List.Item
               actions={[
                 req.lastFiled && <Text type="secondary">Last filed: {req.lastFiled}</Text>,
-                <Button size="small">View Details</Button>
+                <Button size="small" onClick={() => setSelectedRequirement(req)}>View Details</Button>,
+                <Button size="small" danger onClick={() => handleToggleRequirement(req.id, true)}>Deactivate</Button>
               ]}
             >
               <List.Item.Meta
@@ -796,9 +823,47 @@ const RegulatoryHub: React.FC = () => {
             </List.Item>
           )}
         />
+        )}
       </Card>
+
+      {available.length > 0 && (
+        <Card
+          title={<><FileProtectOutlined /> Available Requirements — Click to Activate</>}
+          style={{ marginTop: 16 }}
+          extra={<Text type="secondary">{available.length} requirements available</Text>}
+        >
+          <List
+            dataSource={available}
+            renderItem={req => (
+              <List.Item
+                actions={[
+                  <Button size="small" onClick={() => setSelectedRequirement(req)}>Details</Button>,
+                  <Button type="primary" size="small" onClick={() => handleToggleRequirement(req.id, false)}>Activate</Button>
+                ]}
+              >
+                <List.Item.Meta
+                  avatar={
+                    <Avatar style={{ background: '#d9d9d9' }}>
+                      <FileProtectOutlined />
+                    </Avatar>
+                  }
+                  title={
+                    <Space>
+                      <Text>{req.name}</Text>
+                      <Tag>{req.authority}</Tag>
+                      <Tag color="default">{req.frequency}</Tag>
+                    </Space>
+                  }
+                  description={<Text type="secondary">{req.description}</Text>}
+                />
+              </List.Item>
+            )}
+          />
+        </Card>
+      )}
     </div>
-  );
+    );
+  };
 
   // Calendar Tab
   const renderCalendar = () => {
@@ -944,7 +1009,7 @@ const RegulatoryHub: React.FC = () => {
           { title: 'Submitted', value: submittedFilings },
           { title: 'Pending', value: pendingFilings },
           { title: 'Overdue', value: overdueFilings },
-          { title: 'Next Deadline', value: upcomingDeadlines[0]?.date || '-' }
+          { title: 'Next Deadline', value: nextDeadline }
         ]}
       />
 
@@ -999,6 +1064,128 @@ const RegulatoryHub: React.FC = () => {
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Requirement Details Drawer */}
+      <Drawer
+        title={selectedRequirement?.name || 'Requirement Details'}
+        open={!!selectedRequirement}
+        onClose={() => setSelectedRequirement(null)}
+        width={520}
+      >
+        {selectedRequirement && (() => {
+          const req = selectedRequirement;
+          const guidanceMap: Record<string, { howToComply: string; autoActivation: string; tips: string[] }> = {
+            'EMP201': {
+              howToComply: 'File your monthly PAYE, UIF, and SDL return via SARS eFiling by the 7th of each month.',
+              autoActivation: 'Automatically tracked when employees are added and payroll is processed in HR Hub.',
+              tips: ['Run payroll before month-end', 'Review EMP201 totals before submitting', 'Keep proof of payment from SARS eFiling'],
+            },
+            'EMP501': {
+              howToComply: 'Submit the bi-annual reconciliation by 31 May (annual) and 31 October (interim) via SARS eFiling.',
+              autoActivation: 'Automatically tracked once EMP201 filings exist. Data is pre-populated from payroll history.',
+              tips: ['Reconcile IRP5 certificates against EMP201 totals', 'Submit before deadline to avoid penalties', 'File interim in October for mid-year reconciliation'],
+            },
+            'IRP5': {
+              howToComply: 'Generate and issue IRP5/IT3(a) certificates to all employees annually with EMP501 submission.',
+              autoActivation: 'Activated when employees are added to the system. Certificates are generated from payroll data.',
+              tips: ['Verify each employee\'s tax reference number', 'Issue certificates by 31 May', 'Employees need these for their personal tax returns'],
+            },
+            'VAT201': {
+              howToComply: 'File the VAT return via SARS eFiling by the 25th of the month following your tax period.',
+              autoActivation: 'Automatically calculated from General Ledger journal entries. Output VAT and Input VAT are detected from account codes.',
+              tips: ['Ensure VAT accounts are correctly coded in Chart of Accounts', 'Review GL entries before period close', 'Keep source documents for all VAT claims'],
+            },
+            'BBBEE': {
+              howToComply: 'Engage an accredited verification agency for annual B-BBEE scorecard assessment.',
+              autoActivation: 'Estimated level is auto-calculated when employee demographics (race, gender, disability) are added in HR module.',
+              tips: ['Update employee demographics regularly', 'Track preferential procurement spend', 'Level 1-4 gives you competitive advantage for tenders'],
+            },
+            'FICA': {
+              howToComply: 'Perform Customer Due Diligence (CDD) on all clients. Report suspicious transactions within 15 days.',
+              autoActivation: 'Tracked when customer records with verification data are created in Sales & CRM module.',
+              tips: ['Verify customer identity documents', 'Keep CDD records for at least 5 years', 'Report cash transactions over R24,999.99'],
+            },
+            'POPIA': {
+              howToComply: 'Register an Information Officer, maintain consent records, and establish breach notification procedures.',
+              autoActivation: 'Tracked when data processing agreements or consent records are captured in the system.',
+              tips: ['Register your Information Officer with the Regulator', 'Respond to data subject requests within 30 days', 'Report breaches within 72 hours'],
+            },
+            'CIPC': {
+              howToComply: 'File annual return within 30 business days of your company\'s anniversary date on CIPC website.',
+              autoActivation: 'Automatically tracked when company entities with registration numbers are added in Multi-Entity module.',
+              tips: ['Set a reminder for your company anniversary date', 'Keep registration details up to date', 'Late filing can lead to deregistration'],
+            },
+            'COIDA': {
+              howToComply: 'Submit annual Return of Earnings to the Compensation Fund by 31 March each year.',
+              autoActivation: 'Activate this requirement if your business has employees. A Letter of Good Standing is needed for many contracts.',
+              tips: ['Report workplace injuries immediately', 'Keep payroll records accessible for audits', 'Renewal of Letter of Good Standing is annual'],
+            },
+          };
+          // Match requirement to guidance by checking if the req ID contains a known key
+          const matchKey = Object.keys(guidanceMap).find(k => req.id.toUpperCase().includes(k)) || '';
+          const guidance = guidanceMap[matchKey];
+          return (
+            <div>
+              <Descriptions column={1} bordered size="small" style={{ marginBottom: 16 }}>
+                <Descriptions.Item label="Authority">{req.authority}</Descriptions.Item>
+                <Descriptions.Item label="Frequency">{req.frequency}</Descriptions.Item>
+                <Descriptions.Item label="Status">
+                  <Tag color={req.status === 'compliant' ? 'green' : req.status === 'attention' ? 'orange' : req.status === 'non-compliant' ? 'red' : 'default'}>
+                    {req.status.toUpperCase()}
+                  </Tag>
+                </Descriptions.Item>
+                <Descriptions.Item label="Next Due">{req.nextDue !== '-' ? req.nextDue : 'Not scheduled'}</Descriptions.Item>
+                {req.lastFiled && <Descriptions.Item label="Last Filed">{req.lastFiled}</Descriptions.Item>}
+                <Descriptions.Item label="Tracking">
+                  <Tag color={req.tracked !== false ? 'green' : 'default'}>{req.tracked !== false ? 'Active' : 'Inactive'}</Tag>
+                </Descriptions.Item>
+              </Descriptions>
+
+              <Card size="small" style={{ marginBottom: 12 }}>
+                <Text strong>Description</Text>
+                <Paragraph style={{ marginTop: 8, marginBottom: 0 }}>{req.description}</Paragraph>
+              </Card>
+
+              {guidance ? (
+                <>
+                  <Card size="small" style={{ marginBottom: 12, borderColor: '#52c41a' }}>
+                    <Text strong style={{ color: '#52c41a' }}><CheckCircleOutlined /> How to Comply</Text>
+                    <Paragraph style={{ marginTop: 8, marginBottom: 0 }}>{guidance.howToComply}</Paragraph>
+                  </Card>
+
+                  <Card size="small" style={{ marginBottom: 12, borderColor: '#1890ff' }}>
+                    <Text strong style={{ color: '#1890ff' }}><SyncOutlined /> Auto-Activation</Text>
+                    <Paragraph style={{ marginTop: 8, marginBottom: 0 }}>{guidance.autoActivation}</Paragraph>
+                  </Card>
+
+                  <Card size="small" style={{ marginBottom: 12 }}>
+                    <Text strong><RocketOutlined /> Tips</Text>
+                    <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 20 }}>
+                      {guidance.tips.map((tip, i) => <li key={i}><Text type="secondary">{tip}</Text></li>)}
+                    </ul>
+                  </Card>
+                </>
+              ) : (
+                <Card size="small" style={{ marginBottom: 12 }}>
+                  <Text strong><FileSearchOutlined /> Compliance Guidance</Text>
+                  <Paragraph style={{ marginTop: 8 }}>
+                    Check the relevant authority\'s website for specific filing requirements and deadlines.
+                    {req.tracked === false && ' Click "Activate" to start tracking this requirement for your business.'}
+                  </Paragraph>
+                </Card>
+              )}
+
+              <div style={{ marginTop: 16 }}>
+                {req.tracked !== false ? (
+                  <Button danger block onClick={() => { handleToggleRequirement(req.id, true); setSelectedRequirement(null); }}>Deactivate Tracking</Button>
+                ) : (
+                  <Button type="primary" block onClick={() => { handleToggleRequirement(req.id, false); setSelectedRequirement(null); }}>Activate for Tracking</Button>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+      </Drawer>
     </HubLayout>
   );
 };

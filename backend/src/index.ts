@@ -201,6 +201,9 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/health', (_req, res) => {
   res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
+app.get('/api/health', (_req, res) => {
+  res.status(200).json({ status: 'OK', message: 'Server is running' });
+});
 
 app.get('/health/db', async (_req, res) => {
   try {

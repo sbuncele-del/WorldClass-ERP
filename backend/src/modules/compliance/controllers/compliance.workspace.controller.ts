@@ -236,19 +236,25 @@ export const getRegulatoryRequirements = async (req: TenantRequest, res: Respons
 
     // HR-based requirements
     const hrSnapshot = await getLatestPayrollSnapshot(tenantId);
-    const emp201Status = hrSnapshot
-      ? normalizeRequirementStatus(normalizeFilingStatus('pending', hrSnapshot.dueDate))
-      : 'attention';
+    const emp201LastSubmission = await getLatestSubmissionFor(tenantId, 'EMP201', hrSnapshot?.period || undefined);
+    const emp201NextDue = getNextMonthlyDueDate(7); // EMP201 due 7th of each month
+    const emp201Status = emp201LastSubmission
+      ? 'compliant'
+      : hrSnapshot
+        ? normalizeRequirementStatus(normalizeFilingStatus('pending', emp201NextDue))
+        : 'attention';
 
     requirements.push({
       id: 'REQ-EMP201',
       name: 'EMP201 Monthly PAYE/UIF/SDL Return',
       authority: 'SARS',
       frequency: 'Monthly',
-      nextDue: hrSnapshot?.dueDate || '-',
+      nextDue: emp201NextDue,
       status: emp201Status,
-      lastFiled: (await getLatestSubmissionFor(tenantId, 'EMP201', hrSnapshot?.period || undefined))?.submittedDate,
-      description: 'Monthly statutory payroll return based on payroll run data (PAYE, UIF, SDL).',
+      lastFiled: emp201LastSubmission?.submittedDate,
+      description: hrSnapshot
+        ? `Monthly statutory payroll return (PAYE, UIF, SDL). Last payroll: ${hrSnapshot.period}, total statutory: R${hrSnapshot.amount.toLocaleString()}.`
+        : 'Monthly statutory payroll return based on payroll run data (PAYE, UIF, SDL).',
     });
 
     const taxYear = getCurrentTaxYearLabel();
@@ -280,14 +286,15 @@ export const getRegulatoryRequirements = async (req: TenantRequest, res: Respons
     const vat201Submission = vatSnapshot
       ? await getLatestSubmissionFor(tenantId, 'VAT201', vatSnapshot.period)
       : null;
+    const vat201NextDue = getNextMonthlyDueDate(25); // VAT201 due 25th of each month
     requirements.push({
       id: 'REQ-VAT201',
       name: 'VAT201 Monthly Return',
       authority: 'SARS',
       frequency: 'Monthly',
-      nextDue: vatSnapshot?.dueDate || '-',
+      nextDue: vat201NextDue,
       status: vatSnapshot
-        ? vat201Submission ? 'compliant' : normalizeRequirementStatus(normalizeFilingStatus('pending', vatSnapshot.dueDate))
+        ? vat201Submission ? 'compliant' : normalizeRequirementStatus(normalizeFilingStatus('pending', vat201NextDue))
         : 'attention',
       lastFiled: vat201Submission?.submittedDate,
       description: vatSnapshot
@@ -419,6 +426,78 @@ export const getRegulatoryRequirements = async (req: TenantRequest, res: Respons
         nextDue: '-',
         status: 'attention',
         description: 'No entities with registration numbers found. Add company details in Multi-Entity module.',
+      });
+    }
+
+    // ── PRE-POPULATED SA REQUIREMENTS (available library) ──
+    // These are always shown — user "activates" the ones relevant to their business
+    const saRequirementsLibrary = [
+      // SARS — Tax
+      { id: 'SA-VAT201',  name: 'VAT201 Return',                    authority: 'SARS',                     frequency: 'Monthly/Bi-monthly', category: 'Tax',        description: 'Value-Added Tax return. Due by the 25th of the month following the tax period. Mandatory for VAT-registered businesses (turnover > R2.3m).' },
+      { id: 'SA-EMP201',  name: 'EMP201 Monthly Return',            authority: 'SARS',                     frequency: 'Monthly',            category: 'Tax',        description: 'Monthly employer declaration for PAYE, UIF, and SDL. Due by the 7th of each month.' },
+      { id: 'SA-EMP501',  name: 'EMP501 Reconciliation',            authority: 'SARS',                     frequency: 'Bi-Annual',          category: 'Tax',        description: 'Interim reconciliation (Oct) and annual reconciliation (May) of EMP201 returns against IRP5/IT3(a) certificates.' },
+      { id: 'SA-IRP5',    name: 'IRP5/IT3(a) Tax Certificates',     authority: 'SARS',                     frequency: 'Annual',             category: 'Tax',        description: 'Employee tax certificates issued annually with EMP501 submission. Required for each active employee.' },
+      { id: 'SA-IT14',    name: 'IT14 Company Tax Return',          authority: 'SARS',                     frequency: 'Annual',             category: 'Tax',        description: 'Annual income tax return for companies. Due 12 months after financial year-end.' },
+      { id: 'SA-IT12',    name: 'IT12 Individual Tax Return',       authority: 'SARS',                     frequency: 'Annual',             category: 'Tax',        description: 'Individual/trust income tax return. Filing season typically July–October for non-provisional taxpayers.' },
+      { id: 'SA-PROVTAX', name: 'Provisional Tax (IRP6)',           authority: 'SARS',                     frequency: 'Bi-Annual',          category: 'Tax',        description: 'First payment by end of 6th month of tax year, second by year-end. Third (top-up) within 6 months after year-end.' },
+      { id: 'SA-DWT',     name: 'Dividends Withholding Tax',        authority: 'SARS',                     frequency: 'Per dividend',       category: 'Tax',        description: '20% withholding tax on dividends declared. Due by end of month following dividend payment.' },
+      { id: 'SA-TTL',     name: 'Transfer Duty / Tax',              authority: 'SARS',                     frequency: 'Per transaction',    category: 'Tax',        description: 'Transfer duty on property acquisitions. Payable within 6 months of acquisition.' },
+      { id: 'SA-CUSTOMS', name: 'Customs & Excise Duties',          authority: 'SARS Customs',             frequency: 'Per shipment',       category: 'Tax',        description: 'Import/export duties and excise. Only applicable to businesses importing goods or dealing in excise products.' },
+      // CIPC — Company Registration
+      { id: 'SA-CIPC-AR', name: 'CIPC Annual Return',               authority: 'CIPC',                     frequency: 'Annual',             category: 'Corporate',  description: 'Annual return filed within 30 business days of company anniversary date. Failure = deregistration risk.' },
+      { id: 'SA-CIPC-CR', name: 'CIPC Change of Registered Details', authority: 'CIPC',                    frequency: 'As needed',          category: 'Corporate',  description: 'Notify CIPC within 10 business days of changes to directors, registered address, or financial year-end.' },
+      { id: 'SA-CIPC-FS', name: 'Annual Financial Statements',      authority: 'CIPC / Companies Act',     frequency: 'Annual',             category: 'Corporate',  description: 'Companies Act s30: AFS must be prepared within 6 months of year-end. s33: filed if public interest score > 350.' },
+      { id: 'SA-AGM',     name: 'Annual General Meeting',           authority: 'Companies Act',            frequency: 'Annual',             category: 'Corporate',  description: 'Public companies: AGM within 15 months of previous AGM. Private companies: not required unless MOI stipulates.' },
+      // Labour — DoEL
+      { id: 'SA-UIF',     name: 'UIF Monthly Contributions',        authority: 'Dept of Labour',           frequency: 'Monthly',            category: 'Labour',     description: 'UIF contributions (2% of remuneration, split employer/employee). Declared via EMP201 and paid to SARS.' },
+      { id: 'SA-SDL',     name: 'Skills Development Levy',          authority: 'Dept of Labour',           frequency: 'Monthly',            category: 'Labour',     description: '1% of total payroll for employers with annual payroll > R500,000. Paid via EMP201.' },
+      { id: 'SA-EE',      name: 'Employment Equity Report',         authority: 'Dept of Labour',           frequency: 'Annual',             category: 'Labour',     description: 'Employers with 50+ employees or turnover above sector threshold. Due 15 January annually (online) or 1 October (manual).' },
+      { id: 'SA-WSP',     name: 'Workplace Skills Plan (WSP/ATR)',  authority: 'SETA',                     frequency: 'Annual',             category: 'Labour',     description: 'Due 30 April annually. Submit WSP (forward plans) and ATR (training already done) to your sector SETA. Failure affects mandatory grant claims.' },
+      { id: 'SA-COIDA',   name: 'COIDA Return of Earnings',        authority: 'Compensation Fund',        frequency: 'Annual',             category: 'Labour',     description: 'Annual return of earnings for workplace injury/disease fund. Due 31 March. Letter of Good Standing needed for contracts.' },
+      { id: 'SA-BCEA',    name: 'Basic Conditions of Employment',   authority: 'Dept of Labour',           frequency: 'Ongoing',            category: 'Labour',     description: 'Compliance with BCEA: working hours, leave, overtime, notice periods, payslips. Inspections can occur anytime.' },
+      { id: 'SA-OHS',     name: 'Occupational Health & Safety',     authority: 'Dept of Labour',           frequency: 'Ongoing',            category: 'Labour',     description: 'OHS Act compliance: risk assessments, safety representatives, incident reporting. Required for all employers.' },
+      // B-BBEE
+      { id: 'SA-BBBEE',   name: 'B-BBEE Verification',             authority: 'B-BBEE Commission',        frequency: 'Annual',             category: 'B-BBEE',    description: 'Annual verification against the B-BBEE Codes of Good Practice. Required for government tenders and large enterprise supply chains.' },
+      { id: 'SA-BBBEE-R', name: 'B-BBEE Annual Compliance Report', authority: 'B-BBEE Commission',        frequency: 'Annual',             category: 'B-BBEE',    description: 'Large enterprises (turnover > R50m) must file annual compliance report with the B-BBEE Commission within 90 days of verification.' },
+      // Data Protection
+      { id: 'SA-POPIA',   name: 'POPIA Compliance',                 authority: 'Information Regulator',    frequency: 'Ongoing',            category: 'Data',       description: 'Protection of Personal Information Act: consent management, data subject requests, breach notification (within 72 hours), information officer registration.' },
+      { id: 'SA-PAIA',    name: 'PAIA Manual (s51)',                authority: 'Information Regulator',    frequency: 'As needed',          category: 'Data',       description: 'Promotion of Access to Information Act: every private body must compile and make available a s51 PAIA manual.' },
+      // Financial Intelligence
+      { id: 'SA-FICA',    name: 'FICA / AML Compliance',           authority: 'Financial Intelligence Centre', frequency: 'Ongoing',       category: 'Financial',  description: 'Financial Intelligence Centre Act: Customer Due Diligence (CDD), record-keeping, reporting of suspicious/unusual transactions. Applicable to accountable/reporting institutions.' },
+      { id: 'SA-FICA-STR', name: 'Suspicious Transaction Reports', authority: 'Financial Intelligence Centre', frequency: 'As needed',     category: 'Financial',  description: 'Section 29 reports: file within 15 days of suspicion. Cash transactions > R24,999.99: file CTR within 2 days.' },
+      // Industry-specific
+      { id: 'SA-MHSA',    name: 'Mine Health & Safety',            authority: 'DMRE',                     frequency: 'Ongoing',            category: 'Industry',   description: 'Mine Health and Safety Act compliance. Only applicable to mining operations. Includes accident reporting, safety audits, and dust/noise measurements.' },
+      { id: 'SA-NRCS',    name: 'NRCS Product Compliance',         authority: 'NRCS',                     frequency: 'Per product',        category: 'Industry',   description: 'Compulsory specifications for regulated products (electrical, automotive, food). Only applicable to manufacturers/importers of regulated goods.' },
+      { id: 'SA-NHBRC',   name: 'NHBRC Registration',              authority: 'NHBRC',                    frequency: 'Annual',             category: 'Industry',   description: 'Home builders must be registered with NHBRC. Annual fees and compliance with structural defect warranty requirements. Only for construction sector.' },
+      { id: 'SA-CIDB',    name: 'CIDB Grading',                    authority: 'CIDB',                     frequency: 'Annual',             category: 'Industry',   description: 'Construction Industry Development Board grading. Required for government construction tenders. Annual renewal and upgrading.' },
+    ];
+
+    // Check which requirements are tracked for this tenant
+    await ensureRegulatoryTables();
+    const trackedResult = await query(
+      `SELECT requirement_id, tracked FROM tenant_compliance_tracking WHERE tenant_id = $1`,
+      [tenantId]
+    );
+    const trackedMap = new Map<string, boolean>();
+    for (const row of trackedResult.rows) {
+      trackedMap.set(row.requirement_id, row.tracked);
+    }
+
+    // Merge dynamic requirements (already computed) as tracked=true
+    for (const req of requirements) {
+      (req as any).tracked = true;
+    }
+
+    // Add library items that aren't already covered by dynamic requirements
+    const dynamicIds = new Set(requirements.map(r => r.id));
+    for (const libReq of saRequirementsLibrary) {
+      if (dynamicIds.has(libReq.id)) continue;
+      const isTracked = trackedMap.get(libReq.id) ?? false;
+      requirements.push({
+        ...libReq,
+        nextDue: '-',
+        status: isTracked ? 'attention' : ('inactive' as any),
+        tracked: isTracked,
       });
     }
 
@@ -848,6 +927,37 @@ export const getRegulatoryEnhancedStatus = async (req: TenantRequest, res: Respo
   }
 };
 
+export const toggleRequirementTracking = async (req: TenantRequest, res: Response) => {
+  try {
+    const tenantId = getTenantId(req);
+    if (!tenantId) {
+      return res.status(401).json({ success: false, error: 'Tenant ID not found' });
+    }
+
+    const { requirementId, tracked } = req.body;
+    if (!requirementId || typeof tracked !== 'boolean') {
+      return res.status(400).json({ success: false, error: 'requirementId (string) and tracked (boolean) are required' });
+    }
+
+    await ensureRegulatoryTables();
+
+    await query(
+      `INSERT INTO tenant_compliance_tracking (tenant_id, requirement_id, tracked, activated_at, deactivated_at)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (tenant_id, requirement_id)
+       DO UPDATE SET tracked = $3,
+         activated_at   = CASE WHEN $3 THEN NOW() ELSE tenant_compliance_tracking.activated_at END,
+         deactivated_at = CASE WHEN NOT $3 THEN NOW() ELSE NULL END`,
+      [tenantId, requirementId, tracked, tracked ? new Date() : null, tracked ? null : new Date()]
+    );
+
+    return res.json({ success: true, data: { requirementId, tracked } });
+  } catch (error: any) {
+    console.error('Toggle requirement tracking error:', error);
+    return res.status(500).json({ success: false, error: 'Failed to toggle requirement tracking' });
+  }
+};
+
 async function ensureRegulatoryTables(): Promise<void> {
   await query(
     `
@@ -870,6 +980,19 @@ async function ensureRegulatoryTables(): Promise<void> {
 
     CREATE INDEX IF NOT EXISTS idx_regulatory_filings_tenant_due
       ON regulatory_filings (tenant_id, due_date DESC);
+
+    CREATE TABLE IF NOT EXISTS tenant_compliance_tracking (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      tenant_id UUID NOT NULL,
+      requirement_id VARCHAR(50) NOT NULL,
+      tracked BOOLEAN NOT NULL DEFAULT true,
+      activated_at TIMESTAMP DEFAULT NOW(),
+      deactivated_at TIMESTAMP,
+      UNIQUE(tenant_id, requirement_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_tenant_compliance_tracking_tenant
+      ON tenant_compliance_tracking (tenant_id);
     `
   );
 }
@@ -923,6 +1046,17 @@ function toPeriodString(periodDate: Date): string {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   return `${year}-${month}`;
+}
+
+/**
+ * Get the next upcoming monthly due date on a given day-of-month.
+ * If today is past that day this month, returns next month's date.
+ */
+function getNextMonthlyDueDate(dayOfMonth: number): string {
+  const now = new Date();
+  const thisMonth = new Date(now.getFullYear(), now.getMonth(), dayOfMonth);
+  if (thisMonth.getTime() > now.getTime()) return toDateString(thisMonth);
+  return toDateString(new Date(now.getFullYear(), now.getMonth() + 1, dayOfMonth));
 }
 
 function normalizeFilingStatus(raw: string, dueDate?: string | Date): 'submitted' | 'pending' | 'overdue' | 'draft' {
@@ -1203,23 +1337,23 @@ async function getLatestVATSnapshot(tenantId: string): Promise<VATSnapshot | nul
         WHERE UPPER(COALESCE(jel.tax_code, '')) LIKE '%OUTPUT%'
            OR jel.account_code IN (
               SELECT code FROM chart_of_accounts
-              WHERE tenant_id = $1 AND UPPER(COALESCE(tax_type,'')) = 'VAT_OUTPUT'
+              WHERE tenant_id = $1 AND UPPER(COALESCE(default_tax_code,'')) LIKE '%OUTPUT%'
            )
       ), 0) AS output_vat,
       COALESCE(SUM(jel.debit_amount) FILTER (
         WHERE UPPER(COALESCE(jel.tax_code, '')) LIKE '%INPUT%'
            OR jel.account_code IN (
               SELECT code FROM chart_of_accounts
-              WHERE tenant_id = $1 AND UPPER(COALESCE(tax_type,'')) = 'VAT_INPUT'
+              WHERE tenant_id = $1 AND UPPER(COALESCE(default_tax_code,'')) LIKE '%INPUT%'
            )
       ), 0) AS input_vat
     FROM journal_entries je
-    JOIN journal_entry_lines jel ON je.journal_entry_id = jel.journal_entry_id
+    JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
                                  AND je.tenant_id = jel.tenant_id
     WHERE je.tenant_id = $1
       AND je.status IN ('posted', 'approved')
-      AND je.journal_date >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-      AND je.journal_date < DATE_TRUNC('month', CURRENT_DATE)
+      AND COALESCE(je.journal_date, je.entry_date) >= DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+      AND COALESCE(je.journal_date, je.entry_date) < DATE_TRUNC('month', CURRENT_DATE)
     GROUP BY DATE_TRUNC('month', je.journal_date)
     ORDER BY period DESC
     LIMIT 1
@@ -1274,6 +1408,12 @@ interface BBBEEScorecard {
  */
 async function getBBBEEScorecard(tenantId: string): Promise<BBBEEScorecard | null> {
   if (!(await tableExists('hr', 'employees'))) return null;
+
+  // Check if race column exists — not all deployments have demographic columns
+  const colCheck = await query(
+    `SELECT column_name FROM information_schema.columns WHERE table_schema = 'hr' AND table_name = 'employees' AND column_name = 'race'`
+  );
+  if (colCheck.rows.length === 0) return null;
 
   const result = await query(
     `
@@ -1409,17 +1549,17 @@ async function getCIPCEntityDetails(tenantId: string): Promise<CIPCEntityInfo[]>
   if (await tableExists('public', 'entities')) {
     const result = await query(
       `
-      SELECT entity_name, registration_number, entity_type, tax_number, vat_number
+      SELECT name, registration_number, entity_type, tax_number, vat_number
       FROM entities
       WHERE tenant_id = $1
         AND registration_number IS NOT NULL
         AND registration_number != ''
-      ORDER BY entity_name
+      ORDER BY name
       `,
       [tenantId]
     );
     return result.rows.map((r: any) => ({
-      entityName: r.entity_name,
+      entityName: r.name,
       registrationNumber: r.registration_number,
       entityType: r.entity_type || 'company',
       vatNumber: r.vat_number || undefined,

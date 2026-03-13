@@ -246,23 +246,26 @@ const SwitchToSiyaBusa: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                <tr><td>Accounting & GL</td><td>R900/mo</td><td>R750/mo</td><td className="highlight">Included</td></tr>
-                <tr><td>Payroll</td><td>+R500/mo</td><td>+R400/mo</td><td className="highlight">Included</td></tr>
-                <tr><td>Inventory</td><td>+R1,500/mo</td><td>+R800/mo</td><td className="highlight">Included</td></tr>
-                <tr><td>Projects</td><td>+R350/mo</td><td>+R350/mo</td><td className="highlight">Included</td></tr>
-                <tr><td>CRM & Sales</td><td>+R600/mo</td><td>+R400/mo</td><td className="highlight">Included</td></tr>
+                <tr><td>Accounting & GL</td><td>From R399/mo</td><td>From R499/mo</td><td className="highlight">Included</td></tr>
+                <tr><td>Payroll</td><td>Add-on</td><td>Add-on</td><td className="highlight">Included</td></tr>
+                <tr><td>Inventory</td><td>Higher tier</td><td>Add-on</td><td className="highlight">Included</td></tr>
+                <tr><td>Projects</td><td>Not available</td><td>From R121/mo</td><td className="highlight">Included</td></tr>
+                <tr><td>CRM & Sales</td><td>Third-party</td><td>Third-party</td><td className="highlight">Included</td></tr>
                 <tr><td>Manufacturing</td><td>N/A</td><td>N/A</td><td className="highlight">Included</td></tr>
                 <tr><td>SARS Compliance</td><td>Basic</td><td>Basic</td><td className="highlight">Full eFiling</td></tr>
                 <tr><td>AI Assistant</td><td>N/A</td><td>N/A</td><td className="highlight">Included</td></tr>
                 <tr className="total-row">
-                  <td><strong>Real monthly cost</strong></td>
-                  <td><strong className="text-danger">~R3,850</strong></td>
-                  <td><strong className="text-danger">~R2,700</strong></td>
-                  <td className="highlight"><strong className="text-success">R299/user</strong></td>
+                  <td><strong>Full-feature monthly cost</strong></td>
+                  <td><strong className="text-danger">R2,000+/mo*</strong></td>
+                  <td><strong className="text-danger">R2,000+/mo*</strong></td>
+                  <td className="highlight"><strong className="text-success">R1,499 flat</strong></td>
                 </tr>
               </tbody>
             </table>
           </motion.div>
+          <p style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '12px', textAlign: 'center' }}>
+            *Estimates based on publicly available pricing as of March 2026. Actual costs vary by plan, region, and add-ons selected. QuickBooks® and Xero® are trademarks of their respective owners. SiyaBusa is not affiliated with these companies.
+          </p>
         </div>
       </section>
 

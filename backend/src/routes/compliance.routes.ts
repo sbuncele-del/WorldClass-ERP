@@ -20,6 +20,7 @@ router.get('/regulatory/auto-sync/status', complianceWorkspaceController.getRegu
 router.get('/regulatory/enhanced-status', complianceWorkspaceController.getRegulatoryEnhancedStatus);
 router.post('/regulatory/filings', complianceWorkspaceController.createRegulatoryFiling);
 router.post('/regulatory/filings/:id/submit', complianceWorkspaceController.submitRegulatoryFiling);
+router.post('/regulatory/requirements/toggle', complianceWorkspaceController.toggleRequirementTracking);
 
 // ============================================================================
 // REGULATORY FRAMEWORKS & REQUIREMENTS (V2 - Tenant Isolated)

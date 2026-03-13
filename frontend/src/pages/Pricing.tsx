@@ -76,8 +76,8 @@ const competitorRows = [
 
 /* ── Hidden cost data ── */
 const hiddenCosts = [
-  { tool: 'Typical Accounting Platform', base: '~R900', addons: ['Payroll add-on: ~R500+', 'Inventory add-on: ~R1,500+', 'Projects add-on: ~R350+', 'Receipt capture: ~R400+'], total: '~R3,650+' },
-  { tool: 'Alternative Platform', base: '~R750', addons: ['Payroll add-on: ~R600+', 'Limited inventory', 'No project management', 'Third-party CRM: ~R500+'], total: '~R2,500+' },
+  { tool: 'Typical Accounting Platform', base: 'From ~R399', addons: ['Payroll: separate add-on', 'Inventory: higher-tier plan', 'Projects: add-on (~R121+)', 'Receipt capture: add-on (~R69+)'], total: 'R2,000+/mo' },
+  { tool: 'Alternative Platform', base: 'From ~R499', addons: ['Payroll: separate add-on', 'Limited inventory', 'No project management', 'Third-party CRM required'], total: 'R2,000+/mo' },
   { tool: 'SiyaBusa (Founding Member)', base: 'R299/user', addons: ['Payroll: Included', 'Inventory & WH: Included', 'Projects: Included', 'Every module: Included'], total: 'R1,499 (10 users)', highlight: true },
 ];
 
@@ -86,7 +86,7 @@ const faqs = [
   { q: 'What is Founding Member pricing?', a: 'Our Founding Member offer gives early customers full access to every SiyaBusa module at R299/user/month, or R1,499/month for 10 users. This rate is locked for 12 months from your sign-up date. After 12 months, you\'ll transition to standard pricing (with advance notice); founding members will receive priority support.' },
   { q: 'What\'s included?', a: 'Everything. Every module — Financial Accounting, Sales & CRM, HR & Payroll, Inventory, Warehouse Management, Manufacturing, Projects, Cash Management, Asset Management, Audit-Ready Hub, SARS Sentinel, AI Assistant, and more. No gated features. No premium tiers.' },
   { q: 'Is there a free trial?', a: 'Yes! Every Founding Member gets a 14-day free trial with full access to all features. No credit card required to start.' },
-  { q: 'How do you compare to other accounting platforms?', a: 'Many platforms charge R900+ for basic accounting, then R500+ for payroll, R1,500+ for inventory, R350+ for projects — totalling R3,650+/month. SiyaBusa gives you everything from R299/user/month, or R1,499/mo for 10 users. That\'s a potential saving of over R2,000/month.' },
+  { q: 'How do you compare to other accounting platforms?', a: 'Many platforms charge separately for accounting, payroll, inventory, and projects — with costs adding up quickly when you need the full suite. SiyaBusa gives you everything for R1,499/mo for 10 users. No add-ons, no hidden costs, no forex surprises.' },
   { q: 'Can I migrate from Xero, Sage, or QuickBooks?', a: 'Yes. We provide guided migration support. Our team will help import your chart of accounts, customer/supplier data, and opening balances. For Founding Members, migration assistance is included at no extra charge.' },
   { q: 'What payment methods do you accept?', a: 'We accept all major credit cards, EFT, and debit orders for South African customers. All billing is in ZAR — no forex surprises.' },
   { q: 'Is my data secure?', a: 'Yes. We use AES-256 encryption, and your data is hosted on secure infrastructure in South Africa with regular backups and high-availability architecture.' },

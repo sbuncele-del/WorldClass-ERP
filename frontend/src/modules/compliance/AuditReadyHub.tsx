@@ -167,16 +167,14 @@ const AuditReadyHub: React.FC = () => {
         //   /api/audit/documents       -> backend: not yet implemented (uses empty state)
         //   /api/audit/checklist       -> backend: not yet implemented (uses empty state)
         //   /api/audit-log/logs        -> backend: audit-log.routes.ts  (exists)
-        //   /api/audit/auditors        -> backend: not yet implemented (uses empty state)
-        //   /api/audit/messages        -> backend: not yet implemented (uses empty state)
-        //   /api/audit/requests        -> backend: not yet implemented (uses empty state)
+        //   /api/audit/portal/*        -> backend: auditor-portal.controller.ts (exists)
         const [docsData, checklistData, logsData, auditorsData, messagesData, requestsData] = await Promise.all([
           safeFetch<AuditDocument[]>('/api/audit/documents', []),
           safeFetch<ChecklistItem[]>('/api/audit/checklist', []),
           safeFetch<AuditLog[]>('/api/audit-log/logs', []),
           safeFetch<AuditorAccess[]>('/api/audit/auditors', []),
-          safeFetch<AuditorMessage[]>('/api/audit/messages', []),
-          safeFetch<DocumentRequest[]>('/api/audit/requests', [])
+          safeFetch<AuditorMessage[]>('/api/audit/portal/messages', []),
+          safeFetch<DocumentRequest[]>('/api/audit/portal/requests', [])
         ]);
 
         setDocuments(docsData);
@@ -986,13 +984,16 @@ const AuditReadyHub: React.FC = () => {
 
       {/* Auditor Portal Preview */}
       <Card 
-        title={<><EyeOutlined /> Auditor Portal Preview</>}
+        title={<><EyeOutlined /> Auditor Portal — Live</>}
         style={{ marginTop: 16 }}
-        extra={<Button type="primary" icon={<ExportOutlined />} onClick={() => window.open('/preview/auditor-portal', '_blank')}>Open Portal Preview</Button>}
+        extra={<Space>
+          <Button icon={<ExportOutlined />} onClick={() => window.open('/preview/auditor-portal', '_blank')}>Preview</Button>
+          <Button type="primary" icon={<ExportOutlined />} onClick={() => window.open('https://auditor.siyabusaerp.co.za', '_blank')}>Open Live Portal</Button>
+        </Space>}
       >
         <Alert
-          message="What Auditors See"
-          description="When auditors log into their portal, they see only the documents and categories you've granted them access to. They can view, download (if permitted), send queries, and request additional documents."
+          message="Auditor Portal is Live"
+          description={<>Your auditors access the portal at <a href="https://auditor.siyabusaerp.co.za" target="_blank" rel="noreferrer"><strong>auditor.siyabusaerp.co.za</strong></a>. They can download audit packages, request documents, and communicate with you — all mirrored to email. Requests and messages from auditors appear above in real-time.</>}
           type="success"
           showIcon
           style={{ marginBottom: 16 }}
