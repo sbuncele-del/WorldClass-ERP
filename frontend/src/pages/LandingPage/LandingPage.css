@@ -2578,10 +2578,11 @@
   font-size: 3rem;
   font-weight: 800;
   margin: 12px 0;
-  background: linear-gradient(135deg, #fff 40%, var(--sb-teal) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #ffffff;
+  background: none;
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: unset;
+  background-clip: unset;
 }
 
 .landing-page .insights-badge {

@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { staggerContainer, fadeInUp } from '../shared';
 
 function useCounter(end: number, suffix: string, duration = 2000) {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(end);
   const ref = useRef<HTMLDivElement>(null);
   const started = useRef(false);
 
@@ -16,6 +16,7 @@ function useCounter(end: number, suffix: string, duration = 2000) {
       ([entry]) => {
         if (entry.isIntersecting && !started.current) {
           started.current = true;
+          setCount(0);
           let start = 0;
           const step = end / (duration / 16);
           const timer = setInterval(() => {
@@ -29,7 +30,7 @@ function useCounter(end: number, suffix: string, duration = 2000) {
           }, 16);
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0.1 }
     );
     if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();

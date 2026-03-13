@@ -14,6 +14,16 @@
   --fp-border: #e2e8f0;
 }
 
+/* Dark mode overrides for footer pages inside WebsiteLayout */
+.landing-page.dark {
+  --fp-primary: #F1F5F9;
+  --fp-text: #E2E8F0;
+  --fp-text-secondary: #94a3b8;
+  --fp-bg: #0B1121;
+  --fp-bg-alt: rgba(255, 255, 255, 0.05);
+  --fp-border: rgba(255, 255, 255, 0.1);
+}
+
 /* Base Layout */
 .footer-page {
   min-height: 100vh;
