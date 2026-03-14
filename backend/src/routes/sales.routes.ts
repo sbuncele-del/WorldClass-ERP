@@ -129,4 +129,15 @@ router.post('/pricing', salesController.createPricingRule);
 router.put('/pricing/:id', salesController.updatePricingRule);
 router.delete('/pricing/:id', salesController.deletePricingRule);
 
+// ============================================================================
+// RETAINER ROUTES (v2 - Recurring Billing Services)
+// ============================================================================
+router.get('/retainers', salesController.getRetainers);
+router.get('/retainers/:id', salesController.getRetainerById);
+router.post('/retainers', salesController.createRetainer);
+router.put('/retainers/:id', salesController.updateRetainer);
+router.delete('/retainers/:id', salesController.deleteRetainer);
+router.post('/retainers/:id/generate-invoice', salesController.generateRetainerInvoice);
+router.post('/retainers/:id/toggle-status', salesController.toggleRetainerStatus);
+
 export default router;
