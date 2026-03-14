@@ -3,13 +3,12 @@ import { Router } from 'express';
 import * as salesController from '../controllers/sales.controller.v2';
 import * as salesWorkspaceController from '../modules/sales/controllers/sales.workspace.controller';
 import * as statementsController from '../controllers/statements.controller.v2';
-import { tenantMiddleware, requireEntity } from '../middleware/tenant';
+import { tenantMiddleware } from '../middleware/tenant';
 
 const router = Router();
 
 // Apply tenant middleware to all sales routes
 router.use(tenantMiddleware);
-router.use(requireEntity);
 
 // ============================================================================
 // DASHBOARD (v2 - Repository Pattern)
