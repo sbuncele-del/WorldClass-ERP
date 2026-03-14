@@ -288,8 +288,6 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
           {expandedSections.financial && (
             <div className="sidebar-section-content">
               {isModuleEnabled('financial') && renderNavItem('/app/financial-hub', <BarChartOutlined />, 'Financial Hub', undefined, ['director', 'executive', 'accountant'])}
-              {isModuleEnabled('financial') && renderNavItem('/app/financial/take-on-balances', <SwapOutlined />, 'Take-on Balances')}
-              {isModuleEnabled('financial') && renderNavItem('/app/financial/statements', <FileTextOutlined />, 'Statements')}
               {isModuleEnabled('financial') && renderNavItem('/app/banking-hub', <BankOutlined />, 'Banking Hub')}
               {isModuleEnabled('financial') && renderNavItem('/app/sars', <FileProtectOutlined />, 'SARS Sentinel')}
             </div>
@@ -302,7 +300,9 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
           {expandedSections.operations && (
             <div className="sidebar-section-content">
               {isModuleEnabled('sales') && renderNavItem('/app/sales-hub', <ShoppingCartOutlined />, 'Sales & CRM')}
+              {isModuleEnabled('sales') && renderNavItem('/app/sales/statements', <FileTextOutlined />, 'Customer Statements')}
               {isModuleEnabled('purchase') && renderNavItem('/app/purchase-hub', <ShoppingOutlined />, 'Purchase Hub')}
+              {isModuleEnabled('purchase') && renderNavItem('/app/purchase/statements', <FileTextOutlined />, 'Supplier Statements')}
               {isModuleEnabled('inventory') && renderNavItem('/app/inventory-hub', <InboxOutlined />, 'Inventory Hub')}
               {isModuleEnabled('assets') && renderNavItem('/app/assets-hub', <BuildOutlined />, 'Assets Hub')}
               {isModuleEnabled('warehouse') && renderNavItem('/app/warehouse-hub', <InboxOutlined />, 'Warehouse Hub')}
@@ -344,6 +344,7 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
               {renderNavItem('/app/admin-hub', <SettingOutlined />, 'Admin Hub', undefined, ['director', 'executive'])}
               {renderNavItem('/app/multi-entity', <SwapOutlined />, 'Multi-Entity', undefined, ['director'])}
               {renderNavItem('/app/tenant-settings', <SettingOutlined />, 'Company Setup', undefined, ['director', 'executive'])}
+              {renderNavItem('/app/settings/take-on-balances', <SwapOutlined />, 'Take-on Balances', undefined, ['director', 'executive'])}
               {renderNavItem('/app/users', <UserOutlined />, 'Users', undefined, ['director', 'executive'])}
               {renderNavItem('/app/audit-logs', <FileTextOutlined />, 'Audit Logs', undefined, ['director', 'executive', 'accountant'])}
             </div>

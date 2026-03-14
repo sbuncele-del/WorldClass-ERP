@@ -68,8 +68,12 @@ interface SummaryRow {
 const fmt = (v: number) =>
   `R ${Math.abs(v).toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-const StatementsPage: React.FC = () => {
-  const [mode, setMode] = useState<'customers' | 'suppliers'>('customers');
+interface StatementsPageProps {
+  defaultMode?: 'customers' | 'suppliers';
+}
+
+const StatementsPage: React.FC<StatementsPageProps> = ({ defaultMode = 'customers' }) => {
+  const [mode, setMode] = useState<'customers' | 'suppliers'>(defaultMode);
   const [summaryList, setSummaryList] = useState<SummaryRow[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statement, setStatement] = useState<StatementData | null>(null);

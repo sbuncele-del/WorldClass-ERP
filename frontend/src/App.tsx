@@ -215,6 +215,9 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
             <Route path="/financial/chart-of-accounts" element={<ChartOfAccountsPage />} />
             <Route path="/financial/take-on-balances" element={<TakeOnBalancesPage />} />
             <Route path="/financial/statements" element={<StatementsPage />} />
+            <Route path="/sales/statements" element={<StatementsPage defaultMode="customers" />} />
+            <Route path="/purchase/statements" element={<StatementsPage defaultMode="suppliers" />} />
+            <Route path="/settings/take-on-balances" element={<TakeOnBalancesPage />} />
             <Route path="/financial/dimensions" element={<Dimensions />} />
             <Route path="/financial/*" element={<FinancialHub />} />
             <Route path="/financial-hub/*" element={<FinancialHub />} />
