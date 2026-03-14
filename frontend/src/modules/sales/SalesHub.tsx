@@ -66,6 +66,7 @@ import {
 import { salesService } from '../../services/sales.service';
 import { workspaceApi } from '../../services/api.service';
 import type { SalesStats, SalesOrder, Customer } from '../../services/sales.service';
+import StatementsPage from '../financial/components/StatementsPage';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -1358,6 +1359,12 @@ const SalesHub: React.FC = () => {
           />
         </Card>
       ),
+    },
+    {
+      key: 'statements',
+      label: 'Statements',
+      icon: <FileTextOutlined />,
+      children: <StatementsPage defaultMode="customers" />,
     },
     {
       key: 'settings',

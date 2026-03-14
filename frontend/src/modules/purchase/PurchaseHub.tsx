@@ -55,6 +55,7 @@ import {
 } from '../../components/hub';
 import apiClient from '../../services/api';
 import { purchaseService } from '../../services/purchase.service';
+import StatementsPage from '../financial/components/StatementsPage';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -714,6 +715,12 @@ const PurchaseHub: React.FC = () => {
           </Col>
         </Row>
       ),
+    },
+    {
+      key: 'statements',
+      label: 'Statements',
+      icon: <FileTextOutlined />,
+      children: <StatementsPage defaultMode="suppliers" />,
     },
     {
       key: 'settings',

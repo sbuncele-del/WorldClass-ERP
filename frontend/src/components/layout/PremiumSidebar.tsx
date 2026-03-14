@@ -300,9 +300,7 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
           {expandedSections.operations && (
             <div className="sidebar-section-content">
               {isModuleEnabled('sales') && renderNavItem('/app/sales-hub', <ShoppingCartOutlined />, 'Sales & CRM')}
-              {isModuleEnabled('sales') && renderNavItem('/app/sales/statements', <FileTextOutlined />, 'Customer Statements')}
               {isModuleEnabled('purchase') && renderNavItem('/app/purchase-hub', <ShoppingOutlined />, 'Purchase Hub')}
-              {isModuleEnabled('purchase') && renderNavItem('/app/purchase/statements', <FileTextOutlined />, 'Supplier Statements')}
               {isModuleEnabled('inventory') && renderNavItem('/app/inventory-hub', <InboxOutlined />, 'Inventory Hub')}
               {isModuleEnabled('assets') && renderNavItem('/app/assets-hub', <BuildOutlined />, 'Assets Hub')}
               {isModuleEnabled('warehouse') && renderNavItem('/app/warehouse-hub', <InboxOutlined />, 'Warehouse Hub')}
