@@ -35,6 +35,7 @@ const SalesOrderManagement = lazy(() => import('./components/SalesOrderManagemen
 const LeadsPage = lazy(() => import('./LeadsPage'));
 const OpportunitiesPage = lazy(() => import('./OpportunitiesPage'));
 const RetainerManagement = lazy(() => import('./components/RetainerManagement'));
+const StatementsPage = lazy(() => import('../financial/components/StatementsPage'));
 
 const PageLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300, width: '100%' }}>
@@ -56,6 +57,7 @@ const SalesModule: React.FC = () => {
     if (path.includes('/leads')) return 'leads';
     if (path.includes('/opportunities')) return 'opportunities';
     if (path.includes('/retainers')) return 'retainers';
+    if (path.includes('/statements')) return 'statements';
     if (path.includes('/settings')) return 'settings';
     return 'dashboard';
   };
@@ -127,6 +129,11 @@ const SalesModule: React.FC = () => {
               icon: <CalendarOutlined />,
               label: 'Retainers',
             },
+            {
+              key: 'statements',
+              icon: <FileTextOutlined />,
+              label: 'Statements',
+            },
           ]}
         />
       </div>
@@ -143,6 +150,7 @@ const SalesModule: React.FC = () => {
             <Route path="/leads" element={<LeadsPage />} />
             <Route path="/opportunities" element={<OpportunitiesPage />} />
             <Route path="/retainers" element={<RetainerManagement />} />
+            <Route path="/statements" element={<StatementsPage defaultMode="customers" />} />
             <Route path="*" element={<Navigate to="" replace />} />
           </Routes>
         </Suspense>
