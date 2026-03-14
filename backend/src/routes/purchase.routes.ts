@@ -2,6 +2,7 @@ import express from 'express';
 // All purchase routes now use v2 controllers exclusively
 import * as purchaseControllerV2 from '../controllers/purchase.controller.v2';
 import * as purchaseWorkspaceController from '../modules/purchase/controllers/purchase.workspace.controller';
+import * as statementsController from '../controllers/statements.controller.v2';
 import { tenantMiddleware, requireEntity } from '../middleware/tenant';
 
 const router = express.Router();
@@ -12,6 +13,10 @@ router.use(requireEntity);
 
 // ==================== WORKSPACE ====================
 router.get('/workspace', purchaseWorkspaceController.getPurchaseWorkspace);
+
+// ==================== SUPPLIER STATEMENTS ====================
+router.get('/suppliers/statements', statementsController.listSupplierStatements);
+router.get('/suppliers/:id/statement', statementsController.getSupplierStatement);
 
 // ==================== SUPPLIER ROUTES ====================
 router.get('/suppliers', purchaseControllerV2.getSuppliers);

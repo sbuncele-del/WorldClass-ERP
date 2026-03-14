@@ -288,6 +288,8 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
           {expandedSections.financial && (
             <div className="sidebar-section-content">
               {isModuleEnabled('financial') && renderNavItem('/app/financial-hub', <BarChartOutlined />, 'Financial Hub', undefined, ['director', 'executive', 'accountant'])}
+              {isModuleEnabled('financial') && renderNavItem('/app/financial/take-on-balances', <SwapOutlined />, 'Take-on Balances')}
+              {isModuleEnabled('financial') && renderNavItem('/app/financial/statements', <FileTextOutlined />, 'Statements')}
               {isModuleEnabled('financial') && renderNavItem('/app/banking-hub', <BankOutlined />, 'Banking Hub')}
               {isModuleEnabled('financial') && renderNavItem('/app/sars', <FileProtectOutlined />, 'SARS Sentinel')}
             </div>

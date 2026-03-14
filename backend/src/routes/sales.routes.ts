@@ -2,6 +2,7 @@ import { Router } from 'express';
 // V2 controller with Repository Pattern + direct tenant-safe queries for ALL endpoints
 import * as salesController from '../controllers/sales.controller.v2';
 import * as salesWorkspaceController from '../modules/sales/controllers/sales.workspace.controller';
+import * as statementsController from '../controllers/statements.controller.v2';
 import { tenantMiddleware, requireEntity } from '../middleware/tenant';
 
 const router = Router();
@@ -25,6 +26,8 @@ router.get('/workspace', salesWorkspaceController.getSalesWorkspace);
 // ============================================================================
 router.get('/customers', salesController.getCustomers);
 router.get('/customers/:id', salesController.getCustomer);
+router.get('/customers/statements', statementsController.listCustomerStatements);
+router.get('/customers/:id/statement', statementsController.getCustomerStatement);
 router.get('/customers/:id/orders', salesController.getCustomerOrders);
 router.get('/customers/:id/invoices', salesController.getCustomerInvoices);
 router.post('/customers', salesController.createCustomer);

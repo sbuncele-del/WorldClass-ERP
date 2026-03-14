@@ -51,6 +51,7 @@ import financialForecastingRoutes from './routes/financial-forecasting.routes';
 import customReportsRoutes from './routes/custom-reports.routes';
 import practiceRoutes from './routes/practice.routes';
 import assetsRoutes from './routes/assets.routes';
+import takeOnBalancesRoutes from './routes/take-on-balances.routes';
 // import demoResetRoutes from './routes/demo-reset.routes'; // DISABLED - causes Bull/Redis initialization
 import superAdminRoutes from './routes/super-admin.routes';
 import adminRoutes from './routes/admin.routes';
@@ -1600,6 +1601,7 @@ v1Router.use('/inventory', apiLimiter, inventoryRoutes);
 v1Router.use('/sales', apiLimiter, salesRoutes);
 v1Router.use('/purchase', apiLimiter, purchaseRoutes);
 v1Router.use('/financial', apiLimiter, financialRoutes);
+v1Router.use('/take-on-balances', apiLimiter, takeOnBalancesRoutes);
 v1Router.use('/financial/dimensions', dimensionsRoutes);
 v1Router.use('/financial/periods', periodRoutes);
 v1Router.use(

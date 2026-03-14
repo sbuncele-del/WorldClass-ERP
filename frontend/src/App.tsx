@@ -129,6 +129,8 @@ const AccountantPortalHub = lazy(() => import('./modules/accountant-portal/Accou
 // Financial Sub-Pages
 const Dimensions = lazy(() => import('./pages/Dimensions'));
 const ChartOfAccountsPage = lazy(() => import('./modules/financial/components/ChartOfAccountsPage'));
+const TakeOnBalancesPage = lazy(() => import('./modules/financial/components/TakeOnBalancesPage'));
+const StatementsPage = lazy(() => import('./modules/financial/components/StatementsPage'));
 const SuperAdminPanel = lazy(() => import('./modules/super-admin/SuperAdminPanel'));
 const PlatformLogin = lazy(() => import('./modules/super-admin/PlatformLogin'));
 const AuditorPortalPreview = lazy(() => import('./modules/compliance/AuditorPortalPreview'));
@@ -211,6 +213,8 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
             <Route path="/manufacturing-hub/*" element={<ManufacturingHub />} />
             <Route path="/financial" element={<FinancialHub />} />
             <Route path="/financial/chart-of-accounts" element={<ChartOfAccountsPage />} />
+            <Route path="/financial/take-on-balances" element={<TakeOnBalancesPage />} />
+            <Route path="/financial/statements" element={<StatementsPage />} />
             <Route path="/financial/dimensions" element={<Dimensions />} />
             <Route path="/financial/*" element={<FinancialHub />} />
             <Route path="/financial-hub/*" element={<FinancialHub />} />
