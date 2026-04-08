@@ -6,9 +6,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Calculator, Users, Package, FolderKanban, Truck, Building2,
-  Briefcase, Heart, HardHat, Tractor, Factory, BarChart3,
-  ArrowRight, Check, Star, Crown
+  Calculator, Users, Package, FolderKanban, Truck,
+  Briefcase, ArrowRight, Check, Star, Crown
 } from 'lucide-react';
 import { staggerContainer, fadeInUp } from '../shared';
 
@@ -88,68 +87,7 @@ const MODULES: ModuleTier[] = [
   },
 ];
 
-const INDUSTRY_MODULES: ModuleTier[] = [
-  {
-    id: 'healthcare',
-    name: 'Healthcare',
-    icon: <Heart size={24} />,
-    price: 'R499',
-    period: '/mo',
-    description: 'Patient management, medical inventory, and healthcare compliance.',
-    highlights: ['Patient records', 'Medical inventory', 'Appointment scheduling'],
-    color: '#EC4899',
-  },
-  {
-    id: 'construction',
-    name: 'Construction',
-    icon: <HardHat size={24} />,
-    price: 'R499',
-    period: '/mo',
-    description: 'Project costing, progress billing, and subcontractor management.',
-    highlights: ['Cost tracking', 'Progress billing', 'Subcontractor management'],
-    color: '#F97316',
-  },
-  {
-    id: 'property',
-    name: 'Property Management',
-    icon: <Building2 size={24} />,
-    price: 'R449',
-    period: '/mo',
-    description: 'Lease management, tenant billing, and property maintenance.',
-    highlights: ['Lease tracking', 'Tenant billing', 'Maintenance requests'],
-    color: '#14B8A6',
-  },
-  {
-    id: 'agriculture',
-    name: 'Agriculture',
-    icon: <Tractor size={24} />,
-    price: 'R449',
-    period: '/mo',
-    description: 'Crop management, farm operations, and agricultural compliance.',
-    highlights: ['Crop tracking', 'Farm operations', 'Yield analytics'],
-    color: '#22C55E',
-  },
-  {
-    id: 'manufacturing',
-    name: 'Manufacturing',
-    icon: <Factory size={24} />,
-    price: 'R499',
-    period: '/mo',
-    description: 'BOM, work orders, production planning, and quality control.',
-    highlights: ['Bill of Materials', 'Work orders', 'Production scheduling'],
-    color: '#6366F1',
-  },
-  {
-    id: 'analytics',
-    name: 'Reports & Analytics',
-    icon: <BarChart3 size={24} />,
-    price: 'R199',
-    period: '/mo',
-    description: 'Custom dashboards, KPIs, automated reports, and AI insights.',
-    highlights: ['Custom dashboards', 'Scheduled reports', 'AI-powered insights'],
-    color: '#A855F7',
-  },
-];
+// Industry modules removed — only list what's actually working
 
 const ModulePricing: React.FC = () => {
   const navigate = useNavigate();
@@ -243,35 +181,6 @@ const ModulePricing: React.FC = () => {
           ))}
         </motion.div>
 
-        {/* Industry modules */}
-        <h3 className="module-section-title">Industry-Specific Add-ons</h3>
-        <motion.div
-          className="module-grid module-grid-sm"
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-        >
-          {INDUSTRY_MODULES.map(mod => (
-            <motion.div key={mod.id} className="module-card module-card-sm" variants={fadeInUp}>
-              <div className="module-card-icon" style={{ color: mod.color }}>
-                {mod.icon}
-              </div>
-              <h4>{mod.name}</h4>
-              <p className="module-card-desc">{mod.description}</p>
-              <div className="module-card-price">
-                <span className="module-price">{mod.price}</span>
-                <span className="module-period">{mod.period}</span>
-              </div>
-              <button
-                className="module-card-cta"
-                onClick={() => handleModuleSignup(mod.id)}
-              >
-                Start Free <ArrowRight size={16} />
-              </button>
-            </motion.div>
-          ))}
-        </motion.div>
       </div>
     </section>
   );

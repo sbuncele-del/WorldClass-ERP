@@ -200,7 +200,8 @@ const AdminHub: React.FC = () => {
         email: values.email,
         first_name: values.firstName,
         last_name: values.lastName,
-        role_id: values.role,
+        role: values.role,
+        department: values.department,
       });
       message.success(`Invitation sent to ${values.email}`);
       setUserModalVisible(false);

@@ -10,7 +10,7 @@ import { staggerContainer, fadeInUp } from '../shared';
 const LogoBar: React.FC = () => {
   const logos = [
     { icon: <Shield size={20} />, name: 'SARS Integrated' },
-    { icon: <Cloud size={20} />, name: 'AWS Infrastructure' },
+    { icon: <Cloud size={20} />, name: 'Cloud Hosted' },
     { icon: <Lock size={20} />, name: 'POPIA Compliant' },
     { icon: <Database size={20} />, name: 'Enterprise PostgreSQL' },
     { icon: <Cpu size={20} />, name: 'AI-Assisted' },

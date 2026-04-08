@@ -529,7 +529,7 @@ export class AdminControllerV2 {
     const client = await pool.connect();
     try {
       const { tenantId, userId } = getTenantContext(req);
-      const { email, first_name, last_name, role_id, message } = req.body;
+      const { email, first_name, last_name, role_id: rawRoleId, role, message } = req.body;
 
       if (!email) {
         res.status(400).json({ success: false, message: 'Email is required' });
@@ -537,6 +537,18 @@ export class AdminControllerV2 {
       }
 
       await client.query('BEGIN');
+
+      // Resolve role_id: accept UUID directly, or look up by role_name/role_code
+      let resolvedRoleId = rawRoleId || null;
+      const roleInput = rawRoleId || role;
+      if (roleInput && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(roleInput)) {
+        // Not a UUID — look up by role_name or role_code
+        const roleLookup = await client.query(
+          'SELECT role_id FROM roles WHERE (LOWER(role_name) = LOWER($1) OR LOWER(role_code) = LOWER($1)) AND tenant_id = $2 LIMIT 1',
+          [roleInput, tenantId]
+        );
+        resolvedRoleId = roleLookup.rows[0]?.role_id || null;
+      }
 
       // Check if email exists in this tenant
       const existsResult = await client.query(
@@ -595,19 +607,19 @@ export class AdminControllerV2 {
       const newUserId = userResult.rows[0].id;
 
       // Assign role if provided
-      if (role_id) {
+      if (resolvedRoleId) {
         await client.query(`
           INSERT INTO user_roles (user_id, role_id, assigned_by, is_active)
           VALUES ($1, $2, $3, true)
-        `, [newUserId, role_id, userId]);
+        `, [newUserId, resolvedRoleId, userId]);
       }
 
       // Get role name for email
       let roleName = 'Team Member';
-      if (role_id) {
+      if (resolvedRoleId) {
         const roleResult = await client.query(
           'SELECT role_name FROM roles WHERE role_id = $1',
-          [role_id]
+          [resolvedRoleId]
         );
         roleName = roleResult.rows[0]?.role_name || 'Team Member';
       }

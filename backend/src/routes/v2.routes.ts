@@ -5391,4 +5391,16 @@ router.delete('/accountant-portal/invitations/:id', AccountantPortalV2.cancelInv
 router.get('/accountant-portal/activity', AccountantPortalV2.getActivityLog);
 router.get('/accountant-portal/financial-summary', AccountantPortalV2.getClientFinancialSummary);
 
+// ═══════════════════════════════════════════════════════════════════
+// Support Tickets
+// ═══════════════════════════════════════════════════════════════════
+import SupportTicketsControllerV2 from '../controllers/support-tickets.controller.v2';
+
+router.get('/support-tickets', SupportTicketsControllerV2.listTickets);
+router.post('/support-tickets', SupportTicketsControllerV2.createTicket);
+router.get('/support-tickets/:id', SupportTicketsControllerV2.getTicket);
+router.patch('/support-tickets/:id', SupportTicketsControllerV2.updateTicket);
+router.get('/support-tickets/:id/replies', SupportTicketsControllerV2.listReplies);
+router.post('/support-tickets/:id/replies', SupportTicketsControllerV2.createReply);
+
 export default router;

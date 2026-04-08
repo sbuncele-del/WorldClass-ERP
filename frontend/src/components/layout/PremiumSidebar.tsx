@@ -24,7 +24,8 @@ import {
   CloudOutlined,
   ProjectOutlined, FileTextOutlined, MessageOutlined,
   CalendarOutlined, AuditOutlined, FileProtectOutlined,
-  SettingOutlined, SwapOutlined, BarChartOutlined,
+  SettingOutlined, SwapOutlined, BarChartOutlined, PieChartOutlined,
+  CustomerServiceOutlined,
   RightOutlined, DownOutlined, MenuFoldOutlined,
   MenuUnfoldOutlined, PlusOutlined, SearchOutlined,
   BellOutlined, ClockCircleOutlined
@@ -290,6 +291,7 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
               {isModuleEnabled('financial') && renderNavItem('/app/financial-hub', <BarChartOutlined />, 'Financial Hub', undefined, ['director', 'executive', 'accountant'])}
               {isModuleEnabled('financial') && renderNavItem('/app/banking-hub', <BankOutlined />, 'Banking Hub')}
               {isModuleEnabled('financial') && renderNavItem('/app/sars', <FileProtectOutlined />, 'SARS Sentinel')}
+              {renderNavItem('/app/reports', <PieChartOutlined />, 'Reports & Analytics')}
             </div>
           )}
         </div>
@@ -307,6 +309,7 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
               {isModuleEnabled('hr') && renderNavItem('/app/hr-hub', <TeamOutlined />, 'HR Hub')}
               {isModuleEnabled('projects') && renderNavItem('/app/projects-hub', <ProjectOutlined />, 'Projects Hub')}
               {renderNavItem('/app/proposals', <FileTextOutlined />, 'Proposals')}
+              {renderNavItem('/app/support-tickets', <CustomerServiceOutlined />, 'Support Tickets')}
             </div>
           )}
         </div>

@@ -125,6 +125,8 @@ const AuditReadyHub = lazy(() => import('./modules/compliance/AuditReadyHub'));
 const RegulatoryHub = lazy(() => import('./modules/compliance/RegulatoryHub'));
 const AdminHub = lazy(() => import('./modules/admin/AdminHub'));
 const AccountantPortalHub = lazy(() => import('./modules/accountant-portal/AccountantPortalHub'));
+const SupportTicketsHub = lazy(() => import('./modules/support-tickets/SupportTicketsHub'));
+const ReportsHub = lazy(() => import('./modules/financial/components/ReportLibrary'));
 
 // Financial Sub-Pages
 const Dimensions = lazy(() => import('./pages/Dimensions'));
@@ -256,6 +258,8 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
             <Route path="/audit-ready" element={<AuditReadyHub />} />
             <Route path="/regulatory" element={<RegulatoryHub />} />
             <Route path="/sars/*" element={<SARSSentinel />} />
+            <Route path="/support-tickets" element={<SupportTicketsHub />} />
+            <Route path="/reports" element={<ReportsHub />} />
             <Route path="/admin/*" element={<AdminHub />} />
             <Route path="/admin-hub/*" element={<AdminHub />} />
             <Route path="/accountant-portal/*" element={<AccountantPortalHub />} />

@@ -434,55 +434,41 @@ const WarehouseHub: React.FC = () => {
         {/* Activity Timeline */}
         <Col xs={24} lg={12}>
           <Card title="Recent Activity" extra={<Button type="link">View All</Button>}>
-            <Timeline
-              items={[
-                {
-                  color: 'green',
-                  children: (
-                    <>
-                      <div><strong>GRN-2024-0088</strong> received at Dock 2</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>15 items from Global Electronics • 10 mins ago</div>
-                    </>
-                  )
-                },
-                {
-                  color: 'blue',
-                  children: (
-                    <>
-                      <div><strong>PICK-2024-0233</strong> completed by Sarah K.</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>8 lines picked • 25 mins ago</div>
-                    </>
-                  )
-                },
-                {
-                  color: 'orange',
-                  children: (
-                    <>
-                      <div><strong>Zone E</strong> approaching capacity (95%)</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>Cold Storage alert • 1 hour ago</div>
-                    </>
-                  )
-                },
-                {
-                  color: 'green',
-                  children: (
-                    <>
-                      <div><strong>Cycle Count</strong> completed for Zone B</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>99.2% accuracy • 2 hours ago</div>
-                    </>
-                  )
-                },
-                {
-                  color: 'blue',
-                  children: (
-                    <>
-                      <div><strong>TRF-2024-0044</strong> inter-warehouse transfer completed</div>
-                      <div style={{ fontSize: 12, color: '#999' }}>150 units to Warehouse B • 3 hours ago</div>
-                    </>
-                  )
-                }
-              ]}
-            />
+            {pendingReceipts.length === 0 && pickOrders.length === 0 && stockTransfers.length === 0 ? (
+              <Empty description="No recent warehouse activity" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            ) : (
+              <Timeline
+                items={[
+                  ...pendingReceipts.slice(0, 2).map(r => ({
+                    color: 'green' as const,
+                    children: (
+                      <>
+                        <div><strong>{r.grn_number || r.po_number || 'Receipt'}</strong> pending receipt</div>
+                        <div style={{ fontSize: 12, color: '#999' }}>{r.supplier_name || 'Supplier'} • {r.items_count || 0} items</div>
+                      </>
+                    )
+                  })),
+                  ...pickOrders.slice(0, 2).map(p => ({
+                    color: 'blue' as const,
+                    children: (
+                      <>
+                        <div><strong>{p.pick_number || p.order_number || 'Pick'}</strong> {p.status || 'pending'}</div>
+                        <div style={{ fontSize: 12, color: '#999' }}>{p.customer_name || 'Customer'} • {p.lines_count || 0} lines</div>
+                      </>
+                    )
+                  })),
+                  ...stockTransfers.slice(0, 1).map(t => ({
+                    color: 'orange' as const,
+                    children: (
+                      <>
+                        <div><strong>{t.transfer_number || 'Transfer'}</strong> {t.status || 'in progress'}</div>
+                        <div style={{ fontSize: 12, color: '#999' }}>{t.from_location || ''} → {t.to_location || ''}</div>
+                      </>
+                    )
+                  }))
+                ]}
+              />
+            )}
           </Card>
         </Col>
 
@@ -953,16 +939,27 @@ const WarehouseHub: React.FC = () => {
       >
         <Form form={form} layout="vertical">
           <Form.Item label="Purchase Order" name="po" rules={[{ required: true }]}>
-            <Select placeholder="Select PO">
-              <Option value="PO-2024-0156">PO-2024-0156 - Global Electronics</Option>
-              <Option value="PO-2024-0157">PO-2024-0157 - Premium Parts</Option>
+            <Select placeholder="Select PO" showSearch optionFilterProp="children">
+              {pendingReceipts.length > 0 ? pendingReceipts.map(r => (
+                <Option key={r.po_number || r.id} value={r.po_number || r.id}>
+                  {r.po_number || r.id} - {r.supplier_name || 'Supplier'}
+                </Option>
+              )) : (
+                <Option value="" disabled>No pending purchase orders</Option>
+              )}
             </Select>
           </Form.Item>
           <Form.Item label="Receiving Dock" name="dock" rules={[{ required: true }]}>
             <Select placeholder="Select dock">
-              <Option value="dock1">Dock 1</Option>
-              <Option value="dock2">Dock 2</Option>
-              <Option value="dock3">Dock 3</Option>
+              {warehouseZones.length > 0 ? warehouseZones.map(z => (
+                <Option key={z.id} value={z.id}>{z.name || z.id}</Option>
+              )) : (
+                <>
+                  <Option value="dock1">Dock 1</Option>
+                  <Option value="dock2">Dock 2</Option>
+                  <Option value="dock3">Dock 3</Option>
+                </>
+              )}
             </Select>
           </Form.Item>
           <Form.Item label="Delivery Note Number" name="deliveryNote">
@@ -1001,17 +998,18 @@ const WarehouseHub: React.FC = () => {
             <Input placeholder="e.g., Morning Wave 1" />
           </Form.Item>
           <Form.Item label="Select Orders" name="orders">
-            <Select mode="multiple" placeholder="Select sales orders to include">
-              <Option value="SO-2024-0789">SO-2024-0789 - Acme Corp (5 items)</Option>
-              <Option value="SO-2024-0790">SO-2024-0790 - Tech Solutions (3 items)</Option>
-              <Option value="SO-2024-0791">SO-2024-0791 - Global Traders (8 items)</Option>
+            <Select mode="multiple" placeholder="Select sales orders to include" showSearch optionFilterProp="children">
+              {pickOrders.length > 0 ? pickOrders.map(p => (
+                <Option key={p.order_number || p.id} value={p.order_number || p.id}>
+                  {p.order_number || p.id} - {p.customer_name || 'Customer'} ({p.lines_count || 0} items)
+                </Option>
+              )) : (
+                <Option value="" disabled>No pending sales orders</Option>
+              )}
             </Select>
           </Form.Item>
           <Form.Item label="Assign To" name="picker">
             <Select placeholder="Select picker (optional)">
-              <Option value="john">John M.</Option>
-              <Option value="sarah">Sarah K.</Option>
-              <Option value="mike">Mike R.</Option>
               <Option value="auto">Auto-Assign</Option>
             </Select>
           </Form.Item>
@@ -1040,19 +1038,23 @@ const WarehouseHub: React.FC = () => {
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="From Location" name="fromLocation" rules={[{ required: true }]}>
-                <Select placeholder="Select source">
-                  <Option value="B-12-3-A">B-12-3-A</Option>
-                  <Option value="B-15-2-B">B-15-2-B</Option>
-                  <Option value="C-05-1-A">C-05-1-A</Option>
+                <Select placeholder="Select source" showSearch optionFilterProp="children">
+                  {locationInventory.length > 0 ? locationInventory.map(l => (
+                    <Option key={l.location_code || l.id} value={l.location_code || l.id}>{l.location_code || l.id}</Option>
+                  )) : (
+                    <Option value="" disabled>No locations configured</Option>
+                  )}
                 </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item label="To Location" name="toLocation" rules={[{ required: true }]}>
-                <Select placeholder="Select destination">
-                  <Option value="C-05-1-A">C-05-1-A (Pick Face)</Option>
-                  <Option value="G-01-1-A">G-01-1-A (Returns)</Option>
-                  <Option value="B-20-1-A">B-20-1-A (Bulk)</Option>
+                <Select placeholder="Select destination" showSearch optionFilterProp="children">
+                  {locationInventory.length > 0 ? locationInventory.map(l => (
+                    <Option key={`to-${l.location_code || l.id}`} value={l.location_code || l.id}>{l.location_code || l.id}</Option>
+                  )) : (
+                    <Option value="" disabled>No locations configured</Option>
+                  )}
                 </Select>
               </Form.Item>
             </Col>
