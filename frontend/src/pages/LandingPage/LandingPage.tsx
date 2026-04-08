@@ -10,9 +10,14 @@ import './LandingPage.css';
 // Homepage section components
 import Navigation from './components/Navigation';
 import Footer from './components/Footer';
-import Hero from './components/Hero';
+import HeroConvert from './components/HeroConvert';
 import LogoBar from './components/LogoBar';
 import SocialProof from './components/SocialProof';
+import ModulePricing from './components/ModulePricing';
+import './components/ConvertStyles.css';
+
+// Legacy components (kept for sub-pages that may use them)
+import Hero from './components/Hero';
 import ProductShowcase from './components/ProductShowcase';
 import PainSolution from './components/PainSolution';
 import HowItWorks from './components/HowItWorks';
@@ -107,16 +112,10 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children, title, d
 const LandingPage: React.FC = () => {
   return (
     <WebsiteLayout title="SiyaBusa ERP — Enterprise Resource Planning for South Africa" description="SiyaBusa ERP — South Africa's all-in-one cloud business platform. Accounting, payroll, invoicing, inventory, HR, SARS compliance, and 17 integrated modules from R1,499/mo." canonical="https://siyabusaerp.co.za/">
-      <Hero />
+      <HeroConvert />
       <LogoBar />
       <SocialProof />
-      <ProductShowcase />
-      <PainSolution />
-      <Outcomes />
-      <HowItWorks />
-      <Testimonials />
-      <ComplianceStrip />
-      <CTASection />
+      <ModulePricing />
     </WebsiteLayout>
   );
 };

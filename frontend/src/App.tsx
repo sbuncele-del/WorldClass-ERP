@@ -165,6 +165,14 @@ const PageLoader = () => (
   </div>
 );
 
+// Subdomain detection for multi-portal routing
+function getPortalType(): 'platform' | 'accountant' | 'main' {
+  const hostname = window.location.hostname;
+  if (hostname.startsWith('platform.')) return 'platform';
+  if (hostname.startsWith('accountant.')) return 'accountant';
+  return 'main';
+}
+
 
 // Sidebar layout with collapse state management
 const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
@@ -273,7 +281,39 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
   );
 };
 
+// Platform Admin App (platform.siyabusaerp.co.za)
+const PlatformApp: React.FC = () => (
+  <Router>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/login" element={<PlatformLogin />} />
+        <Route path="/*" element={<SuperAdminPanel />} />
+      </Routes>
+    </Suspense>
+  </Router>
+);
+
+// Accountant Portal App (accountant.siyabusaerp.co.za)
+const AccountantApp: React.FC = () => (
+  <Router>
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/*" element={
+          <ProtectedRoute>
+            <EntityProvider>
+              <AccountantPortalHub />
+            </EntityProvider>
+          </ProtectedRoute>
+        } />
+      </Routes>
+    </Suspense>
+  </Router>
+);
+
 function App() {
+  const portalType = getPortalType();
+
   // Load saved theme on app startup
   useEffect(() => {
     const savedTheme = localStorage.getItem('siyabusa-theme-colors');
@@ -303,6 +343,38 @@ function App() {
     }
   }, []);
 
+  // Render subdomain-specific portals
+  if (portalType === 'platform') {
+    return (
+      <ErrorBoundary>
+        <ConfigProvider theme={antdTheme}>
+          <UserProvider>
+            <PlatformApp />
+          </UserProvider>
+        </ConfigProvider>
+      </ErrorBoundary>
+    );
+  }
+
+  if (portalType === 'accountant') {
+    return (
+      <ErrorBoundary>
+        <ConfigProvider theme={antdTheme}>
+          <UserProvider>
+            <FeatureFlagProvider>
+              <ClientProvider>
+                <CurrencyProvider>
+                  <AccountantApp />
+                </CurrencyProvider>
+              </ClientProvider>
+            </FeatureFlagProvider>
+          </UserProvider>
+        </ConfigProvider>
+      </ErrorBoundary>
+    );
+  }
+
+  // Main app (siyabusaerp.co.za)
   return (
     <ErrorBoundary>
       <ConfigProvider theme={antdTheme}>
@@ -378,7 +450,7 @@ function App() {
                       <Route path="/resend-verification" element={<ResendVerification />} />
                       <Route path="/accept-invite" element={<AcceptInvite />} />
 
-                      {/* Platform Admin - Hidden from regular clients */}
+                      {/* Platform Admin - Hidden from regular clients (also accessible via path) */}
                       <Route path="/platform-admin/login" element={<PlatformLogin />} />
                       <Route path="/platform-admin/*" element={<SuperAdminPanel />} />
                       <Route path="/platform-admin" element={<SuperAdminPanel />} />

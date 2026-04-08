@@ -5,7 +5,7 @@
 
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import authService from '../services/auth.service';
 import type { SignupData } from '../services/auth.service';
 import './Signup.css';
@@ -43,6 +43,9 @@ const INDUSTRIES = [
 
 const Signup = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const moduleParam = searchParams.get('module');
+  const planParam = searchParams.get('plan');
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<SignupData>({
     email: '',
@@ -51,7 +54,7 @@ const Signup = () => {
     lastName: '',
     companyName: '',
     country: 'ZA',
-    plan: 'founding-member',
+    plan: planParam || (moduleParam ? 'module' : 'founding-member'),
     industry: 'general',
   });
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -255,7 +258,11 @@ const Signup = () => {
             </svg>
           </div>
           <h1 className="auth-title">Create Your Account</h1>
-          <p className="auth-subtitle">Start your 14-day free trial. No credit card required.</p>
+          <p className="auth-subtitle">
+            {moduleParam
+              ? `Start your free trial — ${moduleParam.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} module`
+              : 'Start your 14-day free trial. No credit card required.'}
+          </p>
         </div>
 
         {/* Progress Steps */}
