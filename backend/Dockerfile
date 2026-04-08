@@ -40,31 +40,6 @@ COPY --from=builder /app/database ./database
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Database connection (LOCKED TO RDS FOREVER)
-ENV DB_HOST=aetheros-erp-db.cxoqqoowwgxt.eu-north-1.rds.amazonaws.com
-ENV DB_PORT=5432
-ENV DB_NAME=postgres
-ENV DB_USER=postgres
-ENV DB_PASSWORD=caxMex-0putca-dyjnah
-ENV DATABASE_URL=postgresql://postgres:caxMex-0putca-dyjnah@aetheros-erp-db.cxoqqoowwgxt.eu-north-1.rds.amazonaws.com:5432/postgres
-
-# Authentication (LOCKED)
-ENV JWT_SECRET=aetheros-super-secret-key-change-in-production-2024
-ENV JWT_EXPIRY=24h
-
-# Email configuration (LOCKED)
-ENV SMTP_HOST=smtp.sendgrid.net
-ENV SMTP_PORT=587
-ENV SMTP_USER=apikey
-ENV SMTP_PASSWORD=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
-ENV EMAIL_FROM=noreply@primesources.site
-
-# Other settings (LOCKED)
-ENV CORS_ORIGIN=*
-ENV AWS_REGION=eu-north-1
-ENV REDIS_HOST=localhost
-ENV REDIS_PORT=6379
-
 # Security and optimization
 ENV NODE_OPTIONS="--max-old-space-size=1024"
 RUN addgroup -S appuser && adduser -S appuser -G appuser
