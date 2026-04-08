@@ -25,6 +25,8 @@ const poolConfig: PoolConfig = {
   ssl: process.env.DB_HOST?.includes('rds.amazonaws.com') ? {
     rejectUnauthorized: true,
     ca: fs.readFileSync(path.join(__dirname, '../../global-bundle.pem')).toString()
+  } : process.env.DB_HOST?.includes('ondigitalocean.com') ? {
+    rejectUnauthorized: false
   } : undefined
 };
 
