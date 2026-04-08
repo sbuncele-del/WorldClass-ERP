@@ -8,6 +8,7 @@
 import { Response } from 'express';
 import { pool } from '../config/database';
 import { TenantRequest } from '../types';
+import { sendEmail } from '../services/email.service';
 
 function getTenantContext(req: TenantRequest): { tenantId: string; userId?: string } {
   const tenantId = req.tenant?.id;
@@ -77,6 +78,36 @@ export class SupportTicketsControllerV2 {
         VALUES ($1, $2, $3, $4, $5, $6, 'open', $7)
         RETURNING *
       `, [tenantId, ticketNumber, subject, description, category || 'general', priority || 'medium', userId]);
+
+      // Send email notification to the ticket creator
+      try {
+        const userResult = await pool.query(
+          'SELECT email, first_name, last_name FROM users WHERE id = $1',
+          [userId]
+        );
+        if (userResult.rows.length > 0) {
+          const user = userResult.rows[0];
+          const dashboardUrl = process.env.FRONTEND_URL || 'https://siyabusaerp.co.za';
+          await sendEmail({
+            to: user.email,
+            subject: `Ticket Created: ${ticketNumber} — ${subject}`,
+            template: 'ticket-created',
+            variables: {
+              userName: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User',
+              ticketNumber,
+              subject,
+              description: description.length > 300 ? description.substring(0, 300) + '...' : description,
+              category: category || 'general',
+              priority: priority || 'medium',
+              dashboardUrl,
+            },
+            category: 'support',
+          });
+        }
+      } catch (emailErr: any) {
+        console.error('Failed to send ticket creation email:', emailErr.message);
+        // Don't fail the request if email fails
+      }
 
       res.status(201).json({ success: true, ticket: result.rows[0] });
     } catch (error: any) {
@@ -226,6 +257,48 @@ export class SupportTicketsControllerV2 {
         'UPDATE support_tickets SET updated_at = NOW() WHERE id = $1',
         [id]
       );
+
+      // Send email to the ticket creator about the new reply
+      try {
+        const ticketResult = await pool.query(
+          `SELECT t.ticket_number, t.subject, t.created_by,
+                  u.email, u.first_name, u.last_name
+           FROM support_tickets t
+           LEFT JOIN users u ON t.created_by = u.id
+           WHERE t.id = $1`,
+          [id]
+        );
+        if (ticketResult.rows.length > 0 && ticketResult.rows[0].email) {
+          const ticket = ticketResult.rows[0];
+          // Only notify if the reply is from someone other than the ticket creator
+          if (ticket.created_by !== userId) {
+            const replyAuthorResult = await pool.query(
+              'SELECT first_name, last_name FROM users WHERE id = $1',
+              [userId]
+            );
+            const replyAuthor = replyAuthorResult.rows.length > 0
+              ? `${replyAuthorResult.rows[0].first_name || ''} ${replyAuthorResult.rows[0].last_name || ''}`.trim()
+              : 'Support Team';
+            const dashboardUrl = process.env.FRONTEND_URL || 'https://siyabusaerp.co.za';
+            await sendEmail({
+              to: ticket.email,
+              subject: `Reply on ${ticket.ticket_number}: ${ticket.subject}`,
+              template: 'ticket-reply',
+              variables: {
+                userName: `${ticket.first_name || ''} ${ticket.last_name || ''}`.trim() || 'User',
+                ticketNumber: ticket.ticket_number,
+                subject: ticket.subject,
+                replyAuthor,
+                replyMessage: message.length > 500 ? message.substring(0, 500) + '...' : message,
+                dashboardUrl,
+              },
+              category: 'support',
+            });
+          }
+        }
+      } catch (emailErr: any) {
+        console.error('Failed to send ticket reply email:', emailErr.message);
+      }
 
       res.status(201).json({ success: true, reply: result.rows[0] });
     } catch (error: any) {

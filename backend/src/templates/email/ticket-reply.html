@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Reply on {{ticketNumber}}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6; color: #333; background-color: #f5f5f5; padding: 20px;
+    }
+    .email-container {
+      max-width: 600px; margin: 0 auto; background: #ffffff;
+      border-radius: 8px; overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .email-header {
+      background: linear-gradient(135deg, #00D4AA 0%, #00B894 100%);
+      color: #ffffff; padding: 24px 30px; text-align: left;
+    }
+    .email-header h1 { font-size: 18px; font-weight: 600; }
+    .email-header .ticket-num { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+    .email-body { padding: 24px 30px; font-size: 15px; }
+    .email-body p { margin-bottom: 12px; }
+    .reply-box {
+      background: #f0f7ff; border-radius: 6px; padding: 16px;
+      margin: 16px 0; border-left: 4px solid #00D4AA;
+    }
+    .reply-author { font-weight: 600; color: #333; margin-bottom: 6px; }
+    .reply-message { color: #555; }
+    .email-body a.cta {
+      display: inline-block; background: linear-gradient(135deg, #00D4AA 0%, #00B894 100%);
+      color: #ffffff !important; padding: 12px 24px; border-radius: 4px;
+      text-decoration: none; font-weight: 600; margin-top: 12px;
+    }
+    .email-footer {
+      padding: 16px 30px; background: #f8f9fa; text-align: center;
+      font-size: 12px; color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="email-header">
+      <h1>New Reply on Your Ticket</h1>
+      <div class="ticket-num">{{ticketNumber}} — {{subject}}</div>
+    </div>
+    <div class="email-body">
+      <p>Hi {{userName}},</p>
+      <p>There's a new reply on your support ticket:</p>
+
+      <div class="reply-box">
+        <div class="reply-author">{{replyAuthor}} wrote:</div>
+        <div class="reply-message">{{replyMessage}}</div>
+      </div>
+
+      <a href="{{dashboardUrl}}/app/support-tickets" class="cta">View Ticket</a>
+    </div>
+    <div class="email-footer">
+      <p>SiyaBusa ERP — Work Smart, Not Hard</p>
+      <p style="margin-top: 4px;">You're receiving this because you created ticket {{ticketNumber}}.</p>
+    </div>
+  </div>
+</body>
+</html>
