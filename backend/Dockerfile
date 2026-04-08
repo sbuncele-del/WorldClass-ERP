@@ -11,7 +11,7 @@ RUN npm install
 
 # Copy source code and build
 COPY . .
-RUN npm install @socket.io/redis-adapter && npm run build
+RUN npm install @socket.io/redis-adapter && NODE_OPTIONS="--max-old-space-size=1536" npm run build
 
 # Production stage - EVERYTHING LOCKED IN
 FROM node:20-alpine
