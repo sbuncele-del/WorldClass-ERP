@@ -65,9 +65,9 @@ async function sendViaResend(to: string, subject: string, html: string): Promise
     }),
   });
 
-  const data = await res.json();
+  const data = await res.json() as { id?: string };
   if (res.ok) {
-    console.log(`  ✅ Sent: ${subject} → ${to} (ID: ${data.id})`);
+    console.log(`  ✅ Sent: ${subject} → ${to} (ID: ${data.id})`); 
     return true;
   } else {
     console.error(`  ❌ Failed: ${subject}`, data);

@@ -130,7 +130,7 @@ async function getAdminToken(): Promise<string> {
     throw new Error(`Yodlee admin auth failed: ${response.status} - ${error}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as { token: { accessToken: string } };
   return data.token.accessToken;
 }
 
@@ -158,7 +158,7 @@ async function getUserToken(yodleeLoginName: string): Promise<string> {
     throw new Error(`Yodlee user auth failed: ${response.status} - ${error}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as { token: { accessToken: string } };
   return data.token.accessToken;
 }
 
@@ -271,7 +271,7 @@ async function getAccounts(tenantId: string, userId: string): Promise<YodleeAcco
     throw new Error(`Yodlee get accounts failed: ${response.status} - ${error}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as { account?: YodleeAccount[] };
   return data.account || [];
 }
 
@@ -292,7 +292,7 @@ async function getAccountById(tenantId: string, userId: string, accountId: numbe
 
   if (!response.ok) return null;
 
-  const data = await response.json();
+  const data = await response.json() as { account?: YodleeAccount[] };
   return data.account?.[0] || null;
 }
 
@@ -341,7 +341,7 @@ async function getTransactions(
     throw new Error(`Yodlee get transactions failed: ${response.status} - ${error}`);
   }
 
-  const data = await response.json();
+  const data = await response.json() as { transaction?: YodleeTransaction[] };
   return data.transaction || [];
 }
 
@@ -376,7 +376,7 @@ async function getTransactionCount(
 
   if (!response.ok) return 0;
 
-  const data = await response.json();
+  const data = await response.json() as { transaction?: { TOTAL?: { count?: number } } };
   return data.transaction?.TOTAL?.count || 0;
 }
 
@@ -408,7 +408,7 @@ async function searchProviders(
 
   if (!response.ok) return [];
 
-  const data = await response.json();
+  const data = await response.json() as { provider?: YodleeProvider[] };
   return data.provider || [];
 }
 
