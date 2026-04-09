@@ -1704,10 +1704,10 @@ router.get('/fiscal/current-year', async (req: any, res) => {
     if (!fy) {
       // Auto-create a fiscal year for the current SA tax year (March-Feb)
       const now = new Date();
-      const startMonth = now.getMonth() >= 2 ? 2 : 2; // March = month 2
+      const startMonth = 2; // March = month index 2 (0-based)
       const startYear = now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
       const startDate = new Date(startYear, startMonth, 1).toISOString().split('T')[0];
-      const endDate = new Date(startYear + 1, startMonth - 1, 28).toISOString().split('T')[0]; // end of Feb
+      const endDate = new Date(startYear + 1, startMonth, 0).toISOString().split('T')[0]; // last day of Feb (handles leap years)
       const yearCode = `FY${startYear}/${(startYear + 1).toString().slice(-2)}`;
       const yearName = `Financial Year ${startYear}/${startYear + 1}`;
       const createResult = await dbQuery(
@@ -1742,14 +1742,20 @@ router.get('/fiscal/current-year', async (req: any, res) => {
     const openCount = periods.filter((p: any) => p.status === 'OPEN').length;
     const futureCount = periods.filter((p: any) => p.status === 'FUTURE').length;
     const currentPeriod = periods.find((p: any) => p.status === 'OPEN');
+    // Derive start_month from start_date (1-based: Jan=1, Mar=3, etc.)
+    const fyStartMonth = fy.start_date ? new Date(fy.start_date).getMonth() + 1 : null;
     res.json({ success: true, data: {
-      ...fy,
+      fiscalYear: {
+        ...fy,
+        start_month: fyStartMonth,
+      },
       periods,
       summary: {
         totalPeriods: periods.length,
         closedCount, openCount, futureCount,
         currentPeriod: currentPeriod?.period_name || 'None',
-        progress: periods.length > 0 ? Math.round((closedCount / periods.length) * 100) : 0
+        progress: periods.length > 0 ? Math.round((closedCount / periods.length) * 100) : 0,
+        percentComplete: periods.length > 0 ? Math.round((closedCount / periods.length) * 100) : 0
       }
     }});
   } catch (error: any) {

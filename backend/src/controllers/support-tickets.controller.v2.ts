@@ -1,8 +1,9 @@
 /**
- * Support Tickets Controller V2 - Tenant-Hardened
+ * Support Tickets Controller V2 - Tenant-Hardened / Client Service Desk
  * 
  * CRUD for support tickets within a tenant.
- * Tickets are scoped per tenant. Replies threaded per ticket.
+ * Tickets linked to customers (from Sales/CRM or inline new client).
+ * Email notifications to client & assigned staff on create/reply.
  */
 
 import { Response } from 'express';
@@ -28,6 +29,7 @@ export class SupportTicketsControllerV2 {
 
       let query = `
         SELECT t.*, 
+               t.customer_id, t.customer_name, t.customer_email, t.customer_phone,
                u.first_name || ' ' || u.last_name AS created_by_name,
                a.first_name || ' ' || a.last_name AS assigned_to_name,
                (SELECT COUNT(*) FROM support_ticket_replies r WHERE r.ticket_id = t.id)::int AS replies_count
@@ -58,11 +60,31 @@ export class SupportTicketsControllerV2 {
   static async createTicket(req: TenantRequest, res: Response): Promise<void> {
     try {
       const { tenantId, userId } = getTenantContext(req);
-      const { subject, description, category, priority } = req.body;
+      const { subject, description, category, priority, customer_id, customer_name, customer_email, customer_phone, assigned_to } = req.body;
 
       if (!subject || !description) {
         res.status(400).json({ success: false, message: 'Subject and description are required' });
         return;
+      }
+
+      // Resolve customer info: from existing customer or inline
+      let resolvedName = customer_name || null;
+      let resolvedEmail = customer_email || null;
+      let resolvedPhone = customer_phone || null;
+      let resolvedCustomerId = customer_id || null;
+
+      if (customer_id) {
+        // Pull customer details from customers table
+        const custResult = await pool.query(
+          'SELECT company_name, contact_person, email, phone FROM customers WHERE customer_id = $1 AND tenant_id = $2',
+          [customer_id, tenantId]
+        );
+        if (custResult.rows.length > 0) {
+          const cust = custResult.rows[0];
+          resolvedName = cust.company_name || cust.contact_person || resolvedName;
+          resolvedEmail = cust.email || resolvedEmail;
+          resolvedPhone = cust.phone || resolvedPhone;
+        }
       }
 
       // Generate ticket number
@@ -74,26 +96,23 @@ export class SupportTicketsControllerV2 {
       const ticketNumber = `TKT-${new Date().getFullYear()}-${String(count).padStart(4, '0')}`;
 
       const result = await pool.query(`
-        INSERT INTO support_tickets (tenant_id, ticket_number, subject, description, category, priority, status, created_by)
-        VALUES ($1, $2, $3, $4, $5, $6, 'open', $7)
+        INSERT INTO support_tickets (tenant_id, ticket_number, subject, description, category, priority, status, created_by, assigned_to, customer_id, customer_name, customer_email, customer_phone)
+        VALUES ($1, $2, $3, $4, $5, $6, 'open', $7, $8, $9, $10, $11, $12)
         RETURNING *
-      `, [tenantId, ticketNumber, subject, description, category || 'general', priority || 'medium', userId]);
+      `, [tenantId, ticketNumber, subject, description, category || 'general', priority || 'medium', userId, assigned_to || null, resolvedCustomerId, resolvedName, resolvedEmail, resolvedPhone]);
 
-      // Send email notification to the ticket creator
-      try {
-        const userResult = await pool.query(
-          'SELECT email, first_name, last_name FROM users WHERE id = $1',
-          [userId]
-        );
-        if (userResult.rows.length > 0) {
-          const user = userResult.rows[0];
-          const dashboardUrl = process.env.FRONTEND_URL || 'https://siyabusaerp.co.za';
+      const dashboardUrl = process.env.FRONTEND_URL || 'https://app.example.com';
+      let notificationSent = false;
+
+      // Send email notification to the CLIENT
+      if (resolvedEmail) {
+        try {
           await sendEmail({
-            to: user.email,
+            to: resolvedEmail,
             subject: `Ticket Created: ${ticketNumber} — ${subject}`,
             template: 'ticket-created',
             variables: {
-              userName: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'User',
+              userName: resolvedName || 'Valued Client',
               ticketNumber,
               subject,
               description: description.length > 300 ? description.substring(0, 300) + '...' : description,
@@ -103,10 +122,62 @@ export class SupportTicketsControllerV2 {
             },
             category: 'support',
           });
+          notificationSent = true;
+        } catch (emailErr: any) {
+          console.error('Failed to send client ticket email:', emailErr.message);
+        }
+      }
+
+      // Send email notification to the ASSIGNED STAFF member (or tenant admin)
+      try {
+        let staffEmail: string | null = null;
+        let staffName = 'Team';
+        if (assigned_to) {
+          const staffResult = await pool.query(
+            'SELECT email, first_name, last_name FROM users WHERE id = $1',
+            [assigned_to]
+          );
+          if (staffResult.rows.length > 0) {
+            staffEmail = staffResult.rows[0].email;
+            staffName = `${staffResult.rows[0].first_name || ''} ${staffResult.rows[0].last_name || ''}`.trim() || 'Team';
+          }
+        } else {
+          // Notify tenant admin if no one assigned
+          const adminResult = await pool.query(
+            "SELECT email, first_name, last_name FROM users WHERE tenant_id = $1 AND role IN ('admin', 'super_admin') LIMIT 1",
+            [tenantId]
+          );
+          if (adminResult.rows.length > 0) {
+            staffEmail = adminResult.rows[0].email;
+            staffName = `${adminResult.rows[0].first_name || ''} ${adminResult.rows[0].last_name || ''}`.trim() || 'Admin';
+          }
+        }
+        if (staffEmail) {
+          await sendEmail({
+            to: staffEmail,
+            subject: `New Ticket ${ticketNumber} from ${resolvedName || 'a user'}: ${subject}`,
+            template: 'ticket-created',
+            variables: {
+              userName: staffName,
+              ticketNumber,
+              subject,
+              description: description.length > 300 ? description.substring(0, 300) + '...' : description,
+              category: category || 'general',
+              priority: priority || 'medium',
+              dashboardUrl,
+              clientName: resolvedName || 'Not specified',
+              clientEmail: resolvedEmail || 'Not specified',
+            },
+            category: 'support',
+          });
         }
       } catch (emailErr: any) {
-        console.error('Failed to send ticket creation email:', emailErr.message);
-        // Don't fail the request if email fails
+        console.error('Failed to send staff ticket email:', emailErr.message);
+      }
+
+      // Update notification_sent flag
+      if (notificationSent) {
+        await pool.query('UPDATE support_tickets SET notification_sent = true WHERE id = $1', [result.rows[0].id]);
       }
 
       res.status(201).json({ success: true, ticket: result.rows[0] });
@@ -125,6 +196,7 @@ export class SupportTicketsControllerV2 {
 
       const result = await pool.query(`
         SELECT t.*, 
+               t.customer_id, t.customer_name, t.customer_email, t.customer_phone,
                u.first_name || ' ' || u.last_name AS created_by_name,
                a.first_name || ' ' || a.last_name AS assigned_to_name
         FROM support_tickets t
@@ -233,7 +305,7 @@ export class SupportTicketsControllerV2 {
 
       // Verify ticket belongs to tenant
       const ticketCheck = await pool.query(
-        'SELECT id, status FROM support_tickets WHERE id = $1 AND tenant_id = $2',
+        'SELECT id, status, customer_email, customer_name FROM support_tickets WHERE id = $1 AND tenant_id = $2',
         [id, tenantId]
       );
       if (ticketCheck.rows.length === 0) {
@@ -258,43 +330,62 @@ export class SupportTicketsControllerV2 {
         [id]
       );
 
-      // Send email to the ticket creator about the new reply
+      // Send email to the CLIENT about the reply
       try {
-        const ticketResult = await pool.query(
-          `SELECT t.ticket_number, t.subject, t.created_by,
-                  u.email, u.first_name, u.last_name
-           FROM support_tickets t
-           LEFT JOIN users u ON t.created_by = u.id
-           WHERE t.id = $1`,
-          [id]
+        const ticket = ticketCheck.rows[0];
+        const ticketFull = await pool.query(
+          'SELECT ticket_number, subject FROM support_tickets WHERE id = $1', [id]
         );
-        if (ticketResult.rows.length > 0 && ticketResult.rows[0].email) {
-          const ticket = ticketResult.rows[0];
-          // Only notify if the reply is from someone other than the ticket creator
-          if (ticket.created_by !== userId) {
-            const replyAuthorResult = await pool.query(
-              'SELECT first_name, last_name FROM users WHERE id = $1',
-              [userId]
-            );
-            const replyAuthor = replyAuthorResult.rows.length > 0
-              ? `${replyAuthorResult.rows[0].first_name || ''} ${replyAuthorResult.rows[0].last_name || ''}`.trim()
-              : 'Support Team';
-            const dashboardUrl = process.env.FRONTEND_URL || 'https://siyabusaerp.co.za';
-            await sendEmail({
-              to: ticket.email,
-              subject: `Reply on ${ticket.ticket_number}: ${ticket.subject}`,
-              template: 'ticket-reply',
-              variables: {
-                userName: `${ticket.first_name || ''} ${ticket.last_name || ''}`.trim() || 'User',
-                ticketNumber: ticket.ticket_number,
-                subject: ticket.subject,
-                replyAuthor,
-                replyMessage: message.length > 500 ? message.substring(0, 500) + '...' : message,
-                dashboardUrl,
-              },
-              category: 'support',
-            });
-          }
+        const tkt = ticketFull.rows[0];
+
+        const replyAuthorResult = await pool.query(
+          'SELECT first_name, last_name FROM users WHERE id = $1', [userId]
+        );
+        const replyAuthor = replyAuthorResult.rows.length > 0
+          ? `${replyAuthorResult.rows[0].first_name || ''} ${replyAuthorResult.rows[0].last_name || ''}`.trim()
+          : 'Support Team';
+        const dashboardUrl = process.env.FRONTEND_URL || 'https://app.example.com';
+
+        // Notify client
+        if (ticket.customer_email) {
+          await sendEmail({
+            to: ticket.customer_email,
+            subject: `Update on ${tkt.ticket_number}: ${tkt.subject}`,
+            template: 'ticket-reply',
+            variables: {
+              userName: ticket.customer_name || 'Valued Client',
+              ticketNumber: tkt.ticket_number,
+              subject: tkt.subject,
+              replyAuthor,
+              replyMessage: message.length > 500 ? message.substring(0, 500) + '...' : message,
+              dashboardUrl,
+            },
+            category: 'support',
+          });
+        }
+
+        // Also notify internal ticket creator if different from replier
+        const creatorResult = await pool.query(
+          `SELECT t.created_by, u.email, u.first_name, u.last_name
+           FROM support_tickets t LEFT JOIN users u ON t.created_by = u.id
+           WHERE t.id = $1`, [id]
+        );
+        if (creatorResult.rows.length > 0 && creatorResult.rows[0].email && creatorResult.rows[0].created_by !== userId) {
+          const creator = creatorResult.rows[0];
+          await sendEmail({
+            to: creator.email,
+            subject: `Reply on ${tkt.ticket_number}: ${tkt.subject}`,
+            template: 'ticket-reply',
+            variables: {
+              userName: `${creator.first_name || ''} ${creator.last_name || ''}`.trim() || 'User',
+              ticketNumber: tkt.ticket_number,
+              subject: tkt.subject,
+              replyAuthor,
+              replyMessage: message.length > 500 ? message.substring(0, 500) + '...' : message,
+              dashboardUrl,
+            },
+            category: 'support',
+          });
         }
       } catch (emailErr: any) {
         console.error('Failed to send ticket reply email:', emailErr.message);

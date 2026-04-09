@@ -126,7 +126,7 @@ const RegulatoryHub = lazy(() => import('./modules/compliance/RegulatoryHub'));
 const AdminHub = lazy(() => import('./modules/admin/AdminHub'));
 const AccountantPortalHub = lazy(() => import('./modules/accountant-portal/AccountantPortalHub'));
 const SupportTicketsHub = lazy(() => import('./modules/support-tickets/SupportTicketsHub'));
-const ReportsHub = lazy(() => import('./modules/financial/components/ReportLibrary'));
+const ReportsHub = lazy(() => import('./modules/reports/ReportsHub'));
 
 // Financial Sub-Pages
 const Dimensions = lazy(() => import('./pages/Dimensions'));
