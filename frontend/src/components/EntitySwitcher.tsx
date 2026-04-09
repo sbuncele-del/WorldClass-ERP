@@ -8,7 +8,7 @@ import {
   GlobalOutlined,
   RightOutlined,
 } from '@ant-design/icons';
-import { useEntity, Entity } from '../contexts/EntityContext';
+import { useEntity, type Entity } from '../contexts/EntityContext';
 import './EntitySwitcher.css';
 
 const { Text } = Typography;

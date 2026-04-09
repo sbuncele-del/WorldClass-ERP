@@ -7,7 +7,7 @@ import {
   UserAddOutlined, ExclamationCircleOutlined, ReloadOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import DailyIframe, { DailyCall } from '@daily-co/daily-js';
+import DailyIframe, { type DailyCall } from '@daily-co/daily-js';
 import './VideoCall.css';
 
 const { Title, Text } = Typography;

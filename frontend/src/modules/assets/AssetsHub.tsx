@@ -63,9 +63,9 @@ import {
 } from '../../components/hub';
 import {
   assetService,
-  FixedAsset,
-  AssetCategory,
-  AssetDisposal,
+  type FixedAsset,
+  type AssetCategory,
+  type AssetDisposal,
 } from '../../services/asset.service';
 
 const { Text } = Typography;

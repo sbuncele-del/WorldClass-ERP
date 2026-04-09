@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { workspaceApi } from '../../services/api.service';
 import apiClient from '../../services/api';
-import { bankingService, BankingSettings } from '../../services/banking.service';
+import { bankingService, type BankingSettings } from '../../services/banking.service';
 import {
   Card,
   Row,
