@@ -43,11 +43,14 @@ const ReportLibrary: React.FC = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/financial/custom-reports/templates`);
       const data = await response.json();
-      setReports(data);
-      setFilteredReports(data);
+      const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+      setReports(list);
+      setFilteredReports(list);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching reports:', error);
+      setReports([]);
+      setFilteredReports([]);
       setLoading(false);
     }
   };
@@ -56,9 +59,11 @@ const ReportLibrary: React.FC = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/financial/custom-reports/categories`);
       const data = await response.json();
-      setCategories(data);
+      const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+      setCategories(list);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      setCategories([]);
     }
   };
 
