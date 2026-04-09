@@ -15,9 +15,17 @@ jobs:
           username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           envs: RESEND_API_KEY
+          command_timeout: 20m
           script: |
+            set -e
             cd /opt/worldclass-erp
-            git pull origin main
+            # Pull latest code (retry with HTTPS fallback if SSH fails)
+            git pull origin main || {
+              echo "SSH pull failed, trying HTTPS..."
+              git remote set-url origin https://github.com/sbuncele-del/WorldClass-ERP.git
+              git pull origin main
+              git remote set-url origin git@github.com:sbuncele-del/WorldClass-ERP.git
+            }
             # Inject secrets into .env.production
             if [ -n "$RESEND_API_KEY" ]; then
               sed -i '/^RESEND_API_KEY=/d' .env.production
