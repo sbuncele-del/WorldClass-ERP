@@ -26,6 +26,10 @@ jobs:
               sed -i '/^EMAIL_FROM=/d' .env.production
               echo "EMAIL_FROM=support@siyabusaerp.co.za" >> .env.production
             fi
+            # Fix URLs (ensure correct domain)
+            sed -i 's|FRONTEND_URL=https://platform.siyabusaerp.co.za|FRONTEND_URL=https://siyabusaerp.co.za|g' .env.production
+            sed -i 's|APP_URL=https://platform.siyabusaerp.co.za|APP_URL=https://siyabusaerp.co.za|g' .env.production
+            sed -i 's|API_URL=https://platform.siyabusaerp.co.za/api|API_URL=https://siyabusaerp.co.za/api|g' .env.production
             docker compose -f docker-compose.digitalocean.yml up -d --build
             docker image prune -f
         env:
