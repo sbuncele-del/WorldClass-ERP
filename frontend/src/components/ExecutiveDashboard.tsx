@@ -139,6 +139,40 @@ const ExecutiveDashboard: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<UserRole>('director');
   const [refreshing, setRefreshing] = useState(false);
 
+  const buildEmptyDashboard = (): DashboardData => {
+    const hour = new Date().getHours();
+    const greetWord = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    const name = currentUser?.firstName || 'there';
+    return {
+      user: { name, role: 'admin', greeting: `${greetWord}, ${name}` },
+      summary: {
+        date: new Date().toLocaleDateString('en-ZA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+        lastUpdated: new Date().toISOString(),
+      },
+      kpis: [
+        { key: 'revenue', label: 'Revenue MTD', value: 0, format: 'currency', trend: 0, icon: 'dollar' },
+        { key: 'profit', label: 'Net Profit MTD', value: 0, format: 'currency', icon: 'rise' },
+        { key: 'cash', label: 'Cash Position', value: 0, format: 'currency', icon: 'bank' },
+        { key: 'receivables', label: 'Receivables', value: 0, format: 'currency', icon: 'wallet' },
+      ],
+      financial: {
+        revenue: { mtd: 0, ytd: 0, trend: 0, invoiceCount: 0 },
+        expenses: { mtd: 0, ytd: 0, trend: 0 },
+        profit: { mtd: 0, ytd: 0, margin: 0 },
+        cashPosition: { total: 0, trend: 0 },
+        receivables: { total: 0, overdueCount: 0 },
+        payables: { total: 0 },
+      },
+      operational: { projects: { total: 0, active: 0, completedMTD: 0 }, tasks: { total: 0, completed: 0, completionRate: 0, dueToday: 0, overdue: 0 }, customers: { total: 0, newMTD: 0 } },
+      pendingActions: [],
+      recentActivity: [],
+      aiInsights: [{ id: 'welcome', type: 'info', icon: '💡', title: 'Getting Started', message: 'Start by creating invoices, adding customers, or recording transactions to see your dashboard come alive.', action: 'Go to Sales', link: '/app/sales-crm', priority: 'low' } as any],
+      revenueTrend: [],
+      compliance: { vatStatus: 'N/A', payeStatus: 'N/A', citStatus: 'N/A', nextDeadline: '', nextDeadlineType: '', overallScore: 0, score: 0, upcomingDeadlines: [] } as any,
+      team: { totalEmployees: 0, presentToday: 0, onLeave: 0, departments: [] },
+    };
+  };
+
   const fetchDashboard = useCallback(async () => {
     try {
       const response = await apiClient.get('/api/v2/executive-dashboard');
@@ -164,10 +198,14 @@ const ExecutiveDashboard: React.FC = () => {
             setSelectedRole(role as UserRole);
           }
         }
+      } else {
+        // API returned success: false — show empty dashboard instead of error
+        setData(buildEmptyDashboard());
       }
     } catch (error) {
       console.error('Failed to fetch dashboard:', error);
-      message.error('Failed to load dashboard');
+      // Show empty dashboard instead of dead error page
+      setData(buildEmptyDashboard());
     } finally {
       setLoading(false);
       setRefreshing(false);
