@@ -68,7 +68,7 @@ const NAV_ITEMS: NavDropdown[] = [
         title: 'Product Overview',
         items: [
           { label: 'All Features', to: '/features', icon: <Package size={18} />, desc: '17 integrated ERP modules' },
-          { label: 'Pricing', to: '/pricing', icon: <BarChart3 size={18} />, desc: 'Plans from R999/month' },
+          { label: 'Pricing', to: '/pricing', icon: <BarChart3 size={18} />, desc: 'R299/user/month — everything included' },
           { label: 'Audit & Compliance', to: '/compliance', icon: <Shield size={18} />, desc: 'SARS, IFRS, B-BBEE ready' },
           { label: 'Security', to: '/security', icon: <FileCheck size={18} />, desc: 'Enterprise-grade data protection' },
         ],
@@ -258,7 +258,7 @@ const Navigation: React.FC<NavigationProps> = ({ isDark, toggleTheme }) => {
             Sign In
           </button>
           <button className="btn-primary" onClick={() => { closeAll(); navigate('/signup'); }}>
-            Start Free Trial
+            Get Started Free
           </button>
           <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -301,7 +301,7 @@ const Navigation: React.FC<NavigationProps> = ({ isDark, toggleTheme }) => {
             ))}
             <div className="mobile-nav-actions">
               <Link to="/login" className="btn-secondary" onClick={closeAll}>Sign In</Link>
-              <Link to="/signup" className="btn-primary" onClick={closeAll}>Start Free Trial</Link>
+              <Link to="/signup" className="btn-primary" onClick={closeAll}>Get Started Free</Link>
             </div>
           </motion.div>
         )}

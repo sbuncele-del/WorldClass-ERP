@@ -79,36 +79,36 @@ const HeroConvert: React.FC = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <span className="hero-eyebrow">Enterprise Resource Planning for South Africa</span>
+          <span className="hero-eyebrow">Stop juggling five tools that don't talk to each other</span>
 
           <h1>
-            The business platform
+            Your entire business.
             <br />
-            <span className="text-gradient">built for South African SMEs.</span>
+            <span className="text-gradient">One platform. R299/user.</span>
           </h1>
 
           <p className="hero-convert-sub">
-            Finance, HR, payroll, inventory, sales, and compliance — integrated
-            in one platform. SARS-ready, IFRS-aligned, and audit-compliant from day one.
+            Finance, HR, payroll, inventory, sales, SARS compliance — all in one place.
+            No more spreadsheets. No more month-end panic. No more guesswork.
           </p>
 
           <div className="hero-convert-points">
             <div className="hero-convert-point">
               <BarChart3 size={18} />
-              <span>17+ integrated modules — one source of truth</span>
+              <span>Replace 5+ tools with one — save R1,000+/mo</span>
             </div>
             <div className="hero-convert-point">
               <Shield size={18} />
-              <span>SARS e-Filing, IFRS, POPIA & B-BBEE compliant</span>
+              <span>SARS-ready from day one — no compliance surprises</span>
             </div>
             <div className="hero-convert-point">
               <Globe size={18} />
-              <span>Cloud-hosted — access your data from anywhere</span>
+              <span>Close your month in hours, not weeks</span>
             </div>
           </div>
 
           <div className="hero-trust-line">
-            Trusted by South African businesses across industries
+            7-day free trial · No credit card · Cancel anytime
           </div>
         </motion.div>
 
@@ -121,8 +121,8 @@ const HeroConvert: React.FC = () => {
         >
           <form className="hero-convert-form" onSubmit={handleSubmit}>
             <div className="hcf-header">
-              <h3>Start your free 14-day trial</h3>
-              <p>Full access. No credit card required.</p>
+              <h3>Get started — no risk, no card</h3>
+              <p>Full access for 7 days. See the difference.</p>
             </div>
 
             {errorMsg && (
@@ -207,7 +207,7 @@ const HeroConvert: React.FC = () => {
                 <Loader2 size={18} className="spin-icon" />
               ) : (
                 <>
-                  {expanded ? 'Create My Account' : 'Start Free Trial'}
+                  {expanded ? 'Create My Account' : 'Get Started — No Risk, No Card'}
                   <ArrowRight size={18} />
                 </>
               )}

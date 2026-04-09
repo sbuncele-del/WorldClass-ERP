@@ -21,20 +21,17 @@ const CTASection: React.FC = () => {
         viewport={{ once: true }}
       >
         <h2>
-          Ready to streamline your business?
+          Still running your business on spreadsheets?
         </h2>
 
         <p>
-          Start your free 14-day trial today. Full access to every module,
-          no credit card required. See why South African businesses choose SiyaBusa.
+          Try SiyaBusa free for 7 days. R299/user/month after that — everything included.
+          No credit card. No commitment. No surprises.
         </p>
 
         <div className="cta-actions">
           <button className="cta-primary-btn" onClick={() => navigate('/signup')}>
-            Start Free Trial <ArrowRight size={18} />
-          </button>
-          <button className="cta-secondary-btn" onClick={() => navigate('/contact')}>
-            Talk to Sales
+            Get Started — No Risk, No Card <ArrowRight size={18} />
           </button>
         </div>
 

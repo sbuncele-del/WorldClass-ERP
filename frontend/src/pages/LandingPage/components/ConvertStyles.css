@@ -290,14 +290,14 @@
   letter-spacing: 0.03em;
 }
 
-/* ─── Pricing Section (Bundled Tiers) ─── */
+/* ─── Pricing Section (Single Price) ─── */
 .pricing-section {
   padding: 80px 0 60px;
   background: #F8FAFC;
 }
 
 .pricing-section-inner {
-  max-width: 1200px;
+  max-width: 800px;
   margin: 0 auto;
   padding: 0 24px;
 }
@@ -334,181 +334,216 @@
   line-height: 1.6;
 }
 
-/* Pricing grid — 3 column */
-.pricing-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-  margin-bottom: 32px;
-}
-
-/* Pricing card */
-.pricing-card {
+/* Single pricing card */
+.pricing-single-card {
   background: #fff;
-  border-radius: 16px;
-  padding: 36px 28px 28px;
-  border: 1.5px solid #E2E8F0;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-
-.pricing-card:hover {
-  border-color: #CBD5E1;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
-}
-
-/* Highlighted (Professional) card */
-.pricing-card-highlighted {
-  border-color: #00D4AA;
-  box-shadow: 0 8px 40px rgba(0, 212, 170, 0.12);
-  transform: scale(1.02);
-}
-
-.pricing-card-highlighted:hover {
-  border-color: #00B894;
-  box-shadow: 0 12px 48px rgba(0, 212, 170, 0.18);
-}
-
-.pricing-badge {
-  position: absolute;
-  top: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, #00D4AA, #00B894);
-  color: #fff;
-  padding: 5px 16px;
   border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
+  border: 1.5px solid #E2E8F0;
+  overflow: hidden;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+  margin-bottom: 40px;
 }
 
-.pricing-card-top {
-  margin-bottom: 24px;
+.pricing-single-top {
+  background: linear-gradient(135deg, #0A1628 0%, #132244 100%);
+  padding: 48px 40px 40px;
+  text-align: center;
 }
 
-.pricing-card-name {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #0A1628;
-  margin: 0 0 8px;
-}
-
-.pricing-card-desc {
-  font-size: 0.88rem;
-  color: #64748B;
-  line-height: 1.5;
-  margin: 0 0 20px;
-  min-height: 40px;
-}
-
-.pricing-card-price {
+.pricing-single-price-block {
   display: flex;
   align-items: baseline;
-  gap: 4px;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
 .pricing-amount {
-  font-size: 2.4rem;
+  font-size: 3.5rem;
   font-weight: 800;
-  color: #0A1628;
-  letter-spacing: -0.02em;
+  color: #00D4AA;
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
 
-.pricing-note {
-  font-size: 0.85rem;
-  color: #94A3B8;
-}
-
-/* CTA buttons */
-.pricing-cta {
-  width: 100%;
-  padding: 13px 16px;
-  border-radius: 10px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
+.pricing-amount-detail {
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.pricing-per {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.pricing-annual {
+  font-size: 0.8rem;
+  color: #00D4AA;
+  font-weight: 500;
+}
+
+.pricing-single-tagline {
+  font-size: 1.05rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.6;
+  margin: 0 0 28px;
+}
+
+.pricing-cta-main {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s;
-  margin-bottom: 24px;
-}
-
-.pricing-cta-outline {
-  background: transparent;
-  color: #0A1628;
-  border: 1.5px solid #D1D5DB;
-}
-
-.pricing-cta-outline:hover {
-  background: #F1F5F9;
-  border-color: #94A3B8;
-}
-
-.pricing-cta-primary {
+  gap: 10px;
+  padding: 16px 36px;
   background: linear-gradient(135deg, #00D4AA, #00B894);
   color: #fff;
   border: none;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.pricing-cta-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(0, 212, 170, 0.35);
+.pricing-cta-main:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 212, 170, 0.4);
 }
 
-.pricing-cta-dark {
-  background: #0A1628;
-  color: #fff;
-  border: none;
+.pricing-trial-note {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 16px 0 0;
 }
 
-.pricing-cta-dark:hover {
-  background: #132244;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 20px rgba(10, 22, 40, 0.25);
+/* What's included */
+.pricing-included {
+  padding: 36px 40px 40px;
 }
 
-/* Feature list */
-.pricing-features {
+.pricing-included-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94A3B8;
+  margin: 0 0 20px;
+}
+
+.pricing-included-list {
   list-style: none;
   padding: 0;
   margin: 0;
-  flex-grow: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 24px;
 }
 
-.pricing-features li {
+.pricing-included-list li {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
-  padding: 7px 0;
-  font-size: 0.85rem;
-  line-height: 1.4;
-}
-
-.pricing-features li.included {
+  font-size: 0.9rem;
   color: #334155;
 }
 
-.pricing-features li.excluded {
-  color: #CBD5E1;
-}
-
-.pricing-features .check-icon {
+.pricing-included-list .check-icon {
   color: #00D4AA;
   flex-shrink: 0;
-  margin-top: 1px;
 }
 
-.pricing-features .minus-icon {
-  color: #D1D5DB;
+/* Pain comparison table */
+.pricing-comparison {
+  background: #fff;
+  border-radius: 16px;
+  border: 1.5px solid #E2E8F0;
+  padding: 32px;
+  margin-bottom: 24px;
+}
+
+.pricing-comparison-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0A1628;
+  margin: 0 0 20px;
+  text-align: center;
+}
+
+.pricing-comparison-table {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.pricing-comparison-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #F1F5F9;
+}
+
+.comparison-old {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748B;
+  font-size: 0.9rem;
+}
+
+.comparison-x {
+  color: #EF4444;
   flex-shrink: 0;
-  margin-top: 1px;
+}
+
+.comparison-cost {
+  font-size: 0.9rem;
+  color: #94A3B8;
+  font-weight: 500;
+}
+
+.pricing-comparison-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0 10px;
+  border-top: 2px solid #E2E8F0;
+  margin-top: 4px;
+}
+
+.pricing-comparison-total span:first-child {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0A1628;
+}
+
+.comparison-total-amount {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #EF4444;
+  text-decoration: line-through;
+}
+
+.pricing-comparison-vs {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0 0;
+}
+
+.pricing-comparison-vs span:first-child {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0A1628;
+}
+
+.comparison-siyabusa {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #00D4AA;
 }
 
 /* Footer note */
@@ -554,26 +589,6 @@
   box-shadow: 0 6px 24px rgba(0, 212, 170, 0.4);
 }
 
-.cta-secondary-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 32px;
-  background: transparent;
-  color: #0A1628;
-  border: 1.5px solid #D1D5DB;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cta-secondary-btn:hover {
-  border-color: #94A3B8;
-  background: #F8FAFC;
-}
-
 /* ─── Responsive ─── */
 @media (max-width: 900px) {
   .hero-convert-inner {
@@ -595,15 +610,16 @@
     align-items: center;
   }
 
-  .pricing-grid {
+  .pricing-included-list {
     grid-template-columns: 1fr;
-    max-width: 420px;
-    margin-left: auto;
-    margin-right: auto;
   }
 
-  .pricing-card-highlighted {
-    transform: none;
+  .pricing-single-top {
+    padding: 36px 24px 32px;
+  }
+
+  .pricing-included {
+    padding: 28px 24px 32px;
   }
 
   .cta-actions {
@@ -630,7 +646,20 @@
   }
 
   .pricing-amount {
-    font-size: 1.8rem;
+    font-size: 2.5rem;
+  }
+
+  .pricing-single-price-block {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pricing-amount-detail {
+    align-items: center;
+  }
+
+  .pricing-comparison {
+    padding: 24px 20px;
   }
 }
 
