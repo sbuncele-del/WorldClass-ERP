@@ -111,11 +111,15 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children, title, d
 // ─── Homepage ───
 const LandingPage: React.FC = () => {
   return (
-    <WebsiteLayout title="SiyaBusa ERP — Enterprise Resource Planning for South Africa" description="SiyaBusa ERP — South Africa's all-in-one cloud business platform. Accounting, payroll, invoicing, inventory, HR, SARS compliance, and 17 integrated modules from R1,499/mo." canonical="https://siyabusaerp.co.za/">
+    <WebsiteLayout title="SiyaBusa ERP — Enterprise Resource Planning for South Africa" description="SiyaBusa ERP — South Africa's all-in-one cloud business platform. Accounting, payroll, invoicing, inventory, HR, SARS compliance, and 17 integrated modules. Plans from R999/mo." canonical="https://siyabusaerp.co.za/">
       <HeroConvert />
       <LogoBar />
       <SocialProof />
+      <PainSolution />
+      <HowItWorks />
       <ModulePricing />
+      <ComplianceStrip />
+      <CTASection />
     </WebsiteLayout>
   );
 };

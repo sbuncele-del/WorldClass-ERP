@@ -1,186 +1,191 @@
 /**
- * ModulePricing — Pick individual modules or full platform
- * Conversion-focused: each module has its own CTA
+ * ModulePricing — Bundled tier pricing (Starter / Professional / Enterprise)
+ * Premium corporate design targeting SMEs
  */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import {
-  Calculator, Users, Package, FolderKanban, Truck,
-  Briefcase, ArrowRight, Check, Star, Crown
-} from 'lucide-react';
+import { ArrowRight, Check, Minus } from 'lucide-react';
 import { staggerContainer, fadeInUp } from '../shared';
 
-interface ModuleTier {
+interface PricingTier {
   id: string;
   name: string;
-  icon: React.ReactNode;
-  price: string;
-  period: string;
   description: string;
-  highlights: string[];
-  popular?: boolean;
-  color: string;
+  price: string;
+  priceNote: string;
+  cta: string;
+  ctaStyle: 'outline' | 'primary' | 'dark';
+  highlighted?: boolean;
+  badge?: string;
+  features: { label: string; included: boolean }[];
 }
 
-const MODULES: ModuleTier[] = [
+const TIERS: PricingTier[] = [
   {
-    id: 'project-management',
-    name: 'Project Management',
-    icon: <FolderKanban size={24} />,
-    price: 'R299',
-    period: '/mo per 5 users',
-    description: 'Tasks, timelines, resources, Gantt charts, and team collaboration.',
-    highlights: ['Unlimited projects', 'Gantt & Kanban views', 'Time tracking', 'Resource allocation'],
-    popular: true,
-    color: '#8B5CF6',
+    id: 'starter',
+    name: 'Starter',
+    description: 'Everything a growing business needs to get organised and compliant.',
+    price: 'R999',
+    priceNote: '/month — up to 5 users',
+    cta: 'Start Free Trial',
+    ctaStyle: 'outline',
+    features: [
+      { label: 'Financial Accounting (GL, AP, AR)', included: true },
+      { label: 'Sales & Invoicing', included: true },
+      { label: 'HR & Payroll', included: true },
+      { label: 'Inventory Management', included: true },
+      { label: 'SARS e-Filing Integration', included: true },
+      { label: 'Standard Reports & Dashboards', included: true },
+      { label: 'Email Support', included: true },
+      { label: 'Project Management', included: false },
+      { label: 'Manufacturing & BOM', included: false },
+      { label: 'AI Assistant', included: false },
+      { label: 'Custom Integrations', included: false },
+    ],
   },
   {
-    id: 'financial-accounting',
-    name: 'Accounting & Finance',
-    icon: <Calculator size={24} />,
-    price: 'R499',
-    period: '/mo per 5 users',
-    description: 'General ledger, AP/AR, SARS-ready tax, bank reconciliation.',
-    highlights: ['Chart of Accounts', 'SARS e-Filing', 'Bank reconciliation', 'Financial reports'],
-    color: '#00D4AA',
+    id: 'professional',
+    name: 'Professional',
+    description: 'The complete platform for established businesses that need full visibility.',
+    price: 'R1,999',
+    priceNote: '/month — up to 15 users',
+    cta: 'Start Free Trial',
+    ctaStyle: 'primary',
+    highlighted: true,
+    badge: 'Most Popular',
+    features: [
+      { label: 'Everything in Starter', included: true },
+      { label: 'Project Management', included: true },
+      { label: 'Warehouse Management', included: true },
+      { label: 'Purchase Management', included: true },
+      { label: 'Asset Management (IAS 16)', included: true },
+      { label: 'Cash Management & Bank Recon', included: true },
+      { label: 'Manufacturing & BOM', included: true },
+      { label: 'AI Assistant', included: true },
+      { label: 'Advanced Reports & Analytics', included: true },
+      { label: 'Priority Support', included: true },
+      { label: 'Custom Integrations', included: false },
+    ],
   },
   {
-    id: 'hr-payroll',
-    name: 'HR & Payroll',
-    icon: <Users size={24} />,
-    price: 'R399',
-    period: '/mo per 5 users',
-    description: 'Employee management, payroll processing, leave, and compliance.',
-    highlights: ['Payroll processing', 'Leave management', 'Employee self-service', 'UIF/PAYE compliance'],
-    color: '#3B82F6',
-  },
-  {
-    id: 'inventory',
-    name: 'Inventory & Warehouse',
-    icon: <Package size={24} />,
-    price: 'R349',
-    period: '/mo per 5 users',
-    description: 'Stock control, warehousing, transfers, and picking.',
-    highlights: ['Multi-warehouse', 'Stock alerts', 'Barcode scanning', 'Transfer management'],
-    color: '#F59E0B',
-  },
-  {
-    id: 'sales-crm',
-    name: 'Sales & CRM',
-    icon: <Briefcase size={24} />,
-    price: 'R349',
-    period: '/mo per 5 users',
-    description: 'Quotes, invoicing, customer management, and sales pipeline.',
-    highlights: ['Quote → Invoice flow', 'Customer portal', 'Pipeline tracking', 'Delivery notes'],
-    color: '#EF4444',
-  },
-  {
-    id: 'logistics',
-    name: 'Logistics & Fleet',
-    icon: <Truck size={24} />,
-    price: 'R399',
-    period: '/mo per 5 users',
-    description: 'Fleet management, route planning, driver tracking, and delivery.',
-    highlights: ['Fleet tracking', 'Route optimization', 'Driver management', 'Delivery verification'],
-    color: '#06B6D4',
+    id: 'enterprise',
+    name: 'Enterprise',
+    description: 'For multi-entity operations that demand enterprise-grade control.',
+    price: 'Custom',
+    priceNote: 'Tailored to your organisation',
+    cta: 'Contact Sales',
+    ctaStyle: 'dark',
+    features: [
+      { label: 'Everything in Professional', included: true },
+      { label: 'Unlimited Users', included: true },
+      { label: 'Multi-Entity Consolidation', included: true },
+      { label: 'Intercompany Transactions', included: true },
+      { label: 'Custom Integrations & API Access', included: true },
+      { label: 'Dedicated Account Manager', included: true },
+      { label: 'SLA & Uptime Guarantee', included: true },
+      { label: 'On-Boarding & Data Migration', included: true },
+      { label: 'Audit Hub & Compliance Pack', included: true },
+      { label: 'Custom Reporting', included: true },
+      { label: 'Phone & Video Support', included: true },
+    ],
   },
 ];
-
-// Industry modules removed — only list what's actually working
 
 const ModulePricing: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleModuleSignup = (moduleId: string) => {
-    navigate(`/signup?module=${moduleId}`);
+  const handleCTA = (tier: PricingTier) => {
+    if (tier.id === 'enterprise') {
+      navigate('/contact?interest=enterprise');
+    } else {
+      navigate(`/signup?plan=${tier.id}`);
+    }
   };
 
   return (
-    <section className="module-pricing">
-      <div className="module-pricing-inner">
-        {/* Full platform banner */}
+    <section className="pricing-section" id="pricing">
+      <div className="pricing-section-inner">
         <motion.div
-          className="platform-banner"
+          className="pricing-header"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
+          transition={{ duration: 0.5 }}
         >
-          <div className="platform-banner-content">
-            <div className="platform-banner-badge">
-              <Crown size={16} />
-              <span>Best Value — Save 60%+</span>
-            </div>
-            <h2>Full Platform</h2>
-            <p className="platform-banner-desc">
-              All 17+ modules, all integrations, all future updates.
-              One price for your entire business.
-            </p>
-            <div className="platform-banner-price">
-              <span className="price-amount">R1,499</span>
-              <span className="price-period">/mo for 10 users</span>
-            </div>
-            <ul className="platform-banner-perks">
-              <li><Check size={16} /> Every module included</li>
-              <li><Check size={16} /> SARS integration</li>
-              <li><Check size={16} /> AI assistant</li>
-              <li><Check size={16} /> Priority support</li>
-            </ul>
-            <button className="btn-primary platform-cta" onClick={() => navigate('/signup?plan=founding-member')}>
-              Start Free Trial — Full Platform <ArrowRight size={18} />
-            </button>
-          </div>
+          <span className="pricing-eyebrow">Pricing</span>
+          <h2 className="pricing-title">
+            One platform, three plans.<br />
+            Choose what fits your business.
+          </h2>
+          <p className="pricing-subtitle">
+            Every plan includes a 14-day free trial. No credit card required.
+            Cancel anytime.
+          </p>
         </motion.div>
 
-        {/* OR divider */}
-        <div className="pricing-divider">
-          <span>or pick individual modules</span>
-        </div>
-
-        {/* Core modules */}
-        <h3 className="module-section-title">Core Business Modules</h3>
         <motion.div
-          className="module-grid"
+          className="pricing-grid"
           variants={staggerContainer}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
         >
-          {MODULES.map(mod => (
+          {TIERS.map(tier => (
             <motion.div
-              key={mod.id}
-              className={`module-card ${mod.popular ? 'module-popular' : ''}`}
+              key={tier.id}
+              className={`pricing-card ${tier.highlighted ? 'pricing-card-highlighted' : ''}`}
               variants={fadeInUp}
             >
-              {mod.popular && (
-                <div className="module-popular-badge">
-                  <Star size={12} /> Most Popular
-                </div>
+              {tier.badge && (
+                <div className="pricing-badge">{tier.badge}</div>
               )}
-              <div className="module-card-icon" style={{ color: mod.color }}>
-                {mod.icon}
+
+              <div className="pricing-card-top">
+                <h3 className="pricing-card-name">{tier.name}</h3>
+                <p className="pricing-card-desc">{tier.description}</p>
+
+                <div className="pricing-card-price">
+                  <span className="pricing-amount">{tier.price}</span>
+                  <span className="pricing-note">{tier.priceNote}</span>
+                </div>
               </div>
-              <h4>{mod.name}</h4>
-              <p className="module-card-desc">{mod.description}</p>
-              <div className="module-card-price">
-                <span className="module-price">{mod.price}</span>
-                <span className="module-period">{mod.period}</span>
-              </div>
-              <ul className="module-card-features">
-                {mod.highlights.map((h, i) => (
-                  <li key={i}><Check size={14} /> {h}</li>
+
+              <button
+                className={`pricing-cta pricing-cta-${tier.ctaStyle}`}
+                onClick={() => handleCTA(tier)}
+              >
+                {tier.cta} <ArrowRight size={16} />
+              </button>
+
+              <ul className="pricing-features">
+                {tier.features.map((f, i) => (
+                  <li key={i} className={f.included ? 'included' : 'excluded'}>
+                    {f.included
+                      ? <Check size={16} className="check-icon" />
+                      : <Minus size={16} className="minus-icon" />
+                    }
+                    <span>{f.label}</span>
+                  </li>
                 ))}
               </ul>
-              <button
-                className="module-card-cta"
-                onClick={() => handleModuleSignup(mod.id)}
-              >
-                Start Free <ArrowRight size={16} />
-              </button>
             </motion.div>
           ))}
         </motion.div>
 
+        <motion.p
+          className="pricing-footer-note"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3 }}
+        >
+          All prices exclude VAT. Annual billing available at 15% discount.
+          Need a custom configuration?{' '}
+          <a href="/contact" className="pricing-footer-link">
+            Talk to our team
+          </a>
+        </motion.p>
       </div>
     </section>
   );

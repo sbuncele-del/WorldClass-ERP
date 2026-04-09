@@ -1,11 +1,11 @@
 /**
- * HeroConvert — Conversion-first hero with embedded signup
- * One headline, one form, zero friction. Sign up in 10 seconds.
+ * HeroConvert — Premium corporate hero with embedded signup
+ * Clean, authoritative design. Free trial signup as primary CTA.
  */
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Loader2, CheckCircle, Eye, EyeOff, Shield, Zap, Users } from 'lucide-react';
+import { ArrowRight, Loader2, CheckCircle, Eye, EyeOff, Shield, BarChart3, Globe } from 'lucide-react';
 import authService from '../../../services/auth.service';
 
 const HeroConvert: React.FC = () => {
@@ -37,7 +37,7 @@ const HeroConvert: React.FC = () => {
         lastName: form.lastName,
         companyName: form.companyName,
         country: 'ZA',
-        plan: 'founding-member',
+        plan: 'professional',
       });
 
       if (response.success) {
@@ -79,30 +79,36 @@ const HeroConvert: React.FC = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
         >
+          <span className="hero-eyebrow">Enterprise Resource Planning for South Africa</span>
+
           <h1>
-            Run your business.
+            The business platform
             <br />
-            <span className="text-gradient">Not your spreadsheets.</span>
+            <span className="text-gradient">built for South African SMEs.</span>
           </h1>
 
           <p className="hero-convert-sub">
-            Finance, HR, inventory, projects, compliance — one platform,
-            built for South African businesses. Start free, upgrade when ready.
+            Finance, HR, payroll, inventory, sales, and compliance — integrated
+            in one platform. SARS-ready, IFRS-aligned, and audit-compliant from day one.
           </p>
 
           <div className="hero-convert-points">
             <div className="hero-convert-point">
-              <Zap size={18} />
-              <span>Live in 2 minutes — no setup fees</span>
+              <BarChart3 size={18} />
+              <span>17+ integrated modules — one source of truth</span>
             </div>
             <div className="hero-convert-point">
               <Shield size={18} />
-              <span>SARS-integrated, IFRS-aligned, audit-ready</span>
+              <span>SARS e-Filing, IFRS, POPIA & B-BBEE compliant</span>
             </div>
             <div className="hero-convert-point">
-              <Users size={18} />
-              <span>Buy only what you need — single modules from R299/mo</span>
+              <Globe size={18} />
+              <span>Cloud-hosted — access your data from anywhere</span>
             </div>
+          </div>
+
+          <div className="hero-trust-line">
+            Trusted by South African businesses across industries
           </div>
         </motion.div>
 
@@ -116,7 +122,7 @@ const HeroConvert: React.FC = () => {
           <form className="hero-convert-form" onSubmit={handleSubmit}>
             <div className="hcf-header">
               <h3>Start your free 14-day trial</h3>
-              <p>No credit card required</p>
+              <p>Full access. No credit card required.</p>
             </div>
 
             {errorMsg && (
@@ -201,7 +207,7 @@ const HeroConvert: React.FC = () => {
                 <Loader2 size={18} className="spin-icon" />
               ) : (
                 <>
-                  {expanded ? 'Create My Account' : 'Get Started Free'}
+                  {expanded ? 'Create My Account' : 'Start Free Trial'}
                   <ArrowRight size={18} />
                 </>
               )}

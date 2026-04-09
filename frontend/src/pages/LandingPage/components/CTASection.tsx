@@ -1,14 +1,16 @@
 /**
- * CTASection — Strong closing with waitlist capture
- * World-class pattern: clear value prop, founding member urgency, inline signup
+ * CTASection — Strong closing CTA with free trial signup
+ * Premium corporate pattern: clear value prop, trust, direct signup
  */
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Award, ShieldCheck } from 'lucide-react';
+import { ArrowRight, ShieldCheck } from 'lucide-react';
 import { fadeInUp } from '../shared';
-import WaitlistForm from './WaitlistForm';
 
 const CTASection: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="cta-section">
       <motion.div
@@ -18,27 +20,27 @@ const CTASection: React.FC = () => {
         whileInView="visible"
         viewport={{ once: true }}
       >
-        <div className="cta-badge">
-          <Award size={16} style={{ color: '#00D4AA' }} />
-          <span>Founding Member — limited spots</span>
-        </div>
-
         <h2>
-          Complete ERP access.
-          <br />
-          <span className="text-gradient">R1,499 per month. All modules included.</span>
+          Ready to streamline your business?
         </h2>
 
         <p>
-          Full platform access for up to 10 users. All modules, all integrations,
-          all future updates. Price guaranteed for 12 months with no hidden fees.
+          Start your free 14-day trial today. Full access to every module,
+          no credit card required. See why South African businesses choose SiyaBusa.
         </p>
 
-        <WaitlistForm variant="cta" />
+        <div className="cta-actions">
+          <button className="cta-primary-btn" onClick={() => navigate('/signup')}>
+            Start Free Trial <ArrowRight size={18} />
+          </button>
+          <button className="cta-secondary-btn" onClick={() => navigate('/contact')}>
+            Talk to Sales
+          </button>
+        </div>
 
         <div className="cta-trust">
           <ShieldCheck size={16} style={{ color: 'var(--sb-navy)' }} />
-          <span>JSE-ready security & governance · IFRS & SARS integrations</span>
+          <span>SARS integrated · IFRS compliant · Audit-ready · POPIA certified</span>
         </div>
       </motion.div>
     </section>
