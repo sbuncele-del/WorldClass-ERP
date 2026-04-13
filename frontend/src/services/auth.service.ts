@@ -193,10 +193,26 @@ class AuthService {
   }
 
   /**
-   * Check if user is authenticated
+   * Check if user is authenticated and token is not expired
    */
   isAuthenticated(): boolean {
-    return !!(localStorage.getItem('token') || localStorage.getItem('authToken'));
+    const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+    if (!token) return false;
+    try {
+      // Decode JWT payload (base64) without verifying signature
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      // Check expiry — exp is in seconds
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        // Token expired — clear it so we don't loop
+        localStorage.removeItem('token');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken');
+        return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
