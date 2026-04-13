@@ -13,7 +13,7 @@ import './PitchPreview.css';
 
 // Demo data - in real app, this comes from PitchBuilder
 const demoPitch = {
-  companyName: 'WorldClass ERP',
+  companyName: 'SiyaBusa',
   projectName: 'Enterprise Digital Transformation',
   clientName: 'Nexus Industries',
   industry: 'Manufacturing',

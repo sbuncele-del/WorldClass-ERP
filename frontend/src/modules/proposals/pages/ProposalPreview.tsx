@@ -47,7 +47,7 @@ const ProposalPreview: React.FC = () => {
       address: '123 Tech Boulevard, Silicon Valley, CA 94000',
     },
     company: {
-      name: 'WorldClass ERP',
+      name: 'SiyaBusa',
       contact: 'John Smith',
       title: 'Account Executive',
       email: 'john.smith@worldclass-erp.com',
@@ -58,7 +58,7 @@ const ProposalPreview: React.FC = () => {
     sections: [
       {
         title: 'Executive Summary',
-        content: `Thank you for the opportunity to present this proposal for your enterprise software implementation needs. At WorldClass ERP, we understand the unique challenges facing your organization and have developed a comprehensive solution to address your requirements.
+        content: `Thank you for the opportunity to present this proposal for your enterprise software implementation needs. At SiyaBusa, we understand the unique challenges facing your organization and have developed a comprehensive solution to address your requirements.
 
 Our team has extensive experience implementing similar solutions for organizations in your industry. We are confident that our approach will deliver measurable results and provide a strong return on investment.`,
       },
@@ -143,7 +143,7 @@ Our team has extensive experience implementing similar solutions for organizatio
         {/* Document Header */}
         <div className="document-header">
           <div className="company-logo">
-            <Title level={2} style={{ margin: 0, color: '#1890ff' }}>WorldClass ERP</Title>
+            <Title level={2} style={{ margin: 0, color: '#1890ff' }}>SiyaBusa</Title>
           </div>
           <div className="document-meta">
             <Tag color="processing">Proposal</Tag>
@@ -316,7 +316,7 @@ Our team has extensive experience implementing similar solutions for organizatio
             </Col>
             <Col span={12}>
               <div className="signature-block">
-                <Text strong>WorldClass ERP</Text>
+                <Text strong>SiyaBusa</Text>
                 <div className="signature-line signed">
                   <span className="signature-text">John Smith</span>
                 </div>

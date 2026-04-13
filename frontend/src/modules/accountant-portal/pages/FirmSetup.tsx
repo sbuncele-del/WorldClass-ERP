@@ -191,7 +191,7 @@ const FirmSetup: React.FC<FirmSetupProps> = ({ onComplete, editMode = false }) =
             <BankOutlined style={{ fontSize: 48, color: '#1890ff', marginBottom: 16 }} />
             <Title level={3}>Set Up Your Accounting Firm</Title>
             <Paragraph type="secondary">
-              Complete the steps below to configure your firm on the WorldClass ERP platform.
+              Complete the steps below to configure your accounting firm profile.
             </Paragraph>
           </div>
         </>

@@ -242,7 +242,7 @@ const IncomeStatement: React.FC = () => {
 
       <div className="is-content">
         <div className="is-report-header">
-          <h2>Worldclass ERP Software</h2>
+          <h2>SiyaBusa</h2>
           <h3>Income Statement</h3>
           <p className="period-label">{data.period.label}</p>
           <p className="date-range">

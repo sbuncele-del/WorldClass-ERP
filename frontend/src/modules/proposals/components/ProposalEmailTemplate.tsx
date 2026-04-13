@@ -36,7 +36,7 @@ const ProposalEmailTemplate: React.FC<ProposalEmailTemplateProps> = ({
         <span>Email Preview</span>
         <div className="email-meta">
           <span>To: {recipientName.toLowerCase()}@{recipientCompany.toLowerCase().replace(/\s/g, '')}.com</span>
-          <span>Subject: Your Exclusive Proposal from WorldClass ERP - {proposalNumber}</span>
+          <span>Subject: Your Exclusive Proposal from SiyaBusa - {proposalNumber}</span>
         </div>
       </div>
       
@@ -44,7 +44,7 @@ const ProposalEmailTemplate: React.FC<ProposalEmailTemplateProps> = ({
         {/* Email Header */}
         <div className="email-header">
           <div className="email-logo">W</div>
-          <span>WorldClass ERP</span>
+          <span>SiyaBusa</span>
         </div>
 
         {/* Hero Section */}
@@ -128,7 +128,7 @@ const ProposalEmailTemplate: React.FC<ProposalEmailTemplateProps> = ({
         {/* Footer */}
         <div className="email-footer">
           <div className="footer-logo">W</div>
-          <p>WorldClass ERP - Enterprise Solutions</p>
+          <p>SiyaBusa - Enterprise Solutions</p>
           <div className="footer-links">
             <a href="#">Website</a>
             <span>•</span>
@@ -136,7 +136,7 @@ const ProposalEmailTemplate: React.FC<ProposalEmailTemplateProps> = ({
             <span>•</span>
             <a href="#">Unsubscribe</a>
           </div>
-          <p className="copyright">© 2024 WorldClass ERP. All rights reserved.</p>
+          <p className="copyright">© 2026 SiyaBusa. All rights reserved.</p>
         </div>
       </div>
     </div>

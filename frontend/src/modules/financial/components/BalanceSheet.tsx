@@ -212,7 +212,7 @@ const BalanceSheet: React.FC = () => {
 
       <div className="bs-content">
         <div className="bs-report-header">
-          <h2>Worldclass ERP Software</h2>
+          <h2>SiyaBusa</h2>
           <h3>Balance Sheet</h3>
           <p className="date-label">{data.label}</p>
         </div>

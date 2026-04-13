@@ -1100,7 +1100,7 @@ const PitchTemplates: React.FC = () => {
             <Input placeholder="e.g., Nexus Industries Ltd" />
           </Form.Item>
           <Form.Item label="Your Company Name" name="companyName">
-            <Input placeholder="e.g., WorldClass ERP" defaultValue="WorldClass ERP" />
+            <Input placeholder="e.g., SiyaBusa" defaultValue="SiyaBusa" />
           </Form.Item>
           <Form.Item label="Industry" name="industry">
             <Select placeholder="Select industry">

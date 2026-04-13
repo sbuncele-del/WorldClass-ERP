@@ -69,8 +69,8 @@ const PortalAccess: React.FC = () => {
     <div className="portal-access">
       <div className="access-card">
         <div className="brand-section">
-          <div className="brand-logo">W</div>
-          <h1>WorldClass ERP</h1>
+          <div className="brand-logo">S</div>
+          <h1>SiyaBusa</h1>
           <span>Exclusive Proposal Portal</span>
         </div>
 

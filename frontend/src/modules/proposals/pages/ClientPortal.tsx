@@ -48,7 +48,7 @@ const ClientPortal: React.FC = () => {
     number: 'PROP-2024-0042',
     status: 'sent',
     company: {
-      name: 'WorldClass ERP',
+      name: 'SiyaBusa',
       contact: 'Sarah Mitchell',
       title: 'Senior Solutions Architect',
       email: 'sarah.mitchell@worldclass-erp.com',
@@ -173,9 +173,9 @@ const ClientPortal: React.FC = () => {
       {/* Premium Header */}
       <div className="portal-header">
         <div className="company-brand">
-          <div className="brand-logo">W</div>
+          <div className="brand-logo">S</div>
           <div className="brand-text">
-            <h2>WorldClass ERP</h2>
+            <h2>SiyaBusa</h2>
             <span>Enterprise Solutions</span>
           </div>
         </div>
@@ -420,7 +420,7 @@ const ClientPortal: React.FC = () => {
               {/* Testimonial */}
               <div className="testimonial-card">
                 <p className="testimonial-quote">
-                  WorldClass ERP transformed our operations completely. We saw 35% cost reduction 
+                  SiyaBusa transformed our operations completely. We saw 35% cost reduction 
                   in the first quarter alone. The implementation team was exceptional.
                 </p>
                 <div className="testimonial-author">

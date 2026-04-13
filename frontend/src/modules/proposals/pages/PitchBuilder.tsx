@@ -77,7 +77,7 @@ const PitchBuilder: React.FC = () => {
   // Form state
   const [pitchData, setPitchData] = useState({
     // Company Info
-    companyName: 'WorldClass ERP',
+    companyName: 'SiyaBusa',
     tagline: 'Enterprise Solutions That Transform',
     logo: null,
     

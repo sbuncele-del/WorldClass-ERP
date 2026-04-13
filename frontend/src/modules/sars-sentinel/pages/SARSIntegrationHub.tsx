@@ -569,7 +569,7 @@ const SARSIntegrationHub: React.FC = () => {
       >
         <Alert
           message="ISV Registration Complete"
-          description="WorldClass ERP is registered as an official SARS Independent Software Vendor (ISV). Your access credentials are active."
+          description="Your platform is registered as an official SARS Independent Software Vendor (ISV). Your access credentials are active."
           type="success"
           showIcon
           style={{ marginBottom: '24px' }}

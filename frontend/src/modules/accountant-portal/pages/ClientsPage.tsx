@@ -601,7 +601,7 @@ const ClientsPage: React.FC = () => {
             name="tenant_id"
             label="Client Tenant ID"
             rules={[{ required: true, message: 'Please enter the client tenant ID' }]}
-            extra="The tenant ID of an existing company in WorldClass ERP"
+            extra="The tenant ID of an existing company on the platform"
           >
             <Input placeholder="e.g., tenant_abc123" />
           </Form.Item>
