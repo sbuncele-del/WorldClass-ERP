@@ -25,7 +25,7 @@ const CTASection: React.FC = () => {
         </h2>
 
         <p>
-          Try SiyaBusa free for 7 days. R299/user/month after that — everything included.
+          Try SiyaBusa free for 7 days. R399/user/month after that — everything included.
           No credit card. No commitment. No surprises.
         </p>
 

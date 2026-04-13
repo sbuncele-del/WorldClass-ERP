@@ -78,12 +78,12 @@ const competitorRows = [
 const hiddenCosts = [
   { tool: 'Typical Accounting Platform', base: 'From ~R399', addons: ['Payroll: separate add-on', 'Inventory: higher-tier plan', 'Projects: add-on (~R121+)', 'Receipt capture: add-on (~R69+)'], total: 'R2,000+/mo' },
   { tool: 'Alternative Platform', base: 'From ~R499', addons: ['Payroll: separate add-on', 'Limited inventory', 'No project management', 'Third-party CRM required'], total: 'R2,000+/mo' },
-  { tool: 'SiyaBusa (Founding Member)', base: 'R299/user', addons: ['Payroll: Included', 'Inventory & WH: Included', 'Projects: Included', 'Every module: Included'], total: 'R1,499 (10 users)', highlight: true },
+  { tool: 'SiyaBusa (Founding Member)', base: 'R399/user', addons: ['Payroll: Included', 'Inventory & WH: Included', 'Projects: Included', 'Every module: Included'], total: 'R1,499 (10 users)', highlight: true },
 ];
 
 /* ── FAQs ── */
 const faqs = [
-  { q: 'What is Founding Member pricing?', a: 'Our Founding Member offer gives early customers full access to every SiyaBusa module at R299/user/month, or R1,499/month for 10 users. This rate is locked for 12 months from your sign-up date. After 12 months, you\'ll transition to standard pricing (with advance notice); founding members will receive priority support.' },
+  { q: 'What is Founding Member pricing?', a: 'Our Founding Member offer gives early customers full access to every SiyaBusa module at R399/user/month, or R1,499/month for 10 users. This rate is locked for 12 months from your sign-up date. After 12 months, you\'ll transition to standard pricing (with advance notice); founding members will receive priority support.' },
   { q: 'What\'s included?', a: 'Everything. Every module — Financial Accounting, Sales & CRM, HR & Payroll, Inventory, Warehouse Management, Manufacturing, Projects, Cash Management, Asset Management, Audit-Ready Hub, SARS Sentinel, AI Assistant, and more. No gated features. No premium tiers.' },
   { q: 'Is there a free trial?', a: 'Yes! Every Founding Member gets a 14-day free trial with full access to all features. No credit card required to start.' },
   { q: 'How do you compare to other accounting platforms?', a: 'Many platforms charge separately for accounting, payroll, inventory, and projects — with costs adding up quickly when you need the full suite. SiyaBusa gives you everything for R1,499/mo for 10 users. No add-ons, no hidden costs, no forex surprises.' },
@@ -123,7 +123,7 @@ const Pricing: React.FC = () => {
   };
 
   return (
-    <WebsiteLayout title="Founding Member Pricing — SiyaBusa ERP | R299/user/mo" description="SiyaBusa ERP Founding Member pricing: R299/user/mo or R1,499/mo for 10 users. All 17 modules included — Financial Accounting, HR & Payroll, Inventory, CRM, Manufacturing, SARS Compliance." canonical="https://siyabusaerp.co.za/pricing">
+    <WebsiteLayout title="Founding Member Pricing — SiyaBusa ERP | R399/user/mo" description="SiyaBusa ERP Founding Member pricing: R399/user/mo or R1,499/mo for 10 users. All 17 modules included — Financial Accounting, HR & Payroll, Inventory, CRM, Manufacturing, SARS Compliance." canonical="https://siyabusaerp.co.za/pricing">
 
       {/* ═══ HERO ═══ */}
       <section className="pricing-hero">
@@ -145,7 +145,7 @@ const Pricing: React.FC = () => {
             <h1>One Price.<br /><span className="pricing-gradient-text">Per User, Per Month.</span><br />No Hidden Fees.</h1>
             <p className="pricing-hero-sub">
               Get <strong>every module</strong> — Financial Accounting, HR & Payroll, Inventory, CRM, Manufacturing,
-              Compliance, AI Assistant, and more — from just <strong>R299/user/mo</strong>. Or get 10 users for <strong>R1,499/mo</strong>. Built for South African businesses, priced in Rands.
+              Compliance, AI Assistant, and more — from just <strong>R399/user/mo</strong>. Or get 10 users for <strong>R1,499/mo</strong>. Built for South African businesses, priced in Rands.
             </p>
 
             {/* Billing Toggle */}
@@ -356,7 +356,7 @@ const Pricing: React.FC = () => {
         <div className="container">
           <motion.div className="section-header" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             <span className="section-badge sa-badge">Everything Included</span>
-            <h2>Every Module — From R299/user/mo</h2>
+            <h2>Every Module — From R399/user/mo</h2>
             <p className="section-subtitle">No premium tiers. No locked features. Every Founding Member gets the full platform.</p>
           </motion.div>
 
@@ -439,7 +439,7 @@ const Pricing: React.FC = () => {
         <div className="container">
           <motion.div className="pricing-final-cta-content" variants={fadeInUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             <h2>Join the First 50. Shape the Future.</h2>
-            <p>Founding Members get every module from R299/user/mo — or R1,499/mo for 10 users. Locked for 12 months. Only {spotsLeft} spots remaining.</p>
+            <p>Founding Members get every module from R399/user/mo — or R1,499/mo for 10 users. Locked for 12 months. Only {spotsLeft} spots remaining.</p>
             <div className="pricing-final-cta-buttons">
               <button className="pricing-cta-btn primary large" onClick={() => navigate('/signup?plan=founding-member')}>
                 Claim Your Founding Member Spot <ArrowRight size={18} />

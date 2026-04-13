@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SiyaBusa ERP — R2,000,000 Seed Investment Budget</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Helvetica,Arial,sans-serif;background:#f0f4f8;color:#1a202c;font-size:13px;line-height:1.6}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);color:#fff;padding:44px 56px 36px;position:relative;overflow:hidden}
+.hdr::before{content:'';position:absolute;top:-60px;right:-60px;width:300px;height:300px;background:radial-gradient(circle,rgba(0,212,255,.12),transparent 70%);border-radius:50%}
+.hdr-tag{display:inline-block;background:rgba(0,212,255,.15);border:1px solid rgba(0,212,255,.35);color:#00d4ff;padding:3px 13px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;margin-bottom:16px}
+.hdr h1{font-size:30px;font-weight:800;line-height:1.2;margin-bottom:6px}
+.hdr h1 em{font-style:normal;background:linear-gradient(135deg,#00d4ff,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hdr-sub{font-size:14px;color:rgba(255,255,255,.6);margin-bottom:26px}
+.hdr-row{display:flex;gap:36px;flex-wrap:wrap}
+.hdr-item span:first-child{display:block;font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:rgba(255,255,255,.4)}
+.hdr-item span:last-child{font-size:15px;font-weight:700;color:#fff}
+.hdr-item .acc{color:#00d4ff}
+.doc-ref{position:absolute;bottom:12px;right:56px;font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.5px}
+
+/* CONTAINER */
+.wrap{max-width:1080px;margin:0 auto;padding:36px 28px 70px}
+
+/* EXEC SUMMARY */
+.exec{background:#fff;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.06);padding:28px 30px;margin-bottom:30px;border-left:4px solid #0f3460}
+.exec h2{font-size:16px;font-weight:800;color:#0f3460;margin-bottom:12px;letter-spacing:.3px}
+.exec p{font-size:13px;color:#374151;margin-bottom:10px;line-height:1.75}
+.exec strong{color:#1a202c}
+
+/* STACKED BAR */
+.bar-wrap{margin-bottom:30px}
+.bar{background:#e2e8f0;border-radius:8px;height:16px;display:flex;overflow:hidden;margin-bottom:8px}
+.bar div{height:100%}
+.bar-leg{display:flex;flex-wrap:wrap;gap:10px}
+.bar-leg span{display:flex;align-items:center;gap:5px;font-size:10px;color:#64748b}
+.bar-leg i{display:inline-block;width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+/* SUMMARY CARDS */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:14px;margin-bottom:30px}
+.crd{background:#fff;border-radius:11px;padding:18px;box-shadow:0 1px 8px rgba(0,0,0,.05);border-left:4px solid transparent}
+.crd .lb{font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:#94a3b8;font-weight:700;margin-bottom:5px}
+.crd .am{font-size:20px;font-weight:800;color:#1a202c}
+.crd .pc{font-size:10px;color:#64748b;margin-top:2px}
+.c1{border-color:#7c3aed}.c2{border-color:#10b981}.c3{border-color:#f59e0b}.c4{border-color:#ef4444}.c5{border-color:#3b82f6}.c6{border-color:#8b5cf6}.c7{border-color:#06b6d4}.c8{border-color:#f97316}.c9{border-color:#64748b}
+
+/* TOTAL BANNER */
+.tot{background:linear-gradient(135deg,#1a1a2e,#0f3460);border-radius:12px;padding:22px 26px;color:#fff;display:flex;justify-content:space-between;align-items:center;margin-bottom:34px;box-shadow:0 8px 28px rgba(15,52,96,.3)}
+.tot .tl{font-size:12px;font-weight:600;color:rgba(255,255,255,.6);letter-spacing:1px;text-transform:uppercase}
+.tot .tv{font-size:34px;font-weight:900;color:#00d4ff}
+.tot .tn{font-size:11px;color:rgba(255,255,255,.4);margin-top:3px}
+
+/* SECTIONS */
+.sec{background:#fff;border-radius:13px;box-shadow:0 2px 10px rgba(0,0,0,.05);margin-bottom:24px;overflow:hidden}
+.sh{display:flex;align-items:center;gap:14px;padding:20px 26px;border-bottom:1px solid #f1f5f9}
+.sn{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;flex-shrink:0}
+.st{flex:1}.st h3{font-size:15px;font-weight:700;color:#1a202c}.st p{font-size:11px;color:#64748b;margin-top:1px}
+.sv{font-size:18px;font-weight:800;white-space:nowrap}
+.sb{padding:0 26px 24px}
+.badge{font-size:9px;font-weight:700;padding:2px 9px;border-radius:16px;background:#f0f9ff;color:#0369a1;margin-left:6px;vertical-align:middle}
+
+/* Section colors */
+.s1 .sn{background:#7c3aed}.s1 .sv{color:#7c3aed}
+.s2 .sn{background:#10b981}.s2 .sv{color:#10b981}
+.s3 .sn{background:#f59e0b}.s3 .sv{color:#f59e0b}
+.s4 .sn{background:#ef4444}.s4 .sv{color:#ef4444}
+.s5 .sn{background:#3b82f6}.s5 .sv{color:#3b82f6}
+.s6 .sn{background:#8b5cf6}.s6 .sv{color:#8b5cf6}
+.s7 .sn{background:#06b6d4}.s7 .sv{color:#06b6d4}
+.s8 .sn{background:#f97316}.s8 .sv{color:#f97316}
+.s9 .sn{background:#64748b}.s9 .sv{color:#64748b}
+
+/* TABLES */
+.sub-h{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;margin:20px 0 8px;padding-bottom:5px;border-bottom:1px dashed #e2e8f0}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:9px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:#94a3b8;padding:7px 10px;background:#f8fafc;border-bottom:1px solid #e2e8f0}
+th:last-child{text-align:right}
+td{padding:9px 10px;border-bottom:1px solid #f1f5f9;color:#374151;font-size:12.5px}
+td:last-child{text-align:right;font-weight:600;color:#1a202c;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+.nc{font-size:10.5px;color:#94a3b8}
+.sr td{font-weight:700;color:#1a202c;background:#f8fafc;border-top:2px solid #e2e8f0;border-bottom:2px solid #e2e8f0}
+
+/* TIMELINE GRID */
+.tg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+.ti{background:#f8fafc;border-radius:9px;padding:14px;border-left:3px solid #3b82f6}
+.ti.sup{border-color:#8b5cf6}
+.tr-name{font-weight:700;font-size:12px;color:#1a202c;margin-bottom:3px}
+.tr-det{font-size:11px;color:#64748b;line-height:1.7}
+.tag{display:inline-block;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;margin-right:3px}
+.tag-b{background:#dbeafe;color:#1e40af}.tag-g{background:#d1fae5;color:#065f46}.tag-p{background:#ede9fe;color:#5b21b6}.tag-a{background:#fef3c7;color:#92400e}
+
+/* KPI */
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0}
+.kpi-b{border-radius:9px;padding:14px;text-align:center;background:#f0f9ff;border:1px solid #bae6fd}
+.kpi-b.g{background:#f0fdf4;border-color:#86efac}.kpi-b.a{background:#fffbeb;border-color:#fcd34d}
+.kpi-n{font-size:22px;font-weight:800;color:#0f3460}.kpi-n.g{color:#065f46}.kpi-n.a{color:#92400e}
+.kpi-l{font-size:10px;color:#64748b;margin-top:3px;font-weight:500}
+
+/* CALLOUT */
+.co{background:linear-gradient(135deg,#1e1b4b,#312e81);border-radius:9px;padding:16px 20px;color:#fff;margin-top:18px}
+.co h4{font-size:11px;font-weight:700;color:#a5b4fc;margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase}
+.co p{font-size:11px;color:rgba(255,255,255,.78);margin-bottom:5px}
+.co strong{color:#c7d2fe}
+.co .fn{margin-top:8px;color:rgba(255,255,255,.4);font-size:10px}
+
+/* DRAWDOWN */
+.dd-sec{background:#fff;border-radius:13px;box-shadow:0 2px 10px rgba(0,0,0,.05);margin-bottom:24px;overflow:hidden;border:2px solid #0f3460}
+.dd-h{background:linear-gradient(135deg,#1a1a2e,#0f3460);padding:18px 26px;display:flex;align-items:center;gap:12px}
+.dd-h h3{color:#fff;font-size:15px;font-weight:700}
+.dd-h p{color:rgba(255,255,255,.55);font-size:11px;margin-top:2px}
+.dd-b{padding:0 26px 24px}
+
+/* SOURCES */
+.src-sec{background:#fff;border-radius:13px;box-shadow:0 2px 10px rgba(0,0,0,.05);margin-bottom:24px;overflow:hidden}
+.src-h{background:linear-gradient(135deg,#1a1a2e,#0f3460);padding:18px 26px}
+.src-h h3{color:#fff;font-size:15px;font-weight:700}
+.src-h p{color:rgba(255,255,255,.55);font-size:11px;margin-top:2px}
+.src-b{padding:0 26px 24px}
+.si{font-weight:600;color:#1a202c}.sp{font-weight:700;color:#1a202c;white-space:nowrap;font-size:11px}
+.ss{color:#7c3aed;font-weight:600}.su{font-size:10px;color:#3b82f6;font-family:monospace;word-break:break-all}
+.sn2{font-size:10.5px;color:#64748b;margin-top:1px}
+
+/* DISCLAIMER */
+.disc{background:#fef3c7;border:1px solid #fcd34d;border-radius:8px;padding:13px 16px;margin-top:20px;font-size:11px;color:#78350f;line-height:1.7}
+.disc strong{color:#92400e}
+
+/* ASSUMPTIONS */
+.asm{background:#fff;border-radius:13px;box-shadow:0 2px 10px rgba(0,0,0,.05);padding:24px 26px;margin-bottom:24px;border-left:4px solid #06b6d4}
+.asm h3{font-size:14px;font-weight:700;color:#0f3460;margin-bottom:12px}
+.asm ul{list-style:none;padding:0}
+.asm li{font-size:12px;color:#374151;padding:5px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:baseline;gap:8px}
+.asm li:last-child{border:none}
+.asm li::before{content:'•';color:#06b6d4;font-weight:800;font-size:14px}
+
+/* FOOTER */
+.ftr{background:#1a202c;color:rgba(255,255,255,.45);text-align:center;padding:22px;font-size:10px}
+
+@media print{
+body{background:#fff}
+.wrap{max-width:100%;padding:16px}
+.sec,.src-sec,.dd-sec{box-shadow:none;border:1px solid #e2e8f0}
+.hdr,.dd-h,.src-h,.tot,.co{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="hdr">
+<div class="hdr-tag">Investor Document &mdash; Strictly Confidential</div>
+<h1><em>R2,000,000</em> Seed Investment<br>Detailed Budget Breakdown</h1>
+<div class="hdr-sub">Masaphokati Technologies (Pty) Ltd &nbsp;|&nbsp; SiyaBusa ERP &nbsp;|&nbsp; Fiscal Year 2026/27</div>
+<div class="hdr-row">
+<div class="hdr-item"><span>Total Raise</span><span class="acc">R2,000,000</span></div>
+<div class="hdr-item"><span>Deployment Period</span><span>12 Months</span></div>
+<div class="hdr-item"><span>Primary Focus</span><span>Sales &middot; Marketing &middot; People</span></div>
+<div class="hdr-item"><span>Target Market</span><span>SA SMEs (R10M&ndash;R500M)</span></div>
+<div class="hdr-item"><span>Year-End ARR Target</span><span class="acc">R1.8M&ndash;R5.2M</span></div>
+</div>
+<div class="doc-ref">REF: MT-INV-2026-001 &nbsp;|&nbsp; Version 2.0 &nbsp;|&nbsp; 13 April 2026</div>
+</div>
+
+<div class="wrap">
+
+<!-- EXECUTIVE SUMMARY -->
+<div class="exec">
+<h2>Executive Summary</h2>
+<p>SiyaBusa ERP is a <strong>fully built, production-deployed</strong> cloud ERP platform with 25+ modules, 400+ API endpoints, and native South African compliance (SARS, BCEA, POPIA, B-BBEE). The technology is complete. What we need now is a <strong>commercial engine</strong> to take it to market.</p>
+<p>This R2,000,000 seed investment will be deployed across <strong>12 months</strong> to fund three things: <strong>(1)</strong> a dedicated sales team to actively hunt and close SME clients, <strong>(2)</strong> marketing infrastructure &mdash; merchandise, banners, digital campaigns, and trade show presence &mdash; to build visibility where South African SME decision-makers gather, and <strong>(3)</strong> back-office support staff to onboard, train, and retain every client we sign.</p>
+<p><strong>54% of the budget funds people directly</strong> (5 hires, phased). The remaining 46% funds the tools they need, the brand collateral they carry, and the events they attend. Commission for sales staff is paid from generated revenue &mdash; not from this budget &mdash; ensuring alignment between spend and outcomes.</p>
+<p>Every price in this document is sourced from a named South African supplier, published SaaS pricing page, or recognised salary benchmark. A full source reference appendix is included at the end of this document.</p>
+</div>
+
+<!-- STACKED BAR -->
+<div class="bar-wrap">
+<div class="bar">
+<div style="width:2.25%;background:#7c3aed"></div>
+<div style="width:4.25%;background:#10b981"></div>
+<div style="width:9.75%;background:#f59e0b"></div>
+<div style="width:8.75%;background:#ef4444"></div>
+<div style="width:30%;background:#3b82f6"></div>
+<div style="width:24%;background:#8b5cf6"></div>
+<div style="width:4%;background:#06b6d4"></div>
+<div style="width:4.5%;background:#f97316"></div>
+<div style="width:12.5%;background:#64748b"></div>
+</div>
+<div class="bar-leg">
+<span><i style="background:#7c3aed"></i>Branding 2.25%</span>
+<span><i style="background:#10b981"></i>Materials 4.25%</span>
+<span><i style="background:#f59e0b"></i>Digital 9.75%</span>
+<span><i style="background:#ef4444"></i>Events 8.75%</span>
+<span><i style="background:#3b82f6"></i>Sales Staff 30%</span>
+<span><i style="background:#8b5cf6"></i>Support Staff 24%</span>
+<span><i style="background:#06b6d4"></i>Training 4%</span>
+<span><i style="background:#f97316"></i>Tools 4.5%</span>
+<span><i style="background:#64748b"></i>Reserve 12.5%</span>
+</div>
+</div>
+
+<!-- SUMMARY CARDS -->
+<div class="cards">
+<div class="crd c1"><div class="lb">Corporate Branding</div><div class="am">R45,000</div><div class="pc">2.25%</div></div>
+<div class="crd c2"><div class="lb">Physical Materials</div><div class="am">R85,000</div><div class="pc">4.25%</div></div>
+<div class="crd c3"><div class="lb">Digital Marketing</div><div class="am">R195,000</div><div class="pc">9.75%</div></div>
+<div class="crd c4"><div class="lb">Events &amp; Trade Shows</div><div class="am">R175,000</div><div class="pc">8.75%</div></div>
+<div class="crd c5"><div class="lb">Sales Team (2&times; BDE)</div><div class="am">R600,000</div><div class="pc">30%</div></div>
+<div class="crd c6"><div class="lb">Support &amp; Back-Office</div><div class="am">R480,000</div><div class="pc">24%</div></div>
+<div class="crd c7"><div class="lb">Training &amp; Recruitment</div><div class="am">R80,000</div><div class="pc">4%</div></div>
+<div class="crd c8"><div class="lb">Sales Tools &amp; Tech</div><div class="am">R90,000</div><div class="pc">4.5%</div></div>
+<div class="crd c9"><div class="lb">Contingency Reserve</div><div class="am">R250,000</div><div class="pc">12.5%</div></div>
+</div>
+
+<div class="tot">
+<div><div class="tl">Total Investment</div><div class="tn">12-month marketing &amp; growth deployment &middot; South Africa</div></div>
+<div class="tv">R2,000,000</div>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- S1: CORPORATE BRANDING             -->
+<!-- ═══════════════════════════════════ -->
+<div class="sec s1"><div class="sh"><div class="sn">1</div><div class="st"><h3>Corporate Branding &amp; Identity</h3><p>One-time investment in a professional, investor-grade brand presence</p></div><div class="sv">R45,000</div></div>
+<div class="sb">
+<table>
+<thead><tr><th style="width:38%">Item</th><th>Description</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td><strong>Brand Identity Refresh</strong></td><td class="nc">Logo finalisation, colour palette, typography, brand guideline document &mdash; SA mid-tier graphic designer</td><td>R15,000</td></tr>
+<tr><td><strong>Business Cards</strong></td><td class="nc">500 cards &times; 5 staff &mdash; 400gsm matt laminate, full-colour double-sided (Minuteman Press / Digicopy)</td><td>R4,500</td></tr>
+<tr><td><strong>Company Profile Booklet</strong></td><td class="nc">8-page full-colour, print-ready PDF + 200 printed copies (130gsm gloss)</td><td>R10,000</td></tr>
+<tr><td><strong>Branded Email Signatures</strong></td><td class="nc">HTML signatures with tracking links, deployed across all staff</td><td>R2,500</td></tr>
+<tr><td><strong>Master Presentation Decks</strong></td><td class="nc">Sales pitch, investor, and demo decks (PowerPoint + Google Slides)</td><td>R6,000</td></tr>
+<tr><td><strong>Document &amp; Letterhead Templates</strong></td><td class="nc">Proposal, quote, invoice, NDA templates aligned to brand</td><td>R2,000</td></tr>
+<tr><td><strong>Office / Co-working Signage</strong></td><td class="nc">Vinyl cutout logo + branded foam lettering</td><td>R5,000</td></tr>
+<tr class="sr"><td colspan="2"><strong>Section 1 Total</strong></td><td><strong>R45,000</strong></td></tr>
+</tbody></table>
+</div></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- S2: PHYSICAL MATERIALS             -->
+<!-- ═══════════════════════════════════ -->
+<div class="sec s2"><div class="sh"><div class="sn">2</div><div class="st"><h3>Physical Marketing Materials &amp; Merchandise</h3><p>Branded merchandise, banners, and print collateral for events, client meetings, and staff</p></div><div class="sv">R85,000</div></div>
+<div class="sb">
+
+<div class="sub-h">A &mdash; Corporate Merchandise</div>
+<table>
+<thead><tr><th style="width:32%">Item</th><th>Supplier</th><th>Unit</th><th>Qty</th><th>Total</th></tr></thead>
+<tbody>
+<tr><td><strong>Branded Golf Shirts</strong> <span class="nc">(embroidered)</span></td><td class="nc">Brand Innovation / Giftwrap</td><td>R175</td><td>80</td><td>R14,000</td></tr>
+<tr><td><strong>Branded Hoodies / Fleeces</strong></td><td class="nc">Giftwrap SA / PromoGifts</td><td>R310</td><td>30</td><td>R9,300</td></tr>
+<tr><td><strong>Branded Caps</strong> <span class="nc">(embroidered)</span></td><td class="nc">Brandex</td><td>R145</td><td>50</td><td>R7,250</td></tr>
+<tr><td><strong>Metal Pens</strong> <span class="nc">(laser engraved)</span></td><td class="nc">Brandex / Award &amp; Gift</td><td>R38</td><td>300</td><td>R11,400</td></tr>
+<tr><td><strong>A5 Notebooks</strong> <span class="nc">(softcover, 80pp)</span></td><td class="nc">Printlab SA</td><td>R65</td><td>100</td><td>R6,500</td></tr>
+<tr><td><strong>USB Drives 8GB</strong> <span class="nc">(pre-loaded brochure)</span></td><td class="nc">Digicopy / Memostick SA</td><td>R80</td><td>50</td><td>R4,000</td></tr>
+<tr class="sr"><td colspan="4"><strong>Merchandise Subtotal</strong></td><td><strong>R52,450</strong></td></tr>
+</tbody></table>
+
+<div class="sub-h">B &mdash; Banners &amp; Exhibition Displays</div>
+<table>
+<thead><tr><th style="width:32%">Item</th><th>Supplier</th><th>Unit</th><th>Qty</th><th>Total</th></tr></thead>
+<tbody>
+<tr><td><strong>Pull-Up Retractable Banners</strong> <span class="nc">(2m&times;0.85m, cassette + bag)</span></td><td class="nc">FastSign / PrintPath</td><td>R980</td><td>6</td><td>R5,880</td></tr>
+<tr><td><strong>Fabric Backdrop Wall</strong> <span class="nc">(3m&times;3m, dye-sublimation, aluminium frame)</span></td><td class="nc">Print Safari / Display Solutions SA</td><td>R9,500</td><td>1</td><td>R9,500</td></tr>
+<tr><td><strong>Fitted Branded Tablecloths</strong> <span class="nc">(full-colour, 6ft)</span></td><td class="nc">PrintPath / Brandex</td><td>R900</td><td>2</td><td>R1,800</td></tr>
+<tr><td><strong>A-Frame Pavement Signs</strong></td><td class="nc">FastSign</td><td>R750</td><td>2</td><td>R1,500</td></tr>
+<tr><td><strong>Portable Branded Counter</strong> <span class="nc">(foldable + storage shelf)</span></td><td class="nc">Display Solutions SA</td><td>R4,370</td><td>1</td><td>R4,370</td></tr>
+<tr class="sr"><td colspan="4"><strong>Banners Subtotal</strong></td><td><strong>R23,050</strong></td></tr>
+</tbody></table>
+
+<div class="sub-h">C &mdash; Print Collateral</div>
+<table>
+<thead><tr><th style="width:32%">Item</th><th>Description</th><th>Qty</th><th>Total</th></tr></thead>
+<tbody>
+<tr><td><strong>Company Brochures</strong></td><td class="nc">A4 tri-fold, 130gsm gloss (Digicopy / DataDot)</td><td>1,000</td><td>R5,500</td></tr>
+<tr><td><strong>A5 Promotional Flyers</strong></td><td class="nc">Event-specific, 115gsm, full colour both sides</td><td>2,000</td><td>R2,000</td></tr>
+<tr><td><strong>Product Spec Sheets</strong></td><td class="nc">A4 single-fold, per-module overviews for meetings</td><td>500</td><td>R2,000</td></tr>
+<tr class="sr"><td colspan="3"><strong>Print Subtotal</strong></td><td><strong>R9,500</strong></td></tr>
+</tbody></table>
+<table style="margin-top:12px"><tbody><tr class="sr"><td><strong>Section 2 Total</strong></td><td><strong>R85,000</strong></td></tr></tbody></table>
+</div></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- S3: DIGITAL MARKETING              -->
+<!-- ═══════════════════════════════════ -->
+<div class="sec s3"><div class="sh"><div class="sn">3</div><div class="st"><h3>Digital Marketing <span class="badge">12 Months</span></h3><p>Paid and organic channels targeting SME decision-makers across South Africa</p></div><div class="sv">R195,000</div></div>
+<div class="sb">
+<table>
+<thead><tr><th style="width:28%">Channel</th><th>Strategy &amp; Targeting</th><th>Monthly</th><th>Mths</th><th>Total</th></tr></thead>
+<tbody>
+<tr><td><strong>Google Ads</strong> <span class="nc">(Search + Display)</span></td><td class="nc">High-intent: &ldquo;ERP software South Africa&rdquo;, &ldquo;Sage alternative SA&rdquo;. Geo: JHB, CPT, DBN, PE</td><td>R8,000</td><td>12</td><td>R96,000</td></tr>
+<tr><td><strong>LinkedIn Ads</strong> <span class="nc">(Sponsored Content)</span></td><td class="nc">Targeting Finance Directors, CFOs, Ops Managers at SA SMEs (R10M&ndash;R500M segment)</td><td>R5,000</td><td>12</td><td>R60,000</td></tr>
+<tr><td><strong>Social Media Management</strong></td><td class="nc">LinkedIn, Facebook, Instagram &mdash; organic posting + scheduling tool (Buffer/Hootsuite)</td><td>R2,000</td><td>12</td><td>R24,000</td></tr>
+<tr><td><strong>Email Marketing</strong> <span class="nc">(ActiveCampaign Plus)</span></td><td class="nc">Drip campaigns, lead nurturing, list management (up to 2,500 contacts)</td><td>R900</td><td>12</td><td>R10,800</td></tr>
+<tr><td><strong>Lead Magnet Content</strong></td><td class="nc">2 gated white papers: &ldquo;ERP Buyer&rsquo;s Guide for SA SMEs&rdquo;, &ldquo;Hidden Cost of Outgrowing Sage&rdquo;</td><td>&mdash;</td><td>Once</td><td>R4,200</td></tr>
+<tr class="sr"><td colspan="4"><strong>Section 3 Total</strong></td><td><strong>R195,000</strong></td></tr>
+</tbody></table>
+<div class="kpi">
+<div class="kpi-b"><div class="kpi-n">R8/click</div><div class="kpi-l">Avg Google CPC (SA ERP keywords)</div></div>
+<div class="kpi-b g"><div class="kpi-n g">~1,800</div><div class="kpi-l">Monthly website visits (Month 6+)</div></div>
+<div class="kpi-b a"><div class="kpi-n a">~45</div><div class="kpi-l">Qualified demo requests/month</div></div>
+</div>
+</div></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- S4: EVENTS                         -->
+<!-- ═══════════════════════════════════ -->
+<div class="sec s4"><div class="sh"><div class="sn">4</div><div class="st"><h3>Events, Trade Shows &amp; Industry Networking</h3><p>Face-to-face presence where SA SME owners and decision-makers gather</p></div><div class="sv">R175,000</div></div>
+<div class="sb">
+
+<div class="sub-h">A &mdash; Major Trade Shows &amp; Exhibitions</div>
+<table>
+<thead><tr><th style="width:26%">Event</th><th>Venue / Quarter</th><th>Stand</th><th>Travel</th><th>Setup</th><th>Total</th></tr></thead>
+<tbody>
+<tr><td><strong>SMME Expo</strong><br><span class="nc">SA&rsquo;s largest SMME exhibition</span></td><td class="nc">Gallagher Estate, JHB &middot; Q2</td><td>R22,000</td><td>R4,500</td><td>R3,000</td><td>R29,500</td></tr>
+<tr><td><strong>NSBC Business Summit</strong><br><span class="nc">National Small Business Chamber</span></td><td class="nc">Cape Town &middot; Q2</td><td>R15,000</td><td>R6,000</td><td>R2,000</td><td>R23,000</td></tr>
+<tr><td><strong>Africa Tech Week</strong><br><span class="nc">Tech &amp; innovation conference</span></td><td class="nc">CTICC, Cape Town &middot; Q3</td><td>R18,000</td><td>R5,500</td><td>R2,000</td><td>R25,500</td></tr>
+<tr><td><strong>SAIPA Conference</strong><br><span class="nc">Accountancy professionals</span></td><td class="nc">JHB &middot; Q3</td><td>R15,000</td><td>&mdash;</td><td>R2,000</td><td>R17,000</td></tr>
+</tbody></table>
+
+<div class="sub-h">B &mdash; Regional SMME Networking (4 Provinces)</div>
+<table>
+<thead><tr><th>Region</th><th>Event Type</th><th>Stand</th><th>Travel</th><th>Materials</th><th>Total</th></tr></thead>
+<tbody>
+<tr><td><strong>Johannesburg</strong> <span class="tag tag-b">GP</span></td><td class="nc">Chamber of Commerce SMME Breakfast</td><td>R7,000</td><td>R2,000</td><td>R3,000</td><td>R12,000</td></tr>
+<tr><td><strong>Cape Town</strong> <span class="tag tag-b">WC</span></td><td class="nc">Cape Chamber Business Expo</td><td>R7,000</td><td>R3,500</td><td>R1,500</td><td>R12,000</td></tr>
+<tr><td><strong>Durban</strong> <span class="tag tag-b">KZN</span></td><td class="nc">Durban Chamber SME Growth Forum</td><td>R7,000</td><td>R3,000</td><td>R2,000</td><td>R12,000</td></tr>
+<tr><td><strong>Gqeberha</strong> <span class="tag tag-b">EC</span></td><td class="nc">Regional SMME Growth Summit</td><td>R7,000</td><td>R3,500</td><td>R1,500</td><td>R12,000</td></tr>
+</tbody></table>
+
+<div class="sub-h">C &mdash; Thought Leadership &amp; Ancillary</div>
+<table>
+<thead><tr><th>Item</th><th>Detail</th><th>Total</th></tr></thead>
+<tbody>
+<tr><td><strong>Speaking Slot</strong></td><td class="nc">Sponsored speaking position at 1 national SME conference</td><td>R11,000</td></tr>
+<tr><td><strong>Event Giveaways</strong></td><td class="nc">Prize draws, QR-code demo incentives, gift cards</td><td>R10,000</td></tr>
+<tr><td><strong>Event Photography &amp; Video</strong></td><td class="nc">Professional content capture at 3 major events for social media</td><td>R11,000</td></tr>
+<tr class="sr"><td colspan="2"><strong>Section 4 Total</strong></td><td><strong>R175,000</strong></td></tr>
+</tbody></table>
+</div></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- S5: SALES TEAM                     -->
+<!-- ═══════════════════════════════════ -->
+<div class="sec s5"><div class="sh"><div class="sn">5</div><div class="st"><h3>Sales Team &mdash; 2&times; Business Development Executives <span class="badge">12 Months</span></h3><p>Dedicated field sales professionals hunting and closing SME clients across SA</p></div><div class="sv">R600,000</div></div>
+<div class="sb">
+<div class="tg">
+<div class="ti"><div class="tr-name">BDE #1 &mdash; Gauteng</div><div class="tr-det"><span class="tag tag-b">Month 1</span> Start<br><br><strong>CTC:</strong> R25,000/month<br><strong>Annual:</strong> R300,000<br><strong>Territory:</strong> JHB, PTA, Ekurhuleni<br><strong>Focus:</strong> Manufacturing, Professional Services, Construction<br><strong>Target:</strong> 3 new clients/quarter<br><strong>Exp:</strong> 3+ years B2B SaaS sales</div></div>
+<div class="ti"><div class="tr-name">BDE #2 &mdash; Cape Town / KZN</div><div class="tr-det"><span class="tag tag-b">Month 1</span> Start<br><br><strong>CTC:</strong> R25,000/month<br><strong>Annual:</strong> R300,000<br><strong>Territory:</strong> CPT, DBN, remote-first<br><strong>Focus:</strong> Healthcare, Property, Retail SMEs<br><strong>Target:</strong> 3 new clients/quarter<br><strong>Exp:</strong> 3+ years B2B software sales</div></div>
+</div>
+<table style="margin-top:16px">
+<thead><tr><th>Position</th><th>Monthly CTC</th><th>Duration</th><th>Total</th></tr></thead>
+<tbody>
+<tr><td><strong>BDE #1</strong> &mdash; Gauteng</td><td>R25,000</td><td>12 months</td><td>R300,000</td></tr>
+<tr><td><strong>BDE #2</strong> &mdash; Cape Town / KZN</td><td>R25,000</td><td>12 months</td><td>R300,000</td></tr>
+<tr class="sr"><td colspan="3"><strong>Section 5 Total</strong></td><td><strong>R600,000</strong></td></tr>
+</tbody></table>
+<div class="co">
+<h4>Commission Structure &mdash; Self-Funded from Revenue (Not from this Budget)</h4>
+<p><strong>Performance Bonus:</strong> 10% of Year 1 contract value per signed deal, paid on receipt of client&rsquo;s first payment</p>
+<p><strong>Example:</strong> Signing a Professional plan client (R15,000/mo) = R18,000 commission per BDE</p>
+<p><strong>Quarterly Target:</strong> Each BDE targets 3 clients/quarter &rarr; 24 new clients across both BDEs in 12 months</p>
+<p><strong>Revenue if target met:</strong> 24 clients &times; R18,000 avg/mo = <strong>R432,000 MRR &rarr; R5.18M ARR by Month 12</strong></p>
+<p class="fn">Commission is OTE paid from generated revenue &mdash; not from this R2M budget. This ensures BDE incentives are directly aligned with growth.</p>
+</div>
+</div></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- S6: SUPPORT STAFF                  -->
+<!-- ═══════════════════════════════════ -->
+<div class="sec s6"><div class="sh"><div class="sn">6</div><div class="st"><h3>Support &amp; Back-Office Staff &mdash; Phased Hiring</h3><p>Behind-the-scenes team: onboarding, technical support, and marketing execution</p></div><div class="sv">R480,000</div></div>
+<div class="sb">
+<table>
+<thead><tr><th style="width:24%">Role</th><th>Responsibilities</th><th>Start</th><th>CTC/mo</th><th>Mths</th><th>Total</th></tr></thead>
+<tbody>
+<tr><td><strong>Customer Success Specialist</strong><br><span class="tag tag-g">Phase 1</span></td><td class="nc">Client onboarding (4&ndash;8 week programme), training sessions, adoption tracking, renewal conversations, customer health scoring. Single post-sale point of contact.</td><td class="nc"><strong>Month 1</strong></td><td>R18,000</td><td>12</td><td>R216,000</td></tr>
+<tr><td><strong>Technical Support Specialist</strong><br><span class="tag tag-p">Phase 2</span></td><td class="nc">Tier-1/2 helpdesk support. Logs &amp; resolves client issues, maintains knowledge base, escalates to development. Trained on all ERP modules.</td><td class="nc"><strong>Month 4</strong></td><td>R18,000</td><td>9</td><td>R162,000</td></tr>
+<tr><td><strong>Marketing &amp; Content Coordinator</strong><br><span class="tag tag-a">Phase 3</span></td><td class="nc">LinkedIn articles, case studies, email campaigns, event collateral, social media. Works with BDEs on sales enablement content. Manages Canva, CRM content.</td><td class="nc"><strong>Month 7</strong></td><td>R17,000</td><td>6</td><td>R102,000</td></tr>
+<tr class="sr"><td colspan="5"><strong>Section 6 Total</strong></td><td><strong>R480,000</strong></td></tr>
+</tbody></table>
+<div class="sub-h" style="margin-top:18px">Phased Staffing Timeline</div>
+<table>
+<thead><tr><th>Role</th><th>Q1 (M1&ndash;3)</th><th>Q2 (M4&ndash;6)</th><th>Q3 (M7&ndash;9)</th><th>Q4 (M10&ndash;12)</th></tr></thead>
+<tbody>
+<tr><td><strong>BDE #1</strong></td><td>Active</td><td>Active</td><td>Active</td><td>Active</td></tr>
+<tr><td><strong>BDE #2</strong></td><td>Active</td><td>Active</td><td>Active</td><td>Active</td></tr>
+<tr><td><strong>Customer Success</strong></td><td>Active</td><td>Active</td><td>Active</td><td>Active</td></tr>
+<tr><td><strong>Tech Support</strong></td><td>&mdash;</td><td>Hired M4</td><td>Active</td><td>Active</td></tr>
+<tr><td><strong>Marketing Coordinator</strong></td><td>&mdash;</td><td>&mdash;</td><td>Hired M7</td><td>Active</td></tr>
+<tr class="sr"><td><strong>Total Headcount</strong></td><td><strong>3</strong></td><td><strong>4</strong></td><td><strong>5</strong></td><td><strong>5</strong></td></tr>
+</tbody></table>
+</div></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- S7: TRAINING                       -->
+<!-- ═══════════════════════════════════ -->
+<div class="sec s7"><div class="sh"><div class="sn">7</div><div class="st"><h3>Staff Training &amp; Recruitment</h3><p>Getting the right people and arming them to perform from Day 1</p></div><div class="sv">R80,000</div></div>
+<div class="sb">
+<table>
+<thead><tr><th style="width:32%">Item</th><th>Detail</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td><strong>Recruitment Agency Fees</strong></td><td class="nc">5 placements (2 BDEs + 3 support) via PNet/CareerJunction recruiters. Avg R7,000/placement at 8&ndash;10% of first month CTC</td><td>R35,000</td></tr>
+<tr><td><strong>B2B SaaS Sales Workshop</strong></td><td class="nc">2-day intensive for 2 BDEs (Sales Guru SA / Brainwave). Role-play, objection handling, demo technique</td><td>R15,000</td></tr>
+<tr><td><strong>CRM Certification Training</strong></td><td class="nc">HubSpot Sales Hub certification for sales &amp; CS staff</td><td>R5,000</td></tr>
+<tr><td><strong>Product Training Materials</strong></td><td class="nc">Written manuals, screen-recorded walkthroughs, LMS setup for all modules &mdash; 2-week self-paced programme</td><td>R12,000</td></tr>
+<tr><td><strong>Customer Success Playbook</strong></td><td class="nc">30-60-90 day onboarding templates, health score frameworks, developed with CS consultant</td><td>R8,000</td></tr>
+<tr><td><strong>Support Runbook &amp; Knowledge Base</strong></td><td class="nc">Ticket classification guide, FAQ database, escalation protocols. Target: Tier-1 resolves 80%+ without dev</td><td>R5,000</td></tr>
+<tr class="sr"><td colspan="2"><strong>Section 7 Total</strong></td><td><strong>R80,000</strong></td></tr>
+</tbody></table>
+</div></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- S8: TOOLS                          -->
+<!-- ═══════════════════════════════════ -->
+<div class="sec s8"><div class="sh"><div class="sn">8</div><div class="st"><h3>Sales Tools &amp; Technology Stack <span class="badge">12 Months</span></h3><p>Software powering sales pipeline, marketing automation, and demos</p></div><div class="sv">R90,000</div></div>
+<div class="sb">
+<table>
+<thead><tr><th style="width:22%">Tool</th><th>Purpose</th><th>Plan</th><th>Monthly</th><th>Mths</th><th>Total</th></tr></thead>
+<tbody>
+<tr><td><strong>HubSpot CRM</strong></td><td class="nc">Pipeline mgmt, deal tracking, email sequences, reporting</td><td class="nc">Starter (2 seats)</td><td>R2,400</td><td>12</td><td>R28,800</td></tr>
+<tr><td><strong>LinkedIn Sales Navigator</strong></td><td class="nc">B2B lead-gen: identify &amp; reach Finance Directors, MDs at target businesses</td><td class="nc">Core (2 annual)</td><td>&mdash;</td><td>Annual</td><td>R36,000</td></tr>
+<tr><td><strong>Canva Pro</strong></td><td class="nc">Design for social posts, event flyers, email graphics, sales collateral</td><td class="nc">Team (3 seats)</td><td>R400</td><td>12</td><td>R4,800</td></tr>
+<tr><td><strong>Zoom Business</strong></td><td class="nc">Product demos, discovery calls, client check-ins</td><td class="nc">Business (5 hosts)</td><td>R600</td><td>12</td><td>R7,200</td></tr>
+<tr><td><strong>Loom Pro</strong></td><td class="nc">Async personalised video demos for prospect outreach</td><td class="nc">Business</td><td>R150</td><td>12</td><td>R1,800</td></tr>
+<tr><td><strong>Buffer / Hootsuite</strong></td><td class="nc">Social media scheduling &amp; analytics</td><td class="nc">Team plan</td><td>R950</td><td>12</td><td>R11,400</td></tr>
+<tr class="sr"><td colspan="5"><strong>Section 8 Total</strong></td><td><strong>R90,000</strong></td></tr>
+</tbody></table>
+<p style="font-size:10px;color:#94a3b8;margin-top:10px"><strong>Note:</strong> ActiveCampaign (email marketing) is budgeted in Section 3 &mdash; Digital Marketing &mdash; at R900/month. It is not duplicated here.</p>
+</div></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- S9: CONTINGENCY                    -->
+<!-- ═══════════════════════════════════ -->
+<div class="sec s9"><div class="sh"><div class="sn">9</div><div class="st"><h3>Contingency &amp; Strategic Reserve</h3><p>Buffer for price escalation, emerging opportunities, and accelerating what works</p></div><div class="sv">R250,000</div></div>
+<div class="sb">
+<table>
+<thead><tr><th style="width:32%">Allocation</th><th>Purpose</th><th>Amount</th></tr></thead>
+<tbody>
+<tr><td><strong>Opportunistic Event Fund</strong></td><td class="nc">Early-bird registrations, emerging sponsorships, newly announced summits</td><td>R80,000</td></tr>
+<tr><td><strong>Price Escalation Buffer</strong></td><td class="nc">Google CPC increases, printing inflation, venue escalations (SA CPI ~5&ndash;6%)</td><td>R50,000</td></tr>
+<tr><td><strong>Emergency Campaign Fund</strong></td><td class="nc">Rapid deployment if competitor event, product launch, or viral moment requires amplification</td><td>R70,000</td></tr>
+<tr><td><strong>Freelance / Contractor Support</strong></td><td class="nc">Copywriting, video editing, web sprints (Upwork SA / Toptal) &mdash; avoiding FTE for one-off needs</td><td>R50,000</td></tr>
+<tr class="sr"><td colspan="2"><strong>Section 9 Total</strong></td><td><strong>R250,000</strong></td></tr>
+</tbody></table>
+</div></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- GRAND TOTAL                        -->
+<!-- ═══════════════════════════════════ -->
+<div class="sec" style="border:2px solid #0f3460">
+<div class="sh" style="background:#f8fafc"><div style="font-size:15px;font-weight:800;color:#1a202c;flex:1">Grand Total &mdash; R2,000,000 Deployment Summary</div></div>
+<div class="sb">
+<table>
+<thead><tr><th>#</th><th>Category</th><th>Type</th><th>Amount</th><th>%</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><strong>Corporate Branding &amp; Identity</strong></td><td class="nc">Once-off</td><td>R45,000</td><td>2.25%</td></tr>
+<tr><td>2</td><td><strong>Physical Materials &amp; Merchandise</strong></td><td class="nc">Once-off</td><td>R85,000</td><td>4.25%</td></tr>
+<tr><td>3</td><td><strong>Digital Marketing</strong></td><td class="nc">12 months recurring</td><td>R195,000</td><td>9.75%</td></tr>
+<tr><td>4</td><td><strong>Events, Trade Shows &amp; Networking</strong></td><td class="nc">12 months scheduled</td><td>R175,000</td><td>8.75%</td></tr>
+<tr><td>5</td><td><strong>Sales Team (2&times; BDE)</strong></td><td class="nc">12 months payroll</td><td>R600,000</td><td>30.00%</td></tr>
+<tr><td>6</td><td><strong>Support &amp; Back-Office (3 roles, phased)</strong></td><td class="nc">Phased payroll</td><td>R480,000</td><td>24.00%</td></tr>
+<tr><td>7</td><td><strong>Training &amp; Recruitment</strong></td><td class="nc">Once-off + programme</td><td>R80,000</td><td>4.00%</td></tr>
+<tr><td>8</td><td><strong>Sales Tools &amp; Technology</strong></td><td class="nc">12 months SaaS</td><td>R90,000</td><td>4.50%</td></tr>
+<tr><td>9</td><td><strong>Contingency &amp; Strategic Reserve</strong></td><td class="nc">Reserve</td><td>R250,000</td><td>12.50%</td></tr>
+<tr style="background:linear-gradient(135deg,#1a1a2e,#0f3460)">
+<td colspan="3" style="color:#fff;font-weight:800;font-size:15px;padding:14px 10px">TOTAL INVESTMENT</td>
+<td style="color:#00d4ff;font-weight:900;font-size:18px;text-align:right;padding:14px 10px">R2,000,000</td>
+<td style="color:#00d4ff;font-weight:700;text-align:right;padding:14px 10px">100%</td>
+</tr>
+</tbody></table>
+<div class="kpi" style="margin-top:26px">
+<div class="kpi-b"><div class="kpi-n">54%</div><div class="kpi-l">Invested in People (Staff)</div></div>
+<div class="kpi-b g"><div class="kpi-n g">25%</div><div class="kpi-l">Marketing Infrastructure &amp; Channels</div></div>
+<div class="kpi-b a"><div class="kpi-n a">21%</div><div class="kpi-l">Tools, Training &amp; Contingency</div></div>
+</div>
+</div></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- MONTHLY DRAWDOWN SCHEDULE          -->
+<!-- ═══════════════════════════════════ -->
+<div class="dd-sec">
+<div class="dd-h"><div><h3>Monthly Cash Drawdown Schedule</h3><p>Projected monthly spend showing how and when the R2,000,000 leaves the account</p></div></div>
+<div class="dd-b" style="padding-top:20px">
+<table>
+<thead><tr><th>Month</th><th>Staff Payroll</th><th>Marketing &amp; Tools</th><th>Events</th><th>Once-Off Items</th><th>Monthly Total</th><th>Cumulative</th></tr></thead>
+<tbody>
+<tr><td><strong>M1</strong></td><td>R68,000</td><td>R18,250</td><td>&mdash;</td><td>R165,000</td><td>R251,250</td><td>R251,250</td></tr>
+<tr><td><strong>M2</strong></td><td>R68,000</td><td>R18,250</td><td>&mdash;</td><td>&mdash;</td><td>R86,250</td><td>R337,500</td></tr>
+<tr><td><strong>M3</strong></td><td>R68,000</td><td>R18,250</td><td>&mdash;</td><td>&mdash;</td><td>R86,250</td><td>R423,750</td></tr>
+<tr><td><strong>M4</strong></td><td>R86,000</td><td>R18,250</td><td>R29,500</td><td>&mdash;</td><td>R133,750</td><td>R557,500</td></tr>
+<tr><td><strong>M5</strong></td><td>R86,000</td><td>R18,250</td><td>R23,000</td><td>&mdash;</td><td>R127,250</td><td>R684,750</td></tr>
+<tr><td><strong>M6</strong></td><td>R86,000</td><td>R18,250</td><td>R24,000</td><td>&mdash;</td><td>R128,250</td><td>R813,000</td></tr>
+<tr><td><strong>M7</strong></td><td>R103,000</td><td>R18,250</td><td>R25,500</td><td>&mdash;</td><td>R146,750</td><td>R959,750</td></tr>
+<tr><td><strong>M8</strong></td><td>R103,000</td><td>R18,250</td><td>R29,000</td><td>&mdash;</td><td>R150,250</td><td>R1,110,000</td></tr>
+<tr><td><strong>M9</strong></td><td>R103,000</td><td>R18,250</td><td>R12,000</td><td>&mdash;</td><td>R133,250</td><td>R1,243,250</td></tr>
+<tr><td><strong>M10</strong></td><td>R103,000</td><td>R18,250</td><td>R12,000</td><td>&mdash;</td><td>R133,250</td><td>R1,376,500</td></tr>
+<tr><td><strong>M11</strong></td><td>R103,000</td><td>R18,250</td><td>R11,000</td><td>&mdash;</td><td>R132,250</td><td>R1,508,750</td></tr>
+<tr><td><strong>M12</strong></td><td>R103,000</td><td>R18,250</td><td>R9,000</td><td>R110,000</td><td>R240,250</td><td>R1,749,000</td></tr>
+<tr class="sr"><td colspan="5"><strong>Subtotal Deployed</strong></td><td colspan="2"><strong>R1,749,000</strong></td></tr>
+<tr><td colspan="5" class="nc"><strong>Contingency Reserve (unallocated until needed)</strong></td><td colspan="2"><strong>R250,000</strong></td></tr>
+<tr style="background:linear-gradient(135deg,#1a1a2e,#0f3460)"><td colspan="5" style="color:#fff;font-weight:800;padding:12px 10px">TOTAL</td><td colspan="2" style="color:#00d4ff;font-weight:900;text-align:right;padding:12px 10px">R2,000,000</td></tr>
+</tbody></table>
+<p style="font-size:10px;color:#94a3b8;margin-top:12px"><strong>Notes:</strong> M1 Once-Off includes branding (R45K), merchandise (R52K), banners/displays (R23K), print collateral (R9.5K), recruitment fees (R35K). M12 Once-Off includes remaining training programmes (R45K) and opportunistic event reserve drawdown (R65K). Staff payroll: M1&ndash;3 = 3 staff (2 BDEs + 1 CS); M4&ndash;6 = 4 staff (+Tech Support); M7&ndash;12 = 5 staff (+Marketing Coordinator). Marketing &amp; Tools monthly = R18,250 (Google R8K + LinkedIn R5K + Social R2K + ActiveCampaign R0.9K + HubSpot R2.4K).</p>
+</div></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- ROI SCENARIOS                      -->
+<!-- ═══════════════════════════════════ -->
+<div class="sec" style="border:2px solid #10b981">
+<div class="sh" style="background:#f0fdf4"><div style="font-size:15px;font-weight:800;color:#065f46;flex:1">Expected Return on Investment &mdash; 12-Month Scenarios</div></div>
+<div class="sb">
+<table>
+<thead><tr><th style="width:24%">Metric</th><th style="width:25%">Conservative</th><th style="width:25%">Base Case</th><th style="width:26%">Aggressive</th></tr></thead>
+<tbody>
+<tr><td><strong>Clients Signed</strong></td><td>12</td><td>20</td><td>30</td></tr>
+<tr><td><strong>Avg MRR/Client</strong></td><td>R15,000</td><td>R18,000</td><td>R20,000</td></tr>
+<tr><td><strong>Month-12 MRR</strong></td><td>R180,000</td><td>R360,000</td><td>R600,000</td></tr>
+<tr><td><strong>Implied ARR</strong></td><td>R2,160,000</td><td>R4,320,000</td><td>R7,200,000</td></tr>
+<tr><td><strong>Gross Margin (75%)</strong></td><td>R1,620,000</td><td>R3,240,000</td><td>R5,400,000</td></tr>
+<tr><td><strong>CAC per Client</strong></td><td>R166,667</td><td>R100,000</td><td>R66,667</td></tr>
+<tr><td><strong>LTV:CAC (4yr retention)</strong></td><td>4.3:1</td><td>8.6:1</td><td>14.4:1</td></tr>
+<tr><td><strong>CAC Payback</strong></td><td>11 months</td><td>5.5 months</td><td>3.3 months</td></tr>
+<tr class="sr"><td><strong>Investment Multiple (Year 1 ARR / R2M)</strong></td><td><strong>1.08&times;</strong></td><td><strong>2.16&times;</strong></td><td><strong>3.6&times;</strong></td></tr>
+</tbody></table>
+<div class="co" style="margin-top:20px">
+<h4>Key Takeaway</h4>
+<p>Even in the <strong>conservative scenario</strong>, the company reaches R2.16M ARR &mdash; exceeding the seed investment in recurring revenue within 12 months.</p>
+<p>In the <strong>base case</strong>, each R1 invested generates R2.16 in annual recurring revenue, with a 75% gross margin. Technology risk is zero &mdash; <strong>what we are buying is customers</strong>.</p>
+</div>
+</div></div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- KEY ASSUMPTIONS                    -->
+<!-- ═══════════════════════════════════ -->
+<div class="asm">
+<h3>Key Assumptions</h3>
+<ul>
+<li>All prices are <strong>exclusive of VAT</strong> unless otherwise stated. VAT at 15% will apply to physical goods and SA-domiciled services.</li>
+<li>USD-denominated SaaS tools converted at an indicative exchange rate of <strong>R18.00 : USD 1.00</strong> (April 2026 mid-rate).</li>
+<li>Salary figures are <strong>Cost to Company (CTC)</strong> &mdash; inclusive of basic salary, UIF, SDL, and company contributions. Take-home pay differs by individual tax profile.</li>
+<li>BDE commission (10% of Year 1 contract value) is <strong>paid from generated revenue</strong>, not from this R2M capital allocation.</li>
+<li>Monthly churn assumption: <strong>&lt;2%</strong> per month, consistent with B2B SaaS industry benchmarks for SA mid-market.</li>
+<li>Customer Lifetime Value assumes <strong>4-year average retention</strong> &mdash; conservative for enterprise ERP.</li>
+<li>Marketing CPC and CPM rates reflect <strong>Google Keyword Planner</strong> and <strong>LinkedIn Campaign Manager</strong> SA data as at April 2026.</li>
+<li>Event stand fees are based on <strong>published exhibitor prospectus pricing</strong> for 2026 where available, or 2025 pricing +6% CPI escalation.</li>
+<li>Contingency reserve (12.5%) is deliberately held unallocated, to be deployed based on mid-year performance review.</li>
+</ul>
+</div>
+
+<!-- ═══════════════════════════════════ -->
+<!-- SOURCES APPENDIX                   -->
+<!-- ═══════════════════════════════════ -->
+<div class="src-sec">
+<div class="src-h"><h3>Appendix: Price Sources &amp; Market References</h3><p>Every line item is traceable to a named SA supplier, published pricing page, or recognised salary benchmark. Verified April 2026.</p></div>
+<div class="src-b">
+
+<div class="sub-h">A &mdash; Corporate Merchandise &amp; Clothing</div>
+<table class="src-table">
+<thead><tr><th style="width:22%">Item</th><th style="width:20%">Supplier</th><th style="width:18%">Website</th><th style="width:40%">Price Basis</th></tr></thead>
+<tbody>
+<tr><td><span class="si">Golf Shirts</span><br><span class="sp">R175/unit</span></td><td><span class="ss">Brand Innovation SA</span></td><td><span class="su">brandinnovation.co.za</span></td><td><span class="sn2">100% cotton pique, 1-colour chest embroidery, 50&ndash;100 unit tier. Published catalogue rate excl VAT.</span></td></tr>
+<tr><td><span class="si">Hoodies</span><br><span class="sp">R310/unit</span></td><td><span class="ss">Giftwrap SA</span></td><td><span class="su">giftwrap.co.za</span></td><td><span class="sn2">Unisex fleece hoodie, heat transfer/embroidered logo, 30-unit min. Q1 2026 catalogue.</span></td></tr>
+<tr><td><span class="si">Caps</span><br><span class="sp">R145/unit</span></td><td><span class="ss">Brandex</span></td><td><span class="su">brandex.co.za</span></td><td><span class="sn2">5-panel structured, 1-location embroidery, 50-unit order. Corporate gifting price list.</span></td></tr>
+<tr><td><span class="si">Metal Pens</span><br><span class="sp">R38/unit</span></td><td><span class="ss">Brandex / Award &amp; Gift</span></td><td><span class="su">brandex.co.za</span></td><td><span class="sn2">Twist-action metal ballpoint, laser engraving, 300-unit tier. Cross-checked awardandgift.co.za.</span></td></tr>
+<tr><td><span class="si">A5 Notebooks</span><br><span class="sp">R65/unit</span></td><td><span class="ss">Printlab SA</span></td><td><span class="su">printlab.co.za</span></td><td><span class="sn2">Softcover, 80 cream pages, debossed cover, 100-unit order. Standard quoted product line.</span></td></tr>
+<tr><td><span class="si">Business Cards</span><br><span class="sp">R900/500</span></td><td><span class="ss">Minuteman Press / Digicopy</span></td><td><span class="su">minutemanpress.co.za</span></td><td><span class="sn2">400gsm matt laminate, full-colour double-sided. Online quote tool, 500-unit batch.</span></td></tr>
+</tbody></table>
+
+<div class="sub-h">B &mdash; Banners &amp; Displays</div>
+<table class="src-table">
+<thead><tr><th style="width:22%">Item</th><th style="width:20%">Supplier</th><th style="width:18%">Website</th><th style="width:40%">Price Basis</th></tr></thead>
+<tbody>
+<tr><td><span class="si">Pull-Up Banner</span><br><span class="sp">R980/unit</span></td><td><span class="ss">FastSign / PrintPath</span></td><td><span class="su">fastsign.co.za</span></td><td><span class="sn2">Standard retractable cassette, digital inkjet, carry bag. Online calculator &mdash; economy tier.</span></td></tr>
+<tr><td><span class="si">3&times;3m Backdrop Wall</span><br><span class="sp">R9,500</span></td><td><span class="ss">Print Safari</span></td><td><span class="su">printsafari.co.za</span></td><td><span class="sn2">Dye-sublimation fabric, aluminium snap-frame. Exhibition backdrop product range.</span></td></tr>
+<tr><td><span class="si">Fitted Tablecloths</span><br><span class="sp">R900/unit</span></td><td><span class="ss">Brandex</span></td><td><span class="su">brandex.co.za</span></td><td><span class="sn2">Full-colour, 6ft fitted. Standard availability from multiple SA wide-format printers.</span></td></tr>
+</tbody></table>
+
+<div class="sub-h">C &mdash; Events &amp; Trade Shows</div>
+<table class="src-table">
+<thead><tr><th style="width:24%">Event</th><th style="width:20%">Organiser</th><th style="width:18%">Website</th><th style="width:38%">Price Basis</th></tr></thead>
+<tbody>
+<tr><td><span class="si">SMME Expo</span><br><span class="sp">Stand: R22,000</span></td><td><span class="ss">SMME Expo SA</span></td><td><span class="su">smmeexpo.co.za</span></td><td><span class="sn2">Shell stand 3&times;3m: R18K&ndash;R25K. Gallagher Convention Centre, Midrand. Annual event.</span></td></tr>
+<tr><td><span class="si">NSBC Summit</span><br><span class="sp">Stand: R15,000</span></td><td><span class="ss">National Small Business Chamber</span></td><td><span class="su">nsbc.org.za</span></td><td><span class="sn2">SA&rsquo;s largest SME body. Bronze exhibitor packages R12K&ndash;R18K from published prospectus.</span></td></tr>
+<tr><td><span class="si">Africa Tech Week</span><br><span class="sp">Stand: R18,000</span></td><td><span class="ss">Africa Tech Week Ltd</span></td><td><span class="su">africatechweek.com</span></td><td><span class="sn2">CTICC, Cape Town. Startup exhibitor floor R15K&ndash;R22K per previous year prospectus.</span></td></tr>
+<tr><td><span class="si">SAIPA Conference</span><br><span class="sp">Bronze: R15,000</span></td><td><span class="ss">SA Institute of Professional Accountants</span></td><td><span class="su">saipa.co.za</span></td><td><span class="sn2">Bronze sponsorship tier R12K&ndash;R18K. Key channel: accountants refer clients outgrowing Sage.</span></td></tr>
+<tr><td><span class="si">Chamber Events (4)</span><br><span class="sp">R7,000 each</span></td><td><span class="ss">JCCI / Cape / Durban / EC Chambers</span></td><td><span class="su">capechamber.co.za</span></td><td><span class="sn2">Published exhibitor/table rate for regional SME networking events. Durban &amp; JCCI similar.</span></td></tr>
+</tbody></table>
+
+<div class="sub-h">D &mdash; Digital Tools (SaaS Pricing)</div>
+<table class="src-table">
+<thead><tr><th style="width:18%">Tool</th><th style="width:18%">Plan</th><th style="width:18%">Website</th><th style="width:46%">Price Basis</th></tr></thead>
+<tbody>
+<tr><td><span class="si">HubSpot CRM</span><br><span class="sp">~R2,400/mo</span></td><td><span class="ss">Starter (2 seats)</span></td><td><span class="su">hubspot.com/pricing</span></td><td><span class="sn2">~USD $20/seat/mo &times; 2 = $40. Converted at R18/USD. Pipeline, sequences, reporting included.</span></td></tr>
+<tr><td><span class="si">LinkedIn Sales Nav</span><br><span class="sp">~R36K/year</span></td><td><span class="ss">Core (2 annual)</span></td><td><span class="su">business.linkedin.com</span></td><td><span class="sn2">~USD $99/seat/mo billed annually = R18K/seat/year &times; 2. InMail, lead search, CRM sync.</span></td></tr>
+<tr><td><span class="si">ActiveCampaign</span><br><span class="sp">~R900/mo</span></td><td><span class="ss">Plus (2,500 contacts)</span></td><td><span class="su">activecampaign.com</span></td><td><span class="sn2">~USD $49/mo at R18/USD = R882, rounded R900 for FX buffer. Automation, forms, CRM.</span></td></tr>
+<tr><td><span class="si">Google Ads</span><br><span class="sp">R8,000/mo</span></td><td><span class="ss">Search + Display</span></td><td><span class="su">ads.google.com</span></td><td><span class="sn2">SA ERP keywords CPC R6&ndash;R12 (Keyword Planner April 2026). ~800&ndash;1,200 clicks/mo at mid CPC.</span></td></tr>
+<tr><td><span class="si">LinkedIn Ads</span><br><span class="sp">R5,000/mo</span></td><td><span class="ss">Sponsored Content</span></td><td><span class="su">linkedin.com</span></td><td><span class="sn2">Min $10/day. R5K/mo targets SA CFO, Finance Manager, Business Owner. CPM ~R220&ndash;R350.</span></td></tr>
+<tr><td><span class="si">Canva Pro</span><br><span class="sp">~R400/mo</span></td><td><span class="ss">Team (3 seats)</span></td><td><span class="su">canva.com/pricing</span></td><td><span class="sn2">~USD $120/yr per person billed annually &div; 12 &times; 3 seats at R18/USD.</span></td></tr>
+</tbody></table>
+
+<div class="sub-h">E &mdash; Salary Benchmarks (CTC, South Africa 2026)</div>
+<table class="src-table">
+<thead><tr><th style="width:24%">Role</th><th style="width:15%">Our CTC</th><th style="width:22%">Source</th><th style="width:39%">Market Range</th></tr></thead>
+<tbody>
+<tr><td><span class="si">BDE (B2B SaaS)</span></td><td><span class="sp">R25,000/mo</span></td><td><span class="ss">PNet 2025 &middot; Payscale SA &middot; Michael Page 2026</span></td><td><span class="sn2">B2B Sales 3+ yrs: R20K&ndash;R35K CTC/mo. Payscale median R24K&ndash;R28K. Our R25K is mid-range.</span></td></tr>
+<tr><td><span class="si">Customer Success</span></td><td><span class="sp">R18,000/mo</span></td><td><span class="ss">Michael Page SA 2026 &middot; Payscale</span></td><td><span class="sn2">CS Manager Jr&ndash;Mid: R180K&ndash;R240K/yr = R15K&ndash;R20K/mo. Our R18K is middle of range.</span></td></tr>
+<tr><td><span class="si">Tech Support</span></td><td><span class="sp">R18,000/mo</span></td><td><span class="ss">PNet &middot; CareerJunction &middot; Robert Walters</span></td><td><span class="sn2">IT/App Support: R15K&ndash;R22K CTC/mo from active April 2026 job postings. R18K mid-range.</span></td></tr>
+<tr><td><span class="si">Marketing Coordinator</span></td><td><span class="sp">R17,000/mo</span></td><td><span class="ss">Payscale SA &middot; CareerJunction 2026</span></td><td><span class="sn2">Jr&ndash;Mid digital marketing: R14K&ndash;R20K CTC. R17K attracts 2&ndash;3 yrs B2B content experience.</span></td></tr>
+</tbody></table>
+
+<div class="sub-h">F &mdash; Recruitment &amp; Training</div>
+<table class="src-table">
+<thead><tr><th>Service</th><th>Supplier</th><th>Website</th><th>Fee Basis</th></tr></thead>
+<tbody>
+<tr><td><span class="si">5&times; Placements</span><br><span class="sp">R35,000 total</span></td><td><span class="ss">PNet / CareerJunction recruiters</span></td><td><span class="su">pnet.co.za</span></td><td><span class="sn2">SA agencies: 8&ndash;12% annual CTC or flat fee R7K&ndash;R10K per junior&ndash;mid placement. R35K for 5 is conservative.</span></td></tr>
+<tr><td><span class="si">Sales Training (2-day)</span><br><span class="sp">R15,000</span></td><td><span class="ss">Sales Guru SA / Brainwave</span></td><td><span class="su">salesguru.co.za</span></td><td><span class="sn2">Consultative selling masterclass: R6.5K&ndash;R9K/delegate for 2 days. R15K for 2 delegates consistent.</span></td></tr>
+</tbody></table>
+
+<div class="disc">
+<strong>Disclaimer:</strong> All prices are estimated from publicly available South African supplier catalogues, published pricing pages, and industry salary guides as at April 2026. Actual costs may vary by final negotiation, quantity, VAT treatment, and exchange rates at purchase. USD-denominated tools converted at R18:USD1 indicative rate. CTC salary figures from referenced benchmarking guides &mdash; net take-home differs by tax profile. This budget is indicative and demonstrates prudent, market-anchored investment planning.
+</div>
+
+</div></div>
+
+</div><!-- end .wrap -->
+
+<div class="ftr">
+<p><strong>Masaphokati Technologies (Pty) Ltd</strong> &nbsp;&middot;&nbsp; SiyaBusa ERP &nbsp;&middot;&nbsp; STRICTLY CONFIDENTIAL</p>
+<p style="margin-top:4px">REF: MT-INV-2026-001 &nbsp;|&nbsp; Version 2.0 &nbsp;|&nbsp; Prepared 13 April 2026 &nbsp;|&nbsp; All amounts in South African Rand (ZAR)</p>
+</div>
+
+</body>
+</html>

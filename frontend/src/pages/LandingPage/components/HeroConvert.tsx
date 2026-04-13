@@ -84,7 +84,7 @@ const HeroConvert: React.FC = () => {
           <h1>
             Your entire business.
             <br />
-            <span className="text-gradient">One platform. R299/user.</span>
+            <span className="text-gradient">One platform. R399/user.</span>
           </h1>
 
           <p className="hero-convert-sub">

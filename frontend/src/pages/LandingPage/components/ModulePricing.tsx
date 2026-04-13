@@ -1,6 +1,6 @@
 /**
  * ModulePricing — One price, everything included.
- * Pain-driven simplicity: R299/user/month, no tiers, no confusion.
+ * Pain-driven simplicity: R399/user/month, no tiers, no confusion.
  */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -68,7 +68,7 @@ const ModulePricing: React.FC = () => {
         >
           <div className="pricing-single-top">
             <div className="pricing-single-price-block">
-              <span className="pricing-amount">R299</span>
+              <span className="pricing-amount">R399</span>
               <div className="pricing-amount-detail">
                 <span className="pricing-per">per user / month</span>
                 <span className="pricing-annual">Save 15% with annual billing</span>
@@ -139,7 +139,7 @@ const ModulePricing: React.FC = () => {
             </div>
             <div className="pricing-comparison-vs">
               <span>SiyaBusa (per user)</span>
-              <span className="comparison-siyabusa">R299/mo</span>
+              <span className="comparison-siyabusa">R399/mo</span>
             </div>
           </div>
         </motion.div>

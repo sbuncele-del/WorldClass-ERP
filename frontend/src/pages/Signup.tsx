@@ -25,8 +25,8 @@ const PLANS = [
   {
     id: 'business',
     name: 'Business',
-    price: 'R299',
-    priceUSD: '$17',
+    price: 'R399',
+    priceUSD: '$22',
     perUser: true,
     description: 'per user / month',
     features: ['All modules included', 'Unlimited data storage', 'SARS integration', 'AI assistant', '7-day free trial'],
@@ -35,8 +35,8 @@ const PLANS = [
   {
     id: 'accountant',
     name: 'Accounting Firm',
-    price: 'R299',
-    priceUSD: '$17',
+    price: 'R399',
+    priceUSD: '$22',
     perUser: true,
     description: 'per user / month',
     features: ['Everything in Business', 'Manage multiple clients', 'Switch between companies', 'Client billing & reports', '7-day free trial'],

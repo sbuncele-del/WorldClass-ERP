@@ -111,7 +111,7 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children, title, d
 // ─── Homepage ───
 const LandingPage: React.FC = () => {
   return (
-    <WebsiteLayout title="SiyaBusa ERP — One Platform, One Price. R299/user/month." description="Stop paying for five disconnected tools. SiyaBusa ERP gives South African businesses accounting, payroll, HR, inventory, sales, and SARS compliance in one platform. R299/user/month. 7-day free trial." canonical="https://siyabusaerp.co.za/">
+    <WebsiteLayout title="SiyaBusa ERP — One Platform, One Price. R399/user/month." description="Stop paying for five disconnected tools. SiyaBusa ERP gives South African businesses accounting, payroll, HR, inventory, sales, and SARS compliance in one platform. R399/user/month. 7-day free trial." canonical="https://siyabusaerp.co.za/">
       <HeroConvert />
       <LogoBar />
       <SocialProof />
