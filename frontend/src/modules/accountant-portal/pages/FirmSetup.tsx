@@ -134,11 +134,28 @@ const FirmSetup: React.FC<FirmSetupProps> = ({ onComplete, editMode = false }) =
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
-      const values = form.getFieldsValue(true);
+      const v = form.getFieldsValue(true);
+      // Map form field names to API field names
+      const payload = {
+        firm_name: v.name,
+        firm_type: v.type,
+        contact_email: v.email,
+        contact_phone: v.phone,
+        website: v.website,
+        address: [v.address_line1, v.address_line2].filter(Boolean).join(', ') || undefined,
+        city: v.city,
+        province: v.province,
+        postal_code: v.postal_code,
+        country: v.country,
+        registration_number: v.registration_number,
+        tax_number: v.tax_number,
+        practice_number: v.practice_number,
+        subscription_tier: v.subscription_plan,
+      };
       const res = await fetch('/api/v2/accountant-portal/firm', {
         method: 'PUT',
         headers: authHeaders(),
-        body: JSON.stringify(values),
+        body: JSON.stringify(payload),
       });
       const json = await res.json();
       if (json.success) {
@@ -150,7 +167,7 @@ const FirmSetup: React.FC<FirmSetupProps> = ({ onComplete, editMode = false }) =
           setTimeout(() => onComplete(), 1500);
         }
       } else {
-        message.error(json.message || 'Failed to save firm');
+        message.error(json.error || json.message || 'Failed to save firm');
       }
     } catch (err) {
       console.error('Firm save error:', err);
