@@ -3,6 +3,12 @@ name: Deploy to DigitalOcean
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force full rebuild (no cache)'
+        required: false
+        default: 'false'
 
 jobs:
   deploy:
