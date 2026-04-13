@@ -377,8 +377,12 @@ const VATReportTab: React.FC = () => {
         params.start_date = customStart;
         params.end_date = customEnd;
       }
-      const result = await apiGet<any>('/api/financial/reports/vat-report', params);
-      if (result.success) {
+      // Try V2 route first, fall back to module route
+      let result = await apiGet<any>('/api/financial/reports/vat-report', params).catch(() => null);
+      if (!result?.success) {
+        result = await apiGet<any>('/api/financial/vat-report', { fromDate: customStart, toDate: customEnd });
+      }
+      if (result?.success) {
         setVatData(result.data);
       }
     } catch (err) {

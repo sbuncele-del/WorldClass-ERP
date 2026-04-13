@@ -52,10 +52,14 @@ interface DateRange {
 export async function generateIncomeStatement(req: TenantRequest, res: Response): Promise<void> {
   try {
     const { tenantId } = getTenantContext(req);
-    const { start_date, end_date, period = 'monthly', compare_prior = false } = req.query;
+    const { start_date, end_date, from_date, to_date, fromDate, toDate, period = 'monthly', compare_prior = false } = req.query;
+    
+    // Support multiple parameter naming conventions
+    const effectiveStart = start_date || from_date || fromDate;
+    const effectiveEnd = end_date || to_date || toDate;
 
     // Calculate date range
-    const dateRange = calculateDateRange(period as string, start_date as string, end_date as string);
+    const dateRange = calculateDateRange(period as string, effectiveStart as string, effectiveEnd as string);
 
     // Fetch accounts with tenant filtering
     const [revenueAccounts, cogsAccounts, expenseAccounts, otherIncomeAccounts, otherExpenseAccounts, taxAccounts] = await Promise.all([
@@ -331,9 +335,11 @@ export async function getFinancialRatios(req: TenantRequest, res: Response): Pro
 export async function generateCashFlowStatement(req: TenantRequest, res: Response): Promise<void> {
   try {
     const { tenantId } = getTenantContext(req);
-    const { start_date, end_date, period = 'monthly', method = 'indirect' } = req.query;
+    const { start_date, end_date, from_date, to_date, fromDate, toDate, period = 'monthly', method = 'indirect' } = req.query;
+    const effectiveStart = start_date || from_date || fromDate;
+    const effectiveEnd = end_date || to_date || toDate;
 
-    const dateRange = calculateDateRange(period as string, start_date as string, end_date as string);
+    const dateRange = calculateDateRange(period as string, effectiveStart as string, effectiveEnd as string);
 
     // Get net income for the period
     const netIncome = await calculateNetIncome(tenantId, dateRange.start_date, dateRange.end_date);
@@ -910,9 +916,11 @@ export async function generateAgedPayables(req: TenantRequest, res: Response): P
 export async function generateVATReport(req: TenantRequest, res: Response): Promise<void> {
   try {
     const { tenantId } = getTenantContext(req);
-    const { start_date, end_date, period = 'monthly' } = req.query;
+    const { start_date, end_date, from_date, to_date, fromDate, toDate, period = 'monthly' } = req.query;
+    const effectiveStart = start_date || from_date || fromDate;
+    const effectiveEnd = end_date || to_date || toDate;
     
-    const dateRange = calculateDateRange(period as string, start_date as string, end_date as string);
+    const dateRange = calculateDateRange(period as string, effectiveStart as string, effectiveEnd as string);
 
     // Query VAT from journal entries - Output VAT (Sales) and Input VAT (Purchases)
     const vatQuery = `

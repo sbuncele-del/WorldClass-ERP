@@ -4,8 +4,12 @@ export class FinancialReportsService {
   private pool: Pool;
 
   constructor() {
-    // Determine SSL config - only use SSL for AWS RDS, not for local/Docker PostgreSQL
-    const sslConfig = process.env.DB_HOST?.includes('rds.amazonaws.com') 
+    // Determine SSL config for managed databases (AWS RDS and DigitalOcean)
+    const dbHost = process.env.DB_HOST || '';
+    const needsSsl = dbHost.includes('rds.amazonaws.com') || 
+                     dbHost.includes('.db.ondigitalocean.com') ||
+                     process.env.DB_SSL === 'true';
+    const sslConfig = needsSsl
       ? { rejectUnauthorized: false }
       : (process.env.DB_SSL === 'false' ? false : undefined);
 

@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SiyaBusa ERP — Investor Cash Flow Projection 2026</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+@page { size: A4 portrait; margin: 0; }
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9pt;
+  color: #111827;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  background: #ffffff;
+}
+
+/* ── COVER ─────────────────────────────────────────────── */
+.cover {
+  page-break-after: always;
+  background: #0a1628;
+  color: #fff;
+  min-height: 270mm;
+  display: flex;
+  flex-direction: column;
+  padding: 30mm 20mm 20mm;
+}
+.cover-top-bar { width: 48px; height: 4px; background: #c9a84c; margin-bottom: 14mm; }
+.cover-logo { font-size: 22pt; font-weight: 900; letter-spacing: 1px; color: #c9a84c; }
+.cover-subtitle { font-size: 10pt; color: #aaa; margin-top: 2mm; letter-spacing: 2px; text-transform: uppercase; }
+.cover-title { margin-top: 18mm; font-size: 32pt; font-weight: 900; line-height: 1.1; text-transform: uppercase; letter-spacing: 2px; color: #fff; }
+.cover-version { margin-top: 6mm; font-size: 10pt; color: #c9a84c; letter-spacing: 1px; text-transform: uppercase; }
+.cover-body { flex: 1; }
+.cover-meta { margin-top: 14mm; display: flex; gap: 16mm; flex-wrap: wrap; }
+.cover-meta-item label { display: block; font-size: 7.5pt; text-transform: uppercase; letter-spacing: 1px; color: #888; margin-bottom: 1mm; }
+.cover-meta-item span { font-size: 10pt; font-weight: bold; color: #fff; }
+.cover-tagline { font-size: 13pt; font-weight: 700; letter-spacing: 3px; color: #c9a84c; text-transform: uppercase; margin-top: 20mm; }
+.cover-footer-bar { border-top: 1px solid #2a3a5a; padding-top: 5mm; margin-top: 10mm; display: flex; justify-content: space-between; font-size: 8pt; color: #555; }
+
+/* ── CONTENT PAGES ─────────────────────────────────────── */
+.page {
+  width: 210mm;
+  padding: 10mm 14mm 10mm 14mm;
+  page-break-before: always;
+  background-color: #ffffff;
+}
+
+/* Page header bar */
+.ph {
+  border-bottom: 2.5px solid #0A2147;
+  padding-bottom: 3mm;
+  margin-bottom: 6mm;
+}
+
+.ph table { width: 100%; border-collapse: collapse; }
+.ph-title  { font-size: 14pt; font-weight: 900; color: #0A2147; }
+.ph-sub    { font-size: 7.5pt; color: #6B7280; margin-top: 1mm; }
+.ph-right  { text-align: right; font-size: 7pt; color: #9CA3AF; vertical-align: bottom; }
+
+/* Section header */
+.sh {
+  font-size: 8pt;
+  font-weight: 700;
+  color: #ffffff;
+  background-color: #0A2147;
+  padding: 2.5mm 4mm;
+  margin-top: 5mm;
+  margin-bottom: 3.5mm;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.sh.amber  { background-color: #92400E; }
+.sh.green  { background-color: #065F46; }
+.sh.gray   { background-color: #374151; }
+.sh.sm     { margin-top: 0; }
+
+/* Data tables */
+.dt {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 7.5pt;
+  margin-bottom: 4mm;
+}
+
+.dt th {
+  background-color: #0A2147;
+  color: #ffffff;
+  padding: 2.5mm 2mm;
+  text-align: center;
+  font-weight: 700;
+  border: 1px solid #0A2147;
+  white-space: nowrap;
+}
+.dt th.L { text-align: left; padding-left: 3mm; }
+
+.dt td {
+  padding: 2mm 2mm;
+  text-align: center;
+  border: 1px solid #E5E7EB;
+  white-space: nowrap;
+}
+.dt td.L { text-align: left; padding-left: 3mm; font-size: 7pt; }
+
+.dt tr:nth-child(even) td { background-color: #F9FAFB; }
+
+/* Special rows */
+.dt tr.r-sub  td { background-color: #DBEAFE; font-weight: 700; color: #1E3A8A; }
+.dt tr.r-cogs td { background-color: #FEF3C7; font-weight: 700; color: #78350F; }
+.dt tr.r-gp   td { background-color: #D1FAE5; font-weight: 700; color: #065F46; }
+.dt tr.r-opex td { background-color: #EDE9FE; font-weight: 700; color: #4C1D95; }
+.dt tr.r-epos td { background-color: #D1FAE5; font-weight: 700; color: #065F46; }
+.dt tr.r-eneg td { background-color: #FEE2E2; font-weight: 700; color: #991B1B; }
+.dt tr.r-cash td { background-color: #DBEAFE; font-weight: 700; color: #1E3A8A; }
+.dt tr.r-hi   td { background-color: #FEF3C7; font-weight: 700; color: #78350F; }
+.dt tr.r-tot  td { background-color: #0A2147; color: #ffffff; font-weight: 700; }
+
+/* Cell colours */
+.pos  { color: #065F46; font-weight: 700; }
+.neg  { color: #991B1B; }
+.amb  { color: #78350F; font-weight: 700; }
+
+/* Two-column table layout */
+.tcol       { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
+.tcol td    { vertical-align: top; padding: 0; }
+.tc-l       { padding-right: 4mm !important; width: 50%; }
+.tc-r       { padding-left: 4mm !important; width: 50%; }
+.tc-40      { padding-right: 4mm !important; width: 40%; }
+.tc-60      { padding-left: 4mm !important; width: 60%; }
+
+/* Metric cards */
+.mc-row { width: 100%; border-collapse: collapse; margin-bottom: 4mm; }
+.mc-row td { padding: 4mm 3mm; text-align: center; vertical-align: middle; }
+.mc-navy   { background-color: #0A2147; }
+.mc-amber  { background-color: #92400E; }
+.mc-green  { background-color: #065F46; }
+.mc-blue   { background-color: #1E3A8A; }
+.mc-purple { background-color: #4C1D95; }
+.mc-val { display: block; font-size: 15pt; font-weight: 900; color: #ffffff; line-height: 1; margin-bottom: 1.5mm; }
+.mc-lbl { display: block; font-size: 6.5pt; color: rgba(255,255,255,0.65); text-transform: uppercase; letter-spacing: 0.5px; }
+.mc-sub { display: block; font-size: 6pt; color: rgba(255,255,255,0.45); margin-top: 1mm; }
+
+/* Info boxes */
+.ib {
+  border-left: 3px solid #D97706;
+  background-color: #FFFBEB;
+  padding: 2.5mm 3.5mm;
+  margin-bottom: 3.5mm;
+  font-size: 7.5pt;
+  color: #78350F;
+  line-height: 1.55;
+}
+.ib.blue   { border-left-color: #3B82F6; background-color: #EFF6FF; color: #1E3A8A; }
+.ib.green  { border-left-color: #10B981; background-color: #ECFDF5; color: #065F46; }
+.ib.navy   { border-left-color: #0A2147; background-color: #EFF6FF; color: #0A2147; }
+
+/* Bar chart */
+.bc { width: 100%; border-collapse: collapse; font-size: 7pt; }
+.bc td { padding: 1mm 2mm; border: none; vertical-align: middle; }
+.bc-lbl { width: 12%; color: #374151; font-weight: 700; }
+.bc-bar { width: 73%; }
+.bc-bg  { background-color: #E5E7EB; height: 5mm; width: 100%; }
+.bc-fill { height: 5mm; display: inline-block; vertical-align: top; }
+.bc-val { width: 15%; text-align: right; }
+
+/* Assumption rows */
+.at { width: 100%; border-collapse: collapse; font-size: 7.5pt; margin-bottom: 4mm; }
+.at td { padding: 2mm 3mm; border-bottom: 1px solid #E5E7EB; vertical-align: top; }
+.at tr:nth-child(even) td { background-color: #F9FAFB; }
+.at td:first-child { font-weight: 700; color: #0A2147; width: 32%; }
+
+/* Disclaimer */
+.disclaimer {
+  margin-top: 4mm;
+  padding: 3mm 4mm;
+  border: 1px solid #E5E7EB;
+  background-color: #F9FAFB;
+  font-size: 6.5pt;
+  color: #6B7280;
+  line-height: 1.5;
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE 1 — COVER
+════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-top-bar"></div>
+  <div class="cover-logo">SiyaBusa ERP</div>
+  <div class="cover-subtitle">Investor &amp; Partner Documentation</div>
+  <div class="cover-body">
+    <div class="cover-title">Cash Flow<br>Projection<br>2026</div>
+    <div class="cover-version">Financial Model &amp; Unit Economics &nbsp;|&nbsp; April 2026</div>
+    <div class="cover-meta">
+      <div class="cover-meta-item"><label>Company</label><span>Masaphokati Technologies (Pty) Ltd</span></div>
+      <div class="cover-meta-item"><label>Pricing</label><span>R399 / user / month</span></div>
+      <div class="cover-meta-item"><label>Seed Round</label><span>R2,000,000 · 16.67% equity</span></div>
+      <div class="cover-meta-item"><label>Classification</label><span>Confidential</span></div>
+    </div>
+  </div>
+  <div class="cover-tagline">WE RULE. WE GOVERN. WE EMPOWER.</div>
+  <div class="cover-footer-bar">
+    <span>Masaphokati Technologies (Pty) Ltd — Confidential</span>
+    <span>April 2026</span>
+  </div>
+</div><!-- /cover -->
+
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE 2 — PRICING MODEL & COGS / UNIT ECONOMICS
+════════════════════════════════════════════════════════ -->
+<div class="page">
+
+  <div class="ph">
+    <table>
+      <tr>
+        <td>
+          <div class="ph-title">Pricing Model &amp; Unit Economics</div>
+          <div class="ph-sub">R399/user/month — flat rate, all-inclusive across all 25+ ERP modules</div>
+        </td>
+        <td class="ph-right">SiyaBusa ERP &nbsp;·&nbsp; Investor Cash Flow &nbsp;·&nbsp; April 2026</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Section 1: Pricing -->
+  <div class="sh sm">01 — Pricing Architecture &amp; Revenue per Client</div>
+
+  <table class="tcol">
+    <tr>
+      <!-- Left: pricing table -->
+      <td class="tc-l">
+        <table class="dt">
+          <tr>
+            <th class="L">Pricing Metric</th>
+            <th>Value</th>
+            <th>Notes</th>
+          </tr>
+          <tr><td class="L">Price per user / month</td><td><strong>R399</strong></td><td>All-inclusive</td></tr>
+          <tr><td class="L">Avg users per client</td><td>20</td><td>SA SME benchmark</td></tr>
+          <tr><td class="L">MRR per client (avg)</td><td><strong>R7,980</strong></td><td>20 × R399</td></tr>
+          <tr><td class="L">ARR per client (avg)</td><td><strong>R95,760</strong></td><td>R7,980 × 12</td></tr>
+          <tr><td class="L">Minimum viable seat</td><td>5 users</td><td>R1,995/mo min</td></tr>
+          <tr><td class="L">No user cap</td><td>500+</td><td>Enterprise upside</td></tr>
+          <tr class="r-hi"><td class="L">Break-even seats (M9)</td><td>451 users</td><td>MRR R179,949</td></tr>
+        </table>
+
+        <div class="ib blue">
+          <strong>Why flat-rate works:</strong> Every additional user = R399/month straight to recurring revenue.
+          No tiering complexity. Clients self-upgrade as they onboard more staff.
+        </div>
+      </td>
+
+      <!-- Right: revenue bands -->
+      <td class="tc-r">
+        <table class="dt">
+          <tr>
+            <th class="L">Client Size</th>
+            <th>Users</th>
+            <th>MRR (R)</th>
+            <th>ARR (R)</th>
+          </tr>
+          <tr><td class="L">Micro SME</td><td>5</td><td>1,995</td><td>23,940</td></tr>
+          <tr><td class="L">Small SME</td><td>10</td><td>3,990</td><td>47,880</td></tr>
+          <tr class="r-hi"><td class="L"><strong>Typical — avg</strong></td><td><strong>20</strong></td><td><strong>7,980</strong></td><td><strong>95,760</strong></td></tr>
+          <tr><td class="L">Mid-market</td><td>50</td><td>19,950</td><td>239,400</td></tr>
+          <tr><td class="L">Enterprise</td><td>100</td><td>39,900</td><td>478,800</td></tr>
+          <tr><td class="L">Large enterprise</td><td>200</td><td>79,800</td><td>957,600</td></tr>
+        </table>
+
+        <table class="mc-row">
+          <tr>
+            <td class="mc-navy" style="width:50%;">
+              <span class="mc-val">R7,980</span>
+              <span class="mc-lbl">MRR per avg client</span>
+              <span class="mc-sub">20 users × R399</span>
+            </td>
+            <td class="mc-amber" style="width:50%;">
+              <span class="mc-val">R95,760</span>
+              <span class="mc-lbl">ARR per avg client</span>
+              <span class="mc-sub">annual contract value</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Section 2: COGS -->
+  <div class="sh green">02 — Cost of Goods Sold (COGS) &amp; Gross Margin</div>
+
+  <div class="ib">
+    <strong>COGS definition:</strong> Direct costs to deliver the SaaS service — cloud infrastructure, payment processing, and customer-facing
+    support staff. Engineering, sales, marketing and G&amp;A are operating expenses that sit <em>below</em> gross profit.
+  </div>
+
+  <table class="tcol">
+    <tr>
+      <td class="tc-l">
+        <table class="dt">
+          <tr>
+            <th class="L">COGS Component</th>
+            <th>M1</th>
+            <th>M12</th>
+            <th>Driver</th>
+          </tr>
+          <tr><td class="L" colspan="4" style="background:#F3F4F6;font-weight:700;color:#374151;font-size:7pt;">① AWS Cloud Infrastructure</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;EC2 App Servers (×2 t3.medium)</td><td>1,100</td><td>2,200</td><td>Load scaling</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;RDS PostgreSQL (db.t3.medium)</td><td>2,800</td><td>3,500</td><td>Storage growth</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;Redis ElastiCache</td><td>900</td><td>1,200</td><td>Session cache</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;S3 + CloudFront CDN</td><td>700</td><td>1,800</td><td>Bandwidth/data</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;Load Balancer + Route53</td><td>900</td><td>2,800</td><td>Fixed + growth</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;CloudWatch + Backups</td><td>600</td><td>1,800</td><td>Retention cost</td></tr>
+          <tr class="r-cogs"><td class="L">&nbsp;&nbsp;AWS Subtotal</td><td>7,000</td><td>13,300</td><td>Base R8K+R8/user</td></tr>
+          <tr><td class="L" colspan="4" style="background:#F3F4F6;font-weight:700;color:#374151;font-size:7pt;">② Payment Processing (Peach Payments)</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;Gateway fee 2.5% of MRR</td><td>200</td><td>6,584</td><td>2.5% × MRR</td></tr>
+          <tr><td class="L" colspan="4" style="background:#F3F4F6;font-weight:700;color:#374151;font-size:7pt;">③ Customer Support Staff (COGS)</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;1 agent M1–M6 / 2 agents M7–M11 / 3 M12</td><td>25,000</td><td>45,000</td><td>Headcount</td></tr>
+          <tr class="r-tot"><td class="L">TOTAL COGS</td><td>33,400</td><td>64,884</td><td></td></tr>
+          <tr><td class="L">Revenue (MRR)</td><td>7,980</td><td>263,340</td><td></td></tr>
+          <tr class="r-gp"><td class="L">GROSS PROFIT</td><td class="neg">-25,420</td><td class="pos">+198,456</td><td></td></tr>
+          <tr class="r-gp"><td class="L">Gross Margin %</td><td class="neg">—</td><td class="pos">75.4%</td><td></td></tr>
+        </table>
+      </td>
+
+      <td class="tc-r">
+        <div class="sh gray sm">Unit Cost per User — Month 12 (660 users)</div>
+        <table class="mc-row">
+          <tr>
+            <td class="mc-navy" style="width:50%;">
+              <span class="mc-val">R399</span>
+              <span class="mc-lbl">Revenue / user</span>
+              <span class="mc-sub">per month</span>
+            </td>
+            <td class="mc-amber" style="width:50%;">
+              <span class="mc-val">R98</span>
+              <span class="mc-lbl">COGS / user</span>
+              <span class="mc-sub">infra + payments + support</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="mc-green" style="width:50%;">
+              <span class="mc-val">R301</span>
+              <span class="mc-lbl">Gross profit / user</span>
+              <span class="mc-sub">per month</span>
+            </td>
+            <td class="mc-purple" style="width:50%;">
+              <span class="mc-val">75.4%</span>
+              <span class="mc-lbl">Gross margin</span>
+              <span class="mc-sub">SaaS benchmark: 70–80%</span>
+            </td>
+          </tr>
+        </table>
+
+        <table class="dt">
+          <tr>
+            <th class="L">COGS/user at Each Stage</th>
+            <th>M1</th>
+            <th>M12</th>
+            <th>Y2 End</th>
+          </tr>
+          <tr><td class="L">AWS per user</td><td class="neg">R350</td><td>R20</td><td>R13</td></tr>
+          <tr><td class="L">Payment processing / user</td><td>R10</td><td>R10</td><td>R10</td></tr>
+          <tr><td class="L">Support staff / user</td><td class="neg">R1,250</td><td>R68</td><td>R45</td></tr>
+          <tr class="r-cogs"><td class="L">Total COGS / user</td><td class="neg">R1,670</td><td>R98</td><td>R68</td></tr>
+          <tr class="r-gp"><td class="L">Gross profit / user</td><td class="neg">-R1,271</td><td class="pos">R301</td><td class="pos">R331</td></tr>
+        </table>
+
+        <div class="ib green">
+          <strong>Scale economics:</strong> AWS base cost of R8K/month is fixed. At M1 (20 users) that's R400/user;
+          at M12 (660 users) that's R12/user — a <strong>97% drop</strong> in infrastructure cost per user over 12 months.
+          Every new user added is almost pure gross profit by Year 2.
+        </div>
+
+        <table class="dt">
+          <tr><th class="L">LTV / CAC Metrics</th><th>Value</th><th>Benchmark</th></tr>
+          <tr><td class="L">CAC (fully blended)</td><td>R45,000</td><td>R30–80K</td></tr>
+          <tr><td class="L">LTV (4yr, 75% GM)</td><td>R574,560</td><td>—</td></tr>
+          <tr class="r-hi"><td class="L">LTV : CAC</td><td><strong>10.0 : 1</strong></td><td>Target &gt;3:1</td></tr>
+          <tr><td class="L">CAC payback period</td><td>5.6 months</td><td>Target &lt;12mo</td></tr>
+          <tr><td class="L">Monthly churn target</td><td>&lt;2%</td><td>—</td></tr>
+          <tr><td class="L">Net revenue retention</td><td>110%+</td><td>Target &gt;100%</td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</div><!-- /page 2 -->
+
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE 3 — 12-MONTH P&L CASH FLOW
+════════════════════════════════════════════════════════ -->
+<div class="page">
+
+  <div class="ph">
+    <table>
+      <tr>
+        <td>
+          <div class="ph-title">12-Month Detailed Cash Flow</div>
+          <div class="ph-sub">Revenue → COGS → Gross Profit → OpEx → EBITDA → Cash Balance &nbsp;|&nbsp; Seed: R2,000,000</div>
+        </td>
+        <td class="ph-right">SiyaBusa ERP &nbsp;·&nbsp; Investor Cash Flow &nbsp;·&nbsp; April 2026</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Revenue & COGS -->
+  <div class="sh sm">03 — Revenue Build-Up &amp; Cost of Goods Sold</div>
+
+  <table class="dt">
+    <tr>
+      <th class="L" style="width:17%;">Line Item</th>
+      <th>M1</th><th>M2</th><th>M3</th><th>M4</th><th>M5</th><th>M6</th>
+      <th>M7</th><th>M8</th><th>M9</th><th>M10</th><th>M11</th><th>M12</th>
+    </tr>
+
+    <!-- Growth metrics -->
+    <tr>
+      <td class="L">New clients signed</td>
+      <td>1</td><td>1</td><td>2</td><td>3</td><td>3</td><td>3</td>
+      <td>3</td><td>4</td><td>4</td><td>4</td><td>4</td><td>4</td>
+    </tr>
+    <tr>
+      <td class="L">Total active clients</td>
+      <td>1</td><td>2</td><td>4</td><td>7</td><td>10</td><td>13</td>
+      <td>16</td><td>20</td><td>24</td><td>28</td><td>32</td><td>36</td>
+    </tr>
+    <tr>
+      <td class="L">Billable users</td>
+      <td>20</td><td>40</td><td>79</td><td>137</td><td>194</td><td>250</td>
+      <td>305</td><td>379</td><td>451</td><td>522</td><td>592</td><td>660</td>
+    </tr>
+
+    <!-- Revenue -->
+    <tr class="r-sub">
+      <td class="L">REVENUE (MRR)</td>
+      <td>7,980</td><td>15,960</td><td>31,521</td><td>54,663</td><td>77,406</td><td>99,750</td>
+      <td>121,695</td><td>151,221</td><td>179,949</td><td>208,278</td><td>236,208</td><td>263,340</td>
+    </tr>
+
+    <!-- COGS lines -->
+    <tr>
+      <td class="L">— AWS Infrastructure</td>
+      <td>8,200</td><td>8,300</td><td>8,600</td><td>9,100</td><td>9,600</td><td>10,000</td>
+      <td>10,400</td><td>11,000</td><td>11,600</td><td>12,200</td><td>12,700</td><td>13,300</td>
+    </tr>
+    <tr>
+      <td class="L">— Payment Processing</td>
+      <td>200</td><td>399</td><td>788</td><td>1,367</td><td>1,935</td><td>2,494</td>
+      <td>3,042</td><td>3,781</td><td>4,499</td><td>5,207</td><td>5,905</td><td>6,584</td>
+    </tr>
+    <tr>
+      <td class="L">— Cust. Support Staff</td>
+      <td>25,000</td><td>25,000</td><td>25,000</td><td>25,000</td><td>25,000</td><td>25,000</td>
+      <td>35,000</td><td>35,000</td><td>35,000</td><td>35,000</td><td>35,000</td><td>45,000</td>
+    </tr>
+    <tr class="r-cogs">
+      <td class="L">TOTAL COGS</td>
+      <td>33,400</td><td>33,699</td><td>34,388</td><td>35,467</td><td>36,535</td><td>37,494</td>
+      <td>48,442</td><td>49,781</td><td>51,099</td><td>52,407</td><td>53,605</td><td>64,884</td>
+    </tr>
+
+    <!-- Gross Profit -->
+    <tr class="r-gp">
+      <td class="L">GROSS PROFIT</td>
+      <td class="neg">-25,420</td><td class="neg">-17,739</td><td class="neg">-2,867</td>
+      <td class="pos">19,196</td><td class="pos">40,871</td><td class="pos">62,256</td>
+      <td class="pos">73,253</td><td class="pos">101,440</td><td class="pos">128,850</td>
+      <td class="pos">155,871</td><td class="pos">182,603</td><td class="pos">198,456</td>
+    </tr>
+    <tr class="r-gp">
+      <td class="L">Gross Margin %</td>
+      <td class="neg">—</td><td class="neg">—</td><td class="neg">—</td>
+      <td class="pos">35%</td><td class="pos">53%</td><td class="pos">62%</td>
+      <td class="pos">60%</td><td class="pos">67%</td><td class="pos">72%</td>
+      <td class="pos">75%</td><td class="pos">77%</td><td class="pos">75%</td>
+    </tr>
+  </table>
+
+  <!-- OpEx -->
+  <div class="sh gray">04 — Operating Expenses (Below Gross Profit)</div>
+
+  <table class="dt">
+    <tr>
+      <th class="L" style="width:17%;">OpEx Line</th>
+      <th>M1</th><th>M2</th><th>M3</th><th>M4</th><th>M5</th><th>M6</th>
+      <th>M7</th><th>M8</th><th>M9</th><th>M10</th><th>M11</th><th>M12</th>
+    </tr>
+    <tr>
+      <td class="L">Dev / Founders</td>
+      <td>43,000</td><td>43,000</td><td>43,000</td><td>43,000</td><td>43,000</td><td>43,000</td>
+      <td>43,000</td><td>43,000</td><td>43,000</td><td>43,000</td><td>43,000</td><td>43,000</td>
+    </tr>
+    <tr>
+      <td class="L">Sales Staff</td>
+      <td>—</td><td>—</td><td>—</td><td>18,000</td><td>18,000</td><td>18,000</td>
+      <td>25,000</td><td>25,000</td><td>25,000</td><td>25,000</td><td>25,000</td><td>25,000</td>
+    </tr>
+    <tr>
+      <td class="L">Marketing</td>
+      <td>15,900</td><td>15,900</td><td>15,900</td><td>15,900</td><td>15,900</td><td>15,900</td>
+      <td>15,900</td><td>15,900</td><td>15,900</td><td>15,900</td><td>15,900</td><td>15,900</td>
+    </tr>
+    <tr>
+      <td class="L">Events / Roadshows</td>
+      <td>—</td><td>—</td><td>—</td><td>29,500</td><td>23,000</td><td>24,000</td>
+      <td>25,500</td><td>29,000</td><td>12,000</td><td>12,000</td><td>11,000</td><td>9,000</td>
+    </tr>
+    <tr>
+      <td class="L">SaaS Tools</td>
+      <td>4,500</td><td>4,500</td><td>4,500</td><td>4,500</td><td>4,500</td><td>4,500</td>
+      <td>4,500</td><td>4,500</td><td>4,500</td><td>4,500</td><td>4,500</td><td>4,500</td>
+    </tr>
+    <tr>
+      <td class="L">G&amp;A (admin, legal)</td>
+      <td>5,000</td><td>5,000</td><td>5,000</td><td>5,000</td><td>5,000</td><td>5,000</td>
+      <td>5,000</td><td>5,000</td><td>5,000</td><td>5,000</td><td>5,000</td><td>5,000</td>
+    </tr>
+    <tr>
+      <td class="L">One-Off (setup / brand)</td>
+      <td>130,000</td><td>—</td><td>—</td><td>—</td><td>—</td><td>12,000</td>
+      <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+    </tr>
+    <tr class="r-opex">
+      <td class="L">TOTAL OPEX</td>
+      <td>198,400</td><td>68,400</td><td>68,400</td><td>115,900</td><td>109,400</td><td>122,400</td>
+      <td>118,900</td><td>122,400</td><td>105,400</td><td>105,400</td><td>104,400</td><td>102,400</td>
+    </tr>
+  </table>
+
+  <!-- EBITDA & Cash -->
+  <div class="sh green">05 — EBITDA &amp; Running Cash Balance (Seed R2,000,000)</div>
+
+  <table class="dt">
+    <tr>
+      <th class="L" style="width:17%;">Line Item</th>
+      <th>M1</th><th>M2</th><th>M3</th><th>M4</th><th>M5</th><th>M6</th>
+      <th>M7</th><th>M8</th><th style="background:#065F46;">M9 ★</th><th>M10</th><th>M11</th><th>M12</th>
+    </tr>
+    <tr>
+      <td class="L">Gross Profit</td>
+      <td class="neg">-25,420</td><td class="neg">-17,739</td><td class="neg">-2,867</td>
+      <td class="pos">19,196</td><td class="pos">40,871</td><td class="pos">62,256</td>
+      <td class="pos">73,253</td><td class="pos">101,440</td><td class="pos">128,850</td>
+      <td class="pos">155,871</td><td class="pos">182,603</td><td class="pos">198,456</td>
+    </tr>
+    <tr>
+      <td class="L">Less: Total OpEx</td>
+      <td>198,400</td><td>68,400</td><td>68,400</td><td>115,900</td><td>109,400</td><td>122,400</td>
+      <td>118,900</td><td>122,400</td><td>105,400</td><td>105,400</td><td>104,400</td><td>102,400</td>
+    </tr>
+    <tr class="r-eneg">
+      <td class="L">EBITDA</td>
+      <td>-223,820</td><td>-86,139</td><td>-71,267</td><td>-96,704</td><td>-68,529</td><td>-60,144</td>
+      <td>-45,647</td><td>-20,960</td>
+      <td style="background:#D1FAE5;color:#065F46;font-weight:700;">+23,450</td>
+      <td style="background:#D1FAE5;color:#065F46;font-weight:700;">+50,471</td>
+      <td style="background:#D1FAE5;color:#065F46;font-weight:700;">+78,203</td>
+      <td style="background:#D1FAE5;color:#065F46;font-weight:700;">+96,056</td>
+    </tr>
+    <tr class="r-cash">
+      <td class="L">CASH BALANCE (ZAR)</td>
+      <td>1,776,180</td><td>1,690,041</td><td>1,618,774</td>
+      <td>1,522,070</td><td>1,453,541</td><td>1,393,397</td>
+      <td>1,347,750</td><td style="background:#BFDBFE;color:#1E3A8A;font-weight:700;">1,326,790</td>
+      <td>1,350,240</td><td>1,400,711</td><td>1,478,914</td>
+      <td style="background:#1E3A8A;color:#FCD34D;font-weight:700;">1,574,970</td>
+    </tr>
+  </table>
+
+  <div class="ib green">
+    <strong>★ Month 9 = EBITDA break-even.</strong> Gross profit of R128,850 exceeds operating expenses of R105,400 for the first time.
+    Minimum cash is R1,326,790 at Month 8 — the seed is never at risk. Cash at Month 12: <strong>R1,574,970</strong>.
+    Net cash consumed over 12 months: R425,030 (21% of seed) — 79% of seed capital preserved.
+  </div>
+
+</div><!-- /page 3 -->
+
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE 4 — 3-YEAR PROJECTION
+════════════════════════════════════════════════════════ -->
+<div class="page">
+
+  <div class="ph">
+    <table>
+      <tr>
+        <td>
+          <div class="ph-title">3-Year Financial Projection</div>
+          <div class="ph-sub">Annual P&amp;L summary: Y1 (2026) · Y2 (2027) · Y3 (2028) — base case</div>
+        </td>
+        <td class="ph-right">SiyaBusa ERP &nbsp;·&nbsp; Investor Cash Flow &nbsp;·&nbsp; April 2026</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="sh sm">06 — Annual P&amp;L Summary</div>
+
+  <table class="dt" style="font-size:8pt;">
+    <tr>
+      <th class="L" style="width:28%;">Metric</th>
+      <th>Year 1 (2026)</th>
+      <th>Year 2 (2027)</th>
+      <th>Year 3 (2028)</th>
+      <th>Y1→Y2</th>
+      <th>Y2→Y3</th>
+    </tr>
+    <tr><td class="L">Active clients (EoY)</td><td>36</td><td>90</td><td>175</td><td>+150%</td><td>+94%</td></tr>
+    <tr><td class="L">Active users (EoY)</td><td>660</td><td>1,650</td><td>3,200</td><td>+150%</td><td>+94%</td></tr>
+    <tr class="r-sub">
+      <td class="L">MRR at year-end</td>
+      <td>R263,340</td><td>R658,350</td><td>R1,276,800</td><td>+150%</td><td>+94%</td>
+    </tr>
+    <tr class="r-sub">
+      <td class="L">ARR (annualised)</td>
+      <td>R3,160,080</td><td>R7,900,200</td><td>R15,321,600</td><td>+150%</td><td>+94%</td>
+    </tr>
+    <tr><td class="L">Full-year Revenue</td><td>R1,447,971</td><td>R5,530,000</td><td>R11,600,000</td><td>+282%</td><td>+110%</td></tr>
+    <tr><td class="L">Full-year COGS</td><td>R531,201</td><td>R1,065,000</td><td>R2,118,000</td><td>+100%</td><td>+99%</td></tr>
+    <tr class="r-gp">
+      <td class="L">Gross Profit</td>
+      <td>R916,770</td><td>R4,465,000</td><td>R9,482,000</td><td>+387%</td><td>+112%</td>
+    </tr>
+    <tr class="r-gp">
+      <td class="L">Gross Margin %</td>
+      <td>63%*</td>
+      <td style="background:#D1FAE5;color:#065F46;font-weight:700;">81%</td>
+      <td style="background:#D1FAE5;color:#065F46;font-weight:700;">82%</td>
+      <td>—</td><td>—</td>
+    </tr>
+    <tr><td class="L">Full-year OpEx</td><td>R1,341,600</td><td>R3,300,000</td><td>R6,360,000</td><td>+146%</td><td>+93%</td></tr>
+    <tr class="r-eneg">
+      <td class="L">EBITDA</td>
+      <td>-R424,830</td>
+      <td style="background:#D1FAE5;color:#065F46;font-weight:700;">+R1,165,000</td>
+      <td style="background:#D1FAE5;color:#065F46;font-weight:700;">+R3,122,000</td>
+      <td>—</td><td>+168%</td>
+    </tr>
+    <tr class="r-eneg">
+      <td class="L">EBITDA Margin</td>
+      <td>—</td>
+      <td style="background:#D1FAE5;color:#065F46;font-weight:700;">21%</td>
+      <td style="background:#D1FAE5;color:#065F46;font-weight:700;">27%</td>
+      <td>—</td><td>—</td>
+    </tr>
+    <tr class="r-cash">
+      <td class="L">Cash (end of year)</td>
+      <td>R1,574,970</td><td>R2,739,970</td><td>R5,861,970</td><td>+74%</td><td>+114%</td>
+    </tr>
+  </table>
+
+  <div class="ib">
+    * Y1 gross margin is 63% — depressed by early support staff costs during months 1–3 when revenue is minimal.
+    GM reaches <strong>75%+ from Month 10 onwards</strong> and stabilises at 81–82% in Y2/Y3 as infrastructure scales sub-linearly.
+  </div>
+
+  <!-- Cost breakdown -->
+  <div class="sh amber">07 — Cost Structure at Scale</div>
+
+  <table class="tcol">
+    <tr>
+      <td class="tc-l">
+        <table class="dt" style="font-size:7.5pt;">
+          <tr>
+            <th class="L">Monthly Cost Item</th>
+            <th>Y1 Avg</th>
+            <th>Y2 Avg</th>
+            <th>Y3 Avg</th>
+          </tr>
+          <tr><td class="L" colspan="4" style="background:#F3F4F6;font-weight:700;color:#374151;font-size:7pt;">COGS</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;AWS Infrastructure</td><td>R11,000</td><td>R17,250</td><td>R27,400</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;Payment Processing</td><td>R3,800</td><td>R11,522</td><td>R24,190</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;Support Staff (COGS)</td><td>R32,000</td><td>R60,000</td><td>R125,000</td></tr>
+          <tr class="r-cogs"><td class="L">COGS / month</td><td>R46,800</td><td>R88,772</td><td>R176,590</td></tr>
+          <tr><td class="L" colspan="4" style="background:#F3F4F6;font-weight:700;color:#374151;font-size:7pt;">OPEX</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;Dev / Founders</td><td>R43,000</td><td>R120,000</td><td>R280,000</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;Sales Team</td><td>R15,000</td><td>R60,000</td><td>R150,000</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;Marketing</td><td>R15,900</td><td>R25,000</td><td>R45,000</td></tr>
+          <tr><td class="L">&nbsp;&nbsp;G&amp;A + SaaS Tools</td><td>R9,500</td><td>R23,000</td><td>R45,000</td></tr>
+          <tr class="r-opex"><td class="L">OpEx / month</td><td>R111,833</td><td>R228,000</td><td>R492,000</td></tr>
+          <tr><td class="L">Revenue / month (avg)</td><td>R120,664</td><td>R460,833</td><td>R966,667</td></tr>
+          <tr class="r-gp"><td class="L">GM% (avg in period)</td><td class="pos">61%</td><td class="pos">81%</td><td class="pos">82%</td></tr>
+          <tr class="r-epos"><td class="L">EBITDA / month (avg)</td><td class="neg">-R35,403</td><td class="pos">+R97,083</td><td class="pos">+R260,167</td></tr>
+        </table>
+      </td>
+
+      <td class="tc-r">
+        <div class="sh gray sm">COGS per User — Scale Progression</div>
+        <table class="dt">
+          <tr>
+            <th class="L">Cost Component / User</th>
+            <th>M1<br><span style="font-weight:400;font-size:6pt;">20 users</span></th>
+            <th>M12<br><span style="font-weight:400;font-size:6pt;">660 users</span></th>
+            <th>Y2 End<br><span style="font-weight:400;font-size:6pt;">1,650 users</span></th>
+            <th>Y3 End<br><span style="font-weight:400;font-size:6pt;">3,200 users</span></th>
+          </tr>
+          <tr><td class="L">AWS / user</td><td class="neg">R410</td><td>R20</td><td>R13</td><td>R9</td></tr>
+          <tr><td class="L">Payments / user</td><td>R10</td><td>R10</td><td>R10</td><td>R10</td></tr>
+          <tr><td class="L">Support / user</td><td class="neg">R1,250</td><td>R68</td><td>R45</td><td>R39</td></tr>
+          <tr class="r-cogs"><td class="L">Total COGS / user</td><td class="neg">R1,670</td><td>R98</td><td>R68</td><td>R58</td></tr>
+          <tr><td class="L">Revenue / user</td><td>R399</td><td>R399</td><td>R399</td><td>R399</td></tr>
+          <tr class="r-gp">
+            <td class="L">Gross profit / user</td>
+            <td class="neg">-R1,271</td>
+            <td class="pos">R301</td>
+            <td class="pos">R331</td>
+            <td class="pos">R341</td>
+          </tr>
+        </table>
+
+        <div class="ib green">
+          <strong>Why gross margin expands from 63% → 82%:</strong><br>
+          Infrastructure and support are largely fixed costs. As the user base grows from 20 → 3,200,
+          they are spread across more paying users — dramatically improving per-unit economics without any price change.
+        </div>
+
+        <table class="mc-row" style="margin-top:3mm;">
+          <tr>
+            <td class="mc-green" style="width:50%;">
+              <span class="mc-val">R15.3M</span>
+              <span class="mc-lbl">ARR by Year 3</span>
+              <span class="mc-sub">175 clients · 3,200 users</span>
+            </td>
+            <td class="mc-navy" style="width:50%;">
+              <span class="mc-val">R5.86M</span>
+              <span class="mc-lbl">Cash by Year 3</span>
+              <span class="mc-sub">debt-free, self-funded growth</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</div><!-- /page 4 -->
+
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE 5 — BREAK-EVEN, SENSITIVITY & ASSUMPTIONS
+════════════════════════════════════════════════════════ -->
+<div class="page">
+
+  <div class="ph">
+    <table>
+      <tr>
+        <td>
+          <div class="ph-title">Break-Even Analysis, Sensitivity &amp; Assumptions</div>
+          <div class="ph-sub">EBITDA break-even detail · scenario modelling · key financial assumptions</div>
+        </td>
+        <td class="ph-right">SiyaBusa ERP &nbsp;·&nbsp; Investor Cash Flow &nbsp;·&nbsp; April 2026</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="sh sm">08 — EBITDA Break-Even Analysis</div>
+
+  <table class="tcol">
+    <tr>
+      <td class="tc-l">
+        <table class="dt">
+          <tr><th class="L">Break-Even Metric</th><th>Value</th></tr>
+          <tr><td class="L">Break-even month</td><td><strong>Month 9</strong></td></tr>
+          <tr><td class="L">Break-even clients</td><td>24</td></tr>
+          <tr><td class="L">Break-even active users</td><td>451</td></tr>
+          <tr><td class="L">Break-even MRR</td><td>R179,949</td></tr>
+          <tr><td class="L">Gross profit at break-even</td><td>R128,850</td></tr>
+          <tr><td class="L">Gross margin at break-even</td><td>72%</td></tr>
+          <tr><td class="L">Fixed OpEx covered</td><td>R105,400/month</td></tr>
+          <tr class="r-hi"><td class="L">Required MRR formula</td><td>OpEx ÷ GM% = R146,400</td></tr>
+          <tr><td class="L">Minimum cash (Month 8)</td><td><strong>R1,326,790</strong></td></tr>
+          <tr><td class="L">Runway from seed capital</td><td>&gt;18 months</td></tr>
+          <tr><td class="L">Seed not at risk</td><td>Never drops below R1.3M</td></tr>
+        </table>
+
+        <div class="ib blue">
+          Break-even formula: Required MRR = Fixed OpEx ÷ Gross Margin % = R105,400 ÷ 72% = R146,400.
+          At R7,980/client this requires 19 clients — achieved during Month 9 with 24 clients.
+        </div>
+      </td>
+
+      <td class="tc-r">
+        <div class="sh gray sm">Monthly EBITDA — Burn to Profit</div>
+        <table class="bc">
+          <tr>
+            <td class="bc-lbl">M1</td>
+            <td class="bc-bar"><div class="bc-bg"><div class="bc-fill" style="width:100%;background-color:#B91C1C;"></div></div></td>
+            <td class="bc-val neg">-R224K</td>
+          </tr>
+          <tr>
+            <td class="bc-lbl">M2</td>
+            <td class="bc-bar"><div class="bc-bg"><div class="bc-fill" style="width:38%;background-color:#DC2626;"></div></div></td>
+            <td class="bc-val neg">-R86K</td>
+          </tr>
+          <tr>
+            <td class="bc-lbl">M3</td>
+            <td class="bc-bar"><div class="bc-bg"><div class="bc-fill" style="width:32%;background-color:#DC2626;"></div></div></td>
+            <td class="bc-val neg">-R71K</td>
+          </tr>
+          <tr>
+            <td class="bc-lbl">M4</td>
+            <td class="bc-bar"><div class="bc-bg"><div class="bc-fill" style="width:43%;background-color:#EA580C;"></div></div></td>
+            <td class="bc-val neg">-R97K</td>
+          </tr>
+          <tr>
+            <td class="bc-lbl">M5</td>
+            <td class="bc-bar"><div class="bc-bg"><div class="bc-fill" style="width:31%;background-color:#EA580C;"></div></div></td>
+            <td class="bc-val neg">-R69K</td>
+          </tr>
+          <tr>
+            <td class="bc-lbl">M6</td>
+            <td class="bc-bar"><div class="bc-bg"><div class="bc-fill" style="width:27%;background-color:#D97706;"></div></div></td>
+            <td class="bc-val neg">-R60K</td>
+          </tr>
+          <tr>
+            <td class="bc-lbl">M7</td>
+            <td class="bc-bar"><div class="bc-bg"><div class="bc-fill" style="width:20%;background-color:#D97706;"></div></div></td>
+            <td class="bc-val neg">-R46K</td>
+          </tr>
+          <tr>
+            <td class="bc-lbl">M8</td>
+            <td class="bc-bar"><div class="bc-bg"><div class="bc-fill" style="width:9%;background-color:#CA8A04;"></div></div></td>
+            <td class="bc-val neg">-R21K</td>
+          </tr>
+          <tr>
+            <td class="bc-lbl" style="color:#065F46;font-weight:700;">M9 ★</td>
+            <td class="bc-bar"><div class="bc-bg"><div class="bc-fill" style="width:10%;background-color:#059669;"></div></div></td>
+            <td class="bc-val pos">+R23K</td>
+          </tr>
+          <tr>
+            <td class="bc-lbl" style="color:#065F46;">M10</td>
+            <td class="bc-bar"><div class="bc-bg"><div class="bc-fill" style="width:22%;background-color:#059669;"></div></div></td>
+            <td class="bc-val pos">+R50K</td>
+          </tr>
+          <tr>
+            <td class="bc-lbl" style="color:#065F46;">M11</td>
+            <td class="bc-bar"><div class="bc-bg"><div class="bc-fill" style="width:35%;background-color:#059669;"></div></div></td>
+            <td class="bc-val pos">+R78K</td>
+          </tr>
+          <tr>
+            <td class="bc-lbl" style="color:#065F46;">M12</td>
+            <td class="bc-bar"><div class="bc-bg"><div class="bc-fill" style="width:43%;background-color:#059669;"></div></div></td>
+            <td class="bc-val pos">+R96K</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Sensitivity -->
+  <div class="sh green">09 — Scenario Sensitivity (Year 1)</div>
+
+  <table class="dt" style="font-size:8pt;">
+    <tr>
+      <th class="L">Scenario</th>
+      <th>Growth vs Base</th>
+      <th>M12 Clients</th>
+      <th>M12 MRR</th>
+      <th>Y1 ARR</th>
+      <th>Break-Even</th>
+      <th>M12 Cash</th>
+      <th>Y1 GM%</th>
+    </tr>
+    <tr style="background-color:#FEE2E2;">
+      <td class="L"><strong>Bear Case</strong></td>
+      <td>−40%</td><td>22</td><td>R158,004</td><td>R1.90M</td><td>Month 11+</td>
+      <td class="neg">R1,050,000</td><td>56%</td>
+    </tr>
+    <tr class="r-hi">
+      <td class="L"><strong>Base Case ✓</strong></td>
+      <td>As modelled</td><td>36</td><td>R263,340</td><td>R3.16M</td><td>Month 9</td>
+      <td>R1,574,970</td><td>63%</td>
+    </tr>
+    <tr style="background-color:#D1FAE5;">
+      <td class="L"><strong>Bull Case</strong></td>
+      <td>+40%</td><td>50</td><td>R367,080</td><td>R4.40M</td><td>Month 7</td>
+      <td class="pos">R2,100,000</td><td>68%</td>
+    </tr>
+  </table>
+
+  <div class="ib">
+    Even in the bear case, cash never falls below R1M and the seed runway exceeds 18 months.
+    The bull case accelerates break-even to Month 7 and closes Year 1 with cash exceeding the original seed investment.
+  </div>
+
+  <!-- Assumptions -->
+  <div class="sh gray">10 — Key Financial Assumptions</div>
+
+  <table class="at">
+    <tr>
+      <td>Pricing model</td>
+      <td>R399/user/month, flat rate, all-inclusive. No discounts modelled. First 2 clients may receive a 30-day pilot at no charge.</td>
+    </tr>
+    <tr>
+      <td>Average users per client</td>
+      <td>20 users assumed across the portfolio. Range in practice: 5 (micro SME) to 200+ (enterprise).</td>
+    </tr>
+    <tr>
+      <td>Client churn</td>
+      <td>Zero churn modelled in Year 1 (ERP is a deeply embedded system; switching cost is high). Year 2 onward: &lt;2% monthly churn applied.</td>
+    </tr>
+    <tr>
+      <td>AWS infrastructure cost</td>
+      <td>Base R8,000/month fixed + R8/active user variable. Includes EC2 (Auto Scaling), RDS PostgreSQL, Redis, S3, CloudFront, ALB, Route53, CloudWatch. FX rate: R18.50/USD. A 10% ZAR depreciation adds ~R900/month at M12.</td>
+    </tr>
+    <tr>
+      <td>Payment processing</td>
+      <td>Peach Payments (SA-native): 2.5% transaction fee on MRR. Monthly debit order collection.</td>
+    </tr>
+    <tr>
+      <td>Support staff (COGS)</td>
+      <td>M1–M6: 1 customer support agent @ R25,000/month. M7–M11: 2 agents @ R35,000/month total. M12+: 3 agents @ R45,000/month total. Direct service delivery — classified as COGS, not OpEx.</td>
+    </tr>
+    <tr>
+      <td>Dev / Founders (OpEx)</td>
+      <td>2 founders drawing R43,000/month combined throughout Year 1. Engineering headcount grows in Year 2 (R120K/month).</td>
+    </tr>
+    <tr>
+      <td>Sales staff (OpEx)</td>
+      <td>First sales hire in Month 4 @ R18,000/month. Upgraded or second hire from Month 7 @ R25,000/month.</td>
+    </tr>
+    <tr>
+      <td>Marketing spend (OpEx)</td>
+      <td>R15,900/month recurring drawn from the R2M marketing budget allocation. Event costs drawn separately as they occur.</td>
+    </tr>
+    <tr>
+      <td>Seed capital deployment</td>
+      <td>R2,000,000 received Month 0. 16.67% equity issued. Pre-money valuation R10,000,000. No debt, no further raise modelled until break-even is achieved.</td>
+    </tr>
+    <tr>
+      <td>Taxation</td>
+      <td>No income tax in Year 1 (operating at a loss). 28% corporate tax applied from Year 2 on EBITDA after assessed loss carry-forward.</td>
+    </tr>
+    <tr>
+      <td>LTV calculation basis</td>
+      <td>LTV = Avg MRR per client (R7,980) × 12 months × 4-year retention × 75.4% gross margin = R574,560. CAC R45,000, payback 5.6 months.</td>
+    </tr>
+  </table>
+
+  <div class="disclaimer">
+    <strong>DISCLAIMER:</strong> All projections are forward-looking statements based on management assumptions as at April 2026.
+    Actual results may differ materially from those presented. This document is prepared for informed investor discussion purposes only
+    and does not constitute a prospectus, guarantee of future performance, or offer to sell securities.
+    Prepared by Masaphokati Technologies (Pty) Ltd. <strong>Strictly confidential — not for distribution.</strong>
+  </div>
+
+</div><!-- /page 5 -->
+
+</body>
+</html>

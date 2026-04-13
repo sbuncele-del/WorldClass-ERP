@@ -73,6 +73,8 @@ const IncomeStatement: React.FC = () => {
       if (periodType === 'custom' && customStartDate && customEndDate) {
         params.start_date = customStartDate;
         params.end_date = customEndDate;
+        params.from_date = customStartDate;
+        params.to_date = customEndDate;
       }
 
       const result = await apiGet<any>('/api/financial/reports/income-statement', params);

@@ -73,9 +73,15 @@ const CashFlow: React.FC = () => {
       if (periodType === 'custom' && customStartDate && customEndDate) {
         params.start_date = customStartDate;
         params.end_date = customEndDate;
+        params.fromDate = customStartDate;
+        params.toDate = customEndDate;
       }
 
-      const result = await apiGet<ApiResponse>('/api/financial/reports/cash-flow', params);
+      // Try V2 route first, fall back to module route
+      let result = await apiGet<ApiResponse>('/api/financial/reports/cash-flow', params).catch(() => null);
+      if (!result?.success) {
+        result = await apiGet<ApiResponse>('/api/financial/cash-flow', { fromDate: params.start_date || params.fromDate, toDate: params.end_date || params.toDate, method });
+      }
 
       if (result.success && result.data) {
         setData(result.data);
