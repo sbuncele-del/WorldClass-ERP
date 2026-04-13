@@ -749,19 +749,20 @@ export async function generateAgedReceivables(req: TenantRequest, res: Response)
     const query = `
       SELECT 
         c.id as customer_id,
-        c.name as customer_name,
-        c.account_number as customer_code,
+        COALESCE(c.company_name, c.name) as customer_name,
+        COALESCE(c.customer_code, c.account_number) as customer_code,
         COUNT(i.id) as invoice_count,
-        COALESCE(SUM(CASE WHEN (CURRENT_DATE - i.invoice_date::date) <= 30 THEN i.balance_due ELSE 0 END), 0) as current_amount,
-        COALESCE(SUM(CASE WHEN (CURRENT_DATE - i.invoice_date::date) BETWEEN 31 AND 60 THEN i.balance_due ELSE 0 END), 0) as days_31_60,
-        COALESCE(SUM(CASE WHEN (CURRENT_DATE - i.invoice_date::date) BETWEEN 61 AND 90 THEN i.balance_due ELSE 0 END), 0) as days_61_90,
-        COALESCE(SUM(CASE WHEN (CURRENT_DATE - i.invoice_date::date) > 90 THEN i.balance_due ELSE 0 END), 0) as over_90_days,
-        COALESCE(SUM(i.balance_due), 0) as total_balance
-      FROM customers c
-      LEFT JOIN invoices i ON c.id = i.customer_id AND i.tenant_id = c.tenant_id AND i.status != 'paid' AND i.balance_due > 0
+        COALESCE(SUM(CASE WHEN (CURRENT_DATE - i.invoice_date::date) <= 30 THEN COALESCE(i.balance_due, i.total_amount - COALESCE(i.amount_paid, 0)) ELSE 0 END), 0) as current_amount,
+        COALESCE(SUM(CASE WHEN (CURRENT_DATE - i.invoice_date::date) BETWEEN 31 AND 60 THEN COALESCE(i.balance_due, i.total_amount - COALESCE(i.amount_paid, 0)) ELSE 0 END), 0) as days_31_60,
+        COALESCE(SUM(CASE WHEN (CURRENT_DATE - i.invoice_date::date) BETWEEN 61 AND 90 THEN COALESCE(i.balance_due, i.total_amount - COALESCE(i.amount_paid, 0)) ELSE 0 END), 0) as days_61_90,
+        COALESCE(SUM(CASE WHEN (CURRENT_DATE - i.invoice_date::date) > 90 THEN COALESCE(i.balance_due, i.total_amount - COALESCE(i.amount_paid, 0)) ELSE 0 END), 0) as over_90_days,
+        COALESCE(SUM(COALESCE(i.balance_due, i.total_amount - COALESCE(i.amount_paid, 0))), 0) as total_balance
+      FROM sales.customers c
+      LEFT JOIN sales_invoices i ON c.id = i.customer_id AND i.tenant_id = c.tenant_id 
+        AND UPPER(i.status) != 'PAID' AND COALESCE(i.balance_due, i.total_amount - COALESCE(i.amount_paid, 0)) > 0
       WHERE c.tenant_id = $1
-      GROUP BY c.id, c.name, c.account_number
-      HAVING COALESCE(SUM(i.balance_due), 0) > 0
+      GROUP BY c.id, c.company_name, c.name, c.customer_code, c.account_number
+      HAVING COALESCE(SUM(COALESCE(i.balance_due, i.total_amount - COALESCE(i.amount_paid, 0))), 0) > 0
       ORDER BY total_balance DESC
     `;
 
@@ -776,10 +777,7 @@ export async function generateAgedReceivables(req: TenantRequest, res: Response)
 
     // If no data, provide sample structure
     if (customers.length === 0) {
-      customers = [
-        { customer_id: 'sample-1', customer_name: 'Sample Customer A', customer_code: 'CUST001', invoice_count: 2, current_amount: 5000, days_31_60: 2500, days_61_90: 0, over_90_days: 0, total_balance: 7500 },
-        { customer_id: 'sample-2', customer_name: 'Sample Customer B', customer_code: 'CUST002', invoice_count: 1, current_amount: 3000, days_31_60: 0, days_61_90: 1500, over_90_days: 500, total_balance: 5000 },
-      ];
+      // No outstanding receivables
     }
 
     // Calculate totals
@@ -831,23 +829,24 @@ export async function generateAgedPayables(req: TenantRequest, res: Response): P
     const { as_of_date } = req.query;
     const reportDate = as_of_date ? new Date(as_of_date as string) : new Date();
     
-    // Query supplier bills grouped by aging buckets
+    // Query supplier invoices grouped by aging buckets
     const query = `
       SELECT 
         s.id as supplier_id,
-        s.name as supplier_name,
-        s.account_number as supplier_code,
+        COALESCE(s.company_name, s.name) as supplier_name,
+        COALESCE(s.supplier_code, s.account_number) as supplier_code,
         COUNT(b.id) as bill_count,
-        COALESCE(SUM(CASE WHEN (CURRENT_DATE - b.bill_date::date) <= 30 THEN b.balance_due ELSE 0 END), 0) as current_amount,
-        COALESCE(SUM(CASE WHEN (CURRENT_DATE - b.bill_date::date) BETWEEN 31 AND 60 THEN b.balance_due ELSE 0 END), 0) as days_31_60,
-        COALESCE(SUM(CASE WHEN (CURRENT_DATE - b.bill_date::date) BETWEEN 61 AND 90 THEN b.balance_due ELSE 0 END), 0) as days_61_90,
-        COALESCE(SUM(CASE WHEN (CURRENT_DATE - b.bill_date::date) > 90 THEN b.balance_due ELSE 0 END), 0) as over_90_days,
-        COALESCE(SUM(b.balance_due), 0) as total_balance
-      FROM suppliers s
-      LEFT JOIN bills b ON s.id = b.supplier_id AND b.tenant_id = s.tenant_id AND b.status != 'paid' AND b.balance_due > 0
+        COALESCE(SUM(CASE WHEN (CURRENT_DATE - b.invoice_date::date) <= 30 THEN COALESCE(b.balance_due, b.total_amount - COALESCE(b.amount_paid, 0)) ELSE 0 END), 0) as current_amount,
+        COALESCE(SUM(CASE WHEN (CURRENT_DATE - b.invoice_date::date) BETWEEN 31 AND 60 THEN COALESCE(b.balance_due, b.total_amount - COALESCE(b.amount_paid, 0)) ELSE 0 END), 0) as days_31_60,
+        COALESCE(SUM(CASE WHEN (CURRENT_DATE - b.invoice_date::date) BETWEEN 61 AND 90 THEN COALESCE(b.balance_due, b.total_amount - COALESCE(b.amount_paid, 0)) ELSE 0 END), 0) as days_61_90,
+        COALESCE(SUM(CASE WHEN (CURRENT_DATE - b.invoice_date::date) > 90 THEN COALESCE(b.balance_due, b.total_amount - COALESCE(b.amount_paid, 0)) ELSE 0 END), 0) as over_90_days,
+        COALESCE(SUM(COALESCE(b.balance_due, b.total_amount - COALESCE(b.amount_paid, 0))), 0) as total_balance
+      FROM purchase.suppliers s
+      LEFT JOIN purchase.vendor_invoices b ON s.id = b.supplier_id AND b.tenant_id = s.tenant_id 
+        AND UPPER(b.status) != 'PAID' AND COALESCE(b.balance_due, b.total_amount - COALESCE(b.amount_paid, 0)) > 0
       WHERE s.tenant_id = $1
-      GROUP BY s.id, s.name, s.account_number
-      HAVING COALESCE(SUM(b.balance_due), 0) > 0
+      GROUP BY s.id, s.company_name, s.name, s.supplier_code, s.account_number
+      HAVING COALESCE(SUM(COALESCE(b.balance_due, b.total_amount - COALESCE(b.amount_paid, 0))), 0) > 0
       ORDER BY total_balance DESC
     `;
 
@@ -862,10 +861,7 @@ export async function generateAgedPayables(req: TenantRequest, res: Response): P
 
     // If no data, provide sample structure
     if (suppliers.length === 0) {
-      suppliers = [
-        { supplier_id: 'sample-1', supplier_name: 'Sample Supplier A', supplier_code: 'SUP001', bill_count: 3, current_amount: 8000, days_31_60: 3000, days_61_90: 0, over_90_days: 0, total_balance: 11000 },
-        { supplier_id: 'sample-2', supplier_name: 'Sample Supplier B', supplier_code: 'SUP002', bill_count: 2, current_amount: 4000, days_31_60: 2000, days_61_90: 1000, over_90_days: 0, total_balance: 7000 },
-      ];
+      // No outstanding payables
     }
 
     // Calculate totals
@@ -922,20 +918,20 @@ export async function generateVATReport(req: TenantRequest, res: Response): Prom
     const vatQuery = `
       SELECT 
         CASE 
-          WHEN coa.account_code LIKE '2120%' OR coa.account_code LIKE '2121%' THEN 'output'
-          WHEN coa.account_code LIKE '1140%' OR coa.account_code LIKE '1141%' THEN 'input'
+          WHEN coa.account_code IN ('2115','2120','2121') OR coa.account_code LIKE '212%' THEN 'output'
+          WHEN coa.account_code IN ('1230','1140','1141') OR coa.account_code LIKE '114%' THEN 'input'
           ELSE 'other'
         END as vat_type,
         coa.account_code,
         coa.account_name,
         COALESCE(SUM(jel.credit_amount - jel.debit_amount), 0) as amount
-      FROM chart_of_accounts coa
-      LEFT JOIN journal_entry_lines jel ON coa.account_id = jel.account_id AND jel.tenant_id = $1
-      LEFT JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = jel.tenant_id
-        AND je.posting_date BETWEEN $2 AND $3
-        AND je.status = 'posted'
+      FROM accounting.chart_of_accounts coa
+      LEFT JOIN accounting.journal_entry_lines jel ON coa.account_code = jel.account_code AND jel.tenant_id = coa.tenant_id
+      LEFT JOIN accounting.journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = jel.tenant_id
+        AND je.journal_date BETWEEN $2 AND $3
+        AND je.is_posted = true
       WHERE coa.tenant_id = $1
-        AND (coa.account_code LIKE '212%' OR coa.account_code LIKE '114%')
+        AND (coa.account_code IN ('2115','2120','2121','1230','1140','1141') OR coa.account_code LIKE '212%' OR coa.account_code LIKE '114%')
       GROUP BY coa.account_code, coa.account_name
       ORDER BY coa.account_code
     `;
@@ -961,15 +957,7 @@ export async function generateVATReport(req: TenantRequest, res: Response): Prom
       }
     });
 
-    // If no data, provide sample
-    if (vatAccounts.length === 0) {
-      outputVAT = 15000;
-      inputVAT = 8500;
-      vatAccounts = [
-        { vat_type: 'output', account_code: '2120', account_name: 'VAT Output', amount: 15000 },
-        { vat_type: 'input', account_code: '1140', account_name: 'VAT Input', amount: -8500 },
-      ];
-    }
+    // If no data, no VAT transactions for this period\n    if (vatAccounts.length === 0) {\n      // No VAT activity\n    }
 
     const netVAT = outputVAT - inputVAT;
 

@@ -1616,8 +1616,8 @@ v1Router.use('/warehouse', warehouseRoutes);
 v1Router.use('/sars-sentinel', sarsSentinelRoutes);
 v1Router.use('/cash-management', cashManagementRoutes);
 v1Router.use('/yodlee', apiLimiter, yodleeRoutes); // Yodlee Open Banking Integration
-// Old financial reports routes - replaced by new module routes below
-// v1Router.use('/financial/reports', financialReportsRoutes);
+// Financial reports with full IFRS reporting (income statement, balance sheet, cash flow, VAT, aged)
+v1Router.use('/financial/reports', financialReportsRoutes);
 v1Router.use('/financial/recurring-entries', recurringEntriesRoutes);
 v1Router.use('/financial/import-entries', importEntriesRoutes);
 v1Router.use('/migration', migrationRoutes);

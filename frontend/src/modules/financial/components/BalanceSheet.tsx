@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../../../services/api.service';
+import { apiGet } from '../../../services/api.service';
 import './BalanceSheet.css';
 
 interface AccountBalance {
@@ -64,10 +64,10 @@ const BalanceSheet: React.FC = () => {
     setError(null);
 
     try {
-      const url = `${API_BASE_URL}/api/financial/reports/balance-sheet?as_of_date=${asOfDate}&compare_prior=${showComparison}`;
-
-      const response = await fetch(url);
-      const result = await response.json();
+      const result = await apiGet<any>('/api/financial/reports/balance-sheet', {
+        as_of_date: asOfDate,
+        compare_prior: showComparison
+      });
 
       if (result.success) {
         setData(result.data);

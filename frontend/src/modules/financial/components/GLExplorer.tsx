@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiGet } from '../../../services/api.service';
 import './GLExplorer.css';
 
 interface Account {
@@ -116,8 +117,7 @@ const GLExplorer: React.FC = () => {
   const fetchAccountSummaries = async () => {
     setLoadingTree(true);
     try {
-      const response = await fetch('/api/financial/gl-explorer/account-summary');
-      const result = await response.json();
+      const result = await apiGet<any>('/api/financial/gl-explorer/account-summary');
       if (result.success) {
         setAccountSummaries(result.data.accounts || []);
       }
@@ -131,8 +131,7 @@ const GLExplorer: React.FC = () => {
   const fetchAccountLedger = async (accountCode: string) => {
     setLoadingLedger(true);
     try {
-      const response = await fetch(`/api/financial/gl-explorer/account-ledger/${accountCode}`);
-      const result = await response.json();
+      const result = await apiGet<any>(`/api/financial/gl-explorer/account-ledger/${accountCode}`);
       if (result.success) {
         setAccountLedger(result.data.transactions || []);
         setAccountLedgerInfo({
@@ -172,8 +171,7 @@ const GLExplorer: React.FC = () => {
 
   const fetchFilterOptions = async () => {
     try {
-      const response = await fetch('/api/financial/gl-explorer/filter-options');
-      const result = await response.json();
+      const result = await apiGet<any>('/api/financial/gl-explorer/filter-options');
       if (result.success) {
         setFilterOptions(result.data);
       }
@@ -208,7 +206,13 @@ const GLExplorer: React.FC = () => {
       params.append('page', page.toString());
       params.append('limit', pagination.limit.toString());
 
-      const response = await fetch(`/api/financial/gl-explorer/search?${params}`);
+      const response = await fetch(`/api/financial/gl-explorer/search?${params}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'X-Tenant-ID': localStorage.getItem('tenantId') || '',
+          'X-Entity-ID': localStorage.getItem('currentEntityId') || localStorage.getItem('entityId') || '',
+        }
+      });
       const result = await response.json();
 
       if (result.success) {

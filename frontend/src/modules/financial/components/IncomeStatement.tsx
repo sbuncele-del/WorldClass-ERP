@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../../../services/api.service';
+import { apiGet } from '../../../services/api.service';
 import './IncomeStatement.css';
 
 interface AccountBalance {
@@ -69,14 +69,13 @@ const IncomeStatement: React.FC = () => {
     setError(null);
 
     try {
-      let url = `${API_BASE_URL}/api/financial/reports/income-statement?period=${periodType}&compare_prior=${showComparison}`;
-      
+      const params: Record<string, any> = { period: periodType, compare_prior: showComparison };
       if (periodType === 'custom' && customStartDate && customEndDate) {
-        url += `&start_date=${customStartDate}&end_date=${customEndDate}`;
+        params.start_date = customStartDate;
+        params.end_date = customEndDate;
       }
 
-      const response = await fetch(url);
-      const result = await response.json();
+      const result = await apiGet<any>('/api/financial/reports/income-statement', params);
 
       if (result.success) {
         setData(result.data);

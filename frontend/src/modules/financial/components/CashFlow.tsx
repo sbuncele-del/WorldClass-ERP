@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiGet } from '../../../services/api.service';
 import './CashFlow.css';
 
 interface CashFlowItem {
@@ -68,14 +69,13 @@ const CashFlow: React.FC = () => {
     setError(null);
 
     try {
-      let url = `/api/financial/reports/cash-flow?period=${periodType}&method=${method}`;
-
+      const params: Record<string, any> = { period: periodType, method };
       if (periodType === 'custom' && customStartDate && customEndDate) {
-        url += `&start_date=${customStartDate}&end_date=${customEndDate}`;
+        params.start_date = customStartDate;
+        params.end_date = customEndDate;
       }
 
-      const response = await fetch(url);
-      const result: ApiResponse = await response.json();
+      const result = await apiGet<ApiResponse>('/api/financial/reports/cash-flow', params);
 
       if (result.success && result.data) {
         setData(result.data);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '../../../services/api.service';
+import { apiGet } from '../../../services/api.service';
 import './BudgetVsActual.css';
 
 interface VarianceLine {
@@ -56,8 +56,8 @@ const BudgetVsActual: React.FC = () => {
 
   const fetchBudgets = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/financial/forecasting/budgets?status=ACTIVE`);
-      const data = await response.json();
+      const result = await apiGet<any>('/api/financial/forecasting/budgets', { status: 'ACTIVE' });
+      const data = result;
       
       if (data.success && data.budgets.length > 0) {
         setBudgets(data.budgets);
@@ -73,10 +73,10 @@ const BudgetVsActual: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/financial/forecasting/budgets/${selectedBudgetId}/vs-actual`
+      const result = await apiGet<any>(
+        `/api/financial/forecasting/budgets/${selectedBudgetId}/vs-actual`
       );
-      const data = await response.json();
+      const data = result;
       
       if (data.success) {
         setAnalysisData(data);

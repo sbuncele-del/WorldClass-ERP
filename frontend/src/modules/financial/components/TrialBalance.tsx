@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiGet } from '../../../services/api.service';
 import '../styles/TrialBalance.css';
 
 interface TrialBalanceAccount {
@@ -71,20 +72,12 @@ const TrialBalance: React.FC = () => {
 
   const fetchDimensions = async () => {
     try {
-      const [ccRes, deptRes, projRes, prodRes, locRes] = await Promise.all([
-        fetch('/api/financial/dimensions/cost-centers'),
-        fetch('/api/financial/dimensions/departments'),
-        fetch('/api/financial/dimensions/projects'),
-        fetch('/api/financial/dimensions/products'),
-        fetch('/api/financial/dimensions/locations'),
-      ]);
-
       const [ccData, deptData, projData, prodData, locData] = await Promise.all([
-        ccRes.json(),
-        deptRes.json(),
-        projRes.json(),
-        prodRes.json(),
-        locRes.json(),
+        apiGet<any>('/api/financial/dimensions/cost-centers'),
+        apiGet<any>('/api/financial/dimensions/departments'),
+        apiGet<any>('/api/financial/dimensions/projects'),
+        apiGet<any>('/api/financial/dimensions/products'),
+        apiGet<any>('/api/financial/dimensions/locations'),
       ]);
 
       setCostCenters((ccData.data || []).filter((d: Dimension) => d.is_active));
@@ -102,28 +95,23 @@ const TrialBalance: React.FC = () => {
     setError(null);
     
     try {
-      const params = new URLSearchParams({
+      const params: Record<string, any> = {
         fiscal_year: selectedYear.toString(),
         fiscal_period: selectedPeriod.toString(),
-      });
+      };
 
       // Add dimension filters if selected
-      if (selectedCostCenter) params.append('cost_center_id', selectedCostCenter);
-      if (selectedDepartment) params.append('department_id', selectedDepartment);
-      if (selectedProject) params.append('project_id', selectedProject);
-      if (selectedProduct) params.append('product_id', selectedProduct);
-      if (selectedLocation) params.append('location_id', selectedLocation);
+      if (selectedCostCenter) params.cost_center_id = selectedCostCenter;
+      if (selectedDepartment) params.department_id = selectedDepartment;
+      if (selectedProject) params.project_id = selectedProject;
+      if (selectedProduct) params.product_id = selectedProduct;
+      if (selectedLocation) params.location_id = selectedLocation;
 
-      const response = await fetch(
-        `/api/financial/reports/trial-balance?${params.toString()}`
-      );
+      const result = await apiGet<any>('/api/financial/reports/trial-balance', params);
       
-      if (!response.ok) {
-        throw new Error('Failed to fetch trial balance');
+      if (result.data) {
+        setData(result.data);
       }
-      
-      const result = await response.json();
-      setData(result.data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
