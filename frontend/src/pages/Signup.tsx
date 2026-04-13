@@ -22,8 +22,26 @@ const COUNTRIES = [
 ];
 
 const PLANS = [
-  { id: 'founding-member', name: 'Founding Member', price: 'R1,499', priceUSD: '$89', users: 10 },
-  { id: 'accountant', name: 'Accounting Firm', price: 'R2,499', priceUSD: '$149', users: 50 },
+  {
+    id: 'business',
+    name: 'Business',
+    price: 'R299',
+    priceUSD: '$17',
+    perUser: true,
+    description: 'per user / month',
+    features: ['All modules included', 'Unlimited data storage', 'SARS integration', 'AI assistant', '7-day free trial'],
+    users: null,
+  },
+  {
+    id: 'accountant',
+    name: 'Accounting Firm',
+    price: 'R299',
+    priceUSD: '$17',
+    perUser: true,
+    description: 'per user / month',
+    features: ['Everything in Business', 'Manage multiple clients', 'Switch between companies', 'Client billing & reports', '7-day free trial'],
+    users: null,
+  },
 ];
 
 const INDUSTRIES = [
@@ -54,7 +72,7 @@ const Signup = () => {
     lastName: '',
     companyName: '',
     country: 'ZA',
-    plan: planParam || (moduleParam ? 'module' : 'founding-member'),
+    plan: planParam || (moduleParam ? 'module' : 'business'),
     industry: 'general',
   });
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -489,7 +507,7 @@ const Signup = () => {
                     setFormData((prev) => ({
                       ...prev,
                       industry: val,
-                      plan: val === 'accounting-firm' ? 'accountant' : prev.plan === 'accountant' ? 'founding-member' : prev.plan,
+                      plan: val === 'accounting-firm' ? 'accountant' : prev.plan === 'accountant' ? 'business' : prev.plan,
                     }));
                   }}
                   disabled={isLoading}
@@ -524,28 +542,18 @@ const Signup = () => {
                         <h3 className="plan-name">{plan.name}</h3>
                         <div className="plan-price">
                           {selectedCountry?.code === 'ZA' ? plan.price : plan.priceUSD}
-                          <span>/month</span>
+                          <span>/user/month</span>
                         </div>
                       </div>
                       <div className="plan-features">
-                        <div className="plan-feature">
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <path fillRule="evenodd" d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z" />
-                          </svg>
-                          <span>Up to {plan.users} users</span>
-                        </div>
-                        <div className="plan-feature">
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <path fillRule="evenodd" d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z" />
-                          </svg>
-                          <span>All core modules</span>
-                        </div>
-                        <div className="plan-feature">
-                          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                            <path fillRule="evenodd" d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z" />
-                          </svg>
-                          <span>14-day free trial</span>
-                        </div>
+                        {plan.features.map((feature, idx) => (
+                          <div key={idx} className="plan-feature">
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                              <path fillRule="evenodd" d="M13.854 3.646a.5.5 0 010 .708l-7 7a.5.5 0 01-.708 0l-3.5-3.5a.5.5 0 11.708-.708L6.5 10.293l6.646-6.647a.5.5 0 01.708 0z" />
+                            </svg>
+                            <span>{feature}</span>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </label>
@@ -557,7 +565,7 @@ const Signup = () => {
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
                 <span>
-                  Your 14-day free trial starts now. No credit card required. Cancel anytime.
+                  Your 7-day free trial starts now. No credit card required. Cancel anytime.
                 </span>
               </div>
             </>
