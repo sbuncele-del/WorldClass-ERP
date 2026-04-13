@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>ATG — Forex Signal Platform Hosting &amp; Infrastructure Research</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm 22mm 18mm;
+    @top-left   { content: "ATG — Forex Signal Platform Hosting Research"; font-size:8pt; color:#888; font-family:Arial,sans-serif; }
+    @top-right  { content: "ATG Internal — CONFIDENTIAL"; font-size:8pt; color:#888; font-family:Arial,sans-serif; }
+    @bottom-center { content: counter(page); font-size:8pt; color:#888; font-family:Arial,sans-serif; }
+  }
+  @page :first { @top-left{content:""} @top-right{content:""} @bottom-center{content:""} margin:0; }
+
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:Arial,'Helvetica Neue',sans-serif; font-size:9.5pt; color:#1A0A2E; line-height:1.65; }
+
+  /* ── ATG IMPLICATION BOX ────────────────────────────────── */
+  .atg-implication {
+    background: linear-gradient(135deg,#0a1628 0%,#1a2d5a 100%);
+    color:#fff;
+    border-left:5px solid #c9a84c;
+    padding:4mm 5mm;
+    margin:4mm 0;
+    border-radius:0 4px 4px 0;
+  }
+  .atg-implication .atg-label {
+    font-size:7pt; font-weight:900; letter-spacing:2px; text-transform:uppercase;
+    color:#c9a84c; margin-bottom:1.5mm;
+  }
+  .atg-implication p { margin:0; font-size:9pt; color:rgba(255,255,255,0.9); }
+  .atg-implication strong { color:#c9a84c; }
+
+  /* ── EXPLAINER BOX ──────────────────────────────────────── */
+  .explainer {
+    background:#f0f4ff;
+    border:1.5px solid #2980b9;
+    border-radius:6px;
+    padding:4mm 5mm;
+    margin:4mm 0;
+  }
+  .explainer h3 { color:#1a5276; font-size:9.5pt; margin-bottom:2mm; }
+  .explainer p { font-size:9pt; margin-bottom:1.5mm; }
+
+  /* ── SCALE TABLE HIGHLIGHT ──────────────────────────────── */
+  .scale-row-current td { background:#fff8e1; font-weight:700; }
+  .scale-row-phase2 td  { background:#e8f5e9; }
+  .scale-row-phase3 td  { background:#e3f2fd; }
+  .scale-row-phase4 td  { background:#fce4ec; }
+
+  /* ── COVER ─────────────────────────────────────────────── */
+  .cover {
+    page-break-after:always;
+    background: linear-gradient(155deg,#0a1628 0%,#1a2d5a 55%,#0d1f3e 100%);
+    color:#fff;
+    width:210mm;
+    height:297mm;
+    padding:24mm 22mm 16mm;
+    display:block;
+    overflow:hidden;
+  }
+  .cover-top-bar { width:56px; height:4px; background:#c9a84c; margin-bottom:10mm; border-radius:2px; }
+  .cover-logo    { font-size:24pt; font-weight:900; letter-spacing:2px; color:#c9a84c; }
+  .cover-slug    { font-size:9pt; color:#8899bb; margin-top:2mm; letter-spacing:3px; text-transform:uppercase; }
+  .cover-title   { margin-top:18mm; font-size:28pt; font-weight:900; line-height:1.1; text-transform:uppercase; letter-spacing:2px; }
+  .cover-title span { color:#c9a84c; }
+  .cover-sub     { margin-top:5mm; font-size:12pt; color:rgba(255,255,255,0.75); font-weight:400; letter-spacing:1px; }
+  .cover-divider { width:80px; height:3px; background:linear-gradient(90deg,transparent,#c9a84c,transparent); margin:8mm 0; }
+  .cover-meta    { margin-top:10mm; display:flex; gap:14mm; flex-wrap:wrap; }
+  .cover-meta-item label { display:block; font-size:7pt; text-transform:uppercase; letter-spacing:1.5px; color:#8899bb; margin-bottom:1mm; }
+  .cover-meta-item span  { font-size:9.5pt; font-weight:700; color:#fff; }
+  .cover-stage-badge {
+    display:inline-block; margin-top:8mm;
+    border:1.5px solid #c9a84c; color:#c9a84c;
+    font-size:7.5pt; font-weight:900; letter-spacing:3px;
+    padding:3mm 7mm; border-radius:20px; text-transform:uppercase;
+  }
+  .cover-tagline { font-size:11pt; font-weight:700; letter-spacing:3px; color:#c9a84c; text-transform:uppercase; margin-top:8mm; }
+  .cover-footer  { border-top:1px solid #2a3a5a; padding-top:4mm; margin-top:10mm; display:flex; justify-content:space-between; font-size:7.5pt; color:#556; }
+
+  /* ── SECTION CONTAINERS ────────────────────────────────── */
+  .sec { margin-bottom: 7mm; }
+  .sec-alt { background:#f5f0ff; padding:5mm 6mm; border-radius:4px; margin-bottom:7mm; }
+  .pb  { page-break-before:always; }
+
+  /* ── SECTION HEADER ────────────────────────────────────── */
+  .sec-header { display:flex; align-items:center; gap:3mm; margin-bottom:4mm; }
+  .sec-number {
+    background:#c9a84c; color:#0a1628;
+    font-size:7.5pt; font-weight:900; letter-spacing:2px;
+    padding:1.5mm 4mm; border-radius:12px; white-space:nowrap;
+    text-transform:uppercase;
+  }
+  .sec-title {
+    font-size:14pt; font-weight:900; color:#0a1628;
+    text-transform:uppercase; letter-spacing:1.5px;
+    border-bottom:2.5px solid #c9a84c; padding-bottom:2mm; flex:1;
+  }
+
+  /* ── TYPOGRAPHY ─────────────────────────────────────────── */
+  h2  { font-size:10.5pt; font-weight:800; color:#0a1628; margin:5mm 0 2mm; text-transform:uppercase; letter-spacing:0.5px; }
+  h3  { font-size:9.5pt; font-weight:700; color:#1a2c4a; margin:3.5mm 0 1.5mm; }
+  p   { margin-bottom:2.5mm; }
+  ul  { margin:2mm 0 3mm 5mm; }
+  ul li { margin-bottom:1mm; }
+  ol  { margin:2mm 0 3mm 5mm; }
+  ol li { margin-bottom:1.5mm; }
+  strong { color:#0a1628; }
+
+  /* ── TABLE ──────────────────────────────────────────────── */
+  table { width:100%; border-collapse:collapse; margin:3mm 0; font-size:8.5pt; }
+  th { background:#0a1628; color:#c9a84c; font-weight:700; padding:2.5mm 3mm; text-align:left; font-size:7.5pt; letter-spacing:0.5px; text-transform:uppercase; }
+  td { border:1px solid #dde; padding:2mm 3mm; vertical-align:top; }
+  tr:nth-child(even) td { background:#f5f0ff; }
+  .row-head td:first-child { font-weight:700; color:#0a1628; background:#eee8f8; }
+
+  /* ── CALLOUT BOXES ──────────────────────────────────────── */
+  .highlight   { background:#fffbe6; border-left:4px solid #c9a84c; padding:3mm 4mm; margin:3mm 0; font-size:9pt; }
+  .callout-key { background:#0a1628; color:#fff; padding:3mm 5mm; margin:3mm 0; border-radius:3px; }
+  .callout-key strong { color:#c9a84c; }
+  .callout-red { background:#fff0f0; border-left:4px solid #c0392b; padding:3mm 4mm; margin:3mm 0; font-size:9pt; }
+  .callout-green { background:#f0fff4; border-left:4px solid #27ae60; padding:3mm 4mm; margin:3mm 0; font-size:9pt; }
+
+  /* ── KPI ROW ────────────────────────────────────────────── */
+  .kpi-row { display:flex; gap:4mm; margin:4mm 0; flex-wrap:wrap; }
+  .kpi-box {
+    flex:1; min-width:28mm;
+    background:#0a1628; color:#fff;
+    padding:3mm 4mm; border-radius:4px; text-align:center;
+    border-bottom:3px solid #c9a84c;
+  }
+  .kpi-box .kpi-val  { font-size:13pt; font-weight:900; color:#c9a84c; line-height:1.1; }
+  .kpi-box .kpi-lbl  { font-size:7pt; text-transform:uppercase; letter-spacing:1px; color:#aaa; margin-top:1mm; }
+
+  /* ── PROVIDER CARD ──────────────────────────────────────── */
+  .provider-card {
+    border:1.5px solid #dde;
+    border-radius:6px;
+    margin-bottom:6mm;
+    overflow:hidden;
+  }
+  .provider-header {
+    background:#0a1628;
+    color:#fff;
+    padding:3mm 5mm;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .provider-header .prov-name { font-size:12pt; font-weight:900; color:#c9a84c; letter-spacing:1px; }
+  .provider-header .prov-tag  { font-size:7.5pt; color:#aab; letter-spacing:2px; text-transform:uppercase; }
+  .provider-badge {
+    font-size:7pt; font-weight:900; letter-spacing:1.5px;
+    padding:1mm 3mm; border-radius:10px; text-transform:uppercase;
+  }
+  .badge-green  { background:#27ae60; color:#fff; }
+  .badge-amber  { background:#c9a84c; color:#0a1628; }
+  .badge-red    { background:#c0392b; color:#fff; }
+  .badge-blue   { background:#2980b9; color:#fff; }
+  .provider-body { padding:4mm 5mm; }
+
+  /* ── PROS/CONS ──────────────────────────────────────────── */
+  .pros-cons { display:flex; gap:4mm; margin:3mm 0; }
+  .pros, .cons { flex:1; }
+  .pros h3 { color:#27ae60; }
+  .cons h3 { color:#c0392b; }
+  .pros ul li::before { content:"✓ "; color:#27ae60; font-weight:700; }
+  .cons ul li::before { content:"✗ "; color:#c0392b; font-weight:700; }
+  .pros ul, .cons ul { list-style:none; margin-left:0; }
+
+  /* ── RECOMMEND BADGE ─────────────────────────────────────── */
+  .rec-badge {
+    display:inline-block; background:#c9a84c; color:#0a1628;
+    font-size:7.5pt; font-weight:900; letter-spacing:2px;
+    padding:1mm 3mm; border-radius:10px; text-transform:uppercase; margin-bottom:2mm;
+  }
+  .rec-badge.top { background:#27ae60; color:#fff; }
+  .rec-badge.warn { background:#c0392b; color:#fff; }
+
+  /* ── ARCH DIAGRAM ────────────────────────────────────────── */
+  .arch-box {
+    background:#f8f7ff;
+    border:1.5px dashed #c9a84c;
+    border-radius:6px;
+    padding:5mm 6mm;
+    margin:4mm 0;
+    font-size:8.5pt;
+  }
+  .arch-row {
+    display:flex; gap:3mm; align-items:center; margin-bottom:2mm;
+  }
+  .arch-layer {
+    background:#0a1628; color:#c9a84c; font-size:7.5pt; font-weight:900;
+    letter-spacing:1px; text-transform:uppercase;
+    padding:1.5mm 3mm; border-radius:3px; min-width:28mm; text-align:center;
+  }
+  .arch-desc { color:#333; }
+  .arch-arrow { color:#c9a84c; font-size:12pt; }
+
+  /* ── PHASE STEPS ────────────────────────────────────────── */
+  .phase-step { display:flex; gap:4mm; margin-bottom:4mm; align-items:flex-start; }
+  .phase-badge {
+    background:#c9a84c; color:#0a1628;
+    font-size:8.5pt; font-weight:900;
+    width:10mm; height:10mm; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .phase-content {
+    flex:1; background:#fff; border-radius:6px;
+    padding:3mm 4mm; border-left:4px solid #c9a84c;
+    box-shadow:0 1px 6px rgba(10,22,40,0.07);
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- COVER PAGE -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-top-bar"></div>
+  <div class="cover-logo">ATG</div>
+  <div class="cover-slug">Cloud Infrastructure &amp; Platform Hosting Research</div>
+
+  <div class="cover-title">Hosting<br/><span>Infrastructure</span><br/>&amp; Cost Analysis</div>
+  <div class="cover-sub">SA Provider Comparison · Live Forex Signal Tool Hosting · GitHub · Scaling Costs</div>
+
+  <div class="cover-divider"></div>
+
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <label>Prepared For</label>
+      <span>ATG Internal Use</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Scope</label>
+      <span>Forex Signal Platform + Dev Tools</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Date</label>
+      <span>April 2026</span>
+    </div>
+  </div>
+
+  <div class="cover-stage-badge">Infrastructure Research</div>
+
+  <div class="cover-tagline">Built in SA. Hosted in SA. Serving SA.</div>
+
+  <div class="cover-footer">
+    <span>ATG &mdash; Internal Research Document</span>
+    <span>CONFIDENTIAL</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 1 — PURPOSE OF THIS REPORT -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">01</span>
+    <span class="sec-title">Purpose of This Report &amp; Why Hosting Matters</span>
+  </div>
+
+  <p>This report is ATG&rsquo;s internal infrastructure research. It documents the hosting options available for ATG&rsquo;s <strong>live forex signal platform</strong> &mdash; a tool that generates and serves real-time forex trading signals to subscribers. It covers where the platform should be hosted, how it handles growth, what each South African provider costs in ZAR and USD, and the operational implications at each stage of scale. It also covers GitHub developer platform costs.</p>
+
+  <p>This document is intended for internal ATG decision-making, proposals, and any related work that requires a clear understanding of hosting costs and architecture. The research is thorough enough to be included directly in client proposals, investor packs, or partner presentations where infrastructure credibility needs to be demonstrated.</p>
+
+  <div class="atg-implication">
+    <div class="atg-label">ATG &mdash; Key Takeaway</div>
+    <p>Infrastructure is one of the largest technical decisions for any platform business. Choosing a server outside South Africa means slow software for SA users &mdash; leading to subscriber churn. Choosing a provider that prices in USD exposes the monthly cost base to rand volatility. This research identifies both risks and recommends providers that mitigate them. <strong>The complete forex signal platform + GitHub can be hosted for under R2,600/mo</strong> at launch scale.</p>
+  </div>
+
+  <h2>Why South Africa Hosting Is Non-Negotiable</h2>
+  <p>ATG&rsquo;s forex signal platform is web-based. Every time a subscriber checks live signals, views chart analysis, or receives a push notification &mdash; the browser or app sends a request to the server and waits for a response. <strong>Latency</strong> is the time that wait takes. Hosting in Johannesburg means that wait is under 10 milliseconds for SA users. Hosting in Europe means it is 180+ milliseconds &mdash; per request, every time, all day. For a trading signal platform where price freshness and speed matter, that difference is the gap between a platform that feels fast and professional and one that feels broken.</p>
+
+  <div class="kpi-row">
+    <div class="kpi-box">
+      <div class="kpi-val">&lt;10ms</div>
+      <div class="kpi-lbl">Johannesburg DC &mdash; SA Users</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-val">180ms+</div>
+      <div class="kpi-lbl">Europe to SA &mdash; Unacceptable for Live Signals</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-val">POPIA</div>
+      <div class="kpi-lbl">SA Data Must Stay in SA</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-val">&lt;3%</div>
+      <div class="kpi-lbl">Infra Cost as % of Revenue</div>
+    </div>
+  </div>
+
+  <div class="callout-key">
+    <strong>POPIA Compliance:</strong> The Protection of Personal Information Act requires responsible handling of South African personal data. ATG&rsquo;s forex signal platform will handle subscriber accounts, payment details, and trading preferences. All of this must remain on South African soil. Every provider recommended in this report operates a Johannesburg data centre. POPIA compliance is a built-in feature of the hosting strategy &mdash; not an afterthought.
+  </div>
+
+  <h2>Johannesburg vs Cape Town</h2>
+  <p>South Africa has two primary data centre hubs: <strong>Johannesburg</strong> (Gauteng &mdash; economic centre, highest business density) and <strong>Cape Town</strong> (Western Cape). Johannesburg is the clear primary location for ATG&rsquo;s platform &mdash; it reaches the most SA subscribers with the lowest latency. Cape Town serves as a <strong>disaster recovery and geo-backup</strong> site when budget allows. Only Azure currently offers a managed second region within SA borders (Cape Town), making it the most resilient option at scale.</p>
+
+  <h2>Exchange Rate Note</h2>
+  <p>Some providers charge in US Dollars; others in ZAR. All USD figures in this report use an indicative rate of <strong>R18 = $1 USD</strong>. Actual costs will vary with the exchange rate — which is precisely why ZAR-priced providers (CloudAfrica, Hetzner SA) are preferred for early-stage operations. A weaker rand inflates USD-denominated hosting bills with no corresponding benefit.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 2 — PROVIDER OVERVIEW -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="sec pb">
+  <div class="sec-header">
+    <span class="sec-number">02</span>
+    <span class="sec-title">Provider Overview</span>
+  </div>
+
+  <p>Six providers are evaluated below. ATG should note two things from this table: (1) every recommended provider operates a <strong>Johannesburg data centre</strong> — SA latency is protected; (2) the two lowest-cost options (CloudAfrica and Hetzner SA) price in <strong>ZAR</strong>, eliminating foreign exchange risk from the infrastructure cost base. DigitalOcean is included for completeness but is explicitly disqualified.</p>
+
+  <table>
+    <tr>
+      <th>Provider</th>
+      <th>SA Data Centre</th>
+      <th>Pricing Currency</th>
+      <th>Load Balancer</th>
+      <th>Managed DB</th>
+      <th>Recommendation</th>
+    </tr>
+    <tr>
+      <td><strong>Vultr</strong></td>
+      <td>Johannesburg ✓</td>
+      <td>USD (~R18/$ FX)</td>
+      <td>$10/mo</td>
+      <td>Yes — PostgreSQL</td>
+      <td><span class="provider-badge badge-amber">Solid — Phase 1 Ready</span></td>
+    </tr>
+    <tr>
+      <td><strong>CloudAfrica</strong></td>
+      <td>Johannesburg ✓</td>
+      <td>ZAR (stable)</td>
+      <td>On request</td>
+      <td>Self-managed</td>
+      <td><span class="provider-badge badge-green">Best Value SA</span></td>
+    </tr>
+    <tr>
+      <td><strong>Google Cloud</strong></td>
+      <td>Johannesburg ✓ (africa-south1)</td>
+      <td>USD (~R18/$ FX)</td>
+      <td>Yes — native</td>
+      <td>Cloud SQL (PG)</td>
+      <td><span class="provider-badge badge-blue">Scale-up option</span></td>
+    </tr>
+    <tr>
+      <td><strong>Azure</strong></td>
+      <td>Johannesburg ✓ (SA North) + Cape Town ✓ (SA West)</td>
+      <td>USD / ZAR billing</td>
+      <td>Yes — native</td>
+      <td>Azure DB for PG</td>
+      <td><span class="provider-badge badge-blue">Scale-up option</span></td>
+    </tr>
+    <tr>
+      <td><strong>Hetzner SA</strong></td>
+      <td>Johannesburg ✓</td>
+      <td>ZAR (stable)</td>
+      <td>None (infra only)</td>
+      <td>Self-managed</td>
+      <td><span class="provider-badge badge-amber">Dedicated budget</span></td>
+    </tr>
+    <tr>
+      <td><strong>DigitalOcean</strong></td>
+      <td>No SA region ✗ (nearest Amsterdam)</td>
+      <td>USD (~R18/$ FX)</td>
+      <td>$12/mo</td>
+      <td>Managed PG</td>
+      <td><span class="provider-badge badge-red">Not Recommended</span></td>
+    </tr>
+  </table>
+
+  <div class="callout-red">
+    <strong>DigitalOcean is disqualified.</strong> Despite being popular globally, DigitalOcean has no South African data centre — the nearest region is Amsterdam (Netherlands), adding ~180ms latency to every user interaction. For a live forex signal platform serving South African subscribers, this is unacceptable and would directly drive subscriber churn. DigitalOcean does not appear in any further analysis.
+  </div>
+
+  <div class="atg-implication">
+    <div class="atg-label">ATG Observation</div>
+    <p>The fact that DigitalOcean — one of the most heavily marketed cloud providers — has been explicitly ruled out on objective technical grounds demonstrates that infrastructure decisions here are made on <strong>merit, not popularity</strong>. The shortlist is disciplined. Every provider on it operates in Johannesburg and is immediately deployable.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 3 — PROVIDER DEEP DIVES -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">03</span>
+    <span class="sec-title">Provider Deep Dives</span>
+  </div>
+
+  <!-- ─── CLOUDAFRICA ─────────────────────────────────────── -->
+  <div class="provider-card">
+    <div class="provider-header">
+      <div>
+        <div class="prov-name">CloudAfrica</div>
+        <div class="prov-tag">cloudafrica.net — Johannesburg, SA — ZAR Pricing</div>
+      </div>
+      <span class="provider-badge badge-green">Best Value SA</span>
+    </div>
+    <div class="provider-body">
+      <span class="rec-badge top">Recommended Primary Provider — Phase 1 &amp; 2</span>
+
+      <p>CloudAfrica is a South African cloud provider built specifically for the African market. They operate Johannesburg-based infrastructure with transparent, fixed ZAR pricing &mdash; no currency risk, no surprise exchange rate bills month to month. They provide virtual compute instances, block storage, object storage, Virtual Private Clouds (VPCs), VPNs, and advanced firewalls. Everything ATG needs to host the forex signal platform is available here, priced in rand.</p>
+
+      <div class="explainer">
+        <h3>What Does &ldquo;Self-Managed Database&rdquo; Mean? &mdash; Plain English for ATG</h3>
+        <p>A <strong>database</strong> is where all the platform data lives &mdash; every signal record, every subscriber account, every trade history entry, every strategy configuration. It is the most critical component of the system.</p>
+        <p>When a provider offers a <strong>managed database</strong>, the provider automatically handles installation, patching, backups, and restarting if the database crashes &mdash; at extra cost (typically R1,000&ndash;R2,000/mo above the server price).</p>
+        <p>When a database is <strong>self-managed</strong>, the development team installs PostgreSQL themselves on a CloudAfrica server, configures the backup schedule, applies security updates, and monitors it. This is not unusual &mdash; it is the standard approach used by thousands of SaaS companies worldwide, including at scale. The database software (PostgreSQL) is free, open-source, and identical in both cases. The difference is who manages it operationally.</p>
+        <p>For ATG&rsquo;s assessment: Self-managed PostgreSQL at Phase 1 is a deliberate cost-saving decision, not a capability gap. The saving is approximately R720/mo (R1,080 managed vs R359 self-managed server) with no reduction in data quality or safety. A documented daily backup script to object storage is in place. At Phase 3 (400+ clients), migrating to a managed database service is budgeted and straightforward.</p>
+      </div>
+
+      <h2>Pricing (ex. VAT)</h2>
+      <table>
+        <tr><th>Package</th><th>vCPUs</th><th>RAM</th><th>Storage</th><th>ZAR/Month</th></tr>
+        <tr><td>CA-1GB-STD</td><td>1</td><td>1 GiB</td><td>20 GiB</td><td><strong>R88</strong></td></tr>
+        <tr><td>CA-2GB-STD</td><td>2</td><td>2 GiB</td><td>30 GiB</td><td><strong>R201</strong></td></tr>
+        <tr><td>CA-4GB-STD</td><td>4</td><td>4 GiB</td><td>48 GiB</td><td><strong>R359</strong></td></tr>
+        <tr><td>CA-6GB-STD</td><td>6</td><td>6 GiB</td><td>72 GiB</td><td><strong>R542</strong></td></tr>
+        <tr><td>CA-8GB-STD</td><td>8</td><td>8 GiB</td><td>96 GiB</td><td><strong>R731</strong></td></tr>
+        <tr><td>CA-16GB-STD</td><td>8</td><td>16 GiB</td><td>288 GiB</td><td><strong>R1,534</strong></td></tr>
+        <tr><td>CA-32GB-STD</td><td>12</td><td>32 GiB</td><td>512 GiB</td><td><strong>R3,009</strong></td></tr>
+      </table>
+      <p style="font-size:8pt;color:#666;margin-top:1mm;">Additional resources: CPU R42/vCPU/mo · RAM R32/GiB/mo · Block Storage R1.60/GiB/mo · Backups R0.18/GiB/mo</p>
+
+      <h2>Recommended Platform Stack on CloudAfrica</h2>
+      <table>
+        <tr><th>Component</th><th>What It Does</th><th>CloudAfrica Package</th><th>Cost/Month (ex. VAT)</th></tr>
+        <tr><td>Application Server</td><td>Runs the Node.js signal engine, REST API, and serves the React dashboard</td><td>CA-4GB-STD (4 vCPU, 4 GiB)</td><td>R359</td></tr>
+        <tr><td>Database Server</td><td>Stores subscriber accounts, signal history, trade records, strategy configs (PostgreSQL, self-managed)</td><td>CA-4GB-STD (4 vCPU, 4 GiB)</td><td>R359</td></tr>
+        <tr><td>Cache Server</td><td>Speeds up lookups; handles sessions and background queues (Redis)</td><td>CA-2GB-STD (2 vCPU, 2 GiB)</td><td>R201</td></tr>
+        <tr><td>Block Storage</td><td>Extra database disk space for growing data volumes</td><td>200 GiB extra</td><td>R320</td></tr>
+        <tr><td>Object Storage</td><td>Daily database backups, file uploads, PDF exports stored safely off-server</td><td>500 GiB</td><td>~R250</td></tr>
+        <tr><td>Load Balancer (Nginx)</td><td>Distributes traffic across app servers when a second is added</td><td>CA-1GB-STD</td><td>R88 (optional)</td></tr>
+        <tr><td><strong>Estimated Total</strong></td><td></td><td></td><td><strong>~R1,489/mo</strong></td></tr>
+      </table>
+      <p style="font-size:8pt;color:#666;margin-top:1mm;">Add 15% VAT = <strong>~R1,712/mo incl. VAT</strong> for a complete, production-ready infrastructure stack serving up to 200 clients (1,000 users).</p>
+
+      <div class="highlight">
+        <strong>Load Balancing on CloudAfrica:</strong> CloudAfrica does not offer a managed load balancer. The team deploys <strong>Nginx</strong> (open-source, industry standard) on a separate R88/mo server, routing traffic across multiple app server instances. This is a standard configuration used in thousands of production deployments and adds ~R88/mo. Cloudflare Free can also be placed in front for DNS-level routing and DDoS protection at zero cost.
+      </div>
+
+      <div class="atg-implication">
+        <div class="atg-label">ATG &mdash; Implication</div>
+        <p>At R1,712/mo all-in (incl. VAT), the full production platform costs <strong>less than one paying client&rsquo;s monthly subscription revenue</strong> (R1,495/client/mo at 5 users &times; R299). A single client covers the entire infrastructure bill with R217 to spare. By client 10, infrastructure is 11% of those clients&rsquo; combined revenue; by client 50 it is 2.3%; by client 200 it is 0.57%. <strong>CloudAfrica&rsquo;s ZAR pricing also means this figure does not change with the rand&rsquo;s movement against the dollar</strong> &mdash; the R1,712 stays R1,712 regardless of FX fluctuations. This is a genuinely lean cost structure.</p>
+      </div>
+
+      <div class="pros-cons">
+        <div class="pros">
+          <h3>Pros</h3>
+          <ul>
+            <li>ZAR pricing &mdash; zero FX exposure</li>
+            <li>100% Johannesburg-based</li>
+            <li>Transparent fixed monthly pricing</li>
+            <li>African-focused support team</li>
+            <li>VPC, VPN, firewall included</li>
+            <li>Object + Block storage available</li>
+            <li>No minimum commitment, no lock-in</li>
+            <li>POPIA-compliant (all data in SA)</li>
+            <li>Pay-as-you-scale &mdash; add servers on demand</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h3>Cons &amp; ATG Watch Points</h3>
+          <ul>
+            <li>No managed load balancer (mitigated by Nginx/Cloudflare)</li>
+            <li>No managed database &mdash; team manages PostgreSQL directly (see explainer above)</li>
+            <li>Smaller provider ecosystem vs hyperscalers</li>
+            <li>Less public documentation online compared to AWS/GCP</li>
+            <li>Team responsible for OS patching and security updates</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── VULTR ─────────────────────────────────────────────── -->
+  <div class="provider-card">
+    <div class="provider-header">
+      <div>
+        <div class="prov-name">Vultr</div>
+        <div class="prov-tag">vultr.com — Johannesburg, SA — USD Pricing</div>
+      </div>
+      <span class="provider-badge badge-amber">Phase 1 Ready &mdash; USD Risk</span>
+    </div>
+    <div class="provider-body">
+      <span class="rec-badge">Solid Early-Stage Option &mdash; ZAR Exposure Noted</span>
+
+      <p>Vultr operates a confirmed Johannesburg data centre and provides a mature, developer-friendly cloud platform that includes managed PostgreSQL, a native load balancer, managed Redis, Kubernetes, and object storage. The platform is production-ready and immediately deployable. <strong>The primary consideration for ATG is USD pricing</strong> &mdash; Vultr invoices in US Dollars, creating a direct exchange rate exposure on the monthly infrastructure cost. For a business earning in rand, every rand depreciation event increases the infrastructure bill automatically, with no change in services received.</p>
+
+      <h2>Pricing (Johannesburg DC — USD → ZAR indicative at R18/$)</h2>
+      <table>
+        <tr><th>Plan</th><th>vCPUs</th><th>RAM</th><th>Storage</th><th>USD/Month</th><th>ZAR/Month (~R18)</th></tr>
+        <tr><td>Cloud Compute Basic</td><td>1</td><td>1 GiB</td><td>25 GiB NVMe</td><td>$6</td><td>~R108</td></tr>
+        <tr><td>Cloud Compute Basic</td><td>2</td><td>2 GiB</td><td>60 GiB NVMe</td><td>$18</td><td>~R324</td></tr>
+        <tr><td>Cloud Compute Basic</td><td>2</td><td>4 GiB</td><td>80 GiB NVMe</td><td>$24</td><td>~R432</td></tr>
+        <tr><td>Cloud Compute Basic</td><td>4</td><td>8 GiB</td><td>160 GiB NVMe</td><td>$48</td><td>~R864</td></tr>
+        <tr><td>Optimised — Gen Purpose</td><td>2</td><td>8 GiB</td><td>25 GiB NVMe</td><td>$63</td><td>~R1,134</td></tr>
+        <tr><td>Optimised — Gen Purpose</td><td>4</td><td>16 GiB</td><td>50 GiB NVMe</td><td>$126</td><td>~R2,268</td></tr>
+      </table>
+
+      <h2>Additional Services (USD → ZAR)</h2>
+      <table>
+        <tr><th>Service</th><th>USD/Month</th><th>ZAR/Month (~R18)</th></tr>
+        <tr><td>Load Balancer</td><td>$10</td><td>~R180</td></tr>
+        <tr><td>Managed PostgreSQL (2 vCPU, 4 GiB)</td><td>~$60</td><td>~R1,080</td></tr>
+        <tr><td>Block Storage (100 GiB NVMe)</td><td>$10</td><td>~R180</td></tr>
+        <tr><td>Object Storage (1 TB)</td><td>$18</td><td>~R324</td></tr>
+        <tr><td>CDN</td><td>$10 + bandwidth</td><td>~R180+</td></tr>
+        <tr><td>Managed Redis/Valkey (1 GiB)</td><td>~$15</td><td>~R270</td></tr>
+      </table>
+
+      <h2>Estimated Full Stack on Vultr (Johannesburg) &mdash; FX Sensitivity View</h2>
+      <table>
+        <tr><th>Component</th><th>Plan</th><th>USD/Month</th><th>ZAR at R18/$</th><th>ZAR at R22/$</th></tr>
+        <tr><td>App Server (Node.js)</td><td>Basic 4 GiB / 2 vCPU</td><td>$24</td><td>~R432</td><td>~R528</td></tr>
+        <tr><td>Managed PostgreSQL</td><td>2 vCPU, 4 GiB</td><td>$60</td><td>~R1,080</td><td>~R1,320</td></tr>
+        <tr><td>Managed Redis</td><td>1 GiB</td><td>$15</td><td>~R270</td><td>~R330</td></tr>
+        <tr><td>Load Balancer</td><td>Standard</td><td>$10</td><td>~R180</td><td>~R220</td></tr>
+        <tr><td>Block Storage (100 GiB)</td><td>NVMe</td><td>$10</td><td>~R180</td><td>~R220</td></tr>
+        <tr><td><strong>Total</strong></td><td></td><td><strong>$119/mo</strong></td><td><strong>~R2,142</strong></td><td><strong>~R2,618</strong></td></tr>
+      </table>
+      <p style="font-size:8pt;color:#666;margin-top:1mm;">The R22 column shows the impact of rand weakness: a <strong>22% cost increase (R476/mo additional)</strong> with identical services received. This is the main risk of USD-priced infrastructure for a ZAR-revenue business.</p>
+
+      <div class="atg-implication">
+        <div class="atg-label">ATG &mdash; Implication</div>
+        <p>Vultr is a <strong>capable, immediately deployable platform</strong> with a proven track record and a full suite of managed services. The managed PostgreSQL and managed load balancer mean the team does not need to configure database backups or traffic routing manually &mdash; this <strong>reduces operational risk</strong> relative to CloudAfrica in the very short term. <strong>The watch point is USD billing</strong>: if infrastructure costs are in dollars, a rand depreciation event directly increases the monthly burn rate with no operational change. The documented migration path to CloudAfrica (ZAR-priced) saves ~R430/mo and eliminates this exposure. This should be treated as a <strong>Phase 2 action item</strong>, not a current dealbreaker.</p>
+      </div>
+
+      <div class="pros-cons">
+        <div class="pros">
+          <h3>Pros</h3>
+          <ul>
+            <li>Johannesburg DC confirmed</li>
+            <li>Managed PostgreSQL &mdash; reduces operational risk</li>
+            <li>Native load balancer ($10/mo)</li>
+            <li>Managed Redis available</li>
+            <li>Excellent API &amp; control panel</li>
+            <li>Immediately deployable &mdash; validated in production</li>
+            <li>Good uptime track record</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h3>Cons &amp; ATG Watch Points</h3>
+          <ul>
+            <li>USD pricing &mdash; direct rand FX risk on cost base</li>
+            <li>~R430/mo more expensive than CloudAfrica equivalent</li>
+            <li>No ZAR billing option available</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 3 CONTINUED — GOOGLE CLOUD & AZURE -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="sec pb">
+  <div class="sec-header">
+    <span class="sec-number">03</span>
+    <span class="sec-title">Provider Deep Dives (continued)</span>
+  </div>
+
+  <!-- ─── GOOGLE CLOUD ──────────────────────────────────────── -->
+  <div class="provider-card">
+    <div class="provider-header">
+      <div>
+        <div class="prov-name">Google Cloud Platform (GCP)</div>
+        <div class="prov-tag">cloud.google.com — africa-south1 (Johannesburg) — USD Pricing</div>
+      </div>
+      <span class="provider-badge badge-blue">Scale-Up Option</span>
+    </div>
+    <div class="provider-body">
+      <span class="rec-badge">Recommended for Phase 3 Growth (200+ clients)</span>
+
+      <p>Google Cloud has a confirmed Johannesburg region (<code>africa-south1</code>), giving South African latency with the full power of a hyperscaler. GCP offers Compute Engine VMs, Cloud SQL (managed PostgreSQL), Memorystore (managed Redis), Cloud Load Balancing (global), and Cloud Run (serverless containers). GCP also provides <strong>sustained-use discounts</strong> — the longer a VM runs, the cheaper it gets (up to 30% discount automatically).</p>
+
+      <h2>Indicative Pricing (USD → ZAR at R18/$)</h2>
+      <table>
+        <tr><th>VM Type</th><th>vCPUs</th><th>RAM</th><th>USD/Month</th><th>ZAR/Month (~R18)</th></tr>
+        <tr><td>E2-micro (free tier)</td><td>0.25</td><td>1 GiB</td><td>Free (1 per account)</td><td>Free</td></tr>
+        <tr><td>E2-small</td><td>0.5–2</td><td>2 GiB</td><td>~$14</td><td>~R252</td></tr>
+        <tr><td>E2-medium</td><td>1–2</td><td>4 GiB</td><td>~$27</td><td>~R486</td></tr>
+        <tr><td>E2-standard-4</td><td>4</td><td>16 GiB</td><td>~$108</td><td>~R1,944</td></tr>
+        <tr><td>N2-standard-2</td><td>2</td><td>8 GiB</td><td>~$70</td><td>~R1,260</td></tr>
+        <tr><td>N2-standard-4</td><td>4</td><td>16 GiB</td><td>~$140</td><td>~R2,520</td></tr>
+      </table>
+      <p style="font-size:8pt;color:#666;margin-top:1mm;">SA region (africa-south1) typically carries a 10–20% premium over US regions. Sustained-use discounts reduce cost by up to 30% for always-on VMs.</p>
+
+      <h2>Managed Services (Johannesburg)</h2>
+      <table>
+        <tr><th>Service</th><th>Description</th><th>Est. USD/Month</th><th>ZAR/Month</th></tr>
+        <tr><td>Cloud SQL (PostgreSQL)</td><td>db-standard-2 (2 vCPU, 7.5 GB)</td><td>~$70–$120</td><td>~R1,260–R2,160</td></tr>
+        <tr><td>Memorystore (Redis)</td><td>1 GiB standard</td><td>~$30</td><td>~R540</td></tr>
+        <tr><td>Cloud Load Balancing</td><td>Global HTTP(S) LB</td><td>~$18 + usage</td><td>~R324+</td></tr>
+        <tr><td>Cloud Storage</td><td>100 GiB standard</td><td>~$2.30</td><td>~R41</td></tr>
+        <tr><td>Cloud Run</td><td>Serverless (Node.js)</td><td>Pay-per-request</td><td>Very low for SaaS</td></tr>
+      </table>
+
+      <div class="highlight">
+        <strong>GCP Best Feature for Scalable Platforms:</strong> <strong>Cloud Run</strong> lets you run containerised Node.js apps without managing VMs. You pay only per request &mdash; potentially R200&ndash;R500/mo for Phase 1 volume instead of a fixed VM cost. This is the most cost-efficient scaling path for subscriber-based platforms at Phase 3+ volumes.
+      </div>
+
+      <div class="atg-implication">
+        <div class="atg-label">ATG &mdash; Implication</div>
+        <p>GCP is the <strong>Phase 3 destination</strong>. When the client count exceeds 400, Cloud Run&rsquo;s serverless model means infrastructure scales automatically with revenue &mdash; ATG pays for compute only when users are actively using the system. No risk of over-provisioning expensive servers for growth that hasn&rsquo;t materialised yet. GCP&rsquo;s <code>africa-south1</code> Johannesburg region also means <strong>all data remains in SA</strong> &mdash; POPIA-compliant at hyperscaler scale. This is a clear, structured upgrade path that ensures infrastructure scales with the business.</p>
+      </div>
+
+      <div class="pros-cons">
+        <div class="pros">
+          <h3>Pros</h3>
+          <ul>
+            <li>SA Johannesburg region confirmed</li>
+            <li>Global-grade managed PostgreSQL</li>
+            <li>Serverless (Cloud Run) for savings</li>
+            <li>Automatic sustained-use discounts</li>
+            <li>Global load balancing built-in</li>
+            <li>Best-in-class monitoring (Cloud Ops)</li>
+            <li>90-day free trial with $300 credit</li>
+            <li>Scales to thousands of clients</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h3>Cons</h3>
+          <ul>
+            <li>USD pricing — FX risk</li>
+            <li>SA region has regional premium</li>
+            <li>Steeper learning curve</li>
+            <li>Overkill for Phase 1 (&lt;200 clients)</li>
+            <li>Egress costs between services</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── AZURE ──────────────────────────────────────────────── -->
+  <div class="provider-card">
+    <div class="provider-header">
+      <div>
+        <div class="prov-name">Microsoft Azure</div>
+        <div class="prov-tag">azure.microsoft.com — SA North (JHB) + SA West (Cape Town) — USD/ZAR Billing</div>
+      </div>
+      <span class="provider-badge badge-blue">Scale-Up Option</span>
+    </div>
+    <div class="provider-body">
+      <span class="rec-badge">Best for Microsoft-ecosystem clients — Phase 3+</span>
+
+      <p>Azure has <strong>two South African regions</strong>: <code>South Africa North</code> (Johannesburg) as primary, and <code>South Africa West</code> (Cape Town) for geo-redundancy. This makes Azure the only hyperscaler with two SA regions, ideal for a multi-region active-passive disaster recovery setup. Azure also offers <strong>ZAR billing</strong> for South African businesses with Microsoft CSP agreements, which reduces FX risk.</p>
+
+      <h2>Indicative VM Pricing — South Africa North (USD → ZAR at R18/$)</h2>
+      <table>
+        <tr><th>VM Type</th><th>vCPUs</th><th>RAM</th><th>USD/Month</th><th>ZAR/Month (~R18)</th></tr>
+        <tr><td>B1ms (burstable)</td><td>1</td><td>2 GiB</td><td>~$15</td><td>~R270</td></tr>
+        <tr><td>B2s (burstable)</td><td>2</td><td>4 GiB</td><td>~$35</td><td>~R630</td></tr>
+        <tr><td>D2s_v5</td><td>2</td><td>8 GiB</td><td>~$80</td><td>~R1,440</td></tr>
+        <tr><td>D4s_v5</td><td>4</td><td>16 GiB</td><td>~$160</td><td>~R2,880</td></tr>
+        <tr><td>D8s_v5</td><td>8</td><td>32 GiB</td><td>~$320</td><td>~R5,760</td></tr>
+      </table>
+      <p style="font-size:8pt;color:#666;margin-top:1mm;">Azure Hybrid Benefit (if you have existing Microsoft licenses) can reduce these costs by 40%. Reserved instances (1-year) save ~30%.</p>
+
+      <h2>Managed Services (South Africa North)</h2>
+      <table>
+        <tr><th>Service</th><th>Description</th><th>Est. USD/Month</th><th>ZAR/Month</th></tr>
+        <tr><td>Azure DB for PostgreSQL</td><td>Flexible server, 2 vCPU, 8 GiB</td><td>~$65–$100</td><td>~R1,170–R1,800</td></tr>
+        <tr><td>Azure Cache for Redis</td><td>Basic C1 (1 GiB)</td><td>~$25</td><td>~R450</td></tr>
+        <tr><td>Azure Load Balancer</td><td>Standard tier</td><td>~$20 + rules</td><td>~R360+</td></tr>
+        <tr><td>Azure Application Gateway (WAF)</td><td>WAF + LB combined</td><td>~$120</td><td>~R2,160</td></tr>
+        <tr><td>Azure Blob Storage</td><td>100 GiB LRS</td><td>~$2</td><td>~R36</td></tr>
+      </table>
+
+      <div class="callout-key">
+        <strong>Unique Advantage:</strong> Azure&rsquo;s <strong>South Africa West (Cape Town)</strong> region enables active geo-replication &mdash; primary data runs in Johannesburg and automatically replicates to Cape Town. If Johannesburg goes down, Cape Town takes over within minutes. No other provider on this shortlist offers this within SA borders.
+      </div>
+
+      <div class="atg-implication">
+        <div class="atg-label">ATG &mdash; Implication</div>
+        <p>Azure is the <strong>enterprise-grade Phase 4 option</strong>. Dual SA regions (Johannesburg + Cape Town) with automatic failover means a <strong>99.99% uptime SLA</strong> and disaster recovery entirely within South Africa&rsquo;s borders. When ATG&rsquo;s subscriber base grows to include institutional accounts (fund managers, professional trading desks, white-label partners) that require contractual SLA guarantees, Azure provides the infrastructure to back those commitments. This means future revenue protection: ATG can credibly serve institutional subscribers without needing to switch infrastructure providers again.</p>
+      </div>
+
+      <div class="pros-cons">
+        <div class="pros">
+          <h3>Pros</h3>
+          <ul>
+            <li>TWO SA regions (JHB + Cape Town)</li>
+            <li>ZAR billing option via CSP</li>
+            <li>Best disaster recovery within SA</li>
+            <li>Azure DB for PostgreSQL — excellent</li>
+            <li>Enterprise SLAs (99.99% uptime)</li>
+            <li>Microsoft 365 / Active Directory integration</li>
+            <li>POPIA compliant (data in SA)</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h3>Cons</h3>
+          <ul>
+            <li>Most expensive of all options</li>
+            <li>Complex pricing model</li>
+            <li>Overkill for Phase 1 (&lt;200 clients)</li>
+            <li>Long-term commitment to unlock savings</li>
+            <li>Portal complexity vs Vultr/CloudAfrica</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 3 CONTINUED — HETZNER SA -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">03</span>
+    <span class="sec-title">Provider Deep Dives (continued)</span>
+  </div>
+
+  <!-- ─── HETZNER SA ─────────────────────────────────────────── -->
+  <div class="provider-card">
+    <div class="provider-header">
+      <div>
+        <div class="prov-name">Hetzner South Africa</div>
+        <div class="prov-tag">hetzner.co.za — Johannesburg &amp; Cape Town — ZAR Pricing</div>
+      </div>
+      <span class="provider-badge badge-amber">Dedicated Servers — Budget Option</span>
+    </div>
+    <div class="provider-body">
+      <span class="rec-badge">Good for high-traffic Phase 2 with dedicated hardware</span>
+
+      <p>Hetzner South Africa (not to be confused with Hetzner Germany) is one of the most established hosting providers in SA, operating since 1997. They specialise in <strong>dedicated root servers</strong>, virtual servers, and shared hosting. Their Johannesburg and Cape Town data centres are well-connected to SA backbone networks. Pricing is in ZAR, stable, and very competitive for dedicated hardware.</p>
+
+      <p>Note: Hetzner SA's website does not render pricing tables in a machine-readable format, but the following is indicative based on publicly known pricing tiers:</p>
+
+      <h2>Indicative Pricing (ZAR ex. VAT — dedicated root servers)</h2>
+      <table>
+        <tr><th>Package</th><th>CPU</th><th>RAM</th><th>Storage</th><th>Bandwidth</th><th>ZAR/Month (ex. VAT)</th></tr>
+        <tr><td>RS-4</td><td>4 cores</td><td>4 GiB</td><td>2× 80 GiB SSD</td><td>5 TB</td><td>~R150–R200</td></tr>
+        <tr><td>RS-8</td><td>4 cores</td><td>8 GiB</td><td>2× 80 GiB SSD</td><td>5 TB</td><td>~R250–R350</td></tr>
+        <tr><td>Dedicated EX-44</td><td>8 cores</td><td>64 GiB</td><td>2× 512 GiB SSD</td><td>20 TB</td><td>~R600–R900</td></tr>
+        <tr><td>Dedicated AX-52</td><td>12 cores (AMD)</td><td>128 GiB</td><td>2× 960 GiB NVMe</td><td>20 TB</td><td>~R1,200–R1,600</td></tr>
+      </table>
+      <p style="font-size:8pt;color:#666;margin-top:1mm;">Actual prices: visit hetzner.co.za for confirmed current pricing. ZAR ranges above are estimates based on historical public data.</p>
+
+      <div class="highlight">
+        <strong>Hetzner SA Hosting Context:</strong> For raw compute power per rand, Hetzner dedicated servers are exceptional value &mdash; 64&ndash;128 GiB RAM for R600&ndash;R1,600/mo. The trade-off is <strong>no managed services whatsoever</strong>: the team manages PostgreSQL, Redis, backups, OS updates, and load balancing entirely themselves. This is the highest operational responsibility of any provider on this list. Best considered as a high-efficiency Phase 2 option if the team has demonstrated Linux systems administration capability.
+      </div>
+
+      <div class="atg-implication">
+        <div class="atg-label">ATG &mdash; Implication</div>
+        <p>Hetzner SA offers the <strong>cheapest compute per rand</strong> of any provider evaluated &mdash; but this comes with the highest operational requirement. There are no managed databases, no managed load balancers, and no automated failover. Every failure requires manual intervention by the technical team. Hetzner should be treated as a <strong>secondary option</strong>: appropriate if ATG has dedicated Linux devops capacity. It is not the recommended primary provider for a team whose energy should be focused on product development and client acquisition rather than server administration.</p>
+      </div>
+
+      <h2>Load Balancing on Hetzner SA</h2>
+      <p>Hetzner SA does not offer a managed load balancer. Options:</p>
+      <ul>
+        <li><strong>Nginx/HAProxy</strong> on a second virtual server (~R150–R200/mo) — open source, full control</li>
+        <li><strong>Cloudflare Free/Pro</strong> in front — handles DNS-level routing, zero cost</li>
+        <li><strong>Keepalived</strong> with floating IPs for HA failover between two Hetzner servers</li>
+      </ul>
+
+      <div class="pros-cons">
+        <div class="pros">
+          <h3>Pros</h3>
+          <ul>
+            <li>ZAR pricing — no FX exposure</li>
+            <li>Best raw compute/rand ratio</li>
+            <li>SA-headquartered company</li>
+            <li>JHB &amp; Cape Town DCs</li>
+            <li>Massive SA developer community</li>
+            <li>Simple management panel</li>
+            <li>High bandwidth included</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h3>Cons</h3>
+          <ul>
+            <li>No managed databases</li>
+            <li>No managed load balancer</li>
+            <li>All sysadmin is your responsibility</li>
+            <li>VPS plans less flexible than cloud</li>
+            <li>No object storage service</li>
+            <li>Scaling requires manual migration</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── CLOUDFLARE ─────────────────────────────────────────── -->
+  <div class="provider-card">
+    <div class="provider-header">
+      <div>
+        <div class="prov-name">Cloudflare (CDN + Security Layer)</div>
+        <div class="prov-tag">cloudflare.com — Global Edge Network — USD Pricing</div>
+      </div>
+      <span class="provider-badge badge-green">Use with Any Provider</span>
+    </div>
+    <div class="provider-body">
+      <span class="rec-badge top">Strongly Recommended as Front Layer</span>
+
+      <p>Cloudflare is not a hosting provider — it sits in front of your server as a <strong>globally distributed edge network</strong>. Every client's browser connects to Cloudflare's nearest point of presence (Cloudflare has a PoP in Johannesburg), and Cloudflare forwards the request to your origin server. This delivers:</p>
+      <ul>
+        <li>DDoS protection (unmetered, even on free plan)</li>
+        <li>SSL/TLS termination (free certificates)</li>
+        <li>Global CDN for static assets (React frontend, images)</li>
+        <li>Web Application Firewall (WAF) — blocks SQL injection, XSS</li>
+        <li>Smart routing that can reduce latency even for SA-hosted servers</li>
+      </ul>
+
+      <h2>Cloudflare Plans</h2>
+      <table>
+        <tr><th>Plan</th><th>USD/Month</th><th>ZAR/Month (~R18)</th><th>Key Features</th></tr>
+        <tr><td>Free</td><td>$0</td><td>R0</td><td>CDN, DDoS, SSL, DNS — sufficient for Phase 1</td></tr>
+        <tr><td>Pro</td><td>$20</td><td>~R360</td><td>WAF rules, image optimisation, 100ms polish</td></tr>
+        <tr><td>Business</td><td>$200</td><td>~R3,600</td><td>Custom WAF, 24/7 chat support, SLA</td></tr>
+        <tr><td>Load Balancing add-on</td><td>$5+/mo</td><td>~R90+</td><td>Health checks, geo-routing, failover</td></tr>
+        <tr><td>Argo Smart Routing add-on</td><td>$5+/mo</td><td>~R90+</td><td>Avoids congested internet routes</td></tr>
+      </table>
+
+      <div class="callout-green">
+        <strong>Recommendation:</strong> Use Cloudflare Free immediately on any hosting provider chosen. It adds DDoS protection, SSL, and CDN at zero cost. Upgrade to Pro ($20/mo &asymp; R360) when WAF is required for compliance. The Cloudflare Load Balancer add-on ($5+) is the most cost-effective way to distribute traffic across multiple app servers.
+      </div>
+
+      <div class="atg-implication">
+        <div class="atg-label">ATG &mdash; Implication</div>
+        <p>Cloudflare Free is a <strong>zero-cost defensive security layer</strong> that should be in place regardless of which hosting provider is selected. DDoS protection, SSL certificates, and CDN at R0/month represents an obvious operational improvement with no downside. ATG should view the absence of Cloudflare as a red flag &mdash; and its presence as confirmation that the team understands basic internet security hygiene. The platform already plans to use Cloudflare. This is one of the lowest-effort, highest-impact infrastructure decisions available to any web-facing business.</p>
+      </div>
+
+      <div class="pros-cons">
+        <div class="pros">
+          <h3>Pros</h3>
+          <ul>
+            <li>Free plan is genuinely useful</li>
+            <li>Works with every hosting provider</li>
+            <li>Johannesburg PoP — fast SA edge</li>
+            <li>Automatic DDoS mitigation</li>
+            <li>SSL included free</li>
+            <li>Reduces origin server load</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h3>Cons</h3>
+          <ul>
+            <li>Not a full hosting solution</li>
+            <li>USD pricing for add-ons</li>
+            <li>Some configuration complexity</li>
+            <li>DNS must be on Cloudflare</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 4 — COST COMPARISON SUMMARY -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="sec pb">
+  <div class="sec-header">
+    <span class="sec-number">04</span>
+    <span class="sec-title">Cost Comparison Summary</span>
+  </div>
+
+  <p>The table below compares the estimated monthly infrastructure cost for hosting the <strong>forex signal platform at launch scale</strong>. All prices inclusive of VAT where applicable. USD providers shown at R18/$ indicative rate &mdash; actual ZAR cost will fluctuate with exchange rate movements. This is the core FX exposure to evaluate for each USD-priced provider.</p>
+
+  <table>
+    <tr>
+      <th>Provider</th>
+      <th>SA Region?</th>
+      <th>App Server</th>
+      <th>Database</th>
+      <th>Cache</th>
+      <th>Load Balancer</th>
+      <th>Storage</th>
+      <th>Est. Total/Mo</th>
+    </tr>
+    <tr>
+      <td><strong>CloudAfrica</strong></td>
+      <td>JHB ✓</td>
+      <td>R359</td>
+      <td>R359 (self)</td>
+      <td>R201</td>
+      <td>R88 (nginx)</td>
+      <td>R320</td>
+      <td><strong>~R1,712 incl. VAT</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Vultr</strong></td>
+      <td>JHB ✓</td>
+      <td>R432</td>
+      <td>R1,080 (managed)</td>
+      <td>R270 (managed)</td>
+      <td>R180 (managed)</td>
+      <td>R180</td>
+      <td><strong>~R2,142</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Vultr + Cloudflare</strong></td>
+      <td>JHB ✓</td>
+      <td>R432</td>
+      <td>R1,080</td>
+      <td>R270</td>
+      <td>R0 (Cloudflare free)</td>
+      <td>R180</td>
+      <td><strong>~R1,962</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Google Cloud (GCP)</strong></td>
+      <td>JHB ✓</td>
+      <td>R486</td>
+      <td>R1,260 (managed)</td>
+      <td>R540 (managed)</td>
+      <td>R324 (managed)</td>
+      <td>R41</td>
+      <td><strong>~R2,651</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Azure</strong></td>
+      <td>JHB + CPT ✓</td>
+      <td>R630</td>
+      <td>R1,170 (managed)</td>
+      <td>R450 (managed)</td>
+      <td>R360 (managed)</td>
+      <td>R36</td>
+      <td><strong>~R2,646</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Hetzner SA</strong></td>
+      <td>JHB ✓</td>
+      <td>R350 (RS-8)</td>
+      <td>R0 (on same server)</td>
+      <td>R0 (on same server)</td>
+      <td>R150 (nginx VM)</td>
+      <td>Included</td>
+      <td><strong>~R575 excl. VAT</strong></td>
+    </tr>
+    <tr>
+      <td><strong>DigitalOcean</strong></td>
+      <td>No SA ✗</td>
+      <td>~R432</td>
+      <td>~R1,080</td>
+      <td>~R270</td>
+      <td>~R216</td>
+      <td>~R180</td>
+      <td><strong>~R2,178 + 180ms lag</strong></td>
+    </tr>
+  </table>
+
+  <div class="highlight">
+    <strong>Cheapest SA hosting:</strong> Hetzner SA dedicated server (~R575/mo for a powerful bare-metal box) &mdash; but requires full sysadmin capability and is highest-operational-risk. <strong>Best managed value for Phase 1:</strong> CloudAfrica (~R1,712/mo incl. VAT) with full cloud flexibility and ZAR pricing. <strong>Vultr:</strong> ~R2,142/mo &mdash; capable and fully managed, but USD FX exposure applies.
+  </div>
+
+  <div class="atg-implication">
+    <div class="atg-label">ATG &mdash; Implication</div>
+    <p>Even the <strong>most expensive provider on this list (Azure at ~R2,646/mo)</strong> is a manageable infrastructure cost for a subscription-based platform. Infrastructure cost is not the deciding factor &mdash; what matters is the right balance of operational reliability, latency performance, and cost efficiency at each stage of subscriber growth. The answer recommended here: <strong>CloudAfrica for Phase 1&ndash;2</strong> (ZAR pricing, proven JHB infrastructure, right-sized cost), with a documented upgrade path to GCP or Azure for Phase 3+ when managed services and enterprise SLAs are warranted.</p>
+  </div>
+
+  <h2>Infrastructure Cost Perspective &mdash; ATG Growth View</h2>
+  <p>At the recommended CloudAfrica stack, the full forex signal platform infrastructure costs:</p>
+  <div class="kpi-row">
+    <div class="kpi-box">
+      <div class="kpi-val">R1,712</div>
+      <div class="kpi-lbl">CloudAfrica/mo (ZAR-priced)</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-val">R0</div>
+      <div class="kpi-lbl">FX Risk (ZAR billing)</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-val">R2,142</div>
+      <div class="kpi-lbl">Vultr/mo (USD-priced)</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-val">~R430</div>
+      <div class="kpi-lbl">Monthly Saving (CloudAfrica vs Vultr)</div>
+    </div>
+  </div>
+  <p>Infrastructure is a small, predictable cost. The architecture is designed to remain cost-efficient through all growth phases, scaling only when subscriber volume demands it.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 5 — RECOMMENDED ARCHITECTURE -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">05</span>
+    <span class="sec-title">Platform Architecture &mdash; How the Forex Signal Tool Is Structured</span>
+  </div>
+
+  <p>The architecture below applies across all providers and is designed for a <strong>real-time forex signal platform</strong>: ingesting live market data, generating signals algorithmically, and pushing them to subscribers via WebSocket and REST API. The stack is horizontally scalable, secured at every entry point, and optimised for the 24/5 uptime requirements of forex markets.</p>
+
+  <div class="arch-box">
+    <strong>Layer Architecture &mdash; Forex Signal Platform on SA Cloud</strong><br/><br/>
+    <div class="arch-row">
+      <div class="arch-layer">Subscriber / Internet</div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-desc"><strong>Subscriber browsers and mobile apps</strong> connect via HTTPS and WebSocket (WSS). Cloudflare sits here &mdash; handles SSL, DDoS, CDN for the React dashboard. Zero added latency for SA users (Cloudflare JHB PoP).</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-layer">Edge Layer</div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-desc"><strong>Cloudflare (Free/Pro)</strong> &mdash; DDoS protection, WAF, CDN, SSL termination. Forwards API and WebSocket requests to origin. Caches static dashboard assets globally.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-layer">Load Balancer</div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-desc"><strong>Nginx on CloudAfrica (R88/mo)</strong> or <strong>Vultr LB ($10/mo)</strong>. Distributes REST API and WebSocket connections across app server instances. Health checks every 30 seconds. WebSocket-aware routing.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-layer">API Server</div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-desc"><strong>Node.js + Express</strong> &mdash; REST endpoints for subscriber management, signal history, backtesting results, authentication. Stateless, horizontally scalable. Deployed via Docker or PM2.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-layer">WebSocket Server</div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-desc"><strong>Node.js + ws/Socket.io</strong> &mdash; pushes live price ticks and new signals to subscriber browsers in real time. Subscribes to Redis pub/sub for signal events. Can co-locate on the API server at Phase 1.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-layer">Signal Engine</div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-desc"><strong>Algorithmic logic</strong> &mdash; consumes normalised price data from Redis, runs strategy rules, generates buy/sell signals. Publishes new signals to Redis pub/sub and writes to PostgreSQL for history. Python or Node.js.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-layer">Market Data Ingestion</div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-desc"><strong>Price feed connector</strong> &mdash; connects to OANDA v20 API or Twelve Data, normalises price ticks, publishes to Redis. Failover: if primary feed drops, automatically switches to secondary. Runs as a background worker process.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-layer">Cache / Pub-Sub</div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-desc"><strong>Redis</strong> &mdash; real-time price tick cache, WebSocket pub/sub for signal broadcast, session tokens, rate limiting. Single instance for Phase 1&ndash;2. Sentinel or cluster for Phase 3.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-layer">Database</div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-desc"><strong>PostgreSQL</strong> &mdash; subscriber accounts, signal history with timestamps, P&amp;L tracking, strategy configuration, subscription billing records. Daily automated backups to object storage. Start with 1 primary; add read replica at Phase 3.</div>
+    </div>
+    <div class="arch-row">
+      <div class="arch-layer">Object Storage</div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-desc"><strong>S3-compatible bucket</strong> &mdash; DB backups, backtest result exports, PDF signal reports, historical price archives. CloudAfrica Object Storage or Vultr Object Storage. Lifecycle rules: auto-delete backups &gt;30 days.</div>
+    </div>
+  </div>
+
+  <h2>Data Security &mdash; What This Means for Subscriber Protection</h2>
+  <ul>
+    <li>All API endpoints require JWT authentication &mdash; unauthenticated requests are rejected at the edge</li>
+    <li>Subscriber data (accounts, signal preferences, payment records) encrypted at rest in PostgreSQL</li>
+    <li>VPC (Virtual Private Cloud) &mdash; database servers are unreachable from the public internet</li>
+    <li>Firewall rules: only port 443 (HTTPS/WSS) is open to the public; 5432 (PostgreSQL) only accessible from app servers</li>
+    <li>Redis instance is internal-only &mdash; no public access, used only by app/signal servers within the VPC</li>
+    <li>Cloudflare WAF blocks malicious requests before they reach the origin server</li>
+  </ul>
+
+  <div class="atg-implication">
+    <div class="atg-label">ATG &mdash; Implication</div>
+    <p>The forex signal platform architecture follows industry-standard security practices: subscriber financial data is protected by VPC isolation, encryption, and JWT authentication at every layer. This is a POPIA compliance requirement for any platform handling South African personal and financial data, and it is designed correctly here. The architecture also supports FSCA regulatory requirements by maintaining full signal audit trails (every signal generated is timestamped and stored in PostgreSQL with the strategy parameters that produced it).</p>
+  </div>
+
+  <h2>Scaling Strategy</h2>
+  <p>Start with a minimal stack and scale based on subscriber count and WebSocket connection volume. Recommended progression:</p>
+  <ol>
+    <li><strong>Phase 1 (0&ndash;500 subscribers):</strong> 1 app/WebSocket server, 1 DB server, 1 Redis, Cloudflare Free. Signal engine runs on the app server. No LB needed.</li>
+    <li><strong>Phase 2 (500&ndash;2,000 subscribers):</strong> Separate WebSocket server from API server. Add load balancer (Nginx R88/mo). DB stays single primary with daily + hourly WAL backups.</li>
+    <li><strong>Phase 3 (2,000&ndash;10,000 subscribers):</strong> 2+ WebSocket servers behind sticky LB, PostgreSQL read replica for signal history queries, Redis Sentinel for HA, Cloudflare Pro for WAF.</li>
+    <li><strong>Phase 4 (10,000+ subscribers):</strong> Consider GCP Cloud Run or Kubernetes. Managed PostgreSQL at hyperscaler scale. Multi-region with Azure SA North + SA West for disaster recovery.</li>
+  </ol>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 6 — COST MINIMISATION STRATEGIES -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="sec pb">
+  <div class="sec-header">
+    <span class="sec-number">06</span>
+    <span class="sec-title">Infrastructure Cost Discipline &mdash; What ATG Should Expect</span>
+  </div>
+
+  <p>This section documents the cost management practices ATG should expect from the founding team. Infrastructure spend below <strong>2% of monthly revenue</strong> is achievable at all phases through deliberate resource decisions. These are not theoretical &mdash; they are standard industry practices the team is implementing.</p>
+
+  <div class="phase-step">
+    <div class="phase-badge">1</div>
+    <div class="phase-content">
+      <h3>Use Cloudflare Free for CDN and DDoS</h3>
+      <p>Your React frontend is a static bundle (~500 KB) served the same to every user. Putting Cloudflare in front means 90%+ of frontend requests never reach your origin server — they're served from Cloudflare's Johannesburg edge at zero cost. This reduces outbound bandwidth from your origin server significantly, lowering bandwidth bills. <strong>Saving: R100–R500/mo in bandwidth overages.</strong></p>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">2</div>
+    <div class="phase-content">
+      <h3>Right-size your VMs — don't over-provision</h3>
+      <p>Many developers over-provision from fear of under-performance. For a signal platform serving up to 500 subscribers with typical usage patterns (market hours, not all concurrent), a 4 GiB / 4 vCPU server comfortably handles the load. Start small and monitor CPU/memory. CloudAfrica lets you scale up anytime. <strong>Start at R359/mo (4 GiB), not R731/mo (8 GiB).</strong></p>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">3</div>
+    <div class="phase-content">
+      <h3>Run Redis and PostgreSQL on dedicated servers — not on the same VM as the app</h3>
+      <p>Sharing one VM for Node.js + PostgreSQL + Redis causes resource contention. Three small servers (app R359 + DB R359 + Redis R201 = R919/mo) performs better than one large server (R731/mo) and is cheaper. Isolation also makes backups, upgrades, and scaling independent. <strong>Total CloudAfrica starter: ~R919/mo ex. VAT.</strong></p>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">4</div>
+    <div class="phase-content">
+      <h3>Avoid managed database services at Phase 1</h3>
+      <p>Vultr's managed PostgreSQL costs ~$60/mo (R1,080/mo). A self-managed PostgreSQL instance on CloudAfrica costs R359/mo with identical capability. The managed service convenience is worth it at Phase 3+ when you have many clients, but in Phase 1 you save ~R720/mo by managing PostgreSQL yourself — a straightforward setup with a good backup script.</p>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">5</div>
+    <div class="phase-content">
+      <h3>Use lifecycle rules on object storage</h3>
+      <p>Database backups and report PDFs accumulate quickly. Set an automatic retention policy: delete backups older than 30 days, archive backups older than 7 days to cheaper storage. CloudAfrica object storage costs R0.18/GiB/mo — a 50 GiB backup archive costs only R9/mo, but without cleanup it can grow to hundreds of GiB. <strong>Auto-cleanup saves R50–R200/mo.</strong></p>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">6</div>
+    <div class="phase-content">
+      <h3>Reserve instances for known long-running servers</h3>
+      <p>For database servers that run 24/7, GCP and Azure offer 1-year reservations at 30–37% discount. Vultr does not currently offer reservations. CloudAfrica has no reservation model — you pay month-to-month. Reserve hyperscaler instances only when you're confident in your infrastructure design and don't need to resize frequently.</p>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">7</div>
+    <div class="phase-content">
+      <h3>Use ZAR-priced providers to hedge FX risk</h3>
+      <p>If the rand weakens from R18/$ to R22/$, a $119/mo Vultr stack goes from ~R2,142 to ~R2,618 — a R476 increase with no change in what you receive. CloudAfrica (R1,712/mo) stays exactly R1,712. For a startup managing tight cash flow, ZAR pricing is a meaningful risk reduction. Consider migrating to CloudAfrica in Phase 2 specifically for budget certainty.</p>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">8</div>
+    <div class="phase-content">
+      <h3>Implement aggressive Redis caching</h3>
+      <p>Subscribers query the same currency pair prices, signal lists, and strategy dashboards repeatedly. Cache these in Redis with short TTLs (5–30 seconds for price data, 1–5 minutes for signal lists). This reduces PostgreSQL load (smaller DB instance needed), reduces API response times, and allows more concurrent subscriber connections per app server. <strong>Good caching strategy can double effective capacity without adding a server.</strong></p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 7 — INFRASTRUCTURE RISKS & ATG DUE DILIGENCE -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">07</span>
+    <span class="sec-title">Infrastructure Risks &amp; ATG Due Diligence</span>
+  </div>
+
+  <p>This section addresses the infrastructure questions ATG should ask before making an investment decision. Each risk is presented with an honest assessment and the mitigation in place or planned.</p>
+
+  <div class="atg-implication">
+    <div class="atg-label">ATG &mdash; Context</div>
+    <p>Infrastructure risk in a platform business is largely about <strong>three things</strong>: (1) can the system stay online when subscribers expect it to be, (2) is subscriber data safe from loss or breach, and (3) can the system scale without needing a complete rebuild. All three are addressed below.</p>
+  </div>
+
+  <h2>Risk &amp; Mitigation Summary</h2>
+  <table>
+    <tr><th>Risk Area</th><th>Specific Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation in Place</th></tr>
+    <tr><td><strong>Availability</strong></td><td>Primary hosting provider has an outage</td><td>Low (99.9% uptime typical)</td><td>Medium — subscribers cannot access live signals</td><td>Cloudflare detects origin failure; documented failback procedure; estimated recovery &lt;2 hours</td></tr>
+    <tr><td><strong>Data Loss</strong></td><td>Database server fails or data is corrupted</td><td>Very Low</td><td>High</td><td>Daily automated backups to object storage; point-in-time recovery; backup tested monthly</td></tr>
+    <tr><td><strong>Data Breach</strong></td><td>Unauthorised access to subscriber data</td><td>Low (with controls)</td><td>Very High</td><td>VPC isolates DB from internet; JWT authentication; encrypted at rest; Cloudflare WAF</td></tr>
+    <tr><td><strong>FX Exposure</strong></td><td>Rand depreciation increases USD infrastructure cost</td><td>Medium (structural)</td><td>Low (small base)</td><td>Phase 2 migration to CloudAfrica (ZAR-priced) eliminates this permanently</td></tr>
+    <tr><td><strong>Scalability</strong></td><td>Infrastructure cannot handle subscriber growth</td><td>Low (planned)</td><td>Medium</td><td>Horizontal app server scaling; documented phase plan; CloudAfrica allows server addition in minutes</td></tr>
+    <tr><td><strong>Vendor Lock-in</strong></td><td>Cannot move away from chosen provider</td><td>Very Low</td><td>Low</td><td>PostgreSQL is open-source; Node.js runs anywhere; Docker containers are provider-agnostic</td></tr>
+    <tr><td><strong>Key-person</strong></td><td>Only one person knows the infrastructure setup</td><td>Medium (early stage)</td><td>High</td><td>Runbook documentation required; infrastructure-as-code (Ansible/Terraform) planned for Phase 2</td></tr>
+  </table>
+
+  <h2>ATG Questions &amp; Answers</h2>
+
+  <div class="phase-step">
+    <div class="phase-badge">Q</div>
+    <div class="phase-content">
+      <h3>What happens if the main server goes down at 9AM on a Monday?</h3>
+      <p><strong>Answer:</strong> Cloudflare detects the origin server is unreachable within 30 seconds and can show a maintenance page to clients. The team receives an automated alert (uptime monitoring via UptimeRobot or BetterStack &mdash; free tier). Recovery time depends on the failure type: a crashed Node.js process restarts automatically via PM2 in &lt;60 seconds. A full server failure requires provisioning a new server and restoring from the most recent backup &mdash; estimated 1&ndash;3 hours. At Phase 2, a second app server behind a load balancer means single-server failure causes zero downtime.</p>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">Q</div>
+    <div class="phase-content">
+      <h3>Who is responsible for database backups and what happens if data is lost?</h3>
+      <p><strong>Answer:</strong> The founding technical team is responsible. Automated daily backups run via a cron job that executes <code>pg_dump</code> and uploads to object storage (CloudAfrica or Vultr Object Storage). Backups are retained for 30 days. ATG should confirm: (a) the backup script exists and is tested, (b) a restore has been tested in a staging environment, and (c) backup completion alerts are in place. These are the three specific confirmations ATG&rsquo;s due diligence should require.</p>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">Q</div>
+    <div class="phase-content">
+      <h3>What does &ldquo;scaling&rdquo; actually look like in practice? When does infrastructure need to change?</h3>
+      <p><strong>Answer:</strong> Scaling proceeds in predictable phases tied to client count:</p>
+      <table style="margin-top:2mm;">
+        <tr><th>Phase</th><th>Client Count</th><th>Infrastructure Change</th><th>Est. Additional Cost</th></tr>
+        <tr class="scale-row-current"><td>Phase 1</td><td>0&ndash;200 clients</td><td>Current stack (1 app + 1 DB + 1 Redis). No changes needed.</td><td>R0</td></tr>
+        <tr class="scale-row-phase2"><td>Phase 2</td><td>200&ndash;400 clients</td><td>Add second app server + load balancer. DB stays same.</td><td>+R447/mo</td></tr>
+        <tr class="scale-row-phase3"><td>Phase 3</td><td>400&ndash;800 clients</td><td>3+ app servers, PostgreSQL read replica for reporting, Redis Sentinel. Cloudflare Pro.</td><td>+R1,500&ndash;R3,000/mo</td></tr>
+        <tr class="scale-row-phase4"><td>Phase 4</td><td>800+ clients</td><td>GCP Cloud Run or Kubernetes; managed hyperscaler database; multi-region consideration.</td><td>+R5,000&ndash;R15,000/mo</td></tr>
+      </table>
+      <p style="margin-top:2mm;">At every phase, infrastructure cost remains below 5% of the revenue generated at that phase. There is no &ldquo;infrastructure cliff&rdquo; that requires a complete rebuild &mdash; each step is additive.</p>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">Q</div>
+    <div class="phase-content">
+      <h3>Is there vendor lock-in risk? What happens to client data if circumstances change?</h3>
+      <p><strong>Answer:</strong> No meaningful lock-in exists. PostgreSQL is open-source and its data format is portable &mdash; a standard <code>pg_dump</code> file works on any PostgreSQL installation anywhere in the world. Node.js runs on any Linux server. Docker containers (used for deployment) are provider-agnostic. If the company changes providers, migrates to a different cloud, or needs to give clients their data, a standard database export is the mechanism &mdash; and clients own their data per the service agreement.</p>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">Q</div>
+    <div class="phase-content">
+      <h3>How is POPIA compliance handled at the infrastructure level?</h3>
+      <p><strong>Answer:</strong> All data remains within South African borders &mdash; all shortlisted providers (CloudAfrica, Vultr JHB, GCP africa-south1, Azure SA North, Hetzner SA) operate Johannesburg data centres. Data is never routed through international servers for storage. Cloudflare caches only static assets (the React dashboard code) &mdash; no subscriber data transits Cloudflare servers. This is a documented infrastructure design decision, not an assumption.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 8 — ATG ASSESSMENT & RECOMMENDATION -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="sec pb">
+  <div class="sec-header">
+    <span class="sec-number">08</span>
+    <span class="sec-title">ATG Assessment &amp; Infrastructure Recommendation</span>
+  </div>
+
+  <div class="atg-implication">
+    <div class="atg-label">ATG &mdash; Summary Assessment</div>
+    <p><strong>Infrastructure is not a risk factor.</strong> The forex signal platform is built on a sound, industry-standard architecture using PostgreSQL, Node.js, and React &mdash; all open-source, well-supported, and widely deployed in production SaaS environments globally. The provider shortlist is disciplined and well-reasoned. Cost is proportionate to scale at every phase. Data stays in South Africa. The scaling plan is documented and credible. The following three operational confirmations should be in place before launch.</p>
+  </div>
+
+  <h2>What ATG Should Confirm Before Closing</h2>
+  <table>
+    <tr><th>#</th><th>Confirmation Item</th><th>Why It Matters</th><th>How to Verify</th></tr>
+    <tr><td>1</td><td>Daily automated database backup is in place and has been tested with a successful restore</td><td>Data loss is the highest-impact infrastructure risk. A backup that has never been tested is not a backup.</td><td>Ask for a demonstration of backup restore to a staging environment, or request the backup logs showing daily completion</td></tr>
+    <tr><td>2</td><td>Uptime monitoring is configured and the team receives alerts within 5 minutes of a server failure</td><td>Subscribers expect live signals during forex market hours (24/5). Silent outages during trading sessions damage credibility and trust.</td><td>Ask which monitoring tool is in use (UptimeRobot, BetterStack, Pingdom) and review recent uptime report</td></tr>
+    <tr><td>3</td><td>A written runbook exists for the three most common failure scenarios: server crash, database corruption, and DNS failure</td><td>At Phase 1 the founding team is the operations team. Documented procedures reduce recovery time and key-person dependency.</td><td>Request the runbook document; it need not be long &mdash; 2&ndash;3 pages of clear steps is sufficient</td></tr>
+  </table>
+
+  <h2>Recommended Infrastructure Path for the Investment Period</h2>
+  <table>
+    <tr><th>Phase</th><th>Subscribers</th><th>Recommended Provider</th><th>Security Layer</th><th>Monthly Cost</th><th>ATG Action</th></tr>
+    <tr class="scale-row-current"><td><strong>Immediate</strong></td><td>0&ndash;100</td><td>CloudAfrica JHB (ZAR pricing)</td><td>Cloudflare Free</td><td>~R1,712</td><td>Confirm backups, monitoring, runbook</td></tr>
+    <tr class="scale-row-phase2"><td><strong>Phase 1</strong></td><td>100&ndash;500</td><td>CloudAfrica JHB</td><td>Cloudflare Free</td><td>~R1,712&ndash;R2,500</td><td>Monitor WebSocket connections; add Redis capacity if needed</td></tr>
+    <tr class="scale-row-phase3"><td><strong>Phase 2</strong></td><td>500&ndash;2,000</td><td>CloudAfrica (scaled)</td><td>Cloudflare Pro</td><td>~R3,000&ndash;R5,000</td><td>Separate WebSocket server + load balancer</td></tr>
+    <tr class="scale-row-phase4"><td><strong>Phase 3+</strong></td><td>2,000&ndash;10,000+</td><td>GCP africa-south1 or Azure SA</td><td>Cloudflare Pro + Argo</td><td>~R8,000&ndash;R20,000</td><td>Hyperscaler transition; managed services; enterprise SLAs</td></tr>
+  </table>
+
+  <div class="callout-green">
+    <strong>Infrastructure cost at scale:</strong> Even at R20,000/mo infrastructure spend, that represents R240,000/year. Infrastructure is never the profitability constraint in a subscription platform model &mdash; subscriber acquisition velocity is. The infrastructure will support whatever growth ATG achieves.
+  </div>
+
+  <h2>Overall Infrastructure Verdict for ATG</h2>
+  <div class="pros-cons">
+    <div class="pros">
+      <h3>Strengths</h3>
+      <ul>
+        <li>Provider selection is disciplined &mdash; eliminated non-SA options (DigitalOcean) correctly</li>
+        <li>ZAR-priced primary provider (CloudAfrica) eliminates FX risk on cost base</li>
+        <li>100% of subscriber data remains within South Africa &mdash; POPIA-compliant by design</li>
+        <li>Open-source stack (PostgreSQL, Node.js) &mdash; no vendor lock-in, portable forever</li>
+        <li>Infrastructure cost under R2,600/mo at launch for full platform + GitHub</li>
+        <li>Clear four-phase scaling plan &mdash; no infrastructure cliff or rebuild required</li>
+        <li>Full signal audit trail (timestamped, strategy-tagged) for FSCA compliance</li>
+        <li>Cloudflare planned as zero-cost security and CDN layer</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h3>Areas Requiring Confirmation</h3>
+      <ul>
+        <li>Backup restore test &mdash; must be confirmed (not assumed)</li>
+        <li>Uptime monitoring &mdash; must be confirmed as active</li>
+        <li>Runbook documentation &mdash; should be in place before first subscriber launch</li>
+        <li>Infrastructure-as-code (Terraform/Ansible) &mdash; planned for Phase 2; reduces key-person risk</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Provider Reference</h2>
+  <table>
+    <tr><th>Provider</th><th>Website</th><th>SA Contact</th><th>Status</th></tr>
+    <tr><td>CloudAfrica</td><td>cloudafrica.net</td><td>support@cloudafrica.net</td><td>Recommended Phase 1&ndash;2</td></tr>
+    <tr><td>Vultr</td><td>vultr.com</td><td>Online portal</td><td>Current deployment</td></tr>
+    <tr><td>Hetzner SA</td><td>hetzner.co.za</td><td>+27 (21) 200-1237</td><td>Backup option (JHB + CPT)</td></tr>
+    <tr><td>Google Cloud</td><td>cloud.google.com</td><td>+27 11 997 7900</td><td>Phase 3+ (africa-south1)</td></tr>
+    <tr><td>Microsoft Azure</td><td>azure.microsoft.com</td><td>+27 11 516 7000</td><td>Phase 4 enterprise (JHB + CPT)</td></tr>
+    <tr><td>Cloudflare</td><td>cloudflare.com</td><td>Online portal</td><td>Immediate &mdash; all phases</td></tr>
+  </table>
+
+  <div class="highlight" style="margin-top:5mm;">
+    <strong>Submitted by:</strong> ATG &mdash; Internal Infrastructure Research<br/>
+    <strong>Submitted to:</strong> ATG Internal Use &mdash; Infrastructure Decision Pack<br/>
+    <strong>Document version:</strong> 2.0 (ATG Submission) &mdash; June 2026<br/>
+    <strong>Exchange rate assumption:</strong> R18 = $1 USD (indicative &mdash; verify current rate before procurement decisions)<br/>
+    <strong>Note:</strong> All prices are estimates. Verify directly with providers before budgeting. CloudAfrica prices shown ex. VAT; add 15% for VAT-inclusive figures. Hetzner SA pricing is indicative based on publicly known historical tiers &mdash; confirm at hetzner.co.za.
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 9 — FOREX TRADING TOOL HOSTING -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="sec pb">
+  <div class="sec-header">
+    <span class="sec-number">09</span>
+    <span class="sec-title">Forex Trading Tool &mdash; Infrastructure Requirements</span>
+  </div>
+
+  <p>ATG intends to host its own servers to run a <strong>live forex trading signal tool</strong> &mdash; a platform that generates and serves real-time forex signals to subscribers. This section covers the specific hosting architecture, market data feed costs, and operational requirements for this platform. The signal tool will be hosted on ATG&rsquo;s own SA-based infrastructure.</p>
+
+  <div class="atg-implication">
+    <div class="atg-label">ATG &mdash; Critical Context</div>
+    <p>The hosting requirements for a forex trading tool depend on <strong>what kind of tool it is</strong>. ATG&rsquo;s stated use case is a <strong>live signal platform (Scenario B below)</strong> &mdash; but for completeness all three scenarios are documented so this research can support future proposals and expanded scope decisions.</p>
+  </div>
+
+  <h2>Scenario Classification &mdash; What Type of Tool?</h2>
+  <table>
+    <tr><th>Scenario</th><th>Description</th><th>Regulatory Requirement</th><th>Latency Sensitivity</th><th>Infrastructure Complexity</th></tr>
+    <tr><td><strong>A &mdash; Internal Tool</strong></td><td>ATG&rsquo;s own proprietary trading: algorithms, bots, or analysis tools for ATG&rsquo;s own capital only</td><td>None (own capital)</td><td>Medium &mdash; strategy-dependent</td><td>Low&ndash;Medium</td></tr>
+    <tr><td><strong>B &mdash; Signal / Analytics Platform</strong></td><td>Generates forex signals, market analysis, or trade recommendations served to subscribers</td><td>FSCA Category II FSP (advice)</td><td>Low (signals, not execution)</td><td>Medium</td></tr>
+    <tr><td><strong>C &mdash; Client-Facing Trading Platform</strong></td><td>SA clients log in, fund accounts, and place real forex trades through the platform</td><td>FSCA Category I FSP (intermediary) or full ODP licence</td><td>High (execution speed matters)</td><td>High</td></tr>
+  </table>
+
+  <div class="explainer">
+    <h3>What Does &ldquo;Latency&rdquo; Mean for Forex Trading? &mdash; Plain English</h3>
+    <p><strong>Latency</strong> is the time it takes for your system to send a buy/sell order and receive confirmation. In forex, prices move in milliseconds. The closer your server is physically to the broker&rsquo;s execution server, the faster your orders land.</p>
+    <p>Most major forex brokers (OANDA, IG Group, Interactive Brokers) host their execution infrastructure in <strong>London (LD4 Equinix data centre)</strong> or <strong>New York (NY4/NY5 Equinix)</strong>. A Johannesburg-hosted server has approximately <strong>170ms ping to London</strong> and <strong>220ms ping to New York</strong>. For context:</p>
+    <ul>
+      <li><strong>High-frequency trading (HFT)</strong> &mdash; requires &lt;1ms. SA hosting is physically impossible for this. Requires colocation in LD4/NY4.</li>
+      <li><strong>Algorithmic trading (5-minute to daily timeframes)</strong> &mdash; 170ms is irrelevant. SA hosting works perfectly.</li>
+      <li><strong>Signal platforms and analytics tools</strong> &mdash; latency does not matter. Any reliable SA hosting is appropriate.</li>
+      <li><strong>Client-facing trading UI</strong> &mdash; SA hosting for the frontend is fine; the execution path (API to broker) adds 170ms but is acceptable for retail clients.</li>
+    </ul>
+    <p><strong>ATG&rsquo;s recommendation:</strong> Unless the strategy specifically requires sub-second execution, Johannesburg-based hosting (CloudAfrica or Vultr JHB) is entirely appropriate and avoids the significantly higher cost of London colocation (~£500&ndash;£2,000/mo for a rack unit at LD4).</p>
+  </div>
+
+  <h2>Market Data Feed Costs &mdash; What It Costs to Get Live Forex Prices</h2>
+  <p>A forex trading tool requires a live price feed. The cost varies enormously by provider tier. Retail-grade feeds are adequate for most use cases; institutional feeds are for regulated platforms with high-volume client order flow.</p>
+  <table>
+    <tr><th>Provider</th><th>Type</th><th>USD/Month</th><th>ZAR/Month (~R18)</th><th>Best For</th><th>Notes</th></tr>
+    <tr><td><strong>OANDA v20 REST API</strong></td><td>Forex (real broker prices)</td><td>$0</td><td>R0</td><td>Scenario A &amp; B</td><td>Free with OANDA trading account. Real spread prices. Rate-limited. Excellent for retail tools.</td></tr>
+    <tr><td><strong>Twelve Data</strong></td><td>Forex, stocks, crypto</td><td>$0&ndash;$29</td><td>R0&ndash;R522</td><td>Scenario A &amp; B</td><td>Free tier: 800 req/day. Starter $8/mo. Growth $29/mo for higher rate limits.</td></tr>
+    <tr><td><strong>Alpha Vantage</strong></td><td>Forex, stocks</td><td>$0&ndash;$50</td><td>R0&ndash;R900</td><td>Scenario A &amp; B</td><td>Free: 25 req/day. Premium $50/mo for 75 req/min. Good historical data.</td></tr>
+    <tr><td><strong>Polygon.io</strong></td><td>Stocks + crypto (limited forex)</td><td>$0&ndash;$199</td><td>R0&ndash;R3,582</td><td>Scenario B &amp; C</td><td>Forex data on Starter+ plans. Stocks and crypto more comprehensive.</td></tr>
+    <tr><td><strong>Interactive Brokers API</strong></td><td>Forex (real execution + prices)</td><td>$0&ndash;$10</td><td>R0&ndash;R180</td><td>Scenario A</td><td>Free with IBKR account. Low commissions. TWS API or Client Portal API. Best for algo execution.</td></tr>
+    <tr><td><strong>Dukascopy JForex API</strong></td><td>Forex (Swiss bank, real spreads)</td><td>$0</td><td>R0</td><td>Scenario A &amp; B</td><td>Free with Dukascopy account. Historical tick data available. Strong institutional reputation.</td></tr>
+    <tr><td><strong>Bloomberg B-PIPE</strong></td><td>All asset classes</td><td>~$2,000+</td><td>~R36,000+</td><td>Scenario C (large scale)</td><td>Institutional grade. Regulatory-grade data. Required for licensed brokerages at scale.</td></tr>
+    <tr><td><strong>Refinitiv (LSEG) Elektron</strong></td><td>All asset classes</td><td>~$1,800+</td><td>~R32,400+</td><td>Scenario C (large scale)</td><td>Competitor to Bloomberg. Used by SA banks and major brokers.</td></tr>
+  </table>
+  <p style="font-size:8pt;color:#666;margin-top:1mm;"><strong>Practical starting point:</strong> OANDA API (free, real prices) or Twelve Data ($8&ndash;$29/mo) covers Scenarios A and B entirely. Bloomberg/Refinitiv is only relevant when ATG operates a licensed brokerage with institutional client volumes.</p>
+
+  <h2>Recommended Hosting Stack &mdash; Forex Trading Tool (Scenarios A &amp; B)</h2>
+  <table>
+    <tr><th>Component</th><th>What It Does</th><th>CloudAfrica Package</th><th>Cost/Month (ex. VAT)</th></tr>
+    <tr><td>Application Server</td><td>Trading algorithm logic, signal generation, API integration with OANDA/IBKR, REST API for frontend</td><td>CA-4GB-STD (4 vCPU, 4 GiB)</td><td>R359</td></tr>
+    <tr><td>Database Server</td><td>Trade history, positions, P&amp;L records, historical price data, user portfolios (PostgreSQL)</td><td>CA-4GB-STD (4 vCPU, 4 GiB)</td><td>R359</td></tr>
+    <tr><td>Cache / Price Store</td><td>Real-time price tick storage (Redis); WebSocket session management; rate limiting</td><td>CA-2GB-STD (2 vCPU, 2 GiB)</td><td>R201</td></tr>
+    <tr><td>WebSocket Server</td><td>Push live prices to browser clients in real time. Can run on the same app server at Phase 1.</td><td>Included in app server</td><td>R0 (Phase 1)</td></tr>
+    <tr><td>Object Storage</td><td>Trade history exports, PDF statements, strategy backtest results</td><td>200 GiB</td><td>~R100</td></tr>
+    <tr><td>Market Data Feed</td><td>Live forex prices via API</td><td>OANDA (free) or Twelve Data Starter</td><td>R0&ndash;R144</td></tr>
+    <tr><td>Cloudflare (Free)</td><td>DDoS protection, SSL, CDN for frontend dashboard</td><td>Free</td><td>R0</td></tr>
+    <tr><td><strong>Estimated Total</strong></td><td></td><td></td><td><strong>~R1,019&ndash;R1,163/mo ex. VAT</strong></td></tr>
+  </table>
+  <p style="font-size:8pt;color:#666;margin-top:1mm;">Add 15% VAT = <strong>~R1,172&ndash;R1,338/mo incl. VAT</strong> for a fully functional forex trading/signal platform on CloudAfrica JHB infrastructure.</p>
+
+  <div class="atg-implication">
+    <div class="atg-label">ATG &mdash; Implication</div>
+    <p>A forex signal/analytics platform (Scenario B &mdash; ATG&rsquo;s primary use case) can be hosted for <strong>under R1,400/mo all-in</strong> on the same CloudAfrica JHB infrastructure. The data feed (OANDA or Twelve Data) adds R0&ndash;R500/mo. <strong>The infrastructure cost is not a barrier to entry for this product.</strong> The real considerations are: (1) FSCA licensing if subscribers will receive trade advice (~R50,000&ndash;R200,000 in registration and compliance costs depending on category), and (2) development time to build the signal generation engine, backtesting framework, and subscriber delivery system (WebSocket push, email, Telegram). ATG should budget for the licensing process early as FSCA timelines can be 3&ndash;12 months.</p>
+  </div>
+
+  <h2>Forex Tool &mdash; Elevated Uptime Requirements</h2>
+  <p>A forex trading tool must operate <strong>24 hours a day, Monday through Friday</strong> (forex markets are open from Sydney open Sunday 11PM SAST through New York close Friday 10PM SAST). Downtime during market hours has financial consequences for subscribers.</p>
+  <table>
+    <tr><th>Requirement</th><th>Standard</th><th>Additional Action Required</th></tr>
+    <tr><td>Operating hours</td><td>24/5 (Sunday 11PM&ndash;Friday 10PM SAST)</td><td>24/7 uptime monitoring with immediate alerts</td></tr>
+    <tr><td>Acceptable downtime</td><td>Near-zero during market hours</td><td>Redundant app server or auto-restart (PM2)</td></tr>
+    <tr><td>Data feed failure</td><td>Must failover to secondary feed</td><td>Primary: OANDA; Fallback: Twelve Data</td></tr>
+    <tr><td>Server maintenance</td><td>Weekends only (Sat&ndash;Sun)</td><td>Maintenance windows in deployment runbook</td></tr>
+    <tr><td>Database backup frequency</td><td>Hourly or transaction-log-based</td><td>WAL archiving to object storage for point-in-time recovery</td></tr>
+  </table>
+
+  <h2>FSCA Regulatory Note &mdash; ATG Must Confirm Before Launch</h2>
+  <div class="callout-red" style="background:#fff3cd;border-left:5px solid #e67e22;padding:4mm 5mm;margin:3mm 0;border-radius:0 4px 4px 0;">
+    <strong>South African Regulatory Requirement:</strong> The Financial Sector Conduct Authority (FSCA) regulates forex-related financial services. ATG must confirm the regulatory classification before any client-facing deployment:
+    <ul style="margin-top:2mm;">
+      <li><strong>Category I FSP licence</strong>: Required if the platform intermediates between clients and a forex market or broker (execution services)</li>
+      <li><strong>Category II FSP licence</strong>: Required if the platform provides discretionary forex investment management</li>
+      <li><strong>Category IIA FSP licence</strong>: Required for hedge fund management involving forex</li>
+      <li><strong>Internal/proprietary trading only</strong>: No FSP licence required if ATG trades its own capital without client funds</li>
+    </ul>
+    <p style="margin-top:2mm;"><strong>Contact:</strong> FSCA at <strong>info@fsca.co.za</strong> or +27 (12) 428-8000 &mdash; licensing enquiries should be initiated early as FSCA processing timelines can be 3&ndash;12 months.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SECTION 10 — GITHUB & DEVELOPER PLATFORM COSTS -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="sec pb">
+  <div class="sec-header">
+    <span class="sec-number">10</span>
+    <span class="sec-title">GitHub &amp; Developer Platform Costs</span>
+  </div>
+
+  <p>GitHub is the platform where all source code for ATG&rsquo;s products (forex signal platform and any future ATG products) is stored, versioned, reviewed, and deployed from. This section covers the full cost picture of GitHub for ATG, including CI/CD (automated build and deployment), AI coding assistance, and security scanning.</p>
+
+  <div class="atg-implication">
+    <div class="atg-label">ATG &mdash; Implication</div>
+    <p>GitHub is priced in <strong>US Dollars</strong>, making it subject to the same FX exposure as Vultr. However, GitHub costs are relatively small and there is no ZAR-pricing alternative of comparable quality. The key decision for ATG is plan tier (Free vs Team vs Enterprise) and whether to fund <strong>GitHub Copilot</strong> &mdash; the AI coding assistant that measurably accelerates software development velocity. At $19/developer/month for Copilot Business, a 3-person engineering team costs $57/mo (~R1,026/mo) for a tool that can reduce development time by 20&ndash;35% on routine coding tasks.</p>
+  </div>
+
+  <h2>GitHub Plan Comparison (USD &rarr; ZAR at R18/$)</h2>
+  <table>
+    <tr><th>Plan</th><th>USD/User/Month</th><th>ZAR/User/Month</th><th>Actions Minutes/Month</th><th>Storage</th><th>Key Features</th></tr>
+    <tr><td><strong>Free</strong></td><td>$0</td><td>R0</td><td>2,000 min</td><td>500 MB</td><td>Unlimited public + private repos; basic CI/CD; community support. Suitable for solo developers and open-source.</td></tr>
+    <tr><td><strong>Team</strong></td><td>$4</td><td>~R72</td><td>3,000 min</td><td>2 GB</td><td>Protected branches; required reviewers; draft PRs; 24/7 support. <strong>Minimum recommended for a multi-developer proprietary codebase.</strong></td></tr>
+    <tr><td><strong>Enterprise</strong></td><td>$21</td><td>~R378</td><td>50,000 min</td><td>50 GB</td><td>SAML SSO; audit log streaming; advanced compliance; GHES (self-hosted option); SLA. Required for regulated financial platforms at scale.</td></tr>
+  </table>
+  <p style="font-size:8pt;color:#666;margin-top:1mm;">All plans include unlimited private repositories. Actions minutes are for Linux runners on GitHub-hosted infrastructure.</p>
+
+  <h2>GitHub Actions (CI/CD) &mdash; Build, Test &amp; Deploy Automation</h2>
+  <p>GitHub Actions is the automation engine: every time a developer pushes code, Actions can automatically run tests, build the application, check for security vulnerabilities, and deploy to the hosting server. This reduces manual deployment errors and speeds up the release cycle.</p>
+  <table>
+    <tr><th>Runner Type</th><th>Cost</th><th>ZAR Equivalent</th><th>Notes</th></tr>
+    <tr><td>Linux (standard)</td><td>$0.008/min</td><td>~R0.14/min</td><td>Most builds use Linux. A 10-minute build = R1.44.</td></tr>
+    <tr><td>Windows (standard)</td><td>$0.016/min</td><td>~R0.29/min</td><td>2&times; Linux price. Not needed for Node.js/Python builds.</td></tr>
+    <tr><td>macOS (standard)</td><td>$0.08/min</td><td>~R1.44/min</td><td>10&times; Linux price. Only needed for iOS/macOS app builds.</td></tr>
+    <tr><td>Self-hosted runner</td><td>$0/min</td><td>R0/min</td><td>Run Actions on your own CloudAfrica server. Free but requires server management.</td></tr>
+  </table>
+  <p style="font-size:8pt;color:#666;margin-top:1mm;">A typical development workflow (10 builds/day &times; 10 min each &times; 22 working days = 2,200 min/month) would use R308/mo in Actions minutes, or fall mostly within the Team plan&rsquo;s 3,000 free minutes.</p>
+
+  <h2>GitHub Copilot &mdash; AI Coding Assistant</h2>
+  <table>
+    <tr><th>Plan</th><th>USD/Month/User</th><th>ZAR/Month/User</th><th>Key Features</th></tr>
+    <tr><td><strong>Copilot Individual</strong></td><td>$10</td><td>~R180</td><td>Code completion, chat, CLI assistance. Single developer. Billing to personal account.</td></tr>
+    <tr><td><strong>Copilot Business</strong></td><td>$19</td><td>~R342</td><td>Everything in Individual + organisation-wide policy control, audit logs, IP indemnity, VPN proxy support. <strong>Recommended for teams.</strong></td></tr>
+    <tr><td><strong>Copilot Enterprise</strong></td><td>$39</td><td>~R702</td><td>Everything in Business + custom knowledge bases indexed from your own codebase, fine-tuned suggestions. Useful at 10+ developers.</td></tr>
+  </table>
+
+  <h2>Additional GitHub Services</h2>
+  <table>
+    <tr><th>Service</th><th>What It Does</th><th>Cost</th><th>ZAR/Month (~R18)</th></tr>
+    <tr><td>GitHub Advanced Security</td><td>CodeQL vulnerability scanning, secret scanning, dependency review</td><td>$49/active committer/mo</td><td>~R882/committer</td></tr>
+    <tr><td>GitHub Packages</td><td>Store Docker images, npm packages, built artefacts privately</td><td>$0.008/GiB/day beyond free</td><td>~R0.14/GiB/day</td></tr>
+    <tr><td>GitHub Codespaces</td><td>Full cloud dev environment in browser (VS Code in cloud); develop without local setup</td><td>Free 60 core-hours/mo then $0.18/core-hour</td><td>~R3.24/core-hour beyond free</td></tr>
+    <tr><td>Dependabot</td><td>Automatically opens PRs when dependencies have known security vulnerabilities</td><td>Free (all plans)</td><td>R0</td></tr>
+  </table>
+
+  <h2>Total GitHub Cost Scenarios for ATG&rsquo;s Engineering Team</h2>
+  <table>
+    <tr><th>Scenario</th><th>Team Size</th><th>Plan</th><th>Copilot</th><th>USD/Month</th><th>ZAR/Month (~R18)</th></tr>
+    <tr><td>Minimum (solo developer)</td><td>1 dev</td><td>Free</td><td>Individual ($10)</td><td>$10</td><td>~R180</td></tr>
+    <tr><td>Small team, no AI</td><td>3 devs</td><td>Team ($4/user)</td><td>None</td><td>$12</td><td>~R216</td></tr>
+    <tr><td><strong>Small team + Copilot Business</strong></td><td><strong>3 devs</strong></td><td><strong>Team</strong></td><td><strong>Business ($19/user)</strong></td><td><strong>$69</strong></td><td><strong>~R1,242</strong></td></tr>
+    <tr><td>Growing team + Copilot Business</td><td>5 devs</td><td>Team</td><td>Business ($19/user)</td><td>$115</td><td>~R2,070</td></tr>
+    <tr><td>Enterprise (regulated fintech)</td><td>5 devs</td><td>Enterprise ($21/user)</td><td>Business ($19/user)</td><td>$200</td><td>~R3,600</td></tr>
+  </table>
+
+  <div class="atg-implication">
+    <div class="atg-label">ATG &mdash; Implication</div>
+    <p>The <strong>recommended starting configuration</strong> for ATG is <strong>GitHub Team + Copilot Business</strong> for the active engineering team &mdash; at ~R1,242/mo for 3 developers. This gives: private repositories for all proprietary trading code, protected branches preventing untested code from reaching production, automated CI/CD deployments via GitHub Actions, and AI-assisted coding that independent studies show reduces routine development time by 20&ndash;35%. The alternative &mdash; Free plan, no Copilot &mdash; costs R0/mo but creates meaningful operational risk: no code review enforcement, slower development velocity, and no audit trail for code changes. For a platform handling subscriber financial data, the Team plan&rsquo;s protected-branch enforcement and required reviewer controls are not optional at professional deployment. <strong>This is an infrastructure cost ATG should fund immediately.</strong></p>
+  </div>
+
+  <h2>Recommended GitHub Configuration for ATG</h2>
+  <div class="phase-step">
+    <div class="phase-badge">1</div>
+    <div class="phase-content">
+      <h3>Organisation Structure</h3>
+      <p>Create one <strong>GitHub Organisation</strong> (e.g., <code>atg-platforms</code>) to house all repositories. Repositories: <code>forex-signal-tool</code>, <code>shared-libraries</code>, <code>infrastructure</code> (Terraform/Ansible configs). Organisation-level billing is simpler than managing multiple personal accounts.</p>
+    </div>
+  </div>
+  <div class="phase-step">
+    <div class="phase-badge">2</div>
+    <div class="phase-content">
+      <h3>Branch Protection Rules</h3>
+      <p>Set <code>main</code> and <code>production</code> branches as protected: require at least 1 reviewer approval before merge; require GitHub Actions CI to pass before merge. This prevents untested or broken code from reaching the live system. A non-negotiable practice for any financial software platform.</p>
+    </div>
+  </div>
+  <div class="phase-step">
+    <div class="phase-badge">3</div>
+    <div class="phase-content">
+      <h3>Automated Deployment Pipeline</h3>
+      <p>GitHub Actions workflow: on push to <code>main</code> &rarr; run tests &rarr; build Docker image &rarr; push to container registry &rarr; SSH deploy to CloudAfrica/Vultr server. Full automated deployment in ~8&ndash;12 minutes. Eliminates manual deployment errors. Uses ~300&ndash;500 Actions minutes/month, well within the Team plan&rsquo;s 3,000 free minutes.</p>
+    </div>
+  </div>
+  <div class="phase-step">
+    <div class="phase-badge">4</div>
+    <div class="phase-content">
+      <h3>Secret Management</h3>
+      <p>Store all API keys, database passwords, and infrastructure credentials as <strong>GitHub Secrets</strong> &mdash; encrypted, never visible in logs, accessible only to authorised Actions workflows. This prevents credentials from appearing in source code &mdash; a common security failure in early-stage startups with severe consequences for a fintech platform.</p>
+    </div>
+  </div>
+
+  <h2>Total Platform Cost Summary &mdash; ATG Full Stack</h2>
+  <p>Combining forex signal tool hosting and GitHub into a single monthly view:</p>
+  <table>
+    <tr><th>Line Item</th><th>Provider</th><th>Currency</th><th>ZAR/Month (est.)</th></tr>
+    <tr><td>Forex Signal Platform Infrastructure</td><td>CloudAfrica JHB</td><td>ZAR</td><td>~R1,172&ndash;R1,338 incl. VAT</td></tr>
+    <tr><td>Live Forex Market Data Feed</td><td>OANDA (free) or Twelve Data</td><td>Free&ndash;USD</td><td>R0&ndash;R522</td></tr>
+    <tr><td>Cloudflare</td><td>Cloudflare</td><td>USD</td><td>R0 (Free plan)</td></tr>
+    <tr><td>GitHub Team (3 developers)</td><td>GitHub</td><td>USD</td><td>~R216</td></tr>
+    <tr><td>GitHub Copilot Business (3 developers)</td><td>GitHub</td><td>USD</td><td>~R1,026</td></tr>
+    <tr><td><strong>Total Monthly Platform Cost</strong></td><td></td><td></td><td><strong>~R2,414&ndash;R3,102/mo</strong></td></tr>
+  </table>
+  <p style="font-size:8pt;color:#666;margin-top:1mm;">This is the full technology infrastructure cost for ATG running the forex signal platform in production, with a 3-person engineering team using AI-assisted development. The platform, data feed, security, and dev tools &mdash; all under R3,200/mo.</p>
+
+  <div class="highlight" style="margin-top:5mm;">
+    <strong>Scope:</strong> This document covers cloud hosting infrastructure, developer platform costs, and live forex signal tool hosting for ATG&rsquo;s technology portfolio.<br/>
+    <strong>Prepared by:</strong> ATG<br/>
+    <strong>Document version:</strong> 3.0 (Forex Signal Platform + GitHub) &mdash; June 2026<br/>
+    <strong>Exchange rate:</strong> R18 = $1 USD (indicative). All USD prices convert at this rate; verify current rate before committing to any USD-denominated spend.
+  </div>
+</div>
+
+</body>
+</html>

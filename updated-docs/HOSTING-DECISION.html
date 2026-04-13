@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>ATG — AI Trading Bot Hosting Decision</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm 22mm 18mm;
+    @top-left   { content: "ATG — Hosting Decision"; font-size:8pt; color:#888; font-family:Arial,sans-serif; }
+    @top-right  { content: "CONFIDENTIAL"; font-size:8pt; color:#888; font-family:Arial,sans-serif; }
+    @bottom-center { content: counter(page); font-size:8pt; color:#888; font-family:Arial,sans-serif; }
+  }
+  @page cover-page {
+    margin: 0;
+    @top-left   { content: none; }
+    @top-right  { content: none; }
+    @bottom-center { content: none; }
+  }
+
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:Arial,'Helvetica Neue',sans-serif; font-size:9.5pt; color:#1A0A2E; line-height:1.65; }
+
+  .cover {
+    page: cover-page;
+    page-break-after:always;
+    background: linear-gradient(155deg,#0a1628 0%,#1a2d5a 55%,#0d1f3e 100%);
+    color:#fff;
+    padding:28mm 24mm 20mm;
+    height:297mm;
+  }
+  .cover-top-bar { width:56px; height:4px; background:#c9a84c; margin-bottom:12mm; border-radius:2px; }
+  .cover-logo    { font-size:26pt; font-weight:900; letter-spacing:2px; color:#c9a84c; }
+  .cover-slug    { font-size:9pt; color:#8899bb; margin-top:2mm; letter-spacing:3px; text-transform:uppercase; }
+  .cover-title   { margin-top:20mm; font-size:30pt; font-weight:900; line-height:1.15; text-transform:uppercase; letter-spacing:2px; }
+  .cover-title span { color:#c9a84c; }
+  .cover-sub     { margin-top:6mm; font-size:12pt; color:rgba(255,255,255,0.75); font-weight:400; letter-spacing:1px; }
+  .cover-divider { width:80px; height:3px; background:linear-gradient(90deg,transparent,#c9a84c,transparent); margin:10mm 0; }
+  .cover-meta    { margin-top:12mm; display:flex; gap:14mm; flex-wrap:wrap; }
+  .cover-meta-item label { display:block; font-size:7pt; text-transform:uppercase; letter-spacing:1.5px; color:#8899bb; margin-bottom:1mm; }
+  .cover-meta-item span  { font-size:9.5pt; font-weight:700; color:#fff; }
+  .cover-stage-badge {
+    display:inline-block; margin-top:10mm;
+    border:1.5px solid #c9a84c; color:#c9a84c;
+    font-size:7.5pt; font-weight:900; letter-spacing:3px;
+    padding:3mm 7mm; border-radius:20px; text-transform:uppercase;
+  }
+  .cover-footer  { border-top:1px solid #2a3a5a; padding-top:4mm; margin-top:auto; display:flex; justify-content:space-between; font-size:7.5pt; color:#8899bb; position:absolute; bottom:20mm; left:24mm; right:24mm; }
+
+  .sec { margin-bottom: 7mm; }
+  .pb  { page-break-before:always; }
+
+  .sec-header { display:flex; align-items:center; gap:3mm; margin-bottom:4mm; }
+  .sec-number {
+    background:#c9a84c; color:#0a1628;
+    font-size:7.5pt; font-weight:900; letter-spacing:2px;
+    padding:1.5mm 4mm; border-radius:12px; white-space:nowrap; text-transform:uppercase;
+  }
+  .sec-title {
+    font-size:14pt; font-weight:900; color:#0a1628;
+    text-transform:uppercase; letter-spacing:1.5px;
+    border-bottom:2.5px solid #c9a84c; padding-bottom:2mm; flex:1;
+  }
+
+  h2  { font-size:10.5pt; font-weight:800; color:#0a1628; margin:5mm 0 2mm; text-transform:uppercase; letter-spacing:0.5px; }
+  h3  { font-size:9.5pt; font-weight:700; color:#1a2c4a; margin:3.5mm 0 1.5mm; }
+  p   { margin-bottom:2.5mm; }
+  ul  { margin:2mm 0 3mm 5mm; }
+  ul li { margin-bottom:1mm; }
+  strong { color:#0a1628; }
+
+  table { width:100%; border-collapse:collapse; margin:3mm 0; font-size:8.5pt; }
+  th { background:#0a1628; color:#c9a84c; font-weight:700; padding:2.5mm 3mm; text-align:left; font-size:7.5pt; letter-spacing:0.5px; text-transform:uppercase; }
+  td { border:1px solid #dde; padding:2mm 3mm; vertical-align:top; }
+  tr:nth-child(even) td { background:#f5f0ff; }
+
+  .highlight   { background:#fffbe6; border-left:4px solid #c9a84c; padding:3mm 4mm; margin:3mm 0; font-size:9pt; }
+  .callout-green { background:#f0fff4; border-left:4px solid #27ae60; padding:3mm 4mm; margin:3mm 0; font-size:9pt; }
+
+  .kpi-row { display:flex; gap:4mm; margin:4mm 0; flex-wrap:wrap; }
+  .kpi-box {
+    flex:1; min-width:28mm;
+    background:#0a1628; color:#fff;
+    padding:3mm 4mm; border-radius:4px; text-align:center;
+    border-bottom:3px solid #c9a84c;
+  }
+  .kpi-box .kpi-val  { font-size:13pt; font-weight:900; color:#c9a84c; line-height:1.1; }
+  .kpi-box .kpi-lbl  { font-size:7pt; text-transform:uppercase; letter-spacing:1px; color:#aaa; margin-top:1mm; }
+
+  .pros-cons { display:flex; gap:4mm; margin:3mm 0; }
+  .pros, .cons { flex:1; }
+  .pros h3 { color:#27ae60; }
+  .cons h3 { color:#c0392b; }
+  .pros ul li::before { content:"✓ "; color:#27ae60; font-weight:700; }
+  .cons ul li::before { content:"✗ "; color:#c0392b; font-weight:700; }
+  .pros ul, .cons ul { list-style:none; margin-left:0; }
+
+  .provider-card {
+    border:1.5px solid #dde; border-radius:6px;
+    margin-bottom:5mm; overflow:hidden;
+  }
+  .provider-header {
+    background:#0a1628; color:#fff; padding:3mm 5mm;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .provider-header .prov-name { font-size:12pt; font-weight:900; color:#c9a84c; letter-spacing:1px; }
+  .provider-header .prov-tag  { font-size:7.5pt; color:#aab; letter-spacing:2px; text-transform:uppercase; }
+  .provider-badge {
+    font-size:7pt; font-weight:900; letter-spacing:1.5px;
+    padding:1mm 3mm; border-radius:10px; text-transform:uppercase;
+  }
+  .badge-green  { background:#27ae60; color:#fff; }
+  .badge-amber  { background:#c9a84c; color:#0a1628; }
+
+  .verdict-box {
+    background: linear-gradient(135deg,#0a1628 0%,#1a2d5a 100%);
+    color:#fff; padding:5mm 6mm; border-radius:6px; margin:4mm 0;
+    border:2px solid #c9a84c;
+  }
+  .verdict-box h2 { color:#c9a84c; margin-top:0; }
+  .verdict-box p { color:rgba(255,255,255,0.9); }
+  .verdict-box strong { color:#c9a84c; }
+
+  .fine-print {
+    background:#f8f7ff; border:1.5px solid #c9a84c;
+    border-radius:6px; padding:4mm 5mm; margin:4mm 0;
+  }
+  .fine-print h3 { color:#c0392b; margin-bottom:2mm; }
+  .fine-print p { font-size:9pt; margin-bottom:1.5mm; }
+  .fine-print strong { color:#c0392b; }
+
+  .atg-implication {
+    background: linear-gradient(135deg,#0a1628 0%,#1a2d5a 100%);
+    color:#fff; border-left:5px solid #c9a84c;
+    padding:4mm 5mm; margin:4mm 0; border-radius:0 4px 4px 0;
+  }
+  .atg-implication .atg-label {
+    font-size:7pt; font-weight:900; letter-spacing:2px; text-transform:uppercase;
+    color:#c9a84c; margin-bottom:1.5mm;
+  }
+  .atg-implication p { margin:0; font-size:9pt; color:rgba(255,255,255,0.9); }
+  .atg-implication strong { color:#c9a84c; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ COVER PAGE ═══════════════════════ -->
+<div class="cover" style="position:relative;">
+  <div class="cover-top-bar"></div>
+  <div class="cover-logo">ATG</div>
+  <div class="cover-slug">Internal Decision Document</div>
+
+  <div class="cover-title">
+    AI Trading Bot<br/>
+    <span>Hosting Decision</span>
+  </div>
+
+  <div class="cover-sub">Which Windows VPS to run MT5 on, what it costs, and the fine print</div>
+
+  <div class="cover-divider"></div>
+
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <label>What It Does</label>
+      <span>AI analyses forex markets &amp; places trades on MetaTrader 5</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Market Data</label>
+      <span>Free — Nasdaq.com &amp; Yahoo Finance</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Hosting</label>
+      <span>Windows VPS with MT5 installed</span>
+    </div>
+    <div class="cover-meta-item">
+      <label>Monthly Cost</label>
+      <span>~R475 – R792 / month</span>
+    </div>
+  </div>
+
+  <div class="cover-stage-badge">Decision Required</div>
+
+  <div class="cover-footer">
+    <span>ATG — Confidential</span>
+    <span>April 2026</span>
+  </div>
+</div>
+
+
+<!-- ═══════════════ SECTION 1 — WHAT WE'RE HOSTING ═══════════════ -->
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">01</span>
+    <span class="sec-title">What We're Hosting</span>
+  </div>
+
+  <p>ATG's product is an <strong>AI-powered automated forex trading bot</strong>. It pulls free market data from Nasdaq.com and Yahoo Finance, uses AI to analyse price action and market conditions, and places trades directly on <strong>MetaTrader 5 (MT5)</strong>.</p>
+
+  <p>There are no subscribers, no website, no web dashboard. It is a background process that runs on a server 24 hours a day during market hours, making trades autonomously.</p>
+
+  <h2>What We Need</h2>
+  <table>
+    <tr><th>Component</th><th>What It Does</th></tr>
+    <tr><td><strong>Windows VPS</strong></td><td>A virtual server running Windows. MT5 is a Windows application — it needs Windows to run. The AI bot runs on the same server alongside MT5.</td></tr>
+    <tr><td><strong>MetaTrader 5</strong></td><td>Installed directly on the Windows VPS. MT5 connects to the forex broker. The AI bot uses MT5's built-in Python API to analyse markets and place trades — no middleman, no bridge service.</td></tr>
+    <tr><td><strong>Market Data</strong></td><td>Free — pulled from Nasdaq.com and Yahoo Finance. No paid data feed required.</td></tr>
+    <tr><td><strong>Storage</strong></td><td>Disk space for trade logs, AI model data, and price history. 40–100 GB SSD is more than enough.</td></tr>
+  </table>
+
+  <div class="highlight">
+    <strong>What we DO NOT need:</strong> A Linux server, a CDN, a load balancer, Cloudflare, a managed database, object storage, or multiple servers. This is one bot + MT5 on one Windows VPS. That's it.
+  </div>
+
+  <h2>How It Works — The Setup</h2>
+  <p>The complete setup on the Windows VPS:</p>
+  <ol style="margin:2mm 0 3mm 5mm;">
+    <li style="margin-bottom:1.5mm;">Rent a <strong>Windows VPS</strong> from a provider (Vultr, Hetzner, or similar)</li>
+    <li style="margin-bottom:1.5mm;">Install <strong>MetaTrader 5</strong> on the VPS and log in with your broker account</li>
+    <li style="margin-bottom:1.5mm;">Install <strong>Python</strong> on the VPS</li>
+    <li style="margin-bottom:1.5mm;">Deploy the <strong>AI trading bot</strong> — it uses MT5's Python library to read market data, run analysis, and place trades</li>
+    <li style="margin-bottom:1.5mm;">The bot runs 24/7 during market hours. You can remote-desktop into the VPS anytime to monitor it.</li>
+  </ol>
+
+  <div class="atg-implication">
+    <div class="atg-label">Why Windows VPS?</div>
+    <p>MetaTrader 5 is a <strong>Windows application</strong>. It does not run natively on Linux. The simplest, most reliable approach is a Windows VPS where MT5 and the AI bot run together on the same machine. No bridge services, no workarounds, no third-party dependencies between the bot and the broker. <strong>One server, one bill.</strong></p>
+  </div>
+</div>
+
+
+<!-- ═══════════════ SECTION 2 — THE PROVIDERS ═══════════════ -->
+<div class="sec pb">
+  <div class="sec-header">
+    <span class="sec-number">02</span>
+    <span class="sec-title">Windows VPS Providers — With Fine Print</span>
+  </div>
+
+  <p>Two providers offer Windows VPS hosting with servers in South Africa. Below is what each costs, what's included, and <strong>the fine print they don't tell you upfront</strong>.</p>
+
+  <!-- ─── VULTR ─── -->
+  <div class="provider-card">
+    <div class="provider-header">
+      <div>
+        <div class="prov-name">Vultr</div>
+        <div class="prov-tag">vultr.com — Johannesburg — USD Pricing</div>
+      </div>
+      <span class="provider-badge badge-green">Recommended</span>
+    </div>
+    <div style="padding:3mm 5mm;">
+      <p>International cloud provider with a Johannesburg data centre. Offers Windows VPS out of the box.</p>
+
+      <h3>What We'd Use</h3>
+      <table>
+        <tr><th>Item</th><th>vCPUs</th><th>RAM</th><th>Disk</th><th>Bandwidth</th><th>Monthly (USD)</th><th>Monthly (~ZAR at R18/$)</th></tr>
+        <tr><td>Cloud Compute (Regular)</td><td>2</td><td>4 GB</td><td>100 GB SSD</td><td>3 TB</td><td>$24</td><td>~R432</td></tr>
+        <tr><td>Windows Server licence</td><td colspan="5">Included with Windows template</td><td>+$16 (~R288)</td></tr>
+        <tr><td style="background:#0a1628;color:#c9a84c;font-weight:900;" colspan="6">TOTAL</td><td style="background:#0a1628;color:#c9a84c;font-weight:900;">$40 (~R720/mo)</td></tr>
+      </table>
+
+      <div class="fine-print">
+        <h3>⚠ Vultr Fine Print — Read Before You Sign Up</h3>
+
+        <p><strong>USD billing only:</strong> Vultr invoices in US Dollars. If the rand moves from R18/$ to R22/$, your R720/mo becomes <strong>R880/mo</strong>. The service doesn't change — only your bill does. This is real FX risk on a recurring cost.</p>
+
+        <p><strong>"Per hour" billing explained:</strong> You are charged $0.060/hr for this plan (server + Windows). The monthly price ($40) is a <strong>cap</strong> — you never pay more than $40/month even though $0.060 × 720 hours = $43.20. The system charges whichever is lower. If you run 24/7 (which you will — the bot trades around the clock), you always pay the capped monthly rate.</p>
+
+        <p><strong>Stopping vs. destroying:</strong> "Stopping" a server (shutting it down) does <strong>NOT</strong> stop billing. Your disk, IP address, and resources are still reserved for you. <strong>Only destroying/deleting the server stops charges.</strong> If you want to pause costs, you must destroy the server — but you lose everything unless you backed it up.</p>
+
+        <p><strong>Bandwidth:</strong> <strong>3 TB/month included</strong> (clearly stated). A trading bot pulling price data uses a fraction of this. Overage charges apply beyond 3 TB but you won't hit it.</p>
+
+        <p><strong>IP address:</strong> 1 IPv4 included. Additional IPs cost $3/mo each. You only need 1.</p>
+
+        <p><strong>Backups:</strong> Optional, <strong>adds 20% to monthly cost</strong> ($8/mo = ~R144/mo). Automatic weekly snapshots. Recommended — if the server dies, you can restore from backup in minutes.</p>
+
+        <p><strong>Snapshots:</strong> On-demand snapshots are free (up to storage limits). Good for before-and-after backups when updating the bot code.</p>
+
+        <p><strong>Windows licence:</strong> The $16/mo Windows Server licence is <strong>mandatory</strong> if you choose a Windows template. You cannot bring your own licence on Vultr cloud compute.</p>
+
+        <p><strong>Remote Desktop (RDP):</strong> Included with Windows. You connect to your VPS over Remote Desktop to install MT5, deploy the bot, and monitor it. No extra cost.</p>
+      </div>
+
+      <div class="pros-cons">
+        <div class="pros">
+          <h3>Pros</h3>
+          <ul>
+            <li>Windows VPS ready out of the box</li>
+            <li>100 GB SSD, 3 TB bandwidth included</li>
+            <li>Johannesburg data centre</li>
+            <li>Hourly billing capped at monthly rate</li>
+            <li>Free snapshots, optional auto-backup</li>
+            <li>Mature platform, well-documented</li>
+            <li>Can resize server in minutes if needed</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h3>Cons</h3>
+          <ul>
+            <li>USD billing — exchange rate risk</li>
+            <li>~R720/mo is the most expensive option</li>
+            <li>Stopped server still charges</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── HETZNER ─── -->
+  <div class="provider-card">
+    <div class="provider-header">
+      <div>
+        <div class="prov-name">Hetzner South Africa</div>
+        <div class="prov-tag">hetzner.co.za — Johannesburg — ZAR Pricing</div>
+      </div>
+      <span class="provider-badge badge-amber">Budget Option</span>
+    </div>
+    <div style="padding:3mm 5mm;">
+      <p>South African hosting company. Dedicated servers (bare metal) with optional Windows. ZAR pricing — no exchange rate risk.</p>
+
+      <h3>What We'd Use</h3>
+      <table>
+        <tr><th>Item</th><th>CPU</th><th>RAM</th><th>Disk</th><th>Bandwidth</th><th>Monthly (ex. VAT)</th></tr>
+        <tr><td>Dedicated Server (e.g. RS-8)</td><td>Intel Xeon</td><td>8 GB</td><td>2 TB HDD</td><td>Unmetered</td><td>~R350</td></tr>
+        <tr><td colspan="5">+ 15% VAT</td><td>~R403 incl.</td></tr>
+      </table>
+
+      <div class="fine-print">
+        <h3>⚠ Hetzner Fine Print</h3>
+
+        <p><strong>Bare metal (not cloud):</strong> This is a physical machine, not a virtual one. You rent actual hardware. It's powerful, but if it breaks, Hetzner replaces the hardware — which can take <strong>hours or longer</strong>. During that time, your bot is offline and not trading.</p>
+
+        <p><strong>Windows licence:</strong> Hetzner can provide Windows Server at an additional monthly fee. Check current pricing — it varies. You install Windows yourself or request it pre-installed.</p>
+
+        <p><strong>No cloud flexibility:</strong> You cannot "resize" a dedicated server. If you need more RAM or CPU, you order a different server and migrate manually. With cloud providers you click a button.</p>
+
+        <p><strong>Full sysadmin responsibility:</strong> OS updates, security patches, firewall rules, backups — all on you. There is no managed service layer.</p>
+
+        <p><strong>HDD, not SSD:</strong> The base RS-8 uses traditional hard drives, not SSDs. HDD is slower for AI model loading and data reads. SSD upgrades are available at extra cost.</p>
+
+        <p><strong>Setup fee:</strong> Dedicated servers may have a one-off setup fee. Confirm with Hetzner before ordering.</p>
+
+        <p><strong>Monthly billing only:</strong> No hourly billing. You pay for the full month. If you cancel mid-month, you still owe the full month.</p>
+
+        <p><strong>Single point of failure:</strong> One physical machine. If it fails, everything stops. No automatic failover. Cloud VPS providers typically recover faster because they can spin up a new VM from a backup.</p>
+      </div>
+
+      <div class="pros-cons">
+        <div class="pros">
+          <h3>Pros</h3>
+          <ul>
+            <li>Cheapest option (~R403/mo incl. VAT)</li>
+            <li>ZAR billing — no exchange rate risk</li>
+            <li>More raw power (Xeon + 8 GB)</li>
+            <li>Unmetered bandwidth</li>
+          </ul>
+        </div>
+        <div class="cons">
+          <h3>Cons</h3>
+          <ul>
+            <li>Single physical machine — if it dies, bot stops</li>
+            <li>Full sysadmin responsibility</li>
+            <li>Cannot resize — must migrate to new server</li>
+            <li>HDD not SSD (slower)</li>
+            <li>No hourly billing — monthly commitment</li>
+            <li>Possible setup fee</li>
+            <li>Hardware failures take hours to fix</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2>What About CloudAfrica?</h2>
+  <p>CloudAfrica (cloudafrica.net) is a South African cloud provider with ZAR pricing. However, they offer <strong>Linux only</strong> — no Windows VPS option. Since MT5 requires Windows, CloudAfrica is <strong>not suitable</strong> for this use case.</p>
+
+  <h2>GitHub — Code Repository</h2>
+  <p>You need somewhere to store the bot's source code, track changes, and deploy updates. <strong>GitHub</strong> is the standard.</p>
+
+  <table>
+    <tr><th>Plan</th><th>Price</th><th>What You Get</th></tr>
+    <tr><td><strong>Free</strong></td><td>$0/mo</td><td>Unlimited private repos. 500 MB packages storage. 2,000 CI/CD minutes/mo. Limited Copilot access. Good enough if you're just storing code.</td></tr>
+    <tr><td><strong>Pro</strong></td><td>$4/mo (~R72)</td><td>Everything in Free + required reviewers, code owners, branch protection rules, 2 GB packages, 3,000 CI/CD minutes. Pages in private repos.</td></tr>
+    <tr><td><strong>Team</strong></td><td>$4/user/mo</td><td>Everything in Pro + team access controls, draft PRs, multiple reviewers. Only needed if 2+ developers.</td></tr>
+  </table>
+
+  <div class="fine-print">
+    <h3>⚠ GitHub Fine Print</h3>
+    <p><strong>Free plan is enough to start.</strong> If you're one developer, the Free plan gives you unlimited private repos. You only need Pro or Team when you want branch protection or have multiple developers.</p>
+    <p><strong>USD billing:</strong> GitHub bills in USD. Same FX risk as Vultr.</p>
+    <p><strong>CI/CD minutes:</strong> If you use GitHub Actions to auto-deploy the bot to your VPS, the 2,000 free minutes/mo is more than enough. You won't hit this limit.</p>
+    <p><strong>Copilot:</strong> GitHub Copilot (AI coding assistant) costs $10/mo extra. Optional, not required.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════ SECTION 3 — SIDE BY SIDE ═══════════════ -->
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">03</span>
+    <span class="sec-title">Side-by-Side Comparison</span>
+  </div>
+
+  <table>
+    <tr>
+      <th style="width:35%"></th>
+      <th style="width:32%">Vultr (Windows VPS)</th>
+      <th style="width:33%">Hetzner SA (Dedicated)</th>
+    </tr>
+    <tr>
+      <td><strong>Monthly Cost</strong></td>
+      <td><strong>~R720</strong> ($40 at R18/$)</td>
+      <td><strong>~R403</strong> (incl. VAT, excl. Windows fee)</td>
+    </tr>
+    <tr>
+      <td><strong>Currency</strong></td>
+      <td>USD (variable with FX)</td>
+      <td>ZAR (fixed)</td>
+    </tr>
+    <tr>
+      <td><strong>If Rand Goes to R22/$</strong></td>
+      <td>Jumps to ~R880</td>
+      <td>Still ~R403</td>
+    </tr>
+    <tr>
+      <td><strong>Server Type</strong></td>
+      <td>Cloud (virtual machine)</td>
+      <td>Dedicated (physical machine)</td>
+    </tr>
+    <tr>
+      <td><strong>CPU / RAM</strong></td>
+      <td>2 vCPUs / 4 GB</td>
+      <td>Intel Xeon / 8 GB</td>
+    </tr>
+    <tr>
+      <td><strong>Disk</strong></td>
+      <td>100 GB SSD</td>
+      <td>2 TB HDD</td>
+    </tr>
+    <tr>
+      <td><strong>Bandwidth</strong></td>
+      <td>3 TB included</td>
+      <td>Unmetered</td>
+    </tr>
+    <tr>
+      <td><strong>Windows Included?</strong></td>
+      <td>Yes ($16/mo included in total)</td>
+      <td>Extra fee — confirm with Hetzner</td>
+    </tr>
+    <tr>
+      <td><strong>MT5 Runs Natively?</strong></td>
+      <td>Yes — install directly on Windows</td>
+      <td>Yes — if Windows is installed</td>
+    </tr>
+    <tr>
+      <td><strong>Backups</strong></td>
+      <td>Optional (+20% = ~R144/mo)</td>
+      <td>DIY — no managed backup</td>
+    </tr>
+    <tr>
+      <td><strong>Can Resize?</strong></td>
+      <td>Yes — click a button, minutes</td>
+      <td>No — order new server, migrate</td>
+    </tr>
+    <tr>
+      <td><strong>If Hardware Fails</strong></td>
+      <td>New VM spins up from backup (minutes)</td>
+      <td>Physical replacement (hours+)</td>
+    </tr>
+    <tr>
+      <td><strong>Billing Model</strong></td>
+      <td>Hourly, capped at monthly</td>
+      <td>Monthly only</td>
+    </tr>
+    <tr>
+      <td><strong>Stopped Server Charges?</strong></td>
+      <td>Yes — must destroy to stop billing</td>
+      <td>N/A — always monthly</td>
+    </tr>
+  </table>
+</div>
+
+
+<!-- ═══════════════ SECTION 4 — RECOMMENDATION ═══════════════ -->
+<div class="sec pb">
+  <div class="sec-header">
+    <span class="sec-number">04</span>
+    <span class="sec-title">Total Cost &amp; Recommendation</span>
+  </div>
+
+  <h2>What You'll Pay Each Month</h2>
+  <table>
+    <tr><th>Item</th><th>Vultr Windows VPS</th><th>Hetzner Dedicated</th></tr>
+    <tr><td>Server</td><td>$24 (~R432)</td><td>~R350 ex. VAT (~R403 incl.)</td></tr>
+    <tr><td>Windows Server licence</td><td>$16 (~R288) — included</td><td>Extra — confirm with Hetzner</td></tr>
+    <tr><td>MetaTrader 5</td><td>Free (download from broker)</td><td>Free (download from broker)</td></tr>
+    <tr><td>Market data (Nasdaq + Yahoo)</td><td>R0 (free APIs)</td><td>R0 (free APIs)</td></tr>
+    <tr><td>GitHub (code repository)</td><td>$4/mo (~R72) — Pro plan</td><td>$4/mo (~R72) — Pro plan</td></tr>
+    <tr><td>Optional: Auto-backup</td><td>+$8/mo (~R144) — recommended</td><td>DIY</td></tr>
+    <tr><td style="background:#0a1628;color:#c9a84c;font-weight:900;">TOTAL (without backup)</td><td style="background:#0a1628;color:#c9a84c;font-weight:900;">~R792/mo</td><td style="background:#0a1628;color:#c9a84c;font-weight:900;">~R475/mo + Windows fee</td></tr>
+    <tr><td style="background:#0a1628;color:#c9a84c;font-weight:900;">TOTAL (with backup)</td><td style="background:#0a1628;color:#c9a84c;font-weight:900;">~R936/mo</td><td style="background:#0a1628;color:#c9a84c;font-weight:900;">~R475/mo + Windows + DIY</td></tr>
+  </table>
+
+  <div class="kpi-row">
+    <div class="kpi-box">
+      <div class="kpi-val">R792</div>
+      <div class="kpi-lbl">Vultr — Ready to Go (USD risk)</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-val">~R475+</div>
+      <div class="kpi-lbl">Hetzner — Cheapest (More Risk)</div>
+    </div>
+    <div class="kpi-box">
+      <div class="kpi-val">R72</div>
+      <div class="kpi-lbl">GitHub Pro (included in totals)</div>
+    </div>
+  </div>
+
+  <div class="verdict-box">
+    <h2>Recommendation</h2>
+    <p>For a production AI trading bot handling real money: <strong>Vultr Windows VPS + GitHub Pro at ~R792/mo.</strong></p>
+    <p style="margin-top:2mm;">You get a Windows server in Johannesburg, install MT5, deploy the bot, and trade. Everything is on one machine. Backups are one click. If something breaks, Vultr restores it in minutes. You can resize the server if the bot needs more power.</p>
+    <p style="margin-top:2mm;">Hetzner is cheaper (~R475/mo) but it's a physical machine — if it fails, you're offline for hours while real trades could be running. No easy backups, no resizing, more sysadmin work. The saving is not worth the risk when real money is on the line.</p>
+    <p style="margin-top:2mm;"><strong>The FX risk is real</strong> — if the rand weakens to R22/$, Vultr goes to ~R880/mo. But even at R22/$, the reliability advantage is worth it for a live trading bot.</p>
+  </div>
+</div>
+
+
+<!-- ═══════════════ SECTION 5 — DECISION TABLE ═══════════════ -->
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">05</span>
+    <span class="sec-title">Decision Summary</span>
+  </div>
+
+  <table>
+    <tr><th>#</th><th>Question</th><th>Answer</th></tr>
+    <tr><td>1</td><td>What are we hosting?</td><td>An AI bot that analyses forex markets and places trades on MetaTrader 5</td></tr>
+    <tr><td>2</td><td>What kind of server?</td><td>Windows VPS — because MT5 is a Windows application</td></tr>
+    <tr><td>3</td><td>Where does market data come from?</td><td>Free — Nasdaq.com and Yahoo Finance APIs</td></tr>
+    <tr><td>4</td><td>Are there subscribers or users?</td><td>No. The bot runs on its own. No website, no dashboard.</td></tr>
+    <tr><td>5</td><td>Recommended provider?</td><td><strong>Vultr (Johannesburg, Windows VPS)</strong></td></tr>
+    <tr><td>6</td><td>Monthly cost?</td><td><strong>~R792/mo</strong> (Vultr $40 + GitHub $4 at R18/$)</td></tr>
+    <tr><td>7</td><td>Does "per hour" billing mean extra cost?</td><td>No. Hourly is capped at the monthly rate. Running 24/7 = you pay the monthly price, never more.</td></tr>
+    <tr><td>8</td><td>Does a "stopped" server still cost money?</td><td>Yes. You must <strong>destroy</strong> the server to stop billing. Stopping just shuts it down but keeps charging.</td></tr>
+    <tr><td>9</td><td>Do we need Cloudflare / CDN / load balancer?</td><td>No. There is no website. Just a bot running on a server.</td></tr>
+    <tr><td>10</td><td>Do we need multiple servers?</td><td>No. One Windows VPS runs MT5 + the bot. That's all.</td></tr>
+  </table>
+
+  <div class="highlight" style="margin-top:5mm;">
+    <strong>Prepared by:</strong> ATG<br/>
+    <strong>Date:</strong> April 2026<br/>
+    <strong>Exchange rate assumption:</strong> R18 = $1 USD (indicative). Vultr costs will vary with FX.<br/>
+    <strong>Next step:</strong> Sign up for Vultr, deploy a Windows VPS in Johannesburg, install MT5, and deploy the bot. Set up a private GitHub repo for the bot code.
+  </div>
+</div>
+
+</body>
+</html>

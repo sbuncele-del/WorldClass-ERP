@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 20mm 16mm 20mm;
+    @bottom-center {
+      content: counter(page) " / " counter(pages);
+      font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+      font-size: 7pt; color: #aaa;
+    }
+    @top-left {
+      content: "Masaphokati Equity Holdings";
+      font-family: 'DejaVu Serif', Georgia, serif;
+      font-size: 7.5pt; font-weight: 700; color: #0c1720;
+      letter-spacing: 1px; text-transform: uppercase;
+    }
+    @top-right {
+      content: "SPV Response  \2022   7 April 2026";
+      font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+      font-size: 7pt; color: #aaa;
+    }
+  }
+  @page :first {
+    margin: 0;
+    @bottom-center { content: ''; }
+    @top-left { content: ''; }
+    @top-right { content: ''; }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'DejaVu Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 9.5pt; line-height: 1.55; color: #2d2d2d;
+    margin: 0; padding: 0;
+  }
+
+  /* ═══════════════════════════════════════
+     COVER PAGE — redesigned
+  ═══════════════════════════════════════ */
+  .cover {
+    width: 210mm;
+    height: 297mm;
+    background: #08111e;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    page-break-after: always;
+  }
+
+  /* Thick gold top accent bar */
+  .cover-topbar {
+    height: 7px;
+    background: #e8b84b;
+    flex-shrink: 0;
+  }
+
+  /* Left gold accent strip + content side by side */
+  .cover-mid {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+  }
+
+  /* Thin vertical gold bar on left */
+  .cover-leftbar {
+    width: 5px;
+    background: rgba(232,184,75,0.25);
+    flex-shrink: 0;
+  }
+
+  /* All text content */
+  .cover-content {
+    flex: 1;
+    padding: 20mm 22mm 0 22mm;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cover-brand {
+    margin-bottom: 28mm;
+  }
+  .cover-brand-name {
+    font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+    font-size: 6.5pt;
+    letter-spacing: 7px;
+    text-transform: uppercase;
+    color: #e8b84b;
+    font-weight: 700;
+    margin: 0 0 3px 0;
+  }
+  .cover-brand-divider {
+    width: 30px;
+    height: 1px;
+    background: rgba(232,184,75,0.5);
+    margin: 5px 0;
+  }
+  .cover-brand-sub {
+    font-size: 6pt;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.28);
+    margin: 0;
+  }
+
+  .cover-title-block {
+    flex: 1;
+  }
+  .cover-pretitle {
+    font-size: 7pt;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin: 0 0 10px 0;
+    font-weight: 400;
+  }
+  .cover-h1 {
+    font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+    font-size: 44pt;
+    font-weight: 700;
+    line-height: 0.97;
+    text-transform: uppercase;
+    letter-spacing: -1px;
+    color: #ffffff;
+    margin: 0;
+  }
+  .cover-h1 .gold {
+    color: #e8b84b;
+    display: block;
+  }
+  .cover-rule {
+    width: 52px;
+    height: 3px;
+    background: #e8b84b;
+    border: none;
+    border-radius: 1px;
+    display: block;
+    margin: 16px 0 18px 0;
+  }
+  .cover-subject {
+    font-size: 10.5pt;
+    color: rgba(255,255,255,0.6);
+    line-height: 1.55;
+    margin: 0 0 8px 0;
+    max-width: 290px;
+  }
+  .cover-descriptor {
+    font-size: 8pt;
+    color: rgba(255,255,255,0.28);
+    font-style: italic;
+    line-height: 1.5;
+    max-width: 280px;
+    margin: 0;
+  }
+
+  /* Bottom footer band */
+  .cover-footer {
+    flex-shrink: 0;
+    background: rgba(232,184,75,0.07);
+    border-top: 1px solid rgba(232,184,75,0.2);
+    padding: 10px 22mm 10px 27mm;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 7.5pt;
+    color: rgba(255,255,255,0.38);
+  }
+  .cover-footer-left {
+    line-height: 1.5;
+  }
+  .cover-footer-co {
+    font-size: 8pt;
+    font-weight: 700;
+    color: rgba(255,255,255,0.75);
+    letter-spacing: 0.3px;
+    display: block;
+    margin-bottom: 1px;
+  }
+  .cover-footer-right {
+    text-align: right;
+    line-height: 1.6;
+  }
+  .cover-footer-date {
+    font-size: 8.5pt;
+    font-weight: 700;
+    color: #e8b84b;
+    display: block;
+    margin-bottom: 1px;
+  }
+
+  /* ═══════════════════════════════════════
+     INTERIOR CONTENT
+  ═══════════════════════════════════════ */
+  .interior { padding-top: 2mm; }
+
+  h2 {
+    font-family: 'DejaVu Serif', Georgia, serif;
+    font-size: 12.5pt; font-weight: 700; color: #0c1720;
+    margin: 22px 0 2px 0; padding: 0;
+    page-break-after: avoid;
+  }
+  .bar {
+    width: 32px; height: 2.5px; background: #e8b84b;
+    border-radius: 2px; margin: 3px 0 9px 0;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 10pt; font-weight: 700; color: #0c1720;
+    margin: 13px 0 5px 0; page-break-after: avoid;
+  }
+  h4 {
+    font-size: 7.5pt; font-weight: 700; color: #0c1720;
+    text-transform: uppercase; letter-spacing: 2px;
+    margin: 14px 0 5px 0; padding: 5px 0;
+    border-bottom: 1px dashed #ddd;
+    page-break-after: avoid;
+  }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 9pt; }
+
+  .tbl-clean td { padding: 5px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+  .tbl-clean tr:nth-child(even) td { background: #fafafa; }
+  .tbl-clean .lbl { font-weight: 700; color: #0c1720; width: 32%; white-space: nowrap; }
+
+  .tbl th {
+    background: #0c1720; color: #fff; text-align: left;
+    padding: 7px 10px; font-size: 7pt; letter-spacing: 1.8px;
+    text-transform: uppercase; font-weight: 700;
+  }
+  .tbl td { padding: 5px 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+  .tbl tr:nth-child(even) td { background: #fafafa; }
+
+  /* ── Callout notes ── */
+  .note {
+    border-radius: 0 4px 4px 0; padding: 8px 12px;
+    margin: 8px 0; font-size: 8.5pt; page-break-inside: avoid;
+  }
+  .note-gold  { border-left: 3px solid #e8b84b; background: #fdfaf3; }
+  .note-green { border-left: 3px solid #27ae60; background: #f2faf6; }
+  .note-red   { border-left: 3px solid #c0392b; background: #fdf2f2; }
+  .note-blue  { border-left: 3px solid #3498db; background: #f4f9fd; }
+  .note-title { font-weight: 700; color: #0c1720; margin-bottom: 2px; }
+
+  /* ── SAFE mechanics box ── */
+  .safe-box {
+    border: 1.5px solid #e0e0e0; border-radius: 7px;
+    overflow: hidden; margin: 12px 0; page-break-inside: avoid;
+  }
+  .safe-box-hdr {
+    background: #0c1720; color: #fff; padding: 8px 14px;
+    font-size: 7pt; letter-spacing: 2px; text-transform: uppercase; font-weight: 700;
+  }
+  .safe-row {
+    display: flex; border-bottom: 1px solid #eee;
+  }
+  .safe-row:last-child { border-bottom: none; }
+  .safe-cell {
+    flex: 1; padding: 7px 12px; font-size: 9pt;
+    border-right: 1px solid #eee; vertical-align: top;
+  }
+  .safe-cell:last-child { border-right: none; }
+  .safe-cell strong { display: block; color: #0c1720; margin-bottom: 1px; }
+
+  /* ── Structure diagram ── */
+  .diagram {
+    border: 1.5px solid #e0e0e0; border-radius: 8px;
+    padding: 14px 12px; margin: 10px 0;
+    text-align: center; background: #fafbfc;
+    page-break-inside: avoid;
+  }
+  .d-top {
+    display: inline-block; background: #0c1720; color: #fff;
+    padding: 8px 22px; border-radius: 4px;
+    font-weight: 700; font-size: 9pt;
+  }
+  .d-label { font-size: 7pt; color: #999; letter-spacing: 1px; text-transform: uppercase; margin: 4px 0 8px 0; }
+  .d-line { width: 1px; height: 14px; background: #ccc; margin: 0 auto; }
+  .d-row { display: flex; justify-content: center; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+  .d-card { border: 1.5px solid #ddd; border-radius: 5px; padding: 8px 12px; background: #fff; width: 140px; text-align: center; }
+  .d-card.gold { border-color: #e8b84b; border-width: 2px; }
+  .d-name { font-weight: 700; font-size: 9pt; color: #0c1720; }
+  .d-role { font-size: 6.5pt; color: #888; margin-top: 2px; line-height: 1.4; text-transform: uppercase; }
+  .d-aside { font-size: 7pt; color: #aaa; margin-top: 10px; font-style: italic; }
+
+  p { margin: 0 0 6px 0; }
+  strong { color: #0c1720; }
+  ol, ul { padding-left: 18px; margin: 4px 0 8px 0; }
+  li { margin-bottom: 3px; }
+
+  .footer-line {
+    margin-top: 28px; border-top: 1px solid #e0e0e0;
+    padding-top: 6px; font-size: 7pt; color: #bbb;
+    text-align: center; letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ╔══════════════════════════════════╗
+     ║         COVER PAGE               ║
+     ╚══════════════════════════════════╝ -->
+<div class="cover">
+
+  <!-- Gold top bar -->
+  <div class="cover-topbar"></div>
+
+  <!-- Middle: left accent strip + content -->
+  <div class="cover-mid">
+    <div class="cover-leftbar"></div>
+
+    <div class="cover-content">
+
+      <!-- Brand identity -->
+      <div class="cover-brand">
+        <p class="cover-brand-name">Masaphokati Equity Holdings</p>
+        <div class="cover-brand-divider"></div>
+        <p class="cover-brand-sub">Masaphokati Technologies (Pty) Ltd &nbsp;&bull;&nbsp; Centurion, SA</p>
+      </div>
+
+      <!-- Title block -->
+      <div class="cover-title-block">
+        <p class="cover-pretitle">Information Memorandum &nbsp;&mdash;&nbsp; Confidential</p>
+        <h1 class="cover-h1">
+          Investor<br>
+          Information<br>
+          &amp; Structure<br>
+          <span class="gold">Proposal</span>
+        </h1>
+        <hr class="cover-rule">
+        <p class="cover-subject">SiyaBusa ERP &mdash; Proposed Commercial Structure &amp; Investment Framework</p>
+        <p class="cover-descriptor">Prepared for prospective investors and strategic partners. This document presents what has been built, the proposed investment framework under consideration, and invites expressions of interest.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer band -->
+  <div class="cover-footer">
+    <div class="cover-footer-left">
+      <span class="cover-footer-co">Masaphokati Equity Holdings</span>
+      Masaphokati Technologies (Pty) Ltd &nbsp;&bull;&nbsp; SiyaBusa ERP Product
+    </div>
+    <div class="cover-footer-right">
+      <span class="cover-footer-date">7 April 2026</span>
+      Confidential &nbsp;&bull;&nbsp; Not for Distribution
+    </div>
+  </div>
+
+</div>
+
+<!-- ╔══════════════════════════════════╗
+     ║         CONTENT                  ║
+     ╚══════════════════════════════════╝ -->
+<div class="interior">
+
+<!-- ─────────────────────────────── 1 ─── -->
+<h2>1. Purpose of This Document</h2>
+<div class="bar"></div>
+
+<p>This document has been prepared by Masaphokati Equity Holdings to present, for discussion purposes, the corporate structure, asset base, and proposed investment framework surrounding SiyaBusa ERP. It was prompted by conversations with prospective strategic partners but is addressed broadly to <strong>any investor or partner who may be considering involvement</strong>.</p>
+
+<p>To be clear: <strong>this is not a formal offer of securities.</strong> No investment is being solicited at this stage. What is presented here is a picture of what has been built, how the company is structured, and the framework being considered for future investment — so that any interested party can assess whether there is alignment before formal proceedings begin.</p>
+
+<div class="note note-gold">
+  <div class="note-title">A Framework Is Being Proposed — Not Yet Offered</div>
+  Masaphokati Technologies has developed a complete investor documentation framework: Business Plan, Term Sheet, SAFE Agreement, Subscription Agreement, Shareholders Agreement, and a plain-English SAFE guide. These documents exist as a <em>proposed framework</em>. The structures described herein are subject to further discussion, legal review, and board approval before any formal offer is made.
+</div>
+
+<!-- ─────────────────────────────── 2 ─── -->
+<h2>2. Corporate Structure — Who Owns What</h2>
+<div class="bar"></div>
+
+<table class="tbl">
+  <tr><th>Entity</th><th>Nature</th><th>Relevance to Investors</th></tr>
+  <tr>
+    <td><strong>SGBS Group</strong></td>
+    <td>Accounting &amp; Consulting</td>
+    <td>Sibusiso's professional accounting practice. <em>Completely separate — no IP interest in SiyaBusa ERP.</em></td>
+  </tr>
+  <tr>
+    <td><strong>Masaphokati Equity Holdings</strong></td>
+    <td>Holding Company</td>
+    <td>Parent entity. Holds the founder shareholding in Masaphokati Technologies (Pty) Ltd.</td>
+  </tr>
+  <tr>
+    <td><strong>Masaphokati Technologies (Pty) Ltd</strong></td>
+    <td>Operating Technology Company</td>
+    <td><strong>The investment entity.</strong> Developed and owns SiyaBusa ERP. All investor instruments (SAFE, Share Subscription, Shareholders Agreement) are agreements with this company.</td>
+  </tr>
+  <tr>
+    <td><strong>SiyaBusa ERP</strong></td>
+    <td>Software Product</td>
+    <td>17+ modules, 400+ API endpoints, live on Vultr VPS (Johannesburg). Revenue-ready, production-deployed.</td>
+  </tr>
+</table>
+
+<!-- ─────────────────────────────── 3 ─── -->
+<h2>3. Share Capital — What Is Available to Investors</h2>
+<div class="bar"></div>
+
+<p>The following capital structure has been formally established and is reflected in the Term Sheet and Shareholders Agreement:</p>
+
+<table class="tbl-clean">
+  <tr><td class="lbl">Authorised Share Capital</td><td>1,000,000,000 (One Billion) ordinary shares, no par value</td></tr>
+  <tr><td class="lbl">Currently Issued to Founders</td><td><strong>100,000,000</strong> shares (via Masaphokati Equity Holdings)</td></tr>
+  <tr><td class="lbl">Available for Investors</td><td><strong>900,000,000</strong> shares available for issue — of which <strong>20,000,000 are earmarked for the Seed Round</strong></td></tr>
+  <tr><td class="lbl">Seed Round Target</td><td>R2,000,000 — minimum R500,000 (phased close accepted)</td></tr>
+  <tr><td class="lbl">Seed Round Price Per Share</td><td><strong>R0.10</strong> (Ten Cents)</td></tr>
+  <tr><td class="lbl">Pre-Money Valuation</td><td><strong>R10,000,000</strong></td></tr>
+  <tr><td class="lbl">Post-Money Valuation</td><td><strong>R12,000,000</strong></td></tr>
+  <tr><td class="lbl">Seed Investor Equity</td><td><strong>16.67%</strong> of the company (20M of 120M total post-seed shares)</td></tr>
+  <tr><td class="lbl">Founders Post-Seed</td><td><strong>83.33%</strong> retained</td></tr>
+</table>
+
+<div class="note note-blue">
+  <div class="note-title">Minimum Investment Thresholds (Seed Round)</div>
+  Lead Investor: R500,000+ &nbsp;&bull;&nbsp; Strategic Investor: R250,000+ &nbsp;&bull;&nbsp; Other Investors: R30,000+
+</div>
+
+<!-- ─────────────────────────────── 4 ─── -->
+<h2>4. Two Proposed Participation Paths — For Discussion</h2>
+<div class="bar"></div>
+
+<p>The proposed investment framework under consideration contemplates two participation paths, drawn from the documentation already prepared. <strong>These are presented for discussion purposes.</strong> If there is alignment in principle, formal documentation would be progressed with legal advisers on both sides.</p>
+
+<!-- PATH A -->
+<h3>Path A &mdash; SAFE Agreement (Simple Agreement for Future Equity)</h3>
+<p><em>Under consideration for investors who wish to participate early, with conversion to shares deferred to the next priced round.</em></p>
+
+<div class="safe-box">
+  <div class="safe-box-hdr">SAFE Agreement — Key Terms</div>
+  <div class="safe-row">
+    <div class="safe-cell"><strong>Valuation Cap</strong>R15,000,000</div>
+    <div class="safe-cell"><strong>Discount on Next Round</strong>20% (investor pays 80% of the next round price)</div>
+    <div class="safe-cell"><strong>Conversion Trigger</strong>Next qualifying equity financing of R5,000,000+</div>
+  </div>
+  <div class="safe-row">
+    <div class="safe-cell"><strong>Minimum Investment</strong>R30,000</div>
+    <div class="safe-cell"><strong>Investor Rights Now</strong>Monthly reports, Pro Rata rights, Board observer (10%+), MFN clause</div>
+    <div class="safe-cell"><strong>Shares Issued</strong>Not now — converts to shares at qualifying event (IPO, acquisition, or Series A)</div>
+  </div>
+</div>
+
+<table class="tbl">
+  <tr><th>Conversion Method</th><th>Calculation</th><th>Example — R500,000 Invested</th></tr>
+  <tr>
+    <td><strong>Cap Method</strong><br><span style="font-size:7.5pt;color:#888;">Valuation Cap ÷ Total Shares</span></td>
+    <td>Price = R15M ÷ shares outstanding at conversion</td>
+    <td>At 120M shares: R15M ÷ 120M = <strong>R0.125/share</strong><br>R500K ÷ R0.125 = <strong>4,000,000 shares</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Discount Method</strong><br><span style="font-size:7.5pt;color:#888;">80% of Next Round Price</span></td>
+    <td>Price = next round price × 80%</td>
+    <td>If next round prices at R0.20: investor pays R0.16<br>R500K ÷ R0.16 = <strong>3,125,000 shares</strong></td>
+  </tr>
+</table>
+
+<div class="note note-green">
+  <div class="note-title">Investor Always Gets the Better of the Two</div>
+  The SAFE converts at whichever method produces <em>more shares</em>. In this example: 4,000,000 shares (Cap Method) beats 3,125,000 (Discount Method) — the investor gets 4M shares. The early investor who takes the most risk gets the most reward.
+</div>
+
+<!-- PATH B -->
+<h3>Path B &mdash; Seed Equity Round (Direct Share Subscription)</h3>
+<p><em>Under consideration for investors who prefer an immediate, confirmed shareholding position with voting rights from day one.</em></p>
+
+<table class="tbl-clean">
+  <tr><td class="lbl">Instrument</td><td>Share Subscription Agreement (ordinary shares, no par value)</td></tr>
+  <tr><td class="lbl">Price Per Share</td><td><strong>R0.10</strong> (Ten Cents) — fixed seed round price</td></tr>
+  <tr><td class="lbl">Shares Available</td><td>20,000,000 new ordinary shares (16.67% of post-seed total)</td></tr>
+  <tr><td class="lbl">Total Seed Target</td><td>R2,000,000 (phased close accepted, minimum viable raise R500,000)</td></tr>
+  <tr><td class="lbl">Immediate Rights</td><td>Voting rights per shares held &bull; Monthly management accounts &bull; Quarterly financials &bull; Board observer at 10%+</td></tr>
+  <tr><td class="lbl">Minimum Investment</td><td>R30,000 (300,000 shares) — R250,000 Strategic &mdash; R500,000 Lead</td></tr>
+  <tr><td class="lbl">Exit Strategy</td><td>JSE AltX listing targeted Q2 2029</td></tr>
+</table>
+
+<div class="note note-blue">
+  <div class="note-title">Path B Illustration — What R500,000 Buys</div>
+  At R0.10/share: R500,000 ÷ R0.10 = <strong>5,000,000 shares</strong> &nbsp;&bull;&nbsp; Post-seed cap table: <strong>4.17%</strong> of the company &nbsp;&bull;&nbsp; If the company reaches R100M valuation (JSE AltX, Q2 2029): your 4.17% = <strong>R4,170,000</strong> &nbsp;&bull;&nbsp; 8.3× return on R500K invested.
+</div>
+
+<!-- ─────────────────────────────── 5 ─── -->
+<h2>5. Path Comparison — Proposed Terms at a Glance</h2>
+<div class="bar"></div>
+
+<table class="tbl">
+  <tr><th>Factor</th><th>Path A — SAFE</th><th>Path B — Direct Equity</th></tr>
+  <tr><td><strong>Shares Issued</strong></td><td>Not immediately — converts at next round</td><td>Immediately upon subscription</td></tr>
+  <tr><td><strong>Price Certainty</strong></td><td>Price set at conversion event</td><td>R0.10/share fixed now</td></tr>
+  <tr><td><strong>Upside Potential</strong></td><td>Higher — cap + discount rewards early risk</td><td>Strong — locked in at seed price</td></tr>
+  <tr><td><strong>Voting Rights</strong></td><td>None until conversion</td><td>Immediate proportional voting rights</td></tr>
+  <tr><td><strong>Complexity</strong></td><td>Simple document, no valuation needed now</td><td>Full subscription agreement + share register update</td></tr>
+  <tr><td><strong>Minimum Entry</strong></td><td>R100,000</td><td>R100,000</td></tr>
+  <tr><td><strong>Best For</strong></td><td>Patient capital, high-upside seekers, angels</td><td>Strategic partners wanting board presence now</td></tr>
+  <tr><td><strong>Document</strong></td><td>SAFE Agreement (drafted &amp; ready)</td><td>Share Subscription Agreement (drafted &amp; ready)</td></tr>
+</table>
+
+<!-- ─────────────────────────────── 6 ─── -->
+<h2>6. Expression of Interest</h2>
+<div class="bar"></div>
+
+<p>If, after reviewing this document, there is sufficient alignment with your investment thesis and objectives, we invite you to complete an expression of interest below. This is <strong>non-binding</strong> and simply allows us to understand which structure resonates, so that we can progress conversations appropriately. No legal commitments arise from completing this form.</p>
+
+<div style="border: 2px solid #0c1720; border-radius: 8px; overflow: hidden; margin: 10px 0; page-break-inside: avoid;">
+  <div style="background:#0c1720; color:#fff; padding: 9px 16px; font-size:7pt; letter-spacing:2px; text-transform:uppercase; font-weight:700;">Expression of Interest &mdash; Non-Binding &mdash; For Discussion Purposes Only</div>
+  <div style="padding: 14px 16px;">
+
+    <table style="width:100%; border-collapse:collapse; font-size:9pt; margin-bottom:10px;">
+      <tr>
+        <td style="width:4%; padding:6px 8px; border:1.5px solid #ddd; text-align:center; font-size:11pt;">&#9633;</td>
+        <td style="padding:6px 12px; border:1.5px solid #ddd; font-weight:700; color:#0c1720; width:30%;">Path A &mdash; SAFE Framework</td>
+        <td style="padding:6px 12px; border:1.5px solid #ddd; font-size:8.5pt; color:#555;">I am interested in exploring the SAFE framework (R15M valuation cap, 20% discount, converts at next qualifying round). I understand this is subject to formal documentation and legal review.</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 8px; border:1.5px solid #ddd; text-align:center; font-size:11pt;">&#9633;</td>
+        <td style="padding:6px 12px; border:1.5px solid #ddd; font-weight:700; color:#0c1720;">Path B &mdash; Seed Equity</td>
+        <td style="padding:6px 12px; border:1.5px solid #ddd; font-size:8.5pt; color:#555;">I am interested in exploring a direct equity position at seed terms (R0.10/share). I understand this is subject to formal documentation, due diligence, and legal review.</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 8px; border:1.5px solid #ddd; text-align:center; font-size:11pt;">&#9633;</td>
+        <td style="padding:6px 12px; border:1.5px solid #ddd; font-weight:700; color:#0c1720;">Open to Discussion</td>
+        <td style="padding:6px 12px; border:1.5px solid #ddd; font-size:8.5pt; color:#555;">I am interested but would like to discuss structure, terms, and participation before indicating a preference. Please contact me.</td>
+      </tr>
+    </table>
+
+    <table style="width:100%; border-collapse:collapse; font-size:9pt;">
+      <tr>
+        <td style="padding:5px 8px; border:1px solid #eee; width:50%;"><strong>Name / Organisation:</strong><br><span style="display:inline-block; width:95%; border-bottom:1px solid #ccc; margin-top:14px;">&nbsp;</span></td>
+        <td style="padding:5px 8px; border:1px solid #eee;"><strong>Indicative Interest Amount (R):</strong><br><span style="display:inline-block; width:95%; border-bottom:1px solid #ccc; margin-top:14px;">&nbsp;</span></td>
+      </tr>
+      <tr>
+        <td style="padding:5px 8px; border:1px solid #eee;"><strong>Contact Email / Phone:</strong><br><span style="display:inline-block; width:95%; border-bottom:1px solid #ccc; margin-top:14px;">&nbsp;</span></td>
+        <td style="padding:5px 8px; border:1px solid #eee;"><strong>Date:</strong><br><span style="display:inline-block; width:95%; border-bottom:1px solid #ccc; margin-top:14px;">&nbsp;</span></td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── 7 ─── -->
+<h2>7. Post-Investment Corporate Structure</h2>
+<div class="bar"></div>
+
+<div class="diagram">
+  <div class="d-top">MASAPHOKATI EQUITY HOLDINGS</div>
+  <div class="d-label">Parent &bull; Holds Founder Shares in Masaphokati Technologies</div>
+  <div class="d-line"></div>
+  <div style="display:inline-block; border:2px solid #e8b84b; border-radius:5px; padding:7px 20px; background:#fff; margin-bottom:3px;">
+    <span style="font-weight:700; font-size:8.5pt; color:#0c1720;">MASAPHOKATI TECHNOLOGIES (PTY) LTD</span><br>
+    <span style="font-size:6.5pt; color:#888;">1B authorised &bull; 100M founder shares &bull; 20M seed investor shares &bull; Vultr VPS (JHB) &bull; SiyaBusa ERP</span>
+  </div>
+  <div class="d-line"></div>
+  <div class="d-row">
+    <div class="d-card gold">
+      <div class="d-name">Founders</div>
+      <div class="d-role">83.33% post-seed<br>Sibusiso Mavuso &bull; Masaphokati EH</div>
+    </div>
+    <div class="d-card">
+      <div class="d-name">Seed Investors</div>
+      <div class="d-role">Up to 16.67%<br>20M shares at R0.10 &bull; R2M round</div>
+    </div>
+    <div class="d-card">
+      <div class="d-name">SAFE Holders</div>
+      <div class="d-role">Future equity<br>R15M cap &bull; 20% discount</div>
+    </div>
+  </div>
+  <div class="d-aside">SGBS Group: separate accounting entity — no shareholding in Masaphokati Technologies</div>
+</div>
+
+<!-- ─────────────────────────────── 8 ─── -->
+<h2>8. What SiyaBusa Brings — The Asset You Are Investing In</h2>
+<div class="bar"></div>
+
+<table class="tbl-clean">
+  <tr><td class="lbl">ERP Modules</td><td>17+ complete — Financial Accounting, HR &amp; Payroll, Inventory, Sales &amp; CRM, Purchase, Manufacturing, Warehouse, Logistics, Compliance Hub, Audit Hub, Cash Management, Multi-Entity, Projects, Practice Management, Communications, AI Assistant, Dashboard &amp; Reports</td></tr>
+  <tr><td class="lbl">API / Database</td><td>400+ deployed API endpoints &bull; 150+ database tables (PostgreSQL)</td></tr>
+  <tr><td class="lbl">Infrastructure</td><td>Vultr VPS (Ubuntu, Johannesburg) &bull; PostgreSQL &bull; Redis &bull; Multi-tenant architecture</td></tr>
+  <tr><td class="lbl">Live Domains</td><td>siyabusaerp.co.za &bull; platform.siyabusaerp.co.za &bull; auditor.siyabusaerp.co.za</td></tr>
+  <tr><td class="lbl">Pricing</td><td><strong>R299/user/month</strong> (Founding Member rate, 5 users avg per client) &bull; Break-even at 46 clients (founder) / 151 clients (funded team)</td></tr>
+  <tr><td class="lbl">Development Invested</td><td>~R3.5M sweat equity over 18+ months — technology risk eliminated</td></tr>
+  <tr><td class="lbl">Target Market</td><td>750,000+ formal SA SMEs &bull; SAM 180,000 tech-ready businesses &bull; SOM ~8,000 reachable in 3 years &bull; TAM R27B annually</td></tr>
+  <tr><td class="lbl">Long-Term Exit</td><td>JSE AltX listing targeted Q2 2029</td></tr>
+</table>
+
+<!-- ─────────────────────────────── 9 ─── -->
+<h2>9. Proposed Next Steps if There Is Alignment</h2>
+<div class="bar"></div>
+
+<ol>
+  <li><strong>Initial conversation</strong> — An introductory discussion to establish whether there is alignment on vision, structure, and terms. No commitments made at this stage.</li>
+  <li><strong>Review of full investor documentation</strong> — The complete Business Plan, Term Sheet, SAFE Explained, and draft agreements are available to serious prospective partners under a Non-Disclosure Agreement.</li>
+  <li><strong>Expression of interest</strong> — If, after reviewing the documentation, there is continued interest, the prospective investor completes the non-binding expression of interest (Section 6 above).</li>
+  <li><strong>Due diligence</strong> — Masaphokati Technologies will make available relevant technical, financial, and legal information for independent due diligence by the investor.</li>
+  <li><strong>Legal documentation</strong> — If both parties wish to proceed, commercial attorneys on both sides draft and review the relevant agreements (SAFE or Subscription Agreement, Shareholders Agreement).</li>
+  <li><strong>Formal execution</strong> — Agreements executed, funds transferred, cap table updated, and investor reporting commences.</li>
+</ol>
+
+<div class="note note-gold">
+  <div class="note-title">To Request the Full Investor Pack or Arrange a Discussion</div>
+  <strong>Masaphokati Technologies (Pty) Ltd</strong><br>
+  investor@siyabusaerp.co.za &nbsp;&bull;&nbsp; 074 012 6873 &nbsp;&bull;&nbsp; www.siyabusaerp.co.za &nbsp;&bull;&nbsp; Centurion, South Africa
+</div>
+
+<div class="footer-line">
+  Masaphokati Equity Holdings &bull; Masaphokati Technologies (Pty) Ltd &bull; Confidential &bull; 7 April 2026
+</div>
+
+</div><!-- /interior -->
+</body>
+</html>

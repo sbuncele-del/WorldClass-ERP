@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>SiyaBusa ERP — Business Plan 2026</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm 22mm 18mm;
+    @top-left { content: "SiyaBusa ERP — Business Plan 2026"; font-size: 8pt; color: #888; font-family: Arial,sans-serif; }
+    @top-right { content: "Masaphokati Technologies (Pty) Ltd — CONFIDENTIAL"; font-size: 8pt; color: #888; font-family: Arial,sans-serif; }
+    @bottom-center { content: counter(page) " of 18"; font-size: 8pt; color: #888; font-family: Arial,sans-serif; }
+  }
+  @page :first {
+    @top-left { content: ""; }
+    @top-right { content: ""; }
+    @bottom-center { content: ""; }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 9.5pt; color: #222; line-height: 1.5; }
+
+  /* ── COVER PAGE ─────────────────────────────────────────── */
+  .cover {
+    page-break-after: always;
+    background: #0a1628;
+    color: #fff;
+    min-height: 270mm;
+    display: flex;
+    flex-direction: column;
+    padding: 30mm 20mm 20mm;
+  }
+  .cover-top-bar { width:48px; height:4px; background:#c9a84c; margin-bottom:14mm; }
+  .cover-logo { font-size:22pt; font-weight:900; letter-spacing:1px; color:#c9a84c; }
+  .cover-subtitle { font-size:10pt; color:#aaa; margin-top:2mm; letter-spacing:2px; text-transform:uppercase; }
+  .cover-title { margin-top:18mm; font-size:32pt; font-weight:900; line-height:1.1; text-transform:uppercase; letter-spacing:2px; color:#fff; }
+  .cover-version { margin-top:6mm; font-size:10pt; color:#c9a84c; letter-spacing:1px; text-transform:uppercase; }
+  .cover-body { flex:1; }
+  .cover-meta { margin-top:14mm; display:flex; gap:16mm; flex-wrap:wrap; }
+  .cover-meta-item label { display:block; font-size:7.5pt; text-transform:uppercase; letter-spacing:1px; color:#888; margin-bottom:1mm; }
+  .cover-meta-item span { font-size:10pt; font-weight:bold; color:#fff; }
+  .cover-tagline { font-size:13pt; font-weight:700; letter-spacing:3px; color:#c9a84c; text-transform:uppercase; margin-top:20mm; }
+  .cover-footer-bar { border-top:1px solid #2a3a5a; padding-top:5mm; margin-top:10mm; display:flex; justify-content:space-between; font-size:8pt; color:#555; }
+
+  /* ── CONTENT ─────────────────────────────────────────────── */
+  .doc-intro { margin-bottom:6mm; padding:5mm 6mm; background:#f0f4f8; border-left:4px solid #c9a84c; font-size:9pt; color:#444; }
+  h1 { font-size:15pt; font-weight:900; color:#0a1628; border-bottom:2.5px solid #c9a84c; padding-bottom:2mm; margin:7mm 0 4mm; text-transform:uppercase; letter-spacing:1px; }
+  h2 { font-size:11pt; font-weight:700; color:#0a1628; margin:5mm 0 2mm; }
+  h3 { font-size:9.5pt; font-weight:700; color:#1a2c4a; margin:3mm 0 1.5mm; }
+  p { margin-bottom:2.5mm; }
+  ul { margin: 2mm 0 3mm 5mm; }
+  ul li { margin-bottom:1mm; }
+  .section { margin-bottom:6mm; }
+
+  table { width:100%; border-collapse:collapse; margin:3mm 0; font-size:8.5pt; }
+  th { background:#0a1628; color:#c9a84c; font-weight:700; padding:2.5mm 3mm; text-align:left; font-size:8pt; }
+  td { border:1px solid #ddd; padding:2mm 3mm; vertical-align:top; }
+  tr:nth-child(even) td { background:#f8f9fb; }
+  tr:hover td { background:#f0f4f8; }
+  .key-fact { background:#0a1628; color:#fff; font-weight:700; }
+  .highlight { background:#fffbe6; border-left:3px solid #c9a84c; padding:2mm 3mm; margin:2mm 0; font-size:8.5pt; }
+  .label-row th { background:#1a2c4a; }
+  .gold { color:#c9a84c; font-weight:700; }
+  .badge { display:inline-block; background:#c9a84c; color:#0a1628; font-weight:700; padding:0.5mm 2mm; border-radius:2px; font-size:7.5pt; }
+  .two-col { display:flex; gap:5mm; }
+  .two-col > div { flex:1; }
+  .pb { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-top-bar"></div>
+  <div class="cover-logo">SiyaBusa ERP</div>
+  <div class="cover-subtitle">Investor &amp; Partner Documentation</div>
+  <div class="cover-body">
+    <div class="cover-title">Business<br>Plan<br>2026</div>
+    <div class="cover-version">Version 2.0 &nbsp;|&nbsp; April 2026</div>
+    <div class="cover-meta">
+      <div class="cover-meta-item"><label>Company</label><span>Masaphokati Technologies (Pty) Ltd</span></div>
+      <div class="cover-meta-item"><label>Classification</label><span>Confidential</span></div>
+      <div class="cover-meta-item"><label>Department</label><span>Executive</span></div>
+    </div>
+  </div>
+  <div class="cover-tagline">WE RULE. WE GOVERN. WE EMPOWER.</div>
+  <div class="cover-footer-bar">
+    <span>Masaphokati Technologies (Pty) Ltd — Confidential</span>
+    <span>April 2026</span>
+  </div>
+</div>
+
+<!-- INTRO BLURB -->
+<div class="doc-intro">
+  📋 <strong>COMPLETE BUSINESS PLAN</strong> — A comprehensive, bankable business plan covering company overview, market analysis, financial projections, go-to-market strategy, and the path to JSE AltX listing.
+</div>
+
+<!-- SECTION 1: EXECUTIVE SUMMARY -->
+<h1>Executive Summary</h1>
+<div class="section">
+  <h2>Company Overview</h2>
+  <p>Masaphokati Technologies (Pty) Ltd is a South African technology company developing <strong>SiyaBusa ERP</strong>, a comprehensive cloud-native Enterprise Resource Planning platform purpose-built for African mid-market businesses.</p>
+
+  <h2>Key Facts</h2>
+  <table>
+    <thead><tr><th>Aspect</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Legal Entity</td><td>Masaphokati Technologies (Pty) Ltd</td></tr>
+      <tr><td>Registration</td><td>Registered with CIPC</td></tr>
+      <tr><td>Product</td><td>SiyaBusa ERP — Enterprise Resource Planning System</td></tr>
+      <tr><td>Stage</td><td>Product Complete, Pre-Revenue</td></tr>
+      <tr><td>Location</td><td>South Africa</td></tr>
+      <tr><td>Target Market</td><td>Mid-market businesses (R10M–R500M revenue)</td></tr>
+      <tr><td>Funding Request</td><td>R2,000,000 Seed Round</td></tr>
+      <tr><td>Long-term Goal</td><td>JSE AltX listing by Q2 2029</td></tr>
+    </tbody>
+  </table>
+
+  <h2>What We've Built</h2>
+  <p>SiyaBusa ERP is a fully functional, production-ready ERP system:</p>
+  <ul>
+    <li><strong>17+ Complete Modules</strong> covering all core business operations</li>
+    <li><strong>400+ API Endpoints</strong> deployed on Vultr VPS (Johannesburg)</li>
+    <li><strong>150+ Database Tables</strong> with proper relationships and indexing</li>
+    <li><strong>9 AI-Powered Assistants</strong> for natural language queries and automation</li>
+    <li><strong>6 Industry Verticals</strong> (Healthcare, Mining, Manufacturing, Property, Construction, Professional Services)</li>
+    <li>Native SA Compliance (SARS, BCEA, POPIA, B-BBEE)</li>
+  </ul>
+  <div class="highlight">Total Development Investment: Approximately R3.5 million in sweat equity (18 months)</div>
+
+  <h2>Investment Opportunity</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Amount Requested</td><td><strong>R2,000,000</strong></td></tr>
+      <tr><td>Investment Instrument</td><td>Ordinary Shares (Private Placement)</td></tr>
+      <tr><td>Pre-Money Valuation</td><td>R10,000,000</td></tr>
+      <tr><td>Post-Money Valuation</td><td>R12,000,000</td></tr>
+      <tr><td>Equity Offered</td><td>16.67%</td></tr>
+      <tr><td>Use of Funds</td><td>Sales, Marketing, Operations</td></tr>
+      <tr><td>Exit Strategy</td><td>JSE AltX listing (Q2 2029)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Why This Investment Makes Sense</h2>
+  <table>
+    <thead><tr><th>Factor</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td>Product Exists</td><td>Not a concept — working software deployed on Vultr VPS (Johannesburg)</td></tr>
+      <tr><td>Market Validated</td><td>Competitors charge R50K–R200K/month, proving demand</td></tr>
+      <tr><td>Gap is Real</td><td>60,000+ SA businesses need full ERP but can't afford current options</td></tr>
+      <tr><td>Path to Liquidity</td><td>Clear AltX listing roadmap with defined milestones</td></tr>
+      <tr><td>Development Complete</td><td>No technology risk — we're building customers, not code</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 2: THE PROBLEM -->
+<h1>The Problem</h1>
+<div class="section">
+  <h2>The Two-Tier ERP Crisis</h2>
+  <p>South African mid-market businesses face an impossible choice:</p>
+
+  <h3>Tier 1: Enterprise ERP (SAP, Oracle, Microsoft)</h3>
+  <ul>
+    <li>Cost: R50,000 – R200,000+ per month</li>
+    <li>Implementation: 6–18 months</li>
+    <li>SA Localization: R500,000 – R2,000,000 additional</li>
+    <li><em>Reality: Priced out of reach for mid-market</em></li>
+  </ul>
+
+  <h3>Tier 2: Basic Accounting Software (Xero, QuickBooks, Sage)</h3>
+  <ul>
+    <li>Cost: R500 – R2,000 per month</li>
+    <li>Capabilities: Accounting only</li>
+    <li>Missing: Manufacturing, Warehouse, HR, Operations, Compliance</li>
+    <li><em>Reality: Businesses outgrow within 2–3 years</em></li>
+  </ul>
+
+  <h2>The Gap</h2>
+  <p>60,000+ South African businesses with R10M – R500M revenue are stuck:</p>
+  <ul>
+    <li>Too large for basic accounting software</li>
+    <li>Too small (or too cost-conscious) for enterprise ERP</li>
+    <li>Forced to cobble together disconnected systems</li>
+    <li>Result: Data silos, compliance risk, operational inefficiency</li>
+  </ul>
+  <div class="highlight"><strong>This is our target market.</strong></div>
+</div>
+
+<!-- SECTION 3: MARKET SIZE -->
+<div class="pb"></div>
+<h1>Market Size</h1>
+<div class="section">
+  <h2>Total Addressable Market (TAM)</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>Value</th><th>Source</th></tr></thead>
+    <tbody>
+      <tr><td>SA Mid-Market Businesses</td><td>60,000+</td><td>Stats SA Business Register 2024</td></tr>
+      <tr><td>Revenue Range</td><td>R10M – R500M</td><td>SARS Company Tax Statistics</td></tr>
+      <tr><td>Average ERP Spend</td><td>R12,000/month</td><td>Industry Analysis</td></tr>
+      <tr><td>TAM (Annual)</td><td><strong>R8.64 Billion</strong></td><td>Calculated</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Serviceable Addressable Market (SAM)</h2>
+  <table>
+    <thead><tr><th>Segment</th><th>Businesses</th><th>Annual Value</th></tr></thead>
+    <tbody>
+      <tr><td>Manufacturing</td><td>12,000</td><td>R1.73B</td></tr>
+      <tr><td>Professional Services</td><td>15,000</td><td>R2.16B</td></tr>
+      <tr><td>Healthcare</td><td>5,000</td><td>R720M</td></tr>
+      <tr><td>Construction</td><td>8,000</td><td>R1.15B</td></tr>
+      <tr><td>Other Mid-Market</td><td>20,000</td><td>R2.88B</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Serviceable Obtainable Market (SOM) — 5-Year Target</h2>
+  <table>
+    <thead><tr><th>Year</th><th>Customers</th><th>ARR</th><th>Market Share</th></tr></thead>
+    <tbody>
+      <tr><td>2026</td><td>25</td><td>R1.8M</td><td>0.02%</td></tr>
+      <tr><td>2027</td><td>80</td><td>R11.5M</td><td>0.13%</td></tr>
+      <tr><td>2028</td><td>200</td><td>R28.8M</td><td>0.33%</td></tr>
+      <tr><td>2029</td><td>400</td><td>R57.6M</td><td>0.67%</td></tr>
+      <tr><td>2030</td><td>750</td><td>R108M</td><td>1.25%</td></tr>
+    </tbody>
+  </table>
+  <div class="highlight">Even 1% market share = R86.4M ARR</div>
+</div>
+
+<!-- SECTION 4: OUR SOLUTION -->
+<h1>Our Solution</h1>
+<div class="section">
+  <h2>SiyaBusa ERP Platform — Complete Module Coverage</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Modules</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Core Operations</td><td>Sales/CRM, Purchase, Inventory, Warehouse, Manufacturing</td><td><span class="badge">Complete</span></td></tr>
+      <tr><td>Finance</td><td>GL, Cash Management, Multi-Entity, Treasury, Asset Management</td><td><span class="badge">Complete</span></td></tr>
+      <tr><td>Human Resources</td><td>Payroll (SARS-compliant), Leave, Recruitment, Performance</td><td><span class="badge">Complete</span></td></tr>
+      <tr><td>Compliance</td><td>SARS Sentinel, Audit Ready, POPIA, B-BBEE Tracking</td><td><span class="badge">Complete</span></td></tr>
+      <tr><td>Industry Verticals</td><td>Healthcare, Mining, Manufacturing, Property, Construction, Services</td><td><span class="badge">Complete</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Technical Architecture</h2>
+  <table>
+    <thead><tr><th>Component</th><th>Technology</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Backend</td><td>Node.js, TypeScript, Express</td><td><span class="badge">Production</span></td></tr>
+      <tr><td>Frontend</td><td>React, TypeScript, Vite</td><td><span class="badge">Production</span></td></tr>
+      <tr><td>Database</td><td>PostgreSQL (150+ tables)</td><td><span class="badge">Production</span></td></tr>
+      <tr><td>Cache</td><td>Redis</td><td><span class="badge">Production</span></td></tr>
+      <tr><td>Infrastructure</td><td>Vultr VPS (Ubuntu, Johannesburg, South Africa)</td><td><span class="badge">Production</span></td></tr>
+      <tr><td>AI Layer</td><td>Multiple LLM integrations (9 specialized agents)</td><td><span class="badge">Production</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Competitive Advantages</h2>
+  <table>
+    <thead><tr><th>Factor</th><th>Global Vendors</th><th>Local Competitors</th><th>SiyaBusa</th></tr></thead>
+    <tbody>
+      <tr><td>Monthly Cost</td><td>R50K–R200K</td><td>R20K–R50K</td><td><strong>R8K–R25K</strong></td></tr>
+      <tr><td>SA Compliance</td><td>R500K–R2M extra</td><td>Partial</td><td><strong>Built-in</strong></td></tr>
+      <tr><td>Implementation</td><td>6–12 months</td><td>3–6 months</td><td><strong>4–8 weeks</strong></td></tr>
+      <tr><td>AI Assistant</td><td>Limited</td><td>None</td><td><strong>9 specialized agents</strong></td></tr>
+      <tr><td>Multi-Tenant</td><td>Yes</td><td>Varies</td><td><strong>Native</strong></td></tr>
+      <tr><td>Industry Verticals</td><td>Generic</td><td>Limited</td><td><strong>6 verticals</strong></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 5: BUSINESS MODEL -->
+<div class="pb"></div>
+<h1>Business Model</h1>
+<div class="section">
+  <h2>Market Positioning</h2>
+  <p>We serve the <strong>IGNORED middle market</strong> — not competing with Xero or SAP.</p>
+  <table>
+    <thead><tr><th>Segment</th><th>Current Options</th><th>Problem</th></tr></thead>
+    <tbody>
+      <tr><td>Micro/Small</td><td>Xero, QuickBooks</td><td>Accounting only</td></tr>
+      <tr><td><strong>Mid-Market (60K+ businesses)</strong></td><td><strong>NOTHING</strong></td><td>Too big for Xero, priced out of SAP</td></tr>
+      <tr><td>Enterprise</td><td>SAP, Oracle</td><td>R100K–R500K/month</td></tr>
+    </tbody>
+  </table>
+  <div class="highlight"><strong>We fill the gap that nobody else serves.</strong></div>
+
+  <h2>Pricing Philosophy: EVERYTHING INCLUDED</h2>
+  <p>Our competitive advantage is what's bundled by default.</p>
+  <table>
+    <thead><tr><th>Feature</th><th>SAP</th><th>Sage</th><th>SiyaBusa</th></tr></thead>
+    <tbody>
+      <tr><td>SA Payroll</td><td>Extra R15K</td><td>Extra R8K</td><td><span class="badge">INCLUDED</span></td></tr>
+      <tr><td>SARS Integration</td><td>Extra R25K</td><td>Extra</td><td><span class="badge">INCLUDED</span></td></tr>
+      <tr><td>Audit Tools</td><td>Extra R20K</td><td>Extra</td><td><span class="badge">INCLUDED</span></td></tr>
+      <tr><td>AI Assistants</td><td>Extra</td><td>None</td><td><span class="badge">INCLUDED</span></td></tr>
+      <tr><td>Video/Chat</td><td>Zoom/Slack extra</td><td>Zoom/Slack extra</td><td><span class="badge">INCLUDED</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Revenue Streams</h2>
+
+  <h3>1. Subscription Revenue (Primary — 85% of revenue)</h3>
+  <p><strong>Founding Member Pricing (First 25 Customers) — All-Inclusive</strong></p>
+  <table>
+    <thead><tr><th>Tier</th><th>Per User/Month</th><th>What's Included</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Founding Member</strong></td><td><strong class="gold">R299/user</strong></td><td>ALL modules included, no platform fee, locked-in rate</td></tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:3mm;"><strong>Standard Platform + Per-User (from Q3 2026)</strong></p>
+  <table>
+    <thead><tr><th>Plan</th><th>Platform</th><th>Per User</th><th>What's Included</th></tr></thead>
+    <tbody>
+      <tr><td>Starter</td><td>R8,000/mo</td><td>R650</td><td>Finance, Sales, Purchase, Inventory, SARS Sentinel, 3 AI Agents</td></tr>
+      <tr><td>Professional</td><td>R15,000/mo</td><td>R950</td><td>+ Manufacturing, Warehouse, Projects, Audit Ready, Comms Hub, 9 AI</td></tr>
+      <tr><td>Enterprise</td><td>R25,000/mo</td><td>R1,200</td><td>+ Multi-Entity, Assets, Payroll, API, Full Compliance</td></tr>
+      <tr><td>Corporate</td><td>R45,000/mo</td><td>R1,500</td><td>+ Unlimited, 2 Industry Modules, Dedicated Support</td></tr>
+    </tbody>
+  </table>
+
+  <h3>2. Industry Vertical Add-Ons (10% of revenue)</h3>
+  <table>
+    <thead><tr><th>Module</th><th>Monthly</th><th>Target</th></tr></thead>
+    <tbody>
+      <tr><td>Healthcare</td><td>R4,000</td><td>Clinics, practices</td></tr>
+      <tr><td>Mining</td><td>R5,000</td><td>Mining companies</td></tr>
+      <tr><td>Construction</td><td>R4,000</td><td>Contractors</td></tr>
+      <tr><td>Property</td><td>R3,500</td><td>Property managers</td></tr>
+    </tbody>
+  </table>
+
+  <h3>3. Implementation Services (5% of revenue)</h3>
+  <table>
+    <thead><tr><th>Package</th><th>Price</th><th>Duration</th></tr></thead>
+    <tbody>
+      <tr><td>QuickStart</td><td>R35,000</td><td>2 weeks</td></tr>
+      <tr><td>Standard</td><td>R75,000</td><td>4–6 weeks</td></tr>
+      <tr><td>Enterprise</td><td>R150,000</td><td>6–8 weeks</td></tr>
+      <tr><td>Data Migration</td><td>R25,000 – R100,000</td><td>Custom</td></tr>
+      <tr><td>Training (per day)</td><td>R8,000 – R15,000</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Pricing Examples</h2>
+  <table>
+    <thead><tr><th>Customer Type</th><th>Users</th><th>Monthly Cost</th><th>vs Competitor</th></tr></thead>
+    <tbody>
+      <tr><td>Founding Member (10 users)</td><td>10</td><td><strong>R2,990</strong></td><td>vs Xero: R800 (but no ERP)</td></tr>
+      <tr><td>Small Business (10 users)</td><td>10</td><td>R10,600</td><td>vs Xero: R800 (but no ERP)</td></tr>
+      <tr><td>Medium Business (30 users)</td><td>30</td><td>R26,000</td><td>vs SAP Business One: R80K–R120K</td></tr>
+      <tr><td>Enterprise (75 users)</td><td>75</td><td>R54,500</td><td>vs Oracle NetSuite: R180K–R250K</td></tr>
+    </tbody>
+  </table>
+  <div class="highlight">Average Revenue Per Customer (ARPC): R18,000/month = R216,000/year (standard pricing)</div>
+
+  <h2>Unit Economics</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>Value</th><th>Benchmark</th></tr></thead>
+    <tbody>
+      <tr><td>Customer Acquisition Cost (CAC)</td><td>R45,000</td><td>Industry: R30–80K</td></tr>
+      <tr><td>Lifetime Value (LTV)</td><td>R576,000</td><td>Based on 4-year retention</td></tr>
+      <tr><td>LTV:CAC Ratio</td><td>12.8:1</td><td>Industry target: &gt;3:1</td></tr>
+      <tr><td>Gross Margin</td><td>75%</td><td>SaaS average: 70–80%</td></tr>
+      <tr><td>Net Revenue Retention</td><td>110%</td><td>Target: &gt;100%</td></tr>
+      <tr><td>Monthly Churn</td><td>&lt;2%</td><td>Target</td></tr>
+      <tr><td>Payback Period</td><td>3.75 months</td><td>Industry: 12–18 months</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 6: GO-TO-MARKET -->
+<div class="pb"></div>
+<h1>Go-to-Market Strategy</h1>
+<div class="section">
+  <h2>Phase 1: Foundation (Q1–Q2 2026) — First 10 Paying Customers</h2>
+  <table>
+    <thead><tr><th>Activity</th><th>Timeline</th><th>Target</th></tr></thead>
+    <tbody>
+      <tr><td>Beta Partner Program</td><td>Jan–Mar</td><td>5–10 partners</td></tr>
+      <tr><td>Case Study Development</td><td>Feb–Mar</td><td>3 documented wins</td></tr>
+      <tr><td>First Paying Customers</td><td>Mar–Jun</td><td>10 customers</td></tr>
+      <tr><td>Founding Member MRR</td><td>Jun</td><td>R30,000+</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Customer Acquisition Strategy</h3>
+  <ul>
+    <li><strong>Direct Sales (60%):</strong> Founder-led sales to Finance Directors and Operations Managers actively searching for ERP alternatives</li>
+    <li><strong>Partner Channel (25%):</strong> Accounting firms referring clients who've outgrown Sage/Xero; IT consultants as implementation partners</li>
+    <li><strong>Inbound Marketing (15%):</strong> LinkedIn thought leadership, ERP selection guides, Google Ads (high-intent keywords)</li>
+  </ul>
+
+  <h2>Phase 2: Growth (Q3–Q4 2026) — Reach R100,000+ MRR</h2>
+  <table>
+    <thead><tr><th>Activity</th><th>Timeline</th><th>Target</th></tr></thead>
+    <tbody>
+      <tr><td>Sales Team Hire</td><td>Jul</td><td>2 sales reps</td></tr>
+      <tr><td>Marketing Scale</td><td>Jul–Sep</td><td>5x content production</td></tr>
+      <tr><td>Customer Success</td><td>Aug</td><td>Dedicated team</td></tr>
+      <tr><td>Monthly Customers</td><td>Dec</td><td>25 total</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Phase 3: Scale (2027–2028) — Prepare for Series A</h2>
+  <table>
+    <thead><tr><th>Milestone</th><th>Timeline</th><th>Target</th></tr></thead>
+    <tbody>
+      <tr><td>Series A Raise</td><td>Q1 2028</td><td>R15–25M</td></tr>
+      <tr><td>Customers</td><td>Q4 2027</td><td>80</td></tr>
+      <tr><td>ARR</td><td>Q4 2027</td><td>R11.5M</td></tr>
+      <tr><td>Team Size</td><td>Q4 2027</td><td>25</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Phase 4: AltX Preparation (2028–2029)</h2>
+  <table>
+    <thead><tr><th>Phase</th><th>Timeline</th><th>Activities</th></tr></thead>
+    <tbody>
+      <tr><td>Preparation</td><td>Q3 2028</td><td>Corporate governance upgrade, King IV alignment</td></tr>
+      <tr><td>Adviser</td><td>Q4 2028</td><td>Appoint Designated Adviser</td></tr>
+      <tr><td>Documentation</td><td>Q1 2029</td><td>Pre-Listing Statement preparation</td></tr>
+      <tr><td>Shareholder Build</td><td>Q1–Q2 2029</td><td>Private placement to reach 100+ shareholders</td></tr>
+      <tr><td>JSE Application</td><td>Q2 2029</td><td>Submit listing application</td></tr>
+      <tr><td>Listing</td><td>Q2–Q3 2029</td><td>Trading commences</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 7: FINANCIAL PROJECTIONS -->
+<div class="pb"></div>
+<h1>Financial Projections</h1>
+<div class="section">
+  <h2>5-Year Revenue Forecast</h2>
+  <table>
+    <thead><tr><th>Year</th><th>Customers</th><th>MRR (End)</th><th>ARR</th><th>Growth</th></tr></thead>
+    <tbody>
+      <tr><td>2026</td><td>25</td><td>R100K</td><td>R1.8M</td><td>—</td></tr>
+      <tr><td>2027</td><td>80</td><td>R960K</td><td>R11.5M</td><td>539%</td></tr>
+      <tr><td>2028</td><td>200</td><td>R2.4M</td><td>R28.8M</td><td>150%</td></tr>
+      <tr><td>2029</td><td>400</td><td>R4.8M</td><td>R57.6M</td><td>100%</td></tr>
+      <tr><td>2030</td><td>750</td><td>R9M</td><td>R108M</td><td>88%</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Profit &amp; Loss Projection (Simplified)</h2>
+  <table>
+    <thead><tr><th>Year</th><th>Revenue</th><th>Gross Margin</th><th>Operating Costs</th><th>EBITDA</th><th>Margin</th></tr></thead>
+    <tbody>
+      <tr><td>2026</td><td>R1.8M</td><td>R1.35M (75%)</td><td>R2.4M</td><td>-R1.05M</td><td>-58%</td></tr>
+      <tr><td>2027</td><td>R11.5M</td><td>R8.6M</td><td>R7.5M</td><td>R1.1M</td><td>10%</td></tr>
+      <tr><td>2028</td><td>R28.8M</td><td>R21.6M</td><td>R17.3M</td><td>R4.3M</td><td>15%</td></tr>
+      <tr><td>2029</td><td>R57.6M</td><td>R43.2M</td><td>R31.7M</td><td>R11.5M</td><td>20%</td></tr>
+      <tr><td>2030</td><td>R108M</td><td>R81M</td><td>R54M</td><td>R27M</td><td>25%</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Use of Funds (R2,000,000 Seed)</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Amount</th><th>%</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td>Sales &amp; Marketing</td><td>R800,000</td><td>40%</td><td>Customer acquisition, brand building</td></tr>
+      <tr><td>Team Expansion</td><td>R600,000</td><td>30%</td><td>Sales, customer success, support</td></tr>
+      <tr><td>Operations</td><td>R300,000</td><td>15%</td><td>Vultr VPS, tools, office, legal</td></tr>
+      <tr><td>Product Enhancement</td><td>R200,000</td><td>10%</td><td>Features, integrations, UX</td></tr>
+      <tr><td>Working Capital</td><td>R100,000</td><td>5%</td><td>Reserve for opportunities</td></tr>
+      <tr><td class="key-fact">Total</td><td class="key-fact">R2,000,000</td><td class="key-fact">100%</td><td class="key-fact"></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Key Financial Metrics at AltX Listing (Q2 2029)</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>Target</th></tr></thead>
+    <tbody>
+      <tr><td>ARR</td><td>R50–60M</td></tr>
+      <tr><td>Customers</td><td>350–400</td></tr>
+      <tr><td>Gross Margin</td><td>&gt;75%</td></tr>
+      <tr><td>EBITDA Margin</td><td>15–20%</td></tr>
+      <tr><td>Net Revenue Retention</td><td>&gt;110%</td></tr>
+      <tr><td>Employee Count</td><td>50–75</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 8: PATH TO ALTX -->
+<h1>Path to JSE AltX Listing</h1>
+<div class="section">
+  <h2>Why AltX?</h2>
+  <p>The JSE AltX (Alternative Exchange) is designed for small and medium-sized companies seeking to raise capital and gain the benefits of a public listing without the full requirements of the Main Board.</p>
+
+  <h2>AltX Requirements vs Our Status</h2>
+  <table>
+    <thead><tr><th>Requirement</th><th>AltX Minimum</th><th>Our Target</th></tr></thead>
+    <tbody>
+      <tr><td>Share Capital</td><td>R2,000,000</td><td>R12,000,000+</td></tr>
+      <tr><td>Shareholders</td><td>100</td><td>150+</td></tr>
+      <tr><td>Public Float</td><td>10%</td><td>15–20%</td></tr>
+      <tr><td>Designated Adviser</td><td>Required</td><td>Will appoint Q1 2029</td></tr>
+      <tr><td>Audited Financials</td><td>3 years</td><td>2026, 2027, 2028</td></tr>
+      <tr><td>Profit History</td><td>Not required</td><td>Profitable by 2028</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 9: TEAM -->
+<div class="pb"></div>
+<h1>Team</h1>
+<div class="section">
+  <h2>Current Team</h2>
+  <table>
+    <thead><tr><th>Role</th><th>Name</th><th>Background</th></tr></thead>
+    <tbody>
+      <tr><td>Founder &amp; CEO</td><td><strong>Sibusiso Mavuso</strong></td><td>ERP expertise, vision, product development — 18 months building SiyaBusa</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Hiring Plan (Post-Seed)</h2>
+  <table>
+    <thead><tr><th>Role</th><th>Timeline</th><th>Salary Range</th></tr></thead>
+    <tbody>
+      <tr><td>Sales Representatives (2)</td><td>Q2 2026</td><td>R40–60K/month each</td></tr>
+      <tr><td>Customer Success Manager</td><td>Q3 2026</td><td>R35–50K/month</td></tr>
+      <tr><td>Marketing Manager</td><td>Q3 2026</td><td>R40–55K/month</td></tr>
+      <tr><td>Support Engineer</td><td>Q4 2026</td><td>R30–45K/month</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Advisory Board (Planned)</h2>
+  <table>
+    <thead><tr><th>Role</th><th>Profile</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td>Financial Advisor</td><td>CA(SA) with tech experience</td><td>Audit preparation, financial governance</td></tr>
+      <tr><td>Industry Advisor</td><td>Manufacturing sector executive</td><td>Customer introductions, product feedback</td></tr>
+      <tr><td>Technology Advisor</td><td>Enterprise software veteran</td><td>Architecture review, scaling guidance</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 10: RISK FACTORS -->
+<h1>Risk Factors</h1>
+<div class="section">
+  <h2>Market Risks</h2>
+  <table>
+    <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>Slow Adoption</td><td>Beta program creates dependency; locked-in reference customers</td></tr>
+      <tr><td>Price Pressure</td><td>Value-based selling; focus on ROI, not features</td></tr>
+      <tr><td>Economic Downturn</td><td>ERP is essential infrastructure; recession-resistant</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Competitive Risks</h2>
+  <table>
+    <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>Large Vendor Response</td><td>Mid-market not profitable for SAP/Oracle at our price point</td></tr>
+      <tr><td>New Entrants</td><td>18-month head start; compliance moat</td></tr>
+      <tr><td>Local Competitors</td><td>Superior feature set; modern architecture</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Operational Risks</h2>
+  <table>
+    <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>Key Person Dependency</td><td>Document everything; build team early</td></tr>
+      <tr><td>Technical Debt</td><td>Modern architecture; clean codebase</td></tr>
+      <tr><td>Customer Concentration</td><td>Diversify across industries from start</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Financial Risks</h2>
+  <table>
+    <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>Runway Exhaustion</td><td>Conservative burn rate; clear milestones for Series A</td></tr>
+      <tr><td>Long Sales Cycles</td><td>Target businesses in active buying mode</td></tr>
+      <tr><td>Collection Risk</td><td>Monthly billing; upfront implementation fees</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 11: INVESTMENT TERMS -->
+<div class="pb"></div>
+<h1>Investment Terms</h1>
+<div class="section">
+  <h2>Summary Terms</h2>
+  <table>
+    <thead><tr><th>Term</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Investment Amount</td><td><strong>R2,000,000</strong></td></tr>
+      <tr><td>Security Type</td><td>Ordinary Shares</td></tr>
+      <tr><td>Pre-Money Valuation</td><td>R10,000,000</td></tr>
+      <tr><td>Post-Money Valuation</td><td>R12,000,000</td></tr>
+      <tr><td>Equity Issued</td><td>16.67%</td></tr>
+      <tr><td>Minimum Investment</td><td>R100,000</td></tr>
+      <tr><td>Board Representation</td><td>Observer seat for investors &gt;5%</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Investor Rights</h2>
+  <table>
+    <thead><tr><th>Right</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Information Rights</td><td>Quarterly financial updates, annual audited statements</td></tr>
+      <tr><td>Pro-Rata Rights</td><td>Right to maintain ownership % in future rounds</td></tr>
+      <tr><td>Anti-Dilution</td><td>Weighted-average anti-dilution protection</td></tr>
+      <tr><td>Tag-Along</td><td>Right to sell alongside founders in any exit</td></tr>
+      <tr><td>Liquidation Preference</td><td>1x non-participating</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- SECTION 12: EXIT STRATEGY -->
+<h1>Exit Strategy</h1>
+<div class="section">
+  <h2>Primary Exit: JSE AltX IPO (Target Q2 2029)</h2>
+  <table>
+    <thead><tr><th>Scenario</th><th>ARR at Listing</th><th>Valuation (5x ARR)</th><th>Seed Investor Return</th></tr></thead>
+    <tbody>
+      <tr><td>Base Case</td><td>R50M</td><td>R250M</td><td>3.4x (R6.8M for R2M)</td></tr>
+      <tr><td>Upside Case</td><td>R75M</td><td>R375M</td><td>5.2x (R10.4M)</td></tr>
+      <tr><td>Downside Case</td><td>R30M</td><td>R150M</td><td>2.0x (R4.1M)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Potential Acquirers</h2>
+  <table>
+    <thead><tr><th>Type</th><th>Examples</th><th>Strategic Rationale</th></tr></thead>
+    <tbody>
+      <tr><td>Global ERP Vendors</td><td>Tier 2 players</td><td>SA market entry with built-in compliance</td></tr>
+      <tr><td>African Tech Companies</td><td>Regional players</td><td>Expand enterprise offering</td></tr>
+      <tr><td>Private Equity</td><td>Tech-focused PE</td><td>Consolidation play</td></tr>
+      <tr><td>Accounting Firms</td><td>Big 4, mid-tier</td><td>Vertical integration</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- APPENDICES -->
+<h1>Appendices</h1>
+<div class="section">
+  <table>
+    <thead><tr><th>Appendix</th><th>Availability</th></tr></thead>
+    <tbody>
+      <tr><td>A: Product Screenshots</td><td>Available upon request — Live demo preferred</td></tr>
+      <tr><td>B: Technical Architecture Diagram</td><td>Available upon request</td></tr>
+      <tr><td>C: Customer Interview Summaries</td><td>In progress — Beta program Q1–Q2 2026</td></tr>
+      <tr><td>D: Detailed Financial Model</td><td>Available upon request</td></tr>
+      <tr><td>E: CIPC Registration Documents</td><td>Available upon request</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Contact Information</h2>
+  <table>
+    <thead><tr><th>Channel</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Email</td><td>investor@siyabusaerp.co.za</td></tr>
+      <tr><td>Phone</td><td>074 012 6873</td></tr>
+      <tr><td>Website</td><td>www.siyabusaerp.co.za</td></tr>
+      <tr><td>Demo</td><td>Available upon request</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:5mm; font-size:8pt; color:#666;">This document is confidential and intended for potential investors only.<br>© 2026 Masaphokati Technologies (Pty) Ltd. All rights reserved.</p>
+</div>
+
+</body>
+</html>

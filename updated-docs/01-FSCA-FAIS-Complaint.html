@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 30mm 25mm 25mm 25mm; }
+  body {
+    font-family: 'DejaVu Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 10pt; line-height: 1.65; color: #333; margin: 0; padding: 0;
+  }
+  /* === LETTERHEAD === */
+  .letterhead { position: relative; margin-bottom: 0; }
+  .letterhead .name {
+    font-family: 'DejaVu Serif', Georgia, 'Times New Roman', serif;
+    font-size: 20pt; font-weight: 900; color: #2c3e50; margin: 0;
+  }
+  .letterhead .jobtitle {
+    font-size: 9pt; color: #888; margin: 2px 0 0 0;
+  }
+  .letterhead .contact {
+    position: absolute; top: 0; right: 0; text-align: right;
+    font-size: 9pt; color: #666; line-height: 1.6;
+  }
+  .red-line { border: none; border-top: 3px solid #c0392b; margin: 14px 0 16px 0; }
+  /* === DRAFT BANNER === */
+  .draft-banner {
+    background: #3d5a73; color: #fff; text-align: center;
+    padding: 10px 0; font-size: 8.5pt; letter-spacing: 4px;
+    text-transform: uppercase; font-weight: 700; margin-bottom: 20px;
+  }
+  /* === DATE / TO === */
+  .insert-date {
+    font-size: 10pt; font-weight: 700; color: #c0392b; margin-bottom: 16px;
+  }
+  .to-label { font-size: 8pt; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
+  .to-block { margin-bottom: 18px; font-size: 10pt; line-height: 1.7; }
+  .to-block .org { font-weight: 700; }
+  .to-block .contact-line { margin-top: 6px; }
+  .to-block .contact-line strong { color: #2c3e50; }
+  /* === RE BLOCK === */
+  .re-block {
+    border-left: 3px solid #5a7d9a; padding: 12px 16px;
+    background: #f5f7f9; margin-bottom: 24px;
+  }
+  .re-block p {
+    font-size: 10pt; font-weight: 700; color: #2c3e50;
+    text-transform: uppercase; margin: 0; line-height: 1.5;
+  }
+  /* === SECTION HEADINGS === */
+  h2 {
+    font-family: 'DejaVu Serif', Georgia, serif;
+    font-size: 13pt; font-weight: 700; color: #2c3e50;
+    border-bottom: 1px solid #ccc; padding-bottom: 6px;
+    margin-top: 26px; margin-bottom: 14px;
+  }
+  h3 {
+    font-size: 9pt; font-weight: 700; color: #2c3e50;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    margin-top: 18px; margin-bottom: 8px;
+  }
+  /* === TABLES === */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 10pt; }
+  table.info-table td { padding: 10px 14px; border-bottom: 1px solid #e8e8e8; vertical-align: top; }
+  table.info-table tr:nth-child(even) td { background: #f8f9fa; }
+  table.info-table .label { font-weight: 700; color: #2c3e50; width: 35%; }
+  table.info-table .value { color: #333; }
+  table.info-table .value.red { color: #c0392b; font-weight: 700; }
+  /* Data tables with header */
+  table.data-table th {
+    background: #2c3e50; color: #fff; text-align: left; padding: 9px 12px;
+    font-size: 7.5pt; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 700;
+  }
+  table.data-table td { padding: 9px 12px; border-bottom: 1px solid #e8e8e8; }
+  table.data-table tr:nth-child(even) td { background: #f8f9fa; }
+  /* === BODY TEXT === */
+  .snum { font-weight: 700; color: #2c3e50; }
+  ol, ul { padding-left: 22px; }
+  li { margin-bottom: 6px; }
+  p { margin: 0 0 8px 0; }
+  strong { color: #2c3e50; }
+  /* === CHECKLIST === */
+  .checklist-item { margin-bottom: 4px; font-size: 10pt; }
+  .check { color: #27ae60; }
+  .uncheck { color: #999; }
+  /* === SIGNATURE === */
+  .sig-block { margin-top: 44px; }
+  .sig-line { border-bottom: 1px solid #444; width: 250px; height: 28px; margin-bottom: 4px; }
+  .sig-label { font-size: 9pt; color: #666; margin-bottom: 20px; }
+  .portal-note {
+    margin-top: 24px; font-size: 9pt; color: #888; font-style: italic;
+    border-top: 1px solid #ddd; padding-top: 12px;
+  }
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<!-- LETTERHEAD -->
+<div class="letterhead">
+  <p class="name">DAVID MODIKWE</p>
+  <p class="jobtitle">Capital &amp; Projects Specialist</p>
+  <div class="contact">
+    +27 71 858 0868<br>
+    david.modikwe@thungela.com<br>
+    david.modikwe@propertydenvour.com
+  </div>
+</div>
+<hr class="red-line">
+
+<p class="insert-date">8 April 2026</p>
+
+<p class="to-label">TO</p>
+<div class="to-block">
+  <span class="org">The Financial Sector Conduct Authority (FSCA)</span><br>
+  Complaints Department<br>
+  P.O. Box 35655, Menlo Park, 0102<br>
+  <div class="contact-line"><strong>Email:</strong> complaints@fsca.co.za</div>
+  <div class="contact-line"><strong>Tel:</strong> 0800 110 443 / 012 428 8000</div>
+</div>
+
+<div class="re-block">
+  <p>RE: FORMAL COMPLAINT — IMPACT EMPOWERMENT VENTURES (PTY) LTD (SECTION 12J VCC)</p>
+  <p>SUSPECTED ENGINEERED LIQUIDATION AND INVESTOR PREJUDICE</p>
+</div>
+
+<!-- COMPLAINANT DETAILS -->
+<h2>Complainant Details</h2>
+<table class="info-table">
+  <tr><td class="label">Full Name</td><td class="value">David Modikwe</td></tr>
+  <tr><td class="label">ID Number</td><td class="value">831006 5539 087</td></tr>
+  <tr><td class="label">Contact Number</td><td class="value">+27 71 858 0868</td></tr>
+  <tr><td class="label">Email (Primary)</td><td class="value">david.modikwe@thungela.com</td></tr>
+  <tr><td class="label">Email (Secondary)</td><td class="value">david.modikwe@propertydenvour.com</td></tr>
+  <tr><td class="label">Email (Personal)</td><td class="value">tmodikwe@hotmail.co.za</td></tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- RESPONDENT DETAILS -->
+<h2>Respondent Details</h2>
+<table class="info-table">
+  <tr><td class="label">Company Name</td><td class="value">Impact Empowerment Ventures (Pty) Ltd ("IEV" / "Impact")</td></tr>
+  <tr><td class="label">Trading As</td><td class="value">Part of Impact Investment Group</td></tr>
+  <tr><td class="label">FSP Number</td><td class="value">49377</td></tr>
+  <tr><td class="label">Registered Address</td><td class="value">Flexi Offices (Block E), Nedbank Campus, 135 Rivonia Street, Sandton, 2196</td></tr>
+  <tr><td class="label">Key Personnel</td><td class="value">Dave Humphrey; Zethu Ndlangamandla; Harriet Ingman</td></tr>
+  <tr><td class="label">Contact</td><td class="value">zethu@impactinafrica.com / s12j@impactinafrica.com</td></tr>
+</table>
+
+<h2>Appointed Liquidator</h2>
+<table class="info-table">
+  <tr><td class="label">Firm</td><td class="value">Marumo Trustees</td></tr>
+  <tr><td class="label">Email</td><td class="value">info@marumotrustees.co.za / marumo@telkomsa.net</td></tr>
+</table>
+
+<!-- 1. BACKGROUND -->
+<h2>1. Background</h2>
+
+<p><span class="snum">1.1</span> &ensp; I am an individual investor who invested a total of <strong>R2,175,375.00 (Two Million One Hundred and Seventy-Five Thousand Three Hundred and Seventy-Five Rand)</strong> over a two-year period (2020 and 2021) through <strong>Impact Empowerment Ventures (Pty) Ltd</strong> ("IEV"), a Venture Capital Company ("VCC") approved by the South African Revenue Service ("SARS") in terms of <strong>Section 12J of the Income Tax Act, No. 58 of 1962</strong>.</p>
+
+<p><span class="snum">1.2</span> &ensp; My investment was structured as follows:</p>
+
+<table class="data-table">
+  <tr><th>Investor Number</th><th>Share Certificate</th><th>Year</th><th>Amount</th></tr>
+  <tr><td>S12J IIM 2019/147</td><td>D4</td><td>2020</td><td>R690,000</td></tr>
+  <tr><td>S12J IEV 2020/191</td><td>D34</td><td>2020/2021</td><td>R740,300</td></tr>
+  <tr><td>S12J IEV 2022/158</td><td>D86</td><td>2021</td><td>R745,075</td></tr>
+  <tr><td colspan="3" style="text-align:right; font-weight:700;">TOTAL</td><td style="font-weight:700;">R2,175,375.00</td></tr>
+</table>
+
+<p><span class="snum">1.3</span> &ensp; My funds were invested by IEV into <strong>The Joseph Company / Muma Investments</strong> for the purposes of <strong>Class D Student Accommodation</strong>, as a qualifying investment under Section 12J.</p>
+
+<p><span class="snum">1.4</span> &ensp; The qualifying shares in The Joseph Company were issued <strong>to Impact Empowerment Ventures</strong> (the VCC) in its name. I was issued only an <strong>Investor Certificate</strong> by IEV — not direct shares in the qualifying company.</p>
+
+<p><span class="snum">1.5</span> &ensp; As per the Section 12J rules, the investment was subject to a <strong>5-year restriction period</strong>, after which the investment should become accessible to me, subject to performance and valuation.</p>
+
+<!-- 2. CONDUCT COMPLAINED OF -->
+<h2>2. Conduct Complained Of</h2>
+
+<h3>2.1 Failure to Provide Information</h3>
+
+<p><span class="snum">2.1.1</span> &ensp; My earliest investment (Investor No. S12J IIM 2019/147, Share Certificate D4) reached its <strong>5-year maturity</strong> in approximately 2025.</p>
+
+<p><span class="snum">2.1.2</span> &ensp; Since <strong>June 2025</strong> (approximately 9 months ago), I have repeatedly requested the following from IEV:</p>
+<ol type="a" style="margin-left:16px;">
+  <li>SARS interim statements for all three investments;</li>
+  <li>Investment performance report for the matured investment;</li>
+  <li>Guidance on the withdrawal process post the prescribed lock-in duration.</li>
+</ol>
+
+<p><span class="snum">2.1.3</span> &ensp; Despite numerous written follow-ups (18 June 2025, 26 June 2025, 14 July 2025, 12 August 2025, 19 February 2026, and 20 February 2026), I have received only vague assurances that the information is "under review" or "being finalised."</p>
+
+<p><span class="snum">2.1.4</span> &ensp; At no point has IEV provided me with:</p>
+<ul>
+  <li>Any investment performance figures;</li>
+  <li>Any valuation of my investment;</li>
+  <li>Any SARS interim statements; or</li>
+  <li>Any concrete withdrawal procedure.</li>
+</ul>
+
+<h3>2.2 Suspected Engineered Liquidation</h3>
+
+<p><span class="snum">2.2.1</span> &ensp; IEV has been placed in formal liquidation, with <strong>Marumo Trustees</strong> appointed as liquidator.</p>
+
+<p><span class="snum">2.2.2</span> &ensp; I have reason to believe that this liquidation may have been <strong>engineered or orchestrated</strong> to avoid obligations to investors. My basis for this suspicion is:</p>
+<ol type="a" style="margin-left:16px;">
+  <li>The debts that IEV allegedly could not pay were, to my knowledge, <strong>minor in nature</strong> and disproportionate to the scale of investor funds under management;</li>
+  <li>The underlying investment in The Joseph Company / Muma Investments is reportedly performing well — its Group Chairman, Mr Dandy Matamala, confirmed receipt of the invested funds;</li>
+  <li>Despite the underlying assets performing, IEV claims it cannot meet its obligations;</li>
+  <li>The timing and circumstances of the liquidation raise questions about whether it was a deliberate mechanism to strip investors of their claims.</li>
+</ol>
+
+<h3>2.3 Structural Prejudice to Investors</h3>
+
+<p><span class="snum">2.3.1</span> &ensp; The qualifying shares in The Joseph Company are registered in IEV's name, not in the names of individual investors. Investors like myself hold only Investor Certificates.</p>
+
+<p><span class="snum">2.3.2</span> &ensp; As a result of IEV's liquidation, my investment is now trapped in the liquidation estate, and I am at risk of being treated as an unsecured creditor rather than the beneficial owner of the underlying investment.</p>
+
+<p><span class="snum">2.3.3</span> &ensp; This structural arrangement may constitute a failure by IEV to adequately protect investor interests, in possible contravention of its duties as a financial services provider.</p>
+
+<h3>2.4 Communication Failures</h3>
+
+<p><span class="snum">2.4.1</span> &ensp; IEV has failed to provide timely, transparent, and accurate communication to investors regarding:</p>
+<ul>
+  <li>The financial status of their investments;</li>
+  <li>The reasons for and circumstances of the liquidation;</li>
+  <li>The implications for investors' funds and Section 12J tax positions.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- 3. REGULATORY GROUNDS -->
+<h2>3. Regulatory and Legal Grounds</h2>
+
+<p><span class="snum">3.1</span> &ensp; This complaint is lodged under the following legislative and regulatory frameworks:</p>
+<ul>
+  <li><strong>Financial Advisory and Intermediary Services Act, No. 37 of 2002 (FAIS Act)</strong> — IEV, as FSP No. 49377, owed duties of care, skill, and diligence to its clients/investors;</li>
+  <li><strong>General Code of Conduct for Authorised Financial Services Providers</strong> — requiring honest, fair, and transparent dealing;</li>
+  <li><strong>Section 12J of the Income Tax Act</strong> — the regulatory framework under which IEV operated as an approved VCC;</li>
+  <li><strong>Companies Act, No. 71 of 2008</strong> — duties of directors, reckless trading, and potential mismanagement;</li>
+  <li><strong>The common law</strong> — fiduciary duties owed to investors.</li>
+</ul>
+
+<p><span class="snum">3.2</span> &ensp; I respectfully request that the FSCA investigate whether:</p>
+<ol type="a" style="margin-left:16px;">
+  <li>IEV was properly licensed and compliant;</li>
+  <li>IEV's directors acted in the best interests of investors;</li>
+  <li>The liquidation was engineered to prejudice investors;</li>
+  <li>IEV's failure to provide information constitutes a contravention of the FAIS Act and/or the General Code of Conduct.</li>
+</ol>
+
+<!-- 4. RELIEF SOUGHT -->
+<h2>4. Relief Sought</h2>
+
+<p><span class="snum">4.1</span> &ensp; I respectfully request the FSCA to:</p>
+<ol style="margin-left:16px;">
+  <li><strong>Investigate</strong> the conduct of Impact Empowerment Ventures (Pty) Ltd and its directors;</li>
+  <li><strong>Determine</strong> whether the liquidation was engineered to the detriment of Section 12J investors;</li>
+  <li><strong>Intervene</strong> to protect the interests of investors whose funds are trapped in the liquidation estate;</li>
+  <li><strong>Direct</strong> the liquidator to provide full transparency regarding the status of investor funds and the underlying qualifying investments;</li>
+  <li><strong>Consider enforcement action</strong> against the responsible parties if misconduct is established;</li>
+  <li><strong>Advise</strong> on the recourse available to affected investors.</li>
+</ol>
+
+<!-- 5. SUPPORTING DOCUMENTATION -->
+<h2>5. Supporting Documentation</h2>
+
+<p>The following documents are attached / available upon request:</p>
+<p class="checklist-item"><span class="check">&#9745;</span> VCC Share Certificates (D4: R690,000 &bull; D34: R740,300 &bull; D86: R745,075) — <strong>Attached</strong></p>
+<p class="checklist-item"><span class="check">&#9745;</span> SARS VCC Guide — <strong>Attached</strong></p>
+<p class="checklist-item"><span class="check">&#9745;</span> Investor Certificates issued by IEV — <strong>Attached</strong></p>
+<p class="checklist-item"><span class="check">&#9745;</span> Last statement received from Impact (June 2025) — <strong>Attached</strong></p>
+<p class="checklist-item"><span class="check">&#9745;</span> Email correspondence chain (June 2025 – February 2026) — <strong>Attached</strong></p>
+<p class="checklist-item"><span class="check">&#9745;</span> Section 12J investment structure &amp; documents — <strong>Attached</strong></p>
+<p class="checklist-item"><span class="check">&#9745;</span> SARS ITA34 (assessment relating to the Section 12J deductions) — <strong>Attached</strong></p>
+
+<!-- 6. DECLARATION -->
+<h2>6. Declaration</h2>
+
+<p>I, <strong>David Modikwe</strong> (ID: 831006 5539 087), hereby declare that the information provided in this complaint is true and correct to the best of my knowledge. I authorise the FSCA to investigate this matter and to contact me for any further information that may be required.</p>
+
+<div class="sig-block">
+  <div class="sig-line"></div>
+  <p class="sig-label">Signature</p>
+  <div class="sig-line"></div>
+  <p class="sig-label">Date</p>
+  <div class="sig-line"></div>
+  <p class="sig-label">Place</p>
+</div>
+
+<p class="portal-note">This complaint may also be lodged via the FSCA online portal at: www.fsca.co.za/Pages/Complaint.aspx</p>
+
+</body>
+</html>

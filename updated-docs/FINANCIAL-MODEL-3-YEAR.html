@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>SiyaBusa ERP — Financial Model 3 Year</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm 22mm 18mm;
+    @top-left { content: "SiyaBusa ERP — 3-Year Financial Model"; font-size: 8pt; color: #888; font-family: Arial,sans-serif; }
+    @top-right { content: "Masaphokati Technologies (Pty) Ltd — CONFIDENTIAL"; font-size: 8pt; color: #888; font-family: Arial,sans-serif; }
+    @bottom-center { content: counter(page) " of 20"; font-size: 8pt; color: #888; font-family: Arial,sans-serif; }
+  }
+  @page :first { @top-left{content:""} @top-right{content:""} @bottom-center{content:""} }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 9.5pt; color: #222; line-height: 1.5; }
+  .cover { page-break-after:always; background:#0a1628; color:#fff; min-height:270mm; display:flex; flex-direction:column; padding:30mm 20mm 20mm; }
+  .cover-top-bar { width:48px; height:4px; background:#c9a84c; margin-bottom:14mm; }
+  .cover-logo { font-size:22pt; font-weight:900; letter-spacing:1px; color:#c9a84c; }
+  .cover-subtitle { font-size:10pt; color:#aaa; margin-top:2mm; letter-spacing:2px; text-transform:uppercase; }
+  .cover-title { margin-top:18mm; font-size:30pt; font-weight:900; line-height:1.1; text-transform:uppercase; letter-spacing:2px; }
+  .cover-version { margin-top:6mm; font-size:10pt; color:#c9a84c; letter-spacing:1px; text-transform:uppercase; }
+  .cover-body { flex:1; }
+  .cover-meta { margin-top:14mm; display:flex; gap:16mm; flex-wrap:wrap; }
+  .cover-meta-item label { display:block; font-size:7.5pt; text-transform:uppercase; letter-spacing:1px; color:#888; margin-bottom:1mm; }
+  .cover-meta-item span { font-size:10pt; font-weight:bold; color:#fff; }
+  .cover-tagline { font-size:13pt; font-weight:700; letter-spacing:3px; color:#c9a84c; text-transform:uppercase; margin-top:20mm; }
+  .cover-footer-bar { border-top:1px solid #2a3a5a; padding-top:5mm; margin-top:10mm; display:flex; justify-content:space-between; font-size:8pt; color:#555; }
+  .doc-intro { margin-bottom:6mm; padding:5mm 6mm; background:#f0f4f8; border-left:4px solid #c9a84c; font-size:9pt; color:#444; }
+  h1 { font-size:14pt; font-weight:900; color:#0a1628; border-bottom:2.5px solid #c9a84c; padding-bottom:2mm; margin:7mm 0 4mm; text-transform:uppercase; letter-spacing:1px; }
+  h2 { font-size:10.5pt; font-weight:700; color:#0a1628; margin:5mm 0 2mm; }
+  h3 { font-size:9.5pt; font-weight:700; color:#1a2c4a; margin:3mm 0 1.5mm; }
+  p { margin-bottom:2.5mm; }
+  ul { margin:2mm 0 3mm 5mm; }
+  ul li { margin-bottom:1mm; }
+  .section { margin-bottom:6mm; }
+  table { width:100%; border-collapse:collapse; margin:3mm 0; font-size:8.5pt; }
+  th { background:#0a1628; color:#c9a84c; font-weight:700; padding:2.5mm 3mm; text-align:left; font-size:8pt; }
+  td { border:1px solid #ddd; padding:2mm 3mm; vertical-align:top; }
+  tr:nth-child(even) td { background:#f8f9fb; }
+  .key-fact { background:#0a1628; color:#fff; font-weight:700; }
+  .highlight { background:#fffbe6; border-left:3px solid #c9a84c; padding:2mm 3mm; margin:2mm 0; font-size:8.5pt; }
+  .gold { color:#c9a84c; font-weight:700; }
+  .badge { display:inline-block; background:#c9a84c; color:#0a1628; font-weight:700; padding:0.5mm 2mm; border-radius:2px; font-size:7.5pt; }
+  .pb { page-break-before:always; }
+  .note { font-size:8pt; color:#666; font-style:italic; margin-top:1mm; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-top-bar"></div>
+  <div class="cover-logo">SiyaBusa ERP</div>
+  <div class="cover-subtitle">Investor &amp; Partner Documentation</div>
+  <div class="cover-body">
+    <div class="cover-title">Financial<br>Model<br>3 Year</div>
+    <div class="cover-version">Version 2.0 &nbsp;|&nbsp; April 2026</div>
+    <div class="cover-meta">
+      <div class="cover-meta-item"><label>Company</label><span>Masaphokati Technologies (Pty) Ltd</span></div>
+      <div class="cover-meta-item"><label>Classification</label><span>Confidential</span></div>
+      <div class="cover-meta-item"><label>Department</label><span>Executive</span></div>
+    </div>
+  </div>
+  <div class="cover-tagline">WE RULE. WE GOVERN. WE EMPOWER.</div>
+  <div class="cover-footer-bar">
+    <span>Masaphokati Technologies (Pty) Ltd — Confidential</span>
+    <span>April 2026</span>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="doc-intro">
+  📋 <strong>DETAILED FINANCIAL PROJECTIONS</strong> — A comprehensive 3-year financial model with monthly revenue build-up, unit economics, cash flow projections, and capitalization table evolution from seed to Series A.
+</div>
+
+<!-- EXEC SUMMARY -->
+<h1>Executive Summary</h1>
+<div class="section">
+  <h2>Key Financial Highlights — Founding Member + Growth Pricing Model</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>Year 1 (2026)</th><th>Year 2 (2027)</th><th>Year 3 (2028)</th></tr></thead>
+    <tbody>
+      <tr><td>Customers (End of Year)</td><td>25</td><td>80</td><td>200</td></tr>
+      <tr><td>Avg Users per Customer</td><td>15 (Founding Member)</td><td>15</td><td>18</td></tr>
+      <tr><td>Blended Price/User</td><td><strong class="gold">R299 (Founding)</strong></td><td>~R500 (blended)</td><td>~R600 (standard)</td></tr>
+      <tr><td>Monthly Recurring Revenue</td><td>R112,125</td><td>R600,000</td><td>R2,160,000</td></tr>
+      <tr><td>Annual Recurring Revenue</td><td>R1,345,500</td><td>R7,200,000</td><td>R25,920,000</td></tr>
+      <tr><td>Gross Margin</td><td>72%</td><td>74%</td><td>78%</td></tr>
+      <tr><td>Break-even Point</td><td>5–6 customers (ops break-even)</td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+  <div class="highlight"><strong>Founding Member Rate:</strong> R299/user/month (all-inclusive, locked-in) for first 25 customers. Regular pricing from R600–R1,200/user from Q3 2026 onwards for new customers.</div>
+</div>
+
+<!-- REVENUE MODEL -->
+<h1>Revenue Model</h1>
+<div class="section">
+  <h2>Market Positioning</h2>
+  <p>We serve the <strong>IGNORED middle market.</strong></p>
+  <table>
+    <thead><tr><th>Segment</th><th>Who Serves Them</th><th>The Problem</th></tr></thead>
+    <tbody>
+      <tr><td>Micro/Small</td><td>Xero, QuickBooks</td><td>Accounting only, no operations</td></tr>
+      <tr><td><strong>Mid-Market</strong></td><td><strong>NOBODY</strong></td><td>Too big for Xero, priced out of SAP</td></tr>
+      <tr><td>Enterprise</td><td>SAP, Oracle</td><td>R100K–R500K/month, complex</td></tr>
+    </tbody>
+  </table>
+  <div class="highlight">60,000+ South African businesses have NO good ERP option. We fill that gap.</div>
+
+  <h2>Pricing Philosophy: VALUE PER USER</h2>
+  <p>Simple, transparent pricing structured in two phases:</p>
+
+  <h3>Phase 1: Founding Member Pricing (First 25 Customers)</h3>
+  <table>
+    <thead><tr><th>Component</th><th>Per User/Month</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Founding Member Rate</td><td><strong class="gold">R299</strong></td><td>All modules included, no platform fee, rate locked for 3 years</td></tr>
+      <tr><td>Cost to serve</td><td>~R84</td><td>Vultr VPS infrastructure + support (≈28%)</td></tr>
+      <tr><td>Gross Margin</td><td>~R215 (72%)</td><td>Lean infrastructure = strong margins</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Phase 2: Standard Pricing (Q3 2026+, New Customers)</h3>
+  <table>
+    <thead><tr><th>Tier</th><th>Per User/Month</th><th>Min Users</th><th>Min Monthly</th></tr></thead>
+    <tbody>
+      <tr><td>Starter</td><td>R600</td><td>5</td><td>R3,000</td></tr>
+      <tr><td>Professional</td><td>R570 (5% off)</td><td>10</td><td>R5,700</td></tr>
+      <tr><td>Enterprise</td><td>R540 (10% off)</td><td>25</td><td>R13,500</td></tr>
+    </tbody>
+  </table>
+
+  <h3>What's INCLUDED</h3>
+  <p>Customers receive modules relevant to their industry:</p>
+  <table>
+    <thead><tr><th>Industry</th><th>Key Modules</th></tr></thead>
+    <tbody>
+      <tr><td>Manufacturing</td><td>Production, BOM, Inventory, Costing</td></tr>
+      <tr><td>Distribution</td><td>Inventory, Logistics, Fleet, Warehouse</td></tr>
+      <tr><td>Construction</td><td>Project Costing, Job Management, Progress Billing</td></tr>
+      <tr><td>Professional Services</td><td>Practice Management, Time Billing, CRM</td></tr>
+      <tr><td>Healthcare</td><td>Patient Management, Medical Inventory</td></tr>
+      <tr><td>Property</td><td>Lease Management, Tenant Billing</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Pricing Examples</h2>
+  <table>
+    <thead><tr><th>Company Size</th><th>Per User</th><th>Users</th><th>Total/Month</th></tr></thead>
+    <tbody>
+      <tr><td>Founding Member (small)</td><td class="gold">R299</td><td>10</td><td>R2,990</td></tr>
+      <tr><td>Founding Member (medium)</td><td class="gold">R299</td><td>20</td><td>R5,980</td></tr>
+      <tr><td>Standard Starter</td><td>R600</td><td>8</td><td>R4,800</td></tr>
+      <tr><td>Standard Enterprise</td><td>R540</td><td>60</td><td>R32,400</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Average Revenue Per Account (ARPA)</h2>
+  <table>
+    <thead><tr><th>Year</th><th>Avg Users</th><th>Monthly ARPA</th><th>Annual ARPA</th><th>Pricing Basis</th></tr></thead>
+    <tbody>
+      <tr><td>2026</td><td>15</td><td>R4,485</td><td>R53,820</td><td>R299/user (Founding Member)</td></tr>
+      <tr><td>2027</td><td>15</td><td>R7,500</td><td>R90,000</td><td>Blended (founding + standard)</td></tr>
+      <tr><td>2028</td><td>18</td><td>R10,800</td><td>R129,600</td><td>Standard pricing</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Additional Revenue Streams</h2>
+  <h3>Implementation Services (One-Time)</h3>
+  <table>
+    <thead><tr><th>Service</th><th>Price Range</th><th>Average</th></tr></thead>
+    <tbody>
+      <tr><td>Standard Implementation</td><td>R50,000 – R150,000</td><td>R75,000</td></tr>
+      <tr><td>Data Migration</td><td>R25,000 – R100,000</td><td>R50,000</td></tr>
+      <tr><td>Custom Integration</td><td>R25,000 – R75,000</td><td>R40,000</td></tr>
+      <tr><td>Training (per day)</td><td>R8,000 – R15,000</td><td>R10,000</td></tr>
+    </tbody>
+  </table>
+  <class class="note">Average Implementation Revenue per Customer: R75,000 (Year 1 Founding Members)</class>
+</div>
+
+<!-- YEAR 1 -->
+<div class="pb"></div>
+<h1>Year 1 (2026) — Foundation</h1>
+<div class="section">
+  <h2>Customer Acquisition Timeline</h2>
+  <table>
+    <thead><tr><th>Quarter</th><th>New Customers</th><th>Total Customers</th><th>MRR (End)</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Q1 2026</td><td>5</td><td>5</td><td>R0</td><td>Beta partners (free)</td></tr>
+      <tr><td>Q2 2026</td><td>5</td><td>10</td><td>R44,850</td><td>First Founding Members</td></tr>
+      <tr><td>Q3 2026</td><td>8</td><td>18</td><td>R80,730</td><td>Marketing ramp-up</td></tr>
+      <tr><td>Q4 2026</td><td>7</td><td>25</td><td>R112,125</td><td>Word-of-mouth kicks in</td></tr>
+    </tbody>
+  </table>
+  <div class="note">All Year 1 customers on Founding Member rate: R299/user at 15 avg users = R4,485/customer/month</div>
+
+  <h2>Monthly Revenue Build-Up (2026)</h2>
+  <table>
+    <thead><tr><th>Month</th><th>New Cust.</th><th>Total Cust.</th><th>Paying Cust.</th><th>MRR</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Jan</td><td>2</td><td>2</td><td>0</td><td>R0</td><td>Beta launch</td></tr>
+      <tr><td>Feb</td><td>2</td><td>4</td><td>0</td><td>R0</td><td>Beta expansion</td></tr>
+      <tr><td>Mar</td><td>1</td><td>5</td><td>0</td><td>R0</td><td>Beta complete</td></tr>
+      <tr><td>Apr</td><td>2</td><td>7</td><td>3</td><td>R13,455</td><td>First Founding Members</td></tr>
+      <tr><td>May</td><td>2</td><td>9</td><td>5</td><td>R22,425</td><td>Break-even (ops)</td></tr>
+      <tr><td>Jun</td><td>1</td><td>10</td><td>7</td><td>R31,395</td><td>Q2 close</td></tr>
+      <tr><td>Jul</td><td>2</td><td>12</td><td>9</td><td>R40,365</td><td>Marketing starts</td></tr>
+      <tr><td>Aug</td><td>3</td><td>15</td><td>12</td><td>R53,820</td><td>Momentum</td></tr>
+      <tr><td>Sep</td><td>3</td><td>18</td><td>15</td><td>R67,275</td><td>Q3 close</td></tr>
+      <tr><td>Oct</td><td>3</td><td>21</td><td>18</td><td>R80,730</td><td>Referrals active</td></tr>
+      <tr><td>Nov</td><td>2</td><td>23</td><td>20</td><td>R89,700</td><td>Pre-holiday push</td></tr>
+      <tr><td>Dec</td><td>2</td><td>25</td><td>22</td><td>R98,670</td><td>Year-end close</td></tr>
+    </tbody>
+  </table>
+  <p class="note">MRR calculated at R299/user × 15 avg users × paying customers. Implementation revenue separate.</p>
+
+  <p><strong>Year 1 Total Subscription Revenue:</strong> R560,000 (blended over year)</p>
+  <p><strong>Year 1 Implementation Revenue:</strong> R750,000 (10 implementations avg R75K)</p>
+  <p><strong>Year 1 Total Revenue:</strong> R1,310,000</p>
+
+  <h2>Year 1 Operating Expenses</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Monthly</th><th>Annual</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Vultr VPS (Production + Staging)</td><td>R4,500</td><td>R54,000</td><td>Ubuntu VPS, Johannesburg</td></tr>
+      <tr><td>Third-Party APIs</td><td>R15,000</td><td>R180,000</td><td>OpenAI, Daily.co, SendGrid</td></tr>
+      <tr><td>Dev Tools &amp; Security</td><td>R8,000</td><td>R96,000</td><td>GitHub, Sentry, SSL</td></tr>
+      <tr><td><strong>Subtotal Infrastructure</strong></td><td><strong>R27,500</strong></td><td><strong>R330,000</strong></td><td></td></tr>
+      <tr><td>Founder (below market)</td><td>R30,000</td><td>R360,000</td><td>Reduced salary initially</td></tr>
+      <tr><td>Sales Rep (from Q2)</td><td>R45,000</td><td>R405,000</td><td>9 months</td></tr>
+      <tr><td>Customer Success (from Q3)</td><td>R35,000</td><td>R210,000</td><td>6 months</td></tr>
+      <tr><td><strong>Subtotal Team</strong></td><td><strong>R110,000</strong></td><td><strong>R975,000</strong></td><td>Weighted average</td></tr>
+      <tr><td>Digital Ads (LinkedIn, Google)</td><td>R40,000</td><td>R480,000</td><td>From Q2</td></tr>
+      <tr><td>Content &amp; SEO</td><td>R10,000</td><td>R120,000</td><td></td></tr>
+      <tr><td>Events &amp; PR</td><td>R5,000</td><td>R60,000</td><td></td></tr>
+      <tr><td><strong>Subtotal Marketing</strong></td><td><strong>R55,000</strong></td><td><strong>R660,000</strong></td><td>Weighted average</td></tr>
+      <tr><td>Office &amp; Admin</td><td>R8,000</td><td>R96,000</td><td>Co-working space</td></tr>
+      <tr><td>Legal &amp; Accounting</td><td>R5,000</td><td>R60,000</td><td>Professional services</td></tr>
+      <tr><td>Insurance</td><td>R3,000</td><td>R36,000</td><td>Professional indemnity</td></tr>
+      <tr><td>Miscellaneous</td><td>R5,000</td><td>R60,000</td><td>Buffer</td></tr>
+      <tr><td><strong>Subtotal Operations</strong></td><td><strong>R21,000</strong></td><td><strong>R252,000</strong></td><td></td></tr>
+      <tr><td class="key-fact"><strong>TOTAL OPEX</strong></td><td class="key-fact"><strong>R213,500</strong></td><td class="key-fact"><strong>R2,217,000</strong></td><td class="key-fact">Average monthly</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Year 1 Profit &amp; Loss Summary</h2>
+  <table>
+    <thead><tr><th>Line Item</th><th>Amount</th></tr></thead>
+    <tbody>
+      <tr><td>Subscription Revenue</td><td>R560,000</td></tr>
+      <tr><td>Implementation Revenue</td><td>R750,000</td></tr>
+      <tr><td>Total Revenue</td><td><strong>R1,310,000</strong></td></tr>
+      <tr><td>Cost of Revenue (28%)</td><td>R366,800</td></tr>
+      <tr><td>Gross Profit</td><td>R943,200</td></tr>
+      <tr><td>Gross Margin</td><td><strong>72%</strong></td></tr>
+      <tr><td>Operating Expenses</td><td>R2,217,000</td></tr>
+      <tr><td>EBITDA</td><td><strong>-R1,273,800</strong></td></tr>
+      <tr><td>EBITDA Margin</td><td>-97%</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Year 1 Cash Flow</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Amount</th></tr></thead>
+    <tbody>
+      <tr><td>Opening Cash (Seed Round)</td><td><strong>R2,000,000</strong></td></tr>
+      <tr><td>Subscription Revenue</td><td>R560,000</td></tr>
+      <tr><td>Implementation Revenue</td><td>R750,000</td></tr>
+      <tr><td>Total Inflows</td><td>R1,310,000</td></tr>
+      <tr><td>Cost of Revenue</td><td>R366,800</td></tr>
+      <tr><td>Operating Expenses</td><td>R2,217,000</td></tr>
+      <tr><td>Capital Expenditure</td><td>R50,000</td></tr>
+      <tr><td>Total Outflows</td><td>R2,633,800</td></tr>
+      <tr><td>Net Cash Flow</td><td>-R1,323,800</td></tr>
+      <tr><td class="key-fact"><strong>Closing Cash</strong></td><td class="key-fact"><strong>R676,200</strong></td></tr>
+    </tbody>
+  </table>
+  <div class="note">Runway at Year End: ~3 months at current burn. Series A raise planned for Q1 2028 based on Year 2 performance.</div>
+</div>
+
+<!-- YEAR 2 -->
+<div class="pb"></div>
+<h1>Year 2 (2027) — Growth</h1>
+<div class="section">
+  <h2>Customer Acquisition Timeline</h2>
+  <table>
+    <thead><tr><th>Quarter</th><th>New Customers</th><th>Churn</th><th>Net Add</th><th>Total</th><th>MRR (End)</th></tr></thead>
+    <tbody>
+      <tr><td>Q1 2027</td><td>15</td><td>1</td><td>14</td><td>39</td><td>R292,500</td></tr>
+      <tr><td>Q2 2027</td><td>18</td><td>2</td><td>16</td><td>55</td><td>R412,500</td></tr>
+      <tr><td>Q3 2027</td><td>15</td><td>2</td><td>13</td><td>68</td><td>R510,000</td></tr>
+      <tr><td>Q4 2027</td><td>15</td><td>3</td><td>12</td><td>80</td><td>R600,000</td></tr>
+    </tbody>
+  </table>
+  <div class="note">Year 2 MRR blends Founding Members (R299/user) and new standard customers (avg R600/user). Blended ≈ R500/user × 15 users = R7,500/customer/month.</div>
+
+  <h2>Year 2 Team Build</h2>
+  <table>
+    <thead><tr><th>Role</th><th>Count</th><th>Avg Salary</th><th>Annual Cost</th></tr></thead>
+    <tbody>
+      <tr><td>Founder/CEO</td><td>1</td><td>R50,000</td><td>R600,000</td></tr>
+      <tr><td>Sales Reps</td><td>3</td><td>R50,000</td><td>R1,800,000</td></tr>
+      <tr><td>Customer Success</td><td>2</td><td>R40,000</td><td>R960,000</td></tr>
+      <tr><td>Support Engineers</td><td>2</td><td>R35,000</td><td>R840,000</td></tr>
+      <tr><td>Marketing Manager</td><td>1</td><td>R45,000</td><td>R540,000</td></tr>
+      <tr><td>Finance/Admin</td><td>1</td><td>R35,000</td><td>R420,000</td></tr>
+      <tr><td class="key-fact">Total</td><td class="key-fact">10</td><td class="key-fact"></td><td class="key-fact">R5,160,000</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Year 2 Profit &amp; Loss Summary</h2>
+  <table>
+    <thead><tr><th>Line Item</th><th>Amount</th></tr></thead>
+    <tbody>
+      <tr><td>Total Revenue</td><td><strong>R9,600,000</strong></td></tr>
+      <tr><td>Cost of Revenue (26%)</td><td>R2,496,000</td></tr>
+      <tr><td>Gross Profit</td><td>R7,104,000</td></tr>
+      <tr><td>Gross Margin</td><td><strong>74%</strong></td></tr>
+      <tr><td>Operating Expenses</td><td>R7,368,000</td></tr>
+      <tr><td>EBITDA</td><td><strong>-R264,000</strong></td></tr>
+      <tr><td>EBITDA Margin</td><td>-3%</td></tr>
+    </tbody>
+  </table>
+  <div class="note">Year 2 approaching breakeven at full team scale. Series A assumed not raised in Year 2; self-funding growth.</div>
+</div>
+
+<!-- YEAR 3 -->
+<div class="pb"></div>
+<h1>Year 3 (2028) — Scale</h1>
+<div class="section">
+  <h2>Customer Metrics</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Starting Customers</td><td>80</td></tr>
+      <tr><td>New Customers</td><td>140</td></tr>
+      <tr><td>Churned Customers</td><td>20</td></tr>
+      <tr><td>Ending Customers</td><td>200</td></tr>
+      <tr><td>Net Revenue Retention</td><td>115%</td></tr>
+      <tr><td>Annual Churn Rate</td><td>10%</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Year 3 Revenue</h2>
+  <table>
+    <thead><tr><th>Revenue Type</th><th>Amount</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Subscription Revenue</td><td>R21,600,000</td><td>200 customers × R10,800 avg × 12 months (prorated)</td></tr>
+      <tr><td>Implementation Revenue</td><td>R6,300,000</td><td>140 new customers × R45,000 avg (efficient)</td></tr>
+      <tr><td>Support &amp; Add-ons</td><td>R900,000</td><td>45% of customers</td></tr>
+      <tr><td class="key-fact">Total Revenue</td><td class="key-fact">R28,800,000</td><td class="key-fact"></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Year 3 Operating Expenses</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Annual</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Infrastructure (Vultr VPS)</td><td>R1,080,000</td><td>Scaled Vultr cluster for 200 customers</td></tr>
+      <tr><td>Team</td><td>R12,000,000</td><td>30 FTEs by year end</td></tr>
+      <tr><td>Marketing</td><td>R3,600,000</td><td>Brand + performance</td></tr>
+      <tr><td>Operations</td><td>R1,800,000</td><td>Office, legal, admin, AltX prep</td></tr>
+      <tr><td class="key-fact">TOTAL OPEX</td><td class="key-fact">R18,480,000</td><td class="key-fact"></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Year 3 Profit &amp; Loss Summary</h2>
+  <table>
+    <thead><tr><th>Line Item</th><th>Amount</th></tr></thead>
+    <tbody>
+      <tr><td>Total Revenue</td><td>R28,800,000</td></tr>
+      <tr><td>Cost of Revenue (22%)</td><td>R6,336,000</td></tr>
+      <tr><td>Gross Profit</td><td>R22,464,000</td></tr>
+      <tr><td>Gross Margin</td><td><strong>78%</strong></td></tr>
+      <tr><td>Operating Expenses</td><td>R18,480,000</td></tr>
+      <tr><td>EBITDA</td><td><strong>R3,984,000</strong></td></tr>
+      <tr><td>EBITDA Margin</td><td>14%</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- UNIT ECONOMICS -->
+<div class="pb"></div>
+<h1>Unit Economics</h1>
+<div class="section">
+  <h2>Customer Acquisition Cost (CAC)</h2>
+  <table>
+    <thead><tr><th>Year</th><th>Marketing Spend</th><th>Sales Cost</th><th>New Customers</th><th>CAC</th></tr></thead>
+    <tbody>
+      <tr><td>2026</td><td>R660,000</td><td>R405,000</td><td>25</td><td>R42,600</td></tr>
+      <tr><td>2027</td><td>R1,800,000</td><td>R1,800,000</td><td>55</td><td>R65,455</td></tr>
+      <tr><td>2028</td><td>R3,600,000</td><td>R4,800,000</td><td>140</td><td>R60,000</td></tr>
+    </tbody>
+  </table>
+  <div class="note">Target CAC: R50,000 – R70,000 (improving with scale)</div>
+
+  <h2>Customer Lifetime Value (LTV)</h2>
+  <table>
+    <thead><tr><th>Assumption</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Average Annual Revenue</td><td>R90,000 (Year 1 FM) → R129,600 (Year 3)</td></tr>
+      <tr><td>Gross Margin</td><td>78%</td></tr>
+      <tr><td>Annual Churn</td><td>10%</td></tr>
+      <tr><td>Customer Lifetime</td><td>10 years (1/churn)</td></tr>
+      <tr><td>LTV (Year 3 basis)</td><td><strong>R1,010,880</strong></td></tr>
+    </tbody>
+  </table>
+  <div class="highlight">LTV:CAC Ratio: 1,010,880 / 60,000 = <strong>16.8x</strong> (Excellent — target &gt;3x)</div>
+
+  <h2>Monthly Recurring Revenue (MRR) Metrics</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>Year 1</th><th>Year 2</th><th>Year 3</th></tr></thead>
+    <tbody>
+      <tr><td>Starting MRR</td><td>R0</td><td>R98,670</td><td>R600,000</td></tr>
+      <tr><td>New MRR</td><td>R140,000</td><td>R600,000</td><td>R1,680,000</td></tr>
+      <tr><td>Expansion MRR</td><td>R0</td><td>R60,000</td><td>R168,000</td></tr>
+      <tr><td>Churned MRR</td><td>-R10,000</td><td>-R60,000</td><td>-R180,000</td></tr>
+      <tr><td>Ending MRR</td><td>R98,670</td><td>R600,000</td><td>R2,160,000</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- FUNDING -->
+<div class="pb"></div>
+<h1>Funding Requirements</h1>
+<div class="section">
+  <h2>Capital Structure</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Shares</th></tr></thead>
+    <tbody>
+      <tr><td>Authorized Shares</td><td>1,000,000,000</td></tr>
+      <tr><td>Issued to Founders</td><td>100,000,000</td></tr>
+      <tr><td>Available for Issue</td><td>900,000,000</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Funding Rounds</h2>
+  <table>
+    <thead><tr><th>Round</th><th>Timing</th><th>Amount</th><th>Pre-Money</th><th>Shares Issued</th><th>Post-Money</th></tr></thead>
+    <tbody>
+      <tr><td>Seed</td><td>Q1 2026</td><td>R2,000,000</td><td>R10,000,000</td><td>20,000,000</td><td>R12,000,000</td></tr>
+      <tr><td>Series A</td><td>Q1 2028</td><td>R20,000,000</td><td>R80,000,000</td><td>30,000,000</td><td>R100,000,000</td></tr>
+      <tr><td>Pre-IPO</td><td>Q4 2028</td><td>R30,000,000</td><td>R200,000,000</td><td>22,500,000</td><td>R230,000,000</td></tr>
+      <tr><td>AltX IPO</td><td>Q2 2029</td><td>R50,000,000</td><td>R350,000,000</td><td>21,875,000</td><td>R400,000,000</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Cap Table Evolution</h2>
+  <table>
+    <thead><tr><th>Shareholder</th><th>Seed</th><th>Post-Series A</th><th>Post-Pre-IPO</th><th>Post-IPO</th></tr></thead>
+    <tbody>
+      <tr><td>Founders</td><td>83.33%</td><td>66.67%</td><td>57.97%</td><td>51.47%</td></tr>
+      <tr><td>Seed Investors</td><td>16.67%</td><td>13.33%</td><td>11.59%</td><td>10.29%</td></tr>
+      <tr><td>Series A</td><td>—</td><td>20.00%</td><td>17.39%</td><td>15.44%</td></tr>
+      <tr><td>Pre-IPO</td><td>—</td><td>—</td><td>13.05%</td><td>11.59%</td></tr>
+      <tr><td>Public</td><td>—</td><td>—</td><td>—</td><td>11.21%</td></tr>
+      <tr><td class="key-fact">Total</td><td class="key-fact">100%</td><td class="key-fact">100%</td><td class="key-fact">100%</td><td class="key-fact">100%</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Seed Investor Returns</h2>
+  <table>
+    <thead><tr><th>Exit Scenario</th><th>Valuation</th><th>Seed Ownership</th><th>Seed Value</th><th>Multiple</th></tr></thead>
+    <tbody>
+      <tr><td>Base (AltX 2029)</td><td>R400M</td><td>10.29%</td><td>R41.2M</td><td>20.6x</td></tr>
+      <tr><td>Upside</td><td>R600M</td><td>10.29%</td><td>R61.7M</td><td>30.9x</td></tr>
+      <tr><td>Downside</td><td>R200M</td><td>10.29%</td><td>R20.6M</td><td>10.3x</td></tr>
+    </tbody>
+  </table>
+  <div class="highlight">Investment: R2,000,000 | Expected Return (Base Case): R41,200,000 (<strong>20.6x</strong> over ~3 years)</div>
+</div>
+
+<!-- KEY ASSUMPTIONS -->
+<div class="pb"></div>
+<h1>Key Assumptions</h1>
+<div class="section">
+  <h2>Revenue Assumptions</h2>
+  <table>
+    <thead><tr><th>Assumption</th><th>Value</th><th>Basis</th></tr></thead>
+    <tbody>
+      <tr><td>Founding Member pricing</td><td>R299/user/month</td><td>All-inclusive, first 25 customers</td></tr>
+      <tr><td>Standard pricing</td><td>R540–R600/user/month</td><td>From Q3 2026, tiered by volume</td></tr>
+      <tr><td>Average users per customer</td><td>15–18</td><td>Industry standard for mid-market</td></tr>
+      <tr><td>Annual churn rate</td><td>10%</td><td>B2B SaaS benchmark</td></tr>
+      <tr><td>Net revenue retention</td><td>110–115%</td><td>Expansion revenue</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Cost Assumptions</h2>
+  <table>
+    <thead><tr><th>Assumption</th><th>Value</th><th>Basis</th></tr></thead>
+    <tbody>
+      <tr><td>Gross margin</td><td>72–78%</td><td>SaaS industry standard</td></tr>
+      <tr><td>Vultr VPS cost per customer</td><td>~R180/month</td><td>Shared VPS infrastructure, Johannesburg</td></tr>
+      <tr><td>Customer success ratio</td><td>1:30–40</td><td>Industry benchmark</td></tr>
+      <tr><td>Sales quota</td><td>R1.5M ARR/rep</td><td>Conservative</td></tr>
+      <tr><td>Marketing efficiency</td><td>50% of spend to new ARR</td><td>Early stage</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Risk Factors</h2>
+  <table>
+    <thead><tr><th>Risk</th><th>Impact</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>Slower customer acquisition</td><td>Lower revenue, extended runway</td><td>Conservative projections, milestone-based hiring</td></tr>
+      <tr><td>Higher churn than expected</td><td>Lower LTV, more acquisition needed</td><td>Invest in customer success early</td></tr>
+      <tr><td>Price pressure</td><td>Lower ARPA</td><td>Value-based selling, feature differentiation</td></tr>
+      <tr><td>Longer sales cycles</td><td>Higher CAC</td><td>Focus on ready-to-buy customers</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- DISCLAIMER -->
+<div class="highlight" style="margin-top:10mm;">
+  <strong>Disclaimer:</strong> These financial projections are forward-looking statements based on assumptions and estimates. Actual results may differ materially. This document is for informational purposes only and does not constitute an offer to sell or solicitation to buy securities.
+</div>
+<p style="margin-top:4mm; font-size:8pt; color:#666; text-align:center;">Masaphokati Technologies (Pty) Ltd &nbsp;|&nbsp; April 2026 &nbsp;|&nbsp; Confidential</p>
+
+</body>
+</html>

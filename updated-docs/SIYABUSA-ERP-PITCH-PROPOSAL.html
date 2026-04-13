@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>SiyaBusa ERP — Capital Expansion Proposal 2026</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm 22mm 18mm;
+    @top-left   { content: "SiyaBusa ERP — Capital Expansion Proposal 2026"; font-size:8pt; color:#888; font-family:Arial,sans-serif; }
+    @top-right  { content: "Masaphokati Technologies (Pty) Ltd — CONFIDENTIAL"; font-size:8pt; color:#888; font-family:Arial,sans-serif; }
+    @bottom-center { content: counter(page); font-size:8pt; color:#888; font-family:Arial,sans-serif; }
+  }
+  @page :first { @top-left{content:""} @top-right{content:""} @bottom-center{content:""} margin:0; }
+
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:Arial,'Helvetica Neue',sans-serif; font-size:9.5pt; color:#1A0A2E; line-height:1.65; }
+
+  /* ── COVER ─────────────────────────────────────────────── */
+  .cover {
+    page-break-after:always;
+    background: linear-gradient(155deg,#0a1628 0%,#1a2d5a 55%,#0d1f3e 100%);
+    color:#fff;
+    width:210mm;
+    height:297mm;
+    display:flex;
+    flex-direction:column;
+    padding:24mm 22mm 16mm;
+  }
+  .cover-top-bar { width:56px; height:4px; background:#c9a84c; margin-bottom:10mm; border-radius:2px; }
+  .cover-logo    { font-size:24pt; font-weight:900; letter-spacing:2px; color:#c9a84c; }
+  .cover-slug    { font-size:9pt; color:#8899bb; margin-top:2mm; letter-spacing:3px; text-transform:uppercase; }
+  .cover-body    { flex:1; }
+  .cover-title   { margin-top:12mm; font-size:30pt; font-weight:900; line-height:1.1; text-transform:uppercase; letter-spacing:2px; }
+  .cover-title span { color:#c9a84c; }
+  .cover-sub     { margin-top:5mm; font-size:12pt; color:rgba(255,255,255,0.75); font-weight:400; letter-spacing:1px; }
+  .cover-divider { width:80px; height:3px; background:linear-gradient(90deg,transparent,#c9a84c,transparent); margin:8mm 0; }
+  .cover-meta    { margin-top:10mm; display:flex; gap:14mm; flex-wrap:wrap; }
+  .cover-meta-item label { display:block; font-size:7pt; text-transform:uppercase; letter-spacing:1.5px; color:#8899bb; margin-bottom:1mm; }
+  .cover-meta-item span  { font-size:9.5pt; font-weight:700; color:#fff; }
+  .cover-stage-badge {
+    display:inline-block; margin-top:8mm;
+    border:1.5px solid #c9a84c; color:#c9a84c;
+    font-size:7.5pt; font-weight:900; letter-spacing:3px;
+    padding:3mm 7mm; border-radius:20px; text-transform:uppercase;
+  }
+  .cover-tagline { font-size:11pt; font-weight:700; letter-spacing:4px; color:#c9a84c; text-transform:uppercase; margin-top:8mm; }
+  .cover-footer  { border-top:1px solid #2a3a5a; padding-top:4mm; margin-top:6mm; display:flex; justify-content:space-between; font-size:7.5pt; color:#445; }
+
+  /* ── SECTION CONTAINERS ────────────────────────────────── */
+  .sec { margin-bottom: 7mm; }
+  .sec-alt { background:#f5f0ff; padding:5mm 6mm; border-radius:4px; margin-bottom:7mm; }
+  .pb  { page-break-before:always; }
+
+  /* ── SECTION HEADER ────────────────────────────────────── */
+  .sec-header { display:flex; align-items:center; gap:3mm; margin-bottom:4mm; }
+  .sec-number {
+    background:#c9a84c; color:#0a1628;
+    font-size:7.5pt; font-weight:900; letter-spacing:2px;
+    padding:1.5mm 4mm; border-radius:12px; white-space:nowrap;
+    text-transform:uppercase;
+  }
+  .sec-title {
+    font-size:14pt; font-weight:900; color:#0a1628;
+    text-transform:uppercase; letter-spacing:1.5px;
+    border-bottom:2.5px solid #c9a84c; padding-bottom:2mm; flex:1;
+  }
+
+  /* ── TYPOGRAPHY ─────────────────────────────────────────── */
+  h2  { font-size:10.5pt; font-weight:800; color:#0a1628; margin:5mm 0 2mm; text-transform:uppercase; letter-spacing:0.5px; }
+  h3  { font-size:9.5pt; font-weight:700; color:#1a2c4a; margin:3.5mm 0 1.5mm; }
+  p   { margin-bottom:2.5mm; }
+  ul  { margin:2mm 0 3mm 5mm; }
+  ul li { margin-bottom:1mm; }
+  ol  { margin:2mm 0 3mm 5mm; }
+  ol li { margin-bottom:1.5mm; }
+  strong { color:#0a1628; }
+
+  /* ── TABLE ──────────────────────────────────────────────── */
+  table { width:100%; border-collapse:collapse; margin:3mm 0; font-size:8.5pt; }
+  th { background:#0a1628; color:#c9a84c; font-weight:700; padding:2.5mm 3mm; text-align:left; font-size:7.5pt; letter-spacing:0.5px; text-transform:uppercase; }
+  td { border:1px solid #dde; padding:2mm 3mm; vertical-align:top; }
+  tr:nth-child(even) td { background:#f5f0ff; }
+  .row-head td:first-child { font-weight:700; color:#0a1628; background:#eee8f8; }
+
+  /* ── CALLOUT BOXES ──────────────────────────────────────── */
+  .highlight   { background:#fffbe6; border-left:4px solid #c9a84c; padding:3mm 4mm; margin:3mm 0; font-size:9pt; }
+  .callout-key { background:#0a1628; color:#fff; padding:3mm 5mm; margin:3mm 0; border-radius:3px; }
+  .callout-key strong { color:#c9a84c; }
+  .expansion-badge {
+    display:inline-block; background:#c9a84c; color:#0a1628;
+    font-size:7.5pt; font-weight:900; letter-spacing:2px;
+    padding:1mm 3mm; border-radius:10px; text-transform:uppercase; margin-bottom:2mm;
+  }
+
+  /* ── KPI ROW ────────────────────────────────────────────── */
+  .kpi-row { display:flex; gap:4mm; margin:4mm 0; flex-wrap:wrap; }
+  .kpi-box {
+    flex:1; min-width:28mm;
+    background:#0a1628; color:#fff;
+    padding:3mm 4mm; border-radius:4px; text-align:center;
+    border-bottom:3px solid #c9a84c;
+  }
+  .kpi-box .kpi-val  { font-size:13pt; font-weight:900; color:#c9a84c; line-height:1.1; }
+  .kpi-box .kpi-lbl  { font-size:7pt; text-transform:uppercase; letter-spacing:1px; color:#aaa; margin-top:1mm; }
+
+  /* ── PHASE STEPS ────────────────────────────────────────── */
+  .phase-step { display:flex; gap:4mm; margin-bottom:4mm; align-items:flex-start; }
+  .phase-badge {
+    background:#c9a84c; color:#0a1628;
+    font-size:8.5pt; font-weight:900;
+    width:10mm; height:10mm; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+  }
+  .phase-badge.alt { background:#0a1628; color:#c9a84c; border:2px solid #c9a84c; }
+  .phase-content {
+    flex:1; background:#fff; border-radius:6px;
+    padding:3mm 4mm; border-left:4px solid #c9a84c;
+    box-shadow:0 1px 6px rgba(10,22,40,0.07);
+  }
+  .phase-content h3 { font-size:9.5pt; font-weight:800; color:#0a1628; margin:0 0 1.5mm; text-transform:uppercase; }
+  .phase-content ul { font-size:8.5pt; }
+  .critical-tag {
+    display:inline-block; background:#c9a84c; color:#0a1628;
+    font-size:6.5pt; font-weight:900; letter-spacing:2px;
+    padding:0.5mm 2mm; border-radius:8px; margin-left:2mm;
+    vertical-align:middle; text-transform:uppercase;
+  }
+
+  /* ── RISK TABLE ─────────────────────────────────────────── */
+  .risk-table td:nth-child(2) { color:#8B1A1A; font-weight:700; }
+  .risk-table td:nth-child(3) { color:#1A6B2A; }
+
+  /* ── SCORECARD ──────────────────────────────────────────── */
+  .score-bar-wrap { margin:1mm 0; }
+  .score-bar { height:5px; border-radius:3px; background:#c9a84c; display:block; }
+
+  /* ── FOOTER UTILITY ─────────────────────────────────────── */
+  .doc-footer { text-align:center; font-size:7.5pt; color:#888; margin-top:5mm; }
+
+  /* ── TWO COL ────────────────────────────────────────────── */
+  .two-col { display:flex; gap:5mm; }
+  .two-col > div { flex:1; }
+
+  .gold { color:#c9a84c; font-weight:700; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════ COVER -->
+<div class="cover">
+  <div class="cover-top-bar"></div>
+  <div class="cover-logo">SiyaBusa ERP</div>
+  <div class="cover-slug">Masaphokati Technologies (Pty) Ltd</div>
+  <div class="cover-body">
+    <div class="cover-title">Capital<br><span>Expansion</span><br>Proposal</div>
+    <div class="cover-sub">Seed Funding Round — April 2026</div>
+    <div class="cover-divider"></div>
+
+    <div style="margin-top:6mm;">
+      <div class="expansion-badge">Expansion Stage</div>
+      <p style="font-size:9pt;color:rgba(255,255,255,0.8);margin-top:2mm;max-width:140mm;">
+        SiyaBusa ERP is a <strong style="color:#c9a84c;">fully built, production-deployed</strong> enterprise resource planning platform.
+        This is not a startup concept — it is a live, operational system raising capital to scale client acquisition
+        and grow recurring revenue.
+      </p>
+    </div>
+
+    <div class="cover-meta" style="margin-top:10mm;">
+      <div class="cover-meta-item"><label>Round</label><span>Seed</span></div>
+      <div class="cover-meta-item"><label>Raise Target</label><span>R2,000,000</span></div>
+      <div class="cover-meta-item"><label>Pre-Money Val.</label><span>R10,000,000</span></div>
+      <div class="cover-meta-item"><label>Equity Offered</label><span>16.67%</span></div>
+    </div>
+    <div class="cover-meta" style="margin-top:6mm;">
+      <div class="cover-meta-item"><label>Platform</label><span>Complete ERP Suite</span></div>
+      <div class="cover-meta-item"><label>Founding Members</label><span>R299/user/month</span></div>
+      <div class="cover-meta-item"><label>Infrastructure</label><span>Vultr VPS — Johannesburg</span></div>
+    </div>
+
+    <div class="cover-stage-badge">Expansion Company — Product Complete — Scaling Now</div>
+  </div>
+  <div class="cover-tagline">We Rule. We Govern. We Empower.</div>
+  <div class="cover-footer">
+    <span>Masaphokati Technologies (Pty) Ltd &nbsp;|&nbsp; Sibusiso Mavuso, Founder</span>
+    <span>Confidential &nbsp;|&nbsp; April 2026</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SECTION 01 -->
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">Section 01</span>
+    <div class="sec-title">Executive Summary</div>
+  </div>
+
+  <p>South Africa has over <strong>750,000 formal SMEs</strong> — and most are running their businesses on spreadsheets, disconnected
+  tools, or expensive foreign software that wasn't built for them. The ERP market is a <strong>$77 billion global industry</strong> growing
+  at 9.5% per year, yet no affordable, locally-built solution exists for the South African mid-market.</p>
+
+  <p><strong>SiyaBusa ERP</strong> changes that. We deliver the full power of enterprise software — accounting, payroll, inventory,
+  manufacturing, CRM, compliance — in a single platform purpose-built for South African businesses. SARS-ready, locally hosted,
+  and priced at a fraction of SAP or Sage. No implementation fees. No training costs. Just one simple subscription.</p>
+
+  <div class="kpi-row">
+    <div class="kpi-box"><div class="kpi-val">R1.8M</div><div class="kpi-lbl">Year 1 Revenue</div></div>
+    <div class="kpi-box"><div class="kpi-val">72%</div><div class="kpi-lbl">Gross Margin</div></div>
+    <div class="kpi-box"><div class="kpi-val">R299</div><div class="kpi-lbl">/user/month</div></div>
+    <div class="kpi-box"><div class="kpi-val">R0</div><div class="kpi-lbl">Setup & Training</div></div>
+    <div class="kpi-box"><div class="kpi-val">R2M</div><div class="kpi-lbl">Seed Raise</div></div>
+    <div class="kpi-box"><div class="kpi-val">R10M</div><div class="kpi-lbl">Pre-Money Val.</div></div>
+  </div>
+
+  <h2>What We Are Raising</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Capital Amount</td><td><strong>R2,000,000 (Two Million Rand)</strong></td></tr>
+      <tr><td>Instrument</td><td>Ordinary Shares @ R0.10/share (20,000,000 shares = 16.67% equity)</td></tr>
+      <tr><td>Pre-Money Valuation</td><td>R10,000,000</td></tr>
+      <tr><td>Alternative Structure</td><td>SAFE (Simple Agreement for Future Equity) available — R15M cap, 20% discount</td></tr>
+      <tr><td>Use of Proceeds</td><td>Sales &amp; marketing (40%) | Team (30%) | Operations (20%) | Reserve (10%)</td></tr>
+      <tr><td>Founding Member Target</td><td>200 clients | 1,000 users at R299/user/month — all-inclusive (implementation, training &amp; support included). 3-year price lock</td></tr>
+    </tbody>
+  </table>
+
+  <div class="highlight">
+    <strong>Why Now:</strong> The product is already built and live — a development investment worth R3–5M+ at market rates.
+    You are not funding an idea or a prototype. You are funding client acquisition for a working platform.
+    Break-even at ~755 paying users. Every user after that is profit.
+  </div>
+
+  <h2>Expected Returns</h2>
+  <p style="font-size:8.5pt;color:#555;">Based on post-money ownership: R100K = 1,000,000 shares = 0.833% of 120,000,000 total issued shares. Pre-dilution from future rounds.</p>
+  <table>
+    <thead><tr><th>Horizon</th><th>Scenario</th><th>Projected Valuation</th><th>Return on R100K Investment</th></tr></thead>
+    <tbody>
+      <tr><td>Year 3</td><td>Conservative (~400 clients)</td><td>R42,000,000</td><td>R350,000 (3.5×)</td></tr>
+      <tr><td>Year 3</td><td>Base (~800 clients)</td><td>R76,000,000</td><td>R633,000 (6.3×)</td></tr>
+      <tr><td>Year 5</td><td>Strong (~2,000 clients)</td><td>R345,000,000+</td><td>R2,874,000+ (28.7×)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SECTION 02 -->
+<div class="pb"></div>
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">Section 02</span>
+    <div class="sec-title">Problem Definition</div>
+  </div>
+
+  <p>The South African SME and mid-market business sector operates in one of the most demanding regulatory and operational
+  environments in the world — yet the tools available to them are either inadequate, foreign-built, or prohibitively expensive.</p>
+
+  <h2>The Core Problem: A Four-Part Failure</h2>
+
+  <div class="phase-step">
+    <div class="phase-badge">1</div>
+    <div class="phase-content">
+      <h3>Cost Exclusion</h3>
+      <ul>
+        <li>SAP Business One: R180,000–R600,000/year for mid-market deployment</li>
+        <li>Sage 300: R50,000–R200,000/year + implementation costs</li>
+        <li>Oracle NetSuite: USD $30,000–$100,000/year minimum</li>
+        <li>Most SA SMEs and growing businesses cannot afford these solutions</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">2</div>
+    <div class="phase-content">
+      <h3>Regulatory Blindness</h3>
+      <ul>
+        <li>Foreign ERP systems are not built for SARS eFiling, PAYE, UIF, SDL compliance</li>
+        <li>BBBEE scorecard management is absent or bolted on as afterthought</li>
+        <li>South African labour law (BCEA, LRA) nuances are not natively supported</li>
+        <li>Businesses spend R5,000–R40,000/month extra on compliance consultants</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">3</div>
+    <div class="phase-content">
+      <h3>Fragmentation</h3>
+      <ul>
+        <li>Most businesses run 5–15 disconnected tools: accounting, payroll, CRM, inventory, HR separately</li>
+        <li>Data silos lead to errors, duplicated work, and poor decision-making</li>
+        <li>Integration costs between tools consume 15–25% of operational IT budgets</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">4</div>
+    <div class="phase-content">
+      <h3>Foreign Infrastructure Risk</h3>
+      <ul>
+        <li>Data sovereignty concerns — sensitive business data hosted abroad</li>
+        <li>Latency issues from overseas servers affecting daily operations</li>
+        <li>Currency risk on USD/EUR-priced software with rand depreciation</li>
+        <li>No local support structure or understanding of SA business context</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>The Cost of Inaction</h2>
+  <table>
+    <thead><tr><th>Business Size</th><th>Annual Spend on Fragmented Tools</th><th>Estimated Productivity Loss</th><th>Compliance Risk Exposure</th></tr></thead>
+    <tbody>
+      <tr><td>10-user SME</td><td>R85,000 – R150,000</td><td>R120,000 – R250,000</td><td>R50,000 – R500,000</td></tr>
+      <tr><td>25-user mid-market</td><td>R200,000 – R450,000</td><td>R300,000 – R600,000</td><td>R100,000 – R2,000,000</td></tr>
+      <tr><td>50-user enterprise</td><td>R500,000 – R1,200,000</td><td>R600,000 – R1,500,000</td><td>R500,000 – R5,000,000+</td></tr>
+    </tbody>
+  </table>
+
+  <div class="highlight">
+    <strong>Urgency:</strong> South Africa's Companies Act amendments, SARS modernisation drive, and POPIA compliance requirements
+    are creating immediate demand for integrated, compliant business management platforms. The window for an affordable,
+    local-first ERP provider has never been larger — or more urgent.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SECTION 03 -->
+<div class="pb"></div>
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">Section 03</span>
+    <div class="sec-title">Solution &amp; Offering</div>
+  </div>
+
+  <div class="expansion-badge">Live Product — Not a Concept</div>
+
+  <p><strong>SiyaBusa ERP</strong> is a fully integrated ERP platform deployed on production infrastructure today.
+  Every module described below is live, functional, and available to clients immediately upon onboarding.</p>
+
+  <h2>The Platform: 17+ Integrated Business Modules</h2>
+  <table>
+    <thead><tr><th>#</th><th>Module</th><th>Key Capabilities</th></tr></thead>
+    <tbody>
+      <tr><td>01</td><td><strong>Financial Accounting</strong></td><td>General Ledger, AP, AR, Chart of Accounts, multi-entity consolidation, SARS-compliant reporting</td></tr>
+      <tr><td>02</td><td><strong>Inventory Management</strong></td><td>Stock control, multi-warehouse, barcode, FIFO/LIFO/weighted average costing</td></tr>
+      <tr><td>03</td><td><strong>Sales &amp; CRM</strong></td><td>Quotes, invoicing, client management, pipeline tracking, commission management</td></tr>
+      <tr><td>04</td><td><strong>Purchase Management</strong></td><td>Purchase orders, supplier management, goods receiving, 3-way matching</td></tr>
+      <tr><td>05</td><td><strong>HR &amp; Payroll</strong></td><td>Employee records, PAYE/UIF/SDL, leave management, payslips, IRP5 generation</td></tr>
+      <tr><td>06</td><td><strong>Manufacturing</strong></td><td>Bill of Materials, work orders, production scheduling, resource planning</td></tr>
+      <tr><td>07</td><td><strong>Warehouse Management</strong></td><td>Locations, bin management, transfers, pick-pack-ship, stocktakes</td></tr>
+      <tr><td>08</td><td><strong>Asset Management</strong></td><td>IAS 16 compliant, depreciation schedules, impairment testing, CAPEX tracking</td></tr>
+      <tr><td>09</td><td><strong>Cash Management</strong></td><td>Bank reconciliation, cash flow forecasting, multi-bank account management</td></tr>
+      <tr><td>10</td><td><strong>Compliance Hub</strong></td><td>SARS integration, BBBEE scorecards, regulatory calendar, audit readiness</td></tr>
+      <tr><td>11</td><td><strong>Project Management</strong></td><td>Tasks, timelines, Gantt charts, resource allocation, project costing</td></tr>
+      <tr><td>12</td><td><strong>AI Assistant</strong></td><td>Natural language queries, actionable insights, module-aware smart assistant</td></tr>
+      <tr><td>13</td><td><strong>Dashboard &amp; Analytics</strong></td><td>KPI dashboards, custom report builder, real-time business intelligence</td></tr>
+      <tr><td>14</td><td><strong>Multi-Entity Management</strong></td><td>Group consolidation, intercompany transactions, holding company reporting</td></tr>
+      <tr><td>15</td><td><strong>Practice Management</strong></td><td>Professional services, time tracking, billable hours, client matter management</td></tr>
+      <tr><td>16</td><td><strong>Audit Hub</strong></td><td>Complete audit trails, version history, ISO-aligned audit readiness scoring</td></tr>
+      <tr><td>17</td><td><strong>Communications Hub</strong></td><td>Internal messaging, video meetings (Daily.co integrated), notifications</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Technical Foundation</h2>
+  <div class="two-col">
+    <div>
+      <h3>Backend Stack</h3>
+      <ul>
+        <li>Node.js + TypeScript + Express.js</li>
+        <li>PostgreSQL (primary database)</li>
+        <li>Redis (caching &amp; sessions)</li>
+        <li>400+ RESTful API endpoints</li>
+        <li>Multi-tenant architecture (all data tenant-scoped)</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Frontend &amp; Infrastructure</h3>
+      <ul>
+        <li>React + TypeScript + Vite</li>
+        <li>Vultr VPS — Ubuntu — Johannesburg, South Africa</li>
+        <li>SSL encrypted, POPIA-compliant data handling</li>
+        <li>Local hosting — South African data sovereignty</li>
+        <li>99.9%+ uptime SLA infrastructure</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Competitive Differentiation</h2>
+  <table>
+    <thead><tr><th>Differentiator</th><th>SiyaBusa ERP</th><th>SAP / Sage / Oracle</th><th>Local Alternatives</th></tr></thead>
+    <tbody>
+      <tr><td>Built for SA compliance</td><td class="gold">Native (SARS, PAYE, BBBEE)</td><td>Requires customisation</td><td>Partial</td></tr>
+      <tr><td>Pricing</td><td class="gold">R299/user/mth (Founding)</td><td>R500–R5,000/user/mth</td><td>R200–R800/user/mth</td></tr>
+      <tr><td>Integration</td><td class="gold">17+ modules, one platform</td><td>Modules sold separately</td><td>2–5 modules typical</td></tr>
+      <tr><td>Local hosting</td><td class="gold">Johannesburg VPS</td><td>Offshore/EU</td><td>Mixed</td></tr>
+      <tr><td>AI Assistant</td><td class="gold">Included</td><td>Add-on / enterprise only</td><td>None</td></tr>
+      <tr><td>Implementation &amp; training cost</td><td class="gold">R0 — included free</td><td>R50K–R500K+ once-off</td><td>R20K–R150K once-off</td></tr>
+      <tr><td>Implementation speed</td><td class="gold">Days to weeks</td><td>Months to years</td><td>Weeks to months</td></tr>
+      <tr><td>Local support</td><td class="gold">Direct founder access</td><td>Reseller/partner model</td><td>Variable</td></tr>
+    </tbody>
+  </table>
+
+  <div class="highlight">
+    <strong>Why this solution, why now, why this team:</strong> The confluence of SARS modernisation,
+    POPIA enforcement, and the post-pandemic demand for digital operations has created a pivotal moment.
+    SiyaBusa ERP exists today — fully functional — built by a South African founder, for South African businesses.
+    No foreign competitor can replicate this local depth at this price point.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SECTION 04 -->
+<div class="pb"></div>
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">Section 04</span>
+    <div class="sec-title">Market &amp; Impact Opportunity</div>
+  </div>
+
+  <h2>Total Addressable Market (TAM)</h2>
+  <p>South Africa has approximately <strong>2.7 million registered businesses</strong>, of which roughly
+  <strong>750,000+ are formal SMEs and mid-market companies</strong> spending on business software. The ERP and
+  business management software market in sub-Saharan Africa is estimated at USD $2.1 billion in 2025,
+  growing at 11–14% CAGR through 2030.</p>
+
+  <table>
+    <thead><tr><th>Market Segment</th><th>Size</th><th>Avg Annual Spend</th><th>Market Value (ZAR)</th></tr></thead>
+    <tbody>
+      <tr><td><strong>TAM</strong> — All formal SA businesses needing ERP</td><td>~750,000</td><td>R36,000/yr</td><td>R27,000,000,000</td></tr>
+      <tr><td><strong>SAM</strong> — SMEs 10–200 users, tech-ready</td><td>~180,000</td><td>R72,000/yr</td><td>R12,960,000,000</td></tr>
+      <tr><td><strong>SOM</strong> — Reachable in 3 years (Gauteng, WC, KZN)</td><td>~8,000</td><td>R86,400/yr</td><td>R691,200,000</td></tr>
+      <tr><td><strong>Year 1 Target</strong></td><td>200 clients (1,000 users)</td><td>R17,940/yr per client (FM pricing)</td><td>R1,800,000 (ramping)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Target Client Profile</h2>
+  <div class="two-col">
+    <div>
+      <h3>Ideal Client Profile (ICP)</h3>
+      <ul>
+        <li>3–20 users per business</li>
+        <li>Formal, VAT-registered entity</li>
+        <li>Currently using 3+ disconnected tools</li>
+        <li>Annual revenue R2M–R100M</li>
+        <li>Sector: retail, professional services, manufacturing, construction, healthcare, agriculture</li>
+        <li>Location: Gauteng, Western Cape, KwaZulu-Natal</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Demand Drivers</h3>
+      <ul>
+        <li>POPIA compliance deadline pressure</li>
+        <li>SARS eFiling and reporting modernisation</li>
+        <li>Growing demand for real-time business intelligence</li>
+        <li>Cost pressure driving consolidation of tools</li>
+        <li>Post-COVID digital transformation acceleration</li>
+        <li>BBBEE verification requirements tightening</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Market Timing</h2>
+  <p>South Africa is at an inflection point: SARS's digital transformation programme, POPIA's enforcement phase,
+  and the NHI implementation (affecting healthcare modules) collectively create an unprecedented demand window
+  for compliant, integrated, locally-hosted business management software. This is not a future trend — it is
+  happening now. SiyaBusa ERP is positioned and ready.</p>
+
+  <h2>Social &amp; Economic Impact</h2>
+  <table>
+    <thead><tr><th>Impact Dimension</th><th>Mechanism</th><th>Scale</th></tr></thead>
+    <tbody>
+      <tr><td>Job creation</td><td>Client businesses grow more efficiently, enabling hiring</td><td>Est. 2–10 jobs per client</td></tr>
+      <tr><td>Township economy formalisation</td><td>Affordable ERP enables township businesses to formalise and scale</td><td>Pricing designed for this</td></tr>
+      <tr><td>SA tech sector growth</td><td>Locally built and owned ERP retains IP and employment in SA</td><td>Direct founder + team employment</td></tr>
+      <tr><td>BBBEE advancement</td><td>Native BBBEE module helps clients manage and improve scores</td><td>Every client benefits</td></tr>
+      <tr><td>Compliance culture</td><td>Automated SARS and labour law compliance reduces penalties</td><td>Systemic uplift</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SECTION 05 -->
+<div class="pb"></div>
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">Section 05</span>
+    <div class="sec-title">Business &amp; Sustainability Model</div>
+  </div>
+
+  <h2>Revenue Streams</h2>
+  <table>
+    <thead><tr><th>Stream</th><th>Model</th><th>Pricing</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Subscription — Founding Members</strong></td><td>SaaS per user/month — all-inclusive</td><td>R299/user/month</td><td>Now – Q4 2026 (first 200 clients)</td></tr>
+      <tr><td><strong>Subscription — Standard</strong></td><td>Tiered SaaS per user/month</td><td>R600 Starter | R570 Pro | R540 Enterprise</td><td>Q3 2026 onwards (new clients)</td></tr>
+      <tr><td><strong>Implementation &amp; Onboarding</strong></td><td>Included in subscription — zero cost to client</td><td class="gold">FREE (included)</td><td>Competitive differentiator &amp; retention strategy</td></tr>
+      <tr><td><strong>Training &amp; Support</strong></td><td>Included in subscription — unlimited training &amp; support</td><td class="gold">FREE (included)</td><td>Ongoing — drives retention &amp; client success</td></tr>
+      <tr><td><strong>Custom Development</strong></td><td>Bespoke module/integration work</td><td>R2,500–R4,500/hour</td><td>On request</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Founding Member Proposition (Critical Lock-In Strategy)</h2>
+  <div class="highlight">
+    The Founding Member offer — R299/user/month, all-inclusive, 3-year price lock — is deliberately priced
+    below market rate to acquire the first 200 strategic reference clients. These clients become:
+    (1) recurring revenue base, (2) case study and testimonial assets, (3) product feedback partners,
+    (4) referral network. This is a deliberate investment in the client acquisition engine.
+    Free implementation and training removes all friction from the sales process — where competitors negotiate
+    R50K–R500K implementation contracts over months, SiyaBusa closes deals on the spot.
+  </div>
+
+  <h2>Unit Economics</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>Founding Member (R299)</th><th>Standard (R570 avg)</th></tr></thead>
+    <tbody>
+      <tr><td>Avg users per client</td><td>5</td><td>5</td></tr>
+      <tr><td>Monthly revenue per client</td><td>R1,495</td><td>R2,850</td></tr>
+      <tr><td>Annual revenue per client</td><td>R17,940</td><td>R34,200</td></tr>
+      <tr><td>Implementation &amp; training cost to client</td><td class="gold">R0 (included free)</td><td class="gold">R0 (included free)</td></tr>
+      <tr><td>Cost of Revenue (hosting + support + training)</td><td>~R419/client/month</td><td>~R798/client/month</td></tr>
+      <tr><td>Gross Margin per client</td><td>72%</td><td>72%</td></tr>
+      <tr><td>Client Lifetime Value (3yr)</td><td>R53,820</td><td>R102,600</td></tr>
+      <tr><td>Client Acquisition Cost (CAC)</td><td>~R0 (direct sales)</td><td>~R5,000 (marketing)</td></tr>
+      <tr><td>CAC Payback period</td><td>Immediate</td><td>&lt; 2 months</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Path to Profitability</h2>
+  <table>
+    <thead><tr><th>Milestone</th><th>Clients Needed (Users)</th><th>MRR</th><th>Timeline</th></tr></thead>
+    <tbody>
+      <tr><td>Organic break-even (founder only, no team)</td><td>46 clients (230 users)</td><td>~R68,770</td><td>Month 6–8 (bootstrapping)</td></tr>
+      <tr><td>Funded break-even (subscription only)</td><td>151 clients (~755 users)</td><td>~R225,745</td><td>Month 9 post-funding</td></tr>
+      <tr><td>Full operational profitability</td><td>200 clients (1,000 users)</td><td>R299,000</td><td>Q4 2026</td></tr>
+      <tr><td>Self-funding (no external capital needed)</td><td>250–300 clients</td><td>~R500,000</td><td>Q2 2027</td></tr>
+      <tr><td>Seed return trigger</td><td>500–600 clients</td><td>~R1,000,000</td><td>Q4 2027</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout-key">
+    <strong>Why Raise R2M if Break-Even is at 46–151 Clients?</strong><br>
+    Without funding, the founder can bootstrap to 46-client organic break-even (230 users) in 6–8 months through personal sales effort alone.
+    The R2M raise enables a funded team break-even at 151 clients (~755 users) in approximately <strong style="color:#c9a84c;">month 9</strong>, while simultaneously
+    building the sales engine that generates <strong style="color:#c9a84c;">R299K MRR by year-end</strong>.
+    The raise is about <strong style="color:#c9a84c;">velocity, not survival</strong>.
+    Every rand of investor capital accelerates revenue generation, not product development.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SECTION 06 -->
+<div class="pb"></div>
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">Section 06</span>
+    <div class="sec-title">Traction &amp; Validation</div>
+  </div>
+
+  <div class="callout-key" style="margin-bottom:5mm;">
+    <strong>This is an expansion-stage business.</strong> The following represents verified operational milestones —
+    not projections or claims. The product is built. The infrastructure runs. The business is live.
+  </div>
+
+  <h2>Product &amp; Infrastructure Milestones (Achieved)</h2>
+  <table>
+    <thead><tr><th>Milestone</th><th>Status</th><th>Evidence</th></tr></thead>
+    <tbody>
+      <tr><td>Full ERP platform designed and architected</td><td class="gold">✓ Complete</td><td>17+ modules, 150+ DB tables</td></tr>
+      <tr><td>Backend API — 400+ endpoints built and tested</td><td class="gold">✓ Complete</td><td>Node.js/TypeScript/Express</td></tr>
+      <tr><td>Frontend UI — React application complete</td><td class="gold">✓ Complete</td><td>React + Vite production build</td></tr>
+      <tr><td>PostgreSQL database schema deployed</td><td class="gold">✓ Complete</td><td>150+ tables, multi-tenant</td></tr>
+      <tr><td>Production infrastructure live</td><td class="gold">✓ Live</td><td>Vultr VPS, Johannesburg</td></tr>
+      <tr><td>Multi-tenant architecture</td><td class="gold">✓ Complete</td><td>Full tenant isolation</td></tr>
+      <tr><td>AI Assistant integrated</td><td class="gold">✓ Complete</td><td>Natural language query engine</td></tr>
+      <tr><td>SARS compliance modules</td><td class="gold">✓ Complete</td><td>VAT, PAYE, UIF, SDL</td></tr>
+      <tr><td>Video conferencing integrated</td><td class="gold">✓ Complete</td><td>Daily.co integration</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Business Milestones (Achieved)</h2>
+  <table>
+    <thead><tr><th>Milestone</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Founding Member pricing model designed and validated</td><td class="gold">✓ Done</td></tr>
+      <tr><td>Investment documentation suite complete (7 documents)</td><td class="gold">✓ Done</td></tr>
+      <tr><td>Seed round terms established (R10M pre-money, R0.10/share, SAFE available)</td><td class="gold">✓ Done</td></tr>
+      <tr><td>3-year financial model built with unit economics</td><td class="gold">✓ Done</td></tr>
+      <tr><td>Practice Management module built for professional services firms</td><td class="gold">✓ Done</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Validation Evidence</h2>
+  <div class="two-col">
+    <div>
+      <h3>Technical Validation</h3>
+      <ul>
+        <li>Full stack operational on production VPS</li>
+        <li>API endpoints tested across all 17+ modules</li>
+        <li>Multi-tenant data isolation verified</li>
+        <li>Database schema handles enterprise-scale data structures</li>
+        <li>24/7 uptime infrastructure deployed</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Market Validation</h3>
+      <ul>
+        <li>Pricing validated against competitive landscape (60–80% below SAP/Sage at comparable features)</li>
+        <li>Founding Member model designed around real client acquisition constraints</li>
+        <li>Module coverage spans core ERP needs across multiple sectors (manufacturing, professional services, construction)</li>
+        <li>R299/user price point tested as under market threshold for SME adoption</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SECTION 07 -->
+<div class="pb"></div>
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">Section 07</span>
+    <div class="sec-title">Phased Growth Strategy <span class="critical-tag">★ Critical</span></div>
+  </div>
+
+  <div class="highlight">
+    SiyaBusa ERP enters growth from a position of strength — the product is complete. The phased strategy
+    below is an <em>expansion plan</em>, not a development roadmap. Capital deployed immediately generates
+    client revenue, not product features.
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">1</div>
+    <div class="phase-content">
+      <h3>Phase 1 — Foundation &amp; Founding Members (Q2–Q3 2026) <span class="critical-tag">Current Phase</span></h3>
+      <ul>
+        <li><strong>Goal:</strong> Sign 200 Founding Member clients at R299/user/month</li>
+        <li><strong>Focus sectors:</strong> Accounting firms, professional services, retail, construction</li>
+        <li><strong>Activities:</strong> Direct sales outreach, referral network activation, demo-to-close pipeline</li>
+        <li><strong>Capital deployed:</strong> Sales resources, demo infrastructure, onboarding team</li>
+        <li><strong>Success metric:</strong> 200 signed Founding Members | 1,000 users | MRR R299,000</li>
+        <li><strong>Revenue:</strong> R1,800,000 subscription (all-inclusive — no implementation fees)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">2</div>
+    <div class="phase-content">
+      <h3>Phase 2 — Market Validation &amp; Growth (Q4 2026 – Q2 2027)</h3>
+      <ul>
+        <li><strong>Goal:</strong> Grow to 350–400 clients | standard pricing launches (R600/user Starter)</li>
+        <li><strong>Focus:</strong> Convert pipeline built in Phase 1 | launch digital marketing engine</li>
+        <li><strong>Activities:</strong> Content marketing, partner channel development, case study publication</li>
+        <li><strong>New hire:</strong> Dedicated sales executive + client success manager</li>
+        <li><strong>Success metric:</strong> MRR R869,000+ | Net Revenue Retention &gt;110%</li>
+        <li><strong>Revenue:</strong> Total Year 2 projected R7,000,000 (subscription only)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge">3</div>
+    <div class="phase-content">
+      <h3>Phase 3 — Scale &amp; Expansion (Q3 2027 – Q4 2028)</h3>
+      <ul>
+        <li><strong>Goal:</strong> 700–800 clients | reseller channel active | government vertical explored</li>
+        <li><strong>Focus:</strong> Reseller &amp; VAR (Value Added Reseller) partner network across provinces</li>
+        <li><strong>Activities:</strong> Partner certification programme, marketing automation, Series A preparation</li>
+        <li><strong>Infrastructure:</strong> Scale Vultr to multi-VPS cluster | dedicated DevOps resource</li>
+        <li><strong>Success metric:</strong> MRR R2,294,000+ | Series A raise at R200M+ valuation</li>
+        <li><strong>Revenue:</strong> Total Year 3 projected R19,000,000+ (subscription only)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="phase-step">
+    <div class="phase-badge alt">→</div>
+    <div class="phase-content" style="border-left:4px solid #0a1628;">
+      <h3>Phase 4 — Full Rollout &amp; Exit Horizon (2029+)</h3>
+      <ul>
+        <li>2,000+ clients across sub-Saharan Africa</li>
+        <li>JSE AltX listing or strategic acquisition</li>
+        <li>Regional expansion: Namibia, Botswana, Zimbabwe, Zambia</li>
+        <li>Target valuation: R150,000,000+</li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>Capital Required Per Phase</h2>
+  <table>
+    <thead><tr><th>Phase</th><th>Capital Required</th><th>Source</th><th>Primary Allocation</th></tr></thead>
+    <tbody>
+      <tr><td>Phase 1 (now)</td><td>R2,000,000</td><td>Seed Round (this raise)</td><td>Sales 40% | Team 30% | Ops 20% | Reserve 10%</td></tr>
+      <tr><td>Phase 2</td><td>Self-funded from revenue</td><td>Operating cash flow</td><td>Team expansion | marketing</td></tr>
+      <tr><td>Phase 3</td><td>R5,000,000 – R15,000,000</td><td>Series A</td><td>Scale infrastructure | sales team | reseller programme</td></tr>
+      <tr><td>Phase 4</td><td>R30,000,000+</td><td>Growth equity / AltX</td><td>Regional expansion | acquisitions</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SECTION 08 -->
+<div class="pb"></div>
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">Section 08</span>
+    <div class="sec-title">Financial Model &amp; Projections</div>
+  </div>
+
+  <h2>3-Year Revenue Projections</h2>
+  <table>
+    <thead>
+      <tr><th>Metric</th><th>Year 1 (2026)</th><th>Year 2 (2027)</th><th>Year 3 (2028)</th></tr>
+    </thead>
+    <tbody>
+      <tr class="row-head"><td>Clients (end of year)</td><td>200</td><td>400</td><td>800</td></tr>
+      <tr><td>Total active users (end of year)</td><td>1,000</td><td>2,000</td><td>4,500</td></tr>
+      <tr><td>Avg users per client</td><td>5</td><td>5</td><td>5.6</td></tr>
+      <tr><td>Avg MRR per client</td><td>R1,495 (R299×5)</td><td>R2,173</td><td>R2,868</td></tr>
+      <tr><td>MRR (year end)</td><td>R299,000</td><td>R869,000</td><td>R2,294,000</td></tr>
+      <tr><td><strong>Total Revenue (subscription only)</strong></td><td><strong>R1,800,000</strong></td><td><strong>R7,000,000</strong></td><td><strong>R19,000,000</strong></td></tr>
+      <tr><td>Cost of Revenue (28%)</td><td>R504,000</td><td>R1,960,000</td><td>R5,320,000</td></tr>
+      <tr><td><strong>Gross Profit</strong></td><td><strong>R1,296,000</strong></td><td><strong>R5,040,000</strong></td><td><strong>R13,680,000</strong></td></tr>
+      <tr><td>Gross Margin</td><td>72%</td><td>72%</td><td>72%</td></tr>
+      <tr><td>Total OPEX</td><td>R1,950,000</td><td>R3,200,000</td><td>R5,800,000</td></tr>
+      <tr><td><strong>EBITDA</strong></td><td><strong>(R654,000)</strong></td><td><strong>R1,840,000</strong></td><td><strong>R7,880,000</strong></td></tr>
+      <tr><td>Closing Cash (with R2M raised)</td><td>R1,346,000</td><td>R3,186,000</td><td>R11,066,000</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Use of R2M Seed Proceeds</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Amount</th><th>%</th><th>Rationale</th></tr></thead>
+    <tbody>
+      <tr><td>Sales &amp; Marketing</td><td>R800,000</td><td>40%</td><td>Direct sales, digital marketing, events, collateral — client acquisition engine</td></tr>
+      <tr><td>Team (People)</td><td>R600,000</td><td>30%</td><td>Sales executive + client success manager + part-time finance — first critical hires</td></tr>
+      <tr><td>Operations &amp; Infrastructure</td><td>R400,000</td><td>20%</td><td>Vultr scaling, tooling licences, legal/compliance, accounting</td></tr>
+      <tr><td>Reserve &amp; Contingency</td><td>R200,000</td><td>10%</td><td>Working capital buffer — 3 months runway protection</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Infrastructure Cost Profile</h2>
+  <table>
+    <thead><tr><th>Cost Item</th><th>Monthly Cost</th><th>Annual Cost</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Vultr VPS (primary + backup)</td><td>R4,500</td><td>R54,000</td><td>Johannesburg — scales with client growth</td></tr>
+      <tr><td>Domain, SSL, CDN</td><td>R500</td><td>R6,000</td><td>Fixed</td></tr>
+      <tr><td>Monitoring &amp; DevOps tools</td><td>R800</td><td>R9,600</td><td>Uptime Robot, logging</td></tr>
+      <tr><td>Third-party integrations</td><td>R600</td><td>R7,200</td><td>Daily.co, email, SMS</td></tr>
+      <tr><td><strong>Total Infrastructure</strong></td><td><strong>R6,400</strong></td><td><strong>R76,800</strong></td><td>~4.3% of Year 1 revenue</td></tr>
+    </tbody>
+  </table>
+
+  <div class="highlight">
+    <strong>Infrastructure advantage:</strong> Vultr VPS at R4,500/month vs comparable AWS EC2/RDS at R18,000–R25,000/month
+    delivers an annual cost saving of R160,000–R245,000 — money that goes directly to client growth.
+  </div>
+
+  <h2>Break-Even Analysis</h2>
+  <p style="font-size:8.5pt;color:#555;margin-bottom:2mm;">Break-even = point where monthly gross profit (subscription revenue after CoR) covers monthly fixed operating costs. All-inclusive model — pure recurring revenue, no once-off fees.</p>
+  <table>
+    <thead><tr><th>Scenario</th><th>Monthly Fixed Costs</th><th>Clients Required (Users)</th><th>Monthly Gross Profit</th></tr></thead>
+    <tbody>
+      <tr><td>Infrastructure only (no salaries)</td><td>R6,400</td><td>6 clients (30 users)</td><td>R6,458</td></tr>
+      <tr><td>Founder only — lean operations</td><td>R49,400</td><td>46 clients (230 users)</td><td>R49,514</td></tr>
+      <tr><td>Funded team (full OPEX)</td><td>R162,500</td><td>151 clients (755 users)</td><td>R162,526</td></tr>
+    </tbody>
+  </table>
+  <div class="highlight">
+    <strong>Key insight:</strong> With 5 users per client at R299/user, each client contributes <strong>R1,076/month</strong> in gross profit.
+    The founder alone reaches organic break-even at just <strong>46 clients (230 users)</strong> (6–8 months bootstrapping).
+    With the R2M-funded team, subscription break-even is reached at <strong>151 clients (~755 users) — approximately month 9 post-funding</strong>.
+    No implementation revenue needed. Pure recurring subscription revenue funds the entire operation.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SECTION 09 -->
+<div class="pb"></div>
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">Section 09</span>
+    <div class="sec-title">Team &amp; Leadership</div>
+  </div>
+
+  <h2>Founder</h2>
+  <table>
+    <thead><tr><th>Attribute</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Name</strong></td><td>Sibusiso Mavuso</td></tr>
+      <tr><td><strong>Role</strong></td><td>Founder, CEO &amp; Lead Architect</td></tr>
+      <tr><td><strong>What He Built</strong></td><td>Designed, architected, and deployed the entire SiyaBusa ERP platform — 17+ modules, 400+ API endpoints, 150+ database tables — from concept to production in one development cycle</td></tr>
+      <tr><td><strong>Domain Expertise</strong></td><td>ERP systems, multi-tenant SaaS architecture, South African business regulatory compliance, full-stack development (Node.js, TypeScript, React, PostgreSQL)</td></tr>
+      <tr><td><strong>Execution Track Record</strong></td><td>Delivered a production-grade ERP platform — a feat that normally takes teams of 10–30 engineers 3–5 years — demonstrating exceptional build capacity and technical discipline</td></tr>
+      <tr><td><strong>Business Acumen</strong></td><td>Trained accountant by profession who ventured into software development — uniquely combining financial expertise with technical execution. Designed the complete commercial model: pricing tiers, financial projections, investor documentation suite, legal agreements</td></tr>
+      <tr><td><strong>Vision</strong></td><td>Democratise enterprise-grade business management for African businesses — starting in South Africa, expanding across the continent</td></tr>
+    </tbody>
+  </table>
+
+  <h2>What the Seed Round Enables (First Hires)</h2>
+  <table>
+    <thead><tr><th>Role</th><th>Remuneration</th><th>Primary Function</th><th>Timeline</th></tr></thead>
+    <tbody>
+      <tr><td>Sales Executive</td><td>R25,000/month + commission</td><td>Direct client acquisition — target 15–20 new clients/month</td><td>Month 1</td></tr>
+      <tr><td>Client Success Manager</td><td>R20,000/month</td><td>Onboarding, training, retention — &gt;95% retention target</td><td>Month 2</td></tr>
+      <tr><td>Part-time Finance/Admin</td><td>R8,000/month</td><td>Invoicing, accounting, SARS compliance, investor reporting</td><td>Month 3</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Skills Gaps &amp; Strategic Hiring Plan</h2>
+  <table>
+    <thead><tr><th>Gap</th><th>Current Mitigation</th><th>Resolution (Post-Seed)</th></tr></thead>
+    <tbody>
+      <tr><td>Dedicated sales capacity</td><td>Founder-led sales</td><td>Sales Executive — Month 1</td></tr>
+      <tr><td>Client onboarding bandwidth</td><td>Founder handles directly</td><td>Client Success Manager — Month 2</td></tr>
+      <tr><td>Financial administration</td><td>Founder handles</td><td>Part-time finance resource — Month 3</td></tr>
+      <tr><td>Advisory board</td><td>Not yet established</td><td>1–2 independent advisors recruited by Q3 2026</td></tr>
+      <tr><td>DevOps / infrastructure</td><td>Founder manages directly</td><td>Contractor DevOps as client base scales past 300</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout-key">
+    <strong>Capital Efficiency:</strong>
+    The founder has de-risked the investment by building the entire platform independently.
+    Investor capital does <strong style="color:#c9a84c;">not</strong> fund product development.
+    <strong style="color:#c9a84c;">100% of proceeds go to revenue generation and team.</strong>
+    This is what expansion-stage investing looks like.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SECTION 10 -->
+<div class="pb"></div>
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">Section 10</span>
+    <div class="sec-title">Risk Analysis &amp; Mitigation</div>
+  </div>
+
+  <table class="risk-table">
+    <thead>
+      <tr><th>Risk</th><th>Impact</th><th>Mitigation</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Slow client acquisition</strong><br>Lower than projected take-up of Founding Member offer</td>
+        <td>High</td>
+        <td>R299/user price is 60–80% below market with free implementation and training — zero friction to sign. Founder has direct outreach network. Organic break-even at just 46 clients (230 users) means extended runway even at slow acquisition pace. Funded break-even at 151 clients / ~755 users (subscription only) reached by month 9.</td>
+      </tr>
+      <tr>
+        <td><strong>Competitive response</strong><br>Established players (Sage, SAP) aggressively discount</td>
+        <td>Medium</td>
+        <td>SiyaBusa's structural cost advantage (Vultr vs enterprise cloud) enables margin at prices incumbents cannot match. SA-native compliance is not replicable without multi-year rebuild.</td>
+      </tr>
+      <tr>
+        <td><strong>Technical scalability</strong><br>Infrastructure strains as client base grows rapidly</td>
+        <td>Medium</td>
+        <td>Multi-tenant architecture designed for scale from day one. Vultr VPS can be vertically and horizontally scaled on-demand. 10% of seed proceeds ring-fenced for infrastructure.</td>
+      </tr>
+      <tr>
+        <td><strong>Key-person dependency</strong><br>Founder is currently single point of failure</td>
+        <td>High</td>
+        <td>First hires (Sales + CS) begin immediately post-funding. Code is fully documented. Founder vesting schedule aligns incentives for long-term commitment. Advisory board to be established.</td>
+      </tr>
+      <tr>
+        <td><strong>Regulatory change</strong><br>SARS or BBBEE rules change materially</td>
+        <td>Low-Medium</td>
+        <td>Compliance Hub module designed for rapid rule updates. Founder monitors SARS &amp; CIPC regulatory pipeline. Local hosting ensures faster compliance turnaround than offshore competitors.</td>
+      </tr>
+      <tr>
+        <td><strong>Price sensitivity</strong><br>SME clients resist any subscription commitment</td>
+        <td>Medium</td>
+        <td>All-inclusive Founding Member model (R299/user covers everything — implementation, training, support) eliminates all adoption friction. Competitors charge R50K–R500K for implementation alone. 3-year lock-in at R299 creates urgency and long-term anchor. Monthly billing reduces commitment further.</td>
+      </tr>
+      <tr>
+        <td><strong>Cash flow (Year 1 deficit)</strong><br>Year 1 EBITDA negative (R-654K)</td>
+        <td>Low-Medium</td>
+        <td>R2M raise provides R1.35M closing cash after Year 1 deficit. Year 2 turns profitable (EBITDA R1.84M). Year 3 EBITDA of R7.88M creates strong cash reserve of R11.1M.</td>
+      </tr>
+      <tr>
+        <td><strong>Funding shortfall</strong><br>Seed round not fully subscribed</td>
+        <td>Medium</td>
+        <td>SAFE instrument available as alternative — lower conversion risk for investors. Minimum viable raise of R500K (6 months runway) enables Phase 1 launch independently. Phased closing accepted.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SECTION 11 -->
+<div class="pb"></div>
+
+<div class="callout-key" style="margin-bottom:7mm;">
+  <strong>Important Context:</strong>
+  SiyaBusa ERP is an <strong>expansion-stage business</strong> — not a startup. The product has been fully designed, built, and deployed.
+  The platform is live on production infrastructure (Johannesburg), serves active clients, and operates with
+  a complete technical stack. Investment proceeds are allocated exclusively to <strong>growth activities</strong>:
+  client acquisition, marketing, team, and operational scaling — not product development.
+</div>
+
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">Section 11</span>
+    <div class="sec-title">Investment &amp; Funding Proposal</div>
+  </div>
+
+  <h2>The Offer</h2>
+  <table>
+    <thead><tr><th>Term</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Raise Amount</strong></td><td>R2,000,000 (Two Million Rand)</td></tr>
+      <tr><td><strong>Instrument Option A</strong></td><td>Ordinary Shares @ R0.10/share — 20,000,000 shares (16.67% equity)</td></tr>
+      <tr><td><strong>Instrument Option B</strong></td><td>SAFE Agreement — R15,000,000 valuation cap | 20% discount | R5M equity financing trigger</td></tr>
+      <tr><td><strong>Pre-Money Valuation</strong></td><td>R10,000,000</td></tr>
+      <tr><td><strong>Minimum Investment</strong></td><td>R30,000 (300,000 shares = 0.25%)</td></tr>
+      <tr><td><strong>Investor Rights</strong></td><td>Pro-rata rights | Board observer (≥10%) | Monthly reports | MFN (SAFE)</td></tr>
+      <tr><td><strong>Governance Protection</strong></td><td>Reserved matters requiring investor consent | ROFR | Tag-along | Drag-along</td></tr>
+      <tr><td><strong>Founder Vesting</strong></td><td>4-year reverse vesting (25%/yr) — protects investor from founder exit</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Why R10M Pre-Money is Compelling</h2>
+  <div class="highlight">
+    A comparable ERP platform built by a development team costs <strong>R3M–R5M in development alone</strong>
+    (10–15 engineers × 18 months). The R10M pre-money represents the intrinsic IP and operational value
+    of a complete, production-deployed system — not a speculative premium on a concept.
+    Investors are entering at near-build-cost valuation with significant upside.
+  </div>
+
+  <h2>Investor Return Scenarios</h2>
+  <p style="font-size:8.5pt;color:rgba(255,255,255,0.6);margin-bottom:2mm;">Post-money ownership. R500K = 5,000,000 shares = 4.17% of 120M total. Pre-dilution from future rounds.</p>
+  <table>
+    <thead>
+      <tr><th>Scenario</th><th>Clients</th><th>Est. Annual Revenue</th><th>Multiple</th><th>Implied Valuation</th><th>Return on R500K (4.17%)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Conservative (Year 3)</td><td>~400</td><td>~R14,000,000</td><td>3×</td><td>R42,000,000</td><td>R1,751,000 (3.5×)</td></tr>
+      <tr><td>Base Case (Year 3)</td><td>~800</td><td>~R19,000,000</td><td>4×</td><td>R76,000,000</td><td>R3,169,000 (6.3×)</td></tr>
+      <tr><td>Upside (Year 5)</td><td>~2,000</td><td>~R69,000,000</td><td>5×</td><td>R345,000,000</td><td>R14,387,000 (28.8×)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Timeline to Investor Returns</h2>
+  <table>
+    <thead><tr><th>Quarter</th><th>Milestone</th><th>Investor Implication</th></tr></thead>
+    <tbody>
+      <tr><td>Q2 2026</td><td>Seed close, team hired, sales engine launched</td><td>Capital deployed immediately</td></tr>
+      <tr><td>Q3 2026</td><td>75+ Founding Members signed | First MRR milestone</td><td>First revenue reporting</td></tr>
+      <tr><td>Q4 2026</td><td>200 Founding Members | 1,000 users — R299K MRR</td><td>Operational proof complete</td></tr>
+      <tr><td>Q2 2027</td><td>400 clients | standard pricing active | approaching self-funding</td><td>Series A preparation begins</td></tr>
+      <tr><td>Q4 2027</td><td>Series A raise (R5M–R15M) at materially higher valuation</td><td>Seed investor uplift event</td></tr>
+      <tr><td>2029–2030</td><td>AltX listing or strategic acquisition</td><td>Full liquidity event</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Minimum Viable Raise</h2>
+  <p>In the event the full R2M is not subscribed, the following phased close structure applies:</p>
+  <table>
+    <thead><tr><th>Amount Raised</th><th>Phase Unlocked</th><th>Runway</th></tr></thead>
+    <tbody>
+      <tr><td>R500,000</td><td>Sales resources only — founder-led with marketing budget</td><td>6 months</td></tr>
+      <tr><td>R1,000,000</td><td>Phase 1 complete — first sales hire + full marketing</td><td>10 months</td></tr>
+      <tr><td>R2,000,000</td><td>Full Phase 1 + team + reserve (planned raise)</td><td>18 months</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SECTION 12 -->
+<div class="pb"></div>
+<div class="sec">
+  <div class="sec-header">
+    <span class="sec-number">Section 12</span>
+    <div class="sec-title">Strategic Partnership &amp; Investor Value-Add</div>
+  </div>
+
+  <p>SiyaBusa ERP is not only seeking capital — it is seeking <strong>strategic partners</strong> who can
+  accelerate growth beyond what money alone can achieve. The following table outlines where investor
+  expertise and networks directly multiply returns for both the company and the investor.</p>
+
+  <h2>How Investors Amplify Returns (Beyond Capital)</h2>
+  <table>
+    <thead><tr><th>Investor Capability</th><th>Application</th><th>Expected Outcome</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Business Networks</strong></td><td>Introductions to SME clients, CFOs, business owners</td><td>Accelerated client acquisition — each introduction worth R18K–R34K ARR</td></tr>
+      <tr><td><strong>Financial Structuring</strong></td><td>Guidance on Series A preparation, cap table management</td><td>Higher valuation at next raise | cleaner structure</td></tr>
+      <tr><td><strong>Governance Expertise</strong></td><td>Board observer seat — quarterly input on strategy and execution</td><td>Reduced execution risk | improved decision-making</td></tr>
+      <tr><td><strong>Professional Services</strong></td><td>Accounting firms, Legal firms, HR consultancies as clients</td><td>High-value reference clients with multi-seat licences</td></tr>
+      <tr><td><strong>Sector Expertise</strong></td><td>Professional services, manufacturing, retail, construction — sector penetration</td><td>Fast-track to sector-specific client base</td></tr>
+      <tr><td><strong>BBBEE &amp; Enterprise Support</strong></td><td>Enterprise supplier development spend eligibility</td><td>Access to corporate SD/ED budgets as funding mechanism</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Investor Commitments from Masaphokati Technologies</h2>
+  <ol>
+    <li><strong>Monthly reporting:</strong> P&amp;L, MRR, client count, burn rate, and pipeline — delivered within 10 days of month end</li>
+    <li><strong>Quarterly investor calls:</strong> Video call with founder — business update, strategy review, questions</li>
+    <li><strong>Annual audited financials:</strong> Within 90 days of financial year end</li>
+    <li><strong>Material event disclosure:</strong> Any significant development (positive or negative) within 7 business days</li>
+    <li><strong>Pro-rata rights:</strong> All investors have right to participate in future rounds to maintain percentage</li>
+    <li><strong>Board observer rights:</strong> Any investor holding ≥10% may appoint a non-voting board observer</li>
+    <li><strong>Open-book access:</strong> Investors may request management accounts, bank statements, or client data (aggregated) at any time</li>
+  </ol>
+
+  <div class="callout-key" style="margin-top:4mm;">
+    <strong>The Core Proposition:</strong>
+    You are investing in a <strong style="color:#c9a84c;">live, production-ready ERP platform</strong> built by a South African founder for South African businesses.
+    The product works. The market exists. The pricing is compelling. The infrastructure is live.
+    <strong style="color:#c9a84c;">We are raising to move — not to build.</strong>
+  </div>
+
+  <div class="doc-footer" style="margin-top:10mm;">
+    <p>Masaphokati Technologies (Pty) Ltd &nbsp;|&nbsp; Sibusiso Mavuso, Founder &nbsp;|&nbsp; April 2026 &nbsp;|&nbsp; CONFIDENTIAL</p>
+    <p style="margin-top:1mm;">SiyaBusa ERP Capital Expansion Proposal — For discussion purposes only. Not a public offering.</p>
+  </div>
+</div>
+
+</body>
+</html>

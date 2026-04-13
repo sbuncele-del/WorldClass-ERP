@@ -166,9 +166,12 @@
   border-bottom: 1px solid rgba(16,24,40,0.06);
 }
 .landing-page.header-enterprise .logo-text {
-  color: var(--sb-navy);
+  color: #fff;
   font-weight: 800;
   letter-spacing: -0.02em;
+}
+.landing-page.header-enterprise .nav.scrolled .logo-text {
+  color: var(--sb-navy);
 }
 .landing-page.header-enterprise .nav-actions .btn-primary {
   background: linear-gradient(90deg, var(--sb-teal) 0%, var(--sb-teal-dark) 100%);
@@ -221,8 +224,12 @@
 .landing-page .logo-text {
   font-size: 1.25rem;
   font-weight: 800;
-  color: var(--sb-navy);
+  color: #fff;
   letter-spacing: -0.02em;
+}
+
+.landing-page .nav.scrolled .logo-text {
+  color: var(--sb-navy);
 }
 
 .landing-page.dark .logo-text {

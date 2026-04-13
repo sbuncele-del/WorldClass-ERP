@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>SiyaBusa ERP — Investor FAQ</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm 22mm 18mm;
+    @top-left { content: "SiyaBusa ERP — Investor FAQ"; font-size: 8pt; color: #888; font-family: Arial,sans-serif; }
+    @top-right { content: "Masaphokati Technologies (Pty) Ltd — CONFIDENTIAL"; font-size: 8pt; color: #888; font-family: Arial,sans-serif; }
+    @bottom-center { content: counter(page) " of 14"; font-size: 8pt; color: #888; font-family: Arial,sans-serif; }
+  }
+  @page :first { @top-left{content:""} @top-right{content:""} @bottom-center{content:""} }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 9.5pt; color: #222; line-height: 1.5; }
+  .cover { page-break-after:always; background:#0a1628; color:#fff; min-height:270mm; display:flex; flex-direction:column; padding:30mm 20mm 20mm; }
+  .cover-top-bar { width:48px; height:4px; background:#c9a84c; margin-bottom:14mm; }
+  .cover-logo { font-size:22pt; font-weight:900; letter-spacing:1px; color:#c9a84c; }
+  .cover-subtitle { font-size:10pt; color:#aaa; margin-top:2mm; letter-spacing:2px; text-transform:uppercase; }
+  .cover-title { margin-top:18mm; font-size:32pt; font-weight:900; line-height:1.1; text-transform:uppercase; letter-spacing:2px; }
+  .cover-version { margin-top:6mm; font-size:10pt; color:#c9a84c; letter-spacing:1px; text-transform:uppercase; }
+  .cover-body { flex:1; }
+  .cover-tagline { font-size:13pt; font-weight:700; letter-spacing:3px; color:#c9a84c; text-transform:uppercase; margin-top:20mm; }
+  .cover-footer-bar { border-top:1px solid #2a3a5a; padding-top:5mm; margin-top:10mm; display:flex; justify-content:space-between; font-size:8pt; color:#555; }
+  .doc-intro { margin-bottom:6mm; padding:5mm 6mm; background:#f0f4f8; border-left:4px solid #c9a84c; font-size:9pt; color:#444; }
+  h1 { font-size:14pt; font-weight:900; color:#0a1628; border-bottom:2.5px solid #c9a84c; padding-bottom:2mm; margin:7mm 0 3mm; text-transform:uppercase; letter-spacing:1px; }
+  h2 { font-size:10pt; font-weight:700; color:#0a1628; margin:4mm 0 1.5mm; }
+  .q { font-weight:700; color:#0a1628; margin:4mm 0 1.5mm; font-size:9.5pt; }
+  .a { margin-bottom:3mm; padding-left:3mm; border-left:2px solid #e8e0cc; }
+  p { margin-bottom:2.5mm; }
+  ul { margin:2mm 0 3mm 5mm; }
+  ul li { margin-bottom:1mm; }
+  table { width:100%; border-collapse:collapse; margin:3mm 0; font-size:8.5pt; }
+  th { background:#0a1628; color:#c9a84c; font-weight:700; padding:2.5mm 3mm; text-align:left; font-size:8pt; }
+  td { border:1px solid #ddd; padding:2mm 3mm; vertical-align:top; }
+  tr:nth-child(even) td { background:#f8f9fb; }
+  .highlight { background:#fffbe6; border-left:3px solid #c9a84c; padding:2mm 3mm; margin:2mm 0; font-size:8.5pt; }
+  .gold { color:#c9a84c; font-weight:700; }
+  .badge { display:inline-block; background:#c9a84c; color:#0a1628; font-weight:700; padding:0.5mm 2mm; border-radius:2px; font-size:7.5pt; }
+  .pb { page-break-before:always; }
+  .section-label { display:inline-block; background:#0a1628; color:#c9a84c; font-weight:700; font-size:8pt; padding:1mm 3mm; border-radius:2px; margin-bottom:3mm; text-transform:uppercase; letter-spacing:1px; }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-top-bar"></div>
+  <div class="cover-logo">SiyaBusa ERP</div>
+  <div class="cover-subtitle">Investor &amp; Partner Documentation</div>
+  <div class="cover-body">
+    <div class="cover-title">Investor<br>FAQ</div>
+    <div class="cover-version">Version 2.0 &nbsp;|&nbsp; April 2026</div>
+    <div style="margin-top:14mm; display:flex; gap:16mm; flex-wrap:wrap;">
+      <div><label style="display:block;font-size:7.5pt;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:1mm;">Company</label><span style="font-size:10pt;font-weight:bold;">Masaphokati Technologies (Pty) Ltd</span></div>
+      <div><label style="display:block;font-size:7.5pt;text-transform:uppercase;letter-spacing:1px;color:#888;margin-bottom:1mm;">Classification</label><span style="font-size:10pt;font-weight:bold;">Confidential</span></div>
+    </div>
+  </div>
+  <div class="cover-tagline">WE RULE. WE GOVERN. WE EMPOWER.</div>
+  <div class="cover-footer-bar">
+    <span>Masaphokati Technologies (Pty) Ltd — Confidential</span>
+    <span>April 2026</span>
+  </div>
+</div>
+
+<!-- INTRO -->
+<div class="doc-intro">
+  📋 <strong>ANTICIPATED QUESTIONS &amp; ANSWERS</strong> — A comprehensive collection of anticipated questions regarding the business model, technology stack, financial projections, and exit strategy.
+</div>
+
+<!-- THE BUSINESS -->
+<div class="section-label">The Business</div>
+
+<div class="q">Q: What exactly have you built?</div>
+<div class="a">
+  <p>SiyaBusa ERP is a complete, production-ready enterprise resource planning platform with:</p>
+  <ul>
+    <li><strong>17+ fully functional modules</strong> (Sales, Purchase, Inventory, Manufacturing, HR, Finance, etc.)</li>
+    <li><strong>400+ REST API endpoints</strong> deployed and live</li>
+    <li><strong>150+ database tables</strong> with proper relationships</li>
+    <li><strong>9 AI-powered assistants</strong> for natural language queries</li>
+    <li><strong>6 industry vertical modules</strong> (Healthcare, Mining, Manufacturing, Property, Construction, Professional Services)</li>
+    <li>Native South African compliance (SARS, BCEA, POPIA, B-BBEE)</li>
+  </ul>
+  <div class="highlight">The system is deployed on <strong>Vultr VPS (Johannesburg, South Africa)</strong> and accessible for demonstration.</div>
+</div>
+
+<div class="q">Q: Who is your target customer?</div>
+<div class="a">
+  <p>South African mid-market businesses with:</p>
+  <ul>
+    <li>Revenue: R10M – R500M annually</li>
+    <li>Employees: 50–500 people</li>
+    <li>Pain point: Outgrown basic accounting (Xero, QuickBooks, Sage) but priced out of enterprise ERP (SAP, Oracle, Microsoft)</li>
+    <li>Need: Full ERP capabilities — not just accounting, but manufacturing, warehouse, HR, compliance</li>
+  </ul>
+  <p>Market size: <strong>60,000+ businesses</strong> in South Africa alone.</p>
+</div>
+
+<div class="q">Q: What makes you different from enterprise ERP vendors?</div>
+<div class="a">
+  <table>
+    <thead><tr><th>Factor</th><th>Global Vendors</th><th>SiyaBusa</th></tr></thead>
+    <tbody>
+      <tr><td>Pricing</td><td>R2,500–R5,000/user</td><td><span class="gold">R299–R600/user (60–90% less)</span></td></tr>
+      <tr><td>SA Compliance</td><td>R500K–R2M+ localization project</td><td>Native, built-in</td></tr>
+      <tr><td>Implementation</td><td>6–12 months</td><td>2–4 weeks</td></tr>
+      <tr><td>Modules</td><td>Pay per module</td><td>Industry-tailored suite</td></tr>
+      <tr><td>AI Assistant</td><td>None or limited</td><td>9 specialized agents</td></tr>
+    </tbody>
+  </table>
+  <p class="a" style="padding-left:0;border-left:none;font-size:8pt;color:#666;">Founding Member customers get all modules included at R299/user. Standard pricing from R600/user for new customers from Q3 2026.</p>
+</div>
+
+<div class="q">Q: Why would anyone use a startup ERP over SAP?</div>
+<div class="a">
+  <ul>
+    <li><strong>Price:</strong> A 100-user SAP implementation costs R150K+/month plus R1–2M setup. We're R30K–R60K/month total with minimal setup fees.</li>
+    <li><strong>Speed:</strong> SAP implementations take 6–18 months. We implement in 4–8 weeks because SA compliance is already built in.</li>
+    <li><strong>Fit:</strong> SAP is designed for R1B+ enterprises. Mid-market businesses (R10M–R500M) are underserved by their model.</li>
+  </ul>
+</div>
+
+<!-- FINANCIALS -->
+<div class="pb"></div>
+<div class="section-label">Financials</div>
+
+<div class="q">Q: What are the investment terms?</div>
+<div class="a">
+  <table>
+    <thead><tr><th>Term</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Investment Amount</td><td>R2,000,000 (Seed Round)</td></tr>
+      <tr><td>Pre-Money Valuation</td><td>R10,000,000</td></tr>
+      <tr><td>Post-Money Valuation</td><td>R12,000,000</td></tr>
+      <tr><td>Equity Offered</td><td>16.67% (20,000,000 shares @ R0.10)</td></tr>
+      <tr><td>Break-even</td><td>5–6 Founding Member customers (operational cost break-even)</td></tr>
+    </tbody>
+  </table>
+
+  <p style="margin-top:2mm;"><strong>Investment Structure Options:</strong></p>
+  <table>
+    <thead><tr><th>Option</th><th>Instrument</th><th>Amount</th><th>Key Terms</th></tr></thead>
+    <tbody>
+      <tr><td>Option A</td><td>SAFE Note</td><td>R150,000–R500,000</td><td>Valuation Cap: R15M, 20% discount, pro-rata rights</td></tr>
+      <tr><td>Option B</td><td>Equity (Direct)</td><td>R500,000+</td><td>Pre-money: R10M, price R0.10/share</td></tr>
+      <tr><td>Option C</td><td>Bridge Loan</td><td>R200,000</td><td>12 months, 0%, convert to equity at next round (20% discount)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="q">Q: When will you be profitable?</div>
+<div class="a">
+  <table>
+    <thead><tr><th>Timeline</th><th>Milestone</th></tr></thead>
+    <tbody>
+      <tr><td>Apr–Jun 2026</td><td>First paying Founding Members (~R13K MRR)</td></tr>
+      <tr><td>May 2026</td><td>Operational break-even (5–6 customers @ R299/user × 15 users)</td></tr>
+      <tr><td>Q3 2026</td><td>R50K+ MRR, team expansion</td></tr>
+      <tr><td>Q4 2026</td><td>R100K+ MRR — cash flow improving</td></tr>
+      <tr><td>2027</td><td>EBITDA near break-even at company scale</td></tr>
+      <tr><td>2028</td><td>R3.9M EBITDA, 14% margin</td></tr>
+    </tbody>
+  </table>
+  <div class="highlight">At R299/user × 15 users = R4,485/month, we need just 5–6 small customers to cover operational costs (Vultr VPS + minimal admin).</div>
+</div>
+
+<div class="q">Q: How do I get my money back? (Exit Strategy)</div>
+<div class="a">
+  <p><strong>Primary Exit: JSE AltX Listing (Target Q2 2029)</strong></p>
+  <table>
+    <thead><tr><th>Milestone</th><th>Timeline</th><th>What Happens</th></tr></thead>
+    <tbody>
+      <tr><td>Seed Round</td><td>Q1 2026</td><td>You invest, receive up to 16.67% equity</td></tr>
+      <tr><td>Series A</td><td>Q1 2028</td><td>New investors at R80M pre-money valuation</td></tr>
+      <tr><td>Pre-IPO</td><td>Q4 2028</td><td>Final private round, 100+ shareholders</td></tr>
+      <tr><td>AltX Listing</td><td>Q2 2029</td><td>Your shares become tradeable</td></tr>
+    </tbody>
+  </table>
+
+  <p><strong>Return Potential (Realistic Scenarios)</strong></p>
+  <table>
+    <thead><tr><th>Scenario</th><th>Valuation</th><th>Seed Value (post-dilution)</th><th>Return</th></tr></thead>
+    <tbody>
+      <tr><td>Base Case (AltX R400M)</td><td>R400M</td><td>~R20.8M (after dilution)</td><td>~10x</td></tr>
+      <tr><td>Upside (AltX R600M)</td><td>R600M</td><td>~R33M</td><td>~16x</td></tr>
+      <tr><td>Downside (R200M)</td><td>R200M</td><td>~R10.4M</td><td>~5x</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="q">Q: What's your revenue model?</div>
+<div class="a">
+  <p>Platform + Per-User subscription with EVERYTHING INCLUDED.</p>
+  <table>
+    <thead><tr><th>Plan</th><th>Per User</th><th>Target Customers</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Founding Member</strong></td><td><strong class="gold">R299/user</strong></td><td>First 25 customers (all-inclusive, 3-year lock-in)</td></tr>
+      <tr><td>Starter (from Q3 2026)</td><td>R600/user</td><td>Small businesses 5–15 users</td></tr>
+      <tr><td>Professional</td><td>R570/user</td><td>Growing SMEs 10–30 users</td></tr>
+      <tr><td>Enterprise</td><td>R540/user</td><td>Medium businesses 25+ users</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="q">Q: Why don't you have revenue yet?</div>
+<div class="a">
+  <p>Strategic choice. We're following a "land and expand" strategy:</p>
+  <ul>
+    <li><strong>Build dependency first:</strong> Companies that use a system for 6+ months don't switch easily</li>
+    <li><strong>Word-of-mouth:</strong> Free beta creates advocates who recruit paying customers</li>
+    <li><strong>Product-market fit:</strong> Beta feedback ensures we're building what customers actually need</li>
+    <li><strong>Case studies:</strong> We need success stories before mass marketing</li>
+  </ul>
+  <p>This is how Slack, Zoom, and many B2B SaaS companies grew.</p>
+</div>
+
+<div class="q">Q: What happens if you don't raise funds?</div>
+<div class="a">
+  <p>We continue on a slower path:</p>
+  <ul>
+    <li>Vultr VPS free/low tier limits capacity to ~5 customers</li>
+    <li>No marketing means organic-only growth (slower)</li>
+    <li>No dedicated support means founder-only operations</li>
+  </ul>
+  <div class="highlight">The product exists. The opportunity exists. Capital accelerates the timeline.</div>
+</div>
+
+<!-- PRODUCT & TECHNOLOGY -->
+<div class="pb"></div>
+<div class="section-label">Product &amp; Technology</div>
+
+<div class="q">Q: Is the product actually finished?</div>
+<div class="a">
+  <p>The platform is production-ready with 17+ complete modules. Status breakdown:</p>
+  <table>
+    <thead><tr><th>Complete</th><th>In Progress</th><th>Planned</th></tr></thead>
+    <tbody>
+      <tr><td>All 17+ core modules</td><td>SARS API integration (awaiting SARS approval)</td><td>Mobile apps</td></tr>
+      <tr><td>400+ API endpoints</td><td>Performance optimization</td><td>Additional integrations</td></tr>
+      <tr><td>Multi-tenant architecture</td><td>UI polish</td><td>Advanced analytics</td></tr>
+      <tr><td>9 AI assistants</td><td></td><td></td></tr>
+    </tbody>
+  </table>
+  <div class="highlight">We can onboard customers today. Remaining work is enhancement, not core functionality.</div>
+</div>
+
+<div class="q">Q: What technology stack are you using?</div>
+<div class="a">
+  <table>
+    <thead><tr><th>Layer</th><th>Technology</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend</td><td>React 18, TypeScript, Vite</td><td>Modern, fast, maintainable</td></tr>
+      <tr><td>Backend</td><td>Node.js, Express, TypeScript</td><td>Scalable, large ecosystem</td></tr>
+      <tr><td>Database</td><td>PostgreSQL (150+ tables)</td><td>Enterprise-grade, reliable</td></tr>
+      <tr><td>Cache</td><td>Redis</td><td>High-performance</td></tr>
+      <tr><td>Cloud</td><td><strong>Vultr VPS (Ubuntu, Johannesburg)</strong></td><td>Cost-efficient, SA-hosted</td></tr>
+      <tr><td>AI</td><td>Multiple LLM integrations</td><td>Best-in-class language models</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="q">Q: Can I see a demo?</div>
+<div class="a">
+  <p>Absolutely. We have a live demo environment. Contact us to schedule a personalized walkthrough of:</p>
+  <ul>
+    <li>The modules relevant to your interests</li>
+    <li>The AI assistant in action</li>
+    <li>The SA compliance features (SARS, PAYE, etc.)</li>
+  </ul>
+</div>
+
+<!-- TEAM & EXECUTION -->
+<div class="pb"></div>
+<div class="section-label">Team &amp; Execution</div>
+
+<div class="q">Q: Who is on the team?</div>
+<div class="a">
+  <p><strong>Current:</strong></p>
+  <ul>
+    <li><strong>Sibusiso Mavuso</strong>, Founder/Developer — 18 months building this platform</li>
+    <li>No external employees (lean operation)</li>
+  </ul>
+  <p><strong>Post-funding:</strong></p>
+  <ul>
+    <li>Sales Representatives (2) — Q2 2026</li>
+    <li>Customer Success Manager — Q3 2026</li>
+    <li>Marketing Manager — Q3 2026</li>
+    <li>Support Engineer — Q4 2026</li>
+  </ul>
+  <div class="highlight">Intentionally lean. No fancy salaries — maximum capital efficiency.</div>
+</div>
+
+<div class="q">Q: Why should we trust a small team to compete with enterprise vendors?</div>
+<div class="a">
+  <ul>
+    <li>Enterprise vendors make R200K+ per customer. They don't pursue R10K customers.</li>
+    <li>We've built equivalent functionality for this specific market.</li>
+    <li>Our compliance advantage (18 months of SA-specific development) is a moat.</li>
+  </ul>
+  <p>Every major software company was a startup once. Market gaps get filled by those who see them.</p>
+</div>
+
+<div class="q">Q: What if a big player copies you?</div>
+<div class="a">
+  <ul>
+    <li><strong>SA Compliance Depth:</strong> 18 months of SARS, BCEA, POPIA-specific development isn't easily replicated.</li>
+    <li><strong>Speed to Market:</strong> By the time SAP decides to build SA-specific features, we'll have 100+ customers and deep market knowledge.</li>
+    <li><strong>Price Position:</strong> Global vendors can't profitably serve R10K–R30K/month customers. Their cost structure doesn't allow it.</li>
+  </ul>
+</div>
+
+<!-- MARKET & COMPETITION -->
+<div class="pb"></div>
+<div class="section-label">Market &amp; Competition</div>
+
+<div class="q">Q: How do you know there's demand?</div>
+<div class="a">
+  <ul>
+    <li><strong>Competitor Pricing:</strong> SAP, Oracle charge R50K–R200K/month — someone is paying</li>
+    <li><strong>Market Research:</strong> 60,000+ mid-market SA businesses (Stats SA Business Register 2024)</li>
+    <li><strong>Anecdotal Validation:</strong> Every business owner we've spoken to has this pain point</li>
+    <li><strong>Global Trends:</strong> Cloud ERP growing 18% YoY (IDC South Africa IT Spending Forecast)</li>
+  </ul>
+  <table>
+    <thead><tr><th>Claim</th><th>Source</th><th>How to Verify</th></tr></thead>
+    <tbody>
+      <tr><td>60,000+ mid-market businesses</td><td>Stats SA Business Register 2024</td><td>www.statssa.gov.za</td></tr>
+      <tr><td>R10M–R500M revenue segment</td><td>SARS Company Income Tax Statistics</td><td>www.sars.gov.za → Tax Statistics</td></tr>
+      <tr><td>18% YoY software growth</td><td>IDC South Africa IT Spending Guide 2024</td><td>www.idc.com</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="q">Q: What's your competitive moat?</div>
+<div class="a">
+  <table>
+    <thead><tr><th>Moat</th><th>Explanation</th></tr></thead>
+    <tbody>
+      <tr><td>SA Compliance</td><td>18 months of PAYE, UIF, SDL, BCEA, SARS development</td></tr>
+      <tr><td>Price Point</td><td>60–90% below global vendors with sustainable margins</td></tr>
+      <tr><td>Implementation Speed</td><td>4–8 weeks vs. 6–12 months</td></tr>
+      <tr><td>Local Knowledge</td><td>Understanding of SA business practices, regulations, culture</td></tr>
+      <tr><td>AI Integration</td><td>9 specialized agents — ahead of most competitors</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="q">Q: What are the risks?</div>
+<div class="a">
+  <table>
+    <thead><tr><th>Risk</th><th>Mitigation</th></tr></thead>
+    <tbody>
+      <tr><td>Customer acquisition slower than expected</td><td>Conservative projections, 12-month runway</td></tr>
+      <tr><td>Global vendor enters market aggressively</td><td>Our price point makes this unprofitable for them</td></tr>
+      <tr><td>Technical scaling issues</td><td>Cloud-native architecture designed for scale</td></tr>
+      <tr><td>Key person dependency</td><td>Documentation, code quality, eventual team expansion</td></tr>
+      <tr><td>Economic downturn</td><td>ERP is often countercyclical (efficiency focus)</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- INVESTMENT TERMS -->
+<div class="pb"></div>
+<div class="section-label">Investment Terms</div>
+
+<div class="q">Q: What are you offering?</div>
+<div class="a">
+  <table>
+    <thead><tr><th>Term</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Instrument</td><td>SAFE (Simple Agreement for Future Equity) or Direct Equity</td></tr>
+      <tr><td>Seed Amount</td><td>R2,000,000</td></tr>
+      <tr><td>Valuation Cap (SAFE)</td><td>R15,000,000</td></tr>
+      <tr><td>Discount (SAFE)</td><td>20%</td></tr>
+      <tr><td>Equity Price (Direct)</td><td>R0.10/share, R10M pre-money</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="q">Q: Why a SAFE instead of equity?</div>
+<div class="a">
+  <ul>
+    <li><strong>Faster closing:</strong> weeks, not months</li>
+    <li><strong>Lower legal costs:</strong> Standard instrument (YC-style)</li>
+    <li><strong>Converts at next priced round</strong> with 20% discount advantage</li>
+    <li><strong>Valuation cap protection:</strong> R15M cap protects your upside</li>
+  </ul>
+</div>
+
+<div class="q">Q: What's the expected return?</div>
+<div class="a">
+  <table>
+    <thead><tr><th>Scenario</th><th>3-Year ARR</th><th>Valuation (5x ARR)</th><th>SAFE ROI (est.)</th></tr></thead>
+    <tbody>
+      <tr><td>Conservative</td><td>R24M</td><td>R120M</td><td>~40x</td></tr>
+      <tr><td>Base Case</td><td>R36M</td><td>R180M</td><td>~60x</td></tr>
+      <tr><td>Optimistic</td><td>R60M</td><td>R300M</td><td>~100x</td></tr>
+    </tbody>
+  </table>
+  <div class="note">ERP companies typically valued at 5–10x ARR. We've used 5x conservatively.</div>
+</div>
+
+<div class="q">Q: When is the next funding round?</div>
+<div class="a">
+  <p>Series A in 18–24 months, contingent on:</p>
+  <ul>
+    <li>R3M+ ARR (40+ customers at standard pricing)</li>
+    <li>50+ paying customers</li>
+    <li>Proven unit economics</li>
+    <li>Repeatable sales process</li>
+  </ul>
+</div>
+
+<!-- NEXT STEPS -->
+<div class="section-label" style="margin-top:5mm;">Next Steps</div>
+
+<div class="q">Q: How do I proceed if interested?</div>
+<div class="a">
+  <ol style="margin-left:5mm;">
+    <li style="margin-bottom:1.5mm;"><strong>Request demo:</strong> See the product in action (live environment)</li>
+    <li style="margin-bottom:1.5mm;"><strong>Due diligence:</strong> We'll provide technical access, financials, customer pipeline</li>
+    <li style="margin-bottom:1.5mm;"><strong>Term discussion:</strong> Negotiate specifics if needed</li>
+    <li style="margin-bottom:1.5mm;"><strong>Documentation:</strong> Sign SAFE or Subscription Agreement, wire funds</li>
+    <li style="margin-bottom:1.5mm;"><strong>Onboard:</strong> Monthly reporting begins immediately</li>
+  </ol>
+</div>
+
+<div class="q">Q: Who else is investing?</div>
+<div class="a">
+  <p>Currently seeking our first institutional/angel investors. We've bootstrapped to this point — all R3.5M in development value is sweat equity from the founder.</p>
+</div>
+
+<div class="q">Q: Can I speak to potential customers?</div>
+<div class="a">
+  <p>Yes. We can introduce you to beta partner candidates who have expressed interest. Their feedback validates market demand.</p>
+</div>
+
+<div class="highlight" style="margin-top:8mm;">
+  <strong>Questions we didn't anticipate?</strong> Ask us directly.<br>
+  Email: investor@siyabusaerp.co.za &nbsp;|&nbsp; Phone: 074 012 6873 &nbsp;|&nbsp; Web: www.siyabusaerp.co.za
+</div>
+
+<p style="margin-top:6mm; font-size:8pt; color:#666; text-align:center;">Masaphokati Technologies (Pty) Ltd &nbsp;|&nbsp; April 2026 &nbsp;|&nbsp; Confidential</p>
+
+</body>
+</html>
