@@ -21,11 +21,15 @@ router.get('/dashboard', salesController.getSalesDashboard);
 router.get('/workspace', salesWorkspaceController.getSalesWorkspace);
 
 // ============================================================================
+// CUSTOMER STATEMENTS (must be before :id routes)
+// ============================================================================
+router.get('/customers/statements', statementsController.listCustomerStatements);
+
+// ============================================================================
 // CUSTOMER ROUTES (v2 - Repository Pattern)
 // ============================================================================
 router.get('/customers', salesController.getCustomers);
 router.get('/customers/:id', salesController.getCustomer);
-router.get('/customers/statements', statementsController.listCustomerStatements);
 router.get('/customers/:id/statement', statementsController.getCustomerStatement);
 router.get('/customers/:id/orders', salesController.getCustomerOrders);
 router.get('/customers/:id/invoices', salesController.getCustomerInvoices);
