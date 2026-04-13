@@ -166,7 +166,11 @@ export const ClientDetailView: React.FC = () => {
             firmTenantId: data.data.firmTenantId,
           }),
         );
-        window.location.href = '/app';
+        // Always go to main domain for full ERP access
+        const mainDomain = window.location.hostname.startsWith('accountant.')
+          ? `https://${window.location.hostname.replace('accountant.', '')}/app`
+          : '/app';
+        window.location.href = mainDomain;
       } else {
         message.error(data.message || 'Failed to switch');
       }
@@ -357,7 +361,11 @@ const ClientsPage: React.FC = () => {
             firmTenantId: data.data.firmTenantId,
           }),
         );
-        window.location.href = '/app';
+        // Always go to main domain for full ERP access
+        const mainDomain = window.location.hostname.startsWith('accountant.')
+          ? `https://${window.location.hostname.replace('accountant.', '')}/app`
+          : '/app';
+        window.location.href = mainDomain;
       } else {
         message.error(data.message || 'Failed to switch to client');
       }

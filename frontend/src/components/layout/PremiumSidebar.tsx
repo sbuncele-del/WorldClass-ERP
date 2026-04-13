@@ -348,6 +348,7 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
               {renderNavItem('/app/settings/take-on-balances', <SwapOutlined />, 'Take-on Balances', undefined, ['director', 'executive'])}
               {renderNavItem('/app/users', <UserOutlined />, 'Users', undefined, ['director', 'executive'])}
               {renderNavItem('/app/audit-logs', <FileTextOutlined />, 'Audit Logs', undefined, ['director', 'executive', 'accountant'])}
+              {renderNavItem('/app/accountant-portal', <BankOutlined />, 'Accountant Portal', undefined, ['director', 'executive', 'accountant'])}
             </div>
           )}
         </div>

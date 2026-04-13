@@ -27,6 +27,7 @@ import {
 import { useUser } from '../../contexts/UserContext';
 import apiClient from '../../services/api';
 import EntitySwitcher from '../EntitySwitcher';
+import ClientSwitcher from '../../modules/accountant-portal/components/ClientSwitcher';
 import './PremiumTopBar.css';
 
 const { Text } = Typography;
@@ -319,6 +320,8 @@ const PremiumTopBar: React.FC = () => {
   };
 
   return (
+    <>
+    <ClientSwitcher />
     <header className="premium-topbar">
       {/* Left: Entity Switcher & Breadcrumbs */}
       <div className="topbar-left">
@@ -424,6 +427,7 @@ const PremiumTopBar: React.FC = () => {
         </Dropdown>
       </div>
     </header>
+    </>
   );
 };
 

@@ -97,6 +97,7 @@ const ClientSwitcher: React.FC = () => {
       localStorage.setItem('token', firmToken);
       localStorage.removeItem('firmToken');
       localStorage.removeItem('accountantClientContext');
+      // Return to accountant portal — if on main domain, use /app/accountant-portal
       window.location.href = '/app/accountant-portal';
     }
   };
