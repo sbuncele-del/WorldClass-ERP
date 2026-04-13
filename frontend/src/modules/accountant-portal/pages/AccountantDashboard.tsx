@@ -136,7 +136,44 @@ const AccountantDashboard: React.FC = () => {
       });
       if (!response.ok) throw new Error('Failed to load dashboard');
       const json = await response.json();
-      setData(json.data);
+      const raw = json.data;
+
+      // Normalize API response to component's expected shape
+      setData({
+        firm: {
+          id: raw.firm?.id,
+          name: raw.firm?.firm_name || raw.firm?.name || 'Your Firm',
+          type: raw.firm?.firm_type || raw.firm?.type || '',
+          email: raw.firm?.contact_email || raw.firm?.email || '',
+          phone: raw.firm?.contact_phone || raw.firm?.phone || '',
+          practice_number: raw.firm?.practice_number || '',
+        },
+        stats: {
+          totalClients: Number(raw.stats?.total_clients ?? raw.stats?.totalClients ?? 0),
+          activeEngagements: Number(raw.stats?.active_clients ?? raw.stats?.activeEngagements ?? 0),
+          pendingInvitations: Number(raw.pending_invitations ?? raw.stats?.pendingInvitations ?? 0),
+          monthlyRevenue: Number(raw.stats?.monthlyRevenue ?? 0),
+        },
+        clients: (raw.clients || raw.recent_clients || []).map((c: any) => ({
+          id: c.id,
+          tenant_id: c.client_tenant_id || c.tenant_id,
+          company_name: c.company_name || c.name || 'Unknown',
+          industry: c.industry || '',
+          status: c.status || 'active',
+          engagement_type: c.engagement_type || '',
+          last_accessed: c.last_accessed || c.updated_at || '',
+          financial_health: c.financial_health || 'unknown',
+        })),
+        recentActivity: (raw.recent_activity || raw.recentActivity || []).map((a: any) => ({
+          id: a.id,
+          action: a.action,
+          resource_type: a.resource_type,
+          client_name: a.client_name || '',
+          user_name: a.first_name ? `${a.first_name} ${a.last_name}` : (a.user_name || ''),
+          created_at: a.created_at,
+          details: typeof a.details === 'object' ? JSON.stringify(a.details) : (a.details || ''),
+        })),
+      });
     } catch (err) {
       console.error('Dashboard fetch error:', err);
       message.error('Failed to load dashboard data');
