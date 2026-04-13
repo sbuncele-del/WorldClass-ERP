@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import VendorInvoicesPage from './VendorInvoicesPage';
 import {
   Card,
   Row,
@@ -603,6 +604,12 @@ const PurchaseHub: React.FC = () => {
           />
         </Card>
       ),
+    },
+    {
+      key: 'invoices',
+      label: 'Vendor Invoices',
+      icon: <FileTextOutlined />,
+      children: <VendorInvoicesPage />,
     },
     {
       key: 'requisitions',
