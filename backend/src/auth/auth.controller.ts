@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { TenantRequest } from '../types';
+import { TenantRequest, AppError } from '../types';
 import AuthService from './auth.service';
 import WelcomeEmailService from '../services/welcome-email.service';
 import fs from 'fs';
@@ -235,10 +235,8 @@ Error stack: ${error?.stack}
       console.error('Error stack:', error?.stack);
       console.error('=== LOGIN ERROR END ===');
 
-      if (error.name === 'UnauthorizedError') {
-        res.status(401).json({ error: error.message });
-      } else if (error.name === 'ValidationError') {
-        res.status(400).json({ error: error.message });
+      if (error instanceof AppError) {
+        res.status(error.statusCode).json({ error: error.message });
       } else {
         res.status(500).json({ error: 'Login failed', details: error?.message });
       }
