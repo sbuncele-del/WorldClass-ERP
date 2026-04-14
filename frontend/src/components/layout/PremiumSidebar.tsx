@@ -292,6 +292,7 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
               {isModuleEnabled('financial') && renderNavItem('/app/banking-hub', <BankOutlined />, 'Banking Hub')}
               {isModuleEnabled('financial') && renderNavItem('/app/sars', <FileProtectOutlined />, 'SARS Sentinel')}
               {renderNavItem('/app/reports', <PieChartOutlined />, 'Reports & Analytics')}
+              {renderNavItem('/app/reporting', <FileTextOutlined />, 'Financial Reporting', undefined, ['director', 'executive', 'accountant'])}
             </div>
           )}
         </div>

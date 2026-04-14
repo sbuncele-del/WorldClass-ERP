@@ -127,6 +127,7 @@ const AdminHub = lazy(() => import('./modules/admin/AdminHub'));
 const AccountantPortalHub = lazy(() => import('./modules/accountant-portal/AccountantPortalHub'));
 const SupportTicketsHub = lazy(() => import('./modules/support-tickets/SupportTicketsHub'));
 const ReportsHub = lazy(() => import('./modules/reports/ReportsHub'));
+const ReportingHub = lazy(() => import('./modules/reporting/ReportingHub'));
 
 // Financial Sub-Pages
 const Dimensions = lazy(() => import('./pages/Dimensions'));
@@ -168,10 +169,11 @@ const PageLoader = () => (
 );
 
 // Subdomain detection for multi-portal routing
-function getPortalType(): 'platform' | 'accountant' | 'main' {
+function getPortalType(): 'platform' | 'accountant' | 'reporting' | 'main' {
   const hostname = window.location.hostname;
   if (hostname.startsWith('platform.')) return 'platform';
   if (hostname.startsWith('accountant.')) return 'accountant';
+  if (hostname.startsWith('reporting.')) return 'reporting';
   return 'main';
 }
 
@@ -260,6 +262,7 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
             <Route path="/sars/*" element={<SARSSentinel />} />
             <Route path="/support-tickets" element={<SupportTicketsHub />} />
             <Route path="/reports" element={<ReportsHub />} />
+            <Route path="/reporting/*" element={<ReportingHub />} />
             <Route path="/admin/*" element={<AdminHub />} />
             <Route path="/admin-hub/*" element={<AdminHub />} />
             <Route path="/accountant-portal/*" element={<AccountantPortalHub />} />
