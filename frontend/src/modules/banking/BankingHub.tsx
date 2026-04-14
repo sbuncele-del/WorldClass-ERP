@@ -518,11 +518,11 @@ const BankingHub: React.FC = () => {
   };
 
   const getTotalBalance = () => {
-    // Convert all to ZAR for simplicity (mock rates)
-    const rates: Record<string, number> = { ZAR: 1, USD: 18.5, GBP: 23.5, EUR: 20 };
+    // GL balances (current_balance) are already in reporting currency (ZAR)
+    // No currency conversion needed - avoids double-converting foreign currency accounts
     return bankConnections
       .filter(b => b.status === 'connected')
-      .reduce((sum, b) => sum + b.balance * (rates[b.currency] || 1), 0);
+      .reduce((sum, b) => sum + b.balance, 0);
   };
 
   const transactionColumns = [

@@ -3270,25 +3270,27 @@ router.get('/cash-management/bank-accounts', async (req: any, res) => {
   try {
     const result = await query(
       `SELECT
-        ba.id,
+        ba.account_id as id,
         ba.account_name,
         ba.account_number,
         ba.account_type,
         ba.currency,
-        ba.bank_name,
+        ba.opening_balance,
         ba.gl_account_code,
+        ba.is_primary,
         ba.is_active,
         ba.created_at,
         ba.updated_at,
+        b.bank_name,
+        b.bank_code,
         COALESCE(gl.gl_balance, 0) as current_balance,
         COALESCE(gl.gl_debits, 0) as gl_total_debits,
         COALESCE(gl.gl_credits, 0) as gl_total_credits,
         COALESCE(gl.gl_entry_count, 0) as gl_entry_count,
-        COALESCE(sl.statement_balance, 0) as statement_balance,
-        COALESCE(sl.transaction_count, 0) as transaction_count,
         coa.id as gl_account_id,
         COALESCE(coa.account_name, coa.name) as gl_account_name
-      FROM bank_accounts ba
+      FROM cash_bank_accounts ba
+      LEFT JOIN cash_banks b ON ba.bank_id = b.bank_id
       LEFT JOIN chart_of_accounts coa ON (coa.account_code = ba.gl_account_code OR coa.code = ba.gl_account_code) AND coa.tenant_id = ba.tenant_id
       LEFT JOIN LATERAL (
         SELECT 
@@ -3300,15 +3302,8 @@ router.get('/cash-management/bank-accounts', async (req: any, res) => {
         JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = ba.tenant_id
         WHERE jel.account_id = coa.id AND jel.tenant_id = ba.tenant_id AND LOWER(je.status) = 'posted'
       ) gl ON coa.id IS NOT NULL
-      LEFT JOIN LATERAL (
-        SELECT 
-          SUM(amount) as statement_balance,
-          COUNT(*) as transaction_count
-        FROM bank_statement_lines bsl
-        WHERE bsl.bank_account_id = ba.id AND bsl.tenant_id = ba.tenant_id
-      ) sl ON true
       WHERE ba.tenant_id = $1 AND ba.is_active = true
-      ORDER BY ba.account_name ASC`,
+      ORDER BY ba.is_primary DESC, ba.account_name ASC`,
       [tenantId]
     );
     res.json({ success: true, data: result.rows || [] });
@@ -5494,5 +5489,48 @@ router.get('/support-tickets/:id', SupportTicketsControllerV2.getTicket);
 router.patch('/support-tickets/:id', SupportTicketsControllerV2.updateTicket);
 router.get('/support-tickets/:id/replies', SupportTicketsControllerV2.listReplies);
 router.post('/support-tickets/:id/replies', SupportTicketsControllerV2.createReply);
+
+// ═══════════════════════════════════════════════════════════════════
+// FINANCIAL REPORTING PLATFORM (reporting.siyabusaerp.co.za)
+// Standalone financial statement preparation module
+// ═══════════════════════════════════════════════════════════════════
+import * as FinancialReportingV2 from '../controllers/v2/financial-reporting.controller.v2';
+
+// Reference Data
+router.get('/reporting/frameworks', FinancialReportingV2.listFrameworks);
+router.get('/reporting/working-paper-types', FinancialReportingV2.listWorkingPaperTypes);
+
+// Engagements (Client Files)
+router.get('/reporting/engagements', FinancialReportingV2.listEngagements);
+router.post('/reporting/engagements', FinancialReportingV2.createEngagement);
+router.get('/reporting/engagements/:id', FinancialReportingV2.getEngagement);
+router.put('/reporting/engagements/:id', FinancialReportingV2.updateEngagement);
+router.delete('/reporting/engagements/:id', FinancialReportingV2.deleteEngagement);
+router.post('/reporting/engagements/:id/lock', FinancialReportingV2.lockEngagement);
+router.post('/reporting/engagements/:id/unlock', FinancialReportingV2.unlockEngagement);
+router.post('/reporting/engagements/:id/roll-forward', FinancialReportingV2.rollForwardEngagement);
+
+// Trial Balance
+router.get('/reporting/engagements/:id/trial-balance', FinancialReportingV2.getTrialBalance);
+router.post('/reporting/engagements/:id/trial-balance/accounts', FinancialReportingV2.upsertAccount);
+router.post('/reporting/engagements/:id/trial-balance/import', FinancialReportingV2.importTrialBalance);
+router.post('/reporting/engagements/:id/trial-balance/import-gl', FinancialReportingV2.importFromGL);
+router.put('/reporting/engagements/:id/trial-balance/link', FinancialReportingV2.linkAccount);
+router.post('/reporting/engagements/:id/trial-balance/auto-link', FinancialReportingV2.autoLinkAccounts);
+router.get('/reporting/engagements/:id/link-numbers', FinancialReportingV2.getAvailableLinks);
+
+// Financial Statement Generation
+router.get('/reporting/engagements/:id/statements/sofp', FinancialReportingV2.generateSoFP);
+router.get('/reporting/engagements/:id/statements/soci', FinancialReportingV2.generateSoCI);
+router.get('/reporting/engagements/:id/statements/soce', FinancialReportingV2.generateSoCE);
+router.get('/reporting/engagements/:id/statements/scf', FinancialReportingV2.generateSCF);
+router.get('/reporting/engagements/:id/statements/detailed-is', FinancialReportingV2.generateDetailedIS);
+router.get('/reporting/engagements/:id/statements/tax-computation', FinancialReportingV2.generateTaxComputation);
+
+// Notes & Disclosures
+router.get('/reporting/engagements/:id/notes', FinancialReportingV2.getFinancialNotes);
+router.put('/reporting/engagements/:id/notes/:noteId', FinancialReportingV2.updateFinancialNote);
+router.get('/reporting/engagements/:id/disclosures', FinancialReportingV2.getDisclosures);
+router.put('/reporting/engagements/:id/disclosures/:disclosureId', FinancialReportingV2.updateDisclosure);
 
 export default router;
