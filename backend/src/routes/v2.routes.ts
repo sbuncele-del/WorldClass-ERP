@@ -3318,15 +3318,13 @@ router.get('/cash-management/statement-lines', async (req: any, res) => {
         l.matched_transaction_id,
         l.match_confidence as ai_confidence,
         l.auto_category as category,
-        CASE
-          WHEN l.is_matched = true THEN 'allocated'
-          ELSE 'unmatched'
-        END as status,
-        CASE
-          WHEN l.credit_amount > 0 THEN l.credit_amount
-          WHEN l.debit_amount > 0 THEN -l.debit_amount
-          ELSE 0
-        END as amount
+        l.status,
+        l.allocated_gl_account_id,
+        l.allocated_gl_account_code,
+        l.journal_entry_id,
+        l.reconciled_date,
+        COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0) as amount,
+        s.account_id as bank_account_id
       FROM cash_bank_statement_lines l
       INNER JOIN cash_bank_statements s ON l.statement_id = s.statement_id
       WHERE s.tenant_id = $1`;
@@ -3972,9 +3970,14 @@ router.post('/cash-management/reconciliation/auto-match', async (req: any, res) 
   try {
     const { bank_account_id } = req.body;
     
-    // Get unmatched statement lines
+    // Get unmatched statement lines for this bank account
     const stmtLines = await query(
-      `SELECT * FROM bank_statement_lines WHERE tenant_id = $1 AND bank_account_id = $2 AND status = 'unmatched' ORDER BY transaction_date`,
+      `SELECT l.*,
+              COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0) as amount
+       FROM cash_bank_statement_lines l
+       JOIN cash_bank_statements s ON l.statement_id = s.statement_id
+       WHERE s.tenant_id = $1 AND s.account_id = $2 AND l.status = 'unmatched'
+       ORDER BY l.transaction_date`,
       [tenantId, bank_account_id]
     );
     
@@ -3983,34 +3986,39 @@ router.post('/cash-management/reconciliation/auto-match', async (req: any, res) 
       `SELECT jel.*, je.description as journal_description 
        FROM journal_entry_lines jel
        JOIN journal_entries je ON je.id = jel.journal_entry_id
-       WHERE jel.tenant_id = $1 AND je.status = 'posted'
-       AND jel.account_id IN (SELECT gl_account_id FROM bank_accounts WHERE id = $2)
-       ORDER BY je.entry_date`,
+       WHERE jel.tenant_id = $1 AND je.status = 'POSTED'
+       AND jel.account_id IN (
+         SELECT coa.id FROM cash_bank_accounts ba
+         JOIN chart_of_accounts coa ON (coa.code = ba.gl_account_code OR coa.account_code = ba.gl_account_code)
+           AND coa.tenant_id = ba.tenant_id
+         WHERE ba.account_id = $2
+       )
+       ORDER BY je.journal_date`,
       [tenantId, bank_account_id]
     ).catch(() => ({ rows: [] }));
     
     const matches: any[] = [];
-    const matchedLineIds = new Set<string>();
+    const matchedLineIds = new Set<number>();
     
     // Simple matching algorithm: exact amount + similar date
     for (const line of stmtLines.rows) {
-      if (matchedLineIds.has(line.id)) continue;
+      if (matchedLineIds.has(line.line_id)) continue;
       
       for (const gl of glEntries.rows) {
         const lineAmount = Math.abs(parseFloat(line.amount));
-        const glAmount = Math.abs(parseFloat(gl.debit || 0) - parseFloat(gl.credit || 0));
+        const glAmount = Math.abs(parseFloat(gl.debit_amount || 0) - parseFloat(gl.credit_amount || 0));
         
         // Match by exact amount
         if (Math.abs(lineAmount - glAmount) < 0.01) {
           matches.push({
-            statement_line_id: line.id,
+            statement_line_id: line.line_id,
             gl_entry_id: gl.id,
             confidence: 95,
             match_reason: 'Exact amount match',
             line_description: line.description,
             gl_description: gl.journal_description
           });
-          matchedLineIds.add(line.id);
+          matchedLineIds.add(line.line_id);
           break;
         }
       }
@@ -4036,12 +4044,15 @@ router.post('/cash-management/reconciliation/post-to-gl', async (req: any, res) 
   try {
     const { statement_line_ids, bank_account_id } = req.body;
     
-    // Get bank account GL account
+    // Get bank account GL account (cash_bank_accounts uses account_id INTEGER PK)
     const bankAcct = await query(
-      `SELECT ba.*, coa.id as gl_account_uuid, coa.account_code as gl_code, coa.account_name as gl_name
-       FROM bank_accounts ba
-       LEFT JOIN chart_of_accounts coa ON coa.account_code = ba.gl_account_code AND coa.tenant_id = ba.tenant_id
-       WHERE ba.tenant_id = $1 AND ba.id = $2`,
+      `SELECT ba.*, coa.id as gl_account_uuid,
+              COALESCE(NULLIF(coa.code,''), coa.account_code) as gl_code,
+              COALESCE(NULLIF(coa.name,''), coa.account_name) as gl_name
+       FROM cash_bank_accounts ba
+       LEFT JOIN chart_of_accounts coa ON (coa.code = ba.gl_account_code OR coa.account_code = ba.gl_account_code)
+         AND coa.tenant_id = ba.tenant_id
+       WHERE ba.tenant_id = $1 AND ba.account_id = $2`,
       [tenantId, bank_account_id]
     );
     
@@ -4056,54 +4067,77 @@ router.post('/cash-management/reconciliation/post-to-gl', async (req: any, res) 
       return res.status(400).json({ success: false, error: 'Bank account not linked to GL account. Set gl_account_code on bank_accounts.' });
     }
     
-    // Get statement lines to post
+    // Get statement lines to post (from correct table, using integer line_id)
     const lines = await query(
-      `SELECT * FROM bank_statement_lines WHERE tenant_id = $1 AND id = ANY($2)`,
+      `SELECT l.*,
+              COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0) as computed_amount
+       FROM cash_bank_statement_lines l
+       JOIN cash_bank_statements s ON l.statement_id = s.statement_id
+       WHERE s.tenant_id = $1 AND l.line_id = ANY($2::integer[])`,
       [tenantId, statement_line_ids]
     );
     
     const postedIds: string[] = [];
     
     for (const line of lines.rows) {
-      // Create journal entry
+      // Create journal entry (correct production column names)
+      const txDate = line.transaction_date;
+      const fiscalYear  = new Date(txDate).getFullYear();
+      const fiscalPeriod = new Date(txDate).getMonth() + 1;
       const jeResult = await query(
-        `INSERT INTO journal_entries (id, tenant_id, entry_number, entry_date, journal_date, description, status, source_type, total_debit, total_credit, created_by, created_at)
-         VALUES (gen_random_uuid(), $1, $2, $3, $3, $4, 'posted', 'bank_reconciliation', $5, $5, $6, NOW())
+        `INSERT INTO journal_entries
+           (tenant_id, journal_number, journal_date, posting_date, source_type,
+            description, status, total_debit, total_credit,
+            fiscal_year, fiscal_period, currency_code, created_by)
+         VALUES ($1, $2, $3, $3, 'BANK_RECON', $4, 'POSTED', $5, $5, $6, $7, 'ZAR', $8)
          RETURNING id`,
-        [tenantId, `JE-BANK-${Date.now()}`, line.transaction_date, line.description, Math.abs(parseFloat(line.amount)), userId]
+        [tenantId, `JE-BANK-${Date.now()}`, txDate, line.description,
+         Math.abs(parseFloat(line.computed_amount)), fiscalYear, fiscalPeriod,
+         userId || '00000000-0000-0000-0000-000000000000']
       );
       
       const jeId = jeResult.rows[0].id;
-      const amount = Math.abs(parseFloat(line.amount));
-      const isDebit = parseFloat(line.amount) < 0;
+      const computedAmt = parseFloat(line.computed_amount);
+      const amount  = Math.abs(computedAmt);
+      const isDebit = computedAmt < 0; // negative = debit (payment)
       
-      // Bank account line (with account_code and account_name for GL filtering)
+      // Bank account line
       await query(
-        `INSERT INTO journal_entry_lines (id, tenant_id, journal_entry_id, account_id, account_code, account_name, description, debit_amount, credit_amount, created_at)
-         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
-        [tenantId, jeId, glAccountId, glAccountCode, glAccountName, line.description, isDebit ? 0 : amount, isDebit ? amount : 0]
+        `INSERT INTO journal_entry_lines
+           (tenant_id, journal_entry_id, line_number, account_id, account_code, account_name,
+            description, debit_amount, credit_amount)
+         VALUES ($1, $2, 1, $3, $4, $5, $6, $7, $8)`,
+        [tenantId, jeId, glAccountId, glAccountCode, glAccountName,
+         line.description, isDebit ? 0 : amount, isDebit ? amount : 0]
       );
       
       // Offsetting entry (suspense/unallocated)
       const suspenseAccount = await query(
-        `SELECT id, account_code, account_name FROM chart_of_accounts WHERE tenant_id = $1 AND (account_code LIKE '%9999%' OR account_name ILIKE '%suspense%' OR account_name ILIKE '%unallocated%') LIMIT 1`,
+        `SELECT id, COALESCE(NULLIF(code,''), account_code) as code, COALESCE(NULLIF(name,''), account_name) as name
+         FROM chart_of_accounts WHERE tenant_id = $1 AND (account_code LIKE '%9999%' OR account_name ILIKE '%suspense%' OR account_name ILIKE '%unallocated%') LIMIT 1`,
         [tenantId]
       ).catch(() => ({ rows: [] }));
       
-      const offsetAccountId = suspenseAccount.rows[0]?.id || glAccountId;
-      const offsetAccountCode = suspenseAccount.rows[0]?.account_code || glAccountCode;
-      const offsetAccountName = suspenseAccount.rows[0]?.account_name || glAccountName;
+      const offsetAccountId   = suspenseAccount.rows[0]?.id   || glAccountId;
+      const offsetAccountCode = suspenseAccount.rows[0]?.code || glAccountCode;
+      const offsetAccountName = suspenseAccount.rows[0]?.name || glAccountName;
       
       await query(
-        `INSERT INTO journal_entry_lines (id, tenant_id, journal_entry_id, account_id, account_code, account_name, description, debit_amount, credit_amount, created_at)
-         VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
-        [tenantId, jeId, offsetAccountId, offsetAccountCode, offsetAccountName, `Bank: ${line.description}`, isDebit ? amount : 0, isDebit ? 0 : amount]
+        `INSERT INTO journal_entry_lines
+           (tenant_id, journal_entry_id, line_number, account_id, account_code, account_name,
+            description, debit_amount, credit_amount)
+         VALUES ($1, $2, 2, $3, $4, $5, $6, $7, $8)`,
+        [tenantId, jeId, offsetAccountId, offsetAccountCode, offsetAccountName,
+         `Bank: ${line.description}`, isDebit ? amount : 0, isDebit ? 0 : amount]
       );
       
       // Update statement line as posted
       await query(
-        `UPDATE bank_statement_lines SET status = 'posted', matched_transaction_id = $3, updated_at = NOW() WHERE tenant_id = $1 AND id = $2`,
-        [tenantId, line.id, jeId]
+        `UPDATE cash_bank_statement_lines
+         SET status = 'posted', is_matched = true, journal_entry_id = $3
+         WHERE line_id = $2
+           AND statement_id IN (SELECT statement_id FROM cash_bank_statements WHERE tenant_id = $1)`,
+        [tenantId, line.line_id, jeId]
       );
       
       // Learn from this posting for AI suggestions
@@ -4121,7 +4155,7 @@ router.post('/cash-management/reconciliation/post-to-gl', async (req: any, res) 
         // Non-critical
       }
 
-      postedIds.push(line.id);
+      postedIds.push(line.line_id);
     }
     
     res.json({ 
@@ -4142,14 +4176,15 @@ router.get('/cash-management/reconciliation/summary', async (req: any, res) => {
   try {
     const summary = await query(
       `SELECT 
-        COUNT(*) FILTER (WHERE status = 'unmatched') as unmatched,
-        COUNT(*) FILTER (WHERE status = 'matched') as matched,
-        COUNT(*) FILTER (WHERE status = 'posted') as posted,
+        COUNT(*) FILTER (WHERE l.status = 'unmatched') as unmatched,
+        COUNT(*) FILTER (WHERE l.status = 'allocated') as matched,
+        COUNT(*) FILTER (WHERE l.status = 'posted') as posted,
         COUNT(*) as total,
-        SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as total_credits,
-        SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as total_debits
-       FROM bank_statement_lines 
-       WHERE tenant_id = $1 ${bank_account_id ? 'AND bank_account_id = $2' : ''}`,
+        SUM(CASE WHEN COALESCE(l.credit_amount,0) > 0 THEN l.credit_amount ELSE 0 END) as total_credits,
+        SUM(CASE WHEN COALESCE(l.debit_amount,0) > 0 THEN l.debit_amount ELSE 0 END) as total_debits
+       FROM cash_bank_statement_lines l
+       JOIN cash_bank_statements s ON l.statement_id = s.statement_id
+       WHERE s.tenant_id = $1 ${bank_account_id ? 'AND s.account_id = $2' : ''}`,
       bank_account_id ? [tenantId, bank_account_id] : [tenantId]
     );
     
@@ -4166,27 +4201,22 @@ router.get('/cash-management/reconciliation/history', async (req: any, res) => {
     // Get completed reconciliation sessions
     const result = await query(
       `SELECT 
-        bs.id,
-        bs.statement_date as date,
+        s.statement_id as id,
+        s.statement_date as date,
         ba.account_name as account,
-        bs.closing_balance as "bankBal",
+        s.closing_balance as "bankBal",
         COALESCE(
-          (SELECT SUM(CASE WHEN bsl.status = 'matched' THEN amount ELSE 0 END) FROM bank_statement_lines bsl WHERE bsl.statement_id = bs.id),
+          (SELECT SUM(CASE WHEN bsl.status = 'allocated' THEN COALESCE(bsl.credit_amount,0) - COALESCE(bsl.debit_amount,0) ELSE 0 END)
+           FROM cash_bank_statement_lines bsl WHERE bsl.statement_id = s.statement_id),
           0
         ) as "bookBal",
-        bs.closing_balance - COALESCE(
-          (SELECT SUM(CASE WHEN bsl.status = 'matched' THEN amount ELSE 0 END) FROM bank_statement_lines bsl WHERE bsl.statement_id = bs.id),
-          0
-        ) as diff,
-        bs.status,
-        COALESCE(u.first_name || ' ' || LEFT(u.last_name, 1) || '.', 'System') as "user",
-        bs.created_at as created_at,
-        CASE WHEN bs.status = 'imported' AND EXISTS(SELECT 1 FROM bank_statement_lines bsl WHERE bsl.statement_id = bs.id AND bsl.status = 'matched') THEN true ELSE false END as "aiAssisted"
-       FROM bank_statements bs
-       LEFT JOIN bank_accounts ba ON bs.bank_account_id = ba.id
-       LEFT JOIN users u ON bs.created_by = u.id
-       WHERE bs.tenant_id = $1
-       ORDER BY bs.statement_date DESC
+        s.status,
+        s.created_at as created_at,
+        EXISTS(SELECT 1 FROM cash_bank_statement_lines bsl WHERE bsl.statement_id = s.statement_id AND bsl.status = 'allocated') as "aiAssisted"
+       FROM cash_bank_statements s
+       LEFT JOIN cash_bank_accounts ba ON s.account_id = ba.account_id
+       WHERE s.tenant_id = $1
+       ORDER BY s.statement_date DESC
        LIMIT 50`,
       [tenantId]
     );
@@ -4812,26 +4842,27 @@ router.post('/cash-management/reconciliation/allocate', async (req: any, res) =>
       return res.status(400).json({ success: false, error: 'statement_line_id and gl_account_id are required' });
     }
 
-    // Handle case where gl_account_id might be an account code instead of UUID
+    // Resolve gl_account_id (may be UUID or account code)
     const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gl_account_id);
-    let resolvedGLAccountId = gl_account_id;
-    
-    if (!isValidUUID) {
-      // Try to look up account by code
-      const accountLookup = await query(
-        `SELECT id FROM chart_of_accounts WHERE tenant_id = $1 AND (code = $2 OR account_code = $2) AND is_active = true LIMIT 1`,
-        [tenantId, gl_account_id]
-      );
-      if (accountLookup.rows.length === 0) {
-        return res.status(400).json({ success: false, error: `GL account not found. Please select a valid account.` });
-      }
-      resolvedGLAccountId = accountLookup.rows[0].id;
-      console.log(`Resolved GL account code ${gl_account_id} to UUID ${resolvedGLAccountId}`);
+    const glLookupField = isValidUUID ? 'id' : '(code = $2 OR account_code = $2)';
+    const glLookupParams = isValidUUID ? [tenantId, gl_account_id] : [tenantId, gl_account_id];
+    const glLookup = await query(
+      `SELECT id FROM chart_of_accounts WHERE tenant_id = $1 AND ${isValidUUID ? 'id = $2' : '(code = $2 OR account_code = $2)'} AND is_active = true LIMIT 1`,
+      glLookupParams
+    );
+    if (glLookup.rows.length === 0) {
+      return res.status(400).json({ success: false, error: 'GL account not found. Please select a valid account.' });
     }
+    const resolvedGLAccountId = glLookup.rows[0].id;
 
-    // Get the statement line
+    // Get the statement line (join to statements to get bank account info + tenant check)
     const lineResult = await query(
-      `SELECT * FROM bank_statement_lines WHERE tenant_id = $1 AND id = $2`,
+      `SELECT l.*, s.account_id as bank_acct_id,
+              COALESCE(l.credit_amount, 0) as credit_amt,
+              COALESCE(l.debit_amount, 0) as debit_amt
+       FROM cash_bank_statement_lines l
+       JOIN cash_bank_statements s ON l.statement_id = s.statement_id
+       WHERE s.tenant_id = $1 AND l.line_id = $2`,
       [tenantId, statement_line_id]
     );
     
@@ -4840,64 +4871,94 @@ router.post('/cash-management/reconciliation/allocate', async (req: any, res) =>
     }
     
     const line = lineResult.rows[0];
-    const amount = Math.abs(parseFloat(line.amount));
-    const isDebit = parseFloat(line.amount) < 0;
+    const creditAmt = parseFloat(line.credit_amt) || 0;
+    const debitAmt  = parseFloat(line.debit_amt)  || 0;
+    const amount    = creditAmt > 0 ? creditAmt : debitAmt; // raw positive amount
+    const isDebit   = debitAmt > 0; // true = money going OUT (payment)
 
-    // Get bank account's GL account (look up by gl_account_code)
+    // Get bank account's GL account details (account_id is INTEGER PK on cash_bank_accounts)
     const bankAcctResult = await query(
-      `SELECT ba.gl_account_code, coa.id as gl_account_id 
-       FROM bank_accounts ba
-       LEFT JOIN chart_of_accounts coa ON coa.code = ba.gl_account_code AND coa.tenant_id = ba.tenant_id
-       WHERE ba.tenant_id = $1 AND ba.id = $2`,
-      [tenantId, line.bank_account_id || bank_account_id]
+      `SELECT ba.gl_account_code,
+              coa.id as gl_account_id,
+              COALESCE(NULLIF(coa.code,''), coa.account_code) as coa_code,
+              COALESCE(NULLIF(coa.name,''), coa.account_name) as coa_name
+       FROM cash_bank_accounts ba
+       LEFT JOIN chart_of_accounts coa ON (coa.code = ba.gl_account_code OR coa.account_code = ba.gl_account_code)
+         AND coa.tenant_id = ba.tenant_id
+       WHERE ba.tenant_id = $1 AND ba.account_id = $2`,
+      [tenantId, line.bank_acct_id]
     );
     
     const bankGLAccountId = bankAcctResult.rows[0]?.gl_account_id;
+    const bankCoaCode     = bankAcctResult.rows[0]?.coa_code || '';
+    const bankCoaName     = bankAcctResult.rows[0]?.coa_name || 'Bank Account';
     if (!bankGLAccountId) {
       return res.status(400).json({ success: false, error: 'Bank account not linked to GL account. Please set up bank GL mapping first.' });
     }
 
-    // Create journal entry with totals
-    const jeId = require('crypto').randomUUID();
-    await query(
-      `INSERT INTO journal_entries (id, tenant_id, entry_number, entry_date, description, reference, status, source_type, total_debit, total_credit, created_by, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, 'posted', 'bank_reconciliation', $7, $7, $8, NOW())`,
-      [
-        jeId, 
-        tenantId, 
-        `JE-BANK-${Date.now()}`, 
-        line.transaction_date, 
-        description || line.description,
-        line.reference,
-        amount,
-        userId
-      ]
+    // Get allocated GL account details (code + name required for journal_entry_lines)
+    const glAcctResult = await query(
+      `SELECT id, COALESCE(NULLIF(code,''), account_code) as code, COALESCE(NULLIF(name,''), account_name) as name
+       FROM chart_of_accounts WHERE tenant_id = $1 AND id = $2`,
+      [tenantId, resolvedGLAccountId]
     );
+    if (glAcctResult.rows.length === 0) {
+      return res.status(400).json({ success: false, error: 'Selected GL account not found.' });
+    }
+    const glAcct = glAcctResult.rows[0];
 
-    // Line 1: Bank account (Dr for credits/receipts, Cr for debits/payments)
+    // Create journal entry (using correct production column names)
+    const txDate      = line.transaction_date;
+    const fiscalYear  = new Date(txDate).getFullYear();
+    const fiscalPeriod = new Date(txDate).getMonth() + 1;
+    const jeNum       = `JE-BANK-${Date.now()}`;
+
+    const jeResult = await query(
+      `INSERT INTO journal_entries
+         (tenant_id, journal_number, journal_date, posting_date, source_type,
+          description, reference, status, total_debit, total_credit,
+          fiscal_year, fiscal_period, currency_code, created_by)
+       VALUES ($1, $2, $3, $3, 'BANK_RECON', $4, $5, 'POSTED', $6, $6, $7, $8, 'ZAR', $9)
+       RETURNING id`,
+      [tenantId, jeNum, txDate, description || line.description, line.reference,
+       amount, fiscalYear, fiscalPeriod, userId || '00000000-0000-0000-0000-000000000000']
+    );
+    const jeId = jeResult.rows[0].id;
+
+    // Line 1: Bank account (Dr for receipts, Cr for payments)
     await query(
-      `INSERT INTO journal_entry_lines (id, tenant_id, journal_entry_id, account_id, description, debit_amount, credit_amount, created_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW())`,
-      [tenantId, jeId, bankGLAccountId, description || line.description, isDebit ? 0 : amount, isDebit ? amount : 0]
+      `INSERT INTO journal_entry_lines
+         (tenant_id, journal_entry_id, line_number, account_id, account_code, account_name,
+          description, debit_amount, credit_amount)
+       VALUES ($1, $2, 1, $3, $4, $5, $6, $7, $8)`,
+      [tenantId, jeId, bankGLAccountId, bankCoaCode, bankCoaName,
+       description || line.description, isDebit ? 0 : amount, isDebit ? amount : 0]
     );
     
     // Line 2: Selected GL account (opposite of bank)
     await query(
-      `INSERT INTO journal_entry_lines (id, tenant_id, journal_entry_id, account_id, description, debit_amount, credit_amount, created_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, NOW())`,
-      [tenantId, jeId, resolvedGLAccountId, description || line.description, isDebit ? amount : 0, isDebit ? 0 : amount]
+      `INSERT INTO journal_entry_lines
+         (tenant_id, journal_entry_id, line_number, account_id, account_code, account_name,
+          description, debit_amount, credit_amount)
+       VALUES ($1, $2, 2, $3, $4, $5, $6, $7, $8)`,
+      [tenantId, jeId, resolvedGLAccountId, glAcct.code, glAcct.name,
+       description || line.description, isDebit ? amount : 0, isDebit ? 0 : amount]
     );
     
-    // Update statement line as allocated
+    // Update statement line as allocated (using new columns + set is_matched for backward compat)
     await query(
-      `UPDATE bank_statement_lines 
-       SET status = 'allocated', 
-           allocated_gl_account_id = $3, 
-           matched_transaction_id = $4,
-           reconciled_date = NOW(),
-           updated_at = NOW() 
-       WHERE tenant_id = $1 AND id = $2`,
-      [tenantId, statement_line_id, resolvedGLAccountId, jeId]
+      `UPDATE cash_bank_statement_lines
+       SET status = 'allocated',
+           is_matched = true,
+           allocated_gl_account_id = $3,
+           allocated_gl_account_code = $4,
+           journal_entry_id = $5,
+           reconciled_date = NOW()
+       WHERE line_id = $2
+         AND statement_id IN (
+           SELECT statement_id FROM cash_bank_statements WHERE tenant_id = $1
+         )`,
+      [tenantId, statement_line_id, resolvedGLAccountId, glAcct.code, jeId]
     );
 
     // Learn from this allocation for future AI suggestions
@@ -4922,6 +4983,8 @@ router.post('/cash-management/reconciliation/allocate', async (req: any, res) =>
         journal_entry_id: jeId,
         amount: amount,
         gl_account_id: resolvedGLAccountId,
+        gl_account_code: glAcct.code,
+        gl_account_name: glAcct.name,
         is_debit: isDebit
       }
     });
@@ -5087,23 +5150,26 @@ router.post('/cash-management/reconciliation/ai-categorize', async (req: any, re
         }));
     } else {
       // Otherwise fetch from database
-      let linesQuery = `SELECT id as line_id, description, amount, transaction_date, reference,
-                        CASE WHEN amount < 0 THEN true ELSE false END as is_debit
-                        FROM bank_statement_lines
-                        WHERE tenant_id = $1`;
+      let linesQuery = `SELECT l.line_id as line_id, l.description,
+                        COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0) as amount,
+                        l.transaction_date, l.reference,
+                        CASE WHEN COALESCE(l.debit_amount, 0) > 0 THEN true ELSE false END as is_debit
+                        FROM cash_bank_statement_lines l
+                        JOIN cash_bank_statements s ON l.statement_id = s.statement_id
+                        WHERE s.tenant_id = $1`;
       let params: any[] = [tenantId];
 
       if (statement_line_ids && statement_line_ids.length > 0) {
         params.push(statement_line_ids);
-        linesQuery += ` AND id = ANY($2)`;
+        linesQuery += ` AND l.line_id = ANY($2)`;
       } else if (bank_account_id) {
         params.push(bank_account_id);
         params.push('unmatched');
-        linesQuery += ` AND bank_account_id = $2 AND status = $3`;
+        linesQuery += ` AND s.account_id = $2 AND l.status = $3`;
       } else {
         // Get all unmatched
         params.push('unmatched');
-        linesQuery += ` AND status = $2`;
+        linesQuery += ` AND l.status = $2`;
       }
       linesQuery += ` LIMIT 50`; // Limit for AI processing
 
