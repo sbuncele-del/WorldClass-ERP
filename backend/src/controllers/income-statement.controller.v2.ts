@@ -324,11 +324,14 @@ function calculateDateRange(period: string, startDate?: string, endDate?: string
       end = new Date(now.getFullYear(), quarter * 3 + 3, 0);
       label = `Q${quarter + 1} ${now.getFullYear()}`;
       break;
-    case 'annual':
-      start = new Date(now.getFullYear(), 0, 1);
-      end = new Date(now.getFullYear(), 11, 31);
-      label = `FY ${now.getFullYear()}`;
+    case 'annual': {
+      // Default to most relevant fiscal year (previous year if in H1, current year if in H2)
+      const year = now.getMonth() < 6 ? now.getFullYear() - 1 : now.getFullYear();
+      start = new Date(year, 0, 1);
+      end = new Date(year, 11, 31);
+      label = `FY ${year}`;
       break;
+    }
     default:
       start = new Date(now.getFullYear(), now.getMonth(), 1);
       end = new Date(now.getFullYear(), now.getMonth() + 1, 0);

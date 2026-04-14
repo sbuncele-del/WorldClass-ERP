@@ -3276,7 +3276,7 @@ router.get('/cash-management/bank-accounts', async (req: any, res) => {
         ba.account_type,
         ba.currency,
         ba.opening_balance,
-        ba.current_balance,
+        COALESCE(ba.opening_balance, 0) + COALESCE(gl.net_movement, 0) as current_balance,
         ba.gl_account_code,
         ba.is_primary,
         ba.is_active,
@@ -3286,6 +3286,14 @@ router.get('/cash-management/bank-accounts', async (req: any, res) => {
         b.bank_code
       FROM cash_bank_accounts ba
       LEFT JOIN cash_banks b ON ba.bank_id = b.bank_id
+      LEFT JOIN LATERAL (
+        SELECT SUM(jel.debit_amount - jel.credit_amount) as net_movement
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = ba.tenant_id
+        JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = ba.tenant_id
+        WHERE je.status = 'posted'
+          AND (coa.account_code = ba.gl_account_code OR coa.code = ba.gl_account_code)
+      ) gl ON TRUE
       WHERE ba.tenant_id = $1 AND ba.is_active = true
       ORDER BY ba.is_primary DESC, ba.account_name ASC`,
       [tenantId]

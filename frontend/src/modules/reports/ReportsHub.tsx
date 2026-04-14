@@ -77,18 +77,18 @@ const ReportsDashboard: React.FC<{ onNavigate: (tab: string, sub?: string) => vo
         // Extract KPIs from trial balance
         const accounts = Array.isArray(tbRes.data) ? tbRes.data : (tbRes.data.accounts || []);
         const findAccount = (code: string) => accounts.find((a: any) => a.account_code === code);
-        const getBalance = (code: string) => {
+        const getNetBalance = (code: string) => {
           const acc = findAccount(code);
-          return acc ? Math.abs(parseFloat(acc.balance || acc.total_debits || 0) - parseFloat(acc.total_credits || 0)) : 0;
+          return acc ? parseFloat(acc.balance || 0) : 0;
         };
         const getDebit = (code: string) => parseFloat(findAccount(code)?.debit || findAccount(code)?.total_debits || 0);
         const getCredit = (code: string) => parseFloat(findAccount(code)?.credit || findAccount(code)?.total_credits || 0);
 
-        // Calculate from real GL data
-        const revenue = getCredit('4100');
-        const cogs = getDebit('5100');
-        const tradeDebtors = getDebit('1210');
-        const tradeCreditors = getCredit('2111');
+        // Calculate from real GL data using net balances
+        const revenue = Math.abs(getNetBalance('4100'));
+        const cogs = Math.abs(getNetBalance('5100'));
+        const tradeDebtors = Math.max(0, getNetBalance('1210'));
+        const tradeCreditors = Math.abs(getNetBalance('2111'));
         const vatOutput = getCredit('2115');
         const vatInput = getDebit('1230');
         const grossProfit = revenue - cogs;

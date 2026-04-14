@@ -54,7 +54,7 @@ const IncomeStatement: React.FC = () => {
   const [data, setData] = useState<IncomeStatementData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [periodType, setPeriodType] = useState<PeriodType>('monthly');
+  const [periodType, setPeriodType] = useState<PeriodType>('annual');
   const [showComparison, setShowComparison] = useState<boolean>(false);
   const [customStartDate, setCustomStartDate] = useState<string>('');
   const [customEndDate, setCustomEndDate] = useState<string>('');
