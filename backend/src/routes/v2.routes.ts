@@ -3263,6 +3263,93 @@ router.get('/warehouse/picking-lists', async (req: any, res) => {
 });
 
 // Cash management routes
+
+// V2 bank-accounts endpoint (used by BankReconciliationHub + BankingHub)
+router.get('/cash-management/bank-accounts', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+  try {
+    const result = await query(
+      `SELECT
+        ba.account_id as id,
+        ba.account_name,
+        ba.account_number,
+        ba.account_type,
+        ba.currency,
+        ba.opening_balance,
+        ba.current_balance,
+        ba.gl_account_code,
+        ba.is_primary,
+        ba.is_active,
+        ba.created_at,
+        ba.updated_at,
+        b.bank_name,
+        b.bank_code
+      FROM cash_bank_accounts ba
+      LEFT JOIN cash_banks b ON ba.bank_id = b.bank_id
+      WHERE ba.tenant_id = $1 AND ba.is_active = true
+      ORDER BY ba.is_primary DESC, ba.account_name ASC`,
+      [tenantId]
+    );
+    res.json({ success: true, data: result.rows || [] });
+  } catch (err: any) {
+    console.error('V2 bank-accounts error:', err.message);
+    res.json({ success: true, data: [] });
+  }
+});
+
+// V2 statement-lines endpoint (used by BankReconciliationHub for transaction list)
+router.get('/cash-management/statement-lines', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+  const bankAccountId = req.query.bank_account_id || req.query.bankAccountId;
+  const statementId = req.query.statement_id || req.query.statementId;
+  try {
+    let sql = `
+      SELECT
+        l.line_id as id,
+        l.statement_id,
+        l.line_number,
+        l.transaction_date,
+        l.description,
+        l.reference,
+        l.debit_amount,
+        l.credit_amount,
+        l.balance,
+        l.is_matched,
+        l.matched_transaction_id,
+        l.match_confidence as ai_confidence,
+        l.auto_category as category,
+        CASE
+          WHEN l.is_matched = true THEN 'allocated'
+          ELSE 'unmatched'
+        END as status,
+        CASE
+          WHEN l.credit_amount > 0 THEN l.credit_amount
+          WHEN l.debit_amount > 0 THEN -l.debit_amount
+          ELSE 0
+        END as amount
+      FROM cash_bank_statement_lines l
+      INNER JOIN cash_bank_statements s ON l.statement_id = s.statement_id
+      WHERE s.tenant_id = $1`;
+    const params: any[] = [tenantId];
+
+    if (statementId) {
+      params.push(statementId);
+      sql += ` AND l.statement_id = $${params.length}`;
+    }
+    if (bankAccountId) {
+      params.push(bankAccountId);
+      sql += ` AND s.account_id = $${params.length}`;
+    }
+    sql += ` ORDER BY l.transaction_date DESC, l.line_number ASC`;
+
+    const result = await query(sql, params);
+    res.json({ success: true, data: result.rows || [] });
+  } catch (err: any) {
+    console.error('V2 statement-lines error:', err.message);
+    res.json({ success: true, data: [] });
+  }
+});
+
 router.get('/cash-management/workspace', async (req: any, res) => {
   const { query: dbQuery } = await import('../config/database');
   const tenantId = req.tenant?.id || '00000000-0000-0000-0000-000000000001';
