@@ -101,8 +101,8 @@ export async function getExecutiveDashboard(req: TenantRequest, res: Response): 
 
     // KPIs always show the same top-level business metrics
     const kpis = [
-      { key: 'revenue', label: 'Revenue MTD', value: financialMetrics.revenue.mtd, format: 'currency', trend: financialMetrics.revenue.trend, icon: 'dollar' },
-      { key: 'profit', label: 'Net Profit MTD', value: financialMetrics.profit.mtd, format: 'currency', icon: 'rise' },
+      { key: 'revenue', label: 'Revenue', value: financialMetrics.revenue.mtd, format: 'currency', trend: financialMetrics.revenue.trend, icon: 'dollar' },
+      { key: 'profit', label: 'Net Profit', value: financialMetrics.profit.mtd, format: 'currency', icon: 'rise' },
       { key: 'cash', label: 'Cash Position', value: financialMetrics.cashPosition.total, format: 'currency', icon: 'bank' },
       { key: 'receivables', label: 'Receivables', value: financialMetrics.receivables.total, format: 'currency', icon: 'wallet' },
     ];
@@ -156,16 +156,32 @@ export async function getExecutiveDashboard(req: TenantRequest, res: Response): 
 // ============================================================================
 
 async function getFinancialMetrics(tenantId: string, entityId: string | null = null) {
-  // Revenue from real invoices (sales_invoices table, case-insensitive status)
-  const revenueData = await safeQuery(`
+  // ── GL-Based Revenue & Expenses (primary source of truth) ──────────
+  // Uses accounting schema tables, account_code ranges, and is_posted filter
+  // Revenue = accounts 4000-4999 (credit - debit)
+  // Expenses = accounts 5000-8999 (debit - credit)
+  const glData = await safeQuery(`
+    SELECT
+      COALESCE(SUM(CASE WHEN coa.account_code >= '4000' AND coa.account_code <= '4999' THEN jel.credit_amount - jel.debit_amount END), 0) as total_revenue,
+      COALESCE(SUM(CASE WHEN coa.account_code >= '4000' AND coa.account_code <= '4999' AND je.journal_date >= DATE_TRUNC('month', CURRENT_DATE) THEN jel.credit_amount - jel.debit_amount END), 0) as mtd_revenue,
+      COALESCE(SUM(CASE WHEN coa.account_code >= '4000' AND coa.account_code <= '4999' AND je.journal_date >= DATE_TRUNC('year', CURRENT_DATE) THEN jel.credit_amount - jel.debit_amount END), 0) as ytd_revenue,
+      COALESCE(SUM(CASE WHEN coa.account_code >= '5000' AND coa.account_code <= '8999' THEN jel.debit_amount - jel.credit_amount END), 0) as total_expenses,
+      COALESCE(SUM(CASE WHEN coa.account_code >= '5000' AND coa.account_code <= '8999' AND je.journal_date >= DATE_TRUNC('month', CURRENT_DATE) THEN jel.debit_amount - jel.credit_amount END), 0) as mtd_expenses,
+      COALESCE(SUM(CASE WHEN coa.account_code >= '5000' AND coa.account_code <= '8999' AND je.journal_date >= DATE_TRUNC('year', CURRENT_DATE) THEN jel.debit_amount - jel.credit_amount END), 0) as ytd_expenses
+    FROM accounting.journal_entries je
+    JOIN accounting.journal_entry_lines jel ON je.entry_id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+    JOIN accounting.chart_of_accounts coa ON jel.account_code = coa.account_code AND jel.tenant_id = coa.tenant_id
+    WHERE je.tenant_id = $1 AND je.is_posted = true
+  `, [tenantId], { total_revenue: 0, mtd_revenue: 0, ytd_revenue: 0, total_expenses: 0, mtd_expenses: 0, ytd_expenses: 0 });
+
+  // Invoice count (from sales_invoices — for display purposes)
+  const invoiceData = await safeQuery(`
     SELECT 
-      COALESCE(SUM(CASE WHEN invoice_date >= DATE_TRUNC('month', CURRENT_DATE) THEN total_amount END), 0) as mtd_revenue,
-      COALESCE(SUM(CASE WHEN invoice_date >= DATE_TRUNC('year', CURRENT_DATE) THEN total_amount END), 0) as ytd_revenue,
       COUNT(CASE WHEN invoice_date >= DATE_TRUNC('month', CURRENT_DATE) THEN 1 END) as mtd_invoices,
       COUNT(*) as total_invoices
     FROM sales_invoices
     WHERE tenant_id = $1 AND LOWER(status) NOT IN ('void', 'cancelled', 'draft')
-  `, [tenantId], { mtd_revenue: 0, ytd_revenue: 0, mtd_invoices: 0, total_invoices: 0 });
+  `, [tenantId], { mtd_invoices: 0, total_invoices: 0 });
 
   // Cash from bank_accounts — entity-scoped when entityId is provided
   const cashParams = entityId ? [tenantId, entityId] : [tenantId];
@@ -185,40 +201,47 @@ async function getFinancialMetrics(tenantId: string, entityId: string | null = n
     WHERE tenant_id = $1 AND LOWER(status) NOT IN ('void', 'cancelled', 'paid', 'draft') AND balance_due > 0
   `, [tenantId], { total_receivables: 0, overdue_count: 0 });
 
-  // Expenses — sum debit entries from journal_entries where account is an expense type
-  const expenseData = await safeQuery(`
-    SELECT 
-      COALESCE(SUM(CASE WHEN je.entry_date >= DATE_TRUNC('month', CURRENT_DATE) THEN jel.debit_amount END), 0) as mtd_expenses,
-      COALESCE(SUM(CASE WHEN je.entry_date >= DATE_TRUNC('year', CURRENT_DATE) THEN jel.debit_amount END), 0) as ytd_expenses
-    FROM journal_entries je
-    JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
-    JOIN chart_of_accounts coa ON jel.account_id = coa.id
-    WHERE je.tenant_id = $1 AND LOWER(coa.account_type) IN ('expense', 'cost_of_sales', 'cost of sales')
-  `, [tenantId], { mtd_expenses: 0, ytd_expenses: 0 });
+  // Payables — from accounting GL: accounts 2000-2099 (payable accounts)
+  const apData = await safeQuery(`
+    SELECT COALESCE(SUM(jel.credit_amount - jel.debit_amount), 0) as total_payables
+    FROM accounting.journal_entries je
+    JOIN accounting.journal_entry_lines jel ON je.entry_id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+    JOIN accounting.chart_of_accounts coa ON jel.account_code = coa.account_code AND jel.tenant_id = coa.tenant_id
+    WHERE je.tenant_id = $1 AND je.is_posted = true
+      AND coa.account_code >= '2000' AND coa.account_code <= '2099'
+  `, [tenantId], { total_payables: 0 });
 
-  const mtdRevenue = parseFloat(revenueData.mtd_revenue) || 0;
-  const ytdRevenue = parseFloat(revenueData.ytd_revenue) || 0;
-  const mtdExpenses = parseFloat(expenseData.mtd_expenses) || 0;
-  const ytdExpenses = parseFloat(expenseData.ytd_expenses) || 0;
+  const totalRevenue = parseFloat(glData.total_revenue) || 0;
+  const mtdRevenue = parseFloat(glData.mtd_revenue) || 0;
+  const ytdRevenue = parseFloat(glData.ytd_revenue) || 0;
+  const totalExpenses = parseFloat(glData.total_expenses) || 0;
+  const mtdExpenses = parseFloat(glData.mtd_expenses) || 0;
+  const ytdExpenses = parseFloat(glData.ytd_expenses) || 0;
   const cashPosition = parseFloat(cashData.total_cash) || 0;
   const receivables = parseFloat(arData.total_receivables) || 0;
+  const payables = parseFloat(apData.total_payables) || 0;
+
+  // Use the best available revenue figure: prefer YTD from GL, fall back to total
+  const displayRevenue = ytdRevenue > 0 ? ytdRevenue : totalRevenue;
+  const displayExpenses = ytdExpenses > 0 ? ytdExpenses : totalExpenses;
+  const displayProfit = displayRevenue - displayExpenses;
 
   return {
     revenue: {
-      mtd: mtdRevenue,
-      ytd: ytdRevenue,
+      mtd: mtdRevenue > 0 ? mtdRevenue : totalRevenue,
+      ytd: ytdRevenue > 0 ? ytdRevenue : totalRevenue,
       trend: 0,
-      invoiceCount: parseInt(revenueData.mtd_invoices) || 0
+      invoiceCount: parseInt(invoiceData.total_invoices) || 0
     },
     expenses: {
-      mtd: mtdExpenses,
-      ytd: ytdExpenses,
+      mtd: mtdExpenses > 0 ? mtdExpenses : totalExpenses,
+      ytd: ytdExpenses > 0 ? ytdExpenses : totalExpenses,
       trend: 0
     },
     profit: {
-      mtd: mtdRevenue - mtdExpenses,
-      ytd: ytdRevenue - ytdExpenses,
-      margin: ytdRevenue > 0 ? ((ytdRevenue - ytdExpenses) / ytdRevenue * 100) : 0
+      mtd: displayProfit,
+      ytd: displayProfit,
+      margin: displayRevenue > 0 ? ((displayProfit) / displayRevenue * 100) : 0
     },
     cashPosition: {
       total: cashPosition,
@@ -229,7 +252,7 @@ async function getFinancialMetrics(tenantId: string, entityId: string | null = n
       overdueCount: parseInt(arData.overdue_count) || 0
     },
     payables: {
-      total: 0
+      total: payables
     }
   };
 }
@@ -241,20 +264,23 @@ async function getFinancialMetrics(tenantId: string, entityId: string | null = n
 async function getRevenueTrend(tenantId: string) {
   const rows = await safeQueryRows(`
     SELECT 
-      TO_CHAR(DATE_TRUNC('month', invoice_date), 'Mon') as month,
-      EXTRACT(YEAR FROM invoice_date) as year,
-      COALESCE(SUM(total_amount), 0) as revenue
-    FROM sales_invoices
-    WHERE tenant_id = $1 
-      AND LOWER(status) NOT IN ('void', 'cancelled', 'draft')
-      AND invoice_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '5 months'
-    GROUP BY DATE_TRUNC('month', invoice_date), TO_CHAR(DATE_TRUNC('month', invoice_date), 'Mon'), EXTRACT(YEAR FROM invoice_date)
-    ORDER BY DATE_TRUNC('month', invoice_date)
+      TO_CHAR(DATE_TRUNC('month', je.journal_date), 'Mon') as month,
+      EXTRACT(YEAR FROM je.journal_date) as year,
+      COALESCE(SUM(jel.credit_amount - jel.debit_amount), 0) as revenue
+    FROM accounting.journal_entries je
+    JOIN accounting.journal_entry_lines jel ON je.entry_id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+    JOIN accounting.chart_of_accounts coa ON jel.account_code = coa.account_code AND jel.tenant_id = coa.tenant_id
+    WHERE je.tenant_id = $1 
+      AND je.is_posted = true
+      AND coa.account_code >= '4000' AND coa.account_code <= '4999'
+      AND je.journal_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months'
+    GROUP BY DATE_TRUNC('month', je.journal_date), TO_CHAR(DATE_TRUNC('month', je.journal_date), 'Mon'), EXTRACT(YEAR FROM je.journal_date)
+    ORDER BY DATE_TRUNC('month', je.journal_date)
   `, [tenantId]);
 
-  // Always return 6 months even if no data
+  // Return 12 months of trend data
   const months: { month: string; revenue: number }[] = [];
-  for (let i = 5; i >= 0; i--) {
+  for (let i = 11; i >= 0; i--) {
     const d = new Date();
     d.setMonth(d.getMonth() - i);
     const monthName = d.toLocaleString('en-ZA', { month: 'short' });
