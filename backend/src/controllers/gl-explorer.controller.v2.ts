@@ -446,9 +446,9 @@ export class GLExplorerControllerV2 {
 
       // Get source types
       let sourceTypesQuery = `
-        SELECT DISTINCT COALESCE(source_type, source) as source_type
+        SELECT DISTINCT source_type
         FROM journal_entries
-        WHERE tenant_id = $1 AND (source_type IS NOT NULL OR source IS NOT NULL)
+        WHERE tenant_id = $1 AND source_type IS NOT NULL
       `;
       const sourceParams: any[] = [tenantId];
       if (entityId) {
