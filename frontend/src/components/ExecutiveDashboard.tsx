@@ -523,7 +523,7 @@ const ExecutiveDashboard: React.FC = () => {
           >
             <div className="financial-grid">
               <div className="financial-item">
-                <Text type="secondary">Revenue MTD</Text>
+                <Text type="secondary">Revenue</Text>
                 <div className="financial-value positive">
                   {formatCurrency(data.financial.revenue.mtd)}
                 </div>
@@ -532,13 +532,13 @@ const ExecutiveDashboard: React.FC = () => {
                 </div>
               </div>
               <div className="financial-item">
-                <Text type="secondary">Expenses MTD</Text>
+                <Text type="secondary">Expenses</Text>
                 <div className="financial-value">
                   {formatCurrency(data.financial.expenses.mtd)}
                 </div>
               </div>
               <div className="financial-item highlight">
-                <Text type="secondary">Net Profit MTD</Text>
+                <Text type="secondary">Net Profit</Text>
                 <div className={`financial-value ${data.financial.profit.mtd >= 0 ? 'positive' : 'negative'}`}>
                   {formatCurrency(data.financial.profit.mtd)}
                 </div>
@@ -586,7 +586,7 @@ const ExecutiveDashboard: React.FC = () => {
             title={
               <Space>
                 <LineChartOutlined style={{ color: '#667eea' }} />
-                <span>Revenue Trend (6 Months)</span>
+                <span>Revenue Trend (12 Months)</span>
               </Space>
             }
             style={{ marginTop: 16 }}
