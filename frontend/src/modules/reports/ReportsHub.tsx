@@ -372,18 +372,34 @@ const VATReportTab: React.FC = () => {
   const fetchVatReport = async () => {
     setLoading(true);
     try {
-      const params: Record<string, any> = { period };
-      if (period === 'custom') {
-        params.start_date = customStart;
-        params.end_date = customEnd;
+      // Calculate date range based on period
+      const now = new Date();
+      let startDate = customStart;
+      let endDate = customEnd;
+      if (period === 'monthly') {
+        startDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        endDate = now.toISOString().split('T')[0];
+      } else if (period === 'quarterly') {
+        const quarter = Math.floor(now.getMonth() / 3);
+        startDate = `${now.getFullYear()}-${String(quarter * 3 + 1).padStart(2, '0')}-01`;
+        endDate = now.toISOString().split('T')[0];
+      } else if (period === 'annual') {
+        startDate = `${now.getFullYear()}-01-01`;
+        endDate = `${now.getFullYear()}-12-31`;
       }
+      const params = { from_date: startDate, to_date: endDate, start_date: startDate, end_date: endDate, period };
       // Try V2 route first, fall back to module route
       let result = await apiGet<any>('/api/financial/reports/vat-report', params).catch(() => null);
       if (!result?.success) {
-        result = await apiGet<any>('/api/financial/vat-report', { fromDate: customStart, toDate: customEnd });
+        result = await apiGet<any>('/api/financial/vat-report', { fromDate: startDate, toDate: endDate });
       }
       if (result?.success) {
-        setVatData(result.data);
+        const d = result.data;
+        // Derive vat_position from net_vat if not provided
+        if (d && d.vat_position === undefined) {
+          d.vat_position = (d.net_vat || 0) >= 0 ? 'payable' : 'refundable';
+        }
+        setVatData(d);
       }
     } catch (err) {
       console.error('VAT report error:', err);

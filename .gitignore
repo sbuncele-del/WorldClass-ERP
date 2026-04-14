@@ -50,3 +50,4 @@ lerna-debug.log*
 postgres_data/
 .env.production
 frontend/dist-auditor/
+*.env
