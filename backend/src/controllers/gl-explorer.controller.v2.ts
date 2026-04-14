@@ -94,7 +94,7 @@ export class GLExplorerControllerV2 {
         conditions.push(`(
           je.description ILIKE $${paramIndex} OR 
           je.notes ILIKE $${paramIndex} OR
-          jel.description ILIKE $${paramIndex} OR
+          jel.line_description ILIKE $${paramIndex} OR
           je.source_document_number ILIKE $${paramIndex}
         )`);
         params.push(`%${search_text}%`);
@@ -150,7 +150,7 @@ export class GLExplorerControllerV2 {
           je.status,
           COALESCE(coa.account_code, jel.account_code) as account_code,
           COALESCE(coa.account_name, jel.account_name) as account_name,
-          jel.description as line_description,
+          jel.line_description,
           jel.debit_amount,
           jel.credit_amount
         FROM journal_entry_lines jel
@@ -242,7 +242,7 @@ export class GLExplorerControllerV2 {
           COALESCE(SUM(jel.debit_amount), 0) as total_debits,
           COALESCE(SUM(jel.credit_amount), 0) as total_credits,
           CASE 
-            WHEN coa.account_type IN ('ASSET', 'EXPENSE') 
+            WHEN UPPER(coa.account_type) IN ('ASSET', 'EXPENSE') 
             THEN COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0)
             ELSE COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0)
           END as balance,
@@ -325,7 +325,7 @@ export class GLExplorerControllerV2 {
       let openingQuery = `
         SELECT 
           CASE 
-            WHEN $4 IN ('ASSET', 'EXPENSE') 
+            WHEN UPPER($4) IN ('ASSET', 'EXPENSE') 
             THEN COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0)
             ELSE COALESCE(SUM(jel.credit_amount), 0) - COALESCE(SUM(jel.debit_amount), 0)
           END as opening_balance
@@ -357,7 +357,7 @@ export class GLExplorerControllerV2 {
           je.description,
           je.source_type,
           je.source_document_number,
-          jel.description as line_description,
+          jel.line_description,
           jel.debit_amount,
           jel.credit_amount
         FROM journal_entry_lines jel
@@ -389,7 +389,7 @@ export class GLExplorerControllerV2 {
         const debit = parseFloat(row.debit_amount || '0');
         const credit = parseFloat(row.credit_amount || '0');
         
-        if (['ASSET', 'EXPENSE'].includes(account.account_type)) {
+        if (['asset', 'expense'].includes(account.account_type?.toLowerCase())) {
           runningBalance += debit - credit;
         } else {
           runningBalance += credit - debit;
