@@ -3270,32 +3270,45 @@ router.get('/cash-management/bank-accounts', async (req: any, res) => {
   try {
     const result = await query(
       `SELECT
-        ba.account_id as id,
+        ba.id,
         ba.account_name,
         ba.account_number,
         ba.account_type,
         ba.currency,
-        ba.opening_balance,
-        COALESCE(ba.opening_balance, 0) + COALESCE(gl.net_movement, 0) as current_balance,
+        ba.bank_name,
         ba.gl_account_code,
-        ba.is_primary,
         ba.is_active,
         ba.created_at,
         ba.updated_at,
-        b.bank_name,
-        b.bank_code
-      FROM cash_bank_accounts ba
-      LEFT JOIN cash_banks b ON ba.bank_id = b.bank_id
+        COALESCE(gl.gl_balance, 0) as current_balance,
+        COALESCE(gl.gl_debits, 0) as gl_total_debits,
+        COALESCE(gl.gl_credits, 0) as gl_total_credits,
+        COALESCE(gl.gl_entry_count, 0) as gl_entry_count,
+        COALESCE(sl.statement_balance, 0) as statement_balance,
+        COALESCE(sl.transaction_count, 0) as transaction_count,
+        coa.id as gl_account_id,
+        COALESCE(coa.account_name, coa.name) as gl_account_name
+      FROM bank_accounts ba
+      LEFT JOIN chart_of_accounts coa ON (coa.account_code = ba.gl_account_code OR coa.code = ba.gl_account_code) AND coa.tenant_id = ba.tenant_id
       LEFT JOIN LATERAL (
-        SELECT SUM(jel.debit_amount - jel.credit_amount) as net_movement
+        SELECT 
+          COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as gl_balance,
+          COALESCE(SUM(jel.debit_amount), 0) as gl_debits,
+          COALESCE(SUM(jel.credit_amount), 0) as gl_credits,
+          COUNT(DISTINCT jel.journal_entry_id) as gl_entry_count
         FROM journal_entry_lines jel
         JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = ba.tenant_id
-        JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = ba.tenant_id
-        WHERE je.status = 'posted'
-          AND (coa.account_code = ba.gl_account_code OR coa.code = ba.gl_account_code)
-      ) gl ON TRUE
+        WHERE jel.account_id = coa.id AND jel.tenant_id = ba.tenant_id AND LOWER(je.status) = 'posted'
+      ) gl ON coa.id IS NOT NULL
+      LEFT JOIN LATERAL (
+        SELECT 
+          SUM(amount) as statement_balance,
+          COUNT(*) as transaction_count
+        FROM bank_statement_lines bsl
+        WHERE bsl.bank_account_id = ba.id AND bsl.tenant_id = ba.tenant_id
+      ) sl ON true
       WHERE ba.tenant_id = $1 AND ba.is_active = true
-      ORDER BY ba.is_primary DESC, ba.account_name ASC`,
+      ORDER BY ba.account_name ASC`,
       [tenantId]
     );
     res.json({ success: true, data: result.rows || [] });
@@ -3745,60 +3758,6 @@ router.get('/cash-management/cash-flow-dashboard', async (req: any, res) => {
   }
 });
 
-// Cash Management - bank accounts (with live calculated balance)
-router.get('/cash-management/bank-accounts', async (req: any, res) => {
-  const tenantId = req.tenant?.id || req.headers['x-tenant-id'] || 1;
-  try {
-    // Get bank accounts with dynamically calculated balance from statement lines + GL book balance
-    const result = await query(`
-      SELECT ba.*,
-        COALESCE(sl.statement_balance, 0) as calculated_bank_balance,
-        COALESCE(sl.total_credits, 0) as total_credits,
-        COALESCE(sl.total_debits, 0) as total_debits,
-        COALESCE(sl.transaction_count, 0) as transaction_count,
-        COALESCE(gl.gl_balance, 0) as gl_book_balance,
-        COALESCE(gl.gl_debits, 0) as gl_total_debits,
-        COALESCE(gl.gl_credits, 0) as gl_total_credits,
-        COALESCE(gl.gl_entry_count, 0) as gl_entry_count,
-        coa.id as gl_account_id,
-        coa.account_name as gl_account_name
-      FROM bank_accounts ba
-      LEFT JOIN chart_of_accounts coa ON coa.account_code = ba.gl_account_code AND coa.tenant_id = ba.tenant_id
-      LEFT JOIN LATERAL (
-        SELECT 
-          SUM(amount) as statement_balance,
-          SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as total_credits,
-          SUM(CASE WHEN amount < 0 THEN amount ELSE 0 END) as total_debits,
-          COUNT(*) as transaction_count
-        FROM bank_statement_lines bsl
-        WHERE bsl.bank_account_id = ba.id AND bsl.tenant_id = ba.tenant_id
-      ) sl ON true
-      LEFT JOIN LATERAL (
-        SELECT 
-          COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as gl_balance,
-          COALESCE(SUM(jel.debit_amount), 0) as gl_debits,
-          COALESCE(SUM(jel.credit_amount), 0) as gl_credits,
-          COUNT(DISTINCT jel.journal_entry_id) as gl_entry_count
-        FROM journal_entry_lines jel
-        JOIN journal_entries je ON jel.journal_entry_id = je.entry_id AND je.tenant_id = ba.tenant_id
-        WHERE jel.account_id = coa.id AND jel.tenant_id = ba.tenant_id AND LOWER(je.status) = 'posted'
-      ) gl ON coa.id IS NOT NULL
-      WHERE ba.tenant_id = $1
-    `, [tenantId]);
-    
-    // Update current_balance to reflect actual statement line totals
-    const accounts = result.rows.map((acc: any) => ({
-      ...acc,
-      current_balance: acc.transaction_count > 0 ? acc.calculated_bank_balance : acc.current_balance
-    }));
-    
-    res.json({ success: true, data: accounts });
-  } catch (err) { 
-    console.error('Error fetching bank accounts:', err);
-    res.json({ success: true, data: [] }); 
-  }
-});
-
 // Cash Management - create bank account
 router.post('/cash-management/bank-accounts', async (req: any, res) => {
   const tenantId = req.tenant?.id || req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
@@ -3850,40 +3809,6 @@ router.post('/cash-management/statements', async (req: any, res) => {
 });
 
 // Cash Management - Statement Lines (imported transactions)
-router.get('/cash-management/statement-lines', async (req: any, res) => {
-  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
-  const { bank_account_id, statement_id, status } = req.query;
-  try {
-    let sql = `SELECT bsl.*, 
-                      COALESCE(NULLIF(coa.name, ''), coa.account_name) as allocated_account_name,
-                      COALESCE(NULLIF(coa.code, ''), coa.account_code) as allocated_account_code
-               FROM bank_statement_lines bsl
-               LEFT JOIN chart_of_accounts coa ON coa.id = bsl.allocated_gl_account_id AND coa.tenant_id = bsl.tenant_id
-               WHERE bsl.tenant_id = $1`;
-    const params: any[] = [tenantId];
-    
-    if (bank_account_id) {
-      params.push(bank_account_id);
-      sql += ` AND bsl.bank_account_id = $${params.length}`;
-    }
-    if (statement_id) {
-      params.push(statement_id);
-      sql += ` AND bsl.statement_id = $${params.length}`;
-    }
-    if (status) {
-      params.push(status);
-      sql += ` AND bsl.status = $${params.length}`;
-    }
-    sql += ' ORDER BY bsl.transaction_date DESC LIMIT 500';
-    
-    const result = await query(sql, params);
-    res.json({ success: true, data: result.rows || [] });
-  } catch (err) {
-    console.error('Error fetching statement lines:', err);
-    res.json({ success: true, data: [] });
-  }
-});
-
 router.post('/cash-management/statement-lines', async (req: any, res) => {
   const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
   try {

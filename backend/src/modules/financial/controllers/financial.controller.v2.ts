@@ -817,8 +817,36 @@ export const getIncomeStatement = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
     const now = new Date();
-    const fromDate = req.query.fromDate || req.query.from_date || new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-    const toDate = req.query.toDate || req.query.to_date || now.toISOString().split('T')[0];
+    const period = (req.query.period as string) || 'monthly';
+    let fromDate = req.query.fromDate || req.query.from_date || req.query.start_date || req.query.from;
+    let toDate = req.query.toDate || req.query.to_date || req.query.end_date || req.query.to;
+
+    // If no explicit dates provided, calculate from period
+    if (!fromDate || !toDate) {
+      switch (period) {
+        case 'annual': {
+          // Use previous year if in H1, current year if in H2
+          const year = now.getMonth() < 6 ? now.getFullYear() - 1 : now.getFullYear();
+          fromDate = `${year}-01-01`;
+          toDate = `${year}-12-31`;
+          break;
+        }
+        case 'quarterly': {
+          const quarter = Math.floor(now.getMonth() / 3);
+          const qStart = new Date(now.getFullYear(), quarter * 3, 1);
+          const qEnd = new Date(now.getFullYear(), quarter * 3 + 3, 0);
+          fromDate = qStart.toISOString().split('T')[0];
+          toDate = qEnd.toISOString().split('T')[0];
+          break;
+        }
+        case 'monthly':
+        default: {
+          fromDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+          toDate = now.toISOString().split('T')[0];
+          break;
+        }
+      }
+    }
 
     // Get revenue accounts (credits increase revenue)
     const revenueQuery = `
