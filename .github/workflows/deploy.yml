@@ -4,82 +4,35 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      force_rebuild:
-        description: 'Force full rebuild (no cache)'
-        required: false
-        default: 'false'
-
-env:
-  DROPLET_IP: 164.92.197.87
-  DEPLOY_PATH: /opt/worldclass-erp
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # Method 1: Try doctl (DigitalOcean API) — no SSH key needed
-      - name: Try deploy via DigitalOcean API (doctl)
-        id: doctl_deploy
-        continue-on-error: true
-        if: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN != '' }}
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
-
-      - name: Get Droplet ID and deploy via doctl
-        id: doctl_ssh
-        continue-on-error: true
-        if: steps.doctl_deploy.outcome == 'success'
-        run: |
-          DROPLET_ID=$(doctl compute droplet list --format ID,PublicIPv4 --no-header | grep "${{ env.DROPLET_IP }}" | awk '{print $1}')
-          if [ -z "$DROPLET_ID" ]; then
-            echo "Could not find droplet with IP ${{ env.DROPLET_IP }}"
-            exit 1
-          fi
-          echo "Found droplet: $DROPLET_ID"
-          doctl compute ssh $DROPLET_ID --ssh-command "cd ${{ env.DEPLOY_PATH }} && git pull origin main && docker compose -f docker-compose.digitalocean.yml up -d --build && docker image prune -f"
-
-      # Method 2: Try SSH key (traditional approach)
-      - name: Deploy via SSH key
-        id: ssh_deploy
-        if: steps.doctl_ssh.outcome != 'success'
+      - name: Deploy to Droplet via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ env.DROPLET_IP }}
+          host: 164.92.197.87
           username: root
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           envs: RESEND_API_KEY
           command_timeout: 20m
           script: |
             set -e
-            cd ${{ env.DEPLOY_PATH }}
-            # Fix DNS if broken
+            cd /opt/worldclass-erp
             if ! host github.com > /dev/null 2>&1; then
-              echo "DNS broken, fixing resolv.conf..."
               echo "nameserver 8.8.8.8" > /etc/resolv.conf
               echo "nameserver 8.8.4.4" >> /etc/resolv.conf
-              echo "nameserver 1.1.1.1" >> /etc/resolv.conf
             fi
-            # Pull latest code
             git pull origin main || {
-              echo "SSH pull failed, trying HTTPS..."
               git remote set-url origin https://github.com/sbuncele-del/WorldClass-ERP.git
               git pull origin main
               git remote set-url origin git@github.com:sbuncele-del/WorldClass-ERP.git
             }
-            # Inject secrets
             if [ -n "$RESEND_API_KEY" ]; then
               sed -i '/^RESEND_API_KEY=/d' .env.production
               echo "RESEND_API_KEY=$RESEND_API_KEY" >> .env.production
-              sed -i 's/^ENABLE_EMAIL=false/ENABLE_EMAIL=true/' .env.production
-              sed -i '/^EMAIL_FROM=/d' .env.production
-              echo "EMAIL_FROM=support@siyabusaerp.co.za" >> .env.production
             fi
-            # Fix URLs
-            sed -i 's|FRONTEND_URL=https://platform.siyabusaerp.co.za|FRONTEND_URL=https://siyabusaerp.co.za|g' .env.production
-            sed -i 's|APP_URL=https://platform.siyabusaerp.co.za|APP_URL=https://siyabusaerp.co.za|g' .env.production
-            sed -i 's|API_URL=https://platform.siyabusaerp.co.za/api|API_URL=https://siyabusaerp.co.za/api|g' .env.production
             docker compose -f docker-compose.digitalocean.yml up -d --build
             docker image prune -f
         env:
