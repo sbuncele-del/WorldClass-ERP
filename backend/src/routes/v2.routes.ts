@@ -4105,7 +4105,7 @@ router.post('/cash-management/reconciliation/post-to-gl', async (req: any, res) 
       await query(
         `INSERT INTO journal_entry_lines
            (tenant_id, journal_entry_id, line_number, account_id, account_code, account_name,
-            description, debit_amount, credit_amount)
+            line_description, debit_amount, credit_amount)
          VALUES ($1, $2, 1, $3, $4, $5, $6, $7, $8)`,
         [tenantId, jeId, glAccountId, glAccountCode, glAccountName,
          line.description, isDebit ? 0 : amount, isDebit ? amount : 0]
@@ -4125,7 +4125,7 @@ router.post('/cash-management/reconciliation/post-to-gl', async (req: any, res) 
       await query(
         `INSERT INTO journal_entry_lines
            (tenant_id, journal_entry_id, line_number, account_id, account_code, account_name,
-            description, debit_amount, credit_amount)
+            line_description, debit_amount, credit_amount)
          VALUES ($1, $2, 2, $3, $4, $5, $6, $7, $8)`,
         [tenantId, jeId, offsetAccountId, offsetAccountCode, offsetAccountName,
          `Bank: ${line.description}`, isDebit ? amount : 0, isDebit ? 0 : amount]
@@ -4929,7 +4929,7 @@ router.post('/cash-management/reconciliation/allocate', async (req: any, res) =>
     await query(
       `INSERT INTO journal_entry_lines
          (tenant_id, journal_entry_id, line_number, account_id, account_code, account_name,
-          description, debit_amount, credit_amount)
+          line_description, debit_amount, credit_amount)
        VALUES ($1, $2, 1, $3, $4, $5, $6, $7, $8)`,
       [tenantId, jeId, bankGLAccountId, bankCoaCode, bankCoaName,
        description || line.description, isDebit ? 0 : amount, isDebit ? amount : 0]
@@ -4939,7 +4939,7 @@ router.post('/cash-management/reconciliation/allocate', async (req: any, res) =>
     await query(
       `INSERT INTO journal_entry_lines
          (tenant_id, journal_entry_id, line_number, account_id, account_code, account_name,
-          description, debit_amount, credit_amount)
+          line_description, debit_amount, credit_amount)
        VALUES ($1, $2, 2, $3, $4, $5, $6, $7, $8)`,
       [tenantId, jeId, resolvedGLAccountId, glAcct.code, glAcct.name,
        description || line.description, isDebit ? amount : 0, isDebit ? 0 : amount]
