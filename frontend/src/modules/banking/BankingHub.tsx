@@ -561,11 +561,9 @@ const BankingHub: React.FC = () => {
     return `${val < 0 ? '-' : ''}${symbol} ${formatted}`;
   };
 
-  const getTotalBalance = () => {
-    // GL balances (current_balance) are already in reporting currency (ZAR)
-    // No currency conversion needed - avoids double-converting foreign currency accounts
+  const getTotalBalance = (currency?: string) => {
     return bankConnections
-      .filter(b => b.status === 'connected')
+      .filter(b => b.status === 'connected' && (!currency || b.currency === currency))
       .reduce((sum, b) => sum + b.balance, 0);
   };
 
@@ -662,11 +660,19 @@ const BankingHub: React.FC = () => {
           </Col>
           <Col span={5}>
             <Statistic 
-              title="Total Cash Position" 
-              value={getTotalBalance()}
+              title="ZAR Cash Position" 
+              value={getTotalBalance('ZAR')}
               prefix="R"
               valueStyle={{ color: 'white', fontSize: '20px' }}
             />
+            {getTotalBalance('USD') !== 0 && (
+              <Statistic 
+                title="USD Cash Position" 
+                value={getTotalBalance('USD')}
+                prefix="$"
+                valueStyle={{ color: 'rgba(255,255,255,0.85)', fontSize: '14px', marginTop: 4 }}
+              />
+            )}
           </Col>
           <Col span={4}>
             <Statistic 
