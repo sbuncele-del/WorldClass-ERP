@@ -1547,6 +1547,7 @@ router.get('/financial/reports/general-ledger', FinancialReportsV2.generateGener
 router.get('/financial/gl-explorer/search', GLExplorerControllerV2.search);
 router.get('/financial/gl-explorer/account-summary', GLExplorerControllerV2.getAccountSummary);
 router.get('/financial/gl-explorer/account-ledger/:accountCode', GLExplorerControllerV2.getAccountLedger);
+router.get('/financial/gl-explorer/report', GLExplorerControllerV2.getGeneralLedgerReport);
 router.get('/financial/gl-explorer/filter-options', GLExplorerControllerV2.getFilterOptions);
 router.post('/financial/gl-explorer/export', GLExplorerControllerV2.exportResults);
 

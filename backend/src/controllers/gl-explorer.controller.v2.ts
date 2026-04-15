@@ -481,6 +481,167 @@ export class GLExplorerControllerV2 {
   }
 
   /**
+   * Full General Ledger Report (QuickBooks-style)
+   * GET /api/v2/financial/gl-explorer/report
+   * Returns ALL accounts with ALL transactions grouped, with opening/closing balances
+   */
+  static async getGeneralLedgerReport(req: TenantRequest, res: Response): Promise<void> {
+    try {
+      const { tenantId, entityId } = getTenantContext(req);
+      const { date_from, date_to, account_code } = req.query;
+
+      const dateFrom = (date_from as string) || '2025-01-01';
+      const dateTo = (date_to as string) || new Date().toISOString().split('T')[0];
+      const acctCode = account_code as string | undefined;
+
+      // 1. Get all active accounts with posted transactions
+      const acctParams: any[] = [tenantId];
+      let acctFilter = '';
+      if (acctCode) {
+        acctFilter = 'AND coa.account_code = $2';
+        acctParams.push(acctCode);
+      }
+
+      const accountsResult = await pool.query(`
+        SELECT DISTINCT coa.account_code, coa.account_name, coa.account_type
+        FROM chart_of_accounts coa
+        WHERE coa.tenant_id = $1 AND coa.is_active = true ${acctFilter}
+          AND EXISTS (
+            SELECT 1 FROM journal_entry_lines jel
+            JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
+            WHERE jel.account_id = coa.id AND jel.tenant_id = $1 AND LOWER(je.status) = 'posted'
+          )
+        ORDER BY coa.account_code
+      `, acctParams);
+
+      if (accountsResult.rows.length === 0) {
+        res.json({ success: true, data: { date_from: dateFrom, date_to: dateTo, total_accounts: 0, total_transactions: 0, accounts: [] } });
+        return;
+      }
+
+      // 2. Get opening balances (sum of all posted entries before date_from)
+      const obParams: any[] = [tenantId, dateFrom];
+      let obFilter = '';
+      if (acctCode) { obFilter = 'AND coa.account_code = $3'; obParams.push(acctCode); }
+
+      const openingResult = await pool.query(`
+        SELECT
+          coa.account_code,
+          coa.account_type,
+          COALESCE(SUM(jel.debit_amount), 0) as total_dr,
+          COALESCE(SUM(jel.credit_amount), 0) as total_cr
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
+        JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+        WHERE jel.tenant_id = $1 AND LOWER(je.status) = 'posted' AND je.journal_date < $2 ${obFilter}
+        GROUP BY coa.account_code, coa.account_type
+      `, obParams);
+
+      // Store raw DR - CR for each account
+      const openingRaw: Record<string, number> = {};
+      openingResult.rows.forEach(r => {
+        openingRaw[r.account_code] = parseFloat(r.total_dr) - parseFloat(r.total_cr);
+      });
+
+      // 3. Get all transactions in the date range
+      const txParams: any[] = [tenantId, dateFrom, dateTo];
+      let txFilter = '';
+      if (acctCode) { txFilter = 'AND coa.account_code = $4'; txParams.push(acctCode); }
+
+      const transResult = await pool.query(`
+        SELECT
+          coa.account_code,
+          coa.account_name,
+          coa.account_type,
+          je.journal_date,
+          je.source_type,
+          je.entry_number,
+          je.source_document_number,
+          COALESCE(je.reference, '') as reference,
+          COALESCE(jel.line_description, je.description, '') as description,
+          jel.debit_amount,
+          jel.credit_amount
+        FROM journal_entry_lines jel
+        JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
+        JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
+        WHERE jel.tenant_id = $1 AND LOWER(je.status) = 'posted'
+          AND je.journal_date >= $2 AND je.journal_date <= $3 ${txFilter}
+        ORDER BY coa.account_code, je.journal_date, je.created_at
+      `, txParams);
+
+      // 4. Build grouped response with natural-direction balances
+      const accountDataMap: Record<string, any> = {};
+
+      accountsResult.rows.forEach(acc => {
+        const isDebitNormal = ['asset', 'expense'].includes(acc.account_type?.toLowerCase());
+        const rawOB = openingRaw[acc.account_code] || 0;
+        const ob = isDebitNormal ? rawOB : -rawOB;
+
+        accountDataMap[acc.account_code] = {
+          account_code: acc.account_code,
+          account_name: acc.account_name,
+          account_type: acc.account_type,
+          is_debit_normal: isDebitNormal,
+          beginning_balance: ob,
+          transactions: [],
+          total_debits: 0,
+          total_credits: 0,
+          closing_balance: ob,
+          transaction_count: 0,
+        };
+      });
+
+      transResult.rows.forEach(row => {
+        const acc = accountDataMap[row.account_code];
+        if (!acc) return;
+
+        const debit = parseFloat(row.debit_amount || '0');
+        const credit = parseFloat(row.credit_amount || '0');
+        const amount = acc.is_debit_normal ? (debit - credit) : (credit - debit);
+
+        acc.total_debits += debit;
+        acc.total_credits += credit;
+        acc.closing_balance += amount;
+
+        acc.transactions.push({
+          date: row.journal_date,
+          transaction_type: (row.source_type || 'Journal').replace(/_/g, ' '),
+          number: row.source_document_number || row.entry_number || '',
+          name: row.reference || '',
+          description: row.description,
+          debit: debit,
+          credit: credit,
+          amount: amount,
+          balance: acc.closing_balance,
+        });
+
+        acc.transaction_count++;
+      });
+
+      const activeAccounts = Object.values(accountDataMap)
+        .filter((a: any) => a.transaction_count > 0 || a.beginning_balance !== 0);
+
+      res.json({
+        success: true,
+        data: {
+          date_from: dateFrom,
+          date_to: dateTo,
+          total_accounts: activeAccounts.length,
+          total_transactions: activeAccounts.reduce((s: number, a: any) => s + a.transaction_count, 0),
+          accounts: activeAccounts,
+        }
+      });
+    } catch (error: any) {
+      if (error.message === 'Tenant context required') {
+        res.status(401).json({ success: false, message: 'Unauthorized: Tenant context required' });
+        return;
+      }
+      console.error('[GLExplorer] General Ledger Report error:', error);
+      res.status(500).json({ success: false, message: 'Failed to generate general ledger report' });
+    }
+  }
+
+  /**
    * Export search results
    * POST /api/v2/financial/gl-explorer/export
    */

@@ -18,6 +18,9 @@ router.get('/account-summary', GLExplorerControllerV2.getAccountSummary);
 router.get('/account-ledger/:accountCode', GLExplorerControllerV2.getAccountLedger);
 router.get('/account/:account_code/transactions', GLExplorerControllerV2.getAccountLedger);
 
+// Full General Ledger report (QuickBooks-style)
+router.get('/report', GLExplorerControllerV2.getGeneralLedgerReport);
+
 // Filter options for dropdowns
 router.get('/filter-options', GLExplorerControllerV2.getFilterOptions);
 
