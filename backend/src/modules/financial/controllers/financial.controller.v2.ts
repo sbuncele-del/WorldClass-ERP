@@ -411,26 +411,83 @@ export const getAccount = async (req: TenantRequest, res: Response) => {
 export const getTrialBalance = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
-    // Direct SQL trial balance - bypass broken repository
+    const asOfDate = req.query.as_of_date || req.query.asOfDate;
+    const fiscalYear = req.query.fiscal_year ? parseInt(req.query.fiscal_year as string) : new Date().getFullYear();
+    const fiscalPeriod = req.query.fiscal_period ? parseInt(req.query.fiscal_period as string) : new Date().getMonth() + 1;
+
+    // Build date filter: if as_of_date provided use it; else compute from fiscal_year/fiscal_period
+    let dateFilter = '';
+    const params: any[] = [ctx.tenantId];
+    if (asOfDate) {
+      dateFilter = `AND COALESCE(je.journal_date, je.entry_date, je.posting_date) <= $2`;
+      params.push(asOfDate);
+    } else if (req.query.fiscal_year) {
+      const endDate = new Date(fiscalYear, fiscalPeriod, 0).toISOString().split('T')[0]; // last day of period month
+      dateFilter = `AND COALESCE(je.journal_date, je.entry_date, je.posting_date) <= $2`;
+      params.push(endDate);
+    }
+
+    // Direct SQL trial balance
     const result = await query(
       `SELECT 
         COALESCE(NULLIF(coa.account_code, ''), coa.code) as account_code,
         COALESCE(NULLIF(coa.account_name, ''), coa.name) as account_name,
-        coa.account_type,
+        UPPER(coa.account_type) as account_type,
         COALESCE(SUM(jel.debit_amount), 0) as debit,
         COALESCE(SUM(jel.credit_amount), 0) as credit,
         COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as balance
        FROM chart_of_accounts coa
-       LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id AND jel.tenant_id = coa.tenant_id
-       LEFT JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id AND je.status = 'posted'
+       INNER JOIN journal_entry_lines jel ON jel.account_id = coa.id AND jel.tenant_id = coa.tenant_id
+       INNER JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
        WHERE coa.tenant_id = $1 AND coa.is_active = true
-         AND (je.id IS NOT NULL OR jel.journal_entry_id IS NULL)
+         AND LOWER(je.status) = 'posted'
+         ${dateFilter}
        GROUP BY coa.id, coa.code, coa.account_code, coa.name, coa.account_name, coa.account_type
        HAVING COALESCE(SUM(jel.debit_amount), 0) != 0 OR COALESCE(SUM(jel.credit_amount), 0) != 0
        ORDER BY COALESCE(NULLIF(coa.account_code, ''), coa.code)`,
-      [ctx.tenantId]
+      params
     );
-    res.json({ success: true, data: result.rows });
+
+    // Map rows to match both frontend consumers (TrialBalance uses code/name, Dashboard uses account_code)
+    const accounts = result.rows.map((r: any) => ({
+      code: r.account_code,
+      account_code: r.account_code,
+      name: r.account_name,
+      account_name: r.account_name,
+      account_type: r.account_type,
+      total_debits: parseFloat(r.debit || 0),
+      total_credits: parseFloat(r.credit || 0),
+      debit: parseFloat(r.debit || 0),
+      credit: parseFloat(r.credit || 0),
+      balance: parseFloat(r.balance || 0),
+      normal_balance: ['ASSET', 'EXPENSE'].includes(r.account_type) ? 'debit' : 'credit'
+    }));
+
+    const totalDebits = accounts.reduce((s: number, a: any) => s + a.total_debits, 0);
+    const totalCredits = accounts.reduce((s: number, a: any) => s + a.total_credits, 0);
+
+    res.json({
+      success: true,
+      data: {
+        accounts,
+        summary: {
+          total_debits: totalDebits,
+          total_credits: totalCredits,
+          is_balanced: Math.abs(totalDebits - totalCredits) < 0.01,
+          variance: totalDebits - totalCredits
+        },
+        period: {
+          fiscal_year: fiscalYear,
+          fiscal_period: fiscalPeriod
+        },
+        totals: {
+          total_debits: totalDebits,
+          total_credits: totalCredits,
+          is_balanced: Math.abs(totalDebits - totalCredits) < 0.01,
+          variance: totalDebits - totalCredits
+        }
+      }
+    });
   } catch (error) {
     console.error('Error fetching trial balance:', error);
     res.status(500).json({ success: false, message: 'Failed to fetch trial balance', error: error instanceof Error ? error.message : 'Unknown error' });
@@ -893,7 +950,21 @@ export const getIncomeStatement = async (req: TenantRequest, res: Response) => {
 
     const totalRevenue = revenueResult.rows.reduce((sum: number, r: any) => sum + parseFloat(r.balance || 0), 0);
     const totalExpenses = expenseResult.rows.reduce((sum: number, r: any) => sum + parseFloat(r.balance || 0), 0);
+
+    // Separate Cost of Sales (5xxx) from Operating Expenses (6xxx+)
+    const cogsRows = expenseResult.rows.filter((r: any) => (r.account_code || '').startsWith('5'));
+    const opexRows = expenseResult.rows.filter((r: any) => !(r.account_code || '').startsWith('5'));
+    const totalCOGS = cogsRows.reduce((sum: number, r: any) => sum + parseFloat(r.balance || 0), 0);
+    const totalOpex = opexRows.reduce((sum: number, r: any) => sum + parseFloat(r.balance || 0), 0);
+    const grossProfit = totalRevenue - totalCOGS;
     const netIncome = totalRevenue - totalExpenses;
+
+    // Map to frontend AccountBalance shape: { account_code, account_name, amount }
+    const mapISAccount = (r: any) => ({
+      account_code: r.account_code,
+      account_name: r.account_name,
+      amount: parseFloat(r.balance || 0)
+    });
 
     res.json({
       success: true,
@@ -901,25 +972,21 @@ export const getIncomeStatement = async (req: TenantRequest, res: Response) => {
         period: { start_date: fromDate, end_date: toDate, label: `${fromDate} to ${toDate}` },
         revenue: {
           title: 'Revenue',
-          accounts: revenueResult.rows.map((r: any) => ({
-            code: r.account_code,
-            name: r.account_name,
-            balance: parseFloat(r.balance || 0)
-          })),
+          accounts: revenueResult.rows.map(mapISAccount),
           subtotal: totalRevenue
         },
-        cost_of_sales: { title: 'Cost of Sales', accounts: [], subtotal: 0 },
-        gross_profit: totalRevenue,
+        cost_of_sales: {
+          title: 'Cost of Sales',
+          accounts: cogsRows.map(mapISAccount),
+          subtotal: totalCOGS
+        },
+        gross_profit: grossProfit,
         operating_expenses: {
           title: 'Operating Expenses',
-          accounts: expenseResult.rows.map((r: any) => ({
-            code: r.account_code,
-            name: r.account_name,
-            balance: parseFloat(r.balance || 0)
-          })),
-          subtotal: totalExpenses
+          accounts: opexRows.map(mapISAccount),
+          subtotal: totalOpex
         },
-        operating_profit: netIncome,
+        operating_profit: grossProfit - totalOpex,
         other_income: { title: 'Other Income', accounts: [], subtotal: 0 },
         other_expenses: { title: 'Other Expenses', accounts: [], subtotal: 0 },
         net_profit_before_tax: netIncome,
@@ -953,22 +1020,22 @@ export const getBalanceSheet = async (req: TenantRequest, res: Response) => {
         COALESCE(NULLIF(coa.account_name, ''), coa.name) AS account_name,
         LOWER(coa.account_type) AS account_type,
         coa.account_category,
-        SUM(jel.debit_amount) AS total_debits,
-        SUM(jel.credit_amount) AS total_credits,
+        COALESCE(SUM(jel.debit_amount), 0) AS total_debits,
+        COALESCE(SUM(jel.credit_amount), 0) AS total_credits,
         CASE 
-          WHEN LOWER(coa.account_type) IN ('asset', 'expense') THEN SUM(jel.debit_amount - jel.credit_amount)
-          ELSE SUM(jel.credit_amount - jel.debit_amount)
+          WHEN LOWER(coa.account_type) IN ('asset', 'expense') THEN COALESCE(SUM(jel.debit_amount - jel.credit_amount), 0)
+          ELSE COALESCE(SUM(jel.credit_amount - jel.debit_amount), 0)
         END AS balance
-      FROM chart_of_accounts coa
-      LEFT JOIN journal_entry_lines jel ON jel.account_id = coa.id AND jel.tenant_id = $1
-      LEFT JOIN journal_entries je ON je.id = jel.journal_entry_id 
-        AND LOWER(je.status) = 'posted' 
+      FROM journal_entries je
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = jel.tenant_id
+      WHERE je.tenant_id = $1
+        AND LOWER(je.status) = 'posted'
         AND COALESCE(je.journal_date, je.entry_date, je.posting_date) <= $2
-      WHERE coa.tenant_id = $1 
         AND LOWER(coa.account_type) IN ('asset', 'liability', 'equity')
       GROUP BY coa.code, coa.account_code, coa.name, coa.account_name, coa.account_type, coa.account_category
-      HAVING SUM(COALESCE(jel.debit_amount, 0)) != 0 OR SUM(COALESCE(jel.credit_amount, 0)) != 0
-      ORDER BY coa.code
+      HAVING COALESCE(SUM(jel.debit_amount), 0) != 0 OR COALESCE(SUM(jel.credit_amount), 0) != 0
+      ORDER BY COALESCE(NULLIF(coa.account_code, ''), coa.code)
     `;
 
     const result = await query(balanceQuery, [ctx.tenantId, asOfDate]);
@@ -1001,18 +1068,25 @@ export const getBalanceSheet = async (req: TenantRequest, res: Response) => {
     const totalEquityWithRE = totalEquity + retainedEarnings;
     const totalLE = totalLiabilities + totalEquityWithRE;
 
-    const mapAccount = (r: any) => ({ code: r.account_code, name: r.account_name, balance: parseFloat(r.balance || 0) });
+    // Map DB row → frontend AccountBalance shape: { account_code, account_name, amount }
+    const mapAccount = (r: any) => ({ account_code: r.account_code, account_name: r.account_name, amount: parseFloat(r.balance || 0) });
 
-    // Calculate subtotals properly
-    const currentAssets = assets.filter((r: any) => (r.account_code || '').startsWith('1'));
-    const nonCurrentAssets = assets.filter((r: any) => !(r.account_code || '').startsWith('1'));
+    // Classify assets: 1000–1499 = Current, 1500+ = Non-Current (PPE, Intangibles)
+    const currentAssets = assets.filter((r: any) => (r.account_code || '') < '1500');
+    const nonCurrentAssets = assets.filter((r: any) => (r.account_code || '') >= '1500');
     const currentAssetsTotal = currentAssets.reduce((s: number, r: any) => s + parseFloat(r.balance || 0), 0);
     const nonCurrentAssetsTotal = nonCurrentAssets.reduce((s: number, r: any) => s + parseFloat(r.balance || 0), 0);
+
+    // Classify liabilities: 2000–2499 = Current, 2500+ = Non-Current
+    const currentLiabs = liabilities.filter((r: any) => (r.account_code || '') < '2500');
+    const nonCurrentLiabs = liabilities.filter((r: any) => (r.account_code || '') >= '2500');
+    const currentLiabsTotal = currentLiabs.reduce((s: number, r: any) => s + parseFloat(r.balance || 0), 0);
+    const nonCurrentLiabsTotal = nonCurrentLiabs.reduce((s: number, r: any) => s + parseFloat(r.balance || 0), 0);
 
     // Add retained earnings to equity accounts list
     const equityAccountsMapped = equityAccounts.map(mapAccount);
     if (Math.abs(retainedEarnings) > 0.01) {
-      equityAccountsMapped.push({ code: '3200', name: 'Retained Earnings (Net Income)', balance: retainedEarnings });
+      equityAccountsMapped.push({ account_code: '3200', account_name: 'Retained Earnings (Net Income)', amount: retainedEarnings });
     }
 
     res.json({
@@ -1023,8 +1097,8 @@ export const getBalanceSheet = async (req: TenantRequest, res: Response) => {
         current_assets: { title: 'Current Assets', accounts: currentAssets.map(mapAccount), subtotal: currentAssetsTotal },
         non_current_assets: { title: 'Non-Current Assets', accounts: nonCurrentAssets.map(mapAccount), subtotal: nonCurrentAssetsTotal },
         total_assets: totalAssets,
-        current_liabilities: { title: 'Current Liabilities', accounts: liabilities.map(mapAccount), subtotal: totalLiabilities },
-        non_current_liabilities: { title: 'Non-Current Liabilities', accounts: [], subtotal: 0 },
+        current_liabilities: { title: 'Current Liabilities', accounts: currentLiabs.map(mapAccount), subtotal: currentLiabsTotal },
+        non_current_liabilities: { title: 'Non-Current Liabilities', accounts: nonCurrentLiabs.map(mapAccount), subtotal: nonCurrentLiabsTotal },
         total_liabilities: totalLiabilities,
         equity: { title: 'Equity', accounts: equityAccountsMapped, subtotal: totalEquityWithRE },
         total_equity: totalEquityWithRE,
