@@ -97,6 +97,13 @@ const BankingHub: React.FC = () => {
   const [showStatementImportModal, setShowStatementImportModal] = useState(false);
   const [importingStatement, setImportingStatement] = useState(false);
   const [importFileList, setImportFileList] = useState<UploadFile[]>([]);
+
+  // Bank Transactions tab state
+  const [allTransactions, setAllTransactions] = useState<any[]>([]);
+  const [txnLoading, setTxnLoading] = useState(false);
+  const [txnFilter, setTxnFilter] = useState<string>('all');
+  const [txnSearch, setTxnSearch] = useState<string>('');
+  const [txnAccountFilter, setTxnAccountFilter] = useState<string>('all');
   
   useEffect(() => {
     const fetchBankingData = async () => {
@@ -280,6 +287,43 @@ const BankingHub: React.FC = () => {
       setCashFlowLoading(false);
     }
   };
+
+  // Fetch all bank transactions for the Transactions tab
+  const fetchAllTransactions = useCallback(async () => {
+    setTxnLoading(true);
+    try {
+      // Fetch statement lines for all accounts
+      const promises = bankConnections.map(acc =>
+        apiClient.get(`/api/v2/cash-management/statement-lines?bank_account_id=${acc.id}&limit=5000`).catch(() => ({ data: { data: [] } }))
+      );
+      const results = await Promise.all(promises);
+      const allLines: any[] = [];
+      results.forEach((res, idx) => {
+        const lines = res.data?.data || [];
+        lines.forEach((l: any) => {
+          allLines.push({
+            ...l,
+            _accountName: bankConnections[idx]?.accountName || 'Unknown',
+            _currency: bankConnections[idx]?.currency || 'ZAR',
+          });
+        });
+      });
+      // Sort by date desc
+      allLines.sort((a, b) => new Date(b.transaction_date || b.date || 0).getTime() - new Date(a.transaction_date || a.date || 0).getTime());
+      setAllTransactions(allLines);
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+    } finally {
+      setTxnLoading(false);
+    }
+  }, [bankConnections]);
+
+  // Load transactions when tab becomes active or bankConnections change
+  useEffect(() => {
+    if (activeTab === 'transactions' && bankConnections.length > 0 && allTransactions.length === 0) {
+      fetchAllTransactions();
+    }
+  }, [activeTab, bankConnections, fetchAllTransactions]);
 
   // Load banking settings
   const loadSettings = useCallback(async () => {
@@ -911,6 +955,180 @@ const BankingHub: React.FC = () => {
               )}
             </Col>
           </Row>
+        </TabPane>
+
+        <TabPane
+          tab={<span><FileTextOutlined /> Transactions <Badge count={allTransactions.length} style={{ backgroundColor: '#3b82f6', marginLeft: 4 }} overflowCount={9999} /></span>}
+          key="transactions"
+        >
+          <Card>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <Input
+                  placeholder="Search transactions..."
+                  prefix={<EyeOutlined />}
+                  value={txnSearch}
+                  onChange={(e) => setTxnSearch(e.target.value)}
+                  style={{ width: 280 }}
+                  allowClear
+                />
+                <Select value={txnFilter} onChange={setTxnFilter} style={{ width: 150 }}>
+                  <Select.Option value="all">All Types</Select.Option>
+                  <Select.Option value="credit">Money In (Credit)</Select.Option>
+                  <Select.Option value="debit">Money Out (Debit)</Select.Option>
+                </Select>
+                <Select value={txnAccountFilter} onChange={setTxnAccountFilter} style={{ width: 200 }}>
+                  <Select.Option value="all">All Accounts</Select.Option>
+                  {bankConnections.map(acc => (
+                    <Select.Option key={acc.id} value={acc.id}>{acc.accountName}</Select.Option>
+                  ))}
+                </Select>
+              </div>
+              <Space>
+                <Button icon={<SyncOutlined />} onClick={fetchAllTransactions} loading={txnLoading}>
+                  Refresh
+                </Button>
+                <Button icon={<DownloadOutlined />} onClick={() => {
+                  const filtered = allTransactions.filter(t => {
+                    const matchType = txnFilter === 'all' || (txnFilter === 'credit' ? parseFloat(t.credit_amount || 0) > 0 : parseFloat(t.debit_amount || 0) > 0);
+                    const matchSearch = !txnSearch || (t.description || '').toLowerCase().includes(txnSearch.toLowerCase()) || (t.reference || '').toLowerCase().includes(txnSearch.toLowerCase());
+                    const matchAcct = txnAccountFilter === 'all' || t._accountName === bankConnections.find(b => b.id === txnAccountFilter)?.accountName;
+                    return matchType && matchSearch && matchAcct;
+                  });
+                  const csv = ['Date,Description,Reference,Debit,Credit,Balance,Status,Account']
+                    .concat(filtered.map(t => [
+                      t.transaction_date?.split('T')[0] || '',
+                      `"${(t.description || '').replace(/"/g, '""')}"`,
+                      t.reference || '',
+                      t.debit_amount || 0,
+                      t.credit_amount || 0,
+                      t.balance || '',
+                      t.status || '',
+                      t._accountName || '',
+                    ].join(',')))
+                    .join('\n');
+                  const blob = new Blob([csv], { type: 'text/csv' });
+                  const a = document.createElement('a');
+                  a.href = URL.createObjectURL(blob);
+                  a.download = 'bank-transactions.csv';
+                  a.click();
+                }}>
+                  Export CSV
+                </Button>
+              </Space>
+            </div>
+
+            {/* Summary Bar */}
+            {allTransactions.length > 0 && (
+              <Row gutter={16} style={{ marginBottom: 16 }}>
+                <Col span={6}>
+                  <Statistic title="Total Transactions" value={allTransactions.length} valueStyle={{ fontSize: 18 }} />
+                </Col>
+                <Col span={6}>
+                  <Statistic title="Total Inflows (Credits)" prefix="R"
+                    value={allTransactions.reduce((s, t) => s + parseFloat(t.debit_amount || 0), 0)}
+                    precision={2} valueStyle={{ color: '#10b981', fontSize: 18 }} />
+                </Col>
+                <Col span={6}>
+                  <Statistic title="Total Outflows (Debits)" prefix="R"
+                    value={allTransactions.reduce((s, t) => s + parseFloat(t.credit_amount || 0), 0)}
+                    precision={2} valueStyle={{ color: '#ef4444', fontSize: 18 }} />
+                </Col>
+                <Col span={6}>
+                  <Statistic title="Allocated" suffix={`/ ${allTransactions.length}`}
+                    value={allTransactions.filter(t => t.status === 'allocated' || t.status === 'reconciled').length}
+                    valueStyle={{ fontSize: 18 }} />
+                </Col>
+              </Row>
+            )}
+
+            <Table
+              dataSource={allTransactions.filter(t => {
+                const matchType = txnFilter === 'all' || (txnFilter === 'credit' ? parseFloat(t.debit_amount || 0) > 0 : parseFloat(t.credit_amount || 0) > 0);
+                const matchSearch = !txnSearch || (t.description || '').toLowerCase().includes(txnSearch.toLowerCase()) || (t.reference || '').toLowerCase().includes(txnSearch.toLowerCase());
+                const matchAcct = txnAccountFilter === 'all' || t._accountName === bankConnections.find(b => b.id === txnAccountFilter)?.accountName;
+                return matchType && matchSearch && matchAcct;
+              })}
+              columns={[
+                {
+                  title: 'Date', dataIndex: 'transaction_date', key: 'date', width: 110,
+                  sorter: (a: any, b: any) => new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime(),
+                  render: (d: string) => {
+                    try { return <Text style={{ fontSize: 12 }}>{new Date(d).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' })}</Text>; }
+                    catch { return <Text style={{ fontSize: 12 }}>{d}</Text>; }
+                  }
+                },
+                {
+                  title: 'Description', dataIndex: 'description', key: 'description',
+                  render: (text: string, record: any) => (
+                    <div>
+                      <div><Text strong style={{ fontSize: 13 }}>{text}</Text></div>
+                      {record.reference && <div><Text type="secondary" style={{ fontSize: 11 }}>Ref: {record.reference}</Text></div>}
+                    </div>
+                  )
+                },
+                {
+                  title: 'Money In', dataIndex: 'debit_amount', key: 'credit', width: 130, align: 'right' as const,
+                  sorter: (a: any, b: any) => parseFloat(a.debit_amount || 0) - parseFloat(b.debit_amount || 0),
+                  render: (v: string) => {
+                    const amt = parseFloat(v || '0');
+                    return amt > 0 ? <Text strong style={{ color: '#10b981' }}>R {amt.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}</Text> : <Text type="secondary">-</Text>;
+                  }
+                },
+                {
+                  title: 'Money Out', dataIndex: 'credit_amount', key: 'debit', width: 130, align: 'right' as const,
+                  sorter: (a: any, b: any) => parseFloat(a.credit_amount || 0) - parseFloat(b.credit_amount || 0),
+                  render: (v: string) => {
+                    const amt = parseFloat(v || '0');
+                    return amt > 0 ? <Text strong style={{ color: '#ef4444' }}>R {amt.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}</Text> : <Text type="secondary">-</Text>;
+                  }
+                },
+                {
+                  title: 'Balance', dataIndex: 'balance', key: 'balance', width: 140, align: 'right' as const,
+                  render: (v: string) => {
+                    const amt = parseFloat(v || '0');
+                    return <Text strong>R {amt.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}</Text>;
+                  }
+                },
+                {
+                  title: 'Status', dataIndex: 'status', key: 'status', width: 110,
+                  filters: [
+                    { text: 'Allocated', value: 'allocated' },
+                    { text: 'Unmatched', value: 'unmatched' },
+                    { text: 'Reconciled', value: 'reconciled' },
+                  ],
+                  onFilter: (value: any, record: any) => record.status === value,
+                  render: (s: string) => {
+                    const color = s === 'allocated' || s === 'reconciled' ? 'green' : s === 'unmatched' ? 'orange' : 'default';
+                    return <Tag color={color}>{(s || 'unknown').charAt(0).toUpperCase() + (s || 'unknown').slice(1)}</Tag>;
+                  }
+                },
+                {
+                  title: 'Account', key: 'account', width: 160,
+                  render: (_: any, record: any) => <Text type="secondary" style={{ fontSize: 11 }}>{record._accountName}</Text>
+                },
+              ]}
+              rowKey={(r: any) => r.line_id || r.id || `${r.transaction_date}-${r.description}-${Math.random()}`}
+              size="small"
+              loading={txnLoading}
+              pagination={{ pageSize: 50, showSizeChanger: true, pageSizeOptions: ['25', '50', '100', '200'], showTotal: (total: number) => `${total} transactions` }}
+              scroll={{ y: 600 }}
+              summary={(data) => {
+                const totalIn = data.reduce((s, r: any) => s + parseFloat(r.debit_amount || 0), 0);
+                const totalOut = data.reduce((s, r: any) => s + parseFloat(r.credit_amount || 0), 0);
+                return (
+                  <Table.Summary fixed>
+                    <Table.Summary.Row style={{ background: '#f8fafc', fontWeight: 'bold' }}>
+                      <Table.Summary.Cell index={0} colSpan={2}><Text strong>Page Totals</Text></Table.Summary.Cell>
+                      <Table.Summary.Cell index={2} align="right"><Text strong style={{ color: '#10b981' }}>R {totalIn.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}</Text></Table.Summary.Cell>
+                      <Table.Summary.Cell index={3} align="right"><Text strong style={{ color: '#ef4444' }}>R {totalOut.toLocaleString('en-ZA', { minimumFractionDigits: 2 })}</Text></Table.Summary.Cell>
+                      <Table.Summary.Cell index={4} colSpan={3} />
+                    </Table.Summary.Row>
+                  </Table.Summary>
+                );
+              }}
+            />
+          </Card>
         </TabPane>
 
         <TabPane 

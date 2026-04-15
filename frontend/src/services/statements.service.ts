@@ -8,8 +8,8 @@ export const statementsService = {
   },
   async getCustomerStatement(customerId: string, from?: string, to?: string) {
     const params: Record<string, string> = {};
-    if (from) params.from = from;
-    if (to) params.to = to;
+    if (from) params.date_from = from;
+    if (to) params.date_to = to;
     const { data } = await apiClient.get(`/api/sales/customers/${customerId}/statement`, { params });
     return data;
   },
@@ -21,8 +21,8 @@ export const statementsService = {
   },
   async getSupplierStatement(supplierId: string, from?: string, to?: string) {
     const params: Record<string, string> = {};
-    if (from) params.from = from;
-    if (to) params.to = to;
+    if (from) params.date_from = from;
+    if (to) params.date_to = to;
     const { data } = await apiClient.get(`/api/purchase/suppliers/${supplierId}/statement`, { params });
     return data;
   },

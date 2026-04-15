@@ -43,7 +43,7 @@ interface Aging {
 interface StatementData {
   customer?: any;
   supplier?: any;
-  period: { from: string; to: string };
+  period?: { from: string; to: string };
   openingBalance: number;
   closingBalance: number;
   transactions: Transaction[];
@@ -116,7 +116,29 @@ const StatementsPage: React.FC<StatementsPageProps> = ({ defaultMode = 'customer
       const result = mode === 'customers'
         ? await statementsService.getCustomerStatement(selectedId, from, to)
         : await statementsService.getSupplierStatement(selectedId, from, to);
-      if (result.success) setStatement(result.data);
+      if (result.success) {
+        const d = result.data;
+        // Map aging bucket names from backend (current, 1-30, 31-60, 61-90, 90+) to frontend (current, days30, days60, days90, days120Plus)
+        const rawAging = d.aging || {};
+        const aging: Aging = {
+          current: rawAging.current || 0,
+          days30: rawAging['1-30'] || rawAging.days30 || 0,
+          days60: rawAging['31-60'] || rawAging.days60 || 0,
+          days90: rawAging['61-90'] || rawAging.days90 || 0,
+          days120Plus: rawAging['90+'] || rawAging.days120Plus || 0,
+          total: rawAging.total || 0,
+        };
+        // Calculate totals from transactions if not in response
+        const totalDebit = d.totalDebit || d.transactions?.reduce((s: number, t: any) => s + (Number(t.debit) || 0), 0) || 0;
+        const totalCredit = d.totalCredit || d.transactions?.reduce((s: number, t: any) => s + (Number(t.credit) || 0), 0) || 0;
+        setStatement({
+          ...d,
+          period: d.period || { from, to },
+          aging,
+          totalDebit,
+          totalCredit,
+        });
+      }
     } catch (err) {
       message.error('Failed to load statement');
     } finally {
@@ -287,7 +309,7 @@ const StatementsPage: React.FC<StatementsPageProps> = ({ defaultMode = 'customer
                 <Text type="secondary">{mode === 'customers' ? 'Customer' : 'Supplier'} Statement</Text>
               </Col>
               <Col span={12} style={{ textAlign: 'right' }}>
-                <Text type="secondary">Period: {dayjs(statement.period.from).format('DD MMM YYYY')} — {dayjs(statement.period.to).format('DD MMM YYYY')}</Text>
+                <Text type="secondary">Period: {dayjs(statement.period?.from || dateRange[0]).format('DD MMM YYYY')} — {dayjs(statement.period?.to || dateRange[1]).format('DD MMM YYYY')}</Text>
               </Col>
             </Row>
 
