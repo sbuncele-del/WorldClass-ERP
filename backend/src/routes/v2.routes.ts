@@ -14,6 +14,7 @@ import BalanceSheetControllerV2 from '../controllers/balance-sheet.controller.v2
 import IncomeStatementControllerV2 from '../controllers/income-statement.controller.v2';
 import CashFlowControllerV2 from '../controllers/cash-flow.controller.v2';
 import GLExplorerControllerV2 from '../controllers/gl-explorer.controller.v2';
+import { AnnualFinancialStatementsController } from '../controllers/afs.controller.v2';
 import ReportsControllerV2 from '../controllers/reports.controller.v2';
 import CustomReportsControllerV2 from '../controllers/custom-reports.controller.v2';
 import RecurringEntriesControllerV2 from '../controllers/recurring-entries.controller.v2';
@@ -1550,6 +1551,11 @@ router.get('/financial/gl-explorer/account-ledger/:accountCode', GLExplorerContr
 router.get('/financial/gl-explorer/report', GLExplorerControllerV2.getGeneralLedgerReport);
 router.get('/financial/gl-explorer/filter-options', GLExplorerControllerV2.getFilterOptions);
 router.post('/financial/gl-explorer/export', GLExplorerControllerV2.exportResults);
+
+// ============================================================================
+// ANNUAL FINANCIAL STATEMENTS (entity-scoped)
+// ============================================================================
+router.get('/financial/afs/generate', AnnualFinancialStatementsController.generate);
 
 // ============================================================================
 // RECURRING ENTRIES (entity-scoped)

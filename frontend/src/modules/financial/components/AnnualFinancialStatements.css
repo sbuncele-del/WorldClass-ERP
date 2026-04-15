@@ -1,0 +1,422 @@
+/* ═══════════════════════════════════════════════════════════
+   Annual Financial Statements – Professional AFS Styling
+   Draftworx / IFRS-for-SMEs compliant presentation
+   ═══════════════════════════════════════════════════════════ */
+
+.afs-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 24px;
+  font-family: 'Times New Roman', Georgia, serif;
+  color: #1a1a1a;
+  background: #fff;
+}
+
+/* ── Generate Panel ── */
+.afs-generate-panel {
+  text-align: center;
+  padding: 80px 40px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  border: 1px solid #dee2e6;
+}
+
+.afs-generate-panel h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #1a365d;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.afs-generate-panel p {
+  color: #6c757d;
+  margin-bottom: 32px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.afs-generate-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.afs-generate-controls label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.afs-generate-controls select {
+  padding: 10px 16px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+}
+
+/* ── Buttons ── */
+.afs-btn {
+  padding: 8px 16px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  background: #fff;
+  color: #495057;
+  font-size: 13px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.afs-btn:hover { background: #f8f9fa; border-color: #adb5bd; }
+
+.afs-btn-primary {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 6px;
+  background: #1a365d;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.afs-btn-primary:hover { background: #2a4a7f; }
+
+.afs-error {
+  margin-top: 16px;
+  padding: 12px;
+  background: #fee2e2;
+  color: #991b1b;
+  border-radius: 6px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+/* ── Loading ── */
+.afs-loading {
+  text-align: center;
+  padding: 80px;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.afs-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e9ecef;
+  border-top-color: #1a365d;
+  border-radius: 50%;
+  animation: afs-spin 0.6s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes afs-spin { to { transform: rotate(360deg); } }
+
+/* ── Header / Navigation ── */
+.afs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #1a365d;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.afs-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a365d;
+  margin: 0;
+}
+
+.afs-header p {
+  color: #6c757d;
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.afs-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.afs-header-right select {
+  padding: 6px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+/* ── Tabs ── */
+.afs-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid #e9ecef;
+  overflow-x: auto;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.afs-tab {
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  color: #6c757d;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+
+.afs-tab:hover { color: #1a365d; }
+
+.afs-tab.active {
+  color: #1a365d;
+  border-bottom-color: #1a365d;
+  font-weight: 600;
+}
+
+/* ── Statement Layout ── */
+.afs-statement {
+  background: #fff;
+  padding: 0;
+}
+
+.afs-statement-header {
+  text-align: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.afs-statement-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.afs-statement-header p {
+  font-size: 14px;
+  color: #495057;
+  margin: 0;
+  font-style: italic;
+}
+
+/* ── Tables ── */
+.afs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.afs-table thead th {
+  font-weight: 600;
+  padding: 8px 12px;
+  border-bottom: 2px solid #1a1a1a;
+  text-align: left;
+  font-size: 13px;
+}
+
+.afs-table tbody td {
+  padding: 4px 12px;
+  border: none;
+  vertical-align: top;
+}
+
+.afs-amount {
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  min-width: 120px;
+}
+
+.afs-note-col {
+  text-align: center !important;
+  width: 50px;
+  min-width: 50px;
+}
+
+.afs-note-ref {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* ── Row Types ── */
+.afs-section-header td {
+  font-weight: 700;
+  padding-top: 16px !important;
+  padding-bottom: 4px !important;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.afs-subsection td {
+  font-weight: 600;
+  padding-top: 12px !important;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.afs-indent { padding-left: 28px !important; }
+.afs-indent-2 { padding-left: 44px !important; }
+
+.afs-subtotal td {
+  border-top: 1px solid #adb5bd;
+  font-weight: 600;
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+
+.afs-total td {
+  border-top: 1px solid #1a1a1a;
+  font-weight: 700;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+.afs-total-final td {
+  border-top: 2px solid #1a1a1a;
+  border-bottom: 2px solid #1a1a1a;
+}
+
+/* ── Equity Table ── */
+.afs-equity-table {
+  max-width: 700px;
+}
+
+/* ── Notes ── */
+.afs-notes {
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.afs-note {
+  margin-bottom: 28px;
+}
+
+.afs-note h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  border-bottom: 1px solid #e9ecef;
+  padding-bottom: 4px;
+}
+
+.afs-note p {
+  margin: 4px 0 8px;
+  text-align: justify;
+}
+
+.afs-note-table {
+  max-width: 500px;
+  margin-top: 8px;
+}
+
+.afs-note-table td { font-size: 13px; }
+
+/* ── Print Cover ── */
+.afs-print-cover { display: none; }
+
+.afs-print-title {
+  text-align: center;
+  margin-top: 120px;
+}
+
+.afs-print-title h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.afs-print-title .afs-reg {
+  font-size: 14px;
+  color: #495057;
+  margin-bottom: 40px;
+}
+
+.afs-print-title h2 {
+  font-size: 22px;
+  margin-top: 40px;
+}
+
+.afs-print-title h3 {
+  font-size: 16px;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.afs-print-meta {
+  margin-top: 80px;
+}
+
+.afs-print-meta table {
+  width: 80%;
+  margin: 0 auto;
+  font-size: 14px;
+}
+
+.afs-print-meta td {
+  padding: 6px 12px;
+  vertical-align: top;
+}
+
+.afs-print-meta td:first-child {
+  font-weight: 600;
+  width: 200px;
+}
+
+/* ── Footer ── */
+.afs-footer {
+  text-align: center;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid #adb5bd;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* ── Print Styles ── */
+.print-only { display: none; }
+
+@media print {
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+
+  .afs-container {
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  .afs-statement {
+    page-break-before: always;
+  }
+
+  .afs-statement:first-of-type {
+    page-break-before: auto;
+  }
+
+  .afs-print-cover {
+    display: block;
+    page-break-after: always;
+  }
+
+  .afs-table { font-size: 12px; }
+  .afs-note { font-size: 12px; }
+
+  .afs-tabs { display: none; }
+
+  /* Show ALL statements for print */
+  .afs-statement { display: block !important; }
+}

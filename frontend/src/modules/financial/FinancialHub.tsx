@@ -1096,7 +1096,7 @@ const FinancialHub: React.FC = () => {
               actions={[
                 { icon: <PlusOutlined />, label: 'Journal Entry', onClick: () => setShowJournalModal(true) },
                 { icon: <CalculatorOutlined />, label: 'Reconcile' },
-                { icon: <PrinterOutlined />, label: 'Print Reports' },
+                { icon: <PrinterOutlined />, label: 'Annual Financial Statements', onClick: () => navigate('/financial/afs') },
                 { icon: <AuditOutlined />, label: 'Period Close' },
               ]}
             />
