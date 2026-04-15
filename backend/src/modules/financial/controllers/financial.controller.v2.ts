@@ -914,8 +914,8 @@ export const getIncomeStatement = async (req: TenantRequest, res: Response) => {
         SUM(jel.debit_amount) AS debits,
         SUM(jel.credit_amount - jel.debit_amount) AS balance
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
-      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = jel.tenant_id
       WHERE je.tenant_id = $1
         AND LOWER(je.status) = 'posted'
         AND COALESCE(je.journal_date, je.entry_date, je.posting_date) BETWEEN $2 AND $3
@@ -933,8 +933,8 @@ export const getIncomeStatement = async (req: TenantRequest, res: Response) => {
         SUM(jel.credit_amount) AS credits,
         SUM(jel.debit_amount - jel.credit_amount) AS balance
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
-      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = jel.tenant_id
       WHERE je.tenant_id = $1
         AND LOWER(je.status) = 'posted'
         AND COALESCE(je.journal_date, je.entry_date, je.posting_date) BETWEEN $2 AND $3
@@ -1055,8 +1055,8 @@ export const getBalanceSheet = async (req: TenantRequest, res: Response) => {
         COALESCE(SUM(CASE WHEN LOWER(coa.account_type) = 'revenue' THEN jel.credit_amount - jel.debit_amount ELSE 0 END), 0) AS total_revenue,
         COALESCE(SUM(CASE WHEN LOWER(coa.account_type) = 'expense' THEN jel.debit_amount - jel.credit_amount ELSE 0 END), 0) AS total_expenses
       FROM journal_entries je
-      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id
-      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id
+      INNER JOIN journal_entry_lines jel ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
+      INNER JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = jel.tenant_id
       WHERE je.tenant_id = $1
         AND LOWER(je.status) = 'posted'
         AND COALESCE(je.journal_date, je.entry_date, je.posting_date) <= $2

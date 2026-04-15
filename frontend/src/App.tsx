@@ -128,6 +128,7 @@ const AccountantPortalHub = lazy(() => import('./modules/accountant-portal/Accou
 const SupportTicketsHub = lazy(() => import('./modules/support-tickets/SupportTicketsHub'));
 const ReportsHub = lazy(() => import('./modules/reports/ReportsHub'));
 const ReportingHub = lazy(() => import('./modules/reporting/ReportingHub'));
+const ReportingApp = lazy(() => import('./modules/reporting/ReportingApp'));
 
 // Financial Sub-Pages
 const Dimensions = lazy(() => import('./pages/Dimensions'));
@@ -262,7 +263,7 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
             <Route path="/sars/*" element={<SARSSentinel />} />
             <Route path="/support-tickets" element={<SupportTicketsHub />} />
             <Route path="/reports" element={<ReportsHub />} />
-            <Route path="/reporting/*" element={<ReportingHub />} />
+            <Route path="/reporting/*" element={<ReportingApp />} />
             <Route path="/admin/*" element={<AdminHub />} />
             <Route path="/admin-hub/*" element={<AdminHub />} />
             <Route path="/accountant-portal/*" element={<AccountantPortalHub />} />
@@ -372,6 +373,30 @@ function App() {
               <ClientProvider>
                 <CurrencyProvider>
                   <AccountantApp />
+                </CurrencyProvider>
+              </ClientProvider>
+            </FeatureFlagProvider>
+          </UserProvider>
+        </ConfigProvider>
+      </ErrorBoundary>
+    );
+  }
+
+  if (portalType === 'reporting') {
+    return (
+      <ErrorBoundary>
+        <ConfigProvider theme={antdTheme}>
+          <UserProvider>
+            <FeatureFlagProvider>
+              <ClientProvider>
+                <CurrencyProvider>
+                  <Router>
+                    <Suspense fallback={<PageLoader />}>
+                      <Routes>
+                        <Route path="/*" element={<ReportingApp />} />
+                      </Routes>
+                    </Suspense>
+                  </Router>
                 </CurrencyProvider>
               </ClientProvider>
             </FeatureFlagProvider>
