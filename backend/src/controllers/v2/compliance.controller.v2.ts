@@ -61,9 +61,9 @@ export async function getRegulatoryFrameworks(req: TenantRequest, res: Response)
     const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     const query = `
-      SELECT * FROM regulatory_frameworks 
+      SELECT * FROM regulatory_filings 
       ${whereClause}
-      ORDER BY category, framework_name
+      ORDER BY due_date DESC
     `;
 
     const result = await pool.query(query, queryParams);
@@ -187,18 +187,13 @@ export async function getComplianceStatus(req: TenantRequest, res: Response): Pr
 
     const query = `
       SELECT 
-        cs.*,
-        cr.requirement_name,
-        cr.criticality,
-        rf.framework_name
-      FROM compliance_status cs
-      JOIN compliance_requirements cr ON cs.requirement_id = cr.requirement_id
-      JOIN regulatory_frameworks rf ON cr.framework_id = rf.framework_id
-      WHERE ${whereClause}
-      ORDER BY cs.due_date
+        rf.*
+      FROM regulatory_filings rf
+      WHERE rf.tenant_id = $1
+      ORDER BY rf.due_date DESC
     `;
 
-    const result = await pool.query(query, queryParams);
+    const result = await pool.query(query, [tenantId]);
 
     res.json({
       success: true,

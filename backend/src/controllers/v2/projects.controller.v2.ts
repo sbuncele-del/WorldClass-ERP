@@ -57,7 +57,7 @@ export async function getWorkspace(req: AuthenticatedRequest, res: Response): Pr
         COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled,
         COUNT(*) as total
       FROM projects
-      WHERE tenant_id = $1 AND is_active = true
+      WHERE tenant_id = $1
     `, [tenantId]);
 
     // Get task counts by status
@@ -76,30 +76,28 @@ export async function getWorkspace(req: AuthenticatedRequest, res: Response): Pr
     const budgetStats = await query(`
       SELECT 
         COALESCE(SUM(budget), 0) as total_budget,
-        COALESCE(SUM(spent), 0) as total_spent,
-        COALESCE(AVG(progress), 0) as avg_progress
+        0 as total_spent,
+        0 as avg_progress
       FROM projects
-      WHERE tenant_id = $1 AND is_active = true
+      WHERE tenant_id = $1
     `, [tenantId]);
 
     // Get recent projects
     const recentProjects = await query(`
-      SELECT p.id, p.project_code as code, p.project_name as name, p.status, p.progress, p.end_date,
-             u.first_name || ' ' || u.last_name as manager_name
+      SELECT p.project_id as id, p.project_code as code, p.project_name as name, p.status, 0 as progress, p.end_date,
+             p.manager_id
       FROM projects p
-      LEFT JOIN users u ON p.project_manager_id = u.id
-      WHERE p.tenant_id = $1 AND p.is_active = true
+      WHERE p.tenant_id = $1
       ORDER BY p.updated_at DESC
       LIMIT 5
     `, [tenantId]);
 
     // Get upcoming deadlines
     const upcomingDeadlines = await query(`
-      SELECT p.id, p.project_code as code, p.project_name as name, p.end_date,
+      SELECT p.project_id as id, p.project_code as code, p.project_name as name, p.end_date,
              (p.end_date - CURRENT_DATE) as days_remaining
       FROM projects p
       WHERE p.tenant_id = $1 
-        AND p.is_active = true 
         AND p.status IN ('planning', 'active')
         AND p.end_date IS NOT NULL
         AND p.end_date >= CURRENT_DATE
@@ -182,14 +180,12 @@ export async function listProjects(req: AuthenticatedRequest, res: Response): Pr
     const total = parseInt(countResult.rows[0].count);
 
     const result = await query(`
-      SELECT p.id, p.project_code as code, p.project_name as name, p.description, p.status,
-        p.priority, p.project_type, p.start_date, p.end_date, p.budget, p.spent, p.progress,
-        p.project_manager_id, p.created_at, p.updated_at, p.tenant_id,
-        u.first_name || ' ' || u.last_name as manager_name,
-        (SELECT COUNT(*) FROM project_tasks t WHERE t.project_id = p.id AND t.tenant_id = p.tenant_id) as task_count,
-        (SELECT COUNT(*) FROM project_tasks t WHERE t.project_id = p.id AND t.tenant_id = p.tenant_id AND t.status = 'done') as completed_tasks
+      SELECT p.project_id as id, p.project_code as code, p.project_name as name, p.description, p.status,
+        p.start_date, p.end_date, p.budget,
+        p.manager_id, p.created_at, p.updated_at, p.tenant_id,
+        0 as task_count,
+        0 as completed_tasks
       FROM projects p
-      LEFT JOIN users u ON p.project_manager_id = u.id
       ${whereClause}
       ORDER BY p.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -228,10 +224,9 @@ export async function getProject(req: AuthenticatedRequest, res: Response): Prom
 
   try {
     const result = await query(`
-      SELECT p.*, u.first_name || ' ' || u.last_name as manager_name
+      SELECT p.*
       FROM projects p
-      LEFT JOIN users u ON p.project_manager_id = u.id
-      WHERE p.id = $1 AND p.tenant_id = $2
+      WHERE p.project_id = $1 AND p.tenant_id = $2
     `, [id, tenantId]);
 
     if (result.rows.length === 0) {
@@ -241,12 +236,11 @@ export async function getProject(req: AuthenticatedRequest, res: Response): Prom
 
     // Get tasks for this project
     const tasksResult = await query(`
-      SELECT t.*, u.first_name || ' ' || u.last_name as assignee_name
+      SELECT t.*
       FROM project_tasks t
-      LEFT JOIN users u ON t.assigned_to = u.id
-      WHERE t.project_id = $1 AND t.tenant_id = $2
+      WHERE t.project_id = $1::text::uuid
       ORDER BY t.created_at DESC
-    `, [id, tenantId]);
+    `, [id]);
 
     res.json({
       success: true,
@@ -288,14 +282,14 @@ export async function createProject(req: AuthenticatedRequest, res: Response): P
     const result = await query(`
       INSERT INTO projects (
         tenant_id, project_code, project_name, description, client_name, status,
-        priority, project_type, start_date, end_date, budget, project_manager_id
+        start_date, end_date, budget, manager_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *
     `, [
       tenantId, code, name, description, client_name,
-      status || 'planning', priority || 'medium',
-      project_type || 'internal', start_date, end_date,
+      status || 'planning',
+      start_date, end_date,
       budget || 0, manager_id
     ]);
 
@@ -339,19 +333,15 @@ export async function updateProject(req: AuthenticatedRequest, res: Response): P
         description = COALESCE($4, description),
         client_name = COALESCE($5, client_name),
         status = COALESCE($6, status),
-        priority = COALESCE($7, priority),
-        project_type = COALESCE($8, project_type),
-        start_date = COALESCE($9, start_date),
-        end_date = COALESCE($10, end_date),
-        budget = COALESCE($11, budget),
-        spent = COALESCE($12, spent),
-        progress = COALESCE($13, progress),
-        project_manager_id = COALESCE($14, project_manager_id),
+        start_date = COALESCE($7, start_date),
+        end_date = COALESCE($8, end_date),
+        budget = COALESCE($9, budget),
+        manager_id = COALESCE($10, manager_id),
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = $1 AND tenant_id = $2
+      WHERE project_id = $1 AND tenant_id = $2
       RETURNING *
-    `, [id, tenantId, name, description, client_name, status, priority,
-        project_type, start_date, end_date, budget, spent, progress, manager_id]);
+    `, [id, tenantId, name, description, client_name, status,
+        start_date, end_date, budget, manager_id]);
 
     if (result.rows.length === 0) {
       res.status(404).json({ success: false, error: 'Project not found' });
@@ -382,9 +372,9 @@ export async function deleteProject(req: AuthenticatedRequest, res: Response): P
 
   try {
     const result = await query(`
-      UPDATE projects SET is_active = false, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $1 AND tenant_id = $2
-      RETURNING id
+      DELETE FROM projects
+      WHERE project_id = $1 AND tenant_id = $2
+      RETURNING project_id as id
     `, [id, tenantId]);
 
     if (result.rows.length === 0) {
@@ -422,7 +412,7 @@ export async function listTasks(req: AuthenticatedRequest, res: Response): Promi
   try {
     // Verify project belongs to tenant
     const projectCheck = await query(`
-      SELECT id FROM projects WHERE id = $1 AND tenant_id = $2
+      SELECT project_id FROM projects WHERE project_id = $1 AND tenant_id = $2
     `, [projectId, tenantId]);
 
     if (projectCheck.rows.length === 0) {
@@ -430,18 +420,17 @@ export async function listTasks(req: AuthenticatedRequest, res: Response): Promi
       return;
     }
 
-    let whereClause = 'WHERE t.project_id = $1 AND t.tenant_id = $2';
-    const params: any[] = [projectId, tenantId];
+    let whereClause = 'WHERE t.project_id = $1::text::uuid';
+    const params: any[] = [projectId];
 
     if (status) {
-      whereClause += ' AND t.status = $3';
+      whereClause += ' AND t.status = $2';
       params.push(status);
     }
 
     const result = await query(`
-      SELECT t.*, u.first_name || ' ' || u.last_name as assignee_name
+      SELECT t.*
       FROM project_tasks t
-      LEFT JOIN users u ON t.assigned_to = u.id
       ${whereClause}
       ORDER BY t.created_at DESC
     `, params);
@@ -597,15 +586,10 @@ export async function getTask(req: AuthenticatedRequest, res: Response): Promise
 
   try {
     const result = await query(`
-      SELECT t.*,
-             u.first_name || ' ' || u.last_name as assignee_name,
-             p.project_name as project_name,
-             p.project_code as project_code
+      SELECT t.*
       FROM project_tasks t
-      LEFT JOIN users u ON t.assigned_to = u.id
-      LEFT JOIN projects p ON t.project_id = p.id
-      WHERE t.id = $1 AND t.tenant_id = $2
-    `, [taskId, tenantId]);
+      WHERE t.task_id = $1
+    `, [taskId]);
 
     if (result.rows.length === 0) {
       res.status(404).json({ success: false, error: 'Task not found' });

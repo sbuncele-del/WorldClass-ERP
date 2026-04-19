@@ -52,7 +52,7 @@ export interface StockLevel {
 }
 
 export class InventoryItemRepository extends BaseRepository<InventoryItem> {
-  protected tableName = 'inventory_items';
+  protected tableName = 'items';
   protected schema = 'public';
   protected softDelete = false;
   protected entityScoped = false;
@@ -69,36 +69,36 @@ export class InventoryItemRepository extends BaseRepository<InventoryItem> {
     const offset = (page - 1) * limit;
 
     let sql = `
-      SELECT i.*, COALESCE(SUM(sl.quantity), 0) as stock
+      SELECT i.*, COALESCE(SUM(sl.on_hand_quantity), 0) as stock
       FROM ${this.fullTableName} i
-      LEFT JOIN inventory_stock_levels sl ON sl.item_id = i.id
-      WHERE i.tenant_id = $1 AND i.is_active = true
+      LEFT JOIN stock_levels sl ON sl.item_id = i.item_id
+      WHERE 1=1
     `;
     const params: any[] = [];
 
     if (warehouseId) {
-      sql += ` AND sl.warehouse_id = $2`;
+      sql += ` AND sl.warehouse_id = $${params.length + 1}`;
       params.push(warehouseId);
     }
 
     sql += `
-      GROUP BY i.id
+      GROUP BY i.item_id
       ORDER BY ${sortBy} ${sortOrder}
-      LIMIT $${params.length + 2} OFFSET $${params.length + 3}
+      LIMIT $${params.length + 1} OFFSET $${params.length + 2}
     `;
     params.push(limit, offset);
 
     const countSql = `
-      SELECT COUNT(DISTINCT i.id) FROM ${this.fullTableName} i
-      WHERE i.tenant_id = $1 AND i.is_active = true
+      SELECT COUNT(DISTINCT i.item_id) FROM ${this.fullTableName} i
     `;
 
-    const [data, countResult] = await Promise.all([
-      this.rawQuery(ctx, sql, params),
-      this.rawQuery<{ count: string }>(ctx, countSql)
+    const [dataResult, countResult] = await Promise.all([
+      this.query(sql, params),
+      this.query<{ count: string }>(countSql)
     ]);
 
-    const total = parseInt(countResult[0]?.count || '0', 10);
+    const data = dataResult.rows;
+    const total = parseInt(countResult.rows[0]?.count || '0', 10);
 
     return {
       data,

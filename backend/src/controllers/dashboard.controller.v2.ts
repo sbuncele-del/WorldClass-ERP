@@ -384,21 +384,14 @@ export class DashboardControllerV2 {
 
       // Get various KPIs
       const kpiQuery = `
-        WITH current_period AS (
-          SELECT start_date, end_date
-          FROM fiscal_periods
-          WHERE tenant_id = $1 AND status = 'OPEN'
-          ORDER BY start_date DESC
-          LIMIT 1
-        ),
-        financials AS (
+        WITH financials AS (
           SELECT 
             SUM(CASE WHEN coa.account_type = 'REVENUE' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as revenue,
             SUM(CASE WHEN coa.account_type = 'EXPENSE' THEN jel.debit_amount - jel.credit_amount ELSE 0 END) as expenses,
             SUM(CASE WHEN coa.account_type = 'ASSET' THEN jel.debit_amount - jel.credit_amount ELSE 0 END) as assets,
             SUM(CASE WHEN coa.account_type = 'LIABILITY' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as liabilities
           FROM journal_entry_lines jel
-          JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+          JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
           JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
           WHERE jel.tenant_id = $1 AND je.status = 'POSTED'
         )

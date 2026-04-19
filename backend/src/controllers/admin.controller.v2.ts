@@ -34,8 +34,8 @@ export class AdminControllerV2 {
       let paramIndex = 2;
 
       if (status) {
-        conditions.push(`u.is_active = $${paramIndex}`);
-        params.push(status === 'active');
+        conditions.push(`u.status = $${paramIndex}`);
+        params.push(status);
         paramIndex++;
       }
 
@@ -47,21 +47,12 @@ export class AdminControllerV2 {
 
       const query = `
         SELECT 
-          u.id as user_id, u.email, u.username, u.first_name, u.last_name, u.display_name,
-          u.phone, u.avatar_url, u.email_verified, u.mfa_enabled,
-          u.last_login_at, u.last_active_at, u.is_active, u.is_super_admin,
-          u.account_suspended, u.created_at,
-          COALESCE(
-            json_agg(
-              DISTINCT jsonb_build_object('role_id', r.role_id, 'role_name', r.role_name, 'role_code', r.role_code)
-            ) FILTER (WHERE r.role_id IS NOT NULL),
-            '[]'
-          ) as roles
+          u.id as user_id, u.email, u.first_name, u.last_name,
+          u.phone, u.avatar_url, u.email_verified,
+          u.last_login_at, u.status, u.role,
+          u.created_at
         FROM users u
-        LEFT JOIN user_roles ur ON u.id = ur.user_id AND ur.is_active = true
-        LEFT JOIN roles r ON ur.role_id = r.role_id
         WHERE ${conditions.join(' AND ')}
-        GROUP BY u.id
         ORDER BY u.created_at DESC
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
       `;
@@ -70,8 +61,8 @@ export class AdminControllerV2 {
       const result = await pool.query(query, params);
 
       // Count total
-      const countQuery = `SELECT COUNT(*) FROM users u WHERE ${conditions.slice(0, -2).join(' AND ') || 'u.tenant_id = $1'}`;
-      const countResult = await pool.query(countQuery, params.slice(0, -2));
+      const countQuery = `SELECT COUNT(*) FROM users u WHERE u.tenant_id = $1`;
+      const countResult = await pool.query(countQuery, [tenantId]);
 
       res.json({
         success: true,
@@ -102,18 +93,9 @@ export class AdminControllerV2 {
 
       const query = `
         SELECT 
-          u.*,
-          COALESCE(
-            json_agg(
-              DISTINCT jsonb_build_object('role_id', r.role_id, 'role_name', r.role_name, 'role_code', r.role_code)
-            ) FILTER (WHERE r.role_id IS NOT NULL),
-            '[]'
-          ) as roles
+          u.*
         FROM users u
-        LEFT JOIN user_roles ur ON u.id = ur.user_id AND ur.is_active = true
-        LEFT JOIN roles r ON ur.role_id = r.role_id
         WHERE u.id = $1 AND u.tenant_id = $2
-        GROUP BY u.id
       `;
 
       const result = await pool.query(query, [id, tenantId]);

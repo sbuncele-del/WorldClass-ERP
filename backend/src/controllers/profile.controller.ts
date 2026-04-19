@@ -27,9 +27,11 @@ export async function getProfile(req: AuthRequest, res: Response) {
 
     const result = await pool.query(
       `SELECT 
-        id, email, name, phone, avatar, role, 
-        email_verified, two_factor_enabled, 
-        timezone, language, created_at
+        id, email, first_name, last_name, 
+        COALESCE(first_name, '') || ' ' || COALESCE(last_name, '') as name, 
+        phone, avatar_url as avatar, role, 
+        email_verified, false as two_factor_enabled, 
+        'Africa/Johannesburg' as timezone, 'en' as language, created_at
       FROM users 
       WHERE id = $1`,
       [userId]

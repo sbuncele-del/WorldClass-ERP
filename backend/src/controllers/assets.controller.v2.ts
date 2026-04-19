@@ -53,9 +53,9 @@ export async function getAllAssets(req: TenantRequest, res: Response) {
 
     const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
 
-    let whereConditions: string[] = ['fa.tenant_id = $1'];
-    let queryParams: any[] = [tenantId];
-    let paramIndex = 2;
+    let whereConditions: string[] = [];
+    let queryParams: any[] = [];
+    let paramIndex = 1;
 
     if (category_id) {
       whereConditions.push(`fa.category_id = $${paramIndex++}`);
@@ -93,11 +93,11 @@ export async function getAllAssets(req: TenantRequest, res: Response) {
     }
 
     // Validate sort column to prevent SQL injection
-    const allowedSortColumns = ['asset_number', 'asset_name', 'purchase_cost', 'acquisition_date', 'asset_status', 'created_at'];
+    const allowedSortColumns = ['asset_number', 'asset_name', 'acquisition_cost', 'acquisition_date', 'asset_status', 'created_at'];
     const safeSortBy = allowedSortColumns.includes(sort_by as string) ? sort_by : 'asset_number';
     const safeSortOrder = sort_order === 'DESC' ? 'DESC' : 'ASC';
 
-    const whereClause = 'WHERE ' + whereConditions.join(' AND ');
+    const whereClause = whereConditions.length > 0 ? 'WHERE ' + whereConditions.join(' AND ') : '';
 
     // Main query
     const query = `
@@ -105,8 +105,8 @@ export async function getAllAssets(req: TenantRequest, res: Response) {
         fa.*,
         ac.category_name,
         COUNT(*) OVER() as total_count
-      FROM assets.fixed_assets fa
-      LEFT JOIN assets.asset_categories ac ON fa.category_id = ac.category_id
+      FROM fixed_assets fa
+      LEFT JOIN asset_categories ac ON fa.category_id = ac.category_id
       ${whereClause}
       ORDER BY fa.${safeSortBy} ${safeSortOrder}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -120,16 +120,15 @@ export async function getAllAssets(req: TenantRequest, res: Response) {
     const statsQuery = `
       SELECT 
         COUNT(*) as total_assets,
-        COALESCE(SUM(purchase_cost), 0) as total_acquisition_cost,
+        COALESCE(SUM(acquisition_cost), 0) as total_acquisition_cost,
         COUNT(CASE WHEN asset_status = 'ACTIVE' THEN 1 END) as active_assets,
         COUNT(CASE WHEN asset_status = 'IDLE' THEN 1 END) as idle_assets,
         COUNT(CASE WHEN asset_status = 'UNDER_MAINTENANCE' THEN 1 END) as under_maintenance,
         COUNT(CASE WHEN asset_status = 'DISPOSED' THEN 1 END) as disposed_assets
-      FROM assets.fixed_assets fa
-      WHERE fa.tenant_id = $1
+      FROM fixed_assets fa
     `;
 
-    const statsResult = await pool.query(statsQuery, [tenantId]);
+    const statsResult = await pool.query(statsQuery);
 
     res.json({
       success: true,
@@ -167,10 +166,10 @@ export async function getAssetById(req: TenantRequest, res: Response) {
         fa.*,
         ac.category_name,
         ac.category_code
-      FROM assets.fixed_assets fa
-      LEFT JOIN assets.asset_categories ac ON fa.category_id = ac.category_id
-      WHERE fa.asset_id = $1 AND fa.tenant_id = $2
-    `, [id, tenantId]);
+      FROM fixed_assets fa
+      LEFT JOIN asset_categories ac ON fa.category_id = ac.category_id
+      WHERE fa.asset_id = $1
+    `, [id]);
 
     if (assetResult.rows.length === 0) {
       return res.status(404).json({
@@ -183,14 +182,14 @@ export async function getAssetById(req: TenantRequest, res: Response) {
 
     // Get depreciation schedule
     const depreciationResult = await pool.query(`
-      SELECT * FROM assets.asset_depreciation_schedule
+      SELECT * FROM asset_depreciation_schedule
       WHERE asset_id = $1 AND tenant_id = $2
       ORDER BY period_number ASC
     `, [id, tenantId]);
 
     // Get maintenance history
     const maintenanceResult = await pool.query(`
-      SELECT * FROM assets.asset_maintenance
+      SELECT * FROM asset_maintenance
       WHERE asset_id = $1 AND tenant_id = $2
       ORDER BY maintenance_date DESC
       LIMIT 10
@@ -233,7 +232,7 @@ export async function createAsset(req: TenantRequest, res: Response) {
     // Generate asset number
     const seqResult = await client.query(`
       SELECT COALESCE(MAX(CAST(SUBSTRING(asset_number FROM 5) AS INTEGER)), 0) + 1 as next_seq
-      FROM assets.fixed_assets
+      FROM fixed_assets
       WHERE tenant_id = $1 AND asset_number LIKE 'AST-%'
     `, [tenantId]);
     const assetNumber = `AST-${String(seqResult.rows[0].next_seq).padStart(6, '0')}`;
@@ -244,7 +243,7 @@ export async function createAsset(req: TenantRequest, res: Response) {
       : (assetData.useful_life_months || 60);
 
     const result = await client.query(`
-      INSERT INTO assets.fixed_assets (
+      INSERT INTO fixed_assets (
         tenant_id, asset_number, asset_name, description, category_id,
         acquisition_cost, residual_value, useful_life_months, depreciation_method,
         acquisition_date, asset_status, location_id,
@@ -313,7 +312,7 @@ export async function updateAsset(req: TenantRequest, res: Response) {
 
     // Verify asset exists and belongs to tenant
     const existingAsset = await pool.query(
-      'SELECT * FROM assets.fixed_assets WHERE asset_id = $1 AND tenant_id = $2',
+      'SELECT * FROM fixed_assets WHERE asset_id = $1 AND tenant_id = $2',
       [id, tenantId]
     );
 
@@ -325,7 +324,7 @@ export async function updateAsset(req: TenantRequest, res: Response) {
     }
 
     const result = await pool.query(`
-      UPDATE assets.fixed_assets SET
+      UPDATE fixed_assets SET
         asset_name = COALESCE($1, asset_name),
         description = COALESCE($2, description),
         category_id = COALESCE($3, category_id),
@@ -381,7 +380,7 @@ export async function deleteAsset(req: TenantRequest, res: Response) {
     const { id } = req.params;
 
     const result = await pool.query(`
-      UPDATE assets.fixed_assets 
+      UPDATE fixed_assets 
       SET asset_status = 'DISPOSED', 
           updated_by = $1, 
           updated_at = CURRENT_TIMESTAMP
@@ -456,12 +455,11 @@ export async function getAssetCategories(req: TenantRequest, res: Response) {
     const result = await pool.query(`
       SELECT ac.*, 
              COUNT(fa.asset_id) as asset_count
-      FROM assets.asset_categories ac
-      LEFT JOIN assets.fixed_assets fa ON ac.category_id = fa.category_id AND fa.tenant_id = $1
-      WHERE ac.tenant_id = $1
+      FROM asset_categories ac
+      LEFT JOIN fixed_assets fa ON ac.category_id = fa.category_id
       GROUP BY ac.category_id
       ORDER BY ac.category_name
-    `, [tenantId]);
+    `);
 
     res.json({
       success: true,
@@ -487,7 +485,7 @@ export async function createAssetCategory(req: TenantRequest, res: Response) {
     const categoryData = req.body;
 
     const result = await pool.query(`
-      INSERT INTO assets.asset_categories (
+      INSERT INTO asset_categories (
         tenant_id, category_code, category_name, description,
         default_useful_life_years, default_depreciation_method, 
         default_residual_value_percentage, minimum_capitalization_amount,
@@ -538,8 +536,8 @@ export async function getAssetDisposals(req: TenantRequest, res: Response) {
     try {
       const result = await pool.query(`
         SELECT ad.*, fa.asset_number, fa.asset_name
-        FROM assets.asset_disposals ad
-        JOIN assets.fixed_assets fa ON ad.asset_id = fa.asset_id
+        FROM asset_disposals ad
+        JOIN fixed_assets fa ON ad.asset_id = fa.asset_id
         WHERE ad.tenant_id = $1
         ORDER BY ad.disposal_date DESC
         LIMIT $2 OFFSET $3
@@ -572,7 +570,7 @@ export async function createAssetDisposal(req: TenantRequest, res: Response) {
 
     // Verify asset exists and is not already disposed
     const assetCheck = await client.query(
-      'SELECT * FROM assets.fixed_assets WHERE asset_id = $1 AND tenant_id = $2 AND asset_status != $3',
+      'SELECT * FROM fixed_assets WHERE asset_id = $1 AND tenant_id = $2 AND asset_status != $3',
       [disposalData.asset_id, tenantId, AssetStatus.DISPOSED]
     );
 
@@ -591,7 +589,7 @@ export async function createAssetDisposal(req: TenantRequest, res: Response) {
 
     // Create disposal record
     const result = await client.query(`
-      INSERT INTO assets.asset_disposals (
+      INSERT INTO asset_disposals (
         tenant_id, asset_id, disposal_date, disposal_type, disposal_amount,
         book_value_at_disposal, gain_loss, reason, notes, created_by
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -611,7 +609,7 @@ export async function createAssetDisposal(req: TenantRequest, res: Response) {
 
     // Update asset status
     await client.query(
-      'UPDATE assets.fixed_assets SET asset_status = $1, updated_by = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_id = $3 AND tenant_id = $4',
+      'UPDATE fixed_assets SET asset_status = $1, updated_by = $2, updated_at = CURRENT_TIMESTAMP WHERE asset_id = $3 AND tenant_id = $4',
       [AssetStatus.DISPOSED, userId, disposalData.asset_id, tenantId]
     );
 
@@ -651,8 +649,8 @@ export async function getAssetTransfers(req: TenantRequest, res: Response) {
 
     const result = await pool.query(`
       SELECT at.*, fa.asset_number, fa.asset_name
-      FROM assets.asset_transfers at
-      JOIN assets.fixed_assets fa ON at.asset_id = fa.asset_id
+      FROM asset_transfers at
+      JOIN fixed_assets fa ON at.asset_id = fa.asset_id
       WHERE at.tenant_id = $1
       ORDER BY at.transfer_date DESC
       LIMIT $2 OFFSET $3
@@ -686,7 +684,7 @@ export async function createAssetTransfer(req: TenantRequest, res: Response) {
 
     // Get current asset details
     const assetCheck = await client.query(
-      'SELECT * FROM assets.fixed_assets WHERE asset_id = $1 AND tenant_id = $2',
+      'SELECT * FROM fixed_assets WHERE asset_id = $1 AND tenant_id = $2',
       [transferData.asset_id, tenantId]
     );
 
@@ -702,7 +700,7 @@ export async function createAssetTransfer(req: TenantRequest, res: Response) {
 
     // Create transfer record
     const result = await client.query(`
-      INSERT INTO assets.asset_transfers (
+      INSERT INTO asset_transfers (
         tenant_id, asset_id, transfer_date, 
         from_location_id, to_location_id,
         from_department_id, to_department_id,
@@ -727,7 +725,7 @@ export async function createAssetTransfer(req: TenantRequest, res: Response) {
 
     // Update asset location/department/cost_center
     await client.query(`
-      UPDATE assets.fixed_assets SET
+      UPDATE fixed_assets SET
         location_id = COALESCE($1, location_id),
         department_id = COALESCE($2, department_id),
         cost_center_id = COALESCE($3, cost_center_id),
@@ -779,8 +777,8 @@ export async function getAssetMaintenance(req: TenantRequest, res: Response) {
 
     let query = `
       SELECT am.*, fa.asset_number, fa.asset_name
-      FROM assets.asset_maintenance am
-      JOIN assets.fixed_assets fa ON am.asset_id = fa.asset_id
+      FROM asset_maintenance am
+      JOIN fixed_assets fa ON am.asset_id = fa.asset_id
       WHERE am.tenant_id = $1
     `;
     const values: any[] = [tenantId];
@@ -828,7 +826,7 @@ export async function createAssetMaintenance(req: TenantRequest, res: Response) 
 
     // Verify asset exists and belongs to tenant
     const assetCheck = await pool.query(
-      'SELECT * FROM assets.fixed_assets WHERE asset_id = $1 AND tenant_id = $2',
+      'SELECT * FROM fixed_assets WHERE asset_id = $1 AND tenant_id = $2',
       [maintenanceData.asset_id, tenantId]
     );
 
@@ -840,7 +838,7 @@ export async function createAssetMaintenance(req: TenantRequest, res: Response) 
     }
 
     const result = await pool.query(`
-      INSERT INTO assets.asset_maintenance (
+      INSERT INTO asset_maintenance (
         tenant_id, asset_id, maintenance_type, maintenance_date, description,
         cost, vendor, status, next_maintenance_date, notes, created_by
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
@@ -911,8 +909,8 @@ export async function getDepreciationSchedule(req: TenantRequest, res: Response)
 
       const result = await pool.query(
         `SELECT ds.*, ds.posted_to_gl AS is_posted, fa.asset_number, fa.asset_name
-         FROM assets.asset_depreciation_schedule ds
-         JOIN assets.fixed_assets fa ON ds.asset_id = fa.asset_id
+         FROM asset_depreciation_schedule ds
+         JOIN fixed_assets fa ON ds.asset_id = fa.asset_id
          WHERE ${where.join(' AND ')}
          ORDER BY ds.depreciation_date DESC, ds.period_number DESC
          LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
@@ -926,9 +924,9 @@ export async function getDepreciationSchedule(req: TenantRequest, res: Response)
         limit: limitNum
       });
     } catch {
-      const where: string[] = ['fa.tenant_id = $1'];
-      const params: any[] = [tenantId];
-      let paramIndex = 2;
+      const where: string[] = [];
+      const params: any[] = [];
+      let paramIndex = 1;
 
       if (asset_id) {
         where.push(`ads.asset_id = $${paramIndex++}`);
@@ -986,7 +984,7 @@ export async function runDepreciation(req: TenantRequest, res: Response) {
 
     // Get all active assets that need depreciation
     const assetsResult = await pool.query(`
-      SELECT * FROM assets.fixed_assets
+      SELECT * FROM fixed_assets
       WHERE tenant_id = $1 
       AND asset_status = 'ACTIVE'
       AND depreciation_start_date <= $2
@@ -998,7 +996,7 @@ export async function runDepreciation(req: TenantRequest, res: Response) {
     for (const asset of assetsResult.rows) {
       // Get next depreciation period for this asset
       const nextPeriod = await pool.query(`
-        SELECT * FROM assets.asset_depreciation_schedule
+        SELECT * FROM asset_depreciation_schedule
         WHERE asset_id = $1 AND tenant_id = $2 AND status != 'posted'
         ORDER BY period_number ASC
         LIMIT 1
@@ -1009,14 +1007,14 @@ export async function runDepreciation(req: TenantRequest, res: Response) {
         
         // Mark as posted
         await pool.query(`
-          UPDATE assets.asset_depreciation_schedule
+          UPDATE asset_depreciation_schedule
           SET status = 'posted', posted_at = CURRENT_TIMESTAMP, posted_to_gl = true
           WHERE schedule_id = $1 AND tenant_id = $2
         `, [period.schedule_id, tenantId]);
 
         // Update asset book value
         await pool.query(`
-          UPDATE assets.fixed_assets
+          UPDATE fixed_assets
           SET accumulated_depreciation = accumulated_depreciation + $1,
               net_book_value = COALESCE(initial_cost, purchase_price, 0) - accumulated_depreciation - $1,
               last_depreciation_date = CURRENT_DATE,
@@ -1073,13 +1071,13 @@ export async function getAssetDashboard(req: TenantRequest, res: Response) {
           COALESCE(SUM(accumulated_depreciation), 0) AS total_accumulated_depreciation,
           COUNT(*) FILTER (WHERE asset_status = 'ACTIVE') AS active_assets,
           COUNT(*) FILTER (WHERE asset_status = 'UNDER_MAINTENANCE') AS under_maintenance
-        FROM assets.fixed_assets
+        FROM fixed_assets
         WHERE tenant_id = $1
       `, [tenantId]);
 
       const categoriesResult = await pool.query(`
         SELECT COUNT(*) AS total_categories
-        FROM assets.asset_categories
+        FROM asset_categories
         WHERE tenant_id = $1
       `, [tenantId]);
 
@@ -1088,17 +1086,16 @@ export async function getAssetDashboard(req: TenantRequest, res: Response) {
           ac.category_name,
           COUNT(fa.asset_id) AS asset_count,
           COALESCE(SUM(fa.book_value), 0) AS total_book_value
-        FROM assets.asset_categories ac
-        LEFT JOIN assets.fixed_assets fa ON ac.category_id = fa.category_id AND fa.tenant_id = $1
-        WHERE ac.tenant_id = $1
+        FROM asset_categories ac
+        LEFT JOIN fixed_assets fa ON ac.category_id = fa.category_id
         GROUP BY ac.category_name
         ORDER BY asset_count DESC
-      `, [tenantId])).rows;
+      `)).rows;
 
       upcomingMaintenance = (await pool.query(`
         SELECT am.*, fa.asset_number, fa.asset_name
-        FROM assets.asset_maintenance am
-        JOIN assets.fixed_assets fa ON am.asset_id = fa.asset_id
+        FROM asset_maintenance am
+        JOIN fixed_assets fa ON am.asset_id = fa.asset_id
         WHERE am.tenant_id = $1
           AND am.next_maintenance_date IS NOT NULL
           AND am.next_maintenance_date >= CURRENT_DATE
@@ -1135,22 +1132,20 @@ export async function getAssetDashboard(req: TenantRequest, res: Response) {
           COUNT(fa.asset_id) AS asset_count,
           COALESCE(SUM(fa.net_book_value), 0) AS total_book_value
         FROM asset_categories ac
-        LEFT JOIN fixed_assets fa ON ac.category_id = fa.category_id AND fa.tenant_id = $1
-        WHERE ac.tenant_id = $1
+        LEFT JOIN fixed_assets fa ON ac.category_id = fa.category_id
         GROUP BY ac.category_name
         ORDER BY asset_count DESC
-      `, [tenantId])).rows;
+      `)).rows;
 
       upcomingMaintenance = (await pool.query(`
         SELECT am.*, fa.asset_number, fa.asset_name
         FROM asset_maintenance am
         JOIN fixed_assets fa ON am.asset_id = fa.asset_id
-        WHERE fa.tenant_id = $1
-          AND am.next_maintenance_date IS NOT NULL
+        WHERE am.next_maintenance_date IS NOT NULL
           AND am.next_maintenance_date >= CURRENT_DATE
         ORDER BY am.next_maintenance_date ASC
         LIMIT 10
-      `, [tenantId])).rows;
+      `)).rows;
 
       summary = {
         ...summaryResult.rows[0],

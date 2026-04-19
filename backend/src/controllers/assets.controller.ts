@@ -90,8 +90,8 @@ export async function getAllAssets(req: Request, res: Response) {
         fa.*,
         ac.category_name,
         COUNT(*) OVER() as total_count
-      FROM assets.fixed_assets fa
-      LEFT JOIN assets.asset_categories ac ON fa.category_id = ac.category_id
+      FROM fixed_assets fa
+      LEFT JOIN asset_categories ac ON fa.category_id = ac.category_id
       ${whereClause}
       ORDER BY fa.${sort_by} ${sort_order}
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -110,7 +110,7 @@ export async function getAllAssets(req: Request, res: Response) {
         COUNT(CASE WHEN asset_status = 'IDLE' THEN 1 END) as idle_assets,
         COUNT(CASE WHEN asset_status = 'UNDER_MAINTENANCE' THEN 1 END) as under_maintenance,
         COUNT(CASE WHEN asset_status = 'DISPOSED' THEN 1 END) as disposed_assets
-      FROM assets.fixed_assets
+      FROM fixed_assets
       ${whereClause}
     `;
 
@@ -148,8 +148,8 @@ export async function getAssetById(req: Request, res: Response) {
         fa.*,
         ac.category_name,
         ac.category_code
-      FROM assets.fixed_assets fa
-      LEFT JOIN assets.asset_categories ac ON fa.category_id = ac.category_id
+      FROM fixed_assets fa
+      LEFT JOIN asset_categories ac ON fa.category_id = ac.category_id
       WHERE fa.asset_id = $1
     `, [id]);
 
@@ -164,7 +164,7 @@ export async function getAssetById(req: Request, res: Response) {
 
     // Get depreciation schedule
     const scheduleResult = await pool.query(`
-      SELECT * FROM assets.asset_depreciation_schedule
+      SELECT * FROM asset_depreciation_schedule
       WHERE asset_id = $1
       ORDER BY period_year DESC, period_month DESC
       LIMIT 12
@@ -172,7 +172,7 @@ export async function getAssetById(req: Request, res: Response) {
 
     // Get recent maintenance
     const maintenanceResult = await pool.query(`
-      SELECT * FROM assets.asset_maintenance
+      SELECT * FROM asset_maintenance
       WHERE asset_id = $1
       ORDER BY maintenance_date DESC
       LIMIT 5
@@ -180,7 +180,7 @@ export async function getAssetById(req: Request, res: Response) {
 
     // Get transfer history
     const transfersResult = await pool.query(`
-      SELECT * FROM assets.asset_transfers
+      SELECT * FROM asset_transfers
       WHERE asset_id = $1
       ORDER BY transfer_date DESC
       LIMIT 5
@@ -219,14 +219,14 @@ export async function createAsset(req: Request, res: Response) {
     // Generate asset number
     const numberResult = await client.query(`
       SELECT COALESCE(MAX(CAST(SUBSTRING(asset_number FROM 5) AS INTEGER)), 0) + 1 as next_number
-      FROM assets.fixed_assets
+      FROM fixed_assets
       WHERE asset_number LIKE 'AST-%'
     `);
     const asset_number = `AST-${String(numberResult.rows[0].next_number).padStart(5, '0')}`;
 
     // Insert asset
     const result = await client.query(`
-      INSERT INTO assets.fixed_assets (
+      INSERT INTO fixed_assets (
         asset_number, asset_name, description, category_id,
         acquisition_date, acquisition_method, vendor_id, vendor_name,
         purchase_order_id, invoice_number,
@@ -373,7 +373,7 @@ export async function calculateDepreciation(req: Request, res: Response) {
 
     // Get asset details
     const assetResult = await client.query(`
-      SELECT * FROM assets.fixed_assets WHERE asset_id = $1
+      SELECT * FROM fixed_assets WHERE asset_id = $1
     `, [id]);
 
     if (assetResult.rows.length === 0) {
@@ -397,7 +397,7 @@ export async function calculateDepreciation(req: Request, res: Response) {
 
     // Check if depreciation already exists for this period
     const existingResult = await client.query(`
-      SELECT * FROM assets.asset_depreciation_schedule
+      SELECT * FROM asset_depreciation_schedule
       WHERE asset_id = $1 AND period_year = $2 AND period_month = $3
     `, [id, period_year, period_month]);
 
@@ -412,7 +412,7 @@ export async function calculateDepreciation(req: Request, res: Response) {
     // Get latest depreciation to calculate current accumulated depreciation
     const latestDepResult = await client.query(`
       SELECT accumulated_depreciation, closing_book_value 
-      FROM assets.asset_depreciation_schedule
+      FROM asset_depreciation_schedule
       WHERE asset_id = $1
       ORDER BY period_year DESC, period_month DESC
       LIMIT 1
@@ -449,7 +449,7 @@ export async function calculateDepreciation(req: Request, res: Response) {
 
     // Insert depreciation schedule
     const scheduleResult = await client.query(`
-      INSERT INTO assets.asset_depreciation_schedule (
+      INSERT INTO asset_depreciation_schedule (
         asset_id, period_year, period_month,
         opening_book_value, depreciation_amount, accumulated_depreciation, closing_book_value,
         created_by
@@ -504,7 +504,7 @@ export async function batchCalculateDepreciation(req: Request, res: Response) {
 
     // Get all active depreciable assets
     const assetsResult = await client.query(`
-      SELECT * FROM assets.fixed_assets
+      SELECT * FROM fixed_assets
       WHERE asset_status IN ('ACTIVE', 'IDLE')
       AND purchase_date <= $1
     `, [new Date(period_year, period_month - 1, 1)]);
@@ -523,7 +523,7 @@ export async function batchCalculateDepreciation(req: Request, res: Response) {
 
         // Check if already calculated
         const existing = await client.query(`
-          SELECT 1 FROM assets.asset_depreciation_schedule
+          SELECT 1 FROM asset_depreciation_schedule
           WHERE asset_id = $1 AND period_year = $2 AND period_month = $3
         `, [asset.asset_id, period_year, period_month]);
 
@@ -535,7 +535,7 @@ export async function batchCalculateDepreciation(req: Request, res: Response) {
         // Get latest depreciation
         const latestDepResult = await client.query(`
           SELECT accumulated_depreciation, closing_book_value 
-          FROM assets.asset_depreciation_schedule
+          FROM asset_depreciation_schedule
           WHERE asset_id = $1
           ORDER BY period_year DESC, period_month DESC
           LIMIT 1
@@ -567,7 +567,7 @@ export async function batchCalculateDepreciation(req: Request, res: Response) {
 
         // Insert schedule
         await client.query(`
-          INSERT INTO assets.asset_depreciation_schedule (
+          INSERT INTO asset_depreciation_schedule (
             asset_id, period_year, period_month,
             opening_book_value, depreciation_amount, accumulated_depreciation, closing_book_value,
             created_by
@@ -642,10 +642,10 @@ async function disposeAsset(req: Request, res: Response): Promise<void> {
         a.*,
         COALESCE((
           SELECT SUM(depreciation_amount) 
-          FROM assets.asset_depreciation_schedule 
+          FROM asset_depreciation_schedule 
           WHERE asset_id = a.asset_id
         ), 0) as total_accumulated_depreciation
-      FROM assets.fixed_assets a
+      FROM fixed_assets a
       WHERE a.asset_id = $1 AND a.status != 'disposed'
     `, [asset_id]);
 
@@ -662,7 +662,7 @@ async function disposeAsset(req: Request, res: Response): Promise<void> {
 
     // Create disposal record
     const disposalResult = await client.query(`
-      INSERT INTO assets.asset_disposals (
+      INSERT INTO asset_disposals (
         asset_id, disposal_date, disposal_method,
         disposal_proceeds, disposal_costs, net_proceeds,
         carrying_amount_at_disposal, gain_loss_on_disposal,
@@ -680,7 +680,7 @@ async function disposeAsset(req: Request, res: Response): Promise<void> {
 
     // Update asset status
     await client.query(`
-      UPDATE assets.fixed_assets
+      UPDATE fixed_assets
       SET status = 'disposed',
           disposal_date = $2,
           updated_at = NOW(),
@@ -751,10 +751,10 @@ async function createRevaluation(req: Request, res: Response): Promise<void> {
         a.*,
         COALESCE((
           SELECT SUM(depreciation_amount) 
-          FROM assets.asset_depreciation_schedule 
+          FROM asset_depreciation_schedule 
           WHERE asset_id = a.asset_id
         ), 0) as accumulated_depreciation
-      FROM assets.fixed_assets a
+      FROM fixed_assets a
       WHERE a.asset_id = $1 AND a.status = 'active'
     `, [asset_id]);
 
@@ -770,7 +770,7 @@ async function createRevaluation(req: Request, res: Response): Promise<void> {
 
     // Create valuation record
     const valuationResult = await client.query(`
-      INSERT INTO assets.asset_valuations (
+      INSERT INTO asset_valuations (
         asset_id, valuation_date, valuation_type,
         previous_value, new_value, adjustment_amount,
         valuation_method, valuer_name, valuer_credentials,
@@ -786,7 +786,7 @@ async function createRevaluation(req: Request, res: Response): Promise<void> {
 
     // Update asset with revalued amount
     await client.query(`
-      UPDATE assets.fixed_assets
+      UPDATE fixed_assets
       SET purchase_cost = $2,
           last_valuation_date = $3,
           last_valuation_amount = $2,
@@ -797,7 +797,7 @@ async function createRevaluation(req: Request, res: Response): Promise<void> {
 
     // Reset accumulated depreciation for revalued amount (IAS 16.35)
     await client.query(`
-      UPDATE assets.asset_depreciation_schedule
+      UPDATE asset_depreciation_schedule
       SET is_reversal_entry = true
       WHERE asset_id = $1
     `, [asset_id]);
@@ -866,10 +866,10 @@ async function createImpairment(req: Request, res: Response): Promise<void> {
         a.*,
         COALESCE((
           SELECT SUM(depreciation_amount) 
-          FROM assets.asset_depreciation_schedule 
+          FROM asset_depreciation_schedule 
           WHERE asset_id = a.asset_id
         ), 0) as accumulated_depreciation
-      FROM assets.fixed_assets a
+      FROM fixed_assets a
       WHERE a.asset_id = $1 AND a.status = 'active'
     `, [asset_id]);
 
@@ -905,7 +905,7 @@ async function createImpairment(req: Request, res: Response): Promise<void> {
 
     // Create impairment record
     const impairmentResult = await client.query(`
-      INSERT INTO assets.asset_valuations (
+      INSERT INTO asset_valuations (
         asset_id, valuation_date, valuation_type,
         previous_value, new_value, adjustment_amount,
         valuation_method, notes, created_by
@@ -929,7 +929,7 @@ async function createImpairment(req: Request, res: Response): Promise<void> {
 
     // Update asset carrying amount
     await client.query(`
-      UPDATE assets.fixed_assets
+      UPDATE fixed_assets
       SET impairment_loss = COALESCE(impairment_loss, 0) + $2,
           updated_at = NOW(),
           updated_by = $3
@@ -982,8 +982,8 @@ async function getRevaluations(req: Request, res: Response): Promise<void> {
         v.*,
         a.asset_number,
         a.asset_name
-      FROM assets.asset_valuations v
-      JOIN assets.fixed_assets a ON v.asset_id = a.asset_id
+      FROM asset_valuations v
+      JOIN fixed_assets a ON v.asset_id = a.asset_id
       WHERE v.asset_id = $1
       ORDER BY v.valuation_date DESC
     `, [asset_id]);
@@ -1161,9 +1161,9 @@ async function postDepreciationToGL(req: Request, res: Response): Promise<void> 
         c.depreciation_expense_gl_account_code,
         c.accumulated_depreciation_gl_account_code,
         c.category_name
-      FROM assets.asset_depreciation_schedule ds
-      JOIN assets.fixed_assets a ON ds.asset_id = a.asset_id
-      LEFT JOIN assets.asset_categories c ON a.category_id = c.category_id
+      FROM asset_depreciation_schedule ds
+      JOIN fixed_assets a ON ds.asset_id = a.asset_id
+      LEFT JOIN asset_categories c ON a.category_id = c.category_id
       WHERE ds.period_year = $1 
         AND ds.period_month = $2
         AND ds.journal_entry_id IS NULL
@@ -1229,7 +1229,7 @@ async function postDepreciationToGL(req: Request, res: Response): Promise<void> 
 
     // Update depreciation schedule with journal entry reference
     await client.query(`
-      UPDATE assets.asset_depreciation_schedule
+      UPDATE asset_depreciation_schedule
       SET journal_entry_id = $1
       WHERE period_year = $2 AND period_month = $3 AND journal_entry_id IS NULL
     `, [journalEntryId, period_year, period_month]);
@@ -1273,10 +1273,10 @@ async function getDepreciationSchedule(req: Request, res: Response): Promise<voi
         a.*,
         COALESCE((
           SELECT SUM(depreciation_amount) 
-          FROM assets.asset_depreciation_schedule 
+          FROM asset_depreciation_schedule 
           WHERE asset_id = a.asset_id
         ), 0) as accumulated_depreciation
-      FROM assets.fixed_assets a
+      FROM fixed_assets a
       WHERE a.asset_id = $1
     `, [asset_id]);
 

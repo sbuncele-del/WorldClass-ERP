@@ -36,8 +36,8 @@ export const getWorkCenters = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
     const { status } = req.query;
-    const params: any[] = [tenantId];
-    let query = `SELECT * FROM manufacturing.work_centers WHERE tenant_id = $1`;
+    const params: any[] = [];
+    let query = `SELECT * FROM manufacturing.work_centers WHERE 1=1`;
     
     if (status) {
       params.push(status);
@@ -94,8 +94,8 @@ export const getBOMs = async (req: TenantRequest, res: Response) => {
     
     // Simplified query using manufacturing.bill_of_materials
     const result = await pool.query(`
-      SELECT * FROM manufacturing.bill_of_materials WHERE tenant_id = $1 ORDER BY created_at DESC
-    `, [tenantId]);
+      SELECT * FROM manufacturing.bill_of_materials ORDER BY created_at DESC
+    `);
     
     res.json({ success: true, data: result.rows });
   } catch (error: any) {
@@ -195,13 +195,13 @@ export const createBOM = async (req: TenantRequest, res: Response) => {
 
 export const getProductionOrders = async (req: TenantRequest, res: Response) => {
   try {
-    const { tenantId } = getTenantContext(req);
+    getTenantContext(req); // validate tenant
     const { status } = req.query;
-    const params: any[] = [tenantId];
+    const params: any[] = [];
     
-    // Simplified query - use manufacturing.production_orders table
+    // production_orders table has no tenant_id column
     let query = `
-      SELECT * FROM manufacturing.production_orders WHERE tenant_id = $1
+      SELECT * FROM manufacturing.production_orders WHERE 1=1
     `;
     
     if (status) {

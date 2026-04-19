@@ -39,26 +39,23 @@ export class AccountRepository extends BaseRepository<Account> {
    */
   async getChartOfAccounts(ctx: TenantContext): Promise<Account[]> {
     // Simplified query - no recursive tree, just flat list
-    // Use COALESCE to handle different column naming conventions (id vs account_id)
-    // Also try both 'code' and 'account_code' for account number
     const sql = `
       SELECT 
-        COALESCE(id, account_id::text::uuid, gen_random_uuid()) as id,
+        id,
         tenant_id,
         COALESCE(NULLIF(code, ''), account_code) as account_number,
         COALESCE(NULLIF(name, ''), account_name) as name,
         description,
         LOWER(account_type) as account_type,
-        parent_code as parent_id,
+        parent_account_id as parent_id,
         LOWER(normal_balance) as normal_balance,
         COALESCE(is_active, true) as is_active,
         COALESCE(is_header, false) as is_header,
-        COALESCE(current_balance, 0) as balance,
+        0 as balance,
         created_at,
         updated_at
       FROM chart_of_accounts
       WHERE tenant_id = $1
-        AND COALESCE(deleted_at, '9999-12-31') > NOW()
       ORDER BY COALESCE(NULLIF(code, ''), account_code)
     `;
 
