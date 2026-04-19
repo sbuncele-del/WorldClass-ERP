@@ -3254,7 +3254,7 @@ router.get('/warehouse/locations', async (req: any, res) => {
   const { query: dbQuery } = await import('../config/database');
   const tenantId = req.tenant?.id || 1;
   try {
-    const result = await dbQuery(`SELECT * FROM warehouse_locations WHERE tenant_id = $1`, [tenantId]);
+    const result = await dbQuery(`SELECT * FROM warehouse.locations WHERE tenant_id = $1`, [tenantId]);
     res.json({ success: true, data: result.rows || [] });
   } catch {
     res.json({ success: true, data: [] });

@@ -36,22 +36,13 @@ export class ProfileControllerV2 {
       const query = `
         SELECT 
           u.id as user_id, u.email, u.username, u.first_name, u.last_name,
-          u.display_name, u.phone, u.avatar_url, u.email_verified,
-          u.mfa_enabled, u.last_login_at, u.created_at, u.role,
+          u.phone, u.avatar_url, u.email_verified,
+          u.last_login_at, u.created_at, u.role,
           u.preferences,
-          COALESCE(
-            json_agg(
-              DISTINCT jsonb_build_object('role_id', r.role_id, 'role_name', r.role_name, 'role_code', r.role_code)
-            ) FILTER (WHERE r.role_id IS NOT NULL),
-            '[]'
-          ) as roles,
           t.name as tenant_name, t.tenant_code
         FROM users u
-        LEFT JOIN user_roles ur ON u.id = ur.user_id AND ur.is_active = true
-        LEFT JOIN roles r ON ur.role_id = r.role_id
         LEFT JOIN tenants t ON u.tenant_id = t.id
         WHERE u.id = $1 AND u.tenant_id = $2
-        GROUP BY u.id, t.name, t.tenant_code
       `;
 
       const result = await pool.query(query, [userId, tenantId]);

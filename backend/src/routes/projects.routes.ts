@@ -135,12 +135,12 @@ router.get('/', async (req: any, res) => {
     const result = await query(`
       SELECT p.id, p.project_code as code, p.project_name as name, p.description, p.status,
         p.priority, p.project_type, p.start_date, p.end_date, p.budget, p.spent, p.progress,
-        p.project_manager_id, p.created_at, p.updated_at,
+        p.manager_id, p.created_at, p.updated_at,
         u.first_name || ' ' || u.last_name as manager_name,
         (SELECT COUNT(*) FROM project_tasks t WHERE t.project_id = p.id AND t.tenant_id = p.tenant_id) as task_count,
         (SELECT COUNT(*) FROM project_tasks t WHERE t.project_id = p.id AND t.tenant_id = p.tenant_id AND t.status = 'done') as completed_tasks
       FROM projects p
-      LEFT JOIN users u ON p.project_manager_id = u.id
+      LEFT JOIN users u ON p.manager_id = u.id
       ${whereClause}
       ORDER BY p.created_at DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -171,7 +171,7 @@ router.get('/:id', async (req: any, res) => {
     const result = await query(`
       SELECT p.*, u.first_name || ' ' || u.last_name as manager_name
       FROM projects p
-      LEFT JOIN users u ON p.project_manager_id = u.id
+      LEFT JOIN users u ON p.manager_id = u.id
       WHERE p.id = $1 AND p.tenant_id = $2
     `, [id, tenantId]);
 
@@ -212,7 +212,7 @@ router.post('/', async (req: any, res) => {
     }
 
     const result = await query(`
-      INSERT INTO projects (tenant_id, project_code, project_name, description, client_name, status, priority, project_type, start_date, end_date, budget, project_manager_id)
+      INSERT INTO projects (tenant_id, project_code, project_name, description, client_name, status, priority, project_type, start_date, end_date, budget, manager_id)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `, [tenantId, code, name, description, client_name, status || 'planning', priority || 'medium', project_type || 'internal', start_date, end_date, budget || 0, manager_id]);
@@ -250,7 +250,7 @@ router.put('/:id', async (req: any, res) => {
         budget = COALESCE($11, budget),
         spent = COALESCE($12, spent),
         progress = COALESCE($13, progress),
-        project_manager_id = COALESCE($14, project_manager_id),
+        manager_id = COALESCE($14, manager_id),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = $1 AND tenant_id = $2
       RETURNING *

@@ -29,16 +29,22 @@ export class DashboardControllerV2 {
       const { tenantId, entityId } = getTenantContext(req);
       const entityParam = entityId || null;
 
-      // Get current/active period
-      const periodQuery = `
-        SELECT fiscal_year_id, period_number, period_name, start_date, end_date, status
-        FROM fiscal_periods
-        WHERE tenant_id = $1 AND status IN ('OPEN', 'CLOSED')
-        ORDER BY start_date DESC
-        LIMIT 1
-      `;
-      const periodResult = await client.query(periodQuery, [tenantId]);
-      const currentPeriod = periodResult.rows[0] || null;
+      // Get current/active period (fiscal_periods may not exist)
+      let currentPeriod: any = null;
+      try {
+        const periodQuery = `
+          SELECT fiscal_year_id, period_number, period_name, start_date, end_date, status
+          FROM fiscal_periods
+          WHERE tenant_id = $1 AND status IN ('OPEN', 'CLOSED')
+          ORDER BY start_date DESC
+          LIMIT 1
+        `;
+        const periodResult = await client.query(periodQuery, [tenantId]);
+        currentPeriod = periodResult.rows[0] || null;
+      } catch {
+        // fiscal_periods table may not exist
+        currentPeriod = null;
+      }
 
       // Get financial summary - tenant + entity filtering
       const financialQuery = `
