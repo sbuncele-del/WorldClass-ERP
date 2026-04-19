@@ -35,7 +35,7 @@ export class ProfileControllerV2 {
 
       const query = `
         SELECT 
-          u.id as user_id, u.email, u.username, u.first_name, u.last_name,
+          u.id as user_id, u.email, u.first_name, u.last_name,
           u.phone, u.avatar_url, u.email_verified,
           u.last_login_at, u.created_at, u.role,
           u.preferences,

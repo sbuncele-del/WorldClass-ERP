@@ -52,7 +52,7 @@ export class DashboardControllerV2 {
           SUM(CASE WHEN coa.account_type = 'REVENUE' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as total_revenue,
           SUM(CASE WHEN coa.account_type = 'EXPENSE' THEN jel.debit_amount - jel.credit_amount ELSE 0 END) as total_expenses
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+        JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
         JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
         WHERE je.status = 'POSTED'
           ${currentPeriod ? `AND je.posting_date >= $2 AND je.posting_date <= $3` : ''}
@@ -75,7 +75,7 @@ export class DashboardControllerV2 {
           SUM(CASE WHEN coa.account_type = 'LIABILITY' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as total_liabilities,
           SUM(CASE WHEN coa.account_type = 'EQUITY' THEN jel.credit_amount - jel.debit_amount ELSE 0 END) as total_equity
         FROM journal_entry_lines jel
-        JOIN chart_of_accounts coa ON jel.account_id = coa.account_id AND coa.tenant_id = $1
+        JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = $1
         JOIN journal_entries je ON jel.journal_entry_id = je.id AND je.tenant_id = $1
         WHERE je.status = 'POSTED'
       `;
