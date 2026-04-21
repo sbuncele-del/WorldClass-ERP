@@ -320,12 +320,12 @@ const PremiumTopBar: React.FC = () => {
   };
 
   return (
-    <>
-    <ClientSwitcher />
     <header className="premium-topbar">
       {/* Left: Entity Switcher & Breadcrumbs */}
       <div className="topbar-left">
         <EntitySwitcher />
+
+        <ClientSwitcher />
 
         <Divider type="vertical" className="topbar-divider" />
 
@@ -427,7 +427,6 @@ const PremiumTopBar: React.FC = () => {
         </Dropdown>
       </div>
     </header>
-    </>
   );
 };
 
