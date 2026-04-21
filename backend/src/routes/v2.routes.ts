@@ -5485,6 +5485,24 @@ router.delete('/accountant-portal/invitations/:id', AccountantPortalV2.cancelInv
 router.get('/accountant-portal/activity', AccountantPortalV2.getActivityLog);
 router.get('/accountant-portal/financial-summary', AccountantPortalV2.getClientFinancialSummary);
 
+// Jobs / Work Management
+router.get('/accountant-portal/jobs', AccountantPortalV2.getJobs);
+router.post('/accountant-portal/jobs', AccountantPortalV2.createJob);
+router.put('/accountant-portal/jobs/:id', AccountantPortalV2.updateJob);
+router.delete('/accountant-portal/jobs/:id', AccountantPortalV2.deleteJob);
+
+// Time Tracking / WIP
+router.get('/accountant-portal/time-entries', AccountantPortalV2.getTimeEntries);
+router.post('/accountant-portal/time-entries', AccountantPortalV2.createTimeEntry);
+router.put('/accountant-portal/time-entries/:id', AccountantPortalV2.updateTimeEntry);
+router.delete('/accountant-portal/time-entries/:id', AccountantPortalV2.deleteTimeEntry);
+
+// Compliance Calendar
+router.get('/accountant-portal/compliance', AccountantPortalV2.getComplianceItems);
+router.post('/accountant-portal/compliance', AccountantPortalV2.createComplianceItem);
+router.put('/accountant-portal/compliance/:id', AccountantPortalV2.updateComplianceItem);
+router.delete('/accountant-portal/compliance/:id', AccountantPortalV2.deleteComplianceItem);
+
 // ═══════════════════════════════════════════════════════════════════
 // Support Tickets
 // ═══════════════════════════════════════════════════════════════════

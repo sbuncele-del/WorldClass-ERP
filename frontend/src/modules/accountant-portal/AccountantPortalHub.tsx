@@ -8,6 +8,9 @@ import {
   HistoryOutlined,
   SettingOutlined,
   BankOutlined,
+  SolutionOutlined,
+  ClockCircleOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons';
 
 // Lazy-loaded sub-pages
@@ -17,6 +20,9 @@ const ClientDetailPage = lazy(() => import('./pages/ClientsPage').then(m => ({ d
 const InvitationsPage = lazy(() => import('./pages/InvitationsPage'));
 const ActivityLogPage = lazy(() => import('./pages/ActivityLogPage'));
 const FirmSetup = lazy(() => import('./pages/FirmSetup'));
+const JobsPage = lazy(() => import('./pages/JobsPage'));
+const TimeTrackingPage = lazy(() => import('./pages/TimeTrackingPage'));
+const CompliancePage = lazy(() => import('./pages/CompliancePage'));
 
 const PageLoader: React.FC = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>
@@ -73,15 +79,21 @@ const AccountantPortalHub: React.FC = () => {
     if (path.includes('/invitations')) return 'invitations';
     if (path.includes('/activity')) return 'activity';
     if (path.includes('/settings')) return 'settings';
+    if (path.includes('/jobs')) return 'jobs';
+    if (path.includes('/time')) return 'time';
+    if (path.includes('/compliance')) return 'compliance';
     return 'dashboard';
   }, [location.pathname]);
 
   const menuItems = [
-    { key: 'dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
-    { key: 'clients', icon: <TeamOutlined />, label: 'Clients' },
-    { key: 'invitations', icon: <SendOutlined />, label: 'Invitations' },
-    { key: 'activity', icon: <HistoryOutlined />, label: 'Activity Log' },
-    { key: 'settings', icon: <SettingOutlined />, label: 'Firm Settings' },
+    { key: 'dashboard',   icon: <DashboardOutlined />,          label: 'Dashboard' },
+    { key: 'clients',     icon: <TeamOutlined />,                label: 'Clients' },
+    { key: 'jobs',        icon: <SolutionOutlined />,            label: 'Work / Jobs' },
+    { key: 'time',        icon: <ClockCircleOutlined />,         label: 'Time Tracking' },
+    { key: 'compliance',  icon: <SafetyCertificateOutlined />,   label: 'Compliance' },
+    { key: 'invitations', icon: <SendOutlined />,                label: 'Invitations' },
+    { key: 'activity',    icon: <HistoryOutlined />,             label: 'Activity Log' },
+    { key: 'settings',    icon: <SettingOutlined />,             label: 'Firm Settings' },
   ];
 
   if (firmState.loading) {
@@ -128,13 +140,16 @@ const AccountantPortalHub: React.FC = () => {
       />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/" element={<AccountantDashboard />} />
-          <Route path="/clients" element={<ClientsPage />} />
+          <Route path="/"            element={<AccountantDashboard />} />
+          <Route path="/clients"     element={<ClientsPage />} />
           <Route path="/clients/:id" element={<ClientDetailPage />} />
+          <Route path="/jobs"        element={<JobsPage />} />
+          <Route path="/time"        element={<TimeTrackingPage />} />
+          <Route path="/compliance"  element={<CompliancePage />} />
           <Route path="/invitations" element={<InvitationsPage />} />
-          <Route path="/activity" element={<ActivityLogPage />} />
-          <Route path="/settings" element={<FirmSetup onComplete={() => {}} editMode />} />
-          <Route path="*" element={<Navigate to={basePath} replace />} />
+          <Route path="/activity"    element={<ActivityLogPage />} />
+          <Route path="/settings"    element={<FirmSetup onComplete={() => {}} editMode />} />
+          <Route path="*"            element={<Navigate to={basePath} replace />} />
         </Routes>
       </Suspense>
     </div>
