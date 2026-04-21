@@ -1131,56 +1131,96 @@ export const getActivityLog = async (req: TenantRequest, res: Response): Promise
       return;
     }
 
-    const { client_tenant_id, user_id, action, limit: qLimit, offset: qOffset } = req.query;
-    const limit = Math.min(parseInt(qLimit as string, 10) || 50, 500);
-    const offset = parseInt(qOffset as string, 10) || 0;
+    // Support both camelCase (frontend) and snake_case (legacy) param names
+    const clientTenantId = (req.query.clientTenantId || req.query.client_tenant_id) as string | undefined;
+    const userId = req.query.user_id as string | undefined;
+    const action = req.query.action as string | undefined;
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+    const search = req.query.search as string | undefined;
 
-    let sql = `
-      SELECT aal.*,
-             u.first_name, u.last_name, u.email AS user_email,
-             t.name AS client_name
-      FROM accountant_activity_log aal
-      JOIN users u ON aal.user_id = u.id
-      LEFT JOIN tenants t ON aal.client_tenant_id = t.id
-      WHERE aal.firm_id = $1
-    `;
+    // Support page-based pagination (frontend) and offset-based (legacy)
+    const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
+    const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 500);
+    const offset = req.query.offset !== undefined
+      ? parseInt(req.query.offset as string, 10) || 0
+      : (page - 1) * limit;
+
     const params: any[] = [firm.id];
     let paramIdx = 2;
+    let whereClause = `WHERE aal.firm_id = $1`;
 
-    if (client_tenant_id) {
-      sql += ` AND aal.client_tenant_id = $${paramIdx}`;
-      params.push(client_tenant_id);
-      paramIdx++;
+    if (clientTenantId) {
+      whereClause += ` AND aal.client_tenant_id = $${paramIdx++}`;
+      params.push(clientTenantId);
     }
 
-    if (user_id) {
-      sql += ` AND aal.user_id = $${paramIdx}`;
-      params.push(user_id);
-      paramIdx++;
+    if (userId) {
+      whereClause += ` AND aal.user_id = $${paramIdx++}`;
+      params.push(userId);
     }
 
     if (action) {
-      sql += ` AND aal.action = $${paramIdx}`;
+      whereClause += ` AND aal.action = $${paramIdx++}`;
       params.push(action);
+    }
+
+    if (startDate) {
+      whereClause += ` AND aal.created_at >= $${paramIdx++}`;
+      params.push(startDate);
+    }
+
+    if (endDate) {
+      whereClause += ` AND aal.created_at <= $${paramIdx++}`;
+      params.push(endDate);
+    }
+
+    if (search) {
+      whereClause += ` AND (aal.details::text ILIKE $${paramIdx} OR COALESCE(u.first_name,'') ILIKE $${paramIdx} OR COALESCE(u.last_name,'') ILIKE $${paramIdx} OR COALESCE(t.name,'') ILIKE $${paramIdx})`;
+      params.push(`%${search}%`);
       paramIdx++;
     }
 
-    sql += ` ORDER BY aal.created_at DESC LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`;
+    const sql = `
+      SELECT
+        aal.id,
+        aal.created_at AS timestamp,
+        COALESCE(u.first_name || ' ' || u.last_name, u.email, 'Unknown') AS user_name,
+        u.email AS user_email,
+        t.name AS client_name,
+        aal.client_tenant_id,
+        aal.action,
+        aal.resource_type,
+        aal.resource_id,
+        aal.details::text AS details,
+        aal.ip_address
+      FROM accountant_activity_log aal
+      LEFT JOIN users u ON aal.user_id = u.id
+      LEFT JOIN tenants t ON aal.client_tenant_id = t.id
+      ${whereClause}
+      ORDER BY aal.created_at DESC
+      LIMIT $${paramIdx} OFFSET $${paramIdx + 1}
+    `;
     params.push(limit, offset);
 
     const result = await pool.query(sql, params);
 
-    // Total count for pagination
-    const countSql = `SELECT COUNT(*) FROM accountant_activity_log WHERE firm_id = $1`;
-    const countResult = await pool.query(countSql, [firm.id]);
+    // Count with same filters (without pagination params)
+    const countParams = params.slice(0, -2);
+    const countSql = `
+      SELECT COUNT(*)
+      FROM accountant_activity_log aal
+      LEFT JOIN users u ON aal.user_id = u.id
+      LEFT JOIN tenants t ON aal.client_tenant_id = t.id
+      ${whereClause}
+    `;
+    const countResult = await pool.query(countSql, countParams);
 
     res.json({
       success: true,
-      data: result.rows,
-      pagination: {
+      data: {
+        entries: result.rows,
         total: parseInt(countResult.rows[0].count, 10),
-        limit,
-        offset
       }
     });
   } catch (err: any) {

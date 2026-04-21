@@ -100,6 +100,7 @@ const ActivityLogPage: React.FC = () => {
       const params = new URLSearchParams();
       params.set('page', String(page));
       params.set('limit', String(pageSize));
+      params.set('offset', String((page - 1) * pageSize));
       if (dateRange && dateRange[0] && dateRange[1]) {
         params.set('startDate', dateRange[0].toISOString());
         params.set('endDate', dateRange[1].toISOString());
@@ -113,8 +114,8 @@ const ActivityLogPage: React.FC = () => {
       });
       if (!res.ok) throw new Error('Failed to load activity');
       const json = await res.json();
-      setEntries(json.data?.entries || json.data || []);
-      setTotal(json.data?.total || json.data?.length || 0);
+      setEntries(json.data?.entries || []);
+      setTotal(json.data?.total ?? 0);
     } catch (err) {
       console.error('Activity fetch error:', err);
       message.error('Failed to load activity log');
@@ -234,7 +235,11 @@ const ActivityLogPage: React.FC = () => {
       dataIndex: 'details',
       key: 'details',
       ellipsis: true,
-      render: (v: string) => v || '—',
+      render: (v: unknown) => {
+        if (v === null || v === undefined) return '—';
+        if (typeof v === 'object') return JSON.stringify(v);
+        return String(v) || '—';
+      },
     },
   ];
 
