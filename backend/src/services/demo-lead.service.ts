@@ -230,7 +230,6 @@ export const requestDemo = async (req: Request, res: Response) => {
             password_hash = $1, 
             first_name = $2, 
             last_name = $3, 
-            is_active = true, 
             status = 'active',
             email_verified = true,
             failed_login_attempts = 0,
@@ -245,8 +244,8 @@ export const requestDemo = async (req: Request, res: Response) => {
         const lastName = fullName.split(' ').slice(1).join(' ') || '';
         
         const userResult = await client.query(
-          `INSERT INTO users (tenant_id, email, password_hash, first_name, last_name, role, is_active, status, email_verified)
-           VALUES ($1, $2, $3, $4, $5, 'admin', true, 'active', true)
+          `INSERT INTO users (tenant_id, email, password_hash, first_name, last_name, role, status, email_verified)
+           VALUES ($1, $2, $3, $4, $5, 'admin', 'active', true)
            RETURNING id`,
           [DEMO_TENANT_ID, email.toLowerCase(), passwordHash, firstName, lastName]
         );
