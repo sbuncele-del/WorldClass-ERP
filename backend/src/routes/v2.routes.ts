@@ -3283,32 +3283,21 @@ router.get('/cash-management/bank-accounts', async (req: any, res) => {
         ba.account_type,
         ba.currency,
         ba.opening_balance,
+        ba.current_balance,
+        ba.available_balance,
         ba.gl_account_code,
         ba.is_primary,
         ba.is_active,
+        ba.last_reconciled_date,
         ba.created_at,
         ba.updated_at,
         b.bank_name,
         b.bank_code,
-        COALESCE(gl.gl_balance, 0) as current_balance,
-        COALESCE(gl.gl_debits, 0) as gl_total_debits,
-        COALESCE(gl.gl_credits, 0) as gl_total_credits,
-        COALESCE(gl.gl_entry_count, 0) as gl_entry_count,
-        coa.id as gl_account_id,
-        COALESCE(coa.account_name, coa.name) as gl_account_name
+        b.swift_code,
+        (SELECT COUNT(*)::int FROM cash_transactions ct WHERE ct.account_id = ba.account_id AND ct.tenant_id = ba.tenant_id) as transaction_count,
+        (SELECT COUNT(*)::int FROM cash_transactions ct WHERE ct.account_id = ba.account_id AND ct.tenant_id = ba.tenant_id AND ct.status = 'PENDING') as pending_count
       FROM cash_bank_accounts ba
       LEFT JOIN cash_banks b ON ba.bank_id = b.bank_id
-      LEFT JOIN chart_of_accounts coa ON (coa.account_code = ba.gl_account_code OR coa.code = ba.gl_account_code) AND coa.tenant_id = ba.tenant_id
-      LEFT JOIN LATERAL (
-        SELECT 
-          COALESCE(SUM(jel.debit_amount), 0) - COALESCE(SUM(jel.credit_amount), 0) as gl_balance,
-          COALESCE(SUM(jel.debit_amount), 0) as gl_debits,
-          COALESCE(SUM(jel.credit_amount), 0) as gl_credits,
-          COUNT(DISTINCT jel.journal_entry_id) as gl_entry_count
-        FROM journal_entry_lines jel
-        JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = ba.tenant_id
-        WHERE jel.account_id = coa.id AND jel.tenant_id = ba.tenant_id AND LOWER(je.status) = 'posted'
-      ) gl ON coa.id IS NOT NULL
       WHERE ba.tenant_id = $1 AND ba.is_active = true
       ORDER BY ba.is_primary DESC, ba.account_name ASC`,
       [tenantId]
@@ -3533,17 +3522,18 @@ router.get('/financial/custom-reports', async (req: any, res) => {
 router.get('/cash-management/overview-dashboard', async (req: any, res) => {
   const tenantId = req.tenant?.id || req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
   try {
-    // Month summary: total transactions, credits, debits this month
+    // Month summary from cash_bank_statement_lines (joined through cash_bank_statements for tenant filter)
     const monthSummaryResult = await query(
       `SELECT
         COUNT(*)::int as "totalTransactions",
-        COALESCE(SUM(CASE WHEN transaction_type = 'credit' THEN amount ELSE 0 END), 0)::numeric as "totalCredits",
-        COALESCE(SUM(CASE WHEN transaction_type = 'debit' THEN ABS(amount) ELSE 0 END), 0)::numeric as "totalDebits",
-        COUNT(*) FILTER (WHERE transaction_type = 'credit')::int as "creditCount",
-        COUNT(*) FILTER (WHERE transaction_type = 'debit')::int as "debitCount"
-       FROM bank_statement_lines
-       WHERE tenant_id = $1
-         AND transaction_date >= date_trunc('month', CURRENT_DATE)`,
+        COALESCE(SUM(CASE WHEN l.credit_amount > 0 THEN l.credit_amount ELSE 0 END), 0)::numeric as "totalCredits",
+        COALESCE(SUM(CASE WHEN l.debit_amount > 0 THEN l.debit_amount ELSE 0 END), 0)::numeric as "totalDebits",
+        COUNT(*) FILTER (WHERE l.credit_amount > 0)::int as "creditCount",
+        COUNT(*) FILTER (WHERE l.debit_amount > 0)::int as "debitCount"
+       FROM cash_bank_statement_lines l
+       JOIN cash_bank_statements s ON s.statement_id = l.statement_id
+       JOIN cash_bank_accounts a ON a.account_id = s.account_id AND a.tenant_id = $1
+       WHERE l.transaction_date >= date_trunc('month', CURRENT_DATE)`,
       [tenantId]
     );
 
@@ -3551,45 +3541,48 @@ router.get('/cash-management/overview-dashboard', async (req: any, res) => {
     const reconResult = await query(
       `SELECT
         COUNT(*)::int as total,
-        COUNT(*) FILTER (WHERE status = 'allocated' OR status = 'reconciled' OR status = 'matched' OR status = 'posted')::int as allocated,
-        COUNT(*) FILTER (WHERE status = 'unmatched')::int as unmatched,
+        COUNT(*) FILTER (WHERE l.is_matched = true)::int as allocated,
+        COUNT(*) FILTER (WHERE l.is_matched = false)::int as unmatched,
         CASE WHEN COUNT(*) > 0
-             THEN ROUND(100.0 * COUNT(*) FILTER (WHERE status IN ('allocated','reconciled','matched','posted')) / COUNT(*))
+             THEN ROUND(100.0 * COUNT(*) FILTER (WHERE l.is_matched = true) / COUNT(*))
              ELSE 0 END::int as "reconPercent"
-       FROM bank_statement_lines
-       WHERE tenant_id = $1`,
+       FROM cash_bank_statement_lines l
+       JOIN cash_bank_statements s ON s.statement_id = l.statement_id
+       JOIN cash_bank_accounts a ON a.account_id = s.account_id AND a.tenant_id = $1`,
       [tenantId]
     );
 
-    // Recent transactions (last 20)
+    // Recent transactions (last 20) from cash_transactions
     const recentResult = await query(
-      `SELECT id, transaction_date, description, amount, transaction_type, status, reference, bank_account_id
-       FROM bank_statement_lines
-       WHERE tenant_id = $1
-       ORDER BY transaction_date DESC, created_at DESC
+      `SELECT ct.transaction_id as id, ct.transaction_date, ct.description, ct.amount, 
+              ct.transaction_type, ct.status, ct.reference, ct.payee_payer,
+              ct.account_id as bank_account_id
+       FROM cash_transactions ct
+       WHERE ct.tenant_id = $1
+       ORDER BY ct.transaction_date DESC, ct.created_at DESC
        LIMIT 20`,
       [tenantId]
     );
 
-    // Top spending (debits grouped by description, last 90 days)
+    // Top spending (withdrawals grouped by payee, last 90 days)
     const topSpendingResult = await query(
-      `SELECT description, SUM(ABS(amount))::numeric as total, COUNT(*)::int as cnt
-       FROM bank_statement_lines
-       WHERE tenant_id = $1 AND transaction_type = 'debit'
+      `SELECT payee_payer as description, SUM(amount)::numeric as total, COUNT(*)::int as cnt
+       FROM cash_transactions
+       WHERE tenant_id = $1 AND transaction_type IN ('WITHDRAWAL','FEE')
          AND transaction_date >= CURRENT_DATE - INTERVAL '90 days'
-       GROUP BY description
+       GROUP BY payee_payer
        ORDER BY total DESC
        LIMIT 5`,
       [tenantId]
     );
 
-    // Top income (credits grouped by description, last 90 days)
+    // Top income (deposits grouped by payee, last 90 days)
     const topIncomeResult = await query(
-      `SELECT description, SUM(amount)::numeric as total, COUNT(*)::int as cnt
-       FROM bank_statement_lines
-       WHERE tenant_id = $1 AND transaction_type = 'credit'
+      `SELECT payee_payer as description, SUM(amount)::numeric as total, COUNT(*)::int as cnt
+       FROM cash_transactions
+       WHERE tenant_id = $1 AND transaction_type = 'DEPOSIT'
          AND transaction_date >= CURRENT_DATE - INTERVAL '90 days'
-       GROUP BY description
+       GROUP BY payee_payer
        ORDER BY total DESC
        LIMIT 5`,
       [tenantId]

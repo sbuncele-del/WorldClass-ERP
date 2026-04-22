@@ -485,14 +485,43 @@ export async function getTreasuryDashboard(req: TenantRequest, res: Response): P
   try {
     const { tenantId } = getTenantContext(req);
 
-    // Return empty dashboard structure - tables will be created during full implementation
+    const [cashRes, pendingRes, recentRes] = await Promise.all([
+      pool.query(
+        `SELECT COUNT(*)::int as account_count, COALESCE(SUM(current_balance), 0)::numeric as total_cash
+         FROM cash_bank_accounts WHERE tenant_id = $1 AND is_active = true`,
+        [tenantId]
+      ),
+      pool.query(
+        `SELECT COUNT(*)::int as pending_count, COALESCE(SUM(amount), 0)::numeric as pending_amount
+         FROM cash_transactions WHERE tenant_id = $1 AND status = 'PENDING'`,
+        [tenantId]
+      ),
+      pool.query(
+        `SELECT ct.transaction_id as id, ct.transaction_date as date, ct.description,
+                ct.amount, ct.transaction_type as type, ct.status, ct.reference,
+                ct.payee_payer, b.bank_name, b.bank_code
+         FROM cash_transactions ct
+         JOIN cash_bank_accounts a ON a.account_id = ct.account_id
+         LEFT JOIN cash_banks b ON b.bank_id = a.bank_id
+         WHERE ct.tenant_id = $1
+         ORDER BY ct.transaction_date DESC, ct.created_at DESC LIMIT 10`,
+        [tenantId]
+      ),
+    ]);
+
     res.json({
       success: true,
       data: {
-        cash: { total_cash: 0, account_count: 0 },
-        investments: { total_investment_value: 0, investment_count: 0 },
-        pendingPayments: { pending_count: 0, pending_amount: 0 }
-      }
+        cash: {
+          total_cash: parseFloat(cashRes.rows[0]?.total_cash) || 0,
+          account_count: cashRes.rows[0]?.account_count || 0,
+        },
+        pendingPayments: {
+          pending_count: pendingRes.rows[0]?.pending_count || 0,
+          pending_amount: parseFloat(pendingRes.rows[0]?.pending_amount) || 0,
+        },
+        recentTransactions: recentRes.rows || [],
+      },
     });
   } catch (error: any) {
     console.error('[Treasury V2] Get dashboard error:', error);
