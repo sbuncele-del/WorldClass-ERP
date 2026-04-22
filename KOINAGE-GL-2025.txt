@@ -1,0 +1,1802 @@
+KOINAGE ENGINEERING (PTY) LTD
+GENERAL LEDGER - Year ended 31 December 2025
+All amounts in South African Rand (ZAR)
+============================================================
+
+========================================
+1112 - FNB - Business Account
+----------------------------------------
+2025-01-01 OB-0001                  57.36                 57.36 DR  Opening Balance as at Jan 1, 2025 (from QuickBooks TB D
+2025-01-06 BA-0001                              37752.40  37695.04 CR  Bank alloc: HEBEI DIZHUO RUBBER & PLASTIC PRODUCTS CO L
+2025-01-06 BA-0002                                275.00  37970.04 CR  Bank alloc: #R025ZVHXN0 SWIFT COMMISSION (SWIFT fee)
+2025-01-06 JE-BANK-1776185238806      60000.00                 22029.96 DR  Bank alloc: FNB App Payment From Loan (Shareholders loa
+2025-01-07 BA-0004                              19702.23  2327.73 DR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD - INA1325
+2025-01-07 BA-0005               20000.00                 22327.73 DR  Bank alloc: FNB - FNB APP TRANSFER FROM LOAN (Sharehold
+2025-01-11 BA-0006                                200.00  22127.73 DR  Bank alloc: PURCH TSEPO'S BRAAI CORNE 400568******7933 
+2025-01-11 BA-0007                               1006.37  21121.36 DR  Bank alloc: PURCH OK LIQUOR KLIPFONTE 400568******7933 
+2025-01-13 BA-0008                                389.68  20731.68 DR  Bank alloc: PURCH TSEPO'S BUTCHERY * 400568******7933 (
+2025-01-14 BA-0009                                289.00  20442.68 DR  Bank alloc: 763109 (Numeric ref - supplier payment)
+2025-01-14 BA-0010                               1320.00  19122.68 DR  Bank alloc: PURCH AMAN 400568******7933 (Card purchase)
+2025-01-14 BA-0011                                201.17  18921.51 DR  Bank alloc: PURCH PnP Fam River Cresc 400568******7933 
+2025-01-14 BA-0012                                 20.00  18901.51 DR  Bank alloc: PURCH Yoco *Snugg store 400568******7933 (C
+2025-01-15 BA-0013                              25288.50  6386.99 CR  Bank alloc: Ordained Trading - KEL0011 (Supplier: Ordai
+2025-01-15 BA-0014                             166634.22  173021.21 CR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-01-15 BA-0015             2846518.56                 2673497.35 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-01-15 BA-0016                               9900.00  2663597.35 DR  Bank alloc: TRUCK HIRE (Transport subcontractor)
+2025-01-15 BA-0017                              50000.00  2613597.35 DR  Bank alloc: CHA161 (Numeric ref - supplier payment)
+2025-01-15 BA-0018                             100000.00  2513597.35 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-15 BA-0019                               2955.33  2510642.02 DR  Bank alloc: INA13251 (Supplier invoice payment)
+2025-01-15 BA-0020                             500000.00  2010642.02 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-15 BA-0021                              80000.00  1930642.02 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-15 BA-0022                               5783.00  1924859.02 DR  Bank alloc: Airlink/Proflight/Stayeasy/Garden court - F
+2025-01-15 BA-0023                              23633.33  1901225.69 DR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD - INA1327
+2025-01-15 BA-0024                               3071.74  1898153.95 DR  Bank alloc: Airlink/Proflight/Stayeasy/Garden court - F
+2025-01-15 BA-0025               15000.00                 1913153.95 DR  Bank alloc: FNB APP TRANSFER FROM LOAN (Shareholders lo
+2025-01-15 BA-0026               20000.00                 1933153.95 DR  Bank alloc: FNB APP PAYMENT FROM LOAN (Shareholders loa
+2025-01-16 BA-0027                                888.90  1932265.05 DR  Bank alloc: PURCH Total Route N4 C 400568******7933 (Fu
+2025-01-16 BA-0028                              44859.69  1887405.36 DR  Bank alloc: R025ZK5J80 PI202501005 (Purchase invoice pa
+2025-01-16 BA-0029                                275.00  1887130.36 DR  Bank alloc: #R025ZKNQX0 SWIFT COMMISSION (SWIFT fee)
+2025-01-16 BA-0030                                275.00  1886855.36 DR  Bank alloc: #R025ZK5J80 SWIFT COMMISSION (SWIFT fee)
+2025-01-16 BA-0031                              48255.78  1838599.58 DR  Bank alloc: R025ZKNQX0 DZ20250107GH (International supp
+2025-01-17 BA-0032                             102000.00  1736599.58 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-17 BA-0033                                824.00  1735775.58 DR  Bank alloc: PURCH Big Five main Shop 400568******7933 (
+2025-01-21 BA-0034                             353967.41  1381808.17 DR  Bank alloc: HMA (Supplier: HMA)
+2025-01-22 BA-0035                             119025.00  1262783.17 DR  Bank alloc: Ordained Trading - 25-KNG-PINVC-01 (Supplie
+2025-01-23 BA-0036                              26910.00  1235873.17 DR  Bank alloc: Advanced Worx 112 (Pty) Ltd t/a Adroit Tech
+2025-01-23 BA-0037                               1908.21  1233964.96 DR  Bank alloc: SASOL SHERITA ' S 485442*1281 21 JAN (Fuel)
+2025-01-23 BA-0038                             400000.00  833964.96 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-24 BA-0039                              46881.59  787083.37 DR  Bank alloc: R025Z0KKB0 DZ20250117GH (International supp
+2025-01-24 BA-0040                                275.00  786808.37 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-01-25 BA-0041                               3890.00  782918.37 DR  Bank alloc: Meadowdine Group (Supplier: Meadowdine Grou
+2025-01-27 BA-0042                                399.00  782519.37 DR  Bank alloc: Plumblink - PURCH 2020 PLUMBLINK FAER 40056
+2025-01-27 BA-0043                              50000.00  732519.37 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-27 BA-0044                             200000.00  532519.37 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-28 BA-0045                               1853.25  530666.12 DR  Bank alloc: SASOL N4 ROSEHAVEN 485442*1281 25 JAN (Fuel
+2025-01-29 BA-0046                                 89.00  530577.12 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-01-29 BA-0047                                125.48  530451.64 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-01-31 BA-0541               53370.42                 583822.06 DR  Bank receipt: SARS - SARS VAT 42603156110648000108
+2025-01-31 BA-0542               69605.21                 653427.27 DR  Bank receipt: SARS - SARS VAT 42603156110648000376
+2025-02-04 BA-0050                                 10.00  653417.27 DR  Bank alloc: Advance Woodlands 485442*1281 31 JAN (Card 
+2025-02-05 BA-0051                                 19.99  653397.28 DR  Bank alloc: OK EXPRESS WITBANK 485442*1281 03 FEB (Card
+2025-02-05 BA-0052                              20897.00  632500.28 DR  Bank alloc: iStore - iStore Highveld Mal 485442*1281 03
+2025-02-07 BA-0053                              57971.45  574528.83 DR  Bank alloc: Cargo Compass SA PTY LTD (Supplier: Cargo C
+2025-02-07 BA-0054                                250.00  574278.83 DR  Bank alloc: CALTEX NOVA MOTORS 485442*1281 06 FEB (Fuel
+2025-02-07 BA-0055                              50000.00  524278.83 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-08 BA-0056                               1968.00  522310.83 DR  Bank alloc: SASOL WITBANK 485442*1281 06 FEB (Fuel)
+2025-02-10 BA-0057                4434.52                 526745.35 DR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX49150868 (SARS 
+2025-02-10 BA-0058                6543.82                 533289.17 DR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX49150685 (SARS 
+2025-02-10 BA-0059                               3890.00  529399.17 DR  Bank alloc: Meadowdine Group (Supplier: Meadowdine Grou
+2025-02-10 BA-0060                                 75.00  529324.17 DR  Bank alloc: SPARES WISE WITB 485442*1281 06 FEB (Card p
+2025-02-10 BA-0061              102809.83                 632134.00 DR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX49149338 (SARS 
+2025-02-11 BA-0062                              20000.00  612134.00 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-11 BA-0066                                250.00  611884.00 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 09 FEB (Fuel)
+2025-02-12 BA-0067                                428.09  611455.91 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-02-12 BA-0068                              77834.91  533621.00 DR  Bank alloc: R025XM0M80 DZ20250210GH (International supp
+2025-02-12 BA-0069                             200000.00  333621.00 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-14 BA-0070                             130000.00  203621.00 DR  Bank alloc: FSTV35592 (Supplier ref payment)
+2025-02-14 BA-0071                               1754.95  201866.05 DR  Bank alloc: SASOL LEYDS 485442*1281 12 FEB (Fuel)
+2025-02-14 BA-0072               87058.30                 288924.35 DR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX49467909 (SARS 
+2025-02-17 BA-0073                                 47.00  288877.35 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 14 FEB (Card
+2025-02-17 BA-0074                              15000.00  273877.35 DR  Bank alloc: SIHLOBO (Shareholders loan)
+2025-02-17 BA-0075                                 47.00  273830.35 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 14 FEB (Card
+2025-02-17 BA-0076                                943.90  272886.45 DR  Bank alloc: PURCH TOTAL PLAZA 400568******7933 (Fuel)
+2025-02-17 BA-0077                             119600.47  153285.98 DR  Bank alloc: FSTV35592 (Supplier ref payment)
+2025-02-17 BA-0078                                 47.00  153238.98 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 15 FEB (Card
+2025-02-17 BA-0079                                 47.00  153191.98 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 15 FEB (Card
+2025-02-17 BA-0080                               5200.00  147991.98 DR  Bank alloc: BRICKS (Building materials)
+2025-02-18 BA-0081                                 47.00  147944.98 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 15 FEB (Card
+2025-02-18 BA-0082                               3999.00  143945.98 DR  Bank alloc: Builders (Building materials)
+2025-02-19 BA-0083                               5499.00  138446.98 DR  Bank alloc: BWH EMALAHLENE 485442*1281 17 FEB (Card pur
+2025-02-19 BA-0084                              11000.00  127446.98 DR  Bank alloc: DAVID (Subcontractor)
+2025-02-19 BA-0085                              23503.18  103943.80 DR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD - INA1330
+2025-02-19 BA-0086                               2991.75  100952.05 DR  Bank alloc: CUSTOMS DUTY (Import duty/freight)
+2025-02-19 BA-0087                               1910.44  99041.61 DR  Bank alloc: SASOL WITBANK 485442*1281 17 FEB (Fuel)
+2025-02-20 BA-0088                               2500.00  96541.61 DR  Bank alloc: 3319 (Numeric ref - supplier payment)
+2025-02-20 BA-0089                               6000.00  90541.61 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-21 BA-0090                              24022.35  66519.26 DR  Bank alloc: TECDRIVE - TQU1613 (Vehicle parts)
+2025-02-22 BA-0091                                564.00  65955.26 DR  Bank alloc: PURCH WHY NOT 13 400568******7933 (Card pur
+2025-02-22 BA-0092                               5240.00  60715.26 DR  Bank alloc: TECHNICIAN (Technician subcontractor)
+2025-02-24 BA-0094                               4000.00  56715.26 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-24 BA-0095                              20000.00  36715.26 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-24 BA-0096              574528.00                 611243.26 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-02-24 BA-0097                                600.00  610643.26 DR  Bank alloc: PURCH GINELLIS 400568******7933 (Card purch
+2025-02-26 BA-0098                               3000.00  607643.26 DR  Bank alloc: BRICKS (Building materials)
+2025-02-28 BA-0099                                 89.00  607554.26 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-02-28 BA-0100                              15000.00  592554.26 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-28 BA-0101                              15000.00  577554.26 DR  Bank alloc: Builders - BUILDER (Building materials)
+2025-02-28 BA-0102                                 39.00  577515.26 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-02-28 BA-0103                             500000.00  77515.26 DR  Bank alloc: CHA161 (Numeric ref - supplier payment)
+2025-02-28 BA-0104                                156.88  77358.38 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-03-01 BA-0105                               5200.00  72158.38 DR  Bank alloc: BRICKS (Building materials)
+2025-03-01 BA-0106                              12900.00  59258.38 DR  Bank alloc: TRUCK HIRE (Transport subcontractor)
+2025-03-03 BA-0107                               2170.00  57088.38 DR  Bank alloc: PURCH BWH EMALAHLENE 400568******7933 (Card
+2025-03-03 BA-0108                              20079.15  37009.23 DR  Bank alloc: Cargo Compass SA PTY LTD (Supplier: Cargo C
+2025-03-04 BA-0109                               1927.90  35081.33 DR  Bank alloc: SASOL WITBANK 485442*1281 02 MAR (Fuel)
+2025-03-05 BA-0110                                900.00  34181.33 DR  Bank alloc: EAGLE FALLS STEAK R 485442*1281 02 MAR (Car
+2025-03-05 BA-0111                                525.00  33656.33 DR  Bank alloc: INTERNATIONAL EXPRE 485442*1281 02 MAR (Car
+2025-03-07 BA-0112                               9000.00  24656.33 DR  Bank alloc: BONDA (Subcontractor)
+2025-03-07 BA-0113                               5000.00  19656.33 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-03-08 BA-0114                               5000.00  14656.33 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-03-10 BA-0115                               1208.00  13448.33 DR  Bank alloc: Meadowdine Group - 3890 (Supplier: Meadowdi
+2025-03-10 BA-0116                               1615.00  11833.33 DR  Bank alloc: SUNCOAST HOTEL SPA 485442*1281 06 MAR (Card
+2025-03-10 BA-0117                               2682.00  9151.33 DR  Bank alloc: Meadowdine Group - 1208 (Supplier: Meadowdi
+2025-03-10 BA-0118                               8000.00  1151.33 DR  Bank alloc: Builders - BUILDER (Building materials)
+2025-03-10 BA-0119               70000.00                 71151.33 DR  Bank alloc: FNB APP PAYMENT FROM LOAN (Shareholders loa
+2025-03-11 BA-0120                              35399.92  35751.41 DR  Bank alloc: SHENZHEN JOURNEY TO THE WEST COMPANY LIMITE
+2025-03-11 BA-0121                                275.00  35476.41 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-03-12 BA-0122                               2059.29  33417.12 DR  Bank alloc: SASOL WITBANK 485442*1281 10 MAR (Fuel)
+2025-03-13 BA-0123               62967.96                 96385.08 DR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX52518059 (SARS 
+2025-03-13 BA-0124                              22241.65  74143.43 DR  Bank alloc: SHENZHEN JOURNEY TO THE WEST COMPANY LIMITE
+2025-03-13 BA-0125                                275.00  73868.43 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-03-14 BA-0126                              40000.00  33868.43 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-03-15 BA-0127                                250.00  33618.43 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 13 MAR (Fuel)
+2025-03-17 BA-0128                             139247.26  105628.83 CR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-03-17 BA-0129             1037608.00                 931979.17 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-03-17 BA-0130                             583375.91  348603.26 DR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-03-17 BA-0131                                158.70  348444.56 DR  Bank alloc: BOLT AND NUT MINING 485442*1281 13 MAR (Car
+2025-03-18 BA-0132                             100000.00  248444.56 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-03-18 BA-0133                              70000.00  178444.56 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-03-24 BA-0134                               1953.60  176490.96 DR  Bank alloc: SASOL N4 ROSEHAVEN 485442*1281 22 MAR (Fuel
+2025-03-24 BA-0135                                 19.90  176471.06 DR  Bank alloc: SASOL N4 ROSEHAVEN 485442*1281 22 MAR (Fuel
+2025-03-25 BA-0136                                 49.00  176422.06 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 22 MAR (Card
+2025-03-25 BA-0137                                 49.00  176373.06 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 23 MAR (Card
+2025-03-25 BA-0138                                 61.99  176311.07 DR  Bank alloc: Astron Energy Nova 485442*1281 23 MAR (Card
+2025-03-25 BA-0139                                500.00  175811.07 DR  Bank alloc: Q4 TIERPOORT 485442*1281 21 MAR (Card purch
+2025-03-26 BA-0140                               2030.00  173781.07 DR  Bank alloc: FIREROOM PTA 485442*1281 23 MAR (Card purch
+2025-03-26 BA-0142                               6493.60  167287.47 DR  Bank alloc: Cargo Compass SA PTY LTD - AI Category: Com
+2025-03-26 BA-0143                              23724.71  143562.76 DR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD - INA1333
+2025-03-26 BA-0144                                 49.00  143513.76 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 23 MAR (Card
+2025-03-26 BA-0145                               1436.65  142077.11 DR  Bank alloc: THE ROSE FORECOURT 485442*1281 23 MAR (Card
+2025-03-27 BA-0146               30360.00                 172437.11 DR  Bank alloc: FNB - FNB APP PAYMENT FROM INVOICE 20437 (C
+2025-03-27 BA-0148               29118.00                 201555.11 DR  Bank alloc: FNB - FNB APP PAYMENT FROM INVOICE 1112 (Cu
+2025-03-27 BA-0149               45695.00                 247250.11 DR  Bank alloc: FNB - FNB APP PAYMENT FROM INVOICE 1097 (Cu
+2025-03-27 BA-0543                                200.00  247050.11 DR  Bank payment: POS Purchase Cappuccino'S Save
+2025-03-28 BA-0150                               1402.18  245647.93 DR  Bank alloc: SQU11598 (Supplier quote payment)
+2025-03-29 BA-0151                               1096.65  244551.28 DR  Bank alloc: Total Elardus Park 485442*1281 26 MAR (Fuel
+2025-03-29 BA-0152                               1447.55  243103.73 DR  Bank alloc: SASOL N4 ROSEHAVEN 485442*1281 27 MAR (Fuel
+2025-03-29 BA-0153                                 19.50  243084.23 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-03-29 BA-0154                                 89.00  242995.23 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-03-29 BA-0155                                167.28  242827.95 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-03-29 BA-0544                                199.80  242628.15 DR  Bank payment: POS Purchase The Rose Steers
+2025-03-29 BA-0545                               1200.00  241428.15 DR  Bank payment: POS Purchase Fireroom Pta
+2025-03-31 BA-0156                                 49.00  241379.15 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 27 MAR (Card
+2025-04-01 BA-0157                               2600.00  238779.15 DR  Bank alloc: BRICKS (Building materials)
+2025-04-02 BA-0158              250000.00                 488779.15 DR  Bank alloc: FNB APP TRANSFER FROM LOAN (Shareholders lo
+2025-04-02 BA-0159                             300000.00  188779.15 DR  Bank alloc: 2804 (Numeric ref - supplier payment)
+2025-04-05 BA-0160                               1789.61  186989.54 DR  Bank alloc: SASOL SHERITA ' S 485442*1281 03 APR (Fuel)
+2025-04-07 BA-0161                               1066.44  185923.10 DR  Bank alloc: SASOL SHERITA ' S 485442*1281 04 APR (Fuel)
+2025-04-07 BA-0162                               3902.05  182021.05 DR  Bank alloc: TotalSports Menlyn 485442*1281 04 APR (Card
+2025-04-07 BA-0163                               3890.00  178131.05 DR  Bank alloc: 1237 (Numeric ref - supplier payment)
+2025-04-07 BA-0164                               2000.00  176131.05 DR  Bank alloc: Builders - BUILDER (Building materials)
+2025-04-07 BA-0165                               9500.00  166631.05 DR  Bank alloc: Builders - BUILDERS-JOSIAS (Building materi
+2025-04-08 BA-0166                             400000.00  233368.95 CR  Bank alloc: 2804 (Numeric ref - supplier payment)
+2025-04-08 BA-0167               55000.00                 178368.95 CR  Bank alloc: FNB APP PAYMENT FROM LOAN (Shareholders loa
+2025-04-08 BA-0168              233700.00                 55331.05 DR  Bank alloc: FNB APP TRANSFER FROM LOAN (Shareholders lo
+2025-04-08 BA-0169               20000.00                 75331.05 DR  Bank alloc: FNB APP TRANSFER FROM LOAN (Shareholders lo
+2025-04-08 BA-0170                3000.00                 78331.05 DR  Bank alloc: FNB APP TRANSFER FROM LOAN (Shareholders lo
+2025-04-08 BA-0171               50000.00                 128331.05 DR  Bank alloc: FNB APP TRANSFER FROM LOAN (Shareholders lo
+2025-04-09 BA-0172                                 15.00  128316.05 DR  Bank alloc: Advance Menlyn Park 485442*1281 06 APR (Car
+2025-04-10 BA-0173                                458.87  127857.18 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-04-10 BA-0174                              83431.94  44425.24 DR  Bank alloc: R025VL5D20 PI202504004 (Purchase invoice pa
+2025-04-11 BA-0177             3947631.04                 3992056.28 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-04-11 BA-0178                             353967.41  3638088.87 DR  Bank alloc: HMA (Supplier: HMA)
+2025-04-11 BA-0179                             500000.00  3138088.87 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-04-11 BA-0180                              20000.00  3118088.87 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-04-11 BA-0181                              55000.00  3063088.87 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-04-11 BA-0182                             124406.47  2938682.40 DR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD (
+2025-04-11 BA-0183                             412162.57  2526519.83 DR  Bank alloc: IN147948 (Supplier invoice payment)
+2025-04-11 BA-0184                             289100.00  2237419.83 DR  Bank alloc: 2804 (Numeric ref - supplier payment)
+2025-04-11 BA-0185                              61824.39  2175595.44 DR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD (
+2025-04-14 BA-0186                                 15.00  2175580.44 DR  Bank alloc: NELSON MANDELA SQUA 485442*1281 10 APR (Car
+2025-04-14 BA-0187                                550.00  2175030.44 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-04-14 BA-0188                                 49.00  2174981.44 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 11 APR (Card
+2025-04-14 BA-0189                               4100.00  2170881.44 DR  Bank alloc: Builders - BUILDERS-JOSIAS (Building materi
+2025-04-14 BA-0190                                 49.00  2170832.44 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 10 APR (Card
+2025-04-14 BA-0191                               1874.20  2168958.24 DR  Bank alloc: SASOL WITBANK 485442*1281 11 APR (Fuel)
+2025-04-14 BA-0192                             111543.71  2057414.53 DR  Bank alloc: R025VDXLK0 PI202504007 (Purchase invoice pa
+2025-04-15 BA-0193                                550.00  2056864.53 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-04-15 BA-0194              196329.36                 2253193.89 DR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX55334486 (SARS 
+2025-04-17 BA-0195                               1799.72  2251394.17 DR  Bank alloc: SASOL SHERITA ' S 485442*1281 15 APR (Fuel)
+2025-04-17 BA-0196                                 49.00  2251345.17 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 14 APR (Card
+2025-04-22 BA-0197                               2500.00  2248845.17 DR  Bank alloc: Builders - BUILDERS-JOSIAS (Building materi
+2025-04-23 BA-0198                             100000.00  2148845.17 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-04-23 BA-0199                               1939.37  2146905.80 DR  Bank alloc: SASOL WITBANK 485442*1281 21 APR (Fuel)
+2025-04-23 BA-0200                             250000.00  1896905.80 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-04-24 BA-0201                              14415.89  1882489.91 DR  Bank alloc: 24-KING-INVC-01 (Koinage invoice payment)
+2025-04-24 BA-0203                              96105.98  1786383.93 DR  Bank alloc: 25-KING-INVC-02 (Koinage invoice payment)
+2025-04-24 BA-0204                             124406.47  1661977.46 DR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-04-29 BA-0205                                209.00  1661768.46 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-04-29 BA-0206                                100.00  1661668.46 DR  Bank alloc: SEND Bolt Bolt SEND XXXXXXX4584 (Ride-haili
+2025-04-29 BA-0207                                 49.99  1661618.47 DR  Bank alloc: FLM Witbank 485442*1281 27 APR (Card purcha
+2025-04-29 BA-0208                                 37.00  1661581.47 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-04-29 BA-0209                                 89.00  1661492.47 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-04-30 BA-0210                                571.22  1660921.25 DR  Bank alloc: S500V73Q40 SD3GRJC915Z0KKB1 (SWIFT service 
+2025-04-30 BA-0211                                 49.99  1660871.26 DR  Bank alloc: FLM Witbank 485442*1281 28 APR (Card purcha
+2025-04-30 BA-0212                                571.25  1660300.01 DR  Bank alloc: S500V73VH0 SD3GRFVTQ5ZKNQX1 (SWIFT service 
+2025-04-30 BA-0213                                570.75  1659729.26 DR  Bank alloc: S500V73X50 SD3GRBGV15ZVHXN1 (SWIFT service 
+2025-04-30 BA-0214                               1680.90  1658048.36 DR  Bank alloc: SASOL WITBANK 485442*1281 28 APR (Fuel)
+2025-04-30 BA-0215                                 56.00  1657992.36 DR  Bank alloc: Total Petro N12 Sou 485442*1281 27 APR (Fue
+2025-05-02 BA-0216                               4473.50  1653518.86 DR  Bank alloc: 1272 (Numeric ref - supplier payment)
+2025-05-02 BA-0217                              23395.45  1630123.41 DR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD (Supplier
+2025-05-02 BA-0218                              50000.00  1580123.41 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-05-03 BA-0219                                 49.00  1580074.41 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 01 MAY (Card
+2025-05-03 BA-0220                                792.90  1579281.51 DR  Bank alloc: SASOL N4 ROSEHAVEN 485442*1281 01 MAY (Fuel
+2025-05-05 BA-0221                             112512.11  1466769.40 DR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-05-05 BA-0222                             117621.49  1349147.91 DR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-05-05 BA-0223                                 49.00  1349098.91 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 01 MAY (Card
+2025-05-05 BA-0224                              19477.51  1329621.40 DR  Bank alloc: PAYGATE1 (Payment gateway - supplier)
+2025-05-05 BA-0225                               1713.51  1327907.89 DR  Bank alloc: SASOL WITBANK 485442*1281 03 MAY (Fuel)
+2025-05-05 BA-0226             1842409.40                 3170317.29 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-05-05 BA-0227                             150000.00  3020317.29 DR  Bank alloc: FNB - LOAN (Creditor payment via loan)
+2025-05-06 BA-0228                               1099.00  3019218.29 DR  Bank alloc: Builders (Building materials)
+2025-05-06 BA-0229                               6234.50  3012983.79 DR  Bank alloc: Builders (Building materials)
+2025-05-06 BA-0230                               1019.00  3011964.79 DR  Bank alloc: WOOLWORTHS 485442*1281 04 MAY (Card purchas
+2025-05-07 BA-0231                                500.03  3011464.76 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-05-07 BA-0232                                 49.00  3011415.76 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 05 MAY (Card
+2025-05-07 BA-0233                              90915.12  2920500.64 DR  Bank alloc: R025TNBXV0 PI202505007 (Purchase invoice pa
+2025-05-07 BA-0234                               9630.00  2910870.64 DR  Bank alloc: CHAMBERLAIN SILVERL 485442*1281 04 MAY (Car
+2025-05-07 BA-0235                                 49.00  2910821.64 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 04 MAY (Card
+2025-05-07 BA-0236                                 49.00  2910772.64 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 04 MAY (Card
+2025-05-14 BA-0237                              25598.00  2885174.64 DR  Bank alloc: Incredible connections (Computer equipment)
+2025-05-14 BA-0238                               1540.00  2883634.64 DR  Bank alloc: ACSA JIA 485442*1281 11 MAY (Card purchase)
+2025-05-15 BA-0239                             140045.97  2743588.67 DR  Bank alloc: R025TCWG60 PI202505011 (Purchase invoice pa
+2025-05-15 BA-0240                                482.33  2743106.34 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-05-15 BA-0241                              87696.72  2655409.62 DR  Bank alloc: R025TCXHD0 PI202505020 (Purchase invoice pa
+2025-05-15 BA-0242                              25422.48  2629987.14 DR  Bank alloc: Ordained Trading - 25-KNG-INVC-03 (Supplier
+2025-05-15 BA-0243                                550.00  2629437.14 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-05-19 BA-0244                               1785.95  2627651.19 DR  Bank alloc: SASOL WITBANK 485442*1281 17 MAY (Fuel)
+2025-05-19 BA-0245                             102187.64  2525463.55 DR  Bank alloc: PRO0214919 (Supplier ref payment)
+2025-05-20 BA-0246                                 54.50  2525409.05 DR  Bank alloc: BWH WOODLANDS 485442*1281 17 MAY (Card purc
+2025-05-20 BA-0247                               1012.00  2524397.05 DR  Bank alloc: ACSA JIA 485442*1281 16 MAY (Card purchase)
+2025-05-21 BA-0248                              14069.73  2510327.32 DR  Bank alloc: PAYGATE1 (Payment gateway - supplier)
+2025-05-23 BA-0249                               1265.00  2509062.32 DR  Bank alloc: Builders - BUILDERS-JOSIAS (Building materi
+2025-05-23 BA-0250                              22881.36  2486180.96 DR  Bank alloc: Cargo Compass SA (deleted) (Supplier: Cargo
+2025-05-23 BA-0251                              80000.00  2406180.96 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-05-24 BA-0252                              14600.00  2391580.96 DR  Bank alloc: TRUCK HIRE (Transport subcontractor)
+2025-05-26 BA-0253                              23159.85  2368421.11 DR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD - INA1338
+2025-05-26 BA-0254                               2300.00  2366121.11 DR  Bank alloc: Builders - BUILDERS-JOSIAS (Building materi
+2025-05-28 BA-0255                               2885.00  2363236.11 DR  Bank alloc: Builders (Building materials)
+2025-05-29 BA-0256                                236.12  2362999.99 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-05-29 BA-0257                                 89.00  2362910.99 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-05-30 BA-0258                               4000.00  2358910.99 DR  Bank alloc: ATM CASH 00430112 485442*1281 (Card purchas
+2025-05-30 BA-0259                                275.00  2358635.99 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-05-30 BA-0260                               1000.00  2357635.99 DR  Bank alloc: ATM CASH 00430112 485442*1281 (Card purchas
+2025-05-30 BA-0261                              48033.48  2309602.51 DR  Bank alloc: R025SS7QG0 PI202505035 (Purchase invoice pa
+2025-06-04 BA-0262                             249859.35  2059743.16 DR  Bank alloc: HMA (Supplier: HMA)
+2025-06-04 BA-0263             1312879.57                 3372622.73 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-06-04 BA-0264                             133114.92  3239507.81 DR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-06-04 BA-0266                             173496.99  3066010.82 DR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-06-04 BA-0267                              61679.10  3004331.72 DR  Bank alloc: 25-KING-INVC-04 (Koinage invoice payment)
+2025-06-05 BA-0269                               3890.00  3000441.72 DR  Bank alloc: Meadowdine Group (Supplier: Meadowdine Grou
+2025-06-05 BA-0270                              90000.00  2910441.72 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-06-09 BA-0271              197406.70                 3107848.42 DR  Bank alloc: SENOKGA (Customer: Senokga)
+2025-06-09 BA-0272               45081.67                 3152930.09 DR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX59924180 (SARS 
+2025-06-11 BA-0273              650000.00                 3802930.09 DR  Bank alloc: FNB - FNB APP PAYMENT FROM SIHLOBOPN (Share
+2025-06-11 BA-0274                             650000.00  3152930.09 DR  Bank alloc: SIHLOBO (Shareholders loan)
+2025-06-12 BA-0275                               4500.00  3148430.09 DR  Bank alloc: TRUCK HIRE (Transport subcontractor)
+2025-06-12 BA-0276             1014229.52                 4162659.61 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-06-12 BA-0277                             989100.00  3173559.61 DR  Bank alloc: 2804 (Numeric ref - supplier payment)
+2025-06-14 BA-0278                             200000.00  2973559.61 DR  Bank alloc: FRALINE (Supplier: Fraline)
+2025-06-17 BA-0279                              50000.00  2923559.61 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-06-17 BA-0280                              20125.00  2903434.61 DR  Bank alloc: Fumi Energy PTY LTD (Supplier: Fumi Energy)
+2025-06-17 BA-0281                               1741.89  2901692.72 DR  Bank alloc: SASOL WITBANK 485442*1281 14 JUN (Fuel)
+2025-06-17 BA-0282                               6640.00  2895052.72 DR  Bank alloc: QUO0001478 (Supplier quote payment)
+2025-06-20 BA-0283              677207.20                 3572259.92 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-06-20 BA-0284                             300000.00  3272259.92 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-06-20 BA-0285               22600.00                 3294859.92 DR  Bank alloc: FNB APP PAYMENT FROM LOAN (Shareholders loa
+2025-06-23 BA-0286                              30000.00  3264859.92 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-06-23 BA-0287                                550.00  3264309.92 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-06-23 BA-0288                             118932.45  3145377.47 DR  Bank alloc: R025S91JQ0 PI202506007 (Purchase invoice pa
+2025-06-25 BA-0289                                547.85  3144829.62 DR  Bank alloc: S500RZQDW0 SD3GRHG425VDXLK1 (SWIFT service 
+2025-06-25 BA-0290                                547.58  3144282.04 DR  Bank alloc: S500RZQFN0 SD3GR3K1K5WMTJL1 (SWIFT service 
+2025-06-25 BA-0291                                547.81  3143734.23 DR  Bank alloc: S500RZQCV0 SD3GRQS5Z5XM0M81 (SWIFT service 
+2025-06-25 BA-0292                                547.60  3143186.63 DR  Bank alloc: S500RZQFD0 SD3GRG2BQ5VL5D21 (SWIFT service 
+2025-06-25 BA-0293                                547.58  3142639.05 DR  Bank alloc: S500RZQGC0 SD3GR2L0R5WMTDL1 (SWIFT service 
+2025-06-25 BA-0294                                547.82  3142091.23 DR  Bank alloc: S500RZQD80 SD3GRHLVZ5VDX9M1 (SWIFT service 
+2025-06-26 BA-0295                             200000.00  2942091.23 DR  Bank alloc: FRALINE (Supplier: Fraline)
+2025-06-28 BA-0296                                213.68  2941877.55 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-06-28 BA-0297                                 89.00  2941788.55 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-07-01 BA-0298                              28142.47  2913646.08 DR  Bank alloc: IVQ5656 (Supplier invoice payment)
+2025-07-01 BA-0299                               1353.91  2912292.17 DR  Bank alloc: 530.00 LKL*LNQHNGKN 485442*1281 29 JUN (Pre
+2025-07-01 BA-0300                               1353.91  2910938.26 DR  Bank alloc: 530.00 LKL*LNQHNGKN 485442*1281 29 JUN (Pre
+2025-07-02 BA-0301                               4000.00  2906938.26 DR  Bank alloc: TRUCK HIRE (Transport subcontractor)
+2025-07-03 BA-0302                              19925.00  2887013.26 DR  Bank alloc: 6625 (Numeric ref - supplier payment)
+2025-07-03 BA-0303                               1727.38  2885285.88 DR  Bank alloc: SASOL WATERMEYER 485442*1281 01 JUL (Fuel)
+2025-07-04 BA-0304                              10000.00  2875285.88 DR  Bank alloc: CEILING FIXING (Building materials)
+2025-07-04 BA-0305                               1500.00  2873785.88 DR  Bank alloc: PLUMBING SERVICES (Plumbing materials/servi
+2025-07-05 BA-0306                               3890.00  2869895.88 DR  Bank alloc: INV_263 (Supplier invoice payment)
+2025-07-05 BA-0307                               1868.78  2868027.10 DR  Bank alloc: SASOL TUNNEY 485442*1281 03 JUL (Fuel)
+2025-07-05 BA-0308                              24217.10  2843810.00 DR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD (Supplier
+2025-07-07 BA-0309                              60650.00  2783160.00 DR  Bank alloc: Stacy Priestley - SOQ73132 (Professional fe
+2025-07-09 BA-0310                              30000.00  2753160.00 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-07-09 BA-0311                                275.00  2752885.00 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-07-09 BA-0312                              26215.47  2726669.53 DR  Bank alloc: R025RD5DM0 CI202507002 (Commercial invoice 
+2025-07-10 BA-0313                              23557.26  2703112.27 DR  Bank alloc: IVQ6191 (Supplier invoice payment)
+2025-07-11 BA-0314                              50000.00  2653112.27 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-07-11 BA-0315                               9075.00  2644037.27 DR  Bank alloc: INVSGB-0109 (Supplier invoice payment)
+2025-07-15 BA-0316                                550.00  2643487.27 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 13 JUL (Fuel)
+2025-07-17 BA-0317                              72049.80  2571437.47 DR  Bank alloc: Fumi Energy PTY LTD (Supplier: Fumi Energy)
+2025-07-18 BA-0318                               6000.00  2565437.47 DR  Bank alloc: MULENGA (Subcontractor)
+2025-07-19 BA-0319                              52000.00  2513437.47 DR  Bank alloc: QU000115 (Supplier quote payment)
+2025-07-21 BA-0320                              50000.00  2463437.47 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-07-22 BA-0321                                550.00  2462887.47 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-07-22 BA-0322                               1693.60  2461193.87 DR  Bank alloc: SASOL HIGHVELD 485442*1281 20 JUL (Fuel)
+2025-07-22 BA-0323                              13995.00  2447198.87 DR  Bank alloc: Adendorff machinery mart (Machinery/tools)
+2025-07-22 BA-0324                             108648.78  2338550.09 DR  Bank alloc: R025QTCM50 PI202507033 (Purchase invoice pa
+2025-07-23 BA-0325                              35029.90  2303520.19 DR  Bank alloc: 840623 (Numeric ref - supplier payment)
+2025-07-23 BA-0326              946207.65                 3249727.84 DR  Bank alloc: R025QSDFK0 KANSANSHI MINING PLC (Customer: 
+2025-07-25 BA-0327                                533.08  3249194.76 DR  Bank alloc: S500QS6720 SD3GRV4R85TCWG61 (SWIFT service 
+2025-07-25 BA-0328                                533.14  3248661.62 DR  Bank alloc: S500QS67Q0 SD3GRV4QK5TCXHD1 (SWIFT service 
+2025-07-25 BA-0329                                533.15  3248128.47 DR  Bank alloc: S500QS65J0 SD3GRQZV45TNBXV1 (SWIFT service 
+2025-07-28 BA-0330                             580000.00  2668128.47 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-07-29 BA-0331                               1588.21  2666540.26 DR  Bank alloc: SASOL WITBANK 485442*1281 26 JUL (Fuel)
+2025-07-29 BA-0332                                 67.92  2666472.34 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-07-29 BA-0333                                342.52  2666129.82 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-07-29 BA-0334                               1000.00  2665129.82 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 27 JUL (Fuel)
+2025-07-29 BA-0335                                 93.00  2665036.82 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-07-30 BA-0336                              50000.00  2615036.82 DR  Bank alloc: FRALINE (Supplier: Fraline)
+2025-08-01 BA-0847                             150000.00  2465036.82 DR  Bank recon: FNB App Payment To Marian Chama
+2025-08-01 BA-0848                              87602.50  2377434.32 DR  Bank recon: FNB App Payment To Di192124 (Supplier invoi
+2025-08-01 BA-0849                              43639.93  2333794.39 DR  Bank recon: FNB App Payment To Di192123 (Supplier invoi
+2025-08-01 BA-0850                             333669.08  2000125.31 DR  Bank recon: FNB App Payment To In148829 (Supplier invoi
+2025-08-01 BA-0851                               5481.75  1994643.56 DR  Bank recon: FNB App Payment To Di192340 (Supplier invoi
+2025-08-04 BA-0341                             100000.00  1894643.56 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-08-04 BA-0852                              25938.10  1868705.46 DR  Bank recon: FNB App Payment To Soq73132 (Supplier)
+2025-08-04 BA-0853                              15714.00  1852991.46 DR  Bank recon: FNB App Payment To 1519 (Supplier)
+2025-08-12 BA-0854                              12111.19  1840880.27 DR  Bank recon: FNB App Rtc Pmt To 812556
+2025-08-13 BA-0355               53903.34                 1894783.61 DR  Bank alloc: SARS DEPOSIT 53903.34 (SARS VAT refund)
+2025-08-14 BA-0855                              54206.36  1840577.25 DR  Bank recon: Outward Swift Pi202508018 (Purchase invoice
+2025-08-14 BA-0856                                298.14  1840279.11 DR  Bank recon: Forex Fee Swift Commission
+2025-08-15 BA-0857             1114682.07                 2954961.18 DR  Bank recon: Inward Swift Kansanshi Mining Plc
+2025-08-15 BA-0858                              50000.00  2904961.18 DR  Bank recon: FNB App Transfer To Loan
+2025-08-15 BA-0859                              26575.29  2878385.89 DR  Bank recon: FNB App Payment To Ina13467 (Supplier)
+2025-08-15 BA-0860                               1816.12  2876569.77 DR  Bank recon: Fuel Purchase Sasol Witbank
+2025-08-18 BA-0861                               3095.65  2873474.12 DR  Bank recon: Internet Pmt To Paygate1 (Processing fees)
+2025-08-19 BA-0862                                535.37  2872938.75 DR  Bank recon: Overseas Bank Charge (SWIFT fee)
+2025-08-19 BA-0863                                535.37  2872403.38 DR  Bank recon: Overseas Bank Charge (SWIFT fee)
+2025-08-19 BA-0864                               3890.00  2868513.38 DR  Bank recon: FNB App Payment To 301 (Supplier)
+2025-08-19 BA-0865                               1725.00  2866788.38 DR  Bank recon: FNB App Transfer To Inv87809 (Supplier invo
+2025-08-20 BA-0866              575541.58                 3442329.96 DR  Bank recon: Inward Swift Kansanshi Mining Plc
+2025-08-20 BA-0867                                738.70  3441591.26 DR  Bank recon: Fuel Purchase Sasol Highveld
+2025-08-25 BA-0868                              13267.80  3428323.46 DR  Bank recon: Internet Pmt To Paygate1 (Processing fees)
+2025-08-25 BA-0869                             160225.18  3268098.28 DR  Bank recon: Internet Pmt To 13679/1 (Supplier payment)
+2025-08-26 BA-0370                                 93.00  3268005.28 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-08-27 BA-0870                               8756.82  3259248.46 DR  Bank recon: FNB App Payment To 21450 (Supplier)
+2025-08-27 BA-0871                              90000.00  3169248.46 DR  Bank recon: FNB App Transfer To Loan
+2025-08-29 BA-0872                                 92.36  3169156.10 DR  Bank recon: Service Fees
+2025-09-01 BA-0375             1163598.00                 4332754.10 DR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-09-01 BA-0376                               1353.91  4331400.19 DR  Bank alloc: PREPAID ART 530.00.00 LKL*LNQHNGKN 485442*1
+2025-09-01 BA-0377                               1501.98  4329898.21 DR  Bank alloc: SASOL HIGHVELD 485442*1281 30 AUG (Fuel)
+2025-09-02 BA-0378              555779.73                 4885677.94 DR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-09-02 BA-0379                              25613.39  4860064.55 DR  Bank alloc: IVQ7916 (Supplier invoice payment)
+2025-09-03 BA-0380              248699.70                 5108764.25 DR  Bank alloc: R025R3GZL0 KANSANSHI MINING PLC (Customer: 
+2025-09-03 BA-0381                             200000.00  4908764.25 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-09-04 BA-0382              865982.37                 5774746.62 DR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-09-04 BA-0383              348777.97                 6123524.59 DR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-09-04 BA-0384                                550.00  6122974.59 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-09-04 BA-0385                                550.00  6122424.59 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-09-04 BA-0386                                550.00  6121874.59 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-09-04 BA-0387                              84419.79  6037454.80 DR  Bank alloc: R025QTCM50 CI202509001 (Commercial invoice 
+2025-09-05 BA-0388                               4000.00  6033454.80 DR  Bank alloc: TRANSPORT (Transport)
+2025-09-05 BA-0389                              30030.00  6003424.80 DR  Bank alloc: 7388 (Numeric ref - supplier payment)
+2025-09-05 BA-0390                             400000.00  5603424.80 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-09-08 BA-0391               41449.95                 5644874.75 DR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-09-08 BA-0392                                275.00  5644599.75 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-09-09 BA-0393                              14175.00  5630424.75 DR  Bank alloc: INVSGB-0125 (Supplier invoice payment)
+2025-09-09 BA-0394                              20529.04  5609895.71 DR  Bank alloc: 840623 (Numeric ref - supplier payment)
+2025-09-10 BA-0395                              23866.34  5586029.37 DR  Bank alloc: IVQ8251 (Supplier invoice payment)
+2025-09-10 BA-0396              438716.00                 6024745.37 DR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-09-10 BA-0397                                275.00  6024470.37 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-09-11 BA-0398                             700000.00  5324470.37 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-09-11 BA-0399              219358.00                 5543828.37 DR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-09-11 BA-0400                                275.00  5543553.37 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-09-12 BA-0401                              19800.00  5523753.37 DR  Bank alloc: INVSGB-0126:Emerald Sky Trading t/a Buhle G
+2025-09-12 BA-0402                             500000.00  5023753.37 DR  Bank alloc: FRALINE (Supplier: Fraline)
+2025-09-15 BA-0403                                600.00  5023153.37 DR  Bank alloc: SASOL WATERMEYER 485442*1281 13 SEP (Fuel)
+2025-09-16 BA-0404                             700000.00  4323153.37 DR  Bank alloc: CHA161 (Numeric ref - supplier payment)
+2025-09-16 BA-0405                             140000.00  4183153.37 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-09-17 BA-0406                                500.00  4182653.37 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 14 SEP (Fuel)
+2025-09-18 BA-0407                              60000.00  4122653.37 DR  Bank alloc: FUEL (Fuel purchase)
+2025-09-18 BA-0408                               3760.00  4118893.37 DR  Bank alloc: INV_326 (Supplier invoice payment)
+2025-09-22 BA-0409                               1000.00  4117893.37 DR  Bank alloc: SECURITY (Security)
+2025-09-22 BA-0410                               5000.00  4112893.37 DR  Bank alloc: GSR INV005 (Supplier invoice payment)
+2025-09-22 BA-0411                              59780.57  4053112.80 DR  Bank alloc: R025QTCM50 PI202509022 (Purchase invoice pa
+2025-09-23 BA-0412                               8437.50  4044675.30 DR  Bank alloc: INVSGB-0127 (Supplier invoice payment)
+2025-09-24 BA-0413                              20000.00  4024675.30 DR  Bank alloc: FUEL (Fuel purchase)
+2025-09-24 BA-0414                              36000.00  3988675.30 DR  Bank alloc: QU000141 (Supplier quote payment)
+2025-09-25 BA-0415                                529.90  3988145.40 DR  Bank alloc: FIDELITY ON TIME SECURITY SE 485442*1281 22
+2025-09-26 BA-0416                                 26.97  3988118.43 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-09-26 BA-0417                                376.94  3987741.49 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-09-26 BA-0418                                 93.00  3987648.49 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-09-29 BA-0419                              23470.41  3964178.08 DR  Bank alloc: BETTERBOND R1029/25 YVHKDGXT (Vehicle finan
+2025-09-30 BA-0420                                800.01  3963378.07 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 28 SEP (Fuel)
+2025-10-01 BA-0421                              21553.75  3941824.32 DR  Bank alloc: IVQ8806 (Supplier invoice payment)
+2025-10-01 BA-0422                               1353.91  3940470.41 DR  Bank alloc: PREPAID ART 530.00.00 LKL*LNQHNGKN 485442*1
+2025-10-02 BA-0423                              11737.50  3928732.91 DR  Bank alloc: INVSGB-0128 (Supplier invoice payment)
+2025-10-02 BA-0424                             250000.00  3678732.91 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-10-03 BA-0425             3144142.71                 6822875.62 DR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-10-03 BA-0426                                275.00  6822600.62 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-10-03 BA-0427                              60000.00  6762600.62 DR  Bank alloc: FUEL (Fuel purchase)
+2025-10-06 BA-0428                            3450000.00  3312600.62 DR  Bank alloc: Fund new acc (Investment/deposit)
+2025-10-06 BA-0429                              10800.00  3301800.62 DR  Bank alloc: INVSGB-0129:Emerald Sky Trading t/a Buhle G
+2025-10-06 BA-0430                             300000.00  3001800.62 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-10-07 BA-0431                              30393.00  2971407.62 DR  Bank alloc: CARGO COMPASS (Supplier: Cargo Compass)
+2025-10-07 BA-0432                              36629.81  2934777.81 DR  Bank alloc: IVQ9002 (Supplier invoice payment)
+2025-10-08 BA-0433                               2000.00  2932777.81 DR  Bank alloc: DHL (Courier)
+2025-10-08 BA-0434                              30090.00  2902687.81 DR  Bank alloc: 7628 (Numeric ref - supplier payment)
+2025-10-08 BA-0435                              35029.90  2867657.91 DR  Bank alloc: 840623 (Numeric ref - supplier payment)
+2025-10-09 BA-0436                               4000.00  2863657.91 DR  Bank alloc: TRANSPORT (Transport)
+2025-10-10 BA-0437                              12000.00  2851657.91 DR  Bank alloc: CARGO COMPASS (Supplier: Cargo Compass)
+2025-10-13 BA-0438                              41000.00  2810657.91 DR  Bank alloc: FUEL (Fuel purchase)
+2025-10-14 BA-0439                             168027.37  2642630.54 DR  Bank alloc: R025QTCM50 PI202510019 (Purchase invoice pa
+2025-10-15 BA-0440                                600.01  2642030.53 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 12 OCT (Fuel)
+2025-10-15 BA-0441                               7987.50  2634043.03 DR  Bank alloc: INVSGB-0130 (Supplier invoice payment)
+2025-10-16 BA-0442                             100000.00  2534043.03 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-10-20 BA-0443                              23470.41  2510572.62 DR  Bank alloc: BETTERBOND R1029/25 YVHKDGXT (Vehicle finan
+2025-10-21 BA-0444                                700.01  2509872.61 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 19 OCT (Fuel)
+2025-10-22 BA-0445                                550.00  2509322.61 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-10-22 BA-0446                              43938.39  2465384.22 DR  Bank alloc: R025QTCM50 CI202510006 (Commercial invoice 
+2025-10-22 BA-0447                              36975.93  2428408.29 DR  Bank alloc: R025QTCM50 CI202510007 (Commercial invoice 
+2025-10-24 BA-0448                               3000.00  2425408.29 DR  Bank alloc: GSR INV006 (Supplier invoice payment)
+2025-10-24 BA-0449                              72000.00  2353408.29 DR  Bank alloc: QU000146 (Supplier quote payment)
+2025-10-25 BA-0450                                529.90  2352878.39 DR  Bank alloc: FIDELITY ON TIME SECURITY SE 485442*1281 22
+2025-10-27 BA-0451                               3170.00  2349708.39 DR  Bank alloc: INV_356 (Supplier invoice payment)
+2025-10-27 BA-0452                               4000.00  2345708.39 DR  Bank alloc: FUEL (Fuel purchase)
+2025-10-27 BA-0453                                128.96  2345579.43 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-10-27 BA-0454                                382.76  2345196.67 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-10-27 BA-0455                                 93.00  2345103.67 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-10-28 BA-0456                               1000.00  2344103.67 DR  Bank alloc: SASOL WATERMEYER 485442*1281 26 OCT (Fuel)
+2025-10-31 BA-0457                                400.00  2343703.67 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 29 OCT (Fuel)
+2025-11-03 BA-0458                               1353.91  2342349.76 DR  Bank alloc: PREPAID ART 530.00.00 LKL*LNQHNGKN 485442*1
+2025-11-03 BA-0459                              24023.36  2318326.40 DR  Bank alloc: IVQ9389 (Supplier invoice payment)
+2025-11-04 BA-0460              696790.79                 3015117.19 DR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-11-04 BA-0461                                275.00  3014842.19 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-11-04 BA-0462                              14175.00  3000667.19 DR  Bank alloc: INVSGB-0131 (Supplier invoice payment)
+2025-11-05 BA-0463                             300000.00  2700667.19 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-11-05 BA-0464                              30240.00  2670427.19 DR  Bank alloc: 7909 (Numeric ref - supplier payment)
+2025-11-06 BA-0465                              35029.90  2635397.29 DR  Bank alloc: 840623 (Numeric ref - supplier payment)
+2025-11-06 BA-0466                               4000.00  2631397.29 DR  Bank alloc: TRANSPORT (Transport)
+2025-11-07 BA-0467             4435353.36                 7066750.65 DR  Bank alloc: LOTUS AFRICA 14 PTY LTD (Customer: Lotus Af
+2025-11-07 BA-0468                              12600.00  7054150.65 DR  Bank alloc: INVSGB-0132:Emerald Sky Trading t/a Buhle G
+2025-11-10 BA-0469             2736915.73                 9791066.38 DR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-11-10 BA-0470                                550.00  9790516.38 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-11-10 BA-0471                             500000.00  9290516.38 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-11-10 BA-0472                              81135.00  9209381.38 DR  Bank alloc: Fumi Energy PTY LTD (Supplier: Fumi Energy)
+2025-11-11 BA-0473                            2300000.00  6909381.38 DR  Bank alloc: 48 HOUR (Supplier: 48 Hour)
+2025-11-11 BA-0474                              65000.00  6844381.38 DR  Bank alloc: FUEL (Fuel purchase)
+2025-11-12 BA-0475                             700000.00  6144381.38 DR  Bank alloc: FRALINE (Supplier: Fraline)
+2025-11-13 BA-0476                             125095.00  6019286.38 DR  Bank alloc: R025QTCM50 PI202511019 (Purchase invoice pa
+2025-11-14 BA-0477                            1650000.00  4369286.38 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-11-17 BA-0478                               6750.00  4362536.38 DR  Bank alloc: INVSGB-0133 (Supplier invoice payment)
+2025-11-17 BA-0479                               7500.00  4355036.38 DR  Bank alloc: GSR INV008 (Supplier invoice payment)
+2025-11-18 BA-0480                                400.00  4354636.38 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 16 NOV (Fuel)
+2025-11-18 BA-0481                              23866.34  4330770.04 DR  Bank alloc: IVQ9914 (Supplier invoice payment)
+2025-11-19 BA-0482                              23470.41  4307299.63 DR  Bank alloc: BETTERBOND R1029/25 YVHKDGXT (Vehicle finan
+2025-11-19 BA-0483                                650.00  4306649.63 DR  Bank alloc: SASOL WATERMEYER 485442*1281 16 NOV (Fuel)
+2025-11-20 BA-0484                             118000.00  4188649.63 DR  Bank alloc: FUEL (Fuel purchase)
+2025-11-21 BA-0485                              22120.00  4166529.63 DR  Bank alloc: CARGO COMPASS (Supplier: Cargo Compass)
+2025-11-24 BA-0486                               3000.00  4163529.63 DR  Bank alloc: DHL (Courier)
+2025-11-25 BA-0487                                529.90  4162999.73 DR  Bank alloc: FIDELITY ON TIME SECURITY SE 485442*1281 22
+2025-11-25 BA-0488                                600.01  4162399.72 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 23 NOV (Fuel)
+2025-11-25 BA-0489                               5410.00  4156989.72 DR  Bank alloc: INV_392 (Supplier invoice payment)
+2025-11-26 BA-0490                               1000.00  4155989.72 DR  Bank alloc: SECURITY (Security)
+2025-11-26 BA-0491                              36000.00  4119989.72 DR  Bank alloc: QU000164 (Supplier quote payment)
+2025-11-26 BA-0492                                118.02  4119871.70 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-11-26 BA-0493                                360.45  4119511.25 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-11-26 BA-0494                                 93.00  4119418.25 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-11-28 BA-0495                               3500.00  4115918.25 DR  Bank alloc: PLUMBING AND TILES (Plumbing materials/serv
+2025-12-01 BA-0496                               1353.91  4114564.34 DR  Bank alloc: PREPAID ART 530.00.00 LKL*LNQHNGKN 485442*1
+2025-12-01 BA-0497                                800.00  4113764.34 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 29 NOV (Fuel)
+2025-12-02 BA-0498             1304805.98                 5418570.32 DR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-12-02 BA-0499                                275.00  5418295.32 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-12-02 BA-0500                              23173.55  5395121.77 DR  Bank alloc: IVQ0295 (Supplier invoice payment)
+2025-12-02 BA-0501                              35029.90  5360091.87 DR  Bank alloc: 840623 (Numeric ref - supplier payment)
+2025-12-03 BA-0502                            1050000.00  4310091.87 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-12-03 BA-0503                             650000.00  3660091.87 DR  Bank alloc: 48 HOUR (Supplier: 48 Hour)
+2025-12-04 BA-0504                              13500.00  3646591.87 DR  Bank alloc: INVSGB-0135 (Supplier invoice payment)
+2025-12-04 BA-0505                              30240.00  3616351.87 DR  Bank alloc: 7909 (Numeric ref - supplier payment)
+2025-12-05 BA-0506                              70000.00  3546351.87 DR  Bank alloc: FUEL (Fuel purchase)
+2025-12-05 BA-0507                              24600.00  3521751.87 DR  Bank alloc: INVSGB-0136:Emerald Sky Trading t/a Buhle G
+2025-12-08 BA-0508             1124427.36                 4646179.23 DR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-12-08 BA-0509                                550.00  4645629.23 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-12-08 BA-0510                             120776.28  4524852.95 DR  Bank alloc: R025QTCM50 PI202512012 (Purchase invoice pa
+2025-12-08 BA-0511                              39076.19  4485776.76 DR  Bank alloc: R025QTCM50 CI202512001 (Commercial invoice 
+2025-12-09 BA-0512                               4000.00  4481776.76 DR  Bank alloc: TRANSPORT (Transport)
+2025-12-10 BA-0513                              50000.00  4431776.76 DR  Bank alloc: FUEL (Fuel purchase)
+2025-12-10 BA-0514                             500000.00  3931776.76 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-12-12 BA-0515             2067001.33                 5998778.09 DR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-12-12 BA-0516                                275.00  5998503.09 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-12-15 BA-0517                             700000.00  5298503.09 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-12-15 BA-0518                                200.00  5298303.09 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 13 DEC (Fuel)
+2025-12-16 BA-0519                            1000000.00  4298303.09 DR  Bank alloc: FRALINE (Supplier: Fraline)
+2025-12-16 BA-0520                              52000.00  4246303.09 DR  Bank alloc: QU000166 (Supplier quote payment)
+2025-12-17 BA-0521                              51236.63  4195066.46 DR  Bank alloc: R025QTCM50 CI202512002 (Commercial invoice 
+2025-12-18 BA-0522                               3000.00  4192066.46 DR  Bank alloc: DHL (Courier)
+2025-12-18 BA-0523                              23470.41  4168596.05 DR  Bank alloc: BETTERBOND R1029/25 YVHKDGXT (Vehicle finan
+2025-12-18 BA-0524                               4580.00  4164016.05 DR  Bank alloc: INV_420 (Supplier invoice payment)
+2025-12-18 BA-0525                              10000.00  4154016.05 DR  Bank alloc: CARGO COMPASS (Supplier: Cargo Compass)
+2025-12-19 BA-0526             2155227.78                 6309243.83 DR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-12-19 BA-0527                                275.00  6308968.83 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-12-22 BA-0528                             100000.00  6208968.83 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-12-23 BA-0529                              25000.00  6183968.83 DR  Bank alloc: IVQ0816 (Supplier invoice payment)
+2025-12-25 BA-0530                                529.90  6183438.93 DR  Bank alloc: FIDELITY ON TIME SECURITY SE 485442*1281 22
+2025-12-26 BA-0531                                 41.11  6183397.82 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-12-26 BA-0532                                382.76  6183015.06 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-12-26 BA-0533                                 93.00  6182922.06 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-12-29 BA-0534                                600.01  6182322.05 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 27 DEC (Fuel)
+2025-12-30 BA-0535                               1000.00  6181322.05 DR  Bank alloc: SECURITY (Security)
+2025-12-30 BA-0536                               3500.00  6177822.05 DR  Bank alloc: GSR INV012 (Supplier invoice payment)
+2025-12-30 BA-0540             3324975.01                 9502797.06 DR  Bank alloc: Opening Balance from Bank (USD opening bala
+2025-12-31 BA-0537                                400.00  9502397.06 DR  Bank alloc: SASOL WATERMEYER 485442*1281 29 DEC (Fuel)
+2025-12-31 BA-0538                               1353.91  9501043.15 DR  Bank alloc: 530.00 LKL*LNQHNGKN 485442*1281 29 DEC (Pre
+2025-12-31 BA-0539                              20630.44  9480412.71 DR  Bank alloc: FRALINE (Supplier: Fraline)
+2025-12-31 RECLASS001                         9399783.39  80629.32 DR  Reclassification: CFC/USD from 1112 to 1114. FNB Dec 20
+  >> CLOSING BALANCE: 80629.32 DR  (DR 43215485.85 | CR 43134856.53)
+
+========================================
+1114 - FNB - CFC Business Account (USD)
+----------------------------------------
+2025-12-31 RECLASS001          9399783.39                 9399783.39 DR  Reclassification: CFC/USD from 1112 to 1114. FNB Dec 20
+  >> CLOSING BALANCE: 9399783.39 DR  (DR 9399783.39 | CR 0.00)
+
+========================================
+1210 - Trade Debtors
+----------------------------------------
+2025-01-01 OB-0001             4204753.44                 4204753.44 DR  Opening Balance as at Jan 1, 2025 (from QuickBooks TB D
+2025-01-15 BA-0015                            2846518.56  1358234.88 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-01-24 JE-SI-0001          1037608.00                 2395842.88 DR  Sales Invoice INV-000001
+2025-01-24 JE-SI-0002           574528.00                 2970370.88 DR  Sales Invoice INV-000002
+2025-02-01 JE-SI-0003           574528.00                 3544898.88 DR  Sales Invoice INV-000003
+2025-02-01 JE-SI-0004            30360.00                 3575258.88 DR  Sales Invoice INV-000004
+2025-02-24 BA-0096                             574528.00  3000730.88 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-03-01 JE-SI-0005           532014.00                 3532744.88 DR  Sales Invoice INV-000005
+2025-03-05 JE-SI-0006          1702540.00                 5235284.88 DR  Sales Invoice INV-000006
+2025-03-14 JE-SI-0007           880046.28                 6115331.16 DR  Sales Invoice INV-000007
+2025-03-17 BA-0129                            1037608.00  5077723.16 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-03-27 BA-0146                              30360.00  5047363.16 DR  Bank alloc: FNB - FNB APP PAYMENT FROM INVOICE 20437 (C
+2025-03-27 BA-0148                              29118.00  5018245.16 DR  Bank alloc: FNB - FNB APP PAYMENT FROM INVOICE 1112 (Cu
+2025-03-27 BA-0149                              45695.00  4972550.16 DR  Bank alloc: FNB - FNB APP PAYMENT FROM INVOICE 1097 (Cu
+2025-04-06 JE-SI-0008           571794.00                 5544344.16 DR  Sales Invoice INV-000008
+2025-04-11 BA-0177                            3947631.04  1596713.12 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-04-11 JE-SI-0009           773216.00                 2369929.12 DR  Sales Invoice INV-000009
+2025-04-11 JE-SI-0010           497399.40                 2867328.52 DR  Sales Invoice INV-000010
+2025-05-02 JE-SI-0011           865982.37                 3733310.89 DR  Sales Invoice INV-000011
+2025-05-05 BA-0226                            1842409.40  1890901.49 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-05-05 JE-SI-0012           446897.20                 2337798.69 DR  Sales Invoice INV-000012
+2025-05-07 JE-SI-0013           438716.00                 2776514.69 DR  Sales Invoice INV-000015
+2025-05-23 JE-SI-0014           677207.20                 3453721.89 DR  Sales Invoice INV-000013
+2025-05-27 JE-SI-0015           575513.52                 4029235.41 DR  Sales Invoice INV-000014
+2025-06-04 BA-0263                            1312879.57  2716355.84 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-06-06 JE-SI-0016            41449.95                 2757805.79 DR  Sales Invoice INV-000016
+2025-06-06 JE-SI-0017           348977.97                 3106783.76 DR  Sales Invoice INV-000017
+2025-06-09 BA-0271                             197406.70  2909377.06 DR  Bank alloc: SENOKGA (Customer: Senokga)
+2025-06-12 BA-0276                            1014229.52  1895147.54 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-06-20 BA-0283                             677207.20  1217940.34 DR  Bank alloc: Kansanshi Mine (Customer: Kansanshi Mining)
+2025-07-01 JE-SI-0018           575541.58                 1793481.92 DR  Sales Invoice INV-000018
+2025-07-01 JE-SI-0019           555779.73                 2349261.65 DR  Sales Invoice INV-000019
+2025-07-15 JE-SI-0020           448884.00                 2798145.65 DR  Sales Invoice INV-000020
+2025-07-23 BA-0326                             946207.65  1851938.00 DR  Bank alloc: R025QSDFK0 KANSANSHI MINING PLC (Customer: 
+2025-07-31 JE-SI-0021           865982.37                 2717920.37 DR  Sales Invoice INV-000021
+2025-07-31 JE-SI-0022           248699.70                 2966620.07 DR  Sales Invoice INV-000022
+2025-07-31 JE-SI-0023          1163598.00                 4130218.07 DR  Sales Invoice INV-000023
+2025-08-13 JE-SI-0024           438716.00                 4568934.07 DR  Sales Invoice INV-000024
+2025-08-13 JE-SI-0025          1163598.00                 5732532.07 DR  Sales Invoice INV-000027
+2025-08-15 BA-0857                            1114682.07  4617850.00 DR  Bank recon: Inward Swift Kansanshi Mining Plc
+2025-08-20 BA-0866                             575541.58  4042308.42 DR  Bank recon: Inward Swift Kansanshi Mining Plc
+2025-08-22 JE-SI-0026          1070739.36                 5113047.78 DR  Sales Invoice INV-000025
+2025-08-28 JE-SI-0027           219358.00                 5332405.78 DR  Sales Invoice INV-000026
+2025-09-01 BA-0375                            1163598.00  4168807.78 DR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-09-02 BA-0378                             555779.73  3613028.05 DR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-09-03 BA-0380                             248699.70  3364328.35 DR  Bank alloc: R025R3GZL0 KANSANSHI MINING PLC (Customer: 
+2025-09-04 BA-0382                             865982.37  2498345.98 DR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-09-04 BA-0383                             348777.97  2149568.01 DR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-09-08 BA-0391                              41449.95  2108118.06 DR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-09-10 BA-0396                             438716.00  1669402.06 DR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-09-11 BA-0399                             219358.00  1450044.06 DR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-09-30 JE-SI-0028           460921.35                 1910965.41 DR  Sales Invoice INV-000028
+2025-10-03 BA-0425                            3144142.71  1233177.30 CR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-10-22 JE-SI-0029           474045.04                 759132.26 CR  Sales Invoice INV-000031
+2025-10-23 JE-SI-0030           222745.75                 536386.51 CR  Sales Invoice INV-000029
+2025-10-28 JE-SI-0031           452378.85                 84007.66 CR  Sales Invoice INV-000030
+2025-11-04 BA-0460                             696790.79  780798.45 CR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-11-04 JE-SI-0032           288973.41                 491825.04 CR  Sales Invoice INV-000036
+2025-11-05 JE-SI-0033          1466932.18                 975107.14 DR  Sales Invoice INV-000032
+2025-11-05 JE-SI-0034           817604.70                 1792711.84 DR  Sales Invoice INV-000033
+2025-11-07 BA-0467                            4435353.36  2642641.52 CR  Bank alloc: LOTUS AFRICA 14 PTY LTD (Customer: Lotus Af
+2025-11-10 BA-0469                            2736915.73  5379557.25 CR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-11-12 JE-SI-0035            44668.35                 5334888.90 CR  Sales Invoice INV-000034
+2025-11-12 JE-SI-0036           188568.33                 5146320.57 CR  Sales Invoice INV-000035
+2025-11-12 JE-SI-0037           223842.26                 4922478.31 CR  Sales Invoice INV-000048
+2025-12-02 BA-0498                            1304805.98  6227284.29 CR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-12-08 BA-0508                            1124427.36  7351711.65 CR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-12-09 JE-SI-0038           577513.52                 6774198.13 CR  Sales Invoice INV-000044
+2025-12-09 JE-SI-0039           315431.00                 6458767.13 CR  Sales Invoice INV-000045
+2025-12-09 JE-SI-0040           581799.00                 5876968.13 CR  Sales Invoice INV-000046
+2025-12-09 JE-SI-0041           438716.00                 5438252.13 CR  Sales Invoice INV-000047
+2025-12-12 BA-0515                            2067001.33  7505253.46 CR  Bank alloc: R025S3LXM0 KANSANSHI MINING PLC (Customer: 
+2025-12-15 JE-SI-0042           336052.86                 7169200.60 CR  Sales Invoice INV-000043
+2025-12-19 BA-0526                            2155227.78  9324428.38 CR  Bank alloc: R025RD5DM0 KANSANSHI MINING PLC (Customer: 
+2025-12-23 JE-SI-0043           576001.98                 8748426.40 CR  Sales Invoice INV-000038
+2025-12-23 JE-SI-0044           577513.52                 8170912.88 CR  Sales Invoice INV-000039
+2025-12-23 JE-SI-0045           835207.50                 7335705.38 CR  Sales Invoice INV-000040
+2025-12-23 JE-SI-0046          1071150.00                 6264555.38 CR  Sales Invoice INV-000041
+2025-12-23 JE-SI-0047           902024.10                 5362531.28 CR  Sales Invoice INV-000042
+2025-12-31 JE-SI-0048            51700.44                 5310830.84 CR  Sales Invoice INV-000037
+2025-12-31 JE-SI-0049          5310830.84                 0.00 DR  Sales Invoice - Unrecorded revenue for services rendere
+  >> CLOSING BALANCE: 0.00 DR  (DR 37739049.05 | CR 37739049.05)
+
+========================================
+1230 - VAT Input
+----------------------------------------
+2024-09-12 JE-PI-0001            59885.33                 59885.33 DR  Vendor Invoice PI-2025-001
+2024-09-17 JE-PI-0002              130.44                 60015.77 DR  Vendor Invoice PI-2025-168
+2024-12-10 JE-PI-0003            19986.00                 80001.77 DR  Vendor Invoice PI-2025-016
+2025-01-01 JE-PI-0004             3082.61                 83084.38 DR  Vendor Invoice PI-2025-002
+2025-01-01 JE-PI-0005             3065.63                 86150.01 DR  Vendor Invoice PI-2025-008
+2025-01-01 JE-PI-0006             3094.53                 89244.54 DR  Vendor Invoice PI-2025-019
+2025-01-01 OB-0001              242036.01                 331280.55 DR  Opening Balance as at Jan 1, 2025 (from QuickBooks TB D
+2025-01-10 JE-PI-0007             7077.10                 338357.65 DR  Vendor Invoice PI-2025-021
+2025-01-13 JE-PI-0009             3991.31                 342348.96 DR  Vendor Invoice PI-2025-142
+2025-01-27 JE-PI-0010            76092.59                 418441.55 DR  Vendor Invoice PI-2025-003
+2025-01-27 JE-PI-0011                           76092.59  342348.96 DR  Vendor Credit Note PI-2025-004
+2025-01-27 JE-PI-0012            76092.59                 418441.55 DR  Vendor Invoice PI-2025-005
+2025-02-10 JE-PI-0014            16226.93                 434668.48 DR  Vendor Invoice PI-2025-009
+2025-02-13 JE-PI-0015             3510.00                 438178.48 DR  Vendor Invoice PI-2025-022
+2025-02-17 JE-PI-0016             1276.16                 439454.64 DR  Vendor Invoice PI-2025-007
+2025-02-17 JE-PI-0017              757.21                 440211.85 DR  Vendor Invoice PI-2025-017
+2025-02-18 JE-PI-0018              521.61                 440733.46 DR  Vendor Invoice PI-2025-014
+2025-02-21 JE-PI-0019            76092.59                 516826.05 DR  Vendor Invoice PI-2025-012
+2025-02-21 JE-PI-0020             3133.35                 519959.40 DR  Vendor Invoice PI-2025-015
+2025-02-24 JE-PI-0021            18162.70                 538122.10 DR  Vendor Invoice PI-2025-010
+2025-02-24 JE-PI-0022            61824.39                 599946.49 DR  Vendor Invoice PI-2025-011
+2025-02-26 JE-PI-0023            46169.66                 646116.15 DR  Vendor Invoice PI-2025-029
+2025-03-01 JE-PI-0024            14415.90                 660532.05 DR  Vendor Invoice PI-2025-018
+2025-03-10 JE-PI-0026             6110.40                 666642.45 DR  Vendor Invoice PI-2025-028
+2025-03-17 JE-PI-0027            16226.93                 682869.38 DR  Vendor Invoice PI-2025-020
+2025-03-28 JE-PI-0028            17362.82                 700232.20 DR  Vendor Invoice PI-2025-032
+2025-03-28 JE-PI-0029            19095.60                 719327.80 DR  Vendor Invoice PI-2025-046
+2025-04-01 JE-PI-0030             3051.58                 722379.38 DR  Vendor Invoice PI-2025-025
+2025-04-08 JE-PI-0033            14675.49                 737054.87 DR  Vendor Invoice PI-2025-027
+2025-04-09 JE-PI-0034              149.14                 737204.01 DR  Vendor Invoice PI-2025-024
+2025-04-11 JE-PI-0035            31007.85                 768211.86 DR  Vendor Invoice PI-2025-055
+2025-04-17 JE-PI-0036            15341.93                 783553.79 DR  Vendor Invoice PI-2025-026
+2025-04-30 JE-PI-0038              994.63                 784548.42 DR  Vendor Invoice PI-2025-023
+2025-04-30 JE-PI-0039             1188.92                 785737.34 DR  Vendor Invoice PI-2025-052
+2025-05-01 JE-PI-0040             3020.85                 788758.19 DR  Vendor Invoice PI-2025-030
+2025-05-04 JE-PI-0042              143.35                 788901.54 DR  Vendor Invoice PI-2025-036
+2025-05-04 JE-PI-0043              813.20                 789714.74 DR  Vendor Invoice PI-2025-037
+2025-05-04 JE-PI-0044             8045.10                 797759.84 DR  Vendor Invoice PI-2025-048
+2025-05-04 JE-PI-0045               57.26                 797817.10 DR  Vendor Invoice PI-2025-059
+2025-05-05 JE-PI-0046            32590.35                 830407.45 DR  Vendor Invoice PI-2025-050
+2025-05-12 JE-PI-0048            22630.04                 853037.49 DR  Vendor Invoice PI-2025-031
+2025-05-12 JE-PI-0049             3338.87                 856376.36 DR  Vendor Invoice PI-2025-033
+2025-05-12 JE-PI-0050             2725.56                 859101.92 DR  Vendor Invoice PI-2025-034
+2025-05-13 JE-PI-0051            13688.10                 872790.02 DR  Vendor Invoice PI-2025-057
+2025-05-14 JE-PI-0052            12879.45                 885669.47 DR  Vendor Invoice PI-2025-078
+2025-05-14 JE-PI-0053            22101.66                 907771.13 DR  Vendor Invoice PI-2025-085
+2025-05-15 JE-PI-0054             3315.98                 911087.11 DR  Vendor Invoice PI-2025-049
+2025-05-20 JE-PI-0055                              81.91  911005.20 DR  Vendor Credit Note PI-2025-038
+2025-05-20 JE-PI-0056               85.83                 911091.03 DR  Vendor Invoice PI-2025-039
+2025-05-21 JE-PI-0057              260.61                 911351.64 DR  Vendor Invoice PI-2025-040
+2025-05-22 JE-PI-0059            13793.85                 925145.49 DR  Vendor Invoice PI-2025-047
+2025-05-23 JE-PI-0060              126.78                 925272.27 DR  Vendor Invoice PI-2025-041
+2025-05-26 JE-PI-0061              376.31                 925648.58 DR  Vendor Invoice PI-2025-042
+2025-05-26 JE-PI-0062               80.22                 925728.80 DR  Vendor Invoice PI-2025-043
+2025-06-01 JE-PI-0063             3158.75                 928887.55 DR  Vendor Invoice PI-2025-053
+2025-06-13 JE-PI-0064             2625.00                 931512.55 DR  Vendor Invoice PI-2025-054
+2025-06-16 JE-PI-0065            18769.59                 950282.14 DR  Vendor Invoice PI-2025-086
+2025-06-30 JE-PI-0066             2234.72                 952516.86 DR  Vendor Invoice PI-2025-051
+2025-07-01 JE-PI-0067             3373.71                 955890.57 DR  Vendor Invoice PI-2025-068
+2025-07-01 JE-PI-0068             3466.34                 959356.91 DR  Vendor Invoice PI-2025-081
+2025-07-11 JE-PI-0070              243.75                 959600.66 DR  Vendor Invoice PI-2025-058
+2025-07-11 JE-PI-0071             2395.73                 961996.39 DR  Vendor Invoice PI-2025-074
+2025-07-15 JE-PI-0072            43522.05                 1005518.44 DR  Vendor Invoice PI-2025-069
+2025-07-15 JE-PI-0073             8681.41                 1014199.85 DR  Vendor Invoice PI-2025-082
+2025-07-16 JE-PI-0074             4569.12                 1018768.97 DR  Vendor Invoice PI-2025-066
+2025-07-16 JE-PI-0075             9397.80                 1028166.77 DR  Vendor Invoice PI-2025-073
+2025-07-17 JE-PI-0076             3691.30                 1031858.07 DR  Vendor Invoice PI-2025-060
+2025-07-17 JE-PI-0077             2960.74                 1034818.81 DR  Vendor Invoice PI-2025-061
+2025-07-17 JE-PI-0078             6730.43                 1041549.24 DR  Vendor Invoice PI-2025-062
+2025-07-17 JE-PI-0079             6730.43                 1048279.67 DR  Vendor Invoice PI-2025-063
+2025-07-17 JE-PI-0080               57.26                 1048336.93 DR  Vendor Invoice PI-2025-072
+2025-07-17 JE-PI-0081              121.72                 1048458.65 DR  Vendor Invoice PI-2025-084
+2025-07-19 JE-PI-0082             7304.34                 1055762.99 DR  Vendor Invoice PI-2025-064
+2025-07-21 JE-PI-0083              225.00                 1055987.99 DR  Vendor Invoice PI-2025-070
+2025-07-22 JE-PI-0084            16495.35                 1072483.34 DR  Vendor Invoice PI-2025-145
+2025-07-22 JE-PI-0085             8173.95                 1080657.29 DR  Vendor Invoice PI-2025-146
+2025-07-29 JE-PI-0087             1825.44                 1082482.73 DR  Vendor Invoice PI-2025-067
+2025-08-12 JE-PI-0089             1090.00                 1083572.73 DR  Vendor Invoice PI-2025-080
+2025-08-20 JE-PI-0090             1142.19                 1084714.92 DR  Vendor Invoice PI-2025-076
+2025-08-22 JE-PI-0091              300.00                 1085014.92 DR  Vendor Invoice PI-2025-083
+2025-08-22 JE-PI-0092              300.00                 1085314.92 DR  Vendor Invoice PI-2025-102
+2025-08-30 JE-PI-0095               78.26                 1085393.18 DR  Vendor Invoice PI-2025-075
+2025-09-12 JE-PI-0100             1376.09                 1086769.27 DR  Vendor Invoice PI-2025-087
+2025-09-15 JE-PI-0104            39436.05                 1126205.32 DR  Vendor Invoice PI-2025-180
+2025-09-16 JE-PI-0105             1152.10                 1127357.42 DR  Vendor Invoice PI-2025-104
+2025-09-17 JE-PI-0106             1152.10                 1128509.52 DR  Vendor Invoice PI-2025-103
+2025-09-17 JE-PI-0108             9945.85                 1138455.37 DR  Vendor Invoice PI-2025-133
+2025-09-22 JE-PI-0110             3514.85                 1141970.22 DR  Vendor Invoice PI-2025-093
+2025-09-23 JE-PI-0111              300.00                 1142270.22 DR  Vendor Invoice PI-2025-155
+2025-09-25 JE-PI-0112              849.13                 1143119.35 DR  Vendor Invoice PI-2025-088
+2025-09-25 JE-PI-0113               83.48                 1143202.83 DR  Vendor Invoice PI-2025-095
+2025-09-26 JE-PI-0116              208.70                 1143411.53 DR  Vendor Invoice PI-2025-094
+2025-09-29 JE-PI-0119             5262.97                 1148674.50 DR  Vendor Invoice PI-2025-089
+2025-09-29 JE-PI-0120             5206.23                 1153880.73 DR  Vendor Invoice PI-2025-090
+2025-09-30 JE-PI-0124             3132.44                 1157013.17 DR  Vendor Invoice PI-2025-091
+2025-09-30 JE-PI-0125              129.92                 1157143.09 DR  Vendor Invoice PI-2025-092
+2025-09-30 JE-PI-0126             1801.19                 1158944.28 DR  Vendor Invoice PI-2025-105
+2025-10-01 JE-PI-0128             3592.80                 1162537.08 DR  Vendor Invoice PI-2025-122
+2025-10-06 JE-PI-0129               71.09                 1162608.17 DR  Vendor Invoice PI-2025-124
+2025-10-06 JE-PI-0130               83.48                 1162691.65 DR  Vendor Invoice PI-2025-125
+2025-10-07 JE-PI-0131            91984.35                 1254676.00 DR  Vendor Invoice PI-2025-183
+2025-10-08 JE-PI-0132            13974.79                 1268650.79 DR  Vendor Invoice PI-2025-127
+2025-10-09 JE-PI-0133             1387.02                 1270037.81 DR  Vendor Invoice PI-2025-120
+2025-10-09 JE-PI-0134           126669.52                 1396707.33 DR  Vendor Invoice PI-2025-121
+2025-10-15 JE-PI-0136               85.31                 1396792.64 DR  Vendor Invoice PI-2025-116
+2025-10-15 JE-PI-0137             4508.78                 1401301.42 DR  Vendor Invoice PI-2025-128
+2025-10-15 JE-PI-0138             5125.04                 1406426.46 DR  Vendor Invoice PI-2025-169
+2025-10-15 JE-PI-0139              137.57                 1406564.03 DR  Vendor Invoice PI-2025-170
+2025-10-17 JE-PI-0140            17760.00                 1424324.03 DR  Vendor Invoice PI-2025-135
+2025-10-20 JE-PI-0141             1274.24                 1425598.27 DR  Vendor Invoice PI-2025-129
+2025-10-20 JE-PI-0142             1411.73                 1427010.00 DR  Vendor Invoice PI-2025-130
+2025-10-21 JE-PI-0144              307.05                 1427317.05 DR  Vendor Invoice PI-2025-136
+2025-10-22 JE-PI-0145              593.48                 1427910.53 DR  Vendor Invoice PI-2025-137
+2025-10-24 JE-PI-0146             1814.37                 1429724.90 DR  Vendor Invoice PI-2025-131
+2025-10-24 JE-PI-0147              300.00                 1430024.90 DR  Vendor Invoice PI-2025-156
+2025-10-27 JE-PI-0150            13487.22                 1443512.12 DR  Vendor Invoice PI-2025-118
+2025-10-28 JE-PI-0151              259.89                 1443772.01 DR  Vendor Invoice PI-2025-117
+2025-10-28 JE-PI-0152              273.92                 1444045.93 DR  Vendor Invoice PI-2025-138
+2025-10-29 JE-PI-0153             3167.58                 1447213.51 DR  Vendor Invoice PI-2025-123
+2025-10-30 JE-PI-0154              502.73                 1447716.24 DR  Vendor Invoice PI-2025-132
+2025-10-31 JE-PI-0155               83.48                 1447799.72 DR  Vendor Invoice PI-2025-126
+2025-10-31 JE-PI-0156             1159.78                 1448959.50 DR  Vendor Invoice PI-2025-144
+2025-10-31 JE-PI-0157             2006.73                 1450966.23 DR  Vendor Invoice PI-2025-179
+2025-10-31 JE-PI-0158              942.50                 1451908.73 DR  Vendor Invoice PI-2025-182
+2025-11-01 JE-PI-0159              642.22                 1452550.95 DR  Vendor Invoice PI-2025-140
+2025-11-01 JE-PI-0160              184.96                 1452735.91 DR  Vendor Invoice PI-2025-141
+2025-11-01 JE-PI-0161             3409.09                 1456145.00 DR  Vendor Invoice PI-2025-149
+2025-11-01 JE-PI-0162             3450.00                 1459595.00 DR  Vendor Invoice PI-2025-172
+2025-11-01 JE-PI-0163             3388.81                 1462983.81 DR  Vendor Invoice PI-2025-173
+2025-11-04 JE-PI-0164           123659.81                 1586643.62 DR  Vendor Invoice PI-2025-143
+2025-11-04 JE-PI-0166              193.88                 1586837.50 DR  Vendor Invoice PI-2025-152
+2025-11-14 JE-PI-0169            26086.96                 1612924.46 DR  Vendor Invoice PI-2025-154
+2025-11-21 JE-PI-0170            16178.78                 1629103.24 DR  Vendor Invoice PI-2025-148
+2025-11-22 JE-PI-0171              290.13                 1629393.37 DR  Vendor Invoice PI-2025-153
+2025-11-23 JE-PI-0172              150.26                 1629543.63 DR  Vendor Invoice PI-2025-139
+2025-11-26 JE-PI-0173              300.00                 1629843.63 DR  Vendor Invoice PI-2025-157
+2025-11-27 JE-PI-0175            31629.14                 1661472.77 DR  Vendor Invoice PI-2025-167
+2025-11-28 JE-PI-0176             5528.06                 1667000.83 DR  Vendor Invoice PI-2025-147
+2025-11-28 JE-PI-0177             7500.00                 1674500.83 DR  Vendor Invoice PI-2025-159
+2025-12-01 JE-PI-0179             3510.93                 1678011.76 DR  Vendor Invoice PI-2025-171
+2025-12-03 JE-PI-0180             3352.17                 1681363.93 DR  Vendor Invoice PI-2025-174
+2025-12-09 JE-PI-0183             7500.00                 1688863.93 DR  Vendor Invoice PI-2025-177
+  >> CLOSING BALANCE: 1688863.93 DR  (DR 1765038.43 | CR 76174.50)
+
+========================================
+1400 - Other Current Assets
+----------------------------------------
+2025-11-11 BA-0473             2300000.00                 2300000.00 DR  Bank alloc: 48 HOUR (Supplier: 48 Hour)
+2025-12-03 BA-0503              650000.00                 2950000.00 DR  Bank alloc: 48 HOUR (Supplier: 48 Hour)
+  >> CLOSING BALANCE: 2950000.00 DR  (DR 2950000.00 | CR 0.00)
+
+========================================
+1420 - Deposits Paid
+----------------------------------------
+2025-10-06 BA-0428             3450000.00                 3450000.00 DR  Bank alloc: Fund new acc (Investment/deposit)
+  >> CLOSING BALANCE: 3450000.00 DR  (DR 3450000.00 | CR 0.00)
+
+========================================
+1430 - Staff Loans
+----------------------------------------
+2025-01-01 OB-0001               54000.00                 54000.00 DR  Opening Balance as at Jan 1, 2025 (from QuickBooks TB D
+  >> CLOSING BALANCE: 54000.00 DR  (DR 54000.00 | CR 0.00)
+
+========================================
+1541 - Computer Equipment - Cost
+----------------------------------------
+2025-02-05 BA-0052               20897.00                 20897.00 DR  Bank alloc: iStore - iStore Highveld Mal 485442*1281 03
+2025-05-14 BA-0237               25598.00                 46495.00 DR  Bank alloc: Incredible connections (Computer equipment)
+  >> CLOSING BALANCE: 46495.00 DR  (DR 46495.00 | CR 0.00)
+
+========================================
+2111 - Trade Creditors
+----------------------------------------
+2024-09-12 JE-PI-0001                          459120.83  459120.83 CR  Vendor Invoice PI-2025-001
+2024-09-17 JE-PI-0002                            1000.01  460120.84 CR  Vendor Invoice PI-2025-168
+2024-12-10 JE-PI-0003                          119717.02  579837.86 CR  Vendor Invoice PI-2025-016
+2025-01-01 JE-PI-0004                           23633.33  603471.19 CR  Vendor Invoice PI-2025-002
+2025-01-01 JE-PI-0005                           23503.18  626974.37 CR  Vendor Invoice PI-2025-008
+2025-01-01 JE-PI-0006                           23724.71  650699.08 CR  Vendor Invoice PI-2025-019
+2025-01-01 OB-0001                             181462.54  832161.62 CR  Opening Balance as at Jan 1, 2025 (from QuickBooks TB D
+2025-01-06 BA-0001               37752.40                 794409.22 CR  Bank alloc: HEBEI DIZHUO RUBBER & PLASTIC PRODUCTS CO L
+2025-01-07 BA-0004               19702.23                 774706.99 CR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD - INA1325
+2025-01-10 JE-PI-0007                           51936.79  826643.78 CR  Vendor Invoice PI-2025-021
+2025-01-13 JE-PI-0008                            3890.00  830533.78 CR  Vendor Invoice PI-2025-006
+2025-01-13 JE-PI-0009                           30600.01  861133.79 CR  Vendor Invoice PI-2025-142
+2025-01-15 BA-0013               25288.50                 835845.29 CR  Bank alloc: Ordained Trading - KEL0011 (Supplier: Ordai
+2025-01-15 BA-0014              166634.22                 669211.07 CR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-01-15 BA-0023               23633.33                 645577.74 CR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD - INA1327
+2025-01-21 BA-0034              353967.41                 291610.33 CR  Bank alloc: HMA (Supplier: HMA)
+2025-01-22 BA-0035              119025.00                 172585.33 CR  Bank alloc: Ordained Trading - 25-KNG-PINVC-01 (Supplie
+2025-01-23 BA-0036               26910.00                 145675.33 CR  Bank alloc: Advanced Worx 112 (Pty) Ltd t/a Adroit Tech
+2025-01-25 BA-0041                3890.00                 141785.33 CR  Bank alloc: Meadowdine Group (Supplier: Meadowdine Grou
+2025-01-27 JE-PI-0010                          583376.51  725161.84 CR  Vendor Invoice PI-2025-003
+2025-01-27 JE-PI-0011           583376.51                 141785.33 CR  Vendor Credit Note PI-2025-004
+2025-01-27 JE-PI-0012                          583376.51  725161.84 CR  Vendor Invoice PI-2025-005
+2025-01-31 JE-PI-0013                            3890.00  729051.84 CR  Vendor Invoice PI-2025-013
+2025-02-07 BA-0053               57971.45                 671080.39 CR  Bank alloc: Cargo Compass SA PTY LTD (Supplier: Cargo C
+2025-02-10 BA-0059                3890.00                 667190.39 CR  Bank alloc: Meadowdine Group (Supplier: Meadowdine Grou
+2025-02-10 JE-PI-0014                          124406.47  791596.86 CR  Vendor Invoice PI-2025-009
+2025-02-13 JE-PI-0015                           26910.00  818506.86 CR  Vendor Invoice PI-2025-022
+2025-02-17 JE-PI-0016                           37985.45  856492.31 CR  Vendor Invoice PI-2025-007
+2025-02-17 JE-PI-0017                           13002.05  869494.36 CR  Vendor Invoice PI-2025-017
+2025-02-18 JE-PI-0018                            3999.00  873493.36 CR  Vendor Invoice PI-2025-014
+2025-02-19 BA-0085               23503.18                 849990.18 CR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD - INA1330
+2025-02-21 JE-PI-0019                          583376.51  1433366.69 CR  Vendor Invoice PI-2025-012
+2025-02-21 JE-PI-0020                           24022.35  1457389.04 CR  Vendor Invoice PI-2025-015
+2025-02-24 JE-PI-0021                          139247.39  1596636.43 CR  Vendor Invoice PI-2025-010
+2025-02-24 JE-PI-0022                          473986.96  2070623.39 CR  Vendor Invoice PI-2025-011
+2025-02-26 JE-PI-0023                          353967.41  2424590.80 CR  Vendor Invoice PI-2025-029
+2025-03-01 JE-PI-0024                          110521.88  2535112.68 CR  Vendor Invoice PI-2025-018
+2025-03-01 JE-PI-0025                            3890.00  2539002.68 CR  Vendor Invoice PI-2025-160
+2025-03-03 BA-0108               20079.15                 2518923.53 CR  Bank alloc: Cargo Compass SA PTY LTD (Supplier: Cargo C
+2025-03-10 BA-0115                1208.00                 2517715.53 CR  Bank alloc: Meadowdine Group - 3890 (Supplier: Meadowdi
+2025-03-10 BA-0117                2682.00                 2515033.53 CR  Bank alloc: Meadowdine Group - 1208 (Supplier: Meadowdi
+2025-03-10 JE-PI-0026                           41510.32  2556543.85 CR  Vendor Invoice PI-2025-028
+2025-03-11 BA-0120               35399.92                 2521143.93 CR  Bank alloc: SHENZHEN JOURNEY TO THE WEST COMPANY LIMITE
+2025-03-13 BA-0124               22241.65                 2498902.28 CR  Bank alloc: SHENZHEN JOURNEY TO THE WEST COMPANY LIMITE
+2025-03-17 BA-0128              139247.26                 2359655.02 CR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-03-17 BA-0130              583375.91                 1776279.11 CR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-03-17 JE-PI-0027                          124406.47  1900685.58 CR  Vendor Invoice PI-2025-020
+2025-03-26 BA-0142                6493.60                 1894191.98 CR  Bank alloc: Cargo Compass SA PTY LTD - AI Category: Com
+2025-03-26 BA-0143               23724.71                 1870467.27 CR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD - INA1333
+2025-03-28 JE-PI-0028                          133114.92  2003582.19 CR  Vendor Invoice PI-2025-032
+2025-03-28 JE-PI-0029                          141712.38  2145294.57 CR  Vendor Invoice PI-2025-046
+2025-04-01 JE-PI-0030                           23395.46  2168690.03 CR  Vendor Invoice PI-2025-025
+2025-04-01 JE-PI-0031                            3890.00  2172580.03 CR  Vendor Invoice PI-2025-161
+2025-04-07 JE-PI-0032                           83431.94  2256011.97 CR  Vendor Invoice PI-2025-056
+2025-04-08 JE-PI-0033                          112512.11  2368524.08 CR  Vendor Invoice PI-2025-027
+2025-04-09 JE-PI-0034                            1143.43  2369667.51 CR  Vendor Invoice PI-2025-024
+2025-04-11 BA-0178              353967.41                 2015700.10 CR  Bank alloc: HMA (Supplier: HMA)
+2025-04-11 BA-0182              124406.47                 1891293.63 CR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD (
+2025-04-11 BA-0185               61824.39                 1829469.24 CR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD (
+2025-04-11 JE-PI-0035                          142550.85  1972020.09 CR  Vendor Invoice PI-2025-055
+2025-04-17 JE-PI-0036                          117621.49  2089641.58 CR  Vendor Invoice PI-2025-026
+2025-04-24 BA-0204              124406.47                 1965235.11 CR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-04-29 JE-PI-0037                            3890.00  1969125.11 CR  Vendor Invoice PI-2025-035
+2025-04-30 JE-PI-0038                           16770.96  1985896.07 CR  Vendor Invoice PI-2025-023
+2025-04-30 JE-PI-0039                           29951.83  2015847.90 CR  Vendor Invoice PI-2025-052
+2025-05-01 JE-PI-0040                           23159.85  2039007.75 CR  Vendor Invoice PI-2025-030
+2025-05-01 JE-PI-0041                            3890.00  2042897.75 CR  Vendor Invoice PI-2025-162
+2025-05-02 BA-0217               23395.45                 2019502.30 CR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD (Supplier
+2025-05-04 JE-PI-0042                            1099.00  2020601.30 CR  Vendor Invoice PI-2025-036
+2025-05-04 JE-PI-0043                            6234.50  2026835.80 CR  Vendor Invoice PI-2025-037
+2025-05-04 JE-PI-0044                           61679.10  2088514.90 CR  Vendor Invoice PI-2025-048
+2025-05-04 JE-PI-0045                             439.00  2088953.90 CR  Vendor Invoice PI-2025-059
+2025-05-05 BA-0221              112512.11                 1976441.79 CR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-05-05 BA-0222              117621.49                 1858820.30 CR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-05-05 JE-PI-0046                          249859.35  2108679.65 CR  Vendor Invoice PI-2025-050
+2025-05-08 JE-PI-0047                             381.91  2109061.56 CR  Vendor Invoice PI-2025-044
+2025-05-12 JE-PI-0048                          173496.99  2282558.55 CR  Vendor Invoice PI-2025-031
+2025-05-12 JE-PI-0049                           25598.00  2308156.55 CR  Vendor Invoice PI-2025-033
+2025-05-12 JE-PI-0050                           20895.99  2329052.54 CR  Vendor Invoice PI-2025-034
+2025-05-13 JE-PI-0051                          101384.82  2430437.36 CR  Vendor Invoice PI-2025-057
+2025-05-14 JE-PI-0052                          121129.52  2551566.88 CR  Vendor Invoice PI-2025-078
+2025-05-14 JE-PI-0053                          162147.62  2713714.50 CR  Vendor Invoice PI-2025-085
+2025-05-15 BA-0242               25422.48                 2688292.02 CR  Bank alloc: Ordained Trading - 25-KNG-INVC-03 (Supplier
+2025-05-15 JE-PI-0054                           25422.48  2713714.50 CR  Vendor Invoice PI-2025-049
+2025-05-20 JE-PI-0055              628.00                 2713086.50 CR  Vendor Credit Note PI-2025-038
+2025-05-20 JE-PI-0056                             658.00  2713744.50 CR  Vendor Invoice PI-2025-039
+2025-05-21 JE-PI-0057                            1998.00  2715742.50 CR  Vendor Invoice PI-2025-040
+2025-05-22 JE-PI-0058                             275.88  2716018.38 CR  Vendor Invoice PI-2025-045
+2025-05-22 JE-PI-0059                          101490.57  2817508.95 CR  Vendor Invoice PI-2025-047
+2025-05-23 BA-0250               22881.36                 2794627.59 CR  Bank alloc: Cargo Compass SA (deleted) (Supplier: Cargo
+2025-05-23 JE-PI-0060                             972.00  2795599.59 CR  Vendor Invoice PI-2025-041
+2025-05-26 BA-0253               23159.85                 2772439.74 CR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD - INA1338
+2025-05-26 JE-PI-0061                            2885.01  2775324.75 CR  Vendor Invoice PI-2025-042
+2025-05-26 JE-PI-0062                             615.00  2775939.75 CR  Vendor Invoice PI-2025-043
+2025-06-01 JE-PI-0063                           24217.10  2800156.85 CR  Vendor Invoice PI-2025-053
+2025-06-04 BA-0262              249859.35                 2550297.50 CR  Bank alloc: HMA (Supplier: HMA)
+2025-06-04 BA-0264              133114.92                 2417182.58 CR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-06-04 BA-0266              173496.99                 2243685.59 CR  Bank alloc: Martin Bulk Engineering Solutions PTY LTD -
+2025-06-05 BA-0269                3890.00                 2239795.59 CR  Bank alloc: Meadowdine Group (Supplier: Meadowdine Grou
+2025-06-13 JE-PI-0064                           20125.00  2259920.59 CR  Vendor Invoice PI-2025-054
+2025-06-14 BA-0278              200000.00                 2059920.59 CR  Bank alloc: FRALINE (Supplier: Fraline)
+2025-06-16 JE-PI-0065                          137702.04  2197622.63 CR  Vendor Invoice PI-2025-086
+2025-06-17 BA-0280               20125.00                 2177497.63 CR  Bank alloc: Fumi Energy PTY LTD (Supplier: Fumi Energy)
+2025-06-26 BA-0295              200000.00                 1977497.63 CR  Bank alloc: FRALINE (Supplier: Fraline)
+2025-06-30 JE-PI-0066                           56594.65  2034092.28 CR  Vendor Invoice PI-2025-051
+2025-07-01 JE-PI-0067                           25865.12  2059957.40 CR  Vendor Invoice PI-2025-068
+2025-07-01 JE-PI-0068                           26575.30  2086532.70 CR  Vendor Invoice PI-2025-081
+2025-07-03 JE-PI-0069                            9075.00  2095607.70 CR  Vendor Invoice PI-2025-065
+2025-07-05 BA-0308               24217.10                 2071390.60 CR  Bank alloc: Emerald Sky Trading 126 (PTY) LTD (Supplier
+2025-07-11 JE-PI-0070                            5481.75  2076872.35 CR  Vendor Invoice PI-2025-058
+2025-07-11 JE-PI-0071                           57385.32  2134257.67 CR  Vendor Invoice PI-2025-074
+2025-07-15 JE-PI-0072                          333669.08  2467926.75 CR  Vendor Invoice PI-2025-069
+2025-07-15 JE-PI-0073                           66557.46  2534484.21 CR  Vendor Invoice PI-2025-082
+2025-07-16 JE-PI-0074                           35029.90  2569514.11 CR  Vendor Invoice PI-2025-066
+2025-07-16 JE-PI-0075                           72049.80  2641563.91 CR  Vendor Invoice PI-2025-073
+2025-07-17 BA-0317               72049.80                 2569514.11 CR  Bank alloc: Fumi Energy PTY LTD (Supplier: Fumi Energy)
+2025-07-17 JE-PI-0076                           28299.99  2597814.10 CR  Vendor Invoice PI-2025-060
+2025-07-17 JE-PI-0077                           22699.00  2620513.10 CR  Vendor Invoice PI-2025-061
+2025-07-17 JE-PI-0078                           51599.98  2672113.08 CR  Vendor Invoice PI-2025-062
+2025-07-17 JE-PI-0079                           51599.98  2723713.06 CR  Vendor Invoice PI-2025-063
+2025-07-17 JE-PI-0080                             439.00  2724152.06 CR  Vendor Invoice PI-2025-072
+2025-07-17 JE-PI-0081                             933.20  2725085.26 CR  Vendor Invoice PI-2025-084
+2025-07-19 JE-PI-0082                           55999.96  2781085.22 CR  Vendor Invoice PI-2025-064
+2025-07-21 JE-PI-0083                            1725.00  2782810.22 CR  Vendor Invoice PI-2025-070
+2025-07-22 JE-PI-0084                          125144.13  2907954.35 CR  Vendor Invoice PI-2025-145
+2025-07-22 JE-PI-0085                           62380.31  2970334.66 CR  Vendor Invoice PI-2025-146
+2025-07-28 JE-PI-0086                            3890.00  2974224.66 CR  Vendor Invoice PI-2025-071
+2025-07-29 JE-PI-0087                           13995.01  2988219.67 CR  Vendor Invoice PI-2025-067
+2025-07-30 BA-0336               50000.00                 2938219.67 CR  Bank alloc: FRALINE (Supplier: Fraline)
+2025-08-01 BA-0847              150000.00                 2788219.67 CR  Bank recon: FNB App Payment To Marian Chama
+2025-08-01 BA-0848               87602.50                 2700617.17 CR  Bank recon: FNB App Payment To Di192124 (Supplier invoi
+2025-08-01 BA-0849               43639.93                 2656977.24 CR  Bank recon: FNB App Payment To Di192123 (Supplier invoi
+2025-08-01 BA-0850              333669.08                 2323308.16 CR  Bank recon: FNB App Payment To In148829 (Supplier invoi
+2025-08-01 BA-0851                5481.75                 2317826.41 CR  Bank recon: FNB App Payment To Di192340 (Supplier invoi
+2025-08-01 JE-PI-0088                             388.35  2318214.76 CR  Vendor Invoice PI-2025-077
+2025-08-04 BA-0852               25938.10                 2292276.66 CR  Bank recon: FNB App Payment To Soq73132 (Supplier)
+2025-08-04 BA-0853               15714.00                 2276562.66 CR  Bank recon: FNB App Payment To 1519 (Supplier)
+2025-08-12 BA-0854               12111.19                 2264451.47 CR  Bank recon: FNB App Rtc Pmt To 812556
+2025-08-12 JE-PI-0089                           11095.38  2275546.85 CR  Vendor Invoice PI-2025-080
+2025-08-14 BA-0855               54206.36                 2221340.49 CR  Bank recon: Outward Swift Pi202508018 (Purchase invoice
+2025-08-15 BA-0859               26575.29                 2194765.20 CR  Bank recon: FNB App Payment To Ina13467 (Supplier)
+2025-08-19 BA-0864                3890.00                 2190875.20 CR  Bank recon: FNB App Payment To 301 (Supplier)
+2025-08-19 BA-0865                1725.00                 2189150.20 CR  Bank recon: FNB App Transfer To Inv87809 (Supplier invo
+2025-08-20 JE-PI-0090                            8756.82  2197907.02 CR  Vendor Invoice PI-2025-076
+2025-08-22 JE-PI-0091                            2300.00  2200207.02 CR  Vendor Invoice PI-2025-083
+2025-08-22 JE-PI-0092                            2300.00  2202507.02 CR  Vendor Invoice PI-2025-102
+2025-08-23 JE-PI-0093                             150.00  2202657.02 CR  Vendor Invoice PI-2025-079
+2025-08-25 BA-0869              160225.18                 2042431.84 CR  Bank recon: Internet Pmt To 13679/1 (Supplier payment)
+2025-08-27 BA-0870                8756.82                 2033675.02 CR  Bank recon: FNB App Payment To 21450 (Supplier)
+2025-08-27 JE-PI-0094                            3890.00  2037565.02 CR  Vendor Invoice PI-2025-096
+2025-08-30 JE-PI-0095                             600.00  2038165.02 CR  Vendor Invoice PI-2025-075
+2025-09-04 JE-PI-0096                           28760.16  2066925.18 CR  Vendor Invoice PI-2025-181
+2025-09-08 JE-PI-0097                            1634.33  2068559.51 CR  Vendor Invoice PI-2025-098
+2025-09-09 JE-PI-0098                           20000.00  2088559.51 CR  Vendor Invoice PI-2025-100
+2025-09-10 JE-PI-0099                           15000.00  2103559.51 CR  Vendor Invoice PI-2025-106
+2025-09-12 BA-0401               19800.00                 2083759.51 CR  Bank alloc: INVSGB-0126:Emerald Sky Trading t/a Buhle G
+2025-09-12 BA-0402              500000.00                 1583759.51 CR  Bank alloc: FRALINE (Supplier: Fraline)
+2025-09-12 JE-PI-0100                           10550.00  1594309.51 CR  Vendor Invoice PI-2025-087
+2025-09-12 JE-PI-0101                           35000.00  1629309.51 CR  Vendor Invoice PI-2025-107
+2025-09-13 JE-PI-0102                            1732.27  1631041.78 CR  Vendor Invoice PI-2025-099
+2025-09-15 JE-PI-0103                            9000.00  1640041.78 CR  Vendor Invoice PI-2025-111
+2025-09-15 JE-PI-0104                          247564.42  1887606.20 CR  Vendor Invoice PI-2025-180
+2025-09-16 JE-PI-0105                            8832.76  1896438.96 CR  Vendor Invoice PI-2025-104
+2025-09-17 JE-PI-0106                            8832.76  1905271.72 CR  Vendor Invoice PI-2025-103
+2025-09-17 JE-PI-0107                            7000.00  1912271.72 CR  Vendor Invoice PI-2025-109
+2025-09-17 JE-PI-0108                           68889.10  1981160.82 CR  Vendor Invoice PI-2025-133
+2025-09-20 JE-PI-0109                           10000.00  1991160.82 CR  Vendor Invoice PI-2025-101
+2025-09-22 JE-PI-0110                           26947.19  2018108.01 CR  Vendor Invoice PI-2025-093
+2025-09-23 JE-PI-0111                            2300.00  2020408.01 CR  Vendor Invoice PI-2025-155
+2025-09-25 JE-PI-0112                            6510.00  2026918.01 CR  Vendor Invoice PI-2025-088
+2025-09-25 JE-PI-0113                             640.00  2027558.01 CR  Vendor Invoice PI-2025-095
+2025-09-25 JE-PI-0114                           13809.15  2041367.16 CR  Vendor Invoice PI-2025-112
+2025-09-25 JE-PI-0115                            9962.50  2051329.66 CR  Vendor Invoice PI-2025-113
+2025-09-26 JE-PI-0116                            1600.02  2052929.68 CR  Vendor Invoice PI-2025-094
+2025-09-26 JE-PI-0117                           20000.00  2072929.68 CR  Vendor Invoice PI-2025-108
+2025-09-27 JE-PI-0118                            3500.00  2076429.68 CR  Vendor Invoice PI-2025-110
+2025-09-29 JE-PI-0119                           40349.44  2116779.12 CR  Vendor Invoice PI-2025-089
+2025-09-29 JE-PI-0120                           39914.43  2156693.55 CR  Vendor Invoice PI-2025-090
+2025-09-29 JE-PI-0121                            3050.00  2159743.55 CR  Vendor Invoice PI-2025-097
+2025-09-29 JE-PI-0122                            4293.00  2164036.55 CR  Vendor Invoice PI-2025-114
+2025-09-29 JE-PI-0123                           25500.00  2189536.55 CR  Vendor Invoice PI-2025-115
+2025-09-30 JE-PI-0124                           24015.39  2213551.94 CR  Vendor Invoice PI-2025-091
+2025-09-30 JE-PI-0125                             996.07  2214548.01 CR  Vendor Invoice PI-2025-092
+2025-09-30 JE-PI-0126                           13809.11  2228357.12 CR  Vendor Invoice PI-2025-105
+2025-09-30 JE-PI-0127                            3050.00  2231407.12 CR  Vendor Invoice PI-2025-163
+2025-10-01 JE-PI-0128                           27544.81  2258951.93 CR  Vendor Invoice PI-2025-122
+2025-10-06 BA-0429               10800.00                 2248151.93 CR  Bank alloc: INVSGB-0129:Emerald Sky Trading t/a Buhle G
+2025-10-06 JE-PI-0129                             670.00  2248821.93 CR  Vendor Invoice PI-2025-124
+2025-10-06 JE-PI-0130                             740.00  2249561.93 CR  Vendor Invoice PI-2025-125
+2025-10-07 BA-0431               30393.00                 2219168.93 CR  Bank alloc: CARGO COMPASS (Supplier: Cargo Compass)
+2025-10-07 JE-PI-0131                          410975.57  2630144.50 CR  Vendor Invoice PI-2025-183
+2025-10-08 JE-PI-0132                          107140.03  2737284.53 CR  Vendor Invoice PI-2025-127
+2025-10-09 JE-PI-0133                           10633.83  2747918.36 CR  Vendor Invoice PI-2025-120
+2025-10-09 JE-PI-0134                          971132.96  3719051.32 CR  Vendor Invoice PI-2025-121
+2025-10-10 BA-0437               12000.00                 3707051.32 CR  Bank alloc: CARGO COMPASS (Supplier: Cargo Compass)
+2025-10-14 JE-PI-0135                           19613.00  3726664.32 CR  Vendor Invoice PI-2025-119
+2025-10-15 JE-PI-0136                             654.01  3727318.33 CR  Vendor Invoice PI-2025-116
+2025-10-15 JE-PI-0137                           34567.32  3761885.65 CR  Vendor Invoice PI-2025-128
+2025-10-15 JE-PI-0138                           39291.99  3801177.64 CR  Vendor Invoice PI-2025-169
+2025-10-15 JE-PI-0139                            1054.67  3802232.31 CR  Vendor Invoice PI-2025-170
+2025-10-17 JE-PI-0140                          136160.00  3938392.31 CR  Vendor Invoice PI-2025-135
+2025-10-20 JE-PI-0141                            9769.15  3948161.46 CR  Vendor Invoice PI-2025-129
+2025-10-20 JE-PI-0142                           10823.26  3958984.72 CR  Vendor Invoice PI-2025-130
+2025-10-21 JE-PI-0143                             220.00  3959204.72 CR  Vendor Invoice PI-2025-134
+2025-10-21 JE-PI-0144                            6519.16  3965723.88 CR  Vendor Invoice PI-2025-136
+2025-10-22 JE-PI-0145                            4550.03  3970273.91 CR  Vendor Invoice PI-2025-137
+2025-10-24 JE-PI-0146                           13910.20  3984184.11 CR  Vendor Invoice PI-2025-131
+2025-10-24 JE-PI-0147                            2300.00  3986484.11 CR  Vendor Invoice PI-2025-156
+2025-10-24 JE-PI-0148                            3050.00  3989534.11 CR  Vendor Invoice PI-2025-164
+2025-10-25 JE-PI-0149                          245164.20  4234698.31 CR  Vendor Invoice PI-2025-184
+2025-10-27 JE-PI-0150                          103402.00  4338100.31 CR  Vendor Invoice PI-2025-118
+2025-10-28 JE-PI-0151                            1992.50  4340092.81 CR  Vendor Invoice PI-2025-117
+2025-10-28 JE-PI-0152                            2100.02  4342192.83 CR  Vendor Invoice PI-2025-138
+2025-10-29 JE-PI-0153                           24284.78  4366477.61 CR  Vendor Invoice PI-2025-123
+2025-10-30 JE-PI-0154                            3854.26  4370331.87 CR  Vendor Invoice PI-2025-132
+2025-10-31 JE-PI-0155                             640.00  4370971.87 CR  Vendor Invoice PI-2025-126
+2025-10-31 JE-PI-0156                           28916.79  4399888.66 CR  Vendor Invoice PI-2025-144
+2025-10-31 JE-PI-0157                           51998.02  4451886.68 CR  Vendor Invoice PI-2025-179
+2025-10-31 JE-PI-0158                           56303.64  4508190.32 CR  Vendor Invoice PI-2025-182
+2025-11-01 JE-PI-0159                            4923.70  4513114.02 CR  Vendor Invoice PI-2025-140
+2025-11-01 JE-PI-0160                            1418.00  4514532.02 CR  Vendor Invoice PI-2025-141
+2025-11-01 JE-PI-0161                           26136.37  4540668.39 CR  Vendor Invoice PI-2025-149
+2025-11-01 JE-PI-0162                           26450.00  4567118.39 CR  Vendor Invoice PI-2025-172
+2025-11-01 JE-PI-0163                           25980.94  4593099.33 CR  Vendor Invoice PI-2025-173
+2025-11-04 JE-PI-0164                          948058.55  5541157.88 CR  Vendor Invoice PI-2025-143
+2025-11-04 JE-PI-0165                           14030.00  5555187.88 CR  Vendor Invoice PI-2025-151
+2025-11-04 JE-PI-0166                           14411.38  5569599.26 CR  Vendor Invoice PI-2025-152
+2025-11-07 BA-0468               12600.00                 5556999.26 CR  Bank alloc: INVSGB-0132:Emerald Sky Trading t/a Buhle G
+2025-11-10 BA-0472               81135.00                 5475864.26 CR  Bank alloc: Fumi Energy PTY LTD (Supplier: Fumi Energy)
+2025-11-11 JE-PI-0167                             650.00  5476514.26 CR  Vendor Invoice PI-2025-150
+2025-11-11 JE-PI-0168                            1000.00  5477514.26 CR  Vendor Invoice PI-2025-165
+2025-11-12 BA-0475              700000.00                 4777514.26 CR  Bank alloc: FRALINE (Supplier: Fraline)
+2025-11-14 JE-PI-0169                          200000.00  4977514.26 CR  Vendor Invoice PI-2025-154
+2025-11-21 BA-0485               22120.00                 4955394.26 CR  Bank alloc: CARGO COMPASS (Supplier: Cargo Compass)
+2025-11-21 JE-PI-0170                          124037.34  5079431.60 CR  Vendor Invoice PI-2025-148
+2025-11-22 JE-PI-0171                            3736.03  5083167.63 CR  Vendor Invoice PI-2025-153
+2025-11-23 JE-PI-0172                            1152.00  5084319.63 CR  Vendor Invoice PI-2025-139
+2025-11-26 JE-PI-0173                            2300.00  5086619.63 CR  Vendor Invoice PI-2025-157
+2025-11-27 JE-PI-0174                           34770.20  5121389.83 CR  Vendor Invoice PI-2025-158
+2025-11-27 JE-PI-0175                          242490.04  5363879.87 CR  Vendor Invoice PI-2025-167
+2025-11-28 JE-PI-0176                           42381.80  5406261.67 CR  Vendor Invoice PI-2025-147
+2025-11-28 JE-PI-0177                           57500.00  5463761.67 CR  Vendor Invoice PI-2025-159
+2025-11-29 JE-PI-0178                            3050.00  5466811.67 CR  Vendor Invoice PI-2025-166
+2025-12-01 JE-PI-0179                           26917.13  5493728.80 CR  Vendor Invoice PI-2025-171
+2025-12-03 JE-PI-0180                            6704.34  5500433.14 CR  Vendor Invoice PI-2025-174
+2025-12-03 JE-PI-0181                            3534.00  5503967.14 CR  Vendor Invoice PI-2025-176
+2025-12-05 BA-0507               24600.00                 5479367.14 CR  Bank alloc: INVSGB-0136:Emerald Sky Trading t/a Buhle G
+2025-12-07 JE-PI-0182                            1822.15  5481189.29 CR  Vendor Invoice PI-2025-175
+2025-12-09 JE-PI-0183                           57500.00  5538689.29 CR  Vendor Invoice PI-2025-177
+2025-12-09 JE-PI-0184                            1900.00  5540589.29 CR  Vendor Invoice PI-2025-178
+2025-12-16 BA-0519             1000000.00                 4540589.29 CR  Bank alloc: FRALINE (Supplier: Fraline)
+2025-12-18 BA-0525               10000.00                 4530589.29 CR  Bank alloc: CARGO COMPASS (Supplier: Cargo Compass)
+2025-12-19 JE-PI-0185                             950.00  4531539.29 CR  Vendor Invoice PI-2025-185
+2025-12-31 BA-0539               20630.44                 4510908.85 CR  Bank alloc: FRALINE (Supplier: Fraline)
+  >> CLOSING BALANCE: 4510908.85 CR  (DR 7770588.71 | CR 12281497.56)
+
+========================================
+2115 - VAT Output
+----------------------------------------
+2025-01-01 OB-0001                              58781.10  58781.10 CR  Opening Balance as at Jan 1, 2025 (from QuickBooks TB D
+2025-01-31 BA-0541                              53370.42  112151.52 CR  Bank receipt: SARS - SARS VAT 42603156110648000108
+2025-01-31 BA-0542                              69605.21  181756.73 CR  Bank receipt: SARS - SARS VAT 42603156110648000376
+2025-02-01 JE-SI-0004                            3960.00  185716.73 CR  Sales Invoice INV-000004
+2025-02-10 BA-0057                               4434.52  190151.25 CR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX49150868 (SARS 
+2025-02-10 BA-0058                               6543.82  196695.07 CR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX49150685 (SARS 
+2025-02-10 BA-0061                             102809.83  299504.90 CR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX49149338 (SARS 
+2025-02-14 BA-0072                              87058.30  386563.20 CR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX49467909 (SARS 
+2025-03-13 BA-0123                              62967.96  449531.16 CR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX52518059 (SARS 
+2025-04-15 BA-0194                             196329.36  645860.52 CR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX55334486 (SARS 
+2025-06-09 BA-0272                              45081.67  690942.19 CR  Bank alloc: SARS - SARS VAT XXXXXXXXXXXX59924180 (SARS 
+2025-08-13 BA-0355                              53903.34  744845.53 CR  Bank alloc: SARS DEPOSIT 53903.34 (SARS VAT refund)
+2025-11-04 JE-SI-0032                           37692.18  782537.71 CR  Sales Invoice INV-000036
+2025-11-12 JE-SI-0036                           24595.87  807133.58 CR  Sales Invoice INV-000035
+  >> CLOSING BALANCE: 807133.58 CR  (DR 0.00 | CR 807133.58)
+
+========================================
+2520 - Vehicle Finance
+----------------------------------------
+2025-09-29 BA-0419               23470.41                 23470.41 DR  Bank alloc: BETTERBOND R1029/25 YVHKDGXT (Vehicle finan
+2025-10-20 BA-0443               23470.41                 46940.82 DR  Bank alloc: BETTERBOND R1029/25 YVHKDGXT (Vehicle finan
+2025-11-19 BA-0482               23470.41                 70411.23 DR  Bank alloc: BETTERBOND R1029/25 YVHKDGXT (Vehicle finan
+2025-12-18 BA-0523               23470.41                 93881.64 DR  Bank alloc: BETTERBOND R1029/25 YVHKDGXT (Vehicle finan
+  >> CLOSING BALANCE: 93881.64 DR  (DR 93881.64 | CR 0.00)
+
+========================================
+2530 - Shareholders Loans
+----------------------------------------
+2025-01-01 OB-0001                            1633557.16  1633557.16 CR  Opening Balance as at Jan 1, 2025 (from QuickBooks TB D
+2025-01-06 JE-BANK-1776185238806                     60000.00  1693557.16 CR  Bank alloc: FNB App Payment From Loan (Shareholders loa
+2025-01-07 BA-0005                              20000.00  1713557.16 CR  Bank alloc: FNB - FNB APP TRANSFER FROM LOAN (Sharehold
+2025-01-15 BA-0025                              15000.00  1728557.16 CR  Bank alloc: FNB APP TRANSFER FROM LOAN (Shareholders lo
+2025-01-15 BA-0026                              20000.00  1748557.16 CR  Bank alloc: FNB APP PAYMENT FROM LOAN (Shareholders loa
+2025-03-10 BA-0119                              70000.00  1818557.16 CR  Bank alloc: FNB APP PAYMENT FROM LOAN (Shareholders loa
+2025-04-02 BA-0158                             250000.00  2068557.16 CR  Bank alloc: FNB APP TRANSFER FROM LOAN (Shareholders lo
+2025-04-08 BA-0167                              55000.00  2123557.16 CR  Bank alloc: FNB APP PAYMENT FROM LOAN (Shareholders loa
+2025-04-08 BA-0168                             233700.00  2357257.16 CR  Bank alloc: FNB APP TRANSFER FROM LOAN (Shareholders lo
+2025-04-08 BA-0169                              20000.00  2377257.16 CR  Bank alloc: FNB APP TRANSFER FROM LOAN (Shareholders lo
+2025-04-08 BA-0170                               3000.00  2380257.16 CR  Bank alloc: FNB APP TRANSFER FROM LOAN (Shareholders lo
+2025-04-08 BA-0171                              50000.00  2430257.16 CR  Bank alloc: FNB APP TRANSFER FROM LOAN (Shareholders lo
+2025-06-11 BA-0273                             650000.00  3080257.16 CR  Bank alloc: FNB - FNB APP PAYMENT FROM SIHLOBOPN (Share
+2025-06-20 BA-0285                              22600.00  3102857.16 CR  Bank alloc: FNB APP PAYMENT FROM LOAN (Shareholders loa
+2025-08-15 BA-0858               50000.00                 3052857.16 CR  Bank recon: FNB App Transfer To Loan
+2025-08-27 BA-0871               90000.00                 2962857.16 CR  Bank recon: FNB App Transfer To Loan
+  >> CLOSING BALANCE: 2962857.16 CR  (DR 140000.00 | CR 3102857.16)
+
+========================================
+3200 - Retained Earnings
+----------------------------------------
+2025-01-01 OB-0001                            2627046.01  2627046.01 CR  Opening Balance as at Jan 1, 2025 (from QuickBooks TB D
+2025-12-30 BA-0540                            3324975.01  5952021.02 CR  Bank alloc: Opening Balance from Bank (USD opening bala
+  >> CLOSING BALANCE: 5952021.02 CR  (DR 0.00 | CR 5952021.02)
+
+========================================
+4100 - Sales Revenue
+----------------------------------------
+2025-01-24 JE-SI-0001                         1037608.00  1037608.00 CR  Sales Invoice INV-000001
+2025-01-24 JE-SI-0002                          574528.00  1612136.00 CR  Sales Invoice INV-000002
+2025-02-01 JE-SI-0003                          574528.00  2186664.00 CR  Sales Invoice INV-000003
+2025-02-01 JE-SI-0004                           26400.00  2213064.00 CR  Sales Invoice INV-000004
+2025-03-01 JE-SI-0005                          532014.00  2745078.00 CR  Sales Invoice INV-000005
+2025-03-05 JE-SI-0006                         1702540.00  4447618.00 CR  Sales Invoice INV-000006
+2025-03-14 JE-SI-0007                          880046.28  5327664.28 CR  Sales Invoice INV-000007
+2025-04-06 JE-SI-0008                          571794.00  5899458.28 CR  Sales Invoice INV-000008
+2025-04-11 JE-SI-0009                          773216.00  6672674.28 CR  Sales Invoice INV-000009
+2025-04-11 JE-SI-0010                          497399.40  7170073.68 CR  Sales Invoice INV-000010
+2025-05-02 JE-SI-0011                          865982.37  8036056.05 CR  Sales Invoice INV-000011
+2025-05-05 JE-SI-0012                          446897.20  8482953.25 CR  Sales Invoice INV-000012
+2025-05-07 JE-SI-0013                          438716.00  8921669.25 CR  Sales Invoice INV-000015
+2025-05-23 JE-SI-0014                          677207.20  9598876.45 CR  Sales Invoice INV-000013
+2025-05-27 JE-SI-0015                          575513.52  10174389.97 CR  Sales Invoice INV-000014
+2025-06-06 JE-SI-0016                           41449.95  10215839.92 CR  Sales Invoice INV-000016
+2025-06-06 JE-SI-0017                          348977.97  10564817.89 CR  Sales Invoice INV-000017
+2025-07-01 JE-SI-0018                          575541.58  11140359.47 CR  Sales Invoice INV-000018
+2025-07-01 JE-SI-0019                          555779.73  11696139.20 CR  Sales Invoice INV-000019
+2025-07-15 JE-SI-0020                          448884.00  12145023.20 CR  Sales Invoice INV-000020
+2025-07-31 JE-SI-0021                          865982.37  13011005.57 CR  Sales Invoice INV-000021
+2025-07-31 JE-SI-0022                          248699.70  13259705.27 CR  Sales Invoice INV-000022
+2025-07-31 JE-SI-0023                         1163598.00  14423303.27 CR  Sales Invoice INV-000023
+2025-08-13 JE-SI-0024                          438716.00  14862019.27 CR  Sales Invoice INV-000024
+2025-08-13 JE-SI-0025                         1163598.00  16025617.27 CR  Sales Invoice INV-000027
+2025-08-22 JE-SI-0026                         1070739.36  17096356.63 CR  Sales Invoice INV-000025
+2025-08-28 JE-SI-0027                          219358.00  17315714.63 CR  Sales Invoice INV-000026
+2025-09-30 JE-SI-0028                          460921.35  17776635.98 CR  Sales Invoice INV-000028
+2025-10-22 JE-SI-0029                          474045.04  18250681.02 CR  Sales Invoice INV-000031
+2025-10-23 JE-SI-0030                          222745.75  18473426.77 CR  Sales Invoice INV-000029
+2025-10-28 JE-SI-0031                          452378.85  18925805.62 CR  Sales Invoice INV-000030
+2025-11-04 JE-SI-0032                          251281.23  19177086.85 CR  Sales Invoice INV-000036
+2025-11-05 JE-SI-0033                         1466932.18  20644019.03 CR  Sales Invoice INV-000032
+2025-11-05 JE-SI-0034                          817604.70  21461623.73 CR  Sales Invoice INV-000033
+2025-11-12 JE-SI-0035                           44668.35  21506292.08 CR  Sales Invoice INV-000034
+2025-11-12 JE-SI-0036                          163972.46  21670264.54 CR  Sales Invoice INV-000035
+2025-11-12 JE-SI-0037                          223842.26  21894106.80 CR  Sales Invoice INV-000048
+2025-12-09 JE-SI-0038                          577513.52  22471620.32 CR  Sales Invoice INV-000044
+2025-12-09 JE-SI-0039                          315431.00  22787051.32 CR  Sales Invoice INV-000045
+2025-12-09 JE-SI-0040                          581799.00  23368850.32 CR  Sales Invoice INV-000046
+2025-12-09 JE-SI-0041                          438716.00  23807566.32 CR  Sales Invoice INV-000047
+2025-12-15 JE-SI-0042                          336052.86  24143619.18 CR  Sales Invoice INV-000043
+2025-12-23 JE-SI-0043                          576001.98  24719621.16 CR  Sales Invoice INV-000038
+2025-12-23 JE-SI-0044                          577513.52  25297134.68 CR  Sales Invoice INV-000039
+2025-12-23 JE-SI-0045                          835207.50  26132342.18 CR  Sales Invoice INV-000040
+2025-12-23 JE-SI-0046                         1071150.00  27203492.18 CR  Sales Invoice INV-000041
+2025-12-23 JE-SI-0047                          902024.10  28105516.28 CR  Sales Invoice INV-000042
+2025-12-31 JE-SI-0048                           51700.44  28157216.72 CR  Sales Invoice INV-000037
+2025-12-31 JE-SI-0049                         5310830.84  33468047.56 CR  Sales Invoice - Unrecorded revenue for services rendere
+  >> CLOSING BALANCE: 33468047.56 CR  (DR 0.00 | CR 33468047.56)
+
+========================================
+5100 - Direct Costs
+----------------------------------------
+2024-09-12 JE-PI-0001           399235.50                 399235.50 DR  Vendor Invoice PI-2025-001
+2024-09-17 JE-PI-0002              869.57                 400105.07 DR  Vendor Invoice PI-2025-168
+2024-12-10 JE-PI-0003            99731.02                 499836.09 DR  Vendor Invoice PI-2025-016
+2025-01-01 JE-PI-0004            20550.72                 520386.81 DR  Vendor Invoice PI-2025-002
+2025-01-01 JE-PI-0005            20437.55                 540824.36 DR  Vendor Invoice PI-2025-008
+2025-01-01 JE-PI-0006            20630.18                 561454.54 DR  Vendor Invoice PI-2025-019
+2025-01-10 JE-PI-0007            44859.69                 606314.23 DR  Vendor Invoice PI-2025-021
+2025-01-13 JE-PI-0008             3890.00                 610204.23 DR  Vendor Invoice PI-2025-006
+2025-01-13 JE-PI-0009            26608.70                 636812.93 DR  Vendor Invoice PI-2025-142
+2025-01-14 BA-0009                 289.00                 637101.93 DR  Bank alloc: 763109 (Numeric ref - supplier payment)
+2025-01-15 BA-0017               50000.00                 687101.93 DR  Bank alloc: CHA161 (Numeric ref - supplier payment)
+2025-01-15 BA-0018              100000.00                 787101.93 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-15 BA-0019                2955.33                 790057.26 DR  Bank alloc: INA13251 (Supplier invoice payment)
+2025-01-15 BA-0020              500000.00                 1290057.26 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-15 BA-0021               80000.00                 1370057.26 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-16 BA-0028               44859.69                 1414916.95 DR  Bank alloc: R025ZK5J80 PI202501005 (Purchase invoice pa
+2025-01-16 BA-0031               48255.78                 1463172.73 DR  Bank alloc: R025ZKNQX0 DZ20250107GH (International supp
+2025-01-17 BA-0032              102000.00                 1565172.73 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-23 BA-0038              400000.00                 1965172.73 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-24 BA-0039               46881.59                 2012054.32 DR  Bank alloc: R025Z0KKB0 DZ20250117GH (International supp
+2025-01-27 BA-0043               50000.00                 2062054.32 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-27 BA-0044              200000.00                 2262054.32 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-01-27 JE-PI-0010           507283.92                 2769338.24 DR  Vendor Invoice PI-2025-003
+2025-01-27 JE-PI-0011                          507283.92  2262054.32 DR  Vendor Credit Note PI-2025-004
+2025-01-27 JE-PI-0012           507283.92                 2769338.24 DR  Vendor Invoice PI-2025-005
+2025-01-31 JE-PI-0013             3890.00                 2773228.24 DR  Vendor Invoice PI-2025-013
+2025-02-07 BA-0055               50000.00                 2823228.24 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-10 JE-PI-0014           108179.54                 2931407.78 DR  Vendor Invoice PI-2025-009
+2025-02-11 BA-0062               20000.00                 2951407.78 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-12 BA-0068               77834.91                 3029242.69 DR  Bank alloc: R025XM0M80 DZ20250210GH (International supp
+2025-02-12 BA-0069              200000.00                 3229242.69 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-13 JE-PI-0015            23400.00                 3252642.69 DR  Vendor Invoice PI-2025-022
+2025-02-14 BA-0070              130000.00                 3382642.69 DR  Bank alloc: FSTV35592 (Supplier ref payment)
+2025-02-17 BA-0074               15000.00                 3397642.69 DR  Bank alloc: SIHLOBO (Shareholders loan)
+2025-02-17 BA-0077              119600.47                 3517243.16 DR  Bank alloc: FSTV35592 (Supplier ref payment)
+2025-02-17 JE-PI-0016            36709.29                 3553952.45 DR  Vendor Invoice PI-2025-007
+2025-02-17 JE-PI-0017            12244.84                 3566197.29 DR  Vendor Invoice PI-2025-017
+2025-02-18 JE-PI-0018             3477.39                 3569674.68 DR  Vendor Invoice PI-2025-014
+2025-02-20 BA-0088                2500.00                 3572174.68 DR  Bank alloc: 3319 (Numeric ref - supplier payment)
+2025-02-20 BA-0089                6000.00                 3578174.68 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-21 JE-PI-0019           507283.92                 4085458.60 DR  Vendor Invoice PI-2025-012
+2025-02-21 JE-PI-0020            20889.00                 4106347.60 DR  Vendor Invoice PI-2025-015
+2025-02-24 BA-0094                4000.00                 4110347.60 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-24 BA-0095               20000.00                 4130347.60 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-24 JE-PI-0021           121084.69                 4251432.29 DR  Vendor Invoice PI-2025-010
+2025-02-24 JE-PI-0022           412162.57                 4663594.86 DR  Vendor Invoice PI-2025-011
+2025-02-26 JE-PI-0023           307797.75                 4971392.61 DR  Vendor Invoice PI-2025-029
+2025-02-28 BA-0100               15000.00                 4986392.61 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-02-28 BA-0103              500000.00                 5486392.61 DR  Bank alloc: CHA161 (Numeric ref - supplier payment)
+2025-03-01 JE-PI-0024            96105.98                 5582498.59 DR  Vendor Invoice PI-2025-018
+2025-03-01 JE-PI-0025             3890.00                 5586388.59 DR  Vendor Invoice PI-2025-160
+2025-03-07 BA-0113                5000.00                 5591388.59 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-03-08 BA-0114                5000.00                 5596388.59 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-03-10 JE-PI-0026            35399.92                 5631788.51 DR  Vendor Invoice PI-2025-028
+2025-03-14 BA-0126               40000.00                 5671788.51 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-03-17 JE-PI-0027           108179.54                 5779968.05 DR  Vendor Invoice PI-2025-020
+2025-03-18 BA-0132              100000.00                 5879968.05 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-03-18 BA-0133               70000.00                 5949968.05 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-03-28 BA-0150                1402.18                 5951370.23 DR  Bank alloc: SQU11598 (Supplier quote payment)
+2025-03-28 JE-PI-0028           115752.10                 6067122.33 DR  Vendor Invoice PI-2025-032
+2025-03-28 JE-PI-0029           122616.78                 6189739.11 DR  Vendor Invoice PI-2025-046
+2025-04-01 JE-PI-0030            20343.88                 6210082.99 DR  Vendor Invoice PI-2025-025
+2025-04-01 JE-PI-0031             3890.00                 6213972.99 DR  Vendor Invoice PI-2025-161
+2025-04-02 BA-0159              300000.00                 6513972.99 DR  Bank alloc: 2804 (Numeric ref - supplier payment)
+2025-04-07 BA-0163                3890.00                 6517862.99 DR  Bank alloc: 1237 (Numeric ref - supplier payment)
+2025-04-07 JE-PI-0032            83431.94                 6601294.93 DR  Vendor Invoice PI-2025-056
+2025-04-08 BA-0166              400000.00                 7001294.93 DR  Bank alloc: 2804 (Numeric ref - supplier payment)
+2025-04-08 JE-PI-0033            97836.62                 7099131.55 DR  Vendor Invoice PI-2025-027
+2025-04-09 JE-PI-0034              994.29                 7100125.84 DR  Vendor Invoice PI-2025-024
+2025-04-10 BA-0174               83431.94                 7183557.78 DR  Bank alloc: R025VL5D20 PI202504004 (Purchase invoice pa
+2025-04-11 BA-0179              500000.00                 7683557.78 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-04-11 BA-0180               20000.00                 7703557.78 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-04-11 BA-0181               55000.00                 7758557.78 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-04-11 BA-0183              412162.57                 8170720.35 DR  Bank alloc: IN147948 (Supplier invoice payment)
+2025-04-11 BA-0184              289100.00                 8459820.35 DR  Bank alloc: 2804 (Numeric ref - supplier payment)
+2025-04-11 JE-PI-0035           111543.00                 8571363.35 DR  Vendor Invoice PI-2025-055
+2025-04-14 BA-0192              111543.71                 8682907.06 DR  Bank alloc: R025VDXLK0 PI202504007 (Purchase invoice pa
+2025-04-17 JE-PI-0036           102279.56                 8785186.62 DR  Vendor Invoice PI-2025-026
+2025-04-23 BA-0198              100000.00                 8885186.62 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-04-23 BA-0200              250000.00                 9135186.62 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-04-24 BA-0201               14415.89                 9149602.51 DR  Bank alloc: 24-KING-INVC-01 (Koinage invoice payment)
+2025-04-24 BA-0203               96105.98                 9245708.49 DR  Bank alloc: 25-KING-INVC-02 (Koinage invoice payment)
+2025-04-29 JE-PI-0037             3890.00                 9249598.49 DR  Vendor Invoice PI-2025-035
+2025-04-30 JE-PI-0038            15776.33                 9265374.82 DR  Vendor Invoice PI-2025-023
+2025-04-30 JE-PI-0039            28762.91                 9294137.73 DR  Vendor Invoice PI-2025-052
+2025-05-01 JE-PI-0040            20139.00                 9314276.73 DR  Vendor Invoice PI-2025-030
+2025-05-01 JE-PI-0041             3890.00                 9318166.73 DR  Vendor Invoice PI-2025-162
+2025-05-02 BA-0216                4473.50                 9322640.23 DR  Bank alloc: 1272 (Numeric ref - supplier payment)
+2025-05-02 BA-0218               50000.00                 9372640.23 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-05-04 JE-PI-0042              955.65                 9373595.88 DR  Vendor Invoice PI-2025-036
+2025-05-04 JE-PI-0043             5421.30                 9379017.18 DR  Vendor Invoice PI-2025-037
+2025-05-04 JE-PI-0044            53634.00                 9432651.18 DR  Vendor Invoice PI-2025-048
+2025-05-04 JE-PI-0045              381.74                 9433032.92 DR  Vendor Invoice PI-2025-059
+2025-05-05 BA-0224               19477.51                 9452510.43 DR  Bank alloc: PAYGATE1 (Payment gateway - supplier)
+2025-05-05 BA-0227              150000.00                 9602510.43 DR  Bank alloc: FNB - LOAN (Creditor payment via loan)
+2025-05-05 JE-PI-0046           217269.00                 9819779.43 DR  Vendor Invoice PI-2025-050
+2025-05-07 BA-0233               90915.12                 9910694.55 DR  Bank alloc: R025TNBXV0 PI202505007 (Purchase invoice pa
+2025-05-08 JE-PI-0047              381.91                 9911076.46 DR  Vendor Invoice PI-2025-044
+2025-05-12 JE-PI-0048           150866.95                 10061943.41 DR  Vendor Invoice PI-2025-031
+2025-05-12 JE-PI-0049            22259.13                 10084202.54 DR  Vendor Invoice PI-2025-033
+2025-05-12 JE-PI-0050            18170.43                 10102372.97 DR  Vendor Invoice PI-2025-034
+2025-05-13 JE-PI-0051            87696.72                 10190069.69 DR  Vendor Invoice PI-2025-057
+2025-05-14 JE-PI-0052           108250.07                 10298319.76 DR  Vendor Invoice PI-2025-078
+2025-05-14 JE-PI-0053           140045.96                 10438365.72 DR  Vendor Invoice PI-2025-085
+2025-05-15 BA-0239              140045.97                 10578411.69 DR  Bank alloc: R025TCWG60 PI202505011 (Purchase invoice pa
+2025-05-15 BA-0241               87696.72                 10666108.41 DR  Bank alloc: R025TCXHD0 PI202505020 (Purchase invoice pa
+2025-05-15 JE-PI-0054            22106.50                 10688214.91 DR  Vendor Invoice PI-2025-049
+2025-05-19 BA-0245              102187.64                 10790402.55 DR  Bank alloc: PRO0214919 (Supplier ref payment)
+2025-05-20 JE-PI-0055                             546.09  10789856.46 DR  Vendor Credit Note PI-2025-038
+2025-05-20 JE-PI-0056              572.17                 10790428.63 DR  Vendor Invoice PI-2025-039
+2025-05-21 BA-0248               14069.73                 10804498.36 DR  Bank alloc: PAYGATE1 (Payment gateway - supplier)
+2025-05-21 JE-PI-0057             1737.39                 10806235.75 DR  Vendor Invoice PI-2025-040
+2025-05-22 JE-PI-0058              275.88                 10806511.63 DR  Vendor Invoice PI-2025-045
+2025-05-22 JE-PI-0059            87696.72                 10894208.35 DR  Vendor Invoice PI-2025-047
+2025-05-23 BA-0251               80000.00                 10974208.35 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-05-23 JE-PI-0060              845.22                 10975053.57 DR  Vendor Invoice PI-2025-041
+2025-05-26 JE-PI-0061             2508.70                 10977562.27 DR  Vendor Invoice PI-2025-042
+2025-05-26 JE-PI-0062              534.78                 10978097.05 DR  Vendor Invoice PI-2025-043
+2025-05-30 BA-0261               48033.48                 11026130.53 DR  Bank alloc: R025SS7QG0 PI202505035 (Purchase invoice pa
+2025-06-01 JE-PI-0063            21058.35                 11047188.88 DR  Vendor Invoice PI-2025-053
+2025-06-04 BA-0267               61679.10                 11108867.98 DR  Bank alloc: 25-KING-INVC-04 (Koinage invoice payment)
+2025-06-05 BA-0270               90000.00                 11198867.98 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-06-11 BA-0274              650000.00                 11848867.98 DR  Bank alloc: SIHLOBO (Shareholders loan)
+2025-06-12 BA-0277              989100.00                 12837967.98 DR  Bank alloc: 2804 (Numeric ref - supplier payment)
+2025-06-13 JE-PI-0064            17500.00                 12855467.98 DR  Vendor Invoice PI-2025-054
+2025-06-16 JE-PI-0065           118932.45                 12974400.43 DR  Vendor Invoice PI-2025-086
+2025-06-17 BA-0279               50000.00                 13024400.43 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-06-17 BA-0282                6640.00                 13031040.43 DR  Bank alloc: QUO0001478 (Supplier quote payment)
+2025-06-20 BA-0284              300000.00                 13331040.43 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-06-23 BA-0286               30000.00                 13361040.43 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-06-23 BA-0288              118932.45                 13479972.88 DR  Bank alloc: R025S91JQ0 PI202506007 (Purchase invoice pa
+2025-06-30 JE-PI-0066            54359.93                 13534332.81 DR  Vendor Invoice PI-2025-051
+2025-07-01 BA-0298               28142.47                 13562475.28 DR  Bank alloc: IVQ5656 (Supplier invoice payment)
+2025-07-01 JE-PI-0067            22491.41                 13584966.69 DR  Vendor Invoice PI-2025-068
+2025-07-01 JE-PI-0068            23108.96                 13608075.65 DR  Vendor Invoice PI-2025-081
+2025-07-03 BA-0302               19925.00                 13628000.65 DR  Bank alloc: 6625 (Numeric ref - supplier payment)
+2025-07-03 JE-PI-0069             9075.00                 13637075.65 DR  Vendor Invoice PI-2025-065
+2025-07-05 BA-0306                3890.00                 13640965.65 DR  Bank alloc: INV_263 (Supplier invoice payment)
+2025-07-09 BA-0310               30000.00                 13670965.65 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-07-09 BA-0312               26215.47                 13697181.12 DR  Bank alloc: R025RD5DM0 CI202507002 (Commercial invoice 
+2025-07-10 BA-0313               23557.26                 13720738.38 DR  Bank alloc: IVQ6191 (Supplier invoice payment)
+2025-07-11 BA-0314               50000.00                 13770738.38 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-07-11 BA-0315                9075.00                 13779813.38 DR  Bank alloc: INVSGB-0109 (Supplier invoice payment)
+2025-07-11 JE-PI-0070             5238.00                 13785051.38 DR  Vendor Invoice PI-2025-058
+2025-07-11 JE-PI-0071            54989.59                 13840040.97 DR  Vendor Invoice PI-2025-074
+2025-07-15 JE-PI-0072           290147.03                 14130188.00 DR  Vendor Invoice PI-2025-069
+2025-07-15 JE-PI-0073            57876.05                 14188064.05 DR  Vendor Invoice PI-2025-082
+2025-07-16 JE-PI-0074            30460.78                 14218524.83 DR  Vendor Invoice PI-2025-066
+2025-07-16 JE-PI-0075            62652.00                 14281176.83 DR  Vendor Invoice PI-2025-073
+2025-07-17 JE-PI-0076            24608.69                 14305785.52 DR  Vendor Invoice PI-2025-060
+2025-07-17 JE-PI-0077            19738.26                 14325523.78 DR  Vendor Invoice PI-2025-061
+2025-07-17 JE-PI-0078            44869.55                 14370393.33 DR  Vendor Invoice PI-2025-062
+2025-07-17 JE-PI-0079            44869.55                 14415262.88 DR  Vendor Invoice PI-2025-063
+2025-07-17 JE-PI-0080              381.74                 14415644.62 DR  Vendor Invoice PI-2025-072
+2025-07-17 JE-PI-0081              811.48                 14416456.10 DR  Vendor Invoice PI-2025-084
+2025-07-19 BA-0319               52000.00                 14468456.10 DR  Bank alloc: QU000115 (Supplier quote payment)
+2025-07-19 JE-PI-0082            48695.62                 14517151.72 DR  Vendor Invoice PI-2025-064
+2025-07-21 BA-0320               50000.00                 14567151.72 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-07-21 JE-PI-0083             1500.00                 14568651.72 DR  Vendor Invoice PI-2025-070
+2025-07-22 BA-0324              108648.78                 14677300.50 DR  Bank alloc: R025QTCM50 PI202507033 (Purchase invoice pa
+2025-07-22 JE-PI-0084           108648.78                 14785949.28 DR  Vendor Invoice PI-2025-145
+2025-07-22 JE-PI-0085            54206.36                 14840155.64 DR  Vendor Invoice PI-2025-146
+2025-07-23 BA-0325               35029.90                 14875185.54 DR  Bank alloc: 840623 (Numeric ref - supplier payment)
+2025-07-28 BA-0330              580000.00                 15455185.54 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-07-28 JE-PI-0086             3890.00                 15459075.54 DR  Vendor Invoice PI-2025-071
+2025-07-29 JE-PI-0087            12169.57                 15471245.11 DR  Vendor Invoice PI-2025-067
+2025-08-01 JE-PI-0088              388.35                 15471633.46 DR  Vendor Invoice PI-2025-077
+2025-08-04 BA-0341              100000.00                 15571633.46 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-08-12 JE-PI-0089            10005.38                 15581638.84 DR  Vendor Invoice PI-2025-080
+2025-08-20 JE-PI-0090             7614.63                 15589253.47 DR  Vendor Invoice PI-2025-076
+2025-08-22 JE-PI-0091             2000.00                 15591253.47 DR  Vendor Invoice PI-2025-083
+2025-08-22 JE-PI-0092             2000.00                 15593253.47 DR  Vendor Invoice PI-2025-102
+2025-08-23 JE-PI-0093              150.00                 15593403.47 DR  Vendor Invoice PI-2025-079
+2025-08-27 JE-PI-0094             3890.00                 15597293.47 DR  Vendor Invoice PI-2025-096
+2025-08-30 JE-PI-0095              521.74                 15597815.21 DR  Vendor Invoice PI-2025-075
+2025-09-02 BA-0379               25613.39                 15623428.60 DR  Bank alloc: IVQ7916 (Supplier invoice payment)
+2025-09-03 BA-0381              200000.00                 15823428.60 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-09-04 BA-0387               84419.79                 15907848.39 DR  Bank alloc: R025QTCM50 CI202509001 (Commercial invoice 
+2025-09-04 JE-PI-0096            28760.16                 15936608.55 DR  Vendor Invoice PI-2025-181
+2025-09-05 BA-0389               30030.00                 15966638.55 DR  Bank alloc: 7388 (Numeric ref - supplier payment)
+2025-09-05 BA-0390              400000.00                 16366638.55 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-09-08 JE-PI-0097             1634.33                 16368272.88 DR  Vendor Invoice PI-2025-098
+2025-09-09 BA-0393               14175.00                 16382447.88 DR  Bank alloc: INVSGB-0125 (Supplier invoice payment)
+2025-09-09 BA-0394               20529.04                 16402976.92 DR  Bank alloc: 840623 (Numeric ref - supplier payment)
+2025-09-09 JE-PI-0098            20000.00                 16422976.92 DR  Vendor Invoice PI-2025-100
+2025-09-10 BA-0395               23866.34                 16446843.26 DR  Bank alloc: IVQ8251 (Supplier invoice payment)
+2025-09-10 JE-PI-0099            15000.00                 16461843.26 DR  Vendor Invoice PI-2025-106
+2025-09-11 BA-0398              700000.00                 17161843.26 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-09-12 JE-PI-0100             9173.91                 17171017.17 DR  Vendor Invoice PI-2025-087
+2025-09-12 JE-PI-0101            35000.00                 17206017.17 DR  Vendor Invoice PI-2025-107
+2025-09-13 JE-PI-0102             1732.27                 17207749.44 DR  Vendor Invoice PI-2025-099
+2025-09-15 JE-PI-0103             9000.00                 17216749.44 DR  Vendor Invoice PI-2025-111
+2025-09-15 JE-PI-0104           208128.37                 17424877.81 DR  Vendor Invoice PI-2025-180
+2025-09-16 BA-0404              700000.00                 18124877.81 DR  Bank alloc: CHA161 (Numeric ref - supplier payment)
+2025-09-16 BA-0405              140000.00                 18264877.81 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-09-16 JE-PI-0105             7680.66                 18272558.47 DR  Vendor Invoice PI-2025-104
+2025-09-17 JE-PI-0106             7680.66                 18280239.13 DR  Vendor Invoice PI-2025-103
+2025-09-17 JE-PI-0107             7000.00                 18287239.13 DR  Vendor Invoice PI-2025-109
+2025-09-17 JE-PI-0108            58943.25                 18346182.38 DR  Vendor Invoice PI-2025-133
+2025-09-18 BA-0408                3760.00                 18349942.38 DR  Bank alloc: INV_326 (Supplier invoice payment)
+2025-09-20 JE-PI-0109            10000.00                 18359942.38 DR  Vendor Invoice PI-2025-101
+2025-09-22 BA-0410                5000.00                 18364942.38 DR  Bank alloc: GSR INV005 (Supplier invoice payment)
+2025-09-22 BA-0411               59780.57                 18424722.95 DR  Bank alloc: R025QTCM50 PI202509022 (Purchase invoice pa
+2025-09-22 JE-PI-0110            23432.34                 18448155.29 DR  Vendor Invoice PI-2025-093
+2025-09-23 BA-0412                8437.50                 18456592.79 DR  Bank alloc: INVSGB-0127 (Supplier invoice payment)
+2025-09-23 JE-PI-0111             2000.00                 18458592.79 DR  Vendor Invoice PI-2025-155
+2025-09-24 BA-0414               36000.00                 18494592.79 DR  Bank alloc: QU000141 (Supplier quote payment)
+2025-09-25 JE-PI-0112             5660.87                 18500253.66 DR  Vendor Invoice PI-2025-088
+2025-09-25 JE-PI-0113              556.52                 18500810.18 DR  Vendor Invoice PI-2025-095
+2025-09-25 JE-PI-0114            13809.15                 18514619.33 DR  Vendor Invoice PI-2025-112
+2025-09-25 JE-PI-0115             9962.50                 18524581.83 DR  Vendor Invoice PI-2025-113
+2025-09-26 JE-PI-0116             1391.32                 18525973.15 DR  Vendor Invoice PI-2025-094
+2025-09-26 JE-PI-0117            20000.00                 18545973.15 DR  Vendor Invoice PI-2025-108
+2025-09-27 JE-PI-0118             3500.00                 18549473.15 DR  Vendor Invoice PI-2025-110
+2025-09-29 JE-PI-0119            35086.47                 18584559.62 DR  Vendor Invoice PI-2025-089
+2025-09-29 JE-PI-0120            34708.20                 18619267.82 DR  Vendor Invoice PI-2025-090
+2025-09-29 JE-PI-0121             3050.00                 18622317.82 DR  Vendor Invoice PI-2025-097
+2025-09-29 JE-PI-0122             4293.00                 18626610.82 DR  Vendor Invoice PI-2025-114
+2025-09-29 JE-PI-0123            25500.00                 18652110.82 DR  Vendor Invoice PI-2025-115
+2025-09-30 JE-PI-0124            20882.95                 18672993.77 DR  Vendor Invoice PI-2025-091
+2025-09-30 JE-PI-0125              866.15                 18673859.92 DR  Vendor Invoice PI-2025-092
+2025-09-30 JE-PI-0126            12007.92                 18685867.84 DR  Vendor Invoice PI-2025-105
+2025-09-30 JE-PI-0127             3050.00                 18688917.84 DR  Vendor Invoice PI-2025-163
+2025-10-01 BA-0421               21553.75                 18710471.59 DR  Bank alloc: IVQ8806 (Supplier invoice payment)
+2025-10-01 JE-PI-0128            23952.01                 18734423.60 DR  Vendor Invoice PI-2025-122
+2025-10-02 BA-0423               11737.50                 18746161.10 DR  Bank alloc: INVSGB-0128 (Supplier invoice payment)
+2025-10-02 BA-0424              250000.00                 18996161.10 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-10-06 BA-0430              300000.00                 19296161.10 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-10-06 JE-PI-0129              598.91                 19296760.01 DR  Vendor Invoice PI-2025-124
+2025-10-06 JE-PI-0130              656.52                 19297416.53 DR  Vendor Invoice PI-2025-125
+2025-10-07 BA-0432               36629.81                 19334046.34 DR  Bank alloc: IVQ9002 (Supplier invoice payment)
+2025-10-07 JE-PI-0131           318991.22                 19653037.56 DR  Vendor Invoice PI-2025-183
+2025-10-08 BA-0434               30090.00                 19683127.56 DR  Bank alloc: 7628 (Numeric ref - supplier payment)
+2025-10-08 BA-0435               35029.90                 19718157.46 DR  Bank alloc: 840623 (Numeric ref - supplier payment)
+2025-10-08 JE-PI-0132            93165.24                 19811322.70 DR  Vendor Invoice PI-2025-127
+2025-10-09 JE-PI-0133             9246.81                 19820569.51 DR  Vendor Invoice PI-2025-120
+2025-10-09 JE-PI-0134           844463.44                 20665032.95 DR  Vendor Invoice PI-2025-121
+2025-10-14 BA-0439              168027.37                 20833060.32 DR  Bank alloc: R025QTCM50 PI202510019 (Purchase invoice pa
+2025-10-14 JE-PI-0135            19613.00                 20852673.32 DR  Vendor Invoice PI-2025-119
+2025-10-15 BA-0441                7987.50                 20860660.82 DR  Bank alloc: INVSGB-0130 (Supplier invoice payment)
+2025-10-15 JE-PI-0136              568.70                 20861229.52 DR  Vendor Invoice PI-2025-116
+2025-10-15 JE-PI-0137            30058.54                 20891288.06 DR  Vendor Invoice PI-2025-128
+2025-10-15 JE-PI-0138            34166.95                 20925455.01 DR  Vendor Invoice PI-2025-169
+2025-10-15 JE-PI-0139              917.10                 20926372.11 DR  Vendor Invoice PI-2025-170
+2025-10-16 BA-0442              100000.00                 21026372.11 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-10-17 JE-PI-0140           118400.00                 21144772.11 DR  Vendor Invoice PI-2025-135
+2025-10-20 JE-PI-0141             8494.91                 21153267.02 DR  Vendor Invoice PI-2025-129
+2025-10-20 JE-PI-0142             9411.53                 21162678.55 DR  Vendor Invoice PI-2025-130
+2025-10-21 JE-PI-0143              220.00                 21162898.55 DR  Vendor Invoice PI-2025-134
+2025-10-21 JE-PI-0144             6212.11                 21169110.66 DR  Vendor Invoice PI-2025-136
+2025-10-22 BA-0446               43938.39                 21213049.05 DR  Bank alloc: R025QTCM50 CI202510006 (Commercial invoice 
+2025-10-22 BA-0447               36975.93                 21250024.98 DR  Bank alloc: R025QTCM50 CI202510007 (Commercial invoice 
+2025-10-22 JE-PI-0145             3956.55                 21253981.53 DR  Vendor Invoice PI-2025-137
+2025-10-24 BA-0448                3000.00                 21256981.53 DR  Bank alloc: GSR INV006 (Supplier invoice payment)
+2025-10-24 BA-0449               72000.00                 21328981.53 DR  Bank alloc: QU000146 (Supplier quote payment)
+2025-10-24 JE-PI-0146            12095.83                 21341077.36 DR  Vendor Invoice PI-2025-131
+2025-10-24 JE-PI-0147             2000.00                 21343077.36 DR  Vendor Invoice PI-2025-156
+2025-10-24 JE-PI-0148             3050.00                 21346127.36 DR  Vendor Invoice PI-2025-164
+2025-10-25 JE-PI-0149           245164.20                 21591291.56 DR  Vendor Invoice PI-2025-184
+2025-10-27 BA-0451                3170.00                 21594461.56 DR  Bank alloc: INV_356 (Supplier invoice payment)
+2025-10-27 JE-PI-0150            89914.78                 21684376.34 DR  Vendor Invoice PI-2025-118
+2025-10-28 JE-PI-0151             1732.61                 21686108.95 DR  Vendor Invoice PI-2025-117
+2025-10-28 JE-PI-0152             1826.10                 21687935.05 DR  Vendor Invoice PI-2025-138
+2025-10-29 JE-PI-0153            21117.20                 21709052.25 DR  Vendor Invoice PI-2025-123
+2025-10-30 JE-PI-0154             3351.53                 21712403.78 DR  Vendor Invoice PI-2025-132
+2025-10-31 JE-PI-0155              556.52                 21712960.30 DR  Vendor Invoice PI-2025-126
+2025-10-31 JE-PI-0156            27757.01                 21740717.31 DR  Vendor Invoice PI-2025-144
+2025-10-31 JE-PI-0157            49991.29                 21790708.60 DR  Vendor Invoice PI-2025-179
+2025-10-31 JE-PI-0158            55361.14                 21846069.74 DR  Vendor Invoice PI-2025-182
+2025-11-01 JE-PI-0159             4281.48                 21850351.22 DR  Vendor Invoice PI-2025-140
+2025-11-01 JE-PI-0160             1233.04                 21851584.26 DR  Vendor Invoice PI-2025-141
+2025-11-01 JE-PI-0161            22727.28                 21874311.54 DR  Vendor Invoice PI-2025-149
+2025-11-01 JE-PI-0162            23000.00                 21897311.54 DR  Vendor Invoice PI-2025-172
+2025-11-01 JE-PI-0163            22592.13                 21919903.67 DR  Vendor Invoice PI-2025-173
+2025-11-03 BA-0459               24023.36                 21943927.03 DR  Bank alloc: IVQ9389 (Supplier invoice payment)
+2025-11-04 BA-0462               14175.00                 21958102.03 DR  Bank alloc: INVSGB-0131 (Supplier invoice payment)
+2025-11-04 JE-PI-0164           824398.74                 22782500.77 DR  Vendor Invoice PI-2025-143
+2025-11-04 JE-PI-0165            14030.00                 22796530.77 DR  Vendor Invoice PI-2025-151
+2025-11-04 JE-PI-0166            14217.50                 22810748.27 DR  Vendor Invoice PI-2025-152
+2025-11-05 BA-0463              300000.00                 23110748.27 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-11-05 BA-0464               30240.00                 23140988.27 DR  Bank alloc: 7909 (Numeric ref - supplier payment)
+2025-11-06 BA-0465               35029.90                 23176018.17 DR  Bank alloc: 840623 (Numeric ref - supplier payment)
+2025-11-10 BA-0471              500000.00                 23676018.17 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-11-11 JE-PI-0167              650.00                 23676668.17 DR  Vendor Invoice PI-2025-150
+2025-11-11 JE-PI-0168             1000.00                 23677668.17 DR  Vendor Invoice PI-2025-165
+2025-11-13 BA-0476              125095.00                 23802763.17 DR  Bank alloc: R025QTCM50 PI202511019 (Purchase invoice pa
+2025-11-14 BA-0477             1650000.00                 25452763.17 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-11-14 JE-PI-0169           173913.04                 25626676.21 DR  Vendor Invoice PI-2025-154
+2025-11-17 BA-0478                6750.00                 25633426.21 DR  Bank alloc: INVSGB-0133 (Supplier invoice payment)
+2025-11-17 BA-0479                7500.00                 25640926.21 DR  Bank alloc: GSR INV008 (Supplier invoice payment)
+2025-11-18 BA-0481               23866.34                 25664792.55 DR  Bank alloc: IVQ9914 (Supplier invoice payment)
+2025-11-21 JE-PI-0170           107858.56                 25772651.11 DR  Vendor Invoice PI-2025-148
+2025-11-22 JE-PI-0171             3445.90                 25776097.01 DR  Vendor Invoice PI-2025-153
+2025-11-23 JE-PI-0172             1001.74                 25777098.75 DR  Vendor Invoice PI-2025-139
+2025-11-25 BA-0489                5410.00                 25782508.75 DR  Bank alloc: INV_392 (Supplier invoice payment)
+2025-11-26 BA-0491               36000.00                 25818508.75 DR  Bank alloc: QU000164 (Supplier quote payment)
+2025-11-26 JE-PI-0173             2000.00                 25820508.75 DR  Vendor Invoice PI-2025-157
+2025-11-27 JE-PI-0174            34770.20                 25855278.95 DR  Vendor Invoice PI-2025-158
+2025-11-27 JE-PI-0175           210860.90                 26066139.85 DR  Vendor Invoice PI-2025-167
+2025-11-28 JE-PI-0176            36853.74                 26102993.59 DR  Vendor Invoice PI-2025-147
+2025-11-28 JE-PI-0177            50000.00                 26152993.59 DR  Vendor Invoice PI-2025-159
+2025-11-29 JE-PI-0178             3050.00                 26156043.59 DR  Vendor Invoice PI-2025-166
+2025-12-01 JE-PI-0179            23406.20                 26179449.79 DR  Vendor Invoice PI-2025-171
+2025-12-02 BA-0500               23173.55                 26202623.34 DR  Bank alloc: IVQ0295 (Supplier invoice payment)
+2025-12-02 BA-0501               35029.90                 26237653.24 DR  Bank alloc: 840623 (Numeric ref - supplier payment)
+2025-12-03 BA-0502             1050000.00                 27287653.24 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-12-03 JE-PI-0180             3352.17                 27291005.41 DR  Vendor Invoice PI-2025-174
+2025-12-03 JE-PI-0181             3534.00                 27294539.41 DR  Vendor Invoice PI-2025-176
+2025-12-04 BA-0504               13500.00                 27308039.41 DR  Bank alloc: INVSGB-0135 (Supplier invoice payment)
+2025-12-04 BA-0505               30240.00                 27338279.41 DR  Bank alloc: 7909 (Numeric ref - supplier payment)
+2025-12-07 JE-PI-0182             1822.15                 27340101.56 DR  Vendor Invoice PI-2025-175
+2025-12-08 BA-0510              120776.28                 27460877.84 DR  Bank alloc: R025QTCM50 PI202512012 (Purchase invoice pa
+2025-12-08 BA-0511               39076.19                 27499954.03 DR  Bank alloc: R025QTCM50 CI202512001 (Commercial invoice 
+2025-12-09 JE-PI-0183            50000.00                 27549954.03 DR  Vendor Invoice PI-2025-177
+2025-12-09 JE-PI-0184             1900.00                 27551854.03 DR  Vendor Invoice PI-2025-178
+2025-12-10 BA-0514              500000.00                 28051854.03 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-12-15 BA-0517              700000.00                 28751854.03 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-12-16 BA-0520               52000.00                 28803854.03 DR  Bank alloc: QU000166 (Supplier quote payment)
+2025-12-17 BA-0521               51236.63                 28855090.66 DR  Bank alloc: R025QTCM50 CI202512002 (Commercial invoice 
+2025-12-18 BA-0524                4580.00                 28859670.66 DR  Bank alloc: INV_420 (Supplier invoice payment)
+2025-12-19 JE-PI-0185              950.00                 28860620.66 DR  Vendor Invoice PI-2025-185
+2025-12-22 BA-0528              100000.00                 28960620.66 DR  Bank alloc: LOAN (Creditor payment via loan)
+2025-12-23 BA-0529               25000.00                 28985620.66 DR  Bank alloc: IVQ0816 (Supplier invoice payment)
+2025-12-30 BA-0536                3500.00                 28989120.66 DR  Bank alloc: GSR INV012 (Supplier invoice payment)
+  >> CLOSING BALANCE: 28989120.66 DR  (DR 29496950.67 | CR 507830.01)
+
+========================================
+5110 - Purchases - Materials
+----------------------------------------
+2025-02-17 BA-0080                5200.00                 5200.00 DR  Bank alloc: BRICKS (Building materials)
+2025-02-18 BA-0082                3999.00                 9199.00 DR  Bank alloc: Builders (Building materials)
+2025-02-26 BA-0098                3000.00                 12199.00 DR  Bank alloc: BRICKS (Building materials)
+2025-02-28 BA-0101               15000.00                 27199.00 DR  Bank alloc: Builders - BUILDER (Building materials)
+2025-03-01 BA-0105                5200.00                 32399.00 DR  Bank alloc: BRICKS (Building materials)
+2025-03-10 BA-0118                8000.00                 40399.00 DR  Bank alloc: Builders - BUILDER (Building materials)
+2025-04-01 BA-0157                2600.00                 42999.00 DR  Bank alloc: BRICKS (Building materials)
+2025-04-07 BA-0164                2000.00                 44999.00 DR  Bank alloc: Builders - BUILDER (Building materials)
+2025-04-07 BA-0165                9500.00                 54499.00 DR  Bank alloc: Builders - BUILDERS-JOSIAS (Building materi
+2025-04-14 BA-0189                4100.00                 58599.00 DR  Bank alloc: Builders - BUILDERS-JOSIAS (Building materi
+2025-04-22 BA-0197                2500.00                 61099.00 DR  Bank alloc: Builders - BUILDERS-JOSIAS (Building materi
+2025-05-06 BA-0228                1099.00                 62198.00 DR  Bank alloc: Builders (Building materials)
+2025-05-06 BA-0229                6234.50                 68432.50 DR  Bank alloc: Builders (Building materials)
+2025-05-23 BA-0249                1265.00                 69697.50 DR  Bank alloc: Builders - BUILDERS-JOSIAS (Building materi
+2025-05-26 BA-0254                2300.00                 71997.50 DR  Bank alloc: Builders - BUILDERS-JOSIAS (Building materi
+2025-05-28 BA-0255                2885.00                 74882.50 DR  Bank alloc: Builders (Building materials)
+2025-07-04 BA-0304               10000.00                 84882.50 DR  Bank alloc: CEILING FIXING (Building materials)
+2025-07-04 BA-0305                1500.00                 86382.50 DR  Bank alloc: PLUMBING SERVICES (Plumbing materials/servi
+2025-07-22 BA-0323               13995.00                 100377.50 DR  Bank alloc: Adendorff machinery mart (Machinery/tools)
+2025-11-28 BA-0495                3500.00                 103877.50 DR  Bank alloc: PLUMBING AND TILES (Plumbing materials/serv
+  >> CLOSING BALANCE: 103877.50 DR  (DR 103877.50 | CR 0.00)
+
+========================================
+5140 - Subcontractors
+----------------------------------------
+2025-01-15 BA-0016                9900.00                 9900.00 DR  Bank alloc: TRUCK HIRE (Transport subcontractor)
+2025-02-19 BA-0084               11000.00                 20900.00 DR  Bank alloc: DAVID (Subcontractor)
+2025-02-22 BA-0092                5240.00                 26140.00 DR  Bank alloc: TECHNICIAN (Technician subcontractor)
+2025-03-01 BA-0106               12900.00                 39040.00 DR  Bank alloc: TRUCK HIRE (Transport subcontractor)
+2025-03-07 BA-0112                9000.00                 48040.00 DR  Bank alloc: BONDA (Subcontractor)
+2025-05-24 BA-0252               14600.00                 62640.00 DR  Bank alloc: TRUCK HIRE (Transport subcontractor)
+2025-06-12 BA-0275                4500.00                 67140.00 DR  Bank alloc: TRUCK HIRE (Transport subcontractor)
+2025-07-02 BA-0301                4000.00                 71140.00 DR  Bank alloc: TRUCK HIRE (Transport subcontractor)
+2025-07-18 BA-0318                6000.00                 77140.00 DR  Bank alloc: MULENGA (Subcontractor)
+2025-09-05 BA-0388                4000.00                 81140.00 DR  Bank alloc: TRANSPORT (Transport)
+2025-10-09 BA-0436                4000.00                 85140.00 DR  Bank alloc: TRANSPORT (Transport)
+2025-11-06 BA-0466                4000.00                 89140.00 DR  Bank alloc: TRANSPORT (Transport)
+2025-12-09 BA-0512                4000.00                 93140.00 DR  Bank alloc: TRANSPORT (Transport)
+  >> CLOSING BALANCE: 93140.00 DR  (DR 93140.00 | CR 0.00)
+
+========================================
+5150 - Freight Inwards
+----------------------------------------
+2025-02-19 BA-0086                2991.75                 2991.75 DR  Bank alloc: CUSTOMS DUTY (Import duty/freight)
+  >> CLOSING BALANCE: 2991.75 DR  (DR 2991.75 | CR 0.00)
+
+========================================
+6250 - Security
+----------------------------------------
+2025-09-22 BA-0409                1000.00                 1000.00 DR  Bank alloc: SECURITY (Security)
+2025-09-25 BA-0415                 529.90                 1529.90 DR  Bank alloc: FIDELITY ON TIME SECURITY SE 485442*1281 22
+2025-10-25 BA-0450                 529.90                 2059.80 DR  Bank alloc: FIDELITY ON TIME SECURITY SE 485442*1281 22
+2025-11-25 BA-0487                 529.90                 2589.70 DR  Bank alloc: FIDELITY ON TIME SECURITY SE 485442*1281 22
+2025-11-26 BA-0490                1000.00                 3589.70 DR  Bank alloc: SECURITY (Security)
+2025-12-25 BA-0530                 529.90                 4119.60 DR  Bank alloc: FIDELITY ON TIME SECURITY SE 485442*1281 22
+2025-12-30 BA-0535                1000.00                 5119.60 DR  Bank alloc: SECURITY (Security)
+  >> CLOSING BALANCE: 5119.60 DR  (DR 5119.60 | CR 0.00)
+
+========================================
+6310 - Fuel
+----------------------------------------
+2025-01-16 BA-0027                 888.90                 888.90 DR  Bank alloc: PURCH Total Route N4 C 400568******7933 (Fu
+2025-01-23 BA-0037                1908.21                 2797.11 DR  Bank alloc: SASOL SHERITA ' S 485442*1281 21 JAN (Fuel)
+2025-01-28 BA-0045                1853.25                 4650.36 DR  Bank alloc: SASOL N4 ROSEHAVEN 485442*1281 25 JAN (Fuel
+2025-02-07 BA-0054                 250.00                 4900.36 DR  Bank alloc: CALTEX NOVA MOTORS 485442*1281 06 FEB (Fuel
+2025-02-08 BA-0056                1968.00                 6868.36 DR  Bank alloc: SASOL WITBANK 485442*1281 06 FEB (Fuel)
+2025-02-11 BA-0066                 250.00                 7118.36 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 09 FEB (Fuel)
+2025-02-14 BA-0071                1754.95                 8873.31 DR  Bank alloc: SASOL LEYDS 485442*1281 12 FEB (Fuel)
+2025-02-17 BA-0076                 943.90                 9817.21 DR  Bank alloc: PURCH TOTAL PLAZA 400568******7933 (Fuel)
+2025-02-19 BA-0087                1910.44                 11727.65 DR  Bank alloc: SASOL WITBANK 485442*1281 17 FEB (Fuel)
+2025-03-04 BA-0109                1927.90                 13655.55 DR  Bank alloc: SASOL WITBANK 485442*1281 02 MAR (Fuel)
+2025-03-12 BA-0122                2059.29                 15714.84 DR  Bank alloc: SASOL WITBANK 485442*1281 10 MAR (Fuel)
+2025-03-15 BA-0127                 250.00                 15964.84 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 13 MAR (Fuel)
+2025-03-24 BA-0134                1953.60                 17918.44 DR  Bank alloc: SASOL N4 ROSEHAVEN 485442*1281 22 MAR (Fuel
+2025-03-24 BA-0135                  19.90                 17938.34 DR  Bank alloc: SASOL N4 ROSEHAVEN 485442*1281 22 MAR (Fuel
+2025-03-29 BA-0151                1096.65                 19034.99 DR  Bank alloc: Total Elardus Park 485442*1281 26 MAR (Fuel
+2025-03-29 BA-0152                1447.55                 20482.54 DR  Bank alloc: SASOL N4 ROSEHAVEN 485442*1281 27 MAR (Fuel
+2025-04-05 BA-0160                1789.61                 22272.15 DR  Bank alloc: SASOL SHERITA ' S 485442*1281 03 APR (Fuel)
+2025-04-07 BA-0161                1066.44                 23338.59 DR  Bank alloc: SASOL SHERITA ' S 485442*1281 04 APR (Fuel)
+2025-04-14 BA-0191                1874.20                 25212.79 DR  Bank alloc: SASOL WITBANK 485442*1281 11 APR (Fuel)
+2025-04-17 BA-0195                1799.72                 27012.51 DR  Bank alloc: SASOL SHERITA ' S 485442*1281 15 APR (Fuel)
+2025-04-23 BA-0199                1939.37                 28951.88 DR  Bank alloc: SASOL WITBANK 485442*1281 21 APR (Fuel)
+2025-04-30 BA-0214                1680.90                 30632.78 DR  Bank alloc: SASOL WITBANK 485442*1281 28 APR (Fuel)
+2025-04-30 BA-0215                  56.00                 30688.78 DR  Bank alloc: Total Petro N12 Sou 485442*1281 27 APR (Fue
+2025-05-03 BA-0220                 792.90                 31481.68 DR  Bank alloc: SASOL N4 ROSEHAVEN 485442*1281 01 MAY (Fuel
+2025-05-05 BA-0225                1713.51                 33195.19 DR  Bank alloc: SASOL WITBANK 485442*1281 03 MAY (Fuel)
+2025-05-19 BA-0244                1785.95                 34981.14 DR  Bank alloc: SASOL WITBANK 485442*1281 17 MAY (Fuel)
+2025-06-17 BA-0281                1741.89                 36723.03 DR  Bank alloc: SASOL WITBANK 485442*1281 14 JUN (Fuel)
+2025-07-03 BA-0303                1727.38                 38450.41 DR  Bank alloc: SASOL WATERMEYER 485442*1281 01 JUL (Fuel)
+2025-07-05 BA-0307                1868.78                 40319.19 DR  Bank alloc: SASOL TUNNEY 485442*1281 03 JUL (Fuel)
+2025-07-15 BA-0316                 550.00                 40869.19 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 13 JUL (Fuel)
+2025-07-22 BA-0322                1693.60                 42562.79 DR  Bank alloc: SASOL HIGHVELD 485442*1281 20 JUL (Fuel)
+2025-07-29 BA-0331                1588.21                 44151.00 DR  Bank alloc: SASOL WITBANK 485442*1281 26 JUL (Fuel)
+2025-07-29 BA-0334                1000.00                 45151.00 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 27 JUL (Fuel)
+2025-08-15 BA-0860                1816.12                 46967.12 DR  Bank recon: Fuel Purchase Sasol Witbank
+2025-08-20 BA-0867                 738.70                 47705.82 DR  Bank recon: Fuel Purchase Sasol Highveld
+2025-09-01 BA-0377                1501.98                 49207.80 DR  Bank alloc: SASOL HIGHVELD 485442*1281 30 AUG (Fuel)
+2025-09-15 BA-0403                 600.00                 49807.80 DR  Bank alloc: SASOL WATERMEYER 485442*1281 13 SEP (Fuel)
+2025-09-17 BA-0406                 500.00                 50307.80 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 14 SEP (Fuel)
+2025-09-18 BA-0407               60000.00                 110307.80 DR  Bank alloc: FUEL (Fuel purchase)
+2025-09-24 BA-0413               20000.00                 130307.80 DR  Bank alloc: FUEL (Fuel purchase)
+2025-09-30 BA-0420                 800.01                 131107.81 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 28 SEP (Fuel)
+2025-10-03 BA-0427               60000.00                 191107.81 DR  Bank alloc: FUEL (Fuel purchase)
+2025-10-13 BA-0438               41000.00                 232107.81 DR  Bank alloc: FUEL (Fuel purchase)
+2025-10-15 BA-0440                 600.01                 232707.82 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 12 OCT (Fuel)
+2025-10-21 BA-0444                 700.01                 233407.83 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 19 OCT (Fuel)
+2025-10-27 BA-0452                4000.00                 237407.83 DR  Bank alloc: FUEL (Fuel purchase)
+2025-10-28 BA-0456                1000.00                 238407.83 DR  Bank alloc: SASOL WATERMEYER 485442*1281 26 OCT (Fuel)
+2025-10-31 BA-0457                 400.00                 238807.83 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 29 OCT (Fuel)
+2025-11-11 BA-0474               65000.00                 303807.83 DR  Bank alloc: FUEL (Fuel purchase)
+2025-11-18 BA-0480                 400.00                 304207.83 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 16 NOV (Fuel)
+2025-11-19 BA-0483                 650.00                 304857.83 DR  Bank alloc: SASOL WATERMEYER 485442*1281 16 NOV (Fuel)
+2025-11-20 BA-0484              118000.00                 422857.83 DR  Bank alloc: FUEL (Fuel purchase)
+2025-11-25 BA-0488                 600.01                 423457.84 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 23 NOV (Fuel)
+2025-12-01 BA-0497                 800.00                 424257.84 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 29 NOV (Fuel)
+2025-12-05 BA-0506               70000.00                 494257.84 DR  Bank alloc: FUEL (Fuel purchase)
+2025-12-10 BA-0513               50000.00                 544257.84 DR  Bank alloc: FUEL (Fuel purchase)
+2025-12-15 BA-0518                 200.00                 544457.84 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 13 DEC (Fuel)
+2025-12-29 BA-0534                 600.01                 545057.85 DR  Bank alloc: SASOL GORDON ROAD 485442*1281 27 DEC (Fuel)
+2025-12-31 BA-0537                 400.00                 545457.85 DR  Bank alloc: SASOL WATERMEYER 485442*1281 29 DEC (Fuel)
+  >> CLOSING BALANCE: 545457.85 DR  (DR 545457.85 | CR 0.00)
+
+========================================
+6320 - Vehicle Maintenance
+----------------------------------------
+2025-02-21 BA-0090               24022.35                 24022.35 DR  Bank alloc: TECDRIVE - TQU1613 (Vehicle parts)
+  >> CLOSING BALANCE: 24022.35 DR  (DR 24022.35 | CR 0.00)
+
+========================================
+6510 - Telephone and Internet
+----------------------------------------
+2025-07-01 BA-0299                1353.91                 1353.91 DR  Bank alloc: 530.00 LKL*LNQHNGKN 485442*1281 29 JUN (Pre
+2025-07-01 BA-0300                1353.91                 2707.82 DR  Bank alloc: 530.00 LKL*LNQHNGKN 485442*1281 29 JUN (Pre
+2025-09-01 BA-0376                1353.91                 4061.73 DR  Bank alloc: PREPAID ART 530.00.00 LKL*LNQHNGKN 485442*1
+2025-10-01 BA-0422                1353.91                 5415.64 DR  Bank alloc: PREPAID ART 530.00.00 LKL*LNQHNGKN 485442*1
+2025-11-03 BA-0458                1353.91                 6769.55 DR  Bank alloc: PREPAID ART 530.00.00 LKL*LNQHNGKN 485442*1
+2025-12-01 BA-0496                1353.91                 8123.46 DR  Bank alloc: PREPAID ART 530.00.00 LKL*LNQHNGKN 485442*1
+2025-12-31 BA-0538                1353.91                 9477.37 DR  Bank alloc: 530.00 LKL*LNQHNGKN 485442*1281 29 DEC (Pre
+  >> CLOSING BALANCE: 9477.37 DR  (DR 9477.37 | CR 0.00)
+
+========================================
+6520 - Postage and Courier
+----------------------------------------
+2025-10-08 BA-0433                2000.00                 2000.00 DR  Bank alloc: DHL (Courier)
+2025-11-24 BA-0486                3000.00                 5000.00 DR  Bank alloc: DHL (Courier)
+2025-12-18 BA-0522                3000.00                 8000.00 DR  Bank alloc: DHL (Courier)
+  >> CLOSING BALANCE: 8000.00 DR  (DR 8000.00 | CR 0.00)
+
+========================================
+6550 - Bank Charges
+----------------------------------------
+2025-01-06 BA-0002                 275.00                 275.00 DR  Bank alloc: #R025ZVHXN0 SWIFT COMMISSION (SWIFT fee)
+2025-01-16 BA-0029                 275.00                 550.00 DR  Bank alloc: #R025ZKNQX0 SWIFT COMMISSION (SWIFT fee)
+2025-01-16 BA-0030                 275.00                 825.00 DR  Bank alloc: #R025ZK5J80 SWIFT COMMISSION (SWIFT fee)
+2025-01-24 BA-0040                 275.00                 1100.00 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-01-29 BA-0046                  89.00                 1189.00 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-01-29 BA-0047                 125.48                 1314.48 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-02-12 BA-0067                 428.09                 1742.57 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-02-28 BA-0099                  89.00                 1831.57 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-02-28 BA-0102                  39.00                 1870.57 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-02-28 BA-0104                 156.88                 2027.45 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-03-11 BA-0121                 275.00                 2302.45 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-03-13 BA-0125                 275.00                 2577.45 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-03-29 BA-0153                  19.50                 2596.95 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-03-29 BA-0154                  89.00                 2685.95 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-03-29 BA-0155                 167.28                 2853.23 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-04-10 BA-0173                 458.87                 3312.10 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-04-14 BA-0187                 550.00                 3862.10 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-04-15 BA-0193                 550.00                 4412.10 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-04-29 BA-0205                 209.00                 4621.10 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-04-29 BA-0208                  37.00                 4658.10 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-04-29 BA-0209                  89.00                 4747.10 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-04-30 BA-0210                 571.22                 5318.32 DR  Bank alloc: S500V73Q40 SD3GRJC915Z0KKB1 (SWIFT service 
+2025-04-30 BA-0212                 571.25                 5889.57 DR  Bank alloc: S500V73VH0 SD3GRFVTQ5ZKNQX1 (SWIFT service 
+2025-04-30 BA-0213                 570.75                 6460.32 DR  Bank alloc: S500V73X50 SD3GRBGV15ZVHXN1 (SWIFT service 
+2025-05-07 BA-0231                 500.03                 6960.35 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-05-15 BA-0240                 482.33                 7442.68 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-05-15 BA-0243                 550.00                 7992.68 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-05-29 BA-0256                 236.12                 8228.80 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-05-29 BA-0257                  89.00                 8317.80 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-05-30 BA-0259                 275.00                 8592.80 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-06-23 BA-0287                 550.00                 9142.80 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-06-25 BA-0289                 547.85                 9690.65 DR  Bank alloc: S500RZQDW0 SD3GRHG425VDXLK1 (SWIFT service 
+2025-06-25 BA-0290                 547.58                 10238.23 DR  Bank alloc: S500RZQFN0 SD3GR3K1K5WMTJL1 (SWIFT service 
+2025-06-25 BA-0291                 547.81                 10786.04 DR  Bank alloc: S500RZQCV0 SD3GRQS5Z5XM0M81 (SWIFT service 
+2025-06-25 BA-0292                 547.60                 11333.64 DR  Bank alloc: S500RZQFD0 SD3GRG2BQ5VL5D21 (SWIFT service 
+2025-06-25 BA-0293                 547.58                 11881.22 DR  Bank alloc: S500RZQGC0 SD3GR2L0R5WMTDL1 (SWIFT service 
+2025-06-25 BA-0294                 547.82                 12429.04 DR  Bank alloc: S500RZQD80 SD3GRHLVZ5VDX9M1 (SWIFT service 
+2025-06-28 BA-0296                 213.68                 12642.72 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-06-28 BA-0297                  89.00                 12731.72 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-07-09 BA-0311                 275.00                 13006.72 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-07-22 BA-0321                 550.00                 13556.72 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-07-25 BA-0327                 533.08                 14089.80 DR  Bank alloc: S500QS6720 SD3GRV4R85TCWG61 (SWIFT service 
+2025-07-25 BA-0328                 533.14                 14622.94 DR  Bank alloc: S500QS67Q0 SD3GRV4QK5TCXHD1 (SWIFT service 
+2025-07-25 BA-0329                 533.15                 15156.09 DR  Bank alloc: S500QS65J0 SD3GRQZV45TNBXV1 (SWIFT service 
+2025-07-29 BA-0332                  67.92                 15224.01 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-07-29 BA-0333                 342.52                 15566.53 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-07-29 BA-0335                  93.00                 15659.53 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-08-14 BA-0856                 298.14                 15957.67 DR  Bank recon: Forex Fee Swift Commission
+2025-08-18 BA-0861                3095.65                 19053.32 DR  Bank recon: Internet Pmt To Paygate1 (Processing fees)
+2025-08-19 BA-0862                 535.37                 19588.69 DR  Bank recon: Overseas Bank Charge (SWIFT fee)
+2025-08-19 BA-0863                 535.37                 20124.06 DR  Bank recon: Overseas Bank Charge (SWIFT fee)
+2025-08-25 BA-0868               13267.80                 33391.86 DR  Bank recon: Internet Pmt To Paygate1 (Processing fees)
+2025-08-26 BA-0370                  93.00                 33484.86 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-08-29 BA-0872                  92.36                 33577.22 DR  Bank recon: Service Fees
+2025-09-04 BA-0384                 550.00                 34127.22 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-09-04 BA-0385                 550.00                 34677.22 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-09-04 BA-0386                 550.00                 35227.22 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-09-08 BA-0392                 275.00                 35502.22 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-09-10 BA-0397                 275.00                 35777.22 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-09-11 BA-0400                 275.00                 36052.22 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-09-26 BA-0416                  26.97                 36079.19 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-09-26 BA-0417                 376.94                 36456.13 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-09-26 BA-0418                  93.00                 36549.13 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-10-03 BA-0426                 275.00                 36824.13 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-10-22 BA-0445                 550.00                 37374.13 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-10-27 BA-0453                 128.96                 37503.09 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-10-27 BA-0454                 382.76                 37885.85 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-10-27 BA-0455                  93.00                 37978.85 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-11-04 BA-0461                 275.00                 38253.85 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-11-10 BA-0470                 550.00                 38803.85 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-11-26 BA-0492                 118.02                 38921.87 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-11-26 BA-0493                 360.45                 39282.32 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-11-26 BA-0494                  93.00                 39375.32 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+2025-12-02 BA-0499                 275.00                 39650.32 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-12-08 BA-0509                 550.00                 40200.32 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-12-12 BA-0516                 275.00                 40475.32 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-12-19 BA-0527                 275.00                 40750.32 DR  Bank alloc: FNB - #R025WMTJL0 SWIFT COMMISSION (SWIFT f
+2025-12-26 BA-0531                  41.11                 40791.43 DR  Bank alloc: #NON FNB ATM CASH WITHDRAWAL FEES (ATM fee)
+2025-12-26 BA-0532                 382.76                 41174.19 DR  Bank alloc: #SERVICE FEES (Service fee)
+2025-12-26 BA-0533                  93.00                 41267.19 DR  Bank alloc: FNB - #MONTHLY ACCOUNT FEE #MONTHLY ACCOUNT
+  >> CLOSING BALANCE: 41267.19 DR  (DR 41267.19 | CR 0.00)
+
+========================================
+6560 - Legal and Professional Fees
+----------------------------------------
+2025-07-07 BA-0309               60650.00                 60650.00 DR  Bank alloc: Stacy Priestley - SOQ73132 (Professional fe
+  >> CLOSING BALANCE: 60650.00 DR  (DR 60650.00 | CR 0.00)
+
+========================================
+6700 - Other Expenses
+----------------------------------------
+2025-01-11 BA-0006                 200.00                 200.00 DR  Bank alloc: PURCH TSEPO'S BRAAI CORNE 400568******7933 
+2025-01-11 BA-0007                1006.37                 1206.37 DR  Bank alloc: PURCH OK LIQUOR KLIPFONTE 400568******7933 
+2025-01-13 BA-0008                 389.68                 1596.05 DR  Bank alloc: PURCH TSEPO'S BUTCHERY * 400568******7933 (
+2025-01-14 BA-0010                1320.00                 2916.05 DR  Bank alloc: PURCH AMAN 400568******7933 (Card purchase)
+2025-01-14 BA-0011                 201.17                 3117.22 DR  Bank alloc: PURCH PnP Fam River Cresc 400568******7933 
+2025-01-14 BA-0012                  20.00                 3137.22 DR  Bank alloc: PURCH Yoco *Snugg store 400568******7933 (C
+2025-01-15 BA-0022                5783.00                 8920.22 DR  Bank alloc: Airlink/Proflight/Stayeasy/Garden court - F
+2025-01-15 BA-0024                3071.74                 11991.96 DR  Bank alloc: Airlink/Proflight/Stayeasy/Garden court - F
+2025-01-17 BA-0033                 824.00                 12815.96 DR  Bank alloc: PURCH Big Five main Shop 400568******7933 (
+2025-01-27 BA-0042                 399.00                 13214.96 DR  Bank alloc: Plumblink - PURCH 2020 PLUMBLINK FAER 40056
+2025-02-04 BA-0050                  10.00                 13224.96 DR  Bank alloc: Advance Woodlands 485442*1281 31 JAN (Card 
+2025-02-05 BA-0051                  19.99                 13244.95 DR  Bank alloc: OK EXPRESS WITBANK 485442*1281 03 FEB (Card
+2025-02-10 BA-0060                  75.00                 13319.95 DR  Bank alloc: SPARES WISE WITB 485442*1281 06 FEB (Card p
+2025-02-17 BA-0073                  47.00                 13366.95 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 14 FEB (Card
+2025-02-17 BA-0075                  47.00                 13413.95 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 14 FEB (Card
+2025-02-17 BA-0078                  47.00                 13460.95 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 15 FEB (Card
+2025-02-17 BA-0079                  47.00                 13507.95 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 15 FEB (Card
+2025-02-18 BA-0081                  47.00                 13554.95 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 15 FEB (Card
+2025-02-19 BA-0083                5499.00                 19053.95 DR  Bank alloc: BWH EMALAHLENE 485442*1281 17 FEB (Card pur
+2025-02-22 BA-0091                 564.00                 19617.95 DR  Bank alloc: PURCH WHY NOT 13 400568******7933 (Card pur
+2025-02-24 BA-0097                 600.00                 20217.95 DR  Bank alloc: PURCH GINELLIS 400568******7933 (Card purch
+2025-03-03 BA-0107                2170.00                 22387.95 DR  Bank alloc: PURCH BWH EMALAHLENE 400568******7933 (Card
+2025-03-05 BA-0110                 900.00                 23287.95 DR  Bank alloc: EAGLE FALLS STEAK R 485442*1281 02 MAR (Car
+2025-03-05 BA-0111                 525.00                 23812.95 DR  Bank alloc: INTERNATIONAL EXPRE 485442*1281 02 MAR (Car
+2025-03-10 BA-0116                1615.00                 25427.95 DR  Bank alloc: SUNCOAST HOTEL SPA 485442*1281 06 MAR (Card
+2025-03-17 BA-0131                 158.70                 25586.65 DR  Bank alloc: BOLT AND NUT MINING 485442*1281 13 MAR (Car
+2025-03-25 BA-0136                  49.00                 25635.65 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 22 MAR (Card
+2025-03-25 BA-0137                  49.00                 25684.65 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 23 MAR (Card
+2025-03-25 BA-0138                  61.99                 25746.64 DR  Bank alloc: Astron Energy Nova 485442*1281 23 MAR (Card
+2025-03-25 BA-0139                 500.00                 26246.64 DR  Bank alloc: Q4 TIERPOORT 485442*1281 21 MAR (Card purch
+2025-03-26 BA-0140                2030.00                 28276.64 DR  Bank alloc: FIREROOM PTA 485442*1281 23 MAR (Card purch
+2025-03-26 BA-0144                  49.00                 28325.64 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 23 MAR (Card
+2025-03-26 BA-0145                1436.65                 29762.29 DR  Bank alloc: THE ROSE FORECOURT 485442*1281 23 MAR (Card
+2025-03-27 BA-0543                 200.00                 29962.29 DR  Bank payment: POS Purchase Cappuccino'S Save
+2025-03-29 BA-0544                 199.80                 30162.09 DR  Bank payment: POS Purchase The Rose Steers
+2025-03-29 BA-0545                1200.00                 31362.09 DR  Bank payment: POS Purchase Fireroom Pta
+2025-03-31 BA-0156                  49.00                 31411.09 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 27 MAR (Card
+2025-04-07 BA-0162                3902.05                 35313.14 DR  Bank alloc: TotalSports Menlyn 485442*1281 04 APR (Card
+2025-04-09 BA-0172                  15.00                 35328.14 DR  Bank alloc: Advance Menlyn Park 485442*1281 06 APR (Car
+2025-04-14 BA-0186                  15.00                 35343.14 DR  Bank alloc: NELSON MANDELA SQUA 485442*1281 10 APR (Car
+2025-04-14 BA-0188                  49.00                 35392.14 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 11 APR (Card
+2025-04-14 BA-0190                  49.00                 35441.14 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 10 APR (Card
+2025-04-17 BA-0196                  49.00                 35490.14 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 14 APR (Card
+2025-04-29 BA-0206                 100.00                 35590.14 DR  Bank alloc: SEND Bolt Bolt SEND XXXXXXX4584 (Ride-haili
+2025-04-29 BA-0207                  49.99                 35640.13 DR  Bank alloc: FLM Witbank 485442*1281 27 APR (Card purcha
+2025-04-30 BA-0211                  49.99                 35690.12 DR  Bank alloc: FLM Witbank 485442*1281 28 APR (Card purcha
+2025-05-03 BA-0219                  49.00                 35739.12 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 01 MAY (Card
+2025-05-05 BA-0223                  49.00                 35788.12 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 01 MAY (Card
+2025-05-06 BA-0230                1019.00                 36807.12 DR  Bank alloc: WOOLWORTHS 485442*1281 04 MAY (Card purchas
+2025-05-07 BA-0232                  49.00                 36856.12 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 05 MAY (Card
+2025-05-07 BA-0234                9630.00                 46486.12 DR  Bank alloc: CHAMBERLAIN SILVERL 485442*1281 04 MAY (Car
+2025-05-07 BA-0235                  49.00                 46535.12 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 04 MAY (Card
+2025-05-07 BA-0236                  49.00                 46584.12 DR  Bank alloc: DIAMOND HILL TAP N 485442*1281 04 MAY (Card
+2025-05-14 BA-0238                1540.00                 48124.12 DR  Bank alloc: ACSA JIA 485442*1281 11 MAY (Card purchase)
+2025-05-20 BA-0246                  54.50                 48178.62 DR  Bank alloc: BWH WOODLANDS 485442*1281 17 MAY (Card purc
+2025-05-20 BA-0247                1012.00                 49190.62 DR  Bank alloc: ACSA JIA 485442*1281 16 MAY (Card purchase)
+2025-05-30 BA-0258                4000.00                 53190.62 DR  Bank alloc: ATM CASH 00430112 485442*1281 (Card purchas
+2025-05-30 BA-0260                1000.00                 54190.62 DR  Bank alloc: ATM CASH 00430112 485442*1281 (Card purchas
+  >> CLOSING BALANCE: 54190.62 DR  (DR 54190.62 | CR 0.00)

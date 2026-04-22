@@ -1,0 +1,1255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kingdom Champions 2026 Annual Programme</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Raleway:wght@300;400;500;600;700;800;900&display=swap');
+
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --navy:#0B1F3A;
+  --navy2:#122848;
+  --gold:#C9A84C;
+  --gold2:#E2C47A;
+  --white:#FFFFFF;
+  --cream:#F7F4EE;
+}
+html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+body{font-family:'Raleway',sans-serif;background:#ddd;color:var(--navy);}
+
+/* ══ EVERY SECTION IS EXACTLY ONE A4 PAGE ══ */
+.page{
+  width:210mm;
+  height:297mm;
+  position:relative;
+  overflow:hidden;
+  background:var(--white);
+  page-break-after:always;
+}
+.page:last-child{page-break-after:auto;}
+
+/* ─── COVER ─── */
+.cover{
+  background:var(--navy);
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  text-align:center;
+}
+.cover-tri-tl{position:absolute;top:0;left:0;width:0;height:0;
+  border-top:280px solid #122848;border-right:280px solid transparent;}
+.cover-tri-br{position:absolute;bottom:0;right:0;width:0;height:0;
+  border-bottom:280px solid #122848;border-left:280px solid transparent;}
+.cover-line-t{position:absolute;top:0;left:0;right:0;height:6px;
+  background:linear-gradient(90deg,transparent,var(--gold),#fff,var(--gold),transparent);}
+.cover-line-b{position:absolute;bottom:0;left:0;right:0;height:6px;
+  background:linear-gradient(90deg,transparent,var(--gold),#fff,var(--gold),transparent);}
+.cover-line-l{position:absolute;top:50px;bottom:50px;left:36px;width:1px;
+  background:linear-gradient(180deg,transparent,var(--gold),transparent);}
+.cover-line-r{position:absolute;top:50px;bottom:50px;right:36px;width:1px;
+  background:linear-gradient(180deg,transparent,var(--gold),transparent);}
+.cover-inner{position:relative;z-index:5;max-width:480px;padding:0 40px;}
+.cover-tag{
+  display:inline-block;
+  border:1px solid rgba(201,168,76,0.45);
+  padding:7px 28px;border-radius:30px;
+  font-size:9.5px;font-weight:800;
+  letter-spacing:5px;text-transform:uppercase;
+  color:var(--gold2);margin-bottom:36px;
+}
+.cover-crown{margin-bottom:20px;}
+.cover-title{
+  font-family:'Cinzel',serif;font-size:60px;font-weight:900;
+  color:var(--white);letter-spacing:4px;line-height:1.05;margin-bottom:8px;
+}
+.cover-title .g{color:var(--gold);}
+.cover-year{
+  font-family:'Cinzel',serif;font-size:13px;font-weight:600;
+  color:var(--gold);letter-spacing:10px;
+  margin-bottom:32px;text-transform:uppercase;
+}
+.gold-rule{
+  width:100%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),#fff,var(--gold),transparent);
+  margin:24px 0;
+}
+.theme-block{
+  background:rgba(201,168,76,0.08);
+  border:1px solid rgba(201,168,76,0.3);
+  border-radius:4px;padding:22px 38px;margin-bottom:28px;
+}
+.theme-label{
+  font-size:8.5px;font-weight:900;letter-spacing:4px;text-transform:uppercase;
+  color:var(--gold);margin-bottom:8px;
+}
+.theme-text{
+  font-family:'Cinzel',serif;font-size:23px;font-weight:700;
+  color:var(--white);letter-spacing:2px;line-height:1.4;
+}
+.formula{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:32px;}
+.fp{
+  padding:12px 26px;background:var(--gold);color:var(--navy);
+  font-family:'Cinzel',serif;font-weight:700;font-size:12px;letter-spacing:2px;
+}
+.fp:first-child{border-radius:3px 0 0 3px;}
+.fp:last-child{border-radius:0 3px 3px 0;}
+.fa{width:20px;height:2px;background:rgba(201,168,76,0.4);}
+.cover-foot{
+  font-size:9px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(255,255,255,0.25);
+}
+.cover-wm{
+  position:absolute;bottom:30px;right:40px;
+  font-family:'Cinzel',serif;font-size:120px;font-weight:900;
+  color:rgba(255,255,255,0.025);letter-spacing:8px;z-index:1;
+}
+
+/* ─── OVERVIEW PAGE ─── */
+.page-inner{
+  padding:36px 44px 36px 50px;
+  height:100%;display:flex;flex-direction:column;
+}
+.page-accent{
+  position:absolute;top:0;left:0;bottom:0;width:7px;
+  background:linear-gradient(180deg,var(--gold),var(--navy),var(--gold));
+}
+.page-hdr{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  border-bottom:2px solid var(--navy);padding-bottom:12px;margin-bottom:24px;
+}
+.ph-t{font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:var(--navy);letter-spacing:2px;}
+.ph-s{font-size:9.5px;font-weight:800;letter-spacing:3px;text-transform:uppercase;color:var(--gold);}
+
+.stats{display:flex;margin-bottom:22px;}
+.stats .sc{flex:1;margin-right:10px;}
+.stats .sc:last-child{margin-right:0;}
+.sc{background:var(--navy);border-radius:5px;padding:16px 8px;text-align:center;position:relative;overflow:hidden;}
+.sc::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--gold);}
+.sc-n{font-family:'Cinzel',serif;font-size:30px;font-weight:900;color:var(--gold);line-height:1;margin-bottom:4px;}
+.sc-l{font-size:7.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,0.5);}
+
+.sec-div{display:flex;align-items:center;gap:12px;margin:18px 0 14px;}
+.sd-num{width:26px;height:26px;border-radius:50%;background:var(--navy);color:var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cinzel',serif;font-size:10px;font-weight:700;flex-shrink:0;}
+.sd-txt{font-family:'Cinzel',serif;font-size:10px;font-weight:700;letter-spacing:3px;
+  text-transform:uppercase;color:var(--navy);white-space:nowrap;}
+.sd-ln{flex:1;height:1px;background:linear-gradient(90deg,var(--gold),transparent);}
+
+.pillars{display:flex;flex-wrap:wrap;margin-bottom:18px;}
+.pillar{width:48%;margin-right:2%;margin-bottom:12px;}
+.pillar:nth-child(2n){margin-right:0;}
+.pillar{border:1px solid #e0e0e0;border-radius:5px;overflow:hidden;}
+.pillar-h{background:var(--navy);padding:11px 16px;display:flex;align-items:center;gap:10px;}
+.pillar-ico{width:34px;height:34px;border-radius:50%;background:rgba(201,168,76,0.1);
+  border:1px solid var(--gold);display:flex;align-items:center;justify-content:center;
+  font-size:15px;flex-shrink:0;}
+.pillar-n{font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--white);letter-spacing:1px;}
+.pillar-tag{font-size:7.5px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-top:2px;}
+.pillar-b{padding:12px 16px;background:var(--cream);}
+.pr{display:flex;gap:8px;font-size:10.5px;line-height:1.6;color:#555;
+  border-bottom:1px solid rgba(0,0,0,0.05);padding:2px 0;}
+.pr:last-child{border-bottom:none;}
+.pk{font-weight:800;color:var(--navy);min-width:60px;flex-shrink:0;}
+
+.legend{display:flex;flex-wrap:wrap;gap:16px;background:var(--navy);padding:11px 16px;border-radius:4px;margin-top:auto;}
+.li{display:flex;align-items:center;gap:6px;font-size:8.5px;font-weight:800;
+  letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,0.6);}
+.ld{width:9px;height:9px;border-radius:2px;}
+
+/* ─── MONTH PAGES ─── */
+.mp-accent{position:absolute;top:0;left:0;bottom:0;width:7px;
+  background:linear-gradient(180deg,var(--gold),var(--navy),var(--gold));}
+
+.month-page-hdr{
+  padding:22px 44px 18px 57px;
+  border-bottom:2px solid var(--navy);
+  display:flex;justify-content:space-between;align-items:flex-end;
+  flex-shrink:0;
+}
+.mph-name{font-family:'Cinzel',serif;font-size:26px;font-weight:900;color:var(--navy);letter-spacing:3px;}
+.mph-name .g{color:var(--gold);}
+.mph-badge{
+  font-size:9px;font-weight:900;letter-spacing:2px;text-transform:uppercase;
+  padding:5px 14px;border-radius:20px;
+}
+.badge-std{background:var(--cream);color:var(--navy);}
+.badge-youth{background:rgba(232,64,138,0.12);color:#C0206A;border:1px solid rgba(232,64,138,0.35);}
+.badge-conf{background:rgba(231,76,60,0.1);color:#C0392B;border:1px solid rgba(231,76,60,0.35);}
+
+.month-body{
+  display:flex;
+  flex:1;
+  overflow:hidden;
+  margin-left:7px; /* clear the accent bar */
+}
+
+/* LEFT: calendar panel */
+.cal-col{
+  width:255px;flex-shrink:0;
+  background:var(--cream);
+  border-right:2px solid #E0DDD6;
+  padding:20px 16px;
+  display:flex;flex-direction:column;
+}
+.cal-lbl{
+  font-size:8.5px;font-weight:900;letter-spacing:3px;text-transform:uppercase;
+  color:var(--navy);text-align:center;margin-bottom:12px;
+}
+.cal-tbl{width:100%;border-collapse:collapse;table-layout:fixed;}
+.cal-tbl th{
+  text-align:center;font-size:8.5px;font-weight:900;
+  letter-spacing:1px;text-transform:uppercase;color:#AAA;
+  padding:5px 0;width:calc(100%/7);border-bottom:1px solid #DDD;
+}
+.cal-tbl td{
+  text-align:center;font-size:13px;font-weight:600;
+  color:#BBB;padding:8px 2px;border-radius:4px;line-height:1.1;
+}
+.cal-tbl td.eb{background:#DBEEFF;color:#1A5FAF;font-weight:900;}
+.cal-tbl td.es{background:#FFF5D6;color:#8B6209;font-weight:900;}
+.cal-tbl td.eo{background:#D8F7E6;color:#1A7A45;font-weight:900;}
+.cal-tbl td.esp{background:#FFE4F2;color:#C0206A;font-weight:900;}
+.cal-tbl td.ec{background:#FFE4E0;color:#C0392B;font-weight:900;}
+.cal-dot{display:block;width:5px;height:5px;border-radius:50%;margin:2px auto 0;}
+.cal-dot.db{background:#1A5FAF;}
+.cal-dot.ds{background:#8B6209;}
+.cal-dot.do{background:#1A7A45;}
+.cal-dot.dsp{background:#C0206A;}
+.cal-dot.dc{background:#C0392B;}
+
+.cal-legend{margin-top:auto;padding-top:14px;border-top:1px solid #DDD;}
+.cl-item{display:flex;align-items:center;gap:7px;font-size:9.5px;font-weight:700;
+  color:#555;padding:4px 0;}
+.cl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+/* RIGHT: events panel */
+.ev-col{
+  flex:1;
+  padding:20px 28px;
+  display:flex;flex-direction:column;
+  gap:12px;
+}
+.ev-col-title{
+  font-family:'Cinzel',serif;font-size:10px;font-weight:700;
+  letter-spacing:3px;text-transform:uppercase;color:var(--navy);
+  padding-bottom:10px;border-bottom:1px solid #EEE;
+  flex-shrink:0;
+}
+.ev{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:14px 16px;border-radius:6px;border-left:4px solid;
+  flex-shrink:0;
+}
+.ev.bt{background:#EFF6FF;border-left-color:#3A82D4;}
+.ev.es{background:#FFFBEE;border-left-color:#C9A84C;}
+.ev.oa{background:#EDFBF4;border-left-color:#27AE60;}
+.ev.sp{background:#FFF0F7;border-left-color:#E8408A;}
+.ev.cf{background:#FFF1EE;border-left-color:#E74C3C;}
+
+.ev-date{min-width:50px;text-align:center;flex-shrink:0;}
+.ev-dn{font-family:'Cinzel',serif;font-size:28px;font-weight:900;line-height:1;}
+.bt .ev-dn{color:#3A82D4;}
+.es .ev-dn{color:#C9A84C;}
+.oa .ev-dn{color:#27AE60;}
+.sp .ev-dn{color:#E8408A;}
+.cf .ev-dn{color:#E74C3C;}
+.ev-day{font-size:8.5px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:#AAA;}
+
+.ev-info{}
+.ev-type{font-size:8.5px;font-weight:900;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;}
+.bt .ev-type{color:#3A82D4;}
+.es .ev-type{color:#C9A84C;}
+.oa .ev-type{color:#27AE60;}
+.sp .ev-type{color:#E8408A;}
+.cf .ev-type{color:#E74C3C;}
+.ev-name{font-size:13.5px;font-weight:700;color:var(--navy);margin-bottom:5px;line-height:1.3;}
+.ev-desc{font-size:11.5px;color:#555;line-height:1.55;}
+.ev-time{
+  display:inline-block;margin-top:6px;
+  font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
+  color:#999;
+}
+
+/* ─── BUDGET PAGE ─── */
+.act-grid{display:flex;flex-wrap:wrap;margin-bottom:20px;}
+.ac{width:31%;margin-right:2%;margin-bottom:10px;}
+.ac{background:var(--navy);border-radius:5px;padding:16px 12px;text-align:center;position:relative;overflow:hidden;}
+.ac::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--gold);}
+.ac-i{font-size:24px;margin-bottom:6px;}
+.ac-n{font-family:'Cinzel',serif;font-size:10.5px;font-weight:700;color:var(--white);letter-spacing:1px;margin-bottom:3px;}
+.ac-d{font-size:9.5px;color:rgba(255,255,255,0.4);}
+
+.btbl{width:100%;border-collapse:collapse;margin-bottom:18px;}
+.btbl thead tr{background:var(--navy);}
+.btbl th{padding:10px 14px;text-align:left;font-size:8.5px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--gold);}
+.btbl td{padding:9px 14px;font-size:11.5px;border-bottom:1px solid #EFEFEF;color:var(--navy);}
+.btbl tr:nth-child(even) td{background:var(--cream);}
+.btbl .tr{background:var(--navy)!important;}
+.btbl .tr td{color:var(--gold);font-weight:800;font-size:12.5px;border-top:2px solid var(--gold);}
+
+.notes-grid{display:flex;}
+.nb{flex:1;margin-right:14px;}
+.nb:last-child{margin-right:0;}
+.nb{background:var(--cream);border-left:4px solid var(--navy);border-radius:4px;padding:14px 16px;}
+.nb h4{font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  color:var(--navy);margin-bottom:8px;}
+.nb li{font-size:10.5px;color:#555;padding:3px 0 3px 14px;position:relative;
+  border-bottom:1px solid rgba(0,0,0,0.04);list-style:none;}
+.nb li:last-child{border-bottom:none;}
+.nb li::before{content:'›';position:absolute;left:0;color:var(--gold);font-weight:900;}
+
+/* ─── CLOSING ─── */
+.closing{
+  background:var(--navy);
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  text-align:center;
+}
+.c-tri-tl{position:absolute;top:0;left:0;width:0;height:0;
+  border-top:220px solid #122848;border-right:220px solid transparent;}
+.c-tri-br{position:absolute;bottom:0;right:0;width:0;height:0;
+  border-bottom:220px solid #122848;border-left:220px solid transparent;}
+.c-lt{position:absolute;top:0;left:0;right:0;height:6px;
+  background:linear-gradient(90deg,transparent,var(--gold),#fff,var(--gold),transparent);}
+.c-lb{position:absolute;bottom:0;left:0;right:0;height:6px;
+  background:linear-gradient(90deg,transparent,var(--gold),#fff,var(--gold),transparent);}
+.c-inner{position:relative;z-index:5;max-width:520px;padding:0 40px;}
+.c-h1{font-family:'Cinzel',serif;font-size:38px;font-weight:900;color:var(--white);
+  letter-spacing:3px;line-height:1.2;margin-bottom:4px;}
+.c-h1 .g{color:var(--gold);}
+.c-sub{font-family:'Cinzel',serif;font-size:11px;font-weight:600;
+  color:var(--gold2);letter-spacing:4px;text-transform:uppercase;margin-bottom:24px;}
+.c-verse{font-size:13px;font-style:italic;color:rgba(255,255,255,0.45);line-height:1.9;margin:22px 0;}
+.c-verse strong{color:rgba(255,255,255,0.75);font-style:normal;}
+.c-foot{font-size:9px;font-weight:800;letter-spacing:3px;text-transform:uppercase;
+  color:rgba(255,255,255,0.2);margin-top:28px;}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ COVER ══════════════ -->
+<div class="page cover">
+  <div class="cover-tri-tl"></div><div class="cover-tri-br"></div>
+  <div class="cover-line-t"></div><div class="cover-line-b"></div>
+  <div class="cover-line-l"></div><div class="cover-line-r"></div>
+  <div class="cover-inner">
+    <div class="cover-tag">The Kingdom Embassy &nbsp;·&nbsp; Centurion</div>
+    <div class="cover-crown">
+      <svg width="90" height="90" viewBox="0 0 90 90" fill="none">
+        <circle cx="45" cy="45" r="43" stroke="#C9A84C" stroke-width="1.2" stroke-dasharray="5 3"/>
+        <circle cx="45" cy="45" r="34" stroke="rgba(201,168,76,0.2)" stroke-width="1"/>
+        <path d="M18 62 L18 54 L28 34 L45 50 L62 34 L72 54 L72 62 Z"
+          fill="none" stroke="#C9A84C" stroke-width="2" stroke-linejoin="round"/>
+        <line x1="18" y1="62" x2="72" y2="62" stroke="#C9A84C" stroke-width="2"/>
+        <circle cx="28" cy="34" r="4" fill="#C9A84C"/>
+        <circle cx="45" cy="50" r="4" fill="#C9A84C"/>
+        <circle cx="62" cy="34" r="4" fill="#C9A84C"/>
+        <path d="M41 29 L45 22 L49 29 L45 27 Z" fill="#C9A84C" opacity="0.6"/>
+      </svg>
+    </div>
+    <h1 class="cover-title">KINGDOM<br><span class="g">CHAMPIONS</span></h1>
+    <div class="cover-year">Annual &nbsp; Programme &nbsp; 2026</div>
+    <div class="gold-rule"></div>
+    <div class="theme-block">
+      <div class="theme-label">Theme of the Year</div>
+      <div class="theme-text">Dominion Generation<br>Enthroned</div>
+    </div>
+    <div class="formula">
+      <div class="fp">Believe It</div><div class="fa"></div>
+      <div class="fp">See It</div><div class="fa"></div>
+      <div class="fp">Receive It</div>
+    </div>
+    <div class="gold-rule"></div>
+    <div class="cover-foot">April — December 2026 &nbsp;·&nbsp; Youth Ministry</div>
+  </div>
+  <div class="cover-wm">2026</div>
+</div>
+
+
+<!-- ══════════════ PURPOSE & BACKGROUND ══════════════ -->
+<div class="page">
+  <div class="page-accent"></div>
+  <div class="page-inner" style="padding-left:57px;">
+    <div class="page-hdr">
+      <div class="ph-t">Purpose &amp; Background</div>
+      <div class="ph-s">Why Kingdom Champions Exists</div>
+    </div>
+
+    <div class="sec-div">
+      <div class="sd-num">01</div>
+      <div class="sd-txt">Background</div>
+      <div class="sd-ln"></div>
+    </div>
+    <div style="font-size:12px;line-height:1.85;color:#444;margin-bottom:22px;">
+      Kingdom Champions is the youth ministry of <strong style="color:var(--navy);">The Kingdom Embassy, Centurion</strong>. It was established to create a structured, consistent and spiritually grounded environment where young people can grow in their faith, develop leadership skills, and build meaningful relationships within the body of Christ. The ministry exists because the church recognises that young people are not the future of the kingdom &mdash; they are active participants <em>now</em>, called to reign and take dominion in every sphere of life.
+    </div>
+
+    <div class="sec-div">
+      <div class="sd-num">02</div>
+      <div class="sd-txt">Purpose</div>
+      <div class="sd-ln"></div>
+    </div>
+    <div style="font-size:12px;line-height:1.85;color:#444;margin-bottom:22px;">
+      The purpose of this programme is to provide a <strong style="color:var(--navy);">clear annual structure</strong> for engaging young people through scripture study, fellowship, outdoor bonding, and milestone events. Rather than ad-hoc meetings, Kingdom Champions runs a consistent monthly rhythm &mdash; Bible Chat on Zoom, Extended Sunday Sessions in smaller groups, and Outdoor Activities on the last Saturday &mdash; so that every young person knows when and where they can show up, grow, and contribute. The programme also includes special events that mark the spiritual calendar of the ministry, including <strong style="color:var(--navy);">Youth Month (June)</strong> and the annual <strong style="color:var(--navy);">Youth Conference in the Kingdom of Eswatini (December)</strong>.
+    </div>
+
+    <div class="sec-div">
+      <div class="sd-num">03</div>
+      <div class="sd-txt">2026 Theme — Dominion Generation Enthroned</div>
+      <div class="sd-ln"></div>
+    </div>
+    <div style="font-size:12px;line-height:1.85;color:#444;margin-bottom:18px;">
+      The 2026 theme, <strong style="color:var(--navy);">&ldquo;Dominion Generation Enthroned&rdquo;</strong>, is a declaration of identity and mandate. It speaks to a generation of young people who are not waiting for permission to walk in authority &mdash; they are <em>already</em> seated with Christ (Ephesians 2:6) and called to exercise dominion in every area of their lives. The year&rsquo;s formula, <strong style="color:var(--navy);">Believe It &middot; See It &middot; Receive It</strong>, provides a practical spiritual framework: first establish faith, then develop vision, and finally walk in the manifestation.
+    </div>
+
+    <div class="sec-div">
+      <div class="sd-num">04</div>
+      <div class="sd-txt">What This Document Covers</div>
+      <div class="sd-ln"></div>
+    </div>
+    <div style="font-size:12px;line-height:1.85;color:#444;margin-bottom:12px;">
+      This programme lays out the full <strong style="color:var(--navy);">April&ndash;December 2026</strong> calendar, including:
+    </div>
+    <div style="display:flex;flex-wrap:wrap;margin-bottom:auto;">
+      <div style="width:48%;margin-right:2%;margin-bottom:10px;background:var(--cream);border-radius:4px;padding:12px 16px;border-left:3px solid #3A82D4;box-sizing:border-box;">
+        <div style="font-size:9px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#3A82D4;margin-bottom:4px;">Bible Chats</div>
+        <div style="font-size:10.5px;line-height:1.6;color:#555;">9 monthly Zoom sessions &mdash; scripture-led discussion in breakout groups, anchored by a devotional passage each evening.</div>
+      </div>
+      <div style="width:48%;margin-bottom:10px;background:var(--cream);border-radius:4px;padding:12px 16px;border-left:3px solid var(--gold);box-sizing:border-box;">
+        <div style="font-size:9px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:4px;">Extended Sunday Sessions</div>
+        <div style="font-size:10.5px;line-height:1.6;color:#555;">9 in-person sessions after Sunday service &mdash; youth separate into leader-led groups for discussion and practical application.</div>
+      </div>
+      <div style="width:48%;margin-right:2%;background:var(--cream);border-radius:4px;padding:12px 16px;border-left:3px solid #27AE60;box-sizing:border-box;">
+        <div style="font-size:9px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#27AE60;margin-bottom:4px;">Outdoor Activities</div>
+        <div style="font-size:10.5px;line-height:1.6;color:#555;">8 Saturday outings &mdash; hiking, sports, prayer walks and fellowship braais, with church transport and a shared lunch.</div>
+      </div>
+      <div style="width:48%;background:var(--cream);border-radius:4px;padding:12px 16px;border-left:3px solid #E8408A;box-sizing:border-box;">
+        <div style="font-size:9px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#E8408A;margin-bottom:4px;">Special Events &amp; Conferences</div>
+        <div style="font-size:10.5px;line-height:1.6;color:#555;">Youth Month (June) &mdash; including the Youth Economic Indaba with the Marketplace Council &mdash; plus the year-end Eswatini Conference.</div>
+      </div>
+    </div>
+
+    <div class="legend" style="margin-top:18px;">
+      <div class="li" style="color:rgba(255,255,255,0.75);font-size:7.5px;letter-spacing:2px;">ROMANS 8:14</div>
+      <div class="li" style="color:rgba(255,255,255,0.45);font-size:7.5px;font-weight:400;font-style:italic;letter-spacing:0;">"For as many as are led by the Spirit of God, they are the sons of God."</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ OVERVIEW ══════════════ -->
+<div class="page">
+  <div class="page-accent"></div>
+  <div class="page-inner" style="padding-left:57px;">
+    <div class="page-hdr">
+      <div class="ph-t">Programme Overview</div>
+      <div class="ph-s">Kingdom Champions · 2026</div>
+    </div>
+    <div class="stats">
+      <div class="sc"><div class="sc-n">9</div><div class="sc-l">Bible Chats</div></div>
+      <div class="sc"><div class="sc-n">9</div><div class="sc-l">Sunday Sessions</div></div>
+      <div class="sc"><div class="sc-n">8</div><div class="sc-l">Outdoor Days</div></div>
+      <div class="sc"><div class="sc-n">2</div><div class="sc-l">Conferences</div></div>
+      <div class="sc"><div class="sc-n">28+</div><div class="sc-l">Total Events</div></div>
+    </div>
+    <div class="sec-div">
+      <div class="sd-num">01</div>
+      <div class="sd-txt">Our Four Programme Pillars</div>
+      <div class="sd-ln"></div>
+    </div>
+    <div class="pillars">
+      <div class="pillar">
+        <div class="pillar-h">
+          <div class="pillar-ico">📖</div>
+          <div><div class="pillar-n">Bible Chat</div><div class="pillar-tag">Zoom · 2nd Thursday</div></div>
+        </div>
+        <div class="pillar-b">
+          <div class="pr"><span class="pk">When</span>2nd Thursday of each month</div>
+          <div class="pr"><span class="pk">Time</span>18:30 – 20:00</div>
+          <div class="pr"><span class="pk">Platform</span>Zoom (virtual)</div>
+          <div class="pr"><span class="pk">Focus</span>Reigning in life through Christ — practically</div>
+        </div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-h">
+          <div class="pillar-ico">⛪</div>
+          <div><div class="pillar-n">Extended Sunday Sessions</div><div class="pillar-tag">In-Person · 3rd Sunday</div></div>
+        </div>
+        <div class="pillar-b">
+          <div class="pr"><span class="pk">When</span>3rd Sunday of each month</div>
+          <div class="pr"><span class="pk">Format</span>Separated youth sessions</div>
+          <div class="pr"><span class="pk">Venue</span>Church premises</div>
+          <div class="pr"><span class="pk">Count</span>9 sessions (April – December)</div>
+        </div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-h">
+          <div class="pillar-ico">🏔️</div>
+          <div><div class="pillar-n">Outdoor Activities</div><div class="pillar-tag">Outdoors · Last Saturday</div></div>
+        </div>
+        <div class="pillar-b">
+          <div class="pr"><span class="pk">When</span>Last Saturday of each month</div>
+          <div class="pr"><span class="pk">Activities</span>Hiking, prayer walks, sports, braai</div>
+          <div class="pr"><span class="pk">Budget</span>R1,000 per outing (lunch)</div>
+          <div class="pr"><span class="pk">Transport</span>Church transport provided</div>
+        </div>
+      </div>
+      <div class="pillar">
+        <div class="pillar-h">
+          <div class="pillar-ico">🔥</div>
+          <div><div class="pillar-n">Special Events</div><div class="pillar-tag">Milestone · Annual</div></div>
+        </div>
+        <div class="pillar-b">
+          <div class="pr"><span class="pk">7 Jun</span>Youth Month Sunday — Apostle's Word</div>
+          <div class="pr"><span class="pk">21 Jun</span>Youth Economic Indaba — Marketplace Council</div>
+          <div class="pr"><span class="pk">27 Jun</span>Youth Month Joint Conference</div>
+          <div class="pr"><span class="pk">29 Dec</span>Youth Conference — Kingdom of Eswatini</div>
+        </div>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:#3A82D4"></div>Bible Chat (Zoom)</div>
+      <div class="li"><div class="ld" style="background:#C9A84C"></div>Extended Sunday Session</div>
+      <div class="li"><div class="ld" style="background:#27AE60"></div>Outdoor Activity</div>
+      <div class="li"><div class="ld" style="background:#E8408A"></div>Special Event</div>
+      <div class="li"><div class="ld" style="background:#E74C3C"></div>Conference</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ APRIL ══════════════ -->
+<div class="page" style="display:flex;flex-direction:column;">
+  <div class="mp-accent"></div>
+  <div class="month-page-hdr">
+    <div class="mph-name">APRIL <span class="g">2026</span></div>
+    <span class="mph-badge badge-std">Launch Month</span>
+  </div>
+  <div class="month-body" style="flex:1;">
+    <div class="cal-col">
+      <div class="cal-lbl">April 2026</div>
+      <table class="cal-tbl">
+        <tr><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th><th>Su</th></tr>
+        <tr><td></td><td></td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>
+        <tr>
+          <td>6</td><td>7</td><td>8</td>
+          <td class="eb">9<span class="cal-dot db"></span></td>
+          <td>10</td><td>11</td><td>12</td>
+        </tr>
+        <tr>
+          <td>13</td><td>14</td><td>15</td><td>16</td><td>17</td><td>18</td>
+          <td class="es">19<span class="cal-dot ds"></span></td>
+        </tr>
+        <tr>
+          <td>20</td><td>21</td><td>22</td><td>23</td><td>24</td>
+          <td class="eo">25<span class="cal-dot do"></span></td>
+          <td>26</td>
+        </tr>
+        <tr><td>27</td><td>28</td><td>29</td><td>30</td><td></td><td></td><td></td></tr>
+      </table>
+      <div class="cal-legend">
+        <div class="cal-lbl" style="text-align:left;margin-bottom:6px;">This Month</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#3A82D4"></div>Bible Chat — Thu 9 Apr</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#C9A84C"></div>Extended Sunday — Sun 19 Apr</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#27AE60"></div>Outdoor Activity — Sat 25 Apr</div>
+      </div>
+    </div>
+    <div class="ev-col">
+      <div class="ev-col-title">Events This Month</div>
+      <div class="ev bt">
+        <div class="ev-date"><div class="ev-dn">9</div><div class="ev-day">Thursday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Bible Chat · Zoom</div>
+          <div class="ev-name">Monthly Bible Chat — Zoom Discussion</div>
+          <div class="ev-desc">Members join via Zoom at 18:30. A devotional passage opens the evening and anchors the discussion. The group then breaks into smaller virtual breakout rooms for 30–40 minutes of focused small-group conversation. Groups reconvene to share highlights, followed by a collective declaration and closing prayer.</div>
+          <div class="ev-time">18:30 – 20:00 · Zoom</div>
+        </div>
+      </div>
+      <div class="ev es">
+        <div class="ev-date"><div class="ev-dn">19</div><div class="ev-day">Sunday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Extended Sunday Session</div>
+          <div class="ev-name">Extended Sunday Session — Group Breakouts</div>
+          <div class="ev-desc">Following Sunday service, youth separate into smaller groups — each led by a group leader — and move to their own designated space. Groups engage in open discussion, practical exercises, and personal sharing based on the morning’s message. The session closes by bringing everyone back together, with each group sharing one key takeaway before a declaration and prayer.</div>
+          <div class="ev-time">During Sunday Service</div>
+        </div>
+      </div>
+      <div class="ev oa">
+        <div class="ev-date"><div class="ev-dn">25</div><div class="ev-day">Saturday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Outdoor Activity</div>
+          <div class="ev-name">Kickoff Outing — Fellowship Hike &amp; Team Building</div>
+          <div class="ev-desc">First outdoor outing of the year. Hiking, team challenges, and fellowship lunch together as a group. A great start to the year.</div>
+          <div class="ev-time">Morning · Church Transport · R1,000 Lunch Budget</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ MAY ══════════════ -->
+<div class="page" style="display:flex;flex-direction:column;">
+  <div class="mp-accent"></div>
+  <div class="month-page-hdr">
+    <div class="mph-name">MAY <span class="g">2026</span></div>
+    <span class="mph-badge badge-std">Growing Season</span>
+  </div>
+  <div class="month-body" style="flex:1;">
+    <div class="cal-col">
+      <div class="cal-lbl">May 2026</div>
+      <table class="cal-tbl">
+        <tr><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th><th>Su</th></tr>
+        <tr><td></td><td></td><td></td><td></td><td>1</td><td>2</td><td>3</td></tr>
+        <tr><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td><td>10</td></tr>
+        <tr>
+          <td>11</td><td>12</td><td>13</td>
+          <td class="eb">14<span class="cal-dot db"></span></td>
+          <td>15</td><td>16</td>
+          <td class="es">17<span class="cal-dot ds"></span></td>
+        </tr>
+        <tr><td>18</td><td>19</td><td>20</td><td>21</td><td>22</td><td>23</td><td>24</td></tr>
+        <tr>
+          <td>25</td><td>26</td><td>27</td><td>28</td><td>29</td>
+          <td class="eo">30<span class="cal-dot do"></span></td>
+          <td>31</td>
+        </tr>
+      </table>
+      <div class="cal-legend">
+        <div class="cal-lbl" style="text-align:left;margin-bottom:6px;">This Month</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#3A82D4"></div>Bible Chat — Thu 14 May</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#C9A84C"></div>Extended Sunday — Sun 17 May</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#27AE60"></div>Outdoor Activity — Sat 30 May</div>
+      </div>
+    </div>
+    <div class="ev-col">
+      <div class="ev-col-title">Events This Month</div>
+      <div class="ev bt">
+        <div class="ev-date"><div class="ev-dn">14</div><div class="ev-day">Thursday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Bible Chat · Zoom</div>
+          <div class="ev-name">Monthly Bible Chat — Zoom Discussion</div>
+          <div class="ev-desc">Members join via Zoom at 18:30. A devotional passage opens the evening and anchors the discussion. The group then breaks into smaller virtual breakout rooms for 30–40 minutes of focused small-group conversation. Groups reconvene to share highlights, followed by a collective declaration and closing prayer.</div>
+          <div class="ev-time">18:30 – 20:00 · Zoom</div>
+        </div>
+      </div>
+      <div class="ev es">
+        <div class="ev-date"><div class="ev-dn">17</div><div class="ev-day">Sunday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Extended Sunday Session</div>
+          <div class="ev-name">Extended Sunday Session — Group Breakouts</div>
+          <div class="ev-desc">Following Sunday service, youth separate into smaller groups — each led by a group leader — and move to their own designated space. Groups engage in open discussion, practical exercises, and personal sharing based on the morning’s message. The session closes by bringing everyone back together, with each group sharing one key takeaway before a declaration and prayer.</div>
+          <div class="ev-time">During Sunday Service</div>
+        </div>
+      </div>
+      <div class="ev oa">
+        <div class="ev-date"><div class="ev-dn">30</div><div class="ev-day">Saturday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Outdoor Activity</div>
+          <div class="ev-name">Prayer Walk &amp; Nature Fellowship</div>
+          <div class="ev-desc">Intercession on the move — praying over the community while connecting with God's creation. A powerful day of walking and praying together.</div>
+          <div class="ev-time">Morning · Church Transport · R1,000 Lunch Budget</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ JUNE ══════════════ -->
+<div class="page" style="display:flex;flex-direction:column;">
+  <div class="mp-accent" style="background:linear-gradient(180deg,#E8408A,var(--navy),#E8408A);"></div>
+  <div class="month-page-hdr" style="border-bottom-color:#C0206A;">
+    <div class="mph-name">JUNE <span class="g">2026</span></div>
+    <span class="mph-badge badge-youth">★ Youth Month</span>
+  </div>
+  <div class="month-body" style="flex:1;">
+    <div class="cal-col" style="background:#FFF5FA;border-right-color:#F0D0E2;">
+      <div class="cal-lbl">June 2026</div>
+      <table class="cal-tbl">
+        <tr><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th><th>Su</th></tr>
+        <tr>
+          <td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td>
+          <td class="esp">7<span class="cal-dot dsp"></span></td>
+        </tr>
+        <tr>
+          <td>8</td><td>9</td><td>10</td>
+          <td class="eb">11<span class="cal-dot db"></span></td>
+          <td>12</td><td>13</td><td>14</td>
+        </tr>
+        <tr>
+          <td>15</td><td>16</td><td>17</td><td>18</td><td>19</td><td>20</td>
+          <td class="esp">21<span class="cal-dot dsp"></span></td>
+        </tr>
+        <tr>
+          <td>22</td><td>23</td><td>24</td><td>25</td><td>26</td>
+          <td class="ec">27<span class="cal-dot dc"></span></td>
+          <td>28</td>
+        </tr>
+        <tr><td>29</td><td>30</td><td></td><td></td><td></td><td></td><td></td></tr>
+      </table>
+      <div class="cal-legend">
+        <div class="cal-lbl" style="text-align:left;margin-bottom:6px;">This Month</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#E8408A"></div>Youth Sunday — Sun 7 Jun</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#3A82D4"></div>Bible Chat — Thu 11 Jun</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#E8408A"></div>Economic Indaba — Sun 21 Jun</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#E74C3C"></div>Joint Conference — Sat 27 Jun</div>
+      </div>
+    </div>
+    <div class="ev-col">
+      <div class="ev-col-title">Events This Month — Youth Month Special</div>
+      <div class="ev sp">
+        <div class="ev-date"><div class="ev-dn">7</div><div class="ev-day">Sunday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Special Event · Youth Month</div>
+          <div class="ev-name">Youth Month Sunday — Word from the Apostle</div>
+          <div class="ev-desc">Normal Sunday service with a special word from the Apostle, setting the spiritual tone and mandate for Youth Month 2026.</div>
+          <div class="ev-time">Sunday Service</div>
+        </div>
+      </div>
+      <div class="ev bt">
+        <div class="ev-date"><div class="ev-dn">11</div><div class="ev-day">Thursday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Bible Chat — Special Edition · Zoom</div>
+          <div class="ev-name">Monthly Bible Chat — Zoom Discussion</div>
+          <div class="ev-desc">Members join via Zoom at 18:30. A devotional passage opens the evening and anchors the discussion. The group then breaks into smaller virtual breakout rooms for 30–40 minutes of focused small-group conversation. Groups reconvene to share highlights, followed by a collective declaration and closing prayer.</div>
+          <div class="ev-time">18:30 – 20:00 · Zoom</div>
+        </div>
+      </div>
+      <div class="ev sp">
+        <div class="ev-date"><div class="ev-dn">21</div><div class="ev-day">Sunday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Youth Economic Indaba · Marketplace Council</div>
+          <div class="ev-name">Youth Economic Indaba — Exploring Africa</div>
+          <div class="ev-desc">A two-part session facilitated by the Marketplace Council. Session 1 opens with an exploration of Africa's economic landscape and the strategic role young people play in shaping the continent's future. Session 2 is a practical career marketplace — members from different industries take turns presenting their fields, helping the group understand various career paths and how to actively engage in the marketplace.</div>
+          <div class="ev-time">Extended Session · During Sunday Service · Marketplace Council</div>
+        </div>
+      </div>
+      <div class="ev cf">
+        <div class="ev-date"><div class="ev-dn">27</div><div class="ev-day">Saturday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Joint Conference / Event — Full Day</div>
+          <div class="ev-name">Youth Month Joint Conference — "Dominion Generation Enthroned"</div>
+          <div class="ev-desc">End-of-month gathering with other youth groups. Full-day celebration of Youth Month 2026 — worship, word, and fellowship.</div>
+          <div class="ev-time">Full Day · Church Transport</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ JULY ══════════════ -->
+<div class="page" style="display:flex;flex-direction:column;">
+  <div class="mp-accent"></div>
+  <div class="month-page-hdr">
+    <div class="mph-name">JULY <span class="g">2026</span></div>
+    <span class="mph-badge badge-std">Building Momentum</span>
+  </div>
+  <div class="month-body" style="flex:1;">
+    <div class="cal-col">
+      <div class="cal-lbl">July 2026</div>
+      <table class="cal-tbl">
+        <tr><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th><th>Su</th></tr>
+        <tr><td></td><td></td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>
+        <tr>
+          <td>6</td><td>7</td><td>8</td>
+          <td class="eb">9<span class="cal-dot db"></span></td>
+          <td>10</td><td>11</td><td>12</td>
+        </tr>
+        <tr>
+          <td>13</td><td>14</td><td>15</td><td>16</td><td>17</td><td>18</td>
+          <td class="es">19<span class="cal-dot ds"></span></td>
+        </tr>
+        <tr>
+          <td>20</td><td>21</td><td>22</td><td>23</td><td>24</td>
+          <td class="eo">25<span class="cal-dot do"></span></td>
+          <td>26</td>
+        </tr>
+        <tr><td>27</td><td>28</td><td>29</td><td>30</td><td>31</td><td></td><td></td></tr>
+      </table>
+      <div class="cal-legend">
+        <div class="cal-lbl" style="text-align:left;margin-bottom:6px;">This Month</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#3A82D4"></div>Bible Chat — Thu 9 Jul</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#C9A84C"></div>Extended Sunday — Sun 19 Jul</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#27AE60"></div>Outdoor Activity — Sat 25 Jul</div>
+      </div>
+    </div>
+    <div class="ev-col">
+      <div class="ev-col-title">Events This Month</div>
+      <div class="ev bt">
+        <div class="ev-date"><div class="ev-dn">9</div><div class="ev-day">Thursday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Bible Chat · Zoom</div>
+          <div class="ev-name">Monthly Bible Chat — Zoom Discussion</div>
+          <div class="ev-desc">Members join via Zoom at 18:30. A devotional passage opens the evening and anchors the discussion. The group then breaks into smaller virtual breakout rooms for 30–40 minutes of focused small-group conversation. Groups reconvene to share highlights, followed by a collective declaration and closing prayer.</div>
+          <div class="ev-time">18:30 – 20:00 · Zoom</div>
+        </div>
+      </div>
+      <div class="ev es">
+        <div class="ev-date"><div class="ev-dn">19</div><div class="ev-day">Sunday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Extended Sunday Session</div>
+          <div class="ev-name">Extended Sunday Session — Group Breakouts</div>
+          <div class="ev-desc">Following Sunday service, youth separate into smaller groups — each led by a group leader — and move to their own designated space. Groups engage in open discussion, practical exercises, and personal sharing based on the morning’s message. The session closes by bringing everyone back together, with each group sharing one key takeaway before a declaration and prayer.</div>
+          <div class="ev-time">During Sunday Service</div>
+        </div>
+      </div>
+      <div class="ev oa">
+        <div class="ev-date"><div class="ev-dn">25</div><div class="ev-day">Saturday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Outdoor Activity</div>
+          <div class="ev-name">Games Day &amp; Team Challenges</div>
+          <div class="ev-desc">High-energy team games, problem-solving challenges and outdoor fellowship. Lunch together as a group after the activities.</div>
+          <div class="ev-time">Morning · Church Transport · R1,000 Lunch Budget</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ AUGUST ══════════════ -->
+<div class="page" style="display:flex;flex-direction:column;">
+  <div class="mp-accent"></div>
+  <div class="month-page-hdr">
+    <div class="mph-name">AUGUST <span class="g">2026</span></div>
+    <span class="mph-badge badge-std">Women's Month</span>
+  </div>
+  <div class="month-body" style="flex:1;">
+    <div class="cal-col">
+      <div class="cal-lbl">August 2026</div>
+      <table class="cal-tbl">
+        <tr><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th><th>Su</th></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td><td>1</td><td>2</td></tr>
+        <tr><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td><td>9</td></tr>
+        <tr>
+          <td>10</td><td>11</td><td>12</td>
+          <td class="eb">13<span class="cal-dot db"></span></td>
+          <td>14</td><td>15</td>
+          <td class="es">16<span class="cal-dot ds"></span></td>
+        </tr>
+        <tr><td>17</td><td>18</td><td>19</td><td>20</td><td>21</td><td>22</td><td>23</td></tr>
+        <tr>
+          <td>24</td><td>25</td><td>26</td><td>27</td><td>28</td>
+          <td class="eo">29<span class="cal-dot do"></span></td>
+          <td>30</td>
+        </tr>
+        <tr><td>31</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      </table>
+      <div class="cal-legend">
+        <div class="cal-lbl" style="text-align:left;margin-bottom:6px;">This Month</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#3A82D4"></div>Bible Chat — Thu 13 Aug</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#C9A84C"></div>Extended Sunday — Sun 16 Aug</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#27AE60"></div>Outdoor Activity — Sat 29 Aug</div>
+      </div>
+    </div>
+    <div class="ev-col">
+      <div class="ev-col-title">Events This Month</div>
+      <div class="ev bt">
+        <div class="ev-date"><div class="ev-dn">13</div><div class="ev-day">Thursday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Bible Chat · Zoom</div>
+          <div class="ev-name">Monthly Bible Chat — Zoom Discussion</div>
+          <div class="ev-desc">Members join via Zoom at 18:30. A devotional passage opens the evening and anchors the discussion. The group then breaks into smaller virtual breakout rooms for 30–40 minutes of focused small-group conversation. Groups reconvene to share highlights, followed by a collective declaration and closing prayer.</div>
+          <div class="ev-time">18:30 – 20:00 · Zoom</div>
+        </div>
+      </div>
+      <div class="ev es">
+        <div class="ev-date"><div class="ev-dn">16</div><div class="ev-day">Sunday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Extended Sunday Session</div>
+          <div class="ev-name">Extended Sunday Session — Group Breakouts</div>
+          <div class="ev-desc">Following Sunday service, youth separate into smaller groups — each led by a group leader — and move to their own designated space. Groups engage in open discussion, practical exercises, and personal sharing based on the morning’s message. The session closes by bringing everyone back together, with each group sharing one key takeaway before a declaration and prayer.</div>
+          <div class="ev-time">During Sunday Service</div>
+        </div>
+      </div>
+      <div class="ev oa">
+        <div class="ev-date"><div class="ev-dn">29</div><div class="ev-day">Saturday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Outdoor Activity</div>
+          <div class="ev-name">Hiking Adventure &amp; Outdoor Prayer</div>
+          <div class="ev-desc">Group hike exploring God's creation, with outdoor prayer and worship woven throughout. Followed by a fellowship lunch.</div>
+          <div class="ev-time">Morning · Church Transport · R1,000 Lunch Budget</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ SEPTEMBER ══════════════ -->
+<div class="page" style="display:flex;flex-direction:column;">
+  <div class="mp-accent"></div>
+  <div class="month-page-hdr">
+    <div class="mph-name">SEPTEMBER <span class="g">2026</span></div>
+    <span class="mph-badge badge-std">Heritage Month</span>
+  </div>
+  <div class="month-body" style="flex:1;">
+    <div class="cal-col">
+      <div class="cal-lbl">September 2026</div>
+      <table class="cal-tbl">
+        <tr><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th><th>Su</th></tr>
+        <tr><td></td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td></tr>
+        <tr>
+          <td>7</td><td>8</td><td>9</td>
+          <td class="eb">10<span class="cal-dot db"></span></td>
+          <td>11</td><td>12</td><td>13</td>
+        </tr>
+        <tr>
+          <td>14</td><td>15</td><td>16</td><td>17</td><td>18</td><td>19</td>
+          <td class="es">20<span class="cal-dot ds"></span></td>
+        </tr>
+        <tr>
+          <td>21</td><td>22</td><td>23</td><td>24</td><td>25</td>
+          <td class="eo">26<span class="cal-dot do"></span></td>
+          <td>27</td>
+        </tr>
+        <tr><td>28</td><td>29</td><td>30</td><td></td><td></td><td></td><td></td></tr>
+      </table>
+      <div class="cal-legend">
+        <div class="cal-lbl" style="text-align:left;margin-bottom:6px;">This Month</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#3A82D4"></div>Bible Chat — Thu 10 Sep</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#C9A84C"></div>Extended Sunday — Sun 20 Sep</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#27AE60"></div>Outdoor Activity — Sat 26 Sep</div>
+      </div>
+    </div>
+    <div class="ev-col">
+      <div class="ev-col-title">Events This Month</div>
+      <div class="ev bt">
+        <div class="ev-date"><div class="ev-dn">10</div><div class="ev-day">Thursday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Bible Chat · Zoom</div>
+          <div class="ev-name">Monthly Bible Chat — Zoom Discussion</div>
+          <div class="ev-desc">Members join via Zoom at 18:30. A devotional passage opens the evening and anchors the discussion. The group then breaks into smaller virtual breakout rooms for 30–40 minutes of focused small-group conversation. Groups reconvene to share highlights, followed by a collective declaration and closing prayer.</div>
+          <div class="ev-time">18:30 – 20:00 · Zoom</div>
+        </div>
+      </div>
+      <div class="ev es">
+        <div class="ev-date"><div class="ev-dn">20</div><div class="ev-day">Sunday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Extended Sunday Session</div>
+          <div class="ev-name">Extended Sunday Session — Group Breakouts</div>
+          <div class="ev-desc">Following Sunday service, youth separate into smaller groups — each led by a group leader — and move to their own designated space. Groups engage in open discussion, practical exercises, and personal sharing based on the morning’s message. The session closes by bringing everyone back together, with each group sharing one key takeaway before a declaration and prayer.</div>
+          <div class="ev-time">During Sunday Service</div>
+        </div>
+      </div>
+      <div class="ev oa">
+        <div class="ev-date"><div class="ev-dn">26</div><div class="ev-day">Saturday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Outdoor Activity</div>
+          <div class="ev-name">Heritage-Themed Fellowship &amp; Games</div>
+          <div class="ev-desc">A Heritage Month themed outdoor day celebrating who we are as a people and as a kingdom generation. Cultural games, fellowship and lunch.</div>
+          <div class="ev-time">Morning · Church Transport · R1,000 Lunch Budget</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ OCTOBER ══════════════ -->
+<div class="page" style="display:flex;flex-direction:column;">
+  <div class="mp-accent"></div>
+  <div class="month-page-hdr">
+    <div class="mph-name">OCTOBER <span class="g">2026</span></div>
+    <span class="mph-badge badge-std">Harvest Season</span>
+  </div>
+  <div class="month-body" style="flex:1;">
+    <div class="cal-col">
+      <div class="cal-lbl">October 2026</div>
+      <table class="cal-tbl">
+        <tr><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th><th>Su</th></tr>
+        <tr><td></td><td></td><td></td><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+        <tr>
+          <td>5</td><td>6</td><td>7</td>
+          <td class="eb">8<span class="cal-dot db"></span></td>
+          <td>9</td><td>10</td><td>11</td>
+        </tr>
+        <tr>
+          <td>12</td><td>13</td><td>14</td><td>15</td><td>16</td><td>17</td>
+          <td class="es">18<span class="cal-dot ds"></span></td>
+        </tr>
+        <tr><td>19</td><td>20</td><td>21</td><td>22</td><td>23</td><td>24</td><td>25</td></tr>
+        <tr>
+          <td>26</td><td>27</td><td>28</td><td>29</td><td>30</td>
+          <td class="eo">31<span class="cal-dot do"></span></td>
+          <td></td>
+        </tr>
+      </table>
+      <div class="cal-legend">
+        <div class="cal-lbl" style="text-align:left;margin-bottom:6px;">This Month</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#3A82D4"></div>Bible Chat — Thu 8 Oct</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#C9A84C"></div>Extended Sunday — Sun 18 Oct</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#27AE60"></div>Outdoor Activity — Sat 31 Oct</div>
+      </div>
+    </div>
+    <div class="ev-col">
+      <div class="ev-col-title">Events This Month</div>
+      <div class="ev bt">
+        <div class="ev-date"><div class="ev-dn">8</div><div class="ev-day">Thursday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Bible Chat · Zoom</div>
+          <div class="ev-name">Monthly Bible Chat — Zoom Discussion</div>
+          <div class="ev-desc">Members join via Zoom at 18:30. A devotional passage opens the evening and anchors the discussion. The group then breaks into smaller virtual breakout rooms for 30–40 minutes of focused small-group conversation. Groups reconvene to share highlights, followed by a collective declaration and closing prayer.</div>
+          <div class="ev-time">18:30 – 20:00 · Zoom</div>
+        </div>
+      </div>
+      <div class="ev es">
+        <div class="ev-date"><div class="ev-dn">18</div><div class="ev-day">Sunday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Extended Sunday Session</div>
+          <div class="ev-name">Extended Sunday Session — Group Breakouts</div>
+          <div class="ev-desc">Following Sunday service, youth separate into smaller groups — each led by a group leader — and move to their own designated space. Groups engage in open discussion, practical exercises, and personal sharing based on the morning’s message. The session closes by bringing everyone back together, with each group sharing one key takeaway before a declaration and prayer.</div>
+          <div class="ev-time">During Sunday Service</div>
+        </div>
+      </div>
+      <div class="ev oa">
+        <div class="ev-date"><div class="ev-dn">31</div><div class="ev-day">Saturday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Outdoor Activity</div>
+          <div class="ev-name">Team Sports Day &amp; Fellowship Braai</div>
+          <div class="ev-desc">High-energy sports day — soccer, volleyball, relay races — followed by a fellowship braai. A day of play, laughter and community.</div>
+          <div class="ev-time">Morning · Church Transport · R1,000 Lunch Budget</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ NOVEMBER ══════════════ -->
+<div class="page" style="display:flex;flex-direction:column;">
+  <div class="mp-accent"></div>
+  <div class="month-page-hdr">
+    <div class="mph-name">NOVEMBER <span class="g">2026</span></div>
+    <span class="mph-badge badge-std">Thanksgiving Season</span>
+  </div>
+  <div class="month-body" style="flex:1;">
+    <div class="cal-col">
+      <div class="cal-lbl">November 2026</div>
+      <table class="cal-tbl">
+        <tr><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th><th>Su</th></tr>
+        <tr><td></td><td></td><td></td><td></td><td></td><td></td><td>1</td></tr>
+        <tr><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td><td>8</td></tr>
+        <tr>
+          <td>9</td><td>10</td><td>11</td>
+          <td class="eb">12<span class="cal-dot db"></span></td>
+          <td>13</td><td>14</td>
+          <td class="es">15<span class="cal-dot ds"></span></td>
+        </tr>
+        <tr><td>16</td><td>17</td><td>18</td><td>19</td><td>20</td><td>21</td><td>22</td></tr>
+        <tr>
+          <td>23</td><td>24</td><td>25</td><td>26</td><td>27</td>
+          <td class="eo">28<span class="cal-dot do"></span></td>
+          <td>29</td>
+        </tr>
+        <tr><td>30</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      </table>
+      <div class="cal-legend">
+        <div class="cal-lbl" style="text-align:left;margin-bottom:6px;">This Month</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#3A82D4"></div>Bible Chat — Thu 12 Nov</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#C9A84C"></div>Extended Sunday — Sun 15 Nov</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#27AE60"></div>Outdoor Activity — Sat 28 Nov</div>
+      </div>
+    </div>
+    <div class="ev-col">
+      <div class="ev-col-title">Events This Month</div>
+      <div class="ev bt">
+        <div class="ev-date"><div class="ev-dn">12</div><div class="ev-day">Thursday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Bible Chat · Zoom</div>
+          <div class="ev-name">Monthly Bible Chat — Zoom Discussion</div>
+          <div class="ev-desc">Members join via Zoom at 18:30. A devotional passage opens the evening and anchors the discussion. The group then breaks into smaller virtual breakout rooms for 30–40 minutes of focused small-group conversation. Groups reconvene to share highlights, followed by a collective declaration and closing prayer.</div>
+          <div class="ev-time">18:30 – 20:00 · Zoom</div>
+        </div>
+      </div>
+      <div class="ev es">
+        <div class="ev-date"><div class="ev-dn">15</div><div class="ev-day">Sunday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Extended Sunday Session</div>
+          <div class="ev-name">Extended Sunday Session — Group Breakouts</div>
+          <div class="ev-desc">Following Sunday service, youth separate into smaller groups — each led by a group leader — and move to their own designated space. Groups engage in open discussion, practical exercises, and personal sharing based on the morning’s message. The session closes by bringing everyone back together, with each group sharing one key takeaway before a declaration and prayer.</div>
+          <div class="ev-time">During Sunday Service</div>
+        </div>
+      </div>
+      <div class="ev oa">
+        <div class="ev-date"><div class="ev-dn">28</div><div class="ev-day">Saturday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Outdoor Activity</div>
+          <div class="ev-name">Year-End Fun Day — Games, Fellowship &amp; Celebration</div>
+          <div class="ev-desc">Final outdoor outing of 2026. Celebrate the year together with games, laughter, testimonies and a fellowship lunch to close the outdoor season.</div>
+          <div class="ev-time">Morning · Church Transport · R1,000 Lunch Budget</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ DECEMBER ══════════════ -->
+<div class="page" style="display:flex;flex-direction:column;">
+  <div class="mp-accent" style="background:linear-gradient(180deg,#E74C3C,var(--navy),#E74C3C);"></div>
+  <div class="month-page-hdr" style="border-bottom-color:#C0392B;">
+    <div class="mph-name">DECEMBER <span class="g">2026</span></div>
+    <span class="mph-badge badge-conf">★ Eswatini Conference</span>
+  </div>
+  <div class="month-body" style="flex:1;">
+    <div class="cal-col" style="background:#FFF8F5;border-right-color:#F0D8D0;">
+      <div class="cal-lbl">December 2026</div>
+      <table class="cal-tbl">
+        <tr><th>Mo</th><th>Tu</th><th>We</th><th>Th</th><th>Fr</th><th>Sa</th><th>Su</th></tr>
+        <tr><td></td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td></tr>
+        <tr>
+          <td>7</td><td>8</td><td>9</td>
+          <td class="eb">10<span class="cal-dot db"></span></td>
+          <td>11</td><td>12</td><td>13</td>
+        </tr>
+        <tr>
+          <td>14</td><td>15</td><td>16</td><td>17</td><td>18</td><td>19</td>
+          <td class="es">20<span class="cal-dot ds"></span></td>
+        </tr>
+        <tr><td>21</td><td>22</td><td>23</td><td>24</td><td>25</td><td>26</td><td>27</td></tr>
+        <tr>
+          <td>28</td>
+          <td class="ec">29<span class="cal-dot dc"></span></td>
+          <td>30</td><td>31</td><td></td><td></td><td></td>
+        </tr>
+      </table>
+      <div class="cal-legend">
+        <div class="cal-lbl" style="text-align:left;margin-bottom:6px;">This Month</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#3A82D4"></div>Bible Chat — Thu 10 Dec</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#C9A84C"></div>Extended Sunday — Sun 20 Dec</div>
+        <div class="cl-item"><div class="cl-dot" style="background:#E74C3C"></div>Eswatini Conference — Tue 29 Dec</div>
+      </div>
+    </div>
+    <div class="ev-col">
+      <div class="ev-col-title">Events This Month</div>
+      <div class="ev bt">
+        <div class="ev-date"><div class="ev-dn">10</div><div class="ev-day">Thursday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Bible Chat · Zoom</div>
+          <div class="ev-name">Monthly Bible Chat — Zoom Discussion</div>
+          <div class="ev-desc">Members join via Zoom at 18:30. A devotional passage opens the evening and anchors the discussion. The group then breaks into smaller virtual breakout rooms for 30–40 minutes of focused small-group conversation. Groups reconvene to share highlights, followed by a collective declaration and closing prayer.</div>
+          <div class="ev-time">18:30 – 20:00 · Zoom</div>
+        </div>
+      </div>
+      <div class="ev es">
+        <div class="ev-date"><div class="ev-dn">20</div><div class="ev-day">Sunday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Extended Sunday Session</div>
+          <div class="ev-name">Extended Sunday Session — Group Breakouts</div>
+          <div class="ev-desc">Following Sunday service, youth separate into smaller groups — each led by a group leader — and move to their own designated space. Groups engage in open discussion, practical exercises, and personal sharing based on the morning’s message. The session closes by bringing everyone back together, with each group sharing one key takeaway before a declaration and prayer.</div>
+          <div class="ev-time">During Sunday Service</div>
+        </div>
+      </div>
+      <div class="ev cf">
+        <div class="ev-date"><div class="ev-dn">29</div><div class="ev-day">Tuesday</div></div>
+        <div class="ev-info">
+          <div class="ev-type">Annual Youth Conference — Year's Grand Finale</div>
+          <div class="ev-name">Youth Conference · Kingdom of Eswatini 🌍</div>
+          <div class="ev-desc">The grand culmination of 2026. "Dominion Generation Enthroned" — a full-day conference with youth from the Kingdom of Eswatini. Travel arrangements TBC.</div>
+          <div class="ev-time">Full Day · Kingdom of Eswatini · Travel TBC</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ BUDGET PAGE ══════════════ -->
+<div class="page">
+  <div class="page-accent"></div>
+  <div class="page-inner" style="padding-left:57px;">
+    <div class="page-hdr">
+      <div class="ph-t">Activities &amp; Budget</div>
+      <div class="ph-s">Outdoor Programme · Logistics</div>
+    </div>
+    <div class="sec-div">
+      <div class="sd-num">02</div>
+      <div class="sd-txt">Outdoor Activity Ideas</div>
+      <div class="sd-ln"></div>
+    </div>
+    <div class="act-grid">
+      <div class="ac"><div class="ac-i">🥾</div><div class="ac-n">Hiking</div><div class="ac-d">Explore creation, bond as a team, reflect on God's greatness</div></div>
+      <div class="ac"><div class="ac-i">🙏</div><div class="ac-n">Prayer Walks</div><div class="ac-d">Intercession on the move — praying over communities</div></div>
+      <div class="ac"><div class="ac-i">🏐</div><div class="ac-n">Team Sports</div><div class="ac-d">Soccer, volleyball, relay races — unity through play</div></div>
+      <div class="ac"><div class="ac-i">🔥</div><div class="ac-n">Fellowship Braai</div><div class="ac-d">Testimonies, good food &amp; community around the fire</div></div>
+      <div class="ac"><div class="ac-i">🎯</div><div class="ac-n">Team Challenges</div><div class="ac-d">Problem-solving activities that build leadership skills</div></div>
+      <div class="ac"><div class="ac-i">🎵</div><div class="ac-n">Outdoor Worship</div><div class="ac-d">Encountering God in open spaces — praise &amp; worship</div></div>
+    </div>
+    <div class="sec-div">
+      <div class="sd-num">03</div>
+      <div class="sd-txt">Budget Overview — Outdoor Activities</div>
+      <div class="sd-ln"></div>
+    </div>
+    <table class="btbl">
+      <thead>
+        <tr><th>Month</th><th>Date</th><th>Activity</th><th>Lunch</th><th>Transport</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>April</td><td>Sat, 25 April</td><td>Kickoff Hike &amp; Team Building</td><td>R 1,000</td><td>Church</td></tr>
+        <tr><td>May</td><td>Sat, 30 May</td><td>Prayer Walk &amp; Nature Fellowship</td><td>R 1,000</td><td>Church</td></tr>
+        <tr><td>June</td><td>Sat, 27 June</td><td>Joint Conference Day</td><td>TBC</td><td>Church</td></tr>
+        <tr><td>July</td><td>Sat, 25 July</td><td>Games Day &amp; Team Challenges</td><td>R 1,000</td><td>Church</td></tr>
+        <tr><td>August</td><td>Sat, 29 August</td><td>Hiking Adventure &amp; Prayer</td><td>R 1,000</td><td>Church</td></tr>
+        <tr><td>September</td><td>Sat, 26 September</td><td>Heritage Fellowship &amp; Games</td><td>R 1,000</td><td>Church</td></tr>
+        <tr><td>October</td><td>Sat, 31 October</td><td>Sports Day &amp; Fellowship Braai</td><td>R 1,000</td><td>Church</td></tr>
+        <tr><td>November</td><td>Sat, 28 November</td><td>Year-End Fun Day &amp; Celebration</td><td>R 1,000</td><td>Church</td></tr>
+        <tr class="tr"><td colspan="3">Total (7 Regular Outings × R1,000)</td><td>R 7,000</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <div class="notes-grid">
+      <div class="nb">
+        <h4>Transport &amp; Logistics</h4>
+        <ul>
+          <li>Church transport for all outdoor activities</li>
+          <li>Pickup &amp; drop-off from church premises</li>
+          <li>Advance booking with transport team required</li>
+          <li>Carpooling encouraged as backup option</li>
+        </ul>
+      </div>
+      <div class="nb">
+        <h4>Budget Notes</h4>
+        <ul>
+          <li>R1,000 per outing covers youth lunch only</li>
+          <li>June conference budget is separate (joint event)</li>
+          <li>December Eswatini: travel &amp; accommodation TBC</li>
+          <li>Bible Chats via Zoom — no additional event cost</li>
+          <li>Sunday sessions within existing church service</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ CLOSING ══════════════ -->
+<div class="page closing">
+  <div class="c-tri-tl"></div><div class="c-tri-br"></div>
+  <div class="c-lt"></div><div class="c-lb"></div>
+  <div class="c-inner">
+    <div style="font-size:54px;margin-bottom:18px;">👑</div>
+    <h1 class="c-h1">Dominion <span class="g">Generation</span><br>Enthroned</h1>
+    <div class="c-sub">The Formula · 2026</div>
+    <div class="gold-rule"></div>
+    <div class="formula" style="margin:20px 0;">
+      <div class="fp">Believe It</div><div class="fa"></div>
+      <div class="fp">See It</div><div class="fa"></div>
+      <div class="fp">Receive It</div>
+    </div>
+    <div class="gold-rule"></div>
+    <p class="c-verse">
+      <em>"For as many as are led by the Spirit of God,<br>
+      these are <strong>sons of God</strong>."</em><br>
+      — Romans 8:14
+    </p>
+    <div class="c-foot">
+      Kingdom Champions &nbsp;·&nbsp; The Kingdom Embassy, Centurion &nbsp;·&nbsp; 2026
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

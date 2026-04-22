@@ -30,8 +30,14 @@ const CTASection: React.FC = () => {
         </p>
 
         <div className="cta-actions">
-          <button className="cta-primary-btn" onClick={() => navigate('/signup')}>
-            Get Started — No Risk, No Card <ArrowRight size={18} />
+          <button className="cta-primary-btn" onClick={() => navigate('/try-demo')}>
+            Try Free Demo — No Sign-Up Required <ArrowRight size={18} />
+          </button>
+          <button
+            style={{ background: 'transparent', border: '1.5px solid rgba(255,255,255,0.35)', color: 'var(--sb-navy)', borderRadius: 8, padding: '0.75rem 1.5rem', cursor: 'pointer', fontWeight: 500, fontSize: '0.95rem' }}
+            onClick={() => navigate('/signup')}
+          >
+            Create Account
           </button>
         </div>
 

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tax Compliance Services Proposal – SS Adepoju</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 12.5pt;
+      color: #1a1a2e;
+      background: #ffffff;
+      line-height: 1.9;
+    }
+
+    /* ── HEADER (table-based for wkhtmltopdf) ── */
+    .header {
+      background-color: #0d2137;
+      color: #ffffff;
+      width: 100%;
+      position: relative;
+      z-index: 10;
+    }
+    .header table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0;
+    }
+    .header td {
+      padding: 32px 48px;
+      vertical-align: top;
+      border: none;
+      background: none;
+    }
+    .header td:first-child { width: 60%; }
+    .header td:last-child  { width: 40%; text-align: right; }
+    .header h1 {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 30pt;
+      font-weight: bold;
+      color: #ffffff;
+      line-height: 1.2;
+      margin: 0 0 8px 0;
+    }
+    .header .sub {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11pt;
+      color: #a8c8e8;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .header-contact {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11pt;
+      color: #cde0f0;
+      line-height: 2;
+    }
+    .header-contact strong { color: #ffffff; font-size: 13pt; }
+
+    /* ── ACCENT BAR ── */
+    .accent-bar {
+      height: 6px;
+      background-color: #e8a020;
+      width: 100%;
+    }
+
+    /* ── META STRIP (table grid) ── */
+    .meta-strip {
+      background-color: #f4f8fc;
+      border-bottom: 1px solid #dce8f2;
+      width: 100%;
+    }
+    .meta-strip table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0;
+    }
+    .meta-strip td {
+      padding: 18px 24px;
+      vertical-align: top;
+      border-right: 1px solid #dce8f2;
+      border: none;
+      background: none;
+    }
+    .meta-strip td + td {
+      border-left: 1px solid #dce8f2;
+    }
+    .meta-label {
+      font-family: Arial, Helvetica, sans-serif;
+      font-weight: bold;
+      color: #1a4a7a;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 9pt;
+      display: block;
+      margin-bottom: 5px;
+    }
+    .meta-value {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #1a1a2e;
+      font-size: 11pt;
+      font-weight: bold;
+    }
+
+    /* ── MAIN CONTENT ── */
+    .content {
+      padding: 36px 48px 28mm 48px;
+    }
+
+    /* ── URGENT BANNER ── */
+    .urgent-banner {
+      background-color: #fff4e0;
+      border-left: 6px solid #e8a020;
+      padding: 14px 20px;
+      margin-bottom: 30px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10pt;
+      color: #7a4a00;
+    }
+    .urgent-banner strong { color: #b85c00; }
+
+    /* ── SECTION HEADINGS ── */
+    h2 {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 15pt;
+      font-weight: bold;
+      color: #0d2137;
+      margin-top: 36px;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 3px solid #e8a020;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    p { margin-bottom: 14px; orphans: 4; widows: 4; }
+
+    ul, ol {
+      margin: 8px 0 14px 26px;
+    }
+    ul li, ol li {
+      margin-bottom: 6px;
+    }
+
+    /* ── DATA TABLE ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 20px 0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10pt;
+    }
+    .data-table thead tr {
+      background-color: #0d2137;
+      color: #ffffff;
+    }
+    .data-table thead th {
+      padding: 11px 18px;
+      text-align: left;
+      font-size: 9pt;
+      letter-spacing: 0.5px;
+      border: none;
+    }
+    .data-table tbody tr:nth-child(even) { background-color: #f4f8fc; }
+    .data-table tbody tr:nth-child(odd)  { background-color: #ffffff; }
+    .data-table tbody td {
+      padding: 10px 18px;
+      border-bottom: 1px solid #dce8f2;
+    }
+    .data-table tfoot tr { background-color: #1a4a7a; color: #ffffff; }
+    .data-table tfoot td { padding: 10px 18px; font-weight: bold; border: none; }
+
+    /* ── PHASE CARDS (table-based) ── */
+    .phase-card {
+      border: 1px solid #dce8f2;
+      margin: 24px 0;
+      width: 100%;
+    }
+    .phase-card-header {
+      background-color: #1a4a7a;
+      width: 100%;
+    }
+    .phase-card-header table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0;
+    }
+    .phase-card-header td {
+      padding: 18px 26px;
+      vertical-align: middle;
+      border: none;
+      background: none;
+      color: #ffffff;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 14pt;
+      font-weight: bold;
+    }
+    .phase-card-header td:last-child { text-align: right; }
+    .fee-badge {
+      background-color: #e8a020;
+      color: #ffffff;
+      padding: 7px 22px;
+      font-size: 13pt;
+      font-weight: bold;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .phase-card-body {
+      padding: 20px 24px;
+    }
+    .phase-card-body ul { margin-top: 10px; }
+    .phase-note {
+      background-color: #f0f7ff;
+      border-left: 4px solid #1a4a7a;
+      padding: 16px 20px;
+      margin-top: 18px;
+      font-size: 11.5pt;
+      color: #1a4a7a;
+      font-style: italic;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    /* ── BANKING BLOCK (table-based) ── */
+    .banking-block {
+      background-color: #f4f8fc;
+      border: 1px solid #dce8f2;
+      padding: 0;
+      margin: 18px 0;
+      width: 100%;
+    }
+    .banking-block table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 10pt;
+    }
+    .banking-block td {
+      padding: 10px 22px;
+      border-bottom: 1px dashed #ccd8e8;
+      background: none;
+    }
+    .banking-block tr:last-child td { border-bottom: none; }
+    .bank-label {
+      font-weight: bold;
+      color: #0d2137;
+      width: 200px;
+      white-space: nowrap;
+    }
+    .bank-value { color: #333333; }
+
+    /* ── TERMS ── */
+    .terms-list {
+      background-color: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      padding: 20px 28px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 11pt;
+      color: #555;
+    }
+    .terms-list li { margin-bottom: 10px; }
+
+    /* ── SIGNATURE BLOCK (table-based) ── */
+    .sig-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 36px;
+      border-top: 1px solid #dce8f2;
+      padding-top: 0;
+    }
+    .sig-table td {
+      padding: 24px 20px 0 0;
+      vertical-align: top;
+      width: 33%;
+      border: none;
+      background: none;
+    }
+    .sig-line {
+      border-bottom: 1px solid #333;
+      height: 38px;
+      margin-bottom: 6px;
+    }
+    .sig-label {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 8pt;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* ── FIXED FOOTER (repeats every page) ── */
+    #fixed-footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 13mm;
+      background-color: #0d2137;
+      color: #ffffff;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9.5pt;
+      padding: 0 48px;
+    }
+    #fixed-footer table {
+      width: 100%;
+      border-collapse: collapse;
+      height: 13mm;
+    }
+    #fixed-footer td { vertical-align: middle; padding: 0; border: none; background: none; }
+    #fixed-footer .right { text-align: right; color: #a8c8e8; font-size: 8.5pt; }
+
+    /* ── FIXED SLIM HEADER — hidden on page 1 via first-page trick ── */
+    #fixed-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 13mm;
+      background-color: #0d2137;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 8.5pt;
+      padding: 0 48px;
+      display: none;
+    }
+    #fixed-header table {
+      width: 100%;
+      border-collapse: collapse;
+      height: 13mm;
+    }
+    #fixed-header td { vertical-align: middle; padding: 0; border: none; background: none; }
+    #fixed-header .left { color: #a8c8e8; letter-spacing: 1px; text-transform: uppercase; }
+    #fixed-header .right { text-align: right; color: #ffffff; font-weight: bold; font-size: 10pt; }
+
+    /* ── FOOTER ── */
+    .footer {
+      background-color: #0d2137;
+      color: #a8c8e8;
+      text-align: center;
+      padding: 18px 48px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 8.5pt;
+      margin-top: 48px;
+      line-height: 2;
+    }
+    .footer strong { color: #ffffff; }
+    .footer .ref { color: #6a9abf; font-size: 8pt; }
+  </style>
+</head>
+<body>
+
+  <!-- FIXED HEADER (slim, repeats on all pages) -->
+  <div id="fixed-header">
+    <table><tr>
+      <td class="left">Professional Tax Services &bull; Confidential</td>
+      <td class="right">Bontle Mokoene &bull; Tax Compliance Proposal</td>
+    </tr></table>
+  </div>
+
+  <!-- FIXED FOOTER (repeats on all pages) -->
+  <div id="fixed-footer">
+    <table><tr>
+      <td><strong>Bontle Mokoene</strong> &nbsp;&bull;&nbsp; 079 840 5205</td>
+      <td class="right">PROP-2026-TAX-001 &nbsp;&bull;&nbsp; Confidential &amp; Privileged</td>
+    </tr></table>
+  </div>
+
+  <!-- HEADER (decorative, page 1 only — sits on top of fixed header) -->
+  <div class="header">
+    <table>
+      <tr>
+        <td>
+          <div class="sub">Professional Tax Services</div>
+          <h1>Tax Compliance<br>Services Proposal</h1>
+        </td>
+        <td>
+          <div class="header-contact">
+            <strong>Bontle Mokoene</strong><br>
+            079 840 5205
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+  <div class="accent-bar"></div>
+
+  <!-- META STRIP -->
+  <div class="meta-strip">
+    <table>
+      <tr>
+        <td>
+          <span class="meta-label">Prepared For</span>
+          <span class="meta-value">SS Adepoju<br>(Seeletso Sharon Adepoju)</span>
+        </td>
+        <td>
+          <span class="meta-label">Taxpayer Ref No</span>
+          <span class="meta-value">1709656175</span>
+        </td>
+        <td>
+          <span class="meta-label">SARS Case No</span>
+          <span class="meta-value">573993972</span>
+        </td>
+        <td>
+          <span class="meta-label">Proposal Ref</span>
+          <span class="meta-value">PROP-2026-TAX-001</span>
+        </td>
+        <td>
+          <span class="meta-label">Date Issued</span>
+          <span class="meta-value">21 April 2026</span>
+        </td>
+        <td>
+          <span class="meta-label">Valid Until</span>
+          <span class="meta-value">28 April 2026</span>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- Urgent Banner -->
+    <div class="urgent-banner">
+      <strong>URGENT:</strong> SARS issued a Final Demand on 14 April 2026. The 10-business-day compliance window is active.
+      Immediate engagement is recommended to protect your rights and minimise penalty exposure.
+    </div>
+
+    <!-- Background -->
+    <h2>Background</h2>
+    <p>
+      Our office has been engaged to assist with outstanding Personal Income Tax (PIT) returns following a
+      <strong>Final Demand</strong> issued by the South African Revenue Service (SARS) dated 14 April 2026
+      (Case Number: 573993972).
+    </p>
+    <p>According to SARS records, the following returns remain outstanding:</p>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Tax Type</th>
+          <th>Outstanding Periods</th>
+          <th>Number of Returns</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Personal Income Tax (PIT)</td>
+          <td>2021, 2022, 2023, 2025</td>
+          <td>4</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2">Total Outstanding Returns</td>
+          <td>4</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <!-- Our Approach -->
+    <h2>Our Approach</h2>
+    <p>
+      We believe in doing this properly — not just filing returns to satisfy a deadline, but ensuring your tax
+      profile is accurate, compliant, and that no unnecessary penalties or assessments arise from rushed or
+      incomplete submissions.
+    </p>
+    <p>
+      Before committing to a filing fee, we first need to understand the full picture of your tax affairs.
+      To that end, we propose a <strong>two-phase engagement</strong>:
+    </p>
+
+    <!-- Phase 1 -->
+    <div style="page-break-before: always;"></div>
+    <div class="phase-card">
+      <div class="phase-card-header">
+        <table><tr>
+          <td>Phase 1 &mdash; Tax Profile Assessment</td>
+          <td style="text-align:right"><span class="fee-badge">R1,500</span></td>
+        </tr></table>
+      </div>
+      <div class="phase-card-body">
+        <p>Before any returns are prepared or submitted, Bontle Mokoene will conduct a thorough review of your
+        tax profile. This includes:</p>
+        <ul>
+          <li>Reviewing your SARS eFiling profile and current account status</li>
+          <li>Identifying all outstanding obligations and any existing penalties or interest accrued</li>
+          <li>Assessing what source documents are required for each outstanding tax year (IRP5s, payslips, interest certificates, medical aid, retirement annuity, rental income, etc.)</li>
+          <li>Identifying any potential deductions, credits, or refunds you may be entitled to</li>
+          <li>Advising on the most appropriate submission strategy to minimise penalties</li>
+          <li>Providing you with a clear document checklist and a formal fee quote for Phase 2</li>
+        </ul>
+        <div class="phase-note">
+          <strong>Phase 1 Fee: R1,500 &mdash; payable upfront to initiate the engagement.</strong><br>
+          This assessment gives us a clear picture of exactly what is needed before any further commitments
+          are made. It ensures you are not charged a blanket fee before we understand the true complexity
+          of your situation.
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="phase-card">
+      <div class="phase-card-header">
+        <table><tr>
+          <td>Phase 2 &mdash; Return Preparation &amp; Submission</td>
+          <td style="text-align:right"><span class="fee-badge">Fee to be Quoted</span></td>
+        </tr></table>
+      </div>
+      <div class="phase-card-body">
+        <p>Once the Phase 1 assessment is complete, we will provide a detailed, itemised fee proposal for:</p>
+        <ul>
+          <li>Preparation and review of each outstanding tax return</li>
+          <li>Liaising with SARS on your behalf where required</li>
+          <li>Submission of all returns via eFiling</li>
+          <li>Addressing any SARS queries or verifications arising from the submissions</li>
+          <li>Penalty remission applications where applicable</li>
+        </ul>
+        <div class="phase-note">
+          The Phase 2 fee depends on the number of income sources, complexity of each return, and documents
+          available. You will receive a clear, itemised quote before any further work commences &mdash;
+          <strong>no surprises</strong>.
+        </div>
+      </div>
+    </div>
+
+    <!-- Why Act Now -->
+    <h2>Why Act Now</h2>
+    <p>
+      SARS has already issued a <strong>Final Demand</strong>. The 10-business-day window commenced on
+      14 April 2026. Continued non-compliance exposes you to:
+    </p>
+    <ul>
+      <li><strong>Administrative penalties</strong> — levied on a monthly basis per outstanding return and compounding significantly over time</li>
+      <li><strong>A formal summons</strong> being issued against you</li>
+      <li><strong>Criminal prosecution</strong> — carrying fines or imprisonment of up to two years upon conviction</li>
+      <li><strong>Public disclosure</strong> of your name, area of residence, and offence particulars upon conviction</li>
+    </ul>
+    <p>
+      Early engagement gives us the best opportunity to manage your exposure and, where possible, apply for
+      penalty remission on your behalf.
+    </p>
+
+    <!-- How to Proceed -->
+    <h2>How to Proceed</h2>
+    <p>
+      Given the urgency of this matter — with SARS's 10-business-day deadline already running —
+      we urge you to act <strong>immediately</strong>. Every day of delay increases the risk of
+      compounding penalties and further SARS action.
+    </p>
+    <p>To accept this proposal and initiate Phase 1 without delay, please:</p>
+    <ol>
+      <li>Sign and return this proposal to our office <strong>today</strong></li>
+      <li>Make payment of <strong>R1,500</strong> to the account below — <em>same day where possible</em></li>
+      <li>Forward all SARS correspondence received to our office immediately upon payment</li>
+    </ol>
+    <p>Work will commence as soon as payment is confirmed and all relevant correspondence has been received.</p>
+
+    <div class="banking-block">
+      <table>
+        <tr><td class="bank-label">Bank</td><td class="bank-value">Capitec Bank</td></tr>
+        <tr><td class="bank-label">Account Name</td><td class="bank-value">BM Mokoena</td></tr>
+        <tr><td class="bank-label">Account Number</td><td class="bank-value">1506573582</td></tr>
+        <tr><td class="bank-label">Branch Code</td><td class="bank-value">470010 (Universal)</td></tr>
+        <tr><td class="bank-label">Payment Reference</td><td class="bank-value">ADEPOJU-TAX-2026</td></tr>
+      </table>
+    </div>
+
+    <!-- Terms -->
+    <h2>Terms &amp; Conditions</h2>
+    <ul class="terms-list">
+      <li>The Phase 1 assessment fee of R1,500 is non-refundable once work has commenced.</li>
+      <li>This proposal is valid for <strong>7 calendar days</strong> from the date of issue (expires 28 April 2026).</li>
+      <li>All fees quoted are inclusive of VAT where applicable.</li>
+      <li>You remain responsible for the accuracy of all information and documentation provided to us.</li>
+      <li>Phase 2 work will only commence upon receipt of a signed Phase 2 engagement letter and payment of the agreed fee.</li>
+    </ul>
+
+    <!-- Signature Block -->
+    <table class="sig-table">
+      <tr>
+        <td>
+          <div class="sig-line"></div>
+          <div class="sig-label">Client Signature</div>
+        </td>
+        <td>
+          <div class="sig-line"></div>
+          <div class="sig-label">Full Name</div>
+        </td>
+        <td>
+          <div class="sig-line"></div>
+          <div class="sig-label">Date</div>
+        </td>
+      </tr>
+    </table>
+
+  </div><!-- end .content -->
+
+</body>
+</html>

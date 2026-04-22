@@ -151,7 +151,7 @@ class ProductionEmailService {
 
   private getFromAddress(): string {
     const name = process.env.EMAIL_FROM_NAME || 'SiyaBusa ERP';
-    const email = process.env.EMAIL_FROM || process.env.SMTP_USER || 'noreply@aetheros.co.za';
+    const email = process.env.EMAIL_FROM || process.env.SMTP_USER || 'noreply@siyabusaerp.co.za';
     return `"${name}" <${email}>`;
   }
 

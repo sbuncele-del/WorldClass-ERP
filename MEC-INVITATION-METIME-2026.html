@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEC Invitation - MeTime 2026</title>
+<style>
+  @page { margin: 0; }
+  body {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 12pt;
+    line-height: 1.6;
+    color: #222;
+    margin: 0;
+    padding: 0;
+  }
+  .page {
+    position: relative;
+    min-height: 1120px;
+    padding: 60px 70px 80px 70px;
+    box-sizing: border-box;
+  }
+  .top-accent {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 8px;
+    background: linear-gradient(90deg, #0a6e3a, #2eaa5a, #0a6e3a);
+  }
+  .curve-top {
+    position: absolute;
+    top: 8px; left: 0; right: 0;
+    height: 40px;
+    overflow: hidden;
+  }
+  .curve-top::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -5%; right: -5%;
+    height: 80px;
+    border-radius: 0 0 50% 50%;
+    background: linear-gradient(90deg, rgba(10,110,58,0.08), rgba(46,170,90,0.12), rgba(10,110,58,0.08));
+  }
+  .bottom-accent {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 8px;
+    background: linear-gradient(90deg, #0a6e3a, #2eaa5a, #0a6e3a);
+  }
+  .curve-bottom {
+    position: absolute;
+    bottom: 8px; left: 0; right: 0;
+    height: 40px;
+    overflow: hidden;
+  }
+  .curve-bottom::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: -5%; right: -5%;
+    height: 80px;
+    border-radius: 50% 50% 0 0;
+    background: linear-gradient(90deg, rgba(10,110,58,0.08), rgba(46,170,90,0.12), rgba(10,110,58,0.08));
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+  }
+  .logo-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-circle {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, #0a6e3a, #2eaa5a);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 18pt;
+    font-family: Arial, sans-serif;
+  }
+  .logo-text {
+    font-size: 22pt;
+    font-weight: bold;
+    color: #0a6e3a;
+    font-family: Arial, sans-serif;
+  }
+  .logo-sub {
+    font-size: 8pt;
+    color: #0a6e3a;
+    letter-spacing: 3px;
+    font-family: Arial, sans-serif;
+  }
+  .contact-info {
+    text-align: right;
+    font-size: 9.5pt;
+    color: #444;
+    line-height: 1.5;
+  }
+  .contact-info .icon {
+    color: #0a6e3a;
+    margin-right: 4px;
+  }
+  .org-details {
+    font-size: 10pt;
+    color: #333;
+    margin-bottom: 15px;
+  }
+  .org-details strong {
+    color: #0a6e3a;
+  }
+  .addressee {
+    margin-bottom: 8px;
+    font-size: 11.5pt;
+    line-height: 1.5;
+  }
+  .date-line {
+    text-align: right;
+    margin-bottom: 20px;
+    font-size: 11.5pt;
+  }
+  .subject {
+    font-weight: bold;
+    text-decoration: underline;
+    margin: 18px 0 14px 0;
+    font-size: 12pt;
+  }
+  .body-text {
+    text-align: justify;
+    margin-bottom: 12px;
+    font-size: 11.5pt;
+    line-height: 1.7;
+  }
+  .section-heading {
+    font-weight: bold;
+    font-size: 12pt;
+    margin: 20px 0 10px 0;
+    color: #222;
+  }
+  .offer-list {
+    margin: 8px 0 8px 20px;
+    font-size: 11.5pt;
+    line-height: 1.7;
+  }
+  .offer-list li {
+    margin-bottom: 6px;
+  }
+  .proposal-box {
+    margin: 15px 0;
+    font-size: 11.5pt;
+    line-height: 1.7;
+  }
+  .proposal-box p {
+    margin: 4px 0;
+  }
+  .bold-note {
+    font-weight: bold;
+  }
+  .roi-heading {
+    font-weight: bold;
+    font-size: 12pt;
+    margin: 16px 0 8px 0;
+  }
+  .roi-item {
+    margin-bottom: 8px;
+    font-size: 11.5pt;
+    line-height: 1.6;
+    text-align: justify;
+  }
+  .roi-item strong {
+    color: #222;
+  }
+  .additional-list {
+    margin: 8px 0 8px 20px;
+    font-size: 11.5pt;
+    line-height: 1.7;
+  }
+  .additional-list li {
+    margin-bottom: 5px;
+  }
+  .sign-off {
+    margin-top: 25px;
+    font-size: 11.5pt;
+    line-height: 1.7;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+</style>
+</head>
+<body>
+
+<!-- PAGE 1 -->
+<div class="page">
+  <div class="top-accent"></div>
+  <div class="curve-top"></div>
+
+  <div class="header">
+    <div>
+      <div class="logo-section">
+        <div class="logo-circle">i</div>
+        <div>
+          <div class="logo-text">Isago</div>
+          <div class="logo-sub">F o u n d a t i o n</div>
+        </div>
+      </div>
+    </div>
+    <div class="contact-info">
+      <span class="icon">&#9742;</span> +27 79 154 6282<br>
+      <span class="icon">&#9993;</span> tmodisane97@gmail.com<br>
+      <span class="icon">&#9679;</span> 27 Normandy Gardens<br>
+      Kirkness Avenue<br>
+      Pierre van Ryneveld<br>
+      0157
+    </div>
+  </div>
+
+  <div class="org-details">
+    <strong>NPO Number:</strong> 132-843 NPO<br>
+    <strong>PBO Number:</strong> 930046732
+  </div>
+
+  <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div class="addressee">
+      Mrs. Bitsa Lenkopane<br>
+      MEC for Economic Development, Environment,<br>
+      Conservation and Tourism<br>
+      North West Provincial Government<br>
+      Private Bag X15<br>
+      Mmabatho, 2735
+    </div>
+    <div class="date-line">16 April 2026</div>
+  </div>
+
+  <div class="addressee" style="margin-top: 8px;">
+    <em>Attention: Office of the MEC</em>
+  </div>
+
+  <div class="subject">Re: Invitation to be Guest Speaker and Request for Sponsorship of 10 Women Business Exhibitors</div>
+
+  <div class="body-text">
+    Dear Honourable MEC Lenkopane,
+  </div>
+
+  <div class="body-text">
+    I am writing on behalf of the Isago Foundation to respectfully invite you to be a <strong>Guest Speaker</strong> at the upcoming <strong>MeTIME</strong> women empowerment event, scheduled for the <strong>4th and 5th of September 2026</strong> at <strong>Sun City, North West Province</strong>, Republic of South Africa.
+  </div>
+
+  <div class="body-text">
+    MeTIME is a flagship initiative spearheaded by the Isago Foundation, focusing on advancing women in the economy, strengthening networks, and supporting women's growth, resilience, and survival in both business and community spaces.
+  </div>
+
+  <div class="body-text">
+    We would be deeply honoured to have you deliver the keynote address during the <strong>Saturday evening Business Insights programme</strong>. Your distinguished leadership in driving economic growth, empowering informal traders, promoting industrialisation, and championing sustainable development in the North West Province makes you the ideal voice to inspire and empower the women in attendance. A presentation on the Department's services, programmes, and opportunities available to women entrepreneurs would be of tremendous value to our delegates.
+  </div>
+
+  <div class="body-text">
+    In addition to the speaking invitation, we are also seeking the Department's support to <strong>sponsor the participation of 10 women-owned businesses</strong> in exhibition packages at the event, enabling them to attend and fully benefit from this transformative experience. The sponsorship would go toward securing branding visibility, access to market including potential leads, and overall strategic brand alignment for these women — ensuring they are not only present but actively included in high-value conversations, networking opportunities, and exposure to leadership.
+  </div>
+
+  <div class="body-text">
+    We believe that representation matters deeply. Being in spaces surrounded by accomplished and empowered women can be life-changing — opening doors, shifting perspectives, and building confidence for women to thrive in their respective paths.
+  </div>
+
+  <div class="body-text">
+    We would greatly appreciate the opportunity to meet with you and your office to discuss this partnership further, and to explore how we can align this initiative with the Department's goals and impact areas.
+  </div>
+
+  <div class="bottom-accent"></div>
+  <div class="curve-bottom"></div>
+</div>
+
+<!-- PAGE 2 -->
+<div class="page page-break">
+  <div class="top-accent"></div>
+  <div class="curve-top"></div>
+
+  <div class="logo-section" style="margin-bottom: 20px;">
+    <div class="logo-circle">i</div>
+    <div>
+      <div class="logo-text">Isago</div>
+      <div class="logo-sub">F o u n d a t i o n</div>
+    </div>
+  </div>
+
+  <div class="section-heading">Guest Speaker Invitation</div>
+
+  <div class="proposal-box">
+    <p><strong>Speaker:</strong> Honourable MEC Mrs. Bitsa Lenkopane</p>
+    <p><strong>Session:</strong> Saturday Evening Business Insights Programme</p>
+    <p><strong>Topic:</strong> Departmental services, programmes, and opportunities for women in the economy — highlighting areas where the Department can add value and the available opportunities for women entrepreneurs in the North West Province.</p>
+    <p><strong>Date:</strong> Saturday, 5th September 2026 (Evening Programme)</p>
+    <p><strong>Venue:</strong> Sun City, North West Province</p>
+  </div>
+
+  <div class="section-heading">Sponsorship Proposal</div>
+
+  <div class="proposal-box">
+    <p><strong>Who:</strong> Sponsor 10 women-led businesses</p>
+    <p><strong>Cost:</strong> R350 000 (R35 000 per business)</p>
+    <p class="bold-note">Transport and accommodation costs NOT included (To be discussed if applicable)</p>
+    <p><strong>Date:</strong> 4<sup>th</sup> and 5<sup>th</sup> September 2026</p>
+  </div>
+
+  <div class="roi-heading">Return on Investment</div>
+
+  <div class="roi-item">
+    <strong>Targeted Exposure:</strong> Packages provide direct access to specific, niche audiences, ensuring high-quality engagement over generic advertising.
+  </div>
+  <div class="roi-item">
+    <strong>Strategic Brand Alignment:</strong> Association with specific events enhances the Department's reputation and demonstrates commitment to women's economic empowerment.
+  </div>
+  <div class="roi-item">
+    <strong>Measurable ROI &amp; Data Capture:</strong> Modern packages focus on attendee participation and lead generation, allowing sponsors to track engagement and calculate returns, rather than just logo exposure.
+  </div>
+  <div class="roi-item">
+    <strong>Increased Brand Credibility:</strong> Regular sponsorship and visibility at events build familiarity and trust among attendees.
+  </div>
+  <div class="roi-item">
+    <strong>Networking &amp; Leads:</strong> Beyond exposure, packages include networking opportunities, facilitating valuable business relationships.
+  </div>
+  <div class="roi-item">
+    <strong>Content &amp; Amplification:</strong> Sponsorships offer opportunities to present, demonstrate, or produce content that showcases the Department's expertise and initiatives.
+  </div>
+
+  <div class="section-heading">Additional Value</div>
+
+  <ul class="additional-list">
+    <li>Businesses will be positioned and profiled on our social media platforms and databases a week before the event and a week post the event.</li>
+    <li>Businesses will be allocated the best visible branding, with long-term value on database.</li>
+    <li>The Department's logo will be visible as a sponsor on all communication for and about the event.</li>
+    <li>The Department will have access to the database of event attendees, within POPI Act requirements.</li>
+  </ul>
+
+  <div class="body-text" style="margin-top: 18px;">
+    Thank you for considering this opportunity to make a meaningful difference in the lives of women entrepreneurs across the North West Province.
+  </div>
+
+  <div class="sign-off">
+    Warm regards,<br><br><br>
+    <strong>Tebogo Modisane</strong><br>
+    Founder — Isago Foundation<br>
+    Cell: +27 79 154 6282<br>
+    Email: tmodisane97@gmail.com
+  </div>
+
+  <div class="bottom-accent"></div>
+  <div class="curve-bottom"></div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,142 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { margin: 20mm; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #333; margin: 0; padding: 20px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1a5276; padding-bottom: 15px; margin-bottom: 20px; }
+  .company-name { font-size: 24px; font-weight: bold; color: #1a5276; }
+  .company-details { font-size: 11px; color: #555; line-height: 1.6; }
+  .invoice-title { font-size: 28px; font-weight: bold; color: #1a5276; text-align: right; }
+  .invoice-meta { text-align: right; font-size: 12px; margin-top: 5px; line-height: 1.8; }
+  .invoice-meta strong { color: #1a5276; }
+  .section { margin-bottom: 20px; }
+  .section-title { font-size: 14px; font-weight: bold; color: #1a5276; border-bottom: 1px solid #ddd; padding-bottom: 5px; margin-bottom: 10px; }
+  .bill-to { background: #f4f6f9; padding: 15px; border-left: 4px solid #1a5276; margin-bottom: 25px; }
+  .bill-to p { margin: 3px 0; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  th { background: #1a5276; color: white; padding: 10px 12px; text-align: left; font-size: 12px; }
+  th:last-child, th:nth-child(3), th:nth-child(4) { text-align: right; }
+  td { padding: 10px 12px; border-bottom: 1px solid #e0e0e0; font-size: 12px; }
+  td:last-child, td:nth-child(3), td:nth-child(4) { text-align: right; }
+  .totals-table { width: 320px; margin-left: auto; margin-top: 10px; }
+  .totals-table td { padding: 8px 12px; font-size: 13px; }
+  .totals-table .total-row { background: #1a5276; color: white; font-weight: bold; font-size: 15px; }
+  .totals-table .subtotal-row td { border-bottom: 1px solid #ddd; }
+  .banking { background: #f9f9f9; padding: 15px; border: 1px solid #ddd; margin-top: 25px; font-size: 12px; line-height: 1.8; }
+  .banking strong { color: #1a5276; }
+  .terms { margin-top: 25px; font-size: 11px; color: #666; line-height: 1.8; }
+  .terms h3 { color: #1a5276; font-size: 13px; margin-bottom: 5px; }
+  .footer { margin-top: 30px; border-top: 2px solid #1a5276; padding-top: 10px; text-align: center; font-size: 10px; color: #888; }
+  .highlight { background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107; margin: 15px 0; font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="company-name">SGBS Group Pty Ltd</div>
+    <div class="company-details">
+      Registration Number: 2018/066896/07<br>
+      116 Limpopo Ave, Doringkloof, Centurion, Gauteng, 0157<br>
+      South Africa<br>
+      Attention: Sibusiso
+    </div>
+  </div>
+  <div>
+    <div class="invoice-title">TAX INVOICE</div>
+    <div class="invoice-meta">
+      <strong>Invoice No:</strong> INVSGB-0151<br>
+      <strong>Date:</strong> 16 Apr 2026<br>
+      <strong>Due Date:</strong> 19 Apr 2026
+    </div>
+  </div>
+</div>
+
+<div class="bill-to">
+  <div class="section-title">BILL TO</div>
+  <p><strong>Client Name:</strong> Musi Africa</p>
+  <p><strong>Attention:</strong> Mr Sithole</p>
+  <p><strong>Address:</strong> Stand 18996 Ext 12, Sonderwater, Potchefstroom, Northwest, 2520, South Africa</p>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th style="width:5%">#</th>
+      <th style="width:50%">Description</th>
+      <th style="width:15%">Qty</th>
+      <th style="width:15%">Unit Price</th>
+      <th style="width:15%">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>1</td>
+      <td>
+        <strong>CSD Registration Service</strong><br>
+        <span style="font-size:11px; color:#666;">
+          Complete registration on the National Treasury Central Supplier Database (CSD) including:
+          document collection & verification, online application submission, SARS/CIPC/Bank/B-BBEE
+          verification follow-up, and CSD number confirmation.
+        </span>
+      </td>
+      <td>1</td>
+      <td>R 950.00</td>
+      <td>R 950.00</td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="totals-table">
+  <tr class="subtotal-row">
+    <td><strong>Subtotal</strong></td>
+    <td><strong>R 950.00</strong></td>
+  </tr>
+  <tr class="subtotal-row">
+    <td>VAT</td>
+    <td>No VAT</td>
+  </tr>
+  <tr class="total-row">
+    <td>TOTAL ZAR</td>
+    <td>R 950.00</td>
+  </tr>
+</table>
+
+<div class="highlight">
+  <strong>Amount Due: R 950.00 (Nine Hundred and Fifty Rand)</strong><br>
+  Payment is required before the registration process will commence.
+</div>
+
+<div class="banking">
+  <strong>BANKING DETAILS FOR EFT PAYMENT</strong><br><br>
+  <strong>Account Holder:</strong> SGBS Group Pty Ltd<br>
+  <strong>Bank:</strong> Standard Bank<br>
+  <strong>Branch:</strong> Lifestyle<br>
+  <strong>Branch Code:</strong> 2645<br>
+  <strong>Account Number:</strong> 10 17 450 068 6<br>
+  <strong>Account Type:</strong> Savings<br>
+  <strong>SWIFT Code:</strong> SBZAZAJJ<br>
+  <strong>Reference:</strong> INVSGB-0151 / Sithole
+</div>
+
+<div class="terms">
+  <h3>Terms & Conditions</h3>
+  <ol>
+    <li>Payment is due in full before the CSD registration process commences.</li>
+    <li>This fee covers the professional service of completing the CSD registration on your behalf. The CSD platform itself does not charge a registration fee.</li>
+    <li>The service includes: collection and review of required documents, completion of the online registration form, submission, and follow-up on automated verifications (SARS, CIPC, Bank, B-BBEE).</li>
+    <li>The client is responsible for providing all required documents as outlined in the Document Request Checklist provided.</li>
+    <li>Should verification fail due to non-compliance on the client's part (e.g., SARS non-compliance, incorrect bank details), additional follow-up assistance may be subject to a further fee.</li>
+    <li>No refunds will be issued once the registration process has commenced.</li>
+    <li>Estimated turnaround: 1–7 business days from submission, subject to third-party verification systems.</li>
+  </ol>
+</div>
+
+<div class="footer">
+  Thank you for your business.<br>
+  Registered Office: Attention: Sbue Golden Business Solutions, 116 Limpopo Ave, Doringkloof, Centurion, Gauteng, 0157, South Africa.
+</div>
+
+</body>
+</html>

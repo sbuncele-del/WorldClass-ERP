@@ -125,11 +125,11 @@ const Hero: React.FC = () => {
           </p>
 
           <div className="hero-ctas">
-            <button className="btn-primary" onClick={() => navigate('/pricing')}>
-              Get Started <ArrowRight size={18} />
+            <button className="btn-primary" onClick={() => navigate('/try-demo')}>
+              Try Free Demo <ArrowRight size={18} />
             </button>
-            <button className="btn-ghost" onClick={() => navigate('/demo')}>
-              <Play size={16} /> See It in Action
+            <button className="btn-ghost" onClick={() => navigate('/pricing')}>
+              View Pricing
             </button>
           </div>
 

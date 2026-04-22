@@ -93,7 +93,7 @@ export class InvoiceService {
           .fontSize(10)
           .text('Enterprise Resource Planning', 50, 75)
           .text('South Africa', 50, 90)
-          .text('support@aetheros.co.za', 50, 105)
+          .text('support@siyabusaerp.co.za', 50, 105)
           .moveDown(2);
 
         // Bill To
@@ -186,7 +186,7 @@ export class InvoiceService {
             { align: 'center', width: 500 }
           )
           .text(
-            'For questions about this invoice, contact support@aetheros.co.za',
+            'For questions about this invoice, contact support@siyabusaerp.co.za',
             50,
             715,
             { align: 'center', width: 500 }

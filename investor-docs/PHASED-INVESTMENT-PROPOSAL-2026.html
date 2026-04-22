@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>SiyaBusa ERP — Phased Investment Proposal 2026</title>
+<style>
+@page {
+  size: A4;
+  margin: 18mm 16mm 20mm 16mm;
+}
+@page :first {
+  margin: 0;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:Arial, sans-serif; font-size:9.5pt; color:#222; line-height:1.5; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+
+/* ── COVER ──────────────────────────────────────────── */
+.cover {
+  page-break-after:always;
+  background:#0a1628;
+  color:#fff;
+  margin:-18mm -16mm -20mm -16mm;
+  padding:28mm 22mm 20mm;
+  min-height:297mm;
+}
+.cover-bar { width:48px; height:4px; background:#c9a84c; margin-bottom:14mm; }
+.cover-logo { font-size:22pt; font-weight:900; letter-spacing:1px; color:#c9a84c; }
+.cover-sub { font-size:10pt; color:#aaa; margin-top:2mm; letter-spacing:2px; text-transform:uppercase; }
+.cover-title { margin-top:18mm; font-size:48pt; font-weight:900; line-height:1.08; text-transform:uppercase; letter-spacing:2px; color:#fff; }
+.cover-ver { margin-top:7mm; font-size:10pt; color:#c9a84c; letter-spacing:1px; text-transform:uppercase; }
+.cover-tagline { font-size:13pt; font-weight:700; letter-spacing:3px; color:#c9a84c; text-transform:uppercase; margin-top:14mm; }
+.cover-foot { border-top:1px solid #2a3a5a; padding-top:5mm; margin-top:8mm; width:100%; border-collapse:collapse; }
+.cover-foot td { font-size:8pt; color:#666; border:none !important; background:transparent !important; }
+
+/* Cover meta — table-based for wkhtmltopdf reliability */
+.cover-meta-tbl { margin-top:16mm; border-collapse:collapse; width:100%; }
+.cover-meta-tbl td { padding:0 10mm 0 0; vertical-align:top; border:none !important; background:transparent !important; }
+.cover-meta-tbl td:last-child { padding-right:0; }
+.cover-meta-tbl .cm-label { display:block; font-size:7pt; text-transform:uppercase; letter-spacing:1.5px; color:#888; margin-bottom:1.5mm; }
+.cover-meta-tbl .cm-val { display:block; font-size:9pt; font-weight:bold; color:#fff; line-height:1.35; }
+.cover-meta-tbl .cm-sub { display:block; font-size:7.5pt; font-weight:400; color:#aaa; margin-top:0.5mm; }
+
+/* Highlights strip on cover */
+.hl-strip { margin-top:12mm; border-top:1px solid rgba(201,168,76,0.3); border-bottom:1px solid rgba(201,168,76,0.3); padding:5mm 0; }
+.hl-strip table { border-collapse:collapse; width:100%; }
+.hl-strip td { border:none !important; background:transparent !important; text-align:center; padding:0 3mm; vertical-align:middle; }
+.hl-div { width:1px; background:rgba(255,255,255,0.12); padding:0 !important; }
+.hl-num { display:block; font-size:20pt; font-weight:900; color:#c9a84c; line-height:1; }
+.hl-txt { display:block; font-size:6.5pt; color:rgba(255,255,255,0.45); text-transform:uppercase; letter-spacing:1px; margin-top:1.5mm; line-height:1.4; }
+
+/* Phase strip on cover — table-based */
+.phase-tbl { margin-top:10mm; border-collapse:collapse; width:100%; }
+.phase-tbl td { padding:5mm 4mm; text-align:center; vertical-align:middle; width:33.3%; }
+.pt-1 { background:rgba(201,168,76,0.15); border:1px solid rgba(201,168,76,0.5); }
+.pt-2 { background:rgba(59,130,246,0.15); border:1px solid rgba(59,130,246,0.5); }
+.pt-3 { background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.5); }
+.pt-amt { display:block; font-size:18pt; font-weight:900; line-height:1; margin-bottom:2mm; }
+.pt-1 .pt-amt { color:#c9a84c; }
+.pt-2 .pt-amt { color:#93c5fd; }
+.pt-3 .pt-amt { color:#6ee7b7; }
+.pt-lbl { display:block; font-size:7pt; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:1px; }
+.pt-mil { display:block; font-size:6.5pt; color:rgba(255,255,255,0.35); margin-top:1.5mm; }
+
+/* ── TYPOGRAPHY ─────────────────────────────────────── */
+h1 { font-size:14pt; font-weight:900; color:#0a1628; border-bottom:2.5px solid #c9a84c; padding-bottom:2mm; margin:7mm 0 4mm; text-transform:uppercase; letter-spacing:1px; }
+h2 { font-size:11pt; font-weight:700; color:#0a1628; margin:5mm 0 2mm; }
+h3 { font-size:9.5pt; font-weight:700; color:#1a2c4a; margin:3mm 0 1.5mm; }
+p { margin-bottom:2.5mm; }
+ul { margin:2mm 0 3mm 5mm; }
+ul li { margin-bottom:1mm; }
+.pb { page-break-before:always; }
+.section { margin-bottom:5mm; }
+
+/* ── TABLES ─────────────────────────────────────────── */
+table { width:100%; border-collapse:collapse; margin:3mm 0; font-size:8.5pt; }
+th { background:#0a1628; color:#c9a84c; font-weight:700; padding:2.5mm 3mm; text-align:left; font-size:8pt; }
+td { border:1px solid #ddd; padding:2mm 3mm; vertical-align:top; }
+tr:nth-child(even) td { background:#f8f9fb; }
+.sr td { background:#0a1628 !important; color:#c9a84c; font-weight:700; border-color:#0a1628; }
+.green-row td { background:#ecfdf5 !important; color:#065f46; font-weight:700; }
+.amber-row td { background:#fffbe6 !important; color:#78350f; font-weight:700; }
+
+/* ── PHASE HEADER — table-based ──────────────────────── */
+.phase-hdr-tbl { width:100%; border-collapse:collapse; margin:6mm 0 3mm; page-break-inside:avoid; }
+.ph-num  { font-size:32pt; font-weight:900; color:rgba(255,255,255,0.18); line-height:1; padding:5mm 5mm 5mm 6mm; width:20mm; vertical-align:middle; }
+.ph-body { vertical-align:middle; padding:5mm 4mm; }
+.ph-title { font-size:12pt; font-weight:900; color:#fff; text-transform:uppercase; letter-spacing:1px; }
+.ph-sub   { font-size:8pt; color:rgba(255,255,255,0.6); margin-top:1.5mm; }
+.ph-amt   { font-size:20pt; font-weight:900; white-space:nowrap; padding:5mm 6mm 5mm 4mm; vertical-align:middle; text-align:right; }
+.ph-bg-1 { background:#0a1628; border-left:5px solid #c9a84c; }
+.ph-bg-2 { background:#1e3a8a; border-left:5px solid #3b82f6; }
+.ph-bg-3 { background:#065f46; border-left:5px solid #10b981; }
+.ph-col-1 { color:#c9a84c; }
+.ph-col-2 { color:#93c5fd; }
+.ph-col-3 { color:#6ee7b7; }
+
+/* ── CALLOUT BOXES ──────────────────────────────────── */
+.callout { border-left:3px solid #c9a84c; background:#fffbe6; padding:2.5mm 3.5mm; margin:3mm 0; font-size:8.5pt; color:#78350f; line-height:1.55; }
+.callout.blue  { border-color:#3b82f6; background:#eff6ff; color:#1e3a8a; }
+.callout.navy  { border-color:#0a1628; background:#f0f4f8; color:#0a1628; }
+.callout.green { border-color:#10b981; background:#ecfdf5; color:#065f46; }
+.callout.red   { border-color:#dc2626; background:#fef2f2; color:#991b1b; }
+
+/* ── MILESTONE BOX ──────────────────────────────────── */
+.milestone { border:1.5px dashed #c9a84c; background:#fffbe6; padding:3mm 4mm; margin:3mm 0 4mm; font-size:8.5pt; color:#78350f; }
+.milestone.blue  { border-color:#3b82f6; background:#eff6ff; color:#1e3a8a; }
+.milestone.green { border-color:#10b981; background:#ecfdf5; color:#065f46; }
+
+/* ── TWO COL — TABLE BASED ──────────────────────────── */
+.tc-tbl { width:100%; border-collapse:collapse; margin:3mm 0; }
+.tc-tbl td { border:none; vertical-align:top; padding:0; }
+.tc-l { padding-right:4mm !important; width:48%; }
+.tc-r { padding-left:4mm !important; width:52%; }
+.tc-40 { padding-right:4mm !important; width:40%; }
+.tc-60 { padding-left:4mm !important; width:60%; }
+
+/* ── BOARD CARD ─────────────────────────────────────── */
+.board-tbl { width:100%; border-collapse:collapse; margin:3mm 0; }
+.board-tbl td { border:none; padding:0 3mm 3mm 0; vertical-align:top; width:25%; }
+.board-card { border:1px solid #ddd; border-top:3px solid #c9a84c; padding:3mm; background:#f8f9fb; }
+.board-card table { margin:0; }
+.board-card table td { border:none !important; background:transparent !important; padding:0; }
+.board-card.blue  { border-top-color:#3b82f6; }
+.board-card.green { border-top-color:#10b981; }
+.board-card.red   { border-top-color:#991b1b; }
+.bc-name  { font-size:9pt; font-weight:900; color:#0a1628; display:block; margin-bottom:1mm; }
+.bc-title { font-size:7.5pt; color:#c9a84c; font-weight:700; display:block; margin-bottom:1.5mm; }
+.bc-blue  { color:#3b82f6 !important; }
+.bc-green { color:#10b981 !important; }
+.bc-red   { color:#991b1b !important; }
+.bc-desc  { font-size:7.5pt; color:#555; line-height:1.4; }
+
+/* ── MERCH ITEM ROW ─────────────────────────────────── */
+.merch-qty  { color:#0a1628; font-weight:700; text-align:center; }
+.merch-cost { color:#065f46; font-weight:700; text-align:right; }
+
+/* ── BADGE ──────────────────────────────────────────── */
+.badge { display:inline-block; background:#c9a84c; color:#0a1628; font-weight:700; padding:0.5mm 2mm; font-size:7.5pt; }
+.badge.blue  { background:#1e3a8a; color:#fff; }
+.badge.green { background:#065f46; color:#fff; }
+
+/* ── DISCLAIMER ─────────────────────────────────────── */
+.disclaimer { margin-top:4mm; padding:3mm 4mm; border:1px solid #e5e7eb; background:#f9fafb; font-size:6.5pt; color:#6b7280; line-height:1.5; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ COVER ═══════════ -->
+<div class="cover">
+  <!-- Use a full-height wrapper table to spread content across the entire A4 page -->
+  <table style="width:100%; height:261mm; border-collapse:collapse;">
+    <tr>
+      <td style="border:none !important; background:transparent !important; vertical-align:top; padding:0;">
+        <div class="cover-bar"></div>
+        <div class="cover-logo">SiyaBusa ERP</div>
+        <div class="cover-sub">Investor &amp; Partner Documentation</div>
+      </td>
+    </tr>
+    <tr>
+      <td style="border:none !important; background:transparent !important; vertical-align:middle; padding:0;">
+        <div class="cover-title">Phased<br>Investment<br>Proposal</div>
+        <div class="cover-ver">Milestone-Based Seed Deployment &nbsp;|&nbsp; April 2026</div>
+
+        <!-- Meta — 3 columns -->
+        <table class="cover-meta-tbl">
+          <tr>
+            <td style="width:42%;">
+              <span class="cm-label">Company</span>
+              <span class="cm-val">Masaphokati Technologies (Pty) Ltd</span>
+            </td>
+            <td style="width:35%;">
+              <span class="cm-label">Seed Raise &amp; Equity</span>
+              <span class="cm-val">R2,000,000 &mdash; 16.67%</span>
+              <span class="cm-sub">Pre-money valuation: R10,000,000</span>
+            </td>
+            <td style="width:23%;">
+              <span class="cm-label">Classification</span>
+              <span class="cm-val">Strictly Confidential</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="border:none !important; background:transparent !important; vertical-align:bottom; padding:0;">
+        <!-- Phase strip -->
+        <table class="phase-tbl">
+          <tr>
+            <td class="pt-1">
+              <span class="pt-amt">R700,000</span>
+              <span class="pt-lbl">Phase 1 &mdash; Launch</span>
+              <span class="pt-mil">Months 1&ndash;4 &nbsp;&middot;&nbsp; Released immediately</span>
+            </td>
+            <td class="pt-2">
+              <span class="pt-amt">R700,000</span>
+              <span class="pt-lbl">Phase 2 &mdash; Scale</span>
+              <span class="pt-mil">Months 5&ndash;9 &nbsp;&middot;&nbsp; Unlocked on milestones</span>
+            </td>
+            <td class="pt-3">
+              <span class="pt-amt">R600,000</span>
+              <span class="pt-lbl">Phase 3 &mdash; Accelerate</span>
+              <span class="pt-mil">Months 10&ndash;12 &nbsp;&middot;&nbsp; Unlocked on milestones</span>
+            </td>
+          </tr>
+        </table>
+
+        <div class="cover-tagline" style="margin-top:18mm;">WE RULE. WE GOVERN. WE EMPOWER.</div>
+        <table class="cover-foot" style="margin-top:10mm;">
+          <tr>
+            <td>Masaphokati Technologies (Pty) Ltd &mdash; Confidential</td>
+            <td style="text-align:right;">April 2026</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+<!-- ═══════════ PAGE 2: PURPOSE & BACKGROUND ═══════════ -->
+<h1>Purpose of This Document</h1>
+
+<div class="section">
+  <p>
+    This document presents a detailed, phased investment proposal for SiyaBusa ERP, the flagship product of
+    Masaphokati Technologies (Pty) Ltd. It is intended for prospective investors considering a seed-stage
+    equity position in the company.
+  </p>
+
+  <h2>Background</h2>
+  <p>
+    Following discussions with prospective investors, it became clear that a straightforward breakdown of
+    how funds will be used — and when — would serve both parties better than a single lump-sum deployment.
+    This document is the result of that feedback.
+  </p>
+  <p>
+    A clearer breakdown of the use of funds has been prepared to demonstrate transparency and allow for
+    meaningful accountability at every stage. Rather than requesting the full R2,000,000 upfront, we have
+    adopted a phased funding approach: the investor commits the total amount, but capital is released in
+    three tranches, each unlocked only when agreed milestones are met and verified through monthly progress
+    reports and board sign-off.
+  </p>
+  <p>
+    The first tranche of R700,000 covers the launch phase — enough to put the commercial engine in motion
+    without deploying more capital than the business needs at that stage. Sometimes a new business does not
+    need all the money at once. What it needs is the right amount at the right time, tied to real progress.
+    That is the principle behind this proposal.
+  </p>
+  <p>
+    SiyaBusa ERP is a fully built, production-ready cloud ERP system — deployed on Digital Ocean, with native South
+    African compliance (SARS, BBBEE, POPIA, BCEA). The product includes its own built-in CRM, sales pipeline,
+    and client management tools, which means we do not need to spend on third-party CRM or sales software.
+    The technology risk is zero. What this investment buys is <strong>customers and commercial momentum</strong>.
+  </p>
+</div>
+
+<h1>The Phased Investment Rationale</h1>
+
+<div class="section">
+  <h2>Why Phase the Investment?</h2>
+  <p>Phased funding creates accountability at every stage. Capital is released only when milestones are <strong>demonstrated</strong>,
+  not promised. The business builds itself — revenue from Month 4 funds recurring costs, and the seed capital is an accelerant, not life support.</p>
+
+  <table class="tc-tbl">
+    <tr>
+      <td class="tc-l">
+        <h3>For the Investor</h3>
+        <ul>
+          <li>Capital released only when milestones are verified</li>
+          <li>Phase 1 (R700K) proves the model before R1.3M more is committed</li>
+          <li>Monthly 1-page progress reports — full pipeline transparency</li>
+          <li>If Phase 1 underperforms, Phase 2 is restructured before deployment</li>
+          <li>Board observer seat — active visibility, not passive hope</li>
+        </ul>
+      </td>
+      <td class="tc-r">
+        <h3>For the Business</h3>
+        <ul>
+          <li>Forces disciplined execution — every rand must earn the next tranche</li>
+          <li>Sales consulting model: accountability without HR risk</li>
+          <li>Company vehicle owned outright — capital asset, no monthly lease drain</li>
+          <li>Business becomes self-funding from Month 9 (EBITDA positive)</li>
+          <li>Seed capital is the accelerant; revenue is the engine</li>
+        </ul>
+      </td>
+    </tr>
+  </table>
+
+  <h2>Core Strategic Choices</h2>
+  <table>
+    <tr><th style="width:28%">Decision</th><th style="width:36%">Traditional Approach</th><th style="width:36%">Our Approach</th></tr>
+    <tr>
+      <td><strong>Sales execution</strong></td>
+      <td>Hire 2 in-house BDEs on permanent contracts</td>
+      <td><strong>Specialist B2B sales consulting firm</strong> — retainer + success fee, full control via SLA</td>
+    </tr>
+    <tr>
+      <td><strong>Capital release</strong></td>
+      <td>Lump sum upfront — deploy over 12 months</td>
+      <td><strong>3 tranches tied to measurable milestones</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Field mobility</strong></td>
+      <td>Staff use personal vehicles / Uber</td>
+      <td><strong>Company vehicle purchased outright</strong> — capital asset, founders + executive use</td>
+    </tr>
+    <tr>
+      <td><strong>Market presence</strong></td>
+      <td>Digital only — cold calls and LinkedIn</td>
+      <td><strong>Full exhibition programme</strong> — branded gazebo, uniforms, merchandise, event stands</td>
+    </tr>
+    <tr>
+      <td><strong>Investor reporting</strong></td>
+      <td>Quarterly board packs</td>
+      <td><strong>Monthly report + milestone sign-off before each tranche releases</strong></td>
+    </tr>
+  </table>
+</div>
+
+<div class="pb"></div>
+
+<!-- ═══════════ PAGE 3: GOVERNANCE ═══════════ -->
+<h1>Governance: Board of Advisors &amp; Directors</h1>
+
+<div class="section">
+  <div class="callout navy">
+    <strong>Governance from Day 1.</strong> The advisors listed below have been involved throughout the development of the
+    project — contributing to strategy, introductions, financial oversight, and product positioning on an advisory basis.
+    To date, the business has not been in a position to fund formal board fees, and their participation has been voluntary.
+    At this stage, none of the directors are fully involved in day-to-day operations. Once investment is secured and
+    disbursements commence, formal director appointments will be made with appropriate board fees and governance obligations.
+    Full transparency and accountability will be established from the first tranche.
+  </div>
+
+  <h2>Board of Directors &amp; Advisors</h2>
+
+  <h3>Dr Simanga Alex Tsela &mdash; <span style="color:#c9a84c; font-weight:400;">Board Advisor &amp; Non-Executive Director</span></h3>
+  <p>
+    Dr Tsela is a nuclear scientist, corporate executive, and entrepreneur with over 33&nbsp;years in the nuclear sector
+    and 23&nbsp;years at C-suite level. He holds a Ph.D. in Applied Nuclear Physics (University of the Witwatersrand),
+    an MSc in Nuclear Physics (University of Sussex, England), and an MBA in Strategy (University of Pretoria).
+  </p>
+  <p>
+    He currently serves as CEO and Executive Chairman of Mzesi Holdings (Pty) Ltd, which has operated as the
+    Technical Support Organisation (TSO) for South Africa&rsquo;s National Nuclear Regulator since 2010. He is a sitting
+    Board Member of the National Research Foundation (NRF) of South Africa, and represents the country on the OECD
+    Generation IV International Forum. His prior executive roles include CEO (Acting) of the Pebble Bed Modular
+    Reactor Company (a State-Owned Entity), CEO (Interim) of the National Nuclear Regulator, CEO of ARECSA Human
+    Capital (a joint venture between Areva of France and Necsa), and consultant to the International Atomic Energy
+    Agency (IAEA) of the United Nations in Vienna. He served as a non-resident Ambassador to the United Nations
+    in Vienna under ECOSOC accreditation, and is the 2012 recipient of the ITWLA Prestigious Leadership Award &mdash;
+    an honour previously conferred on President Nelson Mandela and Mother Teresa.
+  </p>
+
+  <h3>Mrs Motlapele Molefi &mdash; <span style="color:#3b82f6; font-weight:400;">Board Advisor &amp; Non-Executive Director</span></h3>
+  <p>
+    Mrs Molefi is Co-Founder and Executive Director of Modi Mining (Pty) Ltd, a mining services company she has
+    built since 2011 from a bottom-tier contract mining provider into a reputable operator across the primary and
+    secondary mining sectors. Modi Mining operates from its headquarters in Rustenburg (North West) and a regional
+    office in Middelburg (Mpumalanga), delivering contract mining services, civil works, and the manufacturing of
+    specialised supplies for the mining industry.
+  </p>
+  <p>
+    She brings distinct leadership and entrepreneurial capability developed through years of building successful
+    enterprises in consulting and advisory. Her direct experience scaling an operationally intensive, compliance-heavy
+    business provides the board with practical commercial insight, while her networks across mining, construction,
+    and industrial sectors create a direct pipeline for enterprise ERP clients in verticals SiyaBusa already serves.
+  </p>
+
+  <h3>Mrs Tumie Mosenohi &mdash; <span style="color:#10b981; font-weight:400;">Financial Advisor &amp; Director</span></h3>
+  <p>
+    Mrs Mosenohi is the current Chief Financial Officer of Mzesi Energy (Pty) Ltd, where she oversees financial
+    management, regulatory reporting, and corporate governance for a company that serves as the Technical Support
+    Organisation for South Africa&rsquo;s nuclear regulator. She also operates her own financial consulting practice,
+    providing accounting, compliance, and advisory services to SMEs and corporates.
+  </p>
+  <p>
+    As Financial Advisor to SiyaBusa ERP, she is responsible for preparing monthly investor reports, independently
+    verifying financial milestones before each funding tranche is released, and ensuring all financial controls,
+    governance structures, and reporting standards meet institutional investor expectations. Her dual role &mdash;
+    corporate CFO and independent consultant &mdash; gives her the rigour an investor requires and the practical
+    flexibility a growth-stage business needs.
+  </p>
+
+  <h3>Investor Nominee &mdash; <span style="color:#991b1b; font-weight:400;">Observer Director</span></h3>
+  <p>
+    The investor is encouraged to appoint a representative as an observer director. This seat carries full
+    visibility rights: monthly management accounts, board meeting attendance, milestone review participation,
+    and sign-off authority on tranche releases. There are no management obligations &mdash; transparency is the
+    accountability mechanism.
+  </p>
+
+  <h2>Governance Structure &amp; Investor Rights</h2>
+  <table>
+    <tr><th style="width:35%">Right / Obligation</th><th>Detail</th></tr>
+    <tr><td><strong>Observer Director Seat</strong></td><td>Investor may appoint one representative to attend all board meetings, receive all management accounts, and participate in milestone sign-off reviews. No veto power required — transparency is the mechanism.</td></tr>
+    <tr><td><strong>Monthly Progress Report</strong></td><td>1-page report delivered by the 5th of each month: MRR, clients signed, pipeline count, demos done, EBITDA vs target, cash balance. Prepared by the CEO (Mr Sibusiso Mavuso) and signed off by Mrs Tumie Mosenohi as Financial Advisor and Director.</td></tr>
+    <tr><td><strong>Milestone Sign-Off</strong></td><td>Each phase tranche is released only after the investor and Financial Advisor confirm milestone criteria are met. This is a written confirmation — not discretionary.</td></tr>
+    <tr><td><strong>Quarterly Board Meetings</strong></td><td>Full board (all 4 members + investor observer) meets quarterly. Agenda: financial performance, pipeline, strategy, risks, and next-phase outlook.</td></tr>
+    <tr><td><strong>Information Rights</strong></td><td>Investor receives: monthly management accounts, quarterly board packs, annual audited statements (year 2 onward), and all material contracts signed during the period.</td></tr>
+    <tr><td><strong>Equity &amp; Share Structure</strong></td><td>The company has 1 billion authorised shares. The current seed raise of R2,000,000 for 16.67% equity is based on a pre-money valuation of R10,000,000. We acknowledge the investor&rsquo;s feedback that this stake may appear modest relative to the capital committed. The company is open to re-issuing and re-deploying additional shares to better reflect the investor&rsquo;s contribution. With the company&rsquo;s long-term plan to list on the JSE AltX, early-stage investors will be appropriately protected and rewarded. We propose that the final equity structure be agreed through direct discussion, with flexibility on both sides, to ensure alignment before any commitment is finalised.</td></tr>
+    <tr><td><strong>Anti-Dilution</strong></td><td>No further equity issuance without investor consent until the full R2M is deployed and milestones are achieved. Early investors will receive preferential protections ahead of any future funding rounds or listing.</td></tr>
+  </table>
+
+  <div class="callout green" style="page-break-inside:avoid;">
+    <strong>Why this matters:</strong> Dr Tsela brings three decades of C-suite governance, NRF board membership, and OECD-level
+    strategic authority. Mrs Molefi brings hands-on experience building Modi Mining from start-up to multi-site mining operator.
+    Mrs Mosenohi, as sitting CFO of Mzesi Energy, ensures every financial metric is independently verified before capital is released.
+    Combined with the investor&rsquo;s observer seat, every major decision has four independent perspectives before it is executed.
+  </div>
+</div>
+
+<div class="pb"></div>
+
+<!-- ═══════════ PAGE 4: SALES CONSULTING MODEL ═══════════ -->
+<h1>Sales Execution: Consulting Firm vs. Direct Hire</h1>
+
+<div class="section">
+  <div class="callout">
+    <strong>The case for a sales consulting firm:</strong> We retain full commercial control — pricing, contracts, IP, and client relationships
+    all stay with Masaphokati. The firm provides experienced B2B SaaS salespeople under a performance SLA with
+    <strong>no PAYE, UIF, SDL, or permanent headcount risk.</strong> Commission is paid from generated revenue — not from the seed budget.
+  </div>
+
+  <table>
+    <tr>
+      <th style="width:26%">Criterion</th>
+      <th style="width:37%">Direct Hire (2&times; Permanent BDE)</th>
+      <th style="width:37%">Sales Consulting Firm &nbsp;<span class="badge">Recommended</span></th>
+    </tr>
+    <tr class="amber-row">
+      <td><strong>Monthly cost from seed</strong></td>
+      <td>R50,000/month — fixed regardless of results</td>
+      <td>R35,000–R40,000/month retainer — scope-linked</td>
+    </tr>
+    <tr>
+      <td><strong>Ramp-up time</strong></td>
+      <td>3–6 months to recruit, onboard, train</td>
+      <td><strong>2–4 weeks</strong> — firm has trained resources ready</td>
+    </tr>
+    <tr class="amber-row">
+      <td><strong>Terminate if underperforming?</strong></td>
+      <td>Difficult — CCMA, LRA 4-week notice, retrenchment risk</td>
+      <td><strong>30-day clause — no legal complexity</strong></td>
+    </tr>
+    <tr>
+      <td><strong>Client relationship ownership</strong></td>
+      <td>Employee owns relationships — key-person risk</td>
+      <td><strong>All CRM, contracts, IP owned by Masaphokati</strong></td>
+    </tr>
+    <tr class="amber-row">
+      <td><strong>Commission</strong></td>
+      <td>OTE on top of salary — from seed budget</td>
+      <td><strong>6–8% success fee — paid from revenue, not seed</strong></td>
+    </tr>
+    <tr>
+      <td><strong>HR obligations</strong></td>
+      <td>PAYE, UIF (1%), SDL (1%), COIDA, leave provision</td>
+      <td><strong>None — B2B services contract</strong></td>
+    </tr>
+    <tr class="amber-row">
+      <td><strong>Use of company vehicle</strong></td>
+      <td>Yes — employee benefit</td>
+      <td><strong>No — vehicle is for founders &amp; executive use only</strong></td>
+    </tr>
+    <tr>
+      <td><strong>12-month budget cost</strong></td>
+      <td>R600,000 fixed payroll</td>
+      <td><strong>R460,000 retainer + success fees from revenue</strong></td>
+    </tr>
+  </table>
+
+  <h2>Consulting Firm SLA — Binding Monthly Targets</h2>
+
+  <table class="tc-tbl">
+    <tr>
+      <td class="tc-l">
+        <table>
+          <tr><th colspan="2">Phase 1 SLA (Months 1–4)</th></tr>
+          <tr><td>Qualified demos booked</td><td><strong>20 / month minimum</strong></td></tr>
+          <tr><td>Proposals submitted</td><td><strong>10 / month minimum</strong></td></tr>
+          <tr><td>Contracts signed</td><td><strong>3 / month minimum</strong></td></tr>
+          <tr><td>CRM entries</td><td>100% of prospects logged</td></tr>
+          <tr><td>Pipeline report</td><td>Every Friday 17:00</td></tr>
+          <tr><td>Cold outreach (calls + emails)</td><td><strong>50 / week minimum per rep</strong></td></tr>
+          <tr><td>Non-performance consequence</td><td>30-day written review — contract may be terminated</td></tr>
+        </table>
+      </td>
+      <td class="tc-r">
+        <table>
+          <tr><th colspan="2">Phase 2 SLA (Months 5–9)</th></tr>
+          <tr><td>Qualified demos booked</td><td><strong>30 / month minimum</strong></td></tr>
+          <tr><td>Proposals submitted</td><td><strong>15 / month minimum</strong></td></tr>
+          <tr><td>Contracts signed</td><td><strong>4–5 / month minimum</strong></td></tr>
+          <tr><td>Referral pipeline</td><td>15% of leads from referrals</td></tr>
+          <tr><td>Cold outreach (calls + emails)</td><td><strong>60 / week minimum per rep</strong></td></tr>
+          <tr><td>Monthly investor report</td><td>By 5th of each month</td></tr>
+          <tr><td>Non-performance consequence</td><td>30-day review — firm replaced if targets missed ×2</td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<div class="pb"></div>
+
+<!-- ═══════════ PAGE 5: PHASE 1 ═══════════ -->
+<table class="phase-hdr-tbl">
+  <tr class="ph-bg-1">
+    <td class="ph-num">01</td>
+    <td class="ph-body">
+      <div class="ph-title">Phase 1 &mdash; Launch &amp; Prove</div>
+      <div class="ph-sub">Months 1&ndash;4 &nbsp;&middot;&nbsp; Released immediately on investment agreement &nbsp;&middot;&nbsp; First 120 paying users &amp; vehicle acquisition</div>
+    </td>
+    <td class="ph-amt ph-col-1">R700,000</td>
+  </tr>
+</table>
+
+<div class="callout">
+  <strong>Objective:</strong> Deploy the commercial engine, purchase the company vehicle, establish brand and event presence,
+  and onboard the first 120 paying users. Phase 1 includes all once-off capital items (vehicle, branding, merchandise).
+  Recurring costs from Month 5 onward are significantly lower. End of Month 4: milestone report to investor before Phase 2 is released.
+</div>
+
+<table>
+  <tr>
+    <th style="width:30%">Budget Line</th>
+    <th style="width:40%">Detail</th>
+    <th style="width:15%">Type</th>
+    <th style="width:15%">Amount</th>
+  </tr>
+  <tr>
+    <td><strong>Sales Consulting Firm</strong> <span class="badge">Priority 1</span></td>
+    <td>B2B SaaS specialist — 4 months retainer. 2 dedicated reps, CRM management, weekly pipeline reporting, SLA accountability.</td>
+    <td>4 &times; R35,000</td>
+    <td>R140,000</td>
+  </tr>
+  <tr>
+    <td><strong>Company Vehicle</strong> <span class="badge">Capital Asset</span></td>
+    <td>Outright purchase — Toyota Corolla Quest 1.8 or VW Polo Vivo (2024 model, dealer demo). For founders and executive use. Client visits, investor meetings, event logistics. Not for consulting firm use. Full details: Page 7.</td>
+    <td>Once-off purchase</td>
+    <td>R185,000</td>
+  </tr>
+  <tr>
+    <td><strong>Vehicle Branding &amp; Insurance</strong></td>
+    <td>Full vinyl wrap (SiyaBusa logo, colours, website): R8,000. Comprehensive business vehicle insurance 4 months &times; R1,800 = R7,200.</td>
+    <td>Once-off + monthly</td>
+    <td>R15,200</td>
+  </tr>
+  <tr>
+    <td><strong>Branding &amp; Identity</strong> <span class="badge">Once-Off</span></td>
+    <td>Brand guidelines finalisation, professional pitch deck print, business cards (500&times;), company profile booklet, letterheads.</td>
+    <td>Once-off</td>
+    <td>R28,000</td>
+  </tr>
+  <tr>
+    <td><strong>Exhibition Merchandise Package</strong> <span class="badge">Once-Off</span></td>
+    <td>Full team uniform &amp; event kit for 5 members — detailed breakdown below.</td>
+    <td>Once-off</td>
+    <td>R72,600</td>
+  </tr>
+  <tr>
+    <td><strong>Digital Marketing</strong></td>
+    <td>Google Ads R8K + LinkedIn Ads R5K + Social Media R2K + ActiveCampaign R0.9K = R15,900/month.</td>
+    <td>4 &times; R15,900</td>
+    <td>R63,600</td>
+  </tr>
+  <tr>
+    <td><strong>Customer Success Specialist</strong></td>
+    <td>Internal hire — Month 1 start. Handles user onboarding, training, adoption tracking. Ensures first users become references.</td>
+    <td>4 &times; R18,000</td>
+    <td>R72,000</td>
+  </tr>
+  <tr>
+    <td><strong>Sales Training</strong> <span class="badge">Once-Off</span></td>
+    <td>2-day consultative selling masterclass — Sales Guru SA / Sandler. For CS Specialist + attending firm reps.</td>
+    <td>Once-off</td>
+    <td>R15,000</td>
+  </tr>
+  <tr>
+    <td><strong>Phase 1 Contingency</strong></td>
+    <td>Reserve for early-stage opportunities, supplier renegotiation, or unexpected costs.</td>
+    <td>Reserve</td>
+    <td>R108,600</td>
+  </tr>
+  <tr class="sr">
+    <td colspan="3"><strong>Phase 1 Total</strong></td>
+    <td><strong>R700,000</strong></td>
+  </tr>
+</table>
+
+<h2>Exhibition Merchandise Package Breakdown — 5 Team Members</h2>
+
+<table>
+  <tr>
+    <th style="width:30%">Item</th>
+    <th style="width:35%">Specification</th>
+    <th style="width:15%">Qty</th>
+    <th style="width:10%">Unit Cost</th>
+    <th style="width:10%">Total</th>
+  </tr>
+  <tr>
+    <td><strong>T-Shirt — Variation 1</strong><br><small>Premium Polo (formal events)</small></td>
+    <td>Embroidered SiyaBusa logo, navy + gold, 5 sizes S–XL</td>
+    <td class="merch-qty">5</td>
+    <td>R220</td>
+    <td class="merch-cost">R1,100</td>
+  </tr>
+  <tr>
+    <td><strong>T-Shirt — Variation 2</strong><br><small>Golf Shirt (general use)</small></td>
+    <td>Screen-printed logo, breathable fabric, 2-tone navy/white</td>
+    <td class="merch-qty">5</td>
+    <td>R180</td>
+    <td class="merch-cost">R900</td>
+  </tr>
+  <tr>
+    <td><strong>T-Shirt — Variation 3</strong><br><small>Casual Cotton Tee (community events)</small></td>
+    <td>Bold front print, white on navy, "SiyaBusa — We Govern. We Empower."</td>
+    <td class="merch-qty">5</td>
+    <td>R130</td>
+    <td class="merch-cost">R650</td>
+  </tr>
+  <tr>
+    <td><strong>Branding setup fee</strong><br><small>Screen print screens + embroidery digitising</small></td>
+    <td>One-time setup for all t-shirt variations</td>
+    <td class="merch-qty">1</td>
+    <td>—</td>
+    <td class="merch-cost">R2,400</td>
+  </tr>
+  <tr>
+    <td><strong>Bomber / Bomba Jacket</strong></td>
+    <td>Quality MA-1 style bomber, embroidered chest logo + back print, navy with gold trim, sizes S–XL</td>
+    <td class="merch-qty">5</td>
+    <td>R650</td>
+    <td class="merch-cost">R3,250</td>
+  </tr>
+  <tr>
+    <td><strong>Formal Business Shirt</strong></td>
+    <td>Long-sleeve collared shirt, embroidered logo, navy/white, client-facing meetings &amp; investor days</td>
+    <td class="merch-qty">5</td>
+    <td>R380</td>
+    <td class="merch-cost">R1,900</td>
+  </tr>
+  <tr>
+    <td><strong>Branded Gazebo (3&times;3m)</strong></td>
+    <td>Pop-up gazebo with full dye-sublimation print — SiyaBusa branding on all 4 walls + roof. Carry bag included.</td>
+    <td class="merch-qty">1</td>
+    <td>—</td>
+    <td class="merch-cost">R5,800</td>
+  </tr>
+  <tr>
+    <td><strong>Pull-Up / Roller Banners</strong></td>
+    <td>850&times;2000mm premium roller banner, full colour, aluminium cassette, carry bag. Different designs (product features, testimonial, CTA).</td>
+    <td class="merch-qty">4</td>
+    <td>R1,400</td>
+    <td class="merch-cost">R5,600</td>
+  </tr>
+  <tr>
+    <td><strong>Branded Cups / Keep Cups</strong></td>
+    <td>400ml stainless steel keep cup with SiyaBusa branding. Giveaway at stands — creates ongoing brand impressions.</td>
+    <td class="merch-qty">100</td>
+    <td>R48</td>
+    <td class="merch-cost">R4,800</td>
+  </tr>
+  <tr>
+    <td><strong>Event Stand Booking &amp; Registration</strong></td>
+    <td>Upfront deposits and registration fees for 4 key industry events (SME Indaba, Business Expo, Manufacturing Indaba, Accountex SA). Stand hire, electricity, Wi-Fi at venue.</td>
+    <td class="merch-qty">4 events</td>
+    <td>—</td>
+    <td class="merch-cost">R40,000</td>
+  </tr>
+  <tr>
+    <td><strong>Event Operational Supplies</strong></td>
+    <td>Branded tablecloths, literature stands, iPad mount for demos, extension cables, cable ties, banner lights.</td>
+    <td class="merch-qty">—</td>
+    <td>—</td>
+    <td class="merch-cost">R6,200</td>
+  </tr>
+  <tr class="sr">
+    <td colspan="4"><strong>Exhibition Merchandise Package Total</strong></td>
+    <td><strong>R72,600</strong></td>
+  </tr>
+</table>
+
+<div class="milestone">
+  <strong>Phase 1 &rarr; Phase 2 Unlock Milestones (end of Month 4):</strong>
+  <ul style="margin-top:2mm;">
+    <li>&#10003; Minimum <strong>120 active paying users</strong> (contracts executed, first invoices issued)</li>
+    <li>&#10003; <strong>MRR &ge; R50,000</strong> (120 users at R399 = R47,880 + growth buffer)</li>
+    <li>&#10003; Monthly investor reports submitted for Months 2, 3, and 4</li>
+    <li>&#10003; Consulting firm SLA compliance &mdash; minimum 20 demos/month achieved</li>
+    <li>&#10003; CRM pipeline shows minimum 20 qualified prospects ready for Phase 2 pursuit</li>
+    <li>&#10003; Board confirms milestone sign-off in writing (Mrs Mosenohi financial confirmation + investor observer)</li>
+  </ul>
+</div>
+
+<div class="pb"></div>
+
+<!-- ═══════════ PAGE 6: PHASE 2 ═══════════ -->
+<table class="phase-hdr-tbl">
+  <tr class="ph-bg-2">
+    <td class="ph-num">02</td>
+    <td class="ph-body">
+      <div class="ph-title">Phase 2 &mdash; Scale &amp; Break-Even</div>
+      <div class="ph-sub">Months 5&ndash;9 &nbsp;&middot;&nbsp; Released after Phase 1 sign-off &nbsp;&middot;&nbsp; Target: 360 users, EBITDA positive</div>
+    </td>
+    <td class="ph-amt ph-col-2">R700,000</td>
+  </tr>
+</table>
+
+<div class="callout blue">
+  <strong>Objective:</strong> The model is proven. Expand the consulting firm's scope, execute the event programme, add support headcount,
+  and accelerate digital reach. By end of Month 9, the business is EBITDA positive &mdash; revenue covers all operating costs.
+  Phase 2 bridges proof-of-concept to a self-funding business.
+</div>
+
+<table>
+  <tr>
+    <th style="width:30%">Budget Line</th>
+    <th style="width:40%">Detail</th>
+    <th style="width:15%">Type</th>
+    <th style="width:15%">Amount</th>
+  </tr>
+  <tr>
+    <td><strong>Sales Consulting Firm</strong> <span class="badge blue">Expanded</span></td>
+    <td>Expanded scope — 3 reps, Gauteng + Western Cape + KZN. Higher demo volume SLA (30 demos/month).</td>
+    <td>5 &times; R40,000</td>
+    <td>R200,000</td>
+  </tr>
+  <tr>
+    <td><strong>Technical Support Specialist</strong></td>
+    <td>Hire Month 5. Tier 1/2 helpdesk, knowledge base, issue resolution. CS Specialist cannot manage alone beyond 200 users.</td>
+    <td>5 &times; R18,000</td>
+    <td>R90,000</td>
+  </tr>
+  <tr>
+    <td><strong>Customer Success Specialist</strong></td>
+    <td>Ongoing (Months 5&ndash;9).</td>
+    <td>5 &times; R18,000</td>
+    <td>R90,000</td>
+  </tr>
+  <tr>
+    <td><strong>Events &amp; Trade Shows</strong></td>
+    <td>SME Indaba JHB (R29.5K), Cape Town Business Expo (R23K), Manufacturing Indaba (R24K), Accountex SA (R25.5K), KZN Business Show (R29K). Stand costs, travel, logistics.</td>
+    <td>5 events</td>
+    <td>R131,000</td>
+  </tr>
+  <tr>
+    <td><strong>Digital Marketing</strong></td>
+    <td>Google + LinkedIn + Social + ActiveCampaign — scaled as ICP is validated from Phase 1 data.</td>
+    <td>5 &times; R18,250</td>
+    <td>R91,250</td>
+  </tr>
+  <tr>
+    <td><strong>Vehicle Insurance</strong></td>
+    <td>Ongoing comprehensive business vehicle insurance (5 months).</td>
+    <td>5 &times; R1,800</td>
+    <td>R9,000</td>
+  </tr>
+  <tr>
+    <td><strong>Phase 2 Contingency</strong></td>
+    <td>Reserve for scaling digital, additional event opportunities, or early Phase 3 initiatives.</td>
+    <td>Reserve</td>
+    <td>R88,750</td>
+  </tr>
+  <tr class="sr">
+    <td colspan="3"><strong>Phase 2 Total</strong></td>
+    <td><strong>R700,000</strong></td>
+  </tr>
+</table>
+
+<div class="milestone blue">
+  <strong>Phase 2 &rarr; Phase 3 Unlock Milestones (end of Month 9):</strong>
+  <ul style="margin-top:2mm;">
+    <li>&#10003; Minimum <strong>360 active paying users</strong></li>
+    <li>&#10003; <strong>MRR &ge; R120,000</strong> (360 users at R399 = R143,640)</li>
+    <li>&#10003; <strong>EBITDA positive in at least one month</strong> (gross profit exceeds all operating costs)</li>
+    <li>&#10003; Consulting firm SLA &mdash; 30 demos/month achieved in Months 7&ndash;9</li>
+    <li>&#10003; Monthly investor reports submitted for Months 5&ndash;9</li>
+    <li>&#10003; Customer churn &lt;3% per month across active base</li>
+    <li>&#10003; Board + investor observer sign-off in writing</li>
+  </ul>
+</div>
+
+<div class="pb"></div>
+
+<!-- ═══════════ PAGE 7: PHASE 3 ═══════════ -->
+<table class="phase-hdr-tbl">
+  <tr class="ph-bg-3">
+    <td class="ph-num">03</td>
+    <td class="ph-body">
+      <div class="ph-title">Phase 3 &mdash; Accelerate &amp; Sustain</div>
+      <div class="ph-sub">Months 10&ndash;12 &nbsp;&middot;&nbsp; Released after Phase 2 sign-off &nbsp;&middot;&nbsp; Target: 660 users, ARR &ge; R3M</div>
+    </td>
+    <td class="ph-amt ph-col-3">R600,000</td>
+  </tr>
+</table>
+
+<div class="callout green">
+  <strong>Objective:</strong> By Month 10 the business covers its own costs from revenue. Phase 3 is pure acceleration &mdash;
+  deeper market penetration, full team, Year 2 positioning. The business graduates from startup to self-sustaining growth company.
+  The large contingency in Phase 3 is intentionally preserved as the Year 2 launch reserve.
+</div>
+
+<table>
+  <tr>
+    <th style="width:30%">Budget Line</th>
+    <th style="width:40%">Detail</th>
+    <th style="width:15%">Type</th>
+    <th style="width:15%">Amount</th>
+  </tr>
+  <tr>
+    <td><strong>Sales Consulting Firm</strong> <span class="badge green">Sustained</span></td>
+    <td>Retainer continues. By M12 we evaluate whether to transition to in-house BDE(s) based on 12 months of performance data.</td>
+    <td>3 &times; R40,000</td>
+    <td>R120,000</td>
+  </tr>
+  <tr>
+    <td><strong>Marketing Coordinator</strong></td>
+    <td>Hire Month 10 (or Month 7 if Phase 2 budget allows). LinkedIn content, case studies, email campaigns, event collateral.</td>
+    <td>3 &times; R17,000</td>
+    <td>R51,000</td>
+  </tr>
+  <tr>
+    <td><strong>Support Staff (CS + Tech)</strong></td>
+    <td>Both specialists ongoing (Months 10&ndash;12).</td>
+    <td>3 &times; R36,000</td>
+    <td>R108,000</td>
+  </tr>
+  <tr>
+    <td><strong>Digital Marketing</strong></td>
+    <td>Full digital, now informed by 9 months of conversion and keyword data.</td>
+    <td>3 &times; R18,250</td>
+    <td>R54,750</td>
+  </tr>
+  <tr>
+    <td><strong>Events &mdash; Q4</strong></td>
+    <td>Year-end SME expos, accountancy conferences, holiday client entertainment events.</td>
+    <td>3 events</td>
+    <td>R32,000</td>
+  </tr>
+  <tr>
+    <td><strong>Vehicle Insurance</strong></td>
+    <td>Ongoing (3 months).</td>
+    <td>3 &times; R1,800</td>
+    <td>R5,400</td>
+  </tr>
+  <tr>
+    <td><strong>Training Programmes</strong></td>
+    <td>Full team ERP certification, CRM advanced training, sales methodology upskill for consulting firm reps. Positions team for Year 2 enterprise targeting.</td>
+    <td>Once-off</td>
+    <td>R65,000</td>
+  </tr>
+  <tr>
+    <td><strong>Phase 3 Contingency / Year 2 Reserve</strong></td>
+    <td>Preserved for Year 2 launch: enterprise targeting, additional hiring, PR, industry awards, Series A preparation materials.</td>
+    <td>Reserve</td>
+    <td>R163,850</td>
+  </tr>
+  <tr class="sr">
+    <td colspan="3"><strong>Phase 3 Total</strong></td>
+    <td><strong>R600,000</strong></td>
+  </tr>
+</table>
+
+<div class="milestone green">
+  <strong>Phase 3 Success Criteria (end of Month 12):</strong>
+  <ul style="margin-top:2mm;">
+    <li>&#10003; Minimum <strong>660 active paying users</strong></li>
+    <li>&#10003; <strong>MRR &ge; R263,000</strong> (660 active users at R399)</li>
+    <li>&#10003; <strong>ARR &ge; R3,160,000</strong> &mdash; 1.58&times; return on R2M investment</li>
+    <li>&#10003; <strong>EBITDA positive for minimum 4 consecutive months</strong></li>
+    <li>&#10003; Gross margin &ge; 72%</li>
+    <li>&#10003; Cash balance &ge; R1.3M (seed capital largely preserved)</li>
+    <li>&#10003; Decision: transition consulting firm to in-house team for Year 2? Presented to board.</li>
+  </ul>
+</div>
+
+<div class="pb"></div>
+
+<!-- ═══════════ PAGE 8: VEHICLE + SUMMARY ═══════════ -->
+<h1>Company Vehicle &mdash; Outright Purchase Justification</h1>
+
+<div class="section">
+  <div class="callout">
+    <strong>Why outright purchase beats an operating lease:</strong> An operating lease drains R8,500/month indefinitely with nothing to show.
+    An outright purchase of R185,000 creates a <strong>company asset on the balance sheet</strong> &mdash; improving the company's net asset value
+    for future funding rounds, fully deductible via SARS Section 11(e) wear-and-tear (20% per year), and eliminates all monthly lease obligations.
+    This is the prudent commercial decision.
+  </div>
+
+  <table class="tc-tbl">
+    <tr>
+      <td class="tc-l">
+        <table>
+          <tr><th colspan="2">Vehicle Specification</th></tr>
+          <tr><td><strong>Recommended model</strong></td><td>Toyota Corolla Quest 1.8 or VW Polo Vivo 1.4 Trendline (2024 dealer demo)</td></tr>
+          <tr><td><strong>Purchase price</strong></td><td><strong>R185,000</strong> (outright, one payment)</td></tr>
+          <tr><td><strong>Structure</strong></td><td>Company asset — registered to Masaphokati Technologies (Pty) Ltd</td></tr>
+          <tr><td><strong>SARS deduction</strong></td><td>Section 11(e) wear &amp; tear: 20%/year = R37,000 Year 1 deduction</td></tr>
+          <tr><td><strong>Insurance</strong></td><td>R1,800/month — comprehensive, business use declared</td></tr>
+          <tr><td><strong>Annual insurance cost</strong></td><td>R21,600 (from phased budget)</td></tr>
+          <tr><td><strong>Branding</strong></td><td>Full vinyl wrap — logo, colours, siyabusaerp.co.za (R8,000)</td></tr>
+          <tr><td><strong>Assigned to</strong></td><td><strong>Founders &amp; executive team only</strong></td></tr>
+          <tr><td><strong>Consulting firm use</strong></td><td><strong>No</strong> — consulting firm uses their own transport</td></tr>
+          <tr><td><strong>Lease alternative cost (12 months)</strong></td><td>R8,500/month &times; 12 = R102,000 with zero ownership</td></tr>
+          <tr><td><strong>Purchase advantage</strong></td><td>R185,000 purchase vs R102,000+ lease AND you own the asset</td></tr>
+        </table>
+      </td>
+      <td class="tc-r">
+        <h3>Vehicle Use Cases &mdash; Founders Only</h3>
+        <ul>
+          <li>Client site visits for <strong>live ERP demonstrations</strong> (iPad + laptop setup on-site)</li>
+          <li>Trade show and expo logistics &mdash; transporting gazebo, banners, merchandise, equipment</li>
+          <li><strong>Investor meetings</strong> &mdash; professional arrival, not an Uber</li>
+          <li>Board and advisor meetings</li>
+          <li>New client onboarding visits &mdash; first 4-week implementation support</li>
+          <li>Banking, legal, and CIPC appointments</li>
+          <li>Networking events and chamber of commerce engagements</li>
+        </ul>
+
+        <div class="callout green" style="margin-top:3mm;">
+          <strong>Asset vs. expense:</strong> At end of Year 1, the vehicle is worth &asymp;R140,000–R155,000 (used market).
+          The company's balance sheet shows a R155K asset and zero lease liability.
+          That same R185K in 12 monthly lease payments of R8,500 would leave nothing behind.
+          Purchasing is the only sensible choice for a company building long-term value.
+        </div>
+
+        <table style="margin-top:3mm;">
+          <tr><th colspan="2">Lease vs. Purchase &mdash; 12-Month Comparison</th></tr>
+          <tr><td>Operating lease (12 months)</td><td>R102,000 — zero asset value at end</td></tr>
+          <tr><td>Outright purchase</td><td>R185,000 — asset worth ~R150,000 at end</td></tr>
+          <tr class="green-row"><td><strong>Net cost advantage of purchasing</strong></td><td><strong>R102,000 cost vs R35,000 net cost (R185K &minus; R150K residual)</strong></td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<h1>Full 12-Month Budget Summary &mdash; R2,000,000</h1>
+
+<div class="section">
+  <table>
+    <tr>
+      <th style="width:4%">#</th>
+      <th style="width:32%">Budget Category</th>
+      <th style="width:18%">Phase 1 (M1&ndash;4)</th>
+      <th style="width:18%">Phase 2 (M5&ndash;9)</th>
+      <th style="width:18%">Phase 3 (M10&ndash;12)</th>
+      <th style="width:10%">Total</th>
+    </tr>
+    <tr>
+      <td>1</td><td><strong>Sales Consulting Firm</strong></td>
+      <td>R140,000</td><td>R200,000</td><td>R120,000</td><td><strong>R460,000</strong></td>
+    </tr>
+    <tr>
+      <td>2</td><td><strong>Company Vehicle (outright purchase)</strong></td>
+      <td>R185,000</td><td>&mdash;</td><td>&mdash;</td><td><strong>R185,000</strong></td>
+    </tr>
+    <tr>
+      <td>3</td><td><strong>Vehicle Branding &amp; Insurance</strong></td>
+      <td>R15,200</td><td>R9,000</td><td>R5,400</td><td><strong>R29,600</strong></td>
+    </tr>
+    <tr>
+      <td>4</td><td><strong>Branding &amp; Identity (once-off)</strong></td>
+      <td>R28,000</td><td>&mdash;</td><td>&mdash;</td><td><strong>R28,000</strong></td>
+    </tr>
+    <tr>
+      <td>5</td><td><strong>Exhibition Merchandise Package</strong></td>
+      <td>R72,600</td><td>&mdash;</td><td>&mdash;</td><td><strong>R72,600</strong></td>
+    </tr>
+    <tr>
+      <td>6</td><td><strong>Digital Marketing</strong></td>
+      <td>R63,600</td><td>R91,250</td><td>R54,750</td><td><strong>R209,600</strong></td>
+    </tr>
+    <tr>
+      <td>7</td><td><strong>Events &amp; Trade Shows</strong></td>
+      <td>R40,000</td><td>R131,000</td><td>R32,000</td><td><strong>R203,000</strong></td>
+    </tr>
+    <tr>
+      <td>8</td><td><strong>Customer Success Specialist</strong></td>
+      <td>R72,000</td><td>R90,000</td><td>R36,000</td><td><strong>R198,000</strong></td>
+    </tr>
+    <tr>
+      <td>9</td><td><strong>Technical Support Specialist</strong></td>
+      <td>&mdash;</td><td>R90,000</td><td>R36,000</td><td><strong>R126,000</strong></td>
+    </tr>
+    <tr>
+      <td>10</td><td><strong>Marketing Coordinator</strong></td>
+      <td>&mdash;</td><td>&mdash;</td><td>R51,000</td><td><strong>R51,000</strong></td>
+    </tr>
+    <tr>
+      <td>11</td><td><strong>Sales Training</strong></td>
+      <td>R15,000</td><td>&mdash;</td><td>R65,000</td><td><strong>R80,000</strong></td>
+    </tr>
+    <tr>
+      <td>12</td><td><strong>Contingency / Year 2 Reserve</strong></td>
+      <td>R108,600</td><td>R88,750</td><td>R163,850</td><td><strong>R361,200</strong></td>
+    </tr>
+    <tr class="sr">
+      <td colspan="2"><strong>PHASE TOTAL</strong></td>
+      <td><strong>R700,000</strong></td>
+      <td><strong>R700,000</strong></td>
+      <td><strong>R600,000</strong></td>
+      <td><strong>R2,000,000</strong></td>
+    </tr>
+  </table>
+
+  <div class="pb"></div>
+  <h2>Expected Return at Each Phase Gate</h2>
+  <table>
+    <tr>
+      <th>Milestone</th>
+      <th>Phase 1 End (M4)</th>
+      <th>Phase 2 End (M9)</th>
+      <th>Phase 3 End (M12)</th>
+    </tr>
+    <tr><td><strong>Active paying users</strong></td><td>120+</td><td>360+</td><td>660+</td></tr>
+    <tr><td><strong>MRR</strong></td><td>R54,600+</td><td>R143,640+</td><td>R263,340+</td></tr>
+    <tr><td><strong>ARR (run rate)</strong></td><td>R655,200</td><td>R1,723,680</td><td>R3,160,080</td></tr>
+    <tr><td><strong>EBITDA</strong></td><td>Negative (planned burn)</td><td>Break-even achieved</td><td>+R96,000/month</td></tr>
+    <tr><td><strong>Company vehicle</strong></td><td>Purchased &amp; branded</td><td>Operational asset</td><td>Balance sheet value ~R155K</td></tr>
+    <tr class="green-row"><td><strong>Return multiple (ARR / capital deployed)</strong></td><td>0.94&times; on R700K</td><td>1.23&times; on R1.4M</td><td><strong>1.58&times; on full R2M</strong></td></tr>
+  </table>
+
+  <div class="callout green" style="margin-top:4mm;">
+    <strong>The investor's protection at every stage:</strong> Phase 1 deploys R700K and produces a business with R655K ARR,
+    a branded company vehicle on the balance sheet, and a proven sales process. Before a single rand of Phase 2 is released,
+    the board &mdash; including the investor's observer director and Mrs Mosenohi as Financial Advisor &mdash; signs off in writing
+    that milestones are met. Capital always follows proof, not promises.
+  </div>
+
+  <div class="disclaimer">
+    <strong>DISCLAIMER:</strong> All projections are forward-looking statements based on management assumptions as at April 2026.
+    Actual results may differ materially. This document is for investor discussion only and does not constitute a prospectus or
+    guarantee of future performance. Prepared by Masaphokati Technologies (Pty) Ltd.
+    <strong>Strictly confidential &mdash; not for distribution.</strong>
+  </div>
+</div>
+
+</body>
+</html>

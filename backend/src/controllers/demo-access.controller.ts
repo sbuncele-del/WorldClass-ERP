@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 const JWT_EXPIRY = '8h'; // Demo sessions last 8 hours
 
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
-const DEMO_USER_EMAIL = 'demo@aetheros.co.za';
+const DEMO_USER_EMAIL = process.env.DEMO_USER_EMAIL || 'demo@siyabusaerp.co.za';
 
 /**
  * Demo Access Controller

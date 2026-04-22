@@ -18,7 +18,7 @@ import ProvisioningService from './provisioning.service';
  */
 
 const DEMO_TENANT_ID = '00000000-0000-0000-0000-000000000001';
-const DEMO_USER_EMAIL = 'demo@aetheros.co.za';
+const DEMO_USER_EMAIL = process.env.DEMO_USER_EMAIL || 'demo@siyabusaerp.co.za';
 const DEMO_USER_PASSWORD_HASH = '$2b$10$8Z9K7j.W4YJHpX2vN5Q8.eF1.zX0w3F9bL5fQ7K8R9X3Y5Z1A2B3C'; // Demo123!
 
 class DemoResetService {

@@ -1,64 +1,87 @@
 /**
  * Try Demo Page
- * Lead capture form for demo requests
- * Collects name, email, company, phone → creates demo account → sends credentials email
+ * Instant, no-friction access to the SiyaBusa ERP demo environment.
+ * Auto-logs in as the shared demo user and redirects to the dashboard.
+ * Falls back to lead-capture form if auto-login fails.
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../services/api.service';
 import './Login.css';
 
-const DEMO_URL = 'https://demo.siyabusaerp.co.za';
-
 const TryDemo = () => {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    companyName: '',
-    phone: '',
-  });
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const [phase, setPhase] = useState<'launching' | 'form' | 'form-success'>('launching');
+  const [launchError, setLaunchError] = useState('');
+  const [formData, setFormData] = useState({ fullName: '', email: '', companyName: '', phone: '' });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [alreadyExists, setAlreadyExists] = useState(false);
+
+  // Auto-login on mount
+  useEffect(() => {
+    let cancelled = false;
+    const launchDemo = async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'demo@siyabusaerp.co.za', password: 'Demo123!' }),
+        });
+        if (cancelled) return;
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const tokens = data?.data?.tokens;
+        const user = data?.data?.user;
+        const tenant = data?.data?.tenant;
+        if (!tokens?.accessToken) throw new Error('No token in response');
+
+        localStorage.setItem('token', tokens.accessToken);
+        localStorage.setItem('authToken', tokens.accessToken);
+        if (tokens.refreshToken) localStorage.setItem('refreshToken', tokens.refreshToken);
+        if (user) localStorage.setItem('user', JSON.stringify(user));
+        if (tenant) {
+          localStorage.setItem('tenant', JSON.stringify(tenant));
+          if (tenant.id) {
+            localStorage.setItem('tenantId', tenant.id);
+            localStorage.setItem('workspaceId', tenant.id);
+          }
+        }
+        localStorage.setItem('isDemoSession', 'true');
+
+        if (!cancelled) navigate('/app/dashboard', { replace: true });
+      } catch (err) {
+        console.error('[TryDemo] instant launch failed:', err);
+        if (!cancelled) {
+          setLaunchError('Instant demo temporarily unavailable.');
+          setPhase('form');
+        }
+      }
+    };
+    launchDemo();
+    return () => { cancelled = true; };
+  }, [navigate]);
 
   const validateForm = (): boolean => {
-    const newErrors: { [key: string]: string } = {};
-
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Your name is required';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
-    }
-
-    if (!formData.companyName.trim()) {
-      newErrors.companyName = 'Company name is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e: Record<string, string> = {};
+    if (!formData.fullName.trim()) e.fullName = 'Your name is required';
+    if (!formData.email.trim()) e.email = 'Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) e.email = 'Invalid email format';
+    if (!formData.companyName.trim()) e.companyName = 'Company name is required';
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setApiError('');
-
     if (!validateForm()) return;
-
-    setIsLoading(true);
-
+    setIsSubmitting(true);
     try {
-      // Capture UTM params from URL if present
       const urlParams = new URLSearchParams(window.location.search);
-
-      const response = await fetch(`${API_BASE_URL}/api/demo/request`, {
+      const res = await fetch(`${API_BASE_URL}/api/demo/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -69,128 +92,117 @@ const TryDemo = () => {
           referrerUrl: document.referrer || null,
         }),
       });
-
-      const data = await response.json();
-
-      if (data.success) {
-        setSuccess(true);
-        setAlreadyExists(data.alreadyExists || false);
-      } else {
-        setApiError(data.message || 'Something went wrong. Please try again.');
-      }
-    } catch (error) {
-      console.error('Demo request error:', error);
-      setApiError('Unable to connect. Please try again or contact support@siyabusaerp.co.za');
+      const data = await res.json();
+      if (data.success) setPhase('form-success');
+      else setApiError(data.message || 'Something went wrong. Please try again.');
+    } catch {
+      setApiError('Unable to connect. Please try again or email support@siyabusaerp.co.za');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
-    }
+    setFormData(p => ({ ...p, [name]: value }));
+    if (errors[name]) setErrors(p => ({ ...p, [name]: '' }));
     if (apiError) setApiError('');
   };
 
-  // Success state — after form submission
-  if (success) {
+  if (phase === 'launching') {
+    return (
+      <div className="auth-container">
+        <div className="auth-card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none" style={{ margin: '0 auto 1.25rem', display: 'block' }}>
+            <rect width="56" height="56" rx="14" fill="url(#gd-launch)" />
+            <path d="M28 16L40 24V40H16V24L28 16Z" stroke="white" strokeWidth="2.5" fill="none" strokeLinejoin="round" />
+            <circle cx="28" cy="30" r="4" fill="white" fillOpacity="0.85" />
+            <defs>
+              <linearGradient id="gd-launch" x1="0" y1="0" x2="56" y2="56">
+                <stop offset="0%" stopColor="#6366F1" />
+                <stop offset="100%" stopColor="#8B5CF6" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <h1 className="auth-title" style={{ marginBottom: '0.5rem' }}>Launching Your Demo</h1>
+          <p className="auth-subtitle" style={{ marginBottom: '1.5rem' }}>
+            Loading Ndaba Engineering (Pty) Ltd — your sample company
+          </p>
+          <div style={{ width: '100%', height: 4, background: '#e5e7eb', borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%',
+              background: 'linear-gradient(90deg,#6366F1,#8B5CF6)',
+              borderRadius: 99,
+              animation: 'demo-progress 2.5s ease-in-out infinite',
+            }} />
+          </div>
+          <p style={{ fontSize: '0.8rem', color: '#9ca3af', marginTop: '1rem' }}>
+            No sign-up required. You will be inside in seconds.
+          </p>
+          <style>{`
+            @keyframes demo-progress {
+              0%   { width: 0%;  margin-left: 0;    }
+              50%  { width: 70%; margin-left: 0;    }
+              100% { width: 0%;  margin-left: 100%; }
+            }
+          `}</style>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === 'form-success') {
     return (
       <div className="auth-container">
         <div className="auth-card">
           <div className="auth-header">
-            <div className="auth-logo">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-                <rect width="48" height="48" rx="12" fill="url(#gradient-success)" />
-                <path d="M20 24L23 27L29 21" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                <defs>
-                  <linearGradient id="gradient-success" x1="0" y1="0" x2="48" y2="48">
-                    <stop offset="0%" stopColor="#10B981" />
-                    <stop offset="100%" stopColor="#059669" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-            <h1 className="auth-title">
-              {alreadyExists ? 'Credentials Resent!' : 'Check Your Email!'}
-            </h1>
-            <p className="auth-subtitle" style={{ marginTop: '0.5rem', lineHeight: 1.6 }}>
-              {alreadyExists
-                ? `We've resent your demo login details to ${formData.email}`
-                : `We've sent your demo login credentials to ${formData.email}`
-              }
+            <h1 className="auth-title">Check Your Email</h1>
+            <p className="auth-subtitle">
+              Demo credentials sent to <strong>{formData.email}</strong>
             </p>
           </div>
-
-          <div style={{
-            background: '#f0fdf4',
-            border: '1px solid #bbf7d0',
-            borderRadius: '0.5rem',
-            padding: '1.25rem',
-            marginBottom: '1.5rem',
-            fontSize: '0.875rem',
-            lineHeight: 1.6,
-          }}>
-            <p style={{ margin: '0 0 0.75rem', fontWeight: 600, color: '#166534' }}>
-              What happens next:
-            </p>
+          <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '1.25rem', marginBottom: '1.5rem', fontSize: '0.875rem', lineHeight: 1.7 }}>
+            <p style={{ margin: '0 0 0.5rem', fontWeight: 600, color: '#166534' }}>What is next:</p>
             <ol style={{ margin: 0, paddingLeft: '1.25rem', color: '#15803d' }}>
-              <li>Check your email (also check spam/promotions)</li>
-              <li>Click the link or go to <strong>{DEMO_URL}</strong></li>
-              <li>Log in with the credentials in the email</li>
-              <li>Explore the full ERP — invoicing, payroll, bank recon, and more</li>
+              <li>Check inbox (also spam / promotions tab)</li>
+              <li>Or launch the instant demo right now</li>
             </ol>
           </div>
-
-          <a
-            href={DEMO_URL}
-            className="btn btn-primary btn-full"
-            style={{ textAlign: 'center', display: 'block', textDecoration: 'none', padding: '0.75rem' }}
-          >
-            Go to Demo →
-          </a>
-
+          <button className="btn btn-primary btn-full" onClick={() => setPhase('launching')}>
+            Launch Instant Demo
+          </button>
           <div className="auth-footer" style={{ marginTop: '1.5rem' }}>
-            <p>
-              Already have an account?{' '}
-              <Link to="/login" className="link-text link-bold">Sign in</Link>
-            </p>
+            <Link to="/login" className="link-text">Back to Sign In</Link>
           </div>
         </div>
       </div>
     );
   }
 
-  // Form state
   return (
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <div className="auth-logo">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-              <rect width="48" height="48" rx="12" fill="url(#gradient-demo)" />
-              <path d="M24 14L34 22V34H14V22L24 14Z" stroke="white" strokeWidth="2" fill="none" />
-              <defs>
-                <linearGradient id="gradient-demo" x1="0" y1="0" x2="48" y2="48">
-                  <stop offset="0%" stopColor="#8B5CF6" />
-                  <stop offset="100%" stopColor="#6366F1" />
-                </linearGradient>
-              </defs>
-            </svg>
-          </div>
           <h1 className="auth-title">Try SiyaBusa ERP</h1>
           <p className="auth-subtitle">
-            Get instant access to a fully loaded demo environment — no credit card required
+            {launchError
+              ? 'Instant demo temporarily unavailable. Enter your details for personalised access.'
+              : 'Get instant access — no credit card required.'}
           </p>
         </div>
 
+        <button
+          className="btn btn-primary btn-full"
+          style={{ marginBottom: '1.25rem' }}
+          onClick={() => { setLaunchError(''); setPhase('launching'); }}
+        >
+          Try Instant Demo (no sign-up)
+        </button>
+
+        <div className="auth-divider"><span>or get personalised access</span></div>
+
         {apiError && (
           <div className="alert alert-error">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
             <span>{apiError}</span>
           </div>
         )}
@@ -198,109 +210,43 @@ const TryDemo = () => {
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="fullName" className="form-label">Full Name</label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
+            <input type="text" id="fullName" name="fullName"
               className={`form-input ${errors.fullName ? 'input-error' : ''}`}
-              placeholder="Thandi Nkosi"
-              value={formData.fullName}
-              onChange={handleChange}
-              disabled={isLoading}
-              autoComplete="name"
-            />
+              placeholder="Thandi Nkosi" value={formData.fullName}
+              onChange={handleChange} disabled={isSubmitting} autoComplete="name" />
             {errors.fullName && <span className="error-message">{errors.fullName}</span>}
           </div>
-
           <div className="form-group">
-            <label htmlFor="email" className="form-label">Email Address</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
+            <label htmlFor="email" className="form-label">Work Email</label>
+            <input type="email" id="email" name="email"
               className={`form-input ${errors.email ? 'input-error' : ''}`}
-              placeholder="thandi@yourcompany.co.za"
-              value={formData.email}
-              onChange={handleChange}
-              disabled={isLoading}
-              autoComplete="email"
-            />
+              placeholder="thandi@yourcompany.co.za" value={formData.email}
+              onChange={handleChange} disabled={isSubmitting} autoComplete="email" />
             {errors.email && <span className="error-message">{errors.email}</span>}
           </div>
-
           <div className="form-group">
             <label htmlFor="companyName" className="form-label">Company Name</label>
-            <input
-              type="text"
-              id="companyName"
-              name="companyName"
+            <input type="text" id="companyName" name="companyName"
               className={`form-input ${errors.companyName ? 'input-error' : ''}`}
-              placeholder="Nkosi Construction (Pty) Ltd"
-              value={formData.companyName}
-              onChange={handleChange}
-              disabled={isLoading}
-              autoComplete="organization"
-            />
+              placeholder="Nkosi Construction (Pty) Ltd" value={formData.companyName}
+              onChange={handleChange} disabled={isSubmitting} autoComplete="organization" />
             {errors.companyName && <span className="error-message">{errors.companyName}</span>}
           </div>
-
           <div className="form-group">
             <label htmlFor="phone" className="form-label">
-              Phone / WhatsApp <span style={{ color: '#9ca3af', fontWeight: 400 }}>(optional)</span>
+              WhatsApp / Phone <span style={{ color: '#9ca3af', fontWeight: 400 }}>(optional)</span>
             </label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              className="form-input"
-              placeholder="082 123 4567"
-              value={formData.phone}
-              onChange={handleChange}
-              disabled={isLoading}
-              autoComplete="tel"
-            />
+            <input type="tel" id="phone" name="phone" className="form-input"
+              placeholder="082 123 4567" value={formData.phone}
+              onChange={handleChange} disabled={isSubmitting} autoComplete="tel" />
           </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary btn-full"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <svg className="spinner" width="20" height="20" viewBox="0 0 20 20">
-                  <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="3" fill="none" strokeDasharray="50" strokeLinecap="round">
-                    <animateTransform attributeName="transform" type="rotate" from="0 10 10" to="360 10 10" dur="1s" repeatCount="indefinite" />
-                  </circle>
-                </svg>
-                Setting up your demo...
-              </>
-            ) : (
-              'Get My Free Demo →'
-            )}
+          <button type="submit" className="btn btn-primary btn-full" disabled={isSubmitting}>
+            {isSubmitting ? 'Sending access...' : 'Email Me Demo Access'}
           </button>
         </form>
 
-        <p style={{
-          textAlign: 'center',
-          fontSize: '0.75rem',
-          color: '#9ca3af',
-          marginTop: '1rem',
-          lineHeight: 1.6,
-        }}>
-          Your demo is valid for 7 days. We'll send login credentials to your email. 
-          No spam, just your demo access.
-        </p>
-
-        <div className="auth-divider">
-          <span>or</span>
-        </div>
-
-        <div className="auth-footer">
-          <p>
-            Already have an account?{' '}
-            <Link to="/login" className="link-text link-bold">Sign in</Link>
-          </p>
+        <div className="auth-footer" style={{ marginTop: '1.5rem' }}>
+          <Link to="/login" className="link-text">Already have an account? Sign in</Link>
         </div>
       </div>
     </div>
