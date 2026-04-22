@@ -5,21 +5,39 @@ version: '3.8'
 # Run: docker compose -f docker-compose.digitalocean.yml up -d --build
 
 services:
+  # Auto-healer: watches for unhealthy containers and restarts them automatically
+  autoheal:
+    image: willfarrell/autoheal:latest
+    container_name: erp-autoheal
+    restart: always
+    environment:
+      - AUTOHEAL_CONTAINER_LABEL=autoheal
+      - AUTOHEAL_INTERVAL=10
+      - AUTOHEAL_START_PERIOD=60
+      - CURL_TIMEOUT=10
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - erp-network
+
   # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: erp-redis
-    restart: unless-stopped
+    restart: always
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     volumes:
       - redis-data:/data
     networks:
       - erp-network
+    labels:
+      - autoheal=true
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   # Backend API
   backend:
@@ -28,7 +46,7 @@ services:
       dockerfile: Dockerfile
     image: worldclass-erp-backend:latest
     container_name: erp-backend
-    restart: unless-stopped
+    restart: always
     env_file:
       - .env.production
     environment:
@@ -41,12 +59,16 @@ services:
         condition: service_healthy
     networks:
       - erp-network
+    labels:
+      - autoheal=true
+    mem_limit: 1536m
+    memswap_limit: 1536m
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
-      interval: 30s
+      interval: 20s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 90s
     logging:
       driver: "json-file"
       options:
@@ -62,17 +84,50 @@ services:
         VITE_API_URL: /api
     image: worldclass-erp-frontend:latest
     container_name: erp-frontend
-    restart: unless-stopped
+    restart: always
     expose:
       - "80"
     networks:
       - erp-network
+    labels:
+      - autoheal=true
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # Deploy webhook: allows GitHub Actions to trigger deploys via HTTPS (no SSH needed)
+  deployer:
+    build:
+      context: ./docker/deployer
+      dockerfile: Dockerfile
+    image: worldclass-erp-deployer:latest
+    container_name: erp-deployer
+    restart: always
+    environment:
+      - DEPLOY_SECRET=${DEPLOY_WEBHOOK_SECRET}
+      - PROJECT_DIR=/project
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /opt/worldclass-erp:/project
+      - /usr/bin/docker:/usr/bin/docker
+    expose:
+      - "9000"
+    networks:
+      - erp-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
     container_name: erp-nginx
-    restart: unless-stopped
+    restart: always
     ports:
       - "80:80"
       - "443:443"
@@ -90,6 +145,7 @@ services:
   certbot:
     image: certbot/certbot
     container_name: erp-certbot
+    restart: always
     volumes:
       - ./docker/nginx/ssl:/etc/letsencrypt
       - ./docker/nginx/certbot:/var/www/certbot
