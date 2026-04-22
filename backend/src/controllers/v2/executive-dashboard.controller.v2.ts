@@ -188,7 +188,7 @@ async function getFinancialMetrics(tenantId: string, entityId: string | null = n
   const cashEntityFilter = entityId ? ' AND (entity_id IS NULL OR entity_id = $2)' : '';
   const cashData = await safeQuery(`
     SELECT COALESCE(SUM(current_balance), 0) as total_cash
-    FROM bank_accounts
+    FROM banking.accounts
     WHERE tenant_id = $1 AND is_active = true${cashEntityFilter}
   `, cashParams, { total_cash: 0 });
 
@@ -312,19 +312,19 @@ async function getOperationalMetrics(tenantId: string) {
     SELECT 
       COUNT(*) as total_customers,
       COUNT(CASE WHEN created_at >= DATE_TRUNC('month', CURRENT_DATE) THEN 1 END) as new_mtd
-    FROM sales_customers
-    WHERE tenant_id = $1 AND is_active = true
+    FROM sales.customers
+    WHERE tenant_id = $1 AND status = 'active'
   `, [tenantId], { total_customers: 0, new_mtd: 0 });
 
   const supplierData = await safeQuery(`
     SELECT COUNT(*) as total_suppliers
-    FROM purchase_suppliers
+    FROM purchase.suppliers
     WHERE tenant_id = $1
   `, [tenantId], { total_suppliers: 0 });
 
   const journalData = await safeQuery(`
     SELECT COUNT(*) as total_entries
-    FROM journal_entries
+    FROM accounting.journal_entries
     WHERE tenant_id = $1
   `, [tenantId], { total_entries: 0 });
 
@@ -398,7 +398,7 @@ async function getPendingActions(tenantId: string) {
   // Pending purchase orders
   const pendingPOs = await safeQuery(`
     SELECT COUNT(*) as count
-    FROM purchase_orders
+    FROM purchase.purchase_orders
     WHERE tenant_id = $1 AND LOWER(status) IN ('pending', 'pending_approval', 'draft')
   `, [tenantId], { count: 0 });
   
@@ -444,9 +444,9 @@ async function getRecentActivity(tenantId: string) {
   // Recent invoices
   const recentInvoices = await safeQueryRows(`
     SELECT si.invoice_number, si.total_amount, si.status, si.created_at, 
-           sc.customer_name
+           sc.company_name as customer_name
     FROM sales_invoices si
-    LEFT JOIN sales_customers sc ON si.customer_id = sc.id
+    LEFT JOIN sales.customers sc ON si.customer_id = sc.customer_id
     WHERE si.tenant_id = $1
     ORDER BY si.created_at DESC
     LIMIT 5
@@ -466,8 +466,8 @@ async function getRecentActivity(tenantId: string) {
 
   // Recent journal entries
   const recentJournals = await safeQueryRows(`
-    SELECT reference, description, total_debit, status, created_at
-    FROM journal_entries
+    SELECT journal_number as reference, description, total_debit, status, created_at
+    FROM accounting.journal_entries
     WHERE tenant_id = $1
     ORDER BY created_at DESC
     LIMIT 3
