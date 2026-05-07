@@ -254,10 +254,12 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
               {currentEntity.name.charAt(0)}
             </Avatar>
             {!isCollapsed && (
-              <div className="entity-info">
-                <div className="entity-name">{currentEntity.name}</div>
-                <div className="entity-type">{currentEntity.type}</div>
-              </div>
+              <Tooltip title={currentEntity.name} placement="right">
+                <div className="entity-info">
+                  <div className="entity-name">{currentEntity.name}</div>
+                  <div className="entity-type">{currentEntity.type}</div>
+                </div>
+              </Tooltip>
             )}
             {!isCollapsed && <DownOutlined className="entity-dropdown-icon" />}
           </div>

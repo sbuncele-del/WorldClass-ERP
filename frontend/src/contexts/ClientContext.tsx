@@ -222,6 +222,9 @@ export const ClientProvider: React.FC<ClientProviderProps> = ({ children }) => {
       setAvailableClients([client]);
       setCurrentClient(client);
       localStorage.setItem('currentClientId', client.id);
+      // Sync sidebar localStorage so both sidebar and app show same company name
+      const existingTenant = (() => { try { return JSON.parse(localStorage.getItem('tenant') || '{}'); } catch { return {}; } })();
+      localStorage.setItem('tenant', JSON.stringify({ ...existingTenant, id: client.id, name: client.name, slug: client.code }));
     } catch (err) {
       console.error('CRITICAL ERROR loading tenant:', err);
       setError(`Failed to load tenant data: ${err instanceof Error ? err.message : 'Unknown error'}`);
