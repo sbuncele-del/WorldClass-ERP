@@ -292,7 +292,6 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
               {isModuleEnabled('financial') && renderNavItem('/app/banking-hub', <BankOutlined />, 'Banking Hub')}
               {isModuleEnabled('financial') && renderNavItem('/app/sars', <FileProtectOutlined />, 'SARS Sentinel')}
               {renderNavItem('/app/reports', <PieChartOutlined />, 'Reports & Analytics')}
-              {renderNavItem('/app/reporting', <FileTextOutlined />, 'Financial Reporting', undefined, ['director', 'executive', 'accountant'])}
             </div>
           )}
         </div>
@@ -309,7 +308,6 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
               {isModuleEnabled('warehouse') && renderNavItem('/app/warehouse-hub', <InboxOutlined />, 'Warehouse Hub')}
               {isModuleEnabled('hr') && renderNavItem('/app/hr-hub', <TeamOutlined />, 'HR Hub')}
               {isModuleEnabled('projects') && renderNavItem('/app/projects-hub', <ProjectOutlined />, 'Projects Hub')}
-              {renderNavItem('/app/proposals', <FileTextOutlined />, 'Proposals')}
               {renderNavItem('/app/support-tickets', <CustomerServiceOutlined />, 'Support Tickets')}
             </div>
           )}
@@ -333,7 +331,6 @@ const PremiumSidebar: React.FC<SidebarProps> = ({
             <div className="sidebar-section-content">
               {renderNavItem('/app/audit-ready', <AuditOutlined />, 'Audit-Ready Hub')}
               {renderNavItem('/app/regulatory', <FileProtectOutlined />, 'Regulatory Hub')}
-              {renderNavItem('/app/communications-hub', <MessageOutlined />, 'Comms Hub')}
             </div>
           )}
         </div>
