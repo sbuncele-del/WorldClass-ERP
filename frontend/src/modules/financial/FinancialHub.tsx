@@ -1033,7 +1033,7 @@ const FinancialHub: React.FC = () => {
                     value={financialStats.netIncome}
                     precision={2}
                     prefix="R"
-                    valueStyle={{ color: '#667eea', fontWeight: 'bold' }}
+                    valueStyle={{ color: '#667eea', fontWeight: 'bold', fontSize: 20, whiteSpace: 'nowrap' }}
                   />
                 </Col>
               </Row>

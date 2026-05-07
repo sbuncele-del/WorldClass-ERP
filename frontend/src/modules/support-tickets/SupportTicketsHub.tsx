@@ -475,7 +475,7 @@ const SupportTicketsHub: React.FC = () => {
             </div>
 
             {!isNewClient ? (
-              <Form.Item label="Select Client" name="customer_id" rules={[{ required: true, message: 'Select a client' }]}>
+              <Form.Item label="Select Client" name="customer_id" rules={[{ required: !isNewClient, message: 'Select a client' }]}>
                 <Select
                   placeholder="Search by company name or email..."
                   showSearch

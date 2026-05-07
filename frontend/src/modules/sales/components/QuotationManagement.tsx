@@ -58,6 +58,8 @@ const QuotationManagement: React.FC = () => {
       console.log('[Quotations] response:', JSON.stringify(response).slice(0, 300));
       const list = extractList(response, 'data', 'quotations');
       setQuotations(list.map((q: any) => ({
+        total_amount: q.total_amount ?? q.total,
+        tax_amount: q.tax_amount ?? q.vat_amount,
         ...q, id: q.quotation_id || q.id,
         quotation_number: q.quotation_number || q.quote_number || `Q-${q.id}`,
       })));
@@ -146,7 +148,15 @@ const QuotationManagement: React.FC = () => {
         <Space size="small">
           <Tooltip title="View"><Button type="text" size="small" icon={<EyeOutlined />} onClick={() => { setSelectedQuote(r); setShowDetailModal(true); }} /></Tooltip>
           {(r.status || '').toLowerCase() === 'draft' && (
-            <Tooltip title="Send"><Button type="text" size="small" icon={<SendOutlined />} style={{ color: '#1890ff' }} /></Tooltip>
+            <Tooltip title="Send">
+              <Button type="text" size="small" icon={<SendOutlined />} style={{ color: '#1890ff' }} onClick={async () => {
+                try {
+                  await workspaceApi.sales.sendQuotation(r.id);
+                  message.success(`Quote ${r.quotation_number} sent`);
+                  fetchQuotations();
+                } catch (e: any) { message.error(e?.message || 'Failed to send quote'); }
+              }} />
+            </Tooltip>
           )}
         </Space>
       ),

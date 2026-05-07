@@ -13,18 +13,12 @@ const PAYPAL_BASE = PAYPAL_MODE === 'live'
   ? 'https://api-m.paypal.com'
   : 'https://api-m.sandbox.paypal.com';
 
-// ZAR pricing per plan (monthly / annual)
-const PLAN_PRICING: Record<string, Record<string, number>> = {
-  starter:      { monthly: 299,  annual: 2990  },
-  professional: { monthly: 799,  annual: 7990  },
-  enterprise:   { monthly: 1999, annual: 19990 },
-};
-
 interface PayPalOrderRequest {
   tenantId: string;
   userId: string;
   plan: string;
   billingCycle: 'monthly' | 'annual';
+  amount: number;  // pre-calculated by pricing.service (includes user count)
   customerEmail: string;
   customerName: string;
 }
@@ -38,10 +32,6 @@ interface PayPalOrderResponse {
 export class PayPalPaymentService {
   static isConfigured(): boolean {
     return !!(PAYPAL_CLIENT_ID && PAYPAL_CLIENT_SECRET);
-  }
-
-  static getPlanPricing(plan: string, billingCycle: string): number {
-    return PLAN_PRICING[plan]?.[billingCycle] ?? 0;
   }
 
   /**
@@ -68,7 +58,9 @@ export class PayPalPaymentService {
    * Create a PayPal Order and return approval URL
    */
   static async createOrder(data: PayPalOrderRequest): Promise<PayPalOrderResponse> {
-    const { tenantId, userId, plan, billingCycle, customerEmail, customerName } = data;
+    const { tenantId, userId, plan, billingCycle, amount, customerEmail, customerName } = data;
+
+    if (!amount) throw new Error('Amount required for PayPal order');
 
     const amount = this.getPlanPricing(plan, billingCycle);
     if (!amount) throw new Error(`Invalid plan/billing cycle: ${plan}/${billingCycle}`);

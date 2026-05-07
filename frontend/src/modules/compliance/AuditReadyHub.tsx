@@ -119,7 +119,9 @@ interface DocumentRequest {
 
 const AuditReadyHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
-  const [selectedPeriod, setSelectedPeriod] = useState('2025-12');
+  const _now = new Date();
+  const _currentPeriod = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}`;
+  const [selectedPeriod, setSelectedPeriod] = useState(_currentPeriod);
   const [generating, setGenerating] = useState(false);
   const [auditorModalVisible, setAuditorModalVisible] = useState(false);
   const [form] = Form.useForm();
@@ -1162,10 +1164,13 @@ const AuditReadyHub: React.FC = () => {
             <Col span={12}>
               <Form.Item label="Audit Period">
                 <Select value={selectedPeriod} onChange={setSelectedPeriod}>
-                  <Option value="2025-12">December 2025</Option>
-                  <Option value="2025-11">November 2025</Option>
-                  <Option value="2025-q4">Q4 2025</Option>
-                  <Option value="2025">FY 2025</Option>
+                  {Array.from({ length: 12 }, (_, i) => {
+                    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+                    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    const label = d.toLocaleString('en-ZA', { month: 'long', year: 'numeric' });
+                    return <Option key={val} value={val}>{label}</Option>;
+                  })}
+                  <Option value={`${new Date().getFullYear()}`}>FY {new Date().getFullYear()}</Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -1207,10 +1212,13 @@ const AuditReadyHub: React.FC = () => {
         actions={
           <Space>
             <Select value={selectedPeriod} onChange={setSelectedPeriod} style={{ width: 150 }}>
-              <Option value="2025-12">Dec 2025</Option>
-              <Option value="2025-11">Nov 2025</Option>
-              <Option value="2025-q4">Q4 2025</Option>
-              <Option value="2025">FY 2025</Option>
+              {Array.from({ length: 6 }, (_, i) => {
+                const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+                const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                const label = d.toLocaleString('en-ZA', { month: 'short', year: 'numeric' });
+                return <Option key={val} value={val}>{label}</Option>;
+              })}
+              <Option value={`${new Date().getFullYear()}`}>FY {new Date().getFullYear()}</Option>
             </Select>
             <Button icon={<SyncOutlined />}>Refresh</Button>
             <Button type="primary" icon={<DownloadOutlined />} onClick={handleGenerateAuditPack} loading={generating}>

@@ -15,13 +15,6 @@ const EFT_BRANCH_CODE      = process.env.EFT_BRANCH_CODE      || '250655'; // FN
 const EFT_ACCOUNT_TYPE     = process.env.EFT_ACCOUNT_TYPE     || 'Business Cheque';
 const EFT_SWIFT            = process.env.EFT_SWIFT            || 'FIRNZAJJ'; // FNB SWIFT
 
-// ZAR pricing per plan (monthly / annual)
-const PLAN_PRICING: Record<string, Record<string, number>> = {
-  starter:      { monthly: 299,  annual: 2990  },
-  professional: { monthly: 799,  annual: 7990  },
-  enterprise:   { monthly: 1999, annual: 19990 },
-};
-
 export interface EFTPaymentDetails {
   transactionReference: string;
   bankName: string;
@@ -41,23 +34,19 @@ interface EFTCreateRequest {
   userId: string;
   plan: string;
   billingCycle: 'monthly' | 'annual';
+  amount: number;  // pre-calculated by pricing.service (includes user count)
   customerEmail: string;
   customerName: string;
 }
 
 export class EFTPaymentService {
-  static getPlanPricing(plan: string, billingCycle: string): number {
-    return PLAN_PRICING[plan]?.[billingCycle] ?? 0;
-  }
-
   /**
    * Create an EFT payment record and return bank details with unique reference
    */
   static async createEFTPayment(data: EFTCreateRequest): Promise<EFTPaymentDetails> {
-    const { tenantId, userId, plan, billingCycle, customerEmail, customerName } = data;
+    const { tenantId, userId, plan, billingCycle, amount, customerEmail, customerName } = data;
 
-    const amount = this.getPlanPricing(plan, billingCycle);
-    if (!amount) throw new Error(`Invalid plan/billing cycle: ${plan}/${billingCycle}`);
+    if (!amount) throw new Error(`Amount required for EFT payment`);
 
     // Short memorable reference: EFT-XXXX-YYYY
     const shortCode = tenantId.substring(0, 6).toUpperCase();

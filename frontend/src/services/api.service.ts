@@ -240,6 +240,7 @@ export const workspaceApi = {
     deleteCustomer: (id: number) => apiClient.delete(`/api/sales/customers/${id}`).then(r => r.data),
     createOrder: (data: any) => apiPost('/api/sales/orders', data),
     createQuotation: (data: any) => apiPost('/api/sales/quotations', data),
+    sendQuotation: (id: number) => apiPost(`/api/sales/quotations/${id}/send`, {}),
     createInvoice: (data: any) => apiPost('/api/sales/invoices', data),
     sendInvoice: (id: number, data?: { email?: string; subject?: string; message?: string }) => apiPost(`/api/sales/invoices/${id}/send`, data || {}),
     approveInvoice: (id: number) => apiPost(`/api/sales/invoices/${id}/approve`, {}),
