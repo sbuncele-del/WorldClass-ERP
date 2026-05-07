@@ -45,6 +45,33 @@
   margin: 0;
 }
 
+.pco-pricing-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: #4b5563;
+  align-items: center;
+}
+
+.pco-pricing-breakdown span::after {
+  content: '';
+}
+
+.pco-user-count {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.pco-saving {
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
 .pco-close {
   background: none;
   border: none;

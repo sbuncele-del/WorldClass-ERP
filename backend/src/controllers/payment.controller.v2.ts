@@ -16,6 +16,7 @@ import StripePaymentService from '../services/stripe-payment.service';
 import PayPalPaymentService from '../services/paypal-payment.service';
 import EFTPaymentService from '../services/eft-payment.service';
 import CryptoPaymentService, { SUPPORTED_COINS } from '../services/crypto-payment.service';
+import { getTenantUserCount, calculatePrice, getAllPlanPricing, PLANS } from '../services/pricing.service';
 
 /**
  * Tenant context helper
@@ -65,30 +66,47 @@ export const createPaymentSession = async (req: TenantRequest, res: Response) =>
     }
 
     const customerName = `${user?.first_name || ''} ${user?.last_name || ''}`.trim();
+
+    // ── Calculate price based on actual user count for this tenant ──────────
+    const userCount = await getTenantUserCount(tenantId);
+    const pricing = calculatePrice(plan, userCount);
+    const calculatedAmount = billingCycle === 'annual' ? pricing.annualTotal : pricing.monthlyTotal;
+
     const paymentData = {
       tenantId,
       userId: user?.id || '',
       plan,
       billingCycle,
+      amount: calculatedAmount,
       customerEmail: user?.email || '',
       customerName,
     };
 
-    let amount: number;
+    let amount: number = calculatedAmount;
     let currency = 'ZAR';
     let paymentUrl: string;
     let transactionReference: string;
-    let extraData: Record<string, unknown> = {};
+    let extraData: Record<string, unknown> = {
+      pricing: {
+        userCount,
+        includedSeats: pricing.includedSeats,
+        extraSeats: pricing.extraSeats,
+        baseFee: pricing.baseFee,
+        extraSeatFee: pricing.extraSeatFee,
+        monthlyTotal: pricing.monthlyTotal,
+        annualTotal: pricing.annualTotal,
+      },
+    };
 
     if (gateway === 'paypal') {
       if (!PayPalPaymentService.isConfigured()) {
         return res.status(503).json({ success: false, error: 'PayPal not configured' });
       }
       const ppResponse = await PayPalPaymentService.createOrder(paymentData);
-      amount = PayPalPaymentService.getPlanPricing(plan, billingCycle);
+      amount = calculatedAmount;
       paymentUrl = ppResponse.url;
       transactionReference = ppResponse.transactionReference;
-      extraData = { orderId: ppResponse.orderId };
+      extraData = { ...extraData, orderId: ppResponse.orderId };
 
     } else if (gateway === 'eft') {
       const eftResponse = await EFTPaymentService.createEFTPayment(paymentData);
@@ -97,6 +115,7 @@ export const createPaymentSession = async (req: TenantRequest, res: Response) =>
       paymentUrl = ''; // EFT has no redirect URL – details returned inline
       transactionReference = eftResponse.transactionReference;
       extraData = {
+        ...extraData,
         bankDetails: {
           bankName: eftResponse.bankName,
           accountName: eftResponse.accountName,
@@ -118,25 +137,24 @@ export const createPaymentSession = async (req: TenantRequest, res: Response) =>
       amount = cryptoResponse.amountZAR;
       paymentUrl = cryptoResponse.paymentUrl;
       transactionReference = cryptoResponse.transactionReference;
-      extraData = { paymentId: cryptoResponse.paymentId, payCurrency: cryptoResponse.payCurrency };
+      extraData = { ...extraData, paymentId: cryptoResponse.paymentId, payCurrency: cryptoResponse.payCurrency };
 
     } else if (gateway === 'ozow') {
       if (!OzowPaymentService.isConfigured()) {
         return res.status(503).json({ success: false, error: 'Ozow payment gateway not configured' });
       }
-      amount = OzowPaymentService.getPlanPricing(plan, billingCycle);
-      const ozowResponse = await OzowPaymentService.createPaymentRequest({ ...paymentData, amount });
+      // Ozow uses ZAR – pass the pre-calculated amount
+      const ozowResponse = await OzowPaymentService.createPaymentRequest({ ...paymentData });
       paymentUrl = ozowResponse.url;
       transactionReference = ozowResponse.transactionReference;
 
     } else {
-      // Stripe fallback
+      // Stripe fallback – convert ZAR to USD approx (or bill in ZAR if supported)
       if (!StripePaymentService.isConfigured()) {
         return res.status(503).json({ success: false, error: 'Stripe payment gateway not configured' });
       }
-      amount = StripePaymentService.getPlanPricing(plan, billingCycle);
-      currency = 'USD';
-      const stripeResponse = await StripePaymentService.createCheckoutSession({ ...paymentData, amount, currency });
+      currency = 'ZAR'; // bill in ZAR via Stripe too
+      const stripeResponse = await StripePaymentService.createCheckoutSession({ ...paymentData, amount: calculatedAmount, currency });
       paymentUrl = stripeResponse.url;
       transactionReference = stripeResponse.transactionReference;
     }
@@ -255,50 +273,31 @@ export const cancelPayment = async (req: TenantRequest, res: Response) => {
  */
 export const getPricing = async (req: TenantRequest, res: Response) => {
   try {
-    const { tenant } = getTenantContext(req);
-    const { gateway = 'auto' } = req.query;
+    const { tenantId } = getTenantContext(req);
 
-    let selectedGateway = gateway as string;
-    if (selectedGateway === 'auto') {
-      const tenantCountry = tenant?.settings?.country || 'ZA';
-      selectedGateway = tenantCountry === 'ZA' ? 'ozow' : 'stripe';
-    }
+    const userCount = await getTenantUserCount(tenantId);
+    const plans = Object.keys(PLANS);
+    const pricingData = getAllPlanPricing(userCount);
 
-    const plans = ['starter', 'professional', 'enterprise'];
-    const pricing: any = {};
-
+    const pricing: Record<string, unknown> = {};
     for (const plan of plans) {
-      if (selectedGateway === 'ozow') {
-        pricing[plan] = {
-          monthly: {
-            amount: OzowPaymentService.getPlanPricing(plan, 'monthly'),
-            currency: 'ZAR'
-          },
-          annual: {
-            amount: OzowPaymentService.getPlanPricing(plan, 'annual'),
-            currency: 'ZAR',
-            discount: '2 months free'
-          }
-        };
-      } else {
-        pricing[plan] = {
-          monthly: {
-            amount: StripePaymentService.getPlanPricing(plan, 'monthly'),
-            currency: 'USD'
-          },
-          annual: {
-            amount: StripePaymentService.getPlanPricing(plan, 'annual'),
-            currency: 'USD',
-            discount: '2 months free'
-          }
-        };
-      }
+      const breakdown = pricingData[plan];
+      pricing[plan] = {
+        userCount: breakdown.userCount,
+        includedSeats: breakdown.includedSeats,
+        extraSeats: breakdown.extraSeats,
+        baseFee: breakdown.baseFee,
+        extraSeatFee: breakdown.extraSeatFee,
+        monthly: { amount: breakdown.monthlyTotal, currency: 'ZAR' },
+        annual: { amount: breakdown.annualTotal, currency: 'ZAR', saving: breakdown.annualSaving, discount: '2 months free' },
+      };
     }
 
     res.json({
       success: true,
       data: {
-        gateway: selectedGateway,
+        userCount,
+        currency: 'ZAR',
         pricing
       }
     });

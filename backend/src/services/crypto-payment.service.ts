@@ -13,13 +13,6 @@ const NOWPAYMENTS_API_KEY   = process.env.NOWPAYMENTS_API_KEY   || '';
 const NOWPAYMENTS_IPN_SECRET = process.env.NOWPAYMENTS_IPN_SECRET || '';
 const NOWPAYMENTS_BASE      = 'https://api.nowpayments.io/v1';
 
-// ZAR pricing per plan
-const PLAN_PRICING: Record<string, Record<string, number>> = {
-  starter:      { monthly: 299,  annual: 2990  },
-  professional: { monthly: 799,  annual: 7990  },
-  enterprise:   { monthly: 1999, annual: 19990 },
-};
-
 // Supported coins to display in the UI (subset – NOWPayments supports 200+)
 export const SUPPORTED_COINS = [
   { id: 'btc',  name: 'Bitcoin',  symbol: 'BTC',  icon: '₿' },
@@ -37,6 +30,7 @@ interface CryptoPaymentRequest {
   userId: string;
   plan: string;
   billingCycle: 'monthly' | 'annual';
+  amount: number;  // pre-calculated by pricing.service (includes user count)
   customerEmail: string;
   customerName: string;
   payCurrency: string; // e.g. 'btc', 'eth', 'usdt'
@@ -54,10 +48,6 @@ export interface CryptoPaymentResponse {
 export class CryptoPaymentService {
   static isConfigured(): boolean {
     return !!NOWPAYMENTS_API_KEY;
-  }
-
-  static getPlanPricing(plan: string, billingCycle: string): number {
-    return PLAN_PRICING[plan]?.[billingCycle] ?? 0;
   }
 
   private static async apiRequest(method: string, path: string, body?: object): Promise<any> {
@@ -81,10 +71,9 @@ export class CryptoPaymentService {
    * The customer is redirected to a page where they send crypto
    */
   static async createPayment(data: CryptoPaymentRequest): Promise<CryptoPaymentResponse> {
-    const { tenantId, userId, plan, billingCycle, customerEmail, customerName, payCurrency } = data;
+    const { tenantId, userId, plan, billingCycle, amount: amountZAR, customerEmail, customerName, payCurrency } = data;
 
-    const amountZAR = this.getPlanPricing(plan, billingCycle);
-    if (!amountZAR) throw new Error(`Invalid plan/billing cycle: ${plan}/${billingCycle}`);
+    if (!amountZAR) throw new Error('Amount required for crypto payment');
 
     const transactionReference = `CRY-${tenantId.substring(0, 8).toUpperCase()}-${Date.now()}`;
     const frontendUrl = process.env.APP_URL || 'https://siyabusaerp.co.za';

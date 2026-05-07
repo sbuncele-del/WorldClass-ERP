@@ -292,6 +292,11 @@ class BillingService {
     const response = await apiClient.get('/payment/crypto/coins');
     return response.data.data;
   }
+
+  async getPricing(): Promise<any> {
+    const response = await apiClient.get('/payment/pricing');
+    return response.data.data;
+  }
 }
 
 export default new BillingService();
