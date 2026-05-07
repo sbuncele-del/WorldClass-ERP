@@ -80,6 +80,31 @@ function generateFallbackTemplate(templateName: string, variables: Record<string
   const userName = variables.userName || variables.name || 'User';
   
   const templates: Record<string, string> = {
+    'admin-signup-notification': `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="utf-8"><title>New Signup</title></head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 24px 30px; border-radius: 8px 8px 0 0;">
+          <h1 style="color: white; margin: 0; font-size: 20px;">🆕 New Company Signed Up</h1>
+        </div>
+        <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 8px 8px;">
+          <table style="width:100%; border-collapse:collapse;">
+            <tr><td style="padding:8px 0; color:#666; width:140px;">Company</td><td style="padding:8px 0; font-weight:bold;">${variables.companyName}</td></tr>
+            <tr><td style="padding:8px 0; color:#666;">Admin Name</td><td style="padding:8px 0;">${variables.adminName}</td></tr>
+            <tr><td style="padding:8px 0; color:#666;">Admin Email</td><td style="padding:8px 0;">${variables.adminEmail}</td></tr>
+            <tr><td style="padding:8px 0; color:#666;">Plan</td><td style="padding:8px 0; text-transform:capitalize;">${variables.plan}</td></tr>
+            <tr><td style="padding:8px 0; color:#666;">Industry</td><td style="padding:8px 0;">${variables.industry}</td></tr>
+            <tr><td style="padding:8px 0; color:#666;">Signed up at</td><td style="padding:8px 0;">${variables.signupTime}</td></tr>
+          </table>
+          <div style="text-align:center; margin:24px 0;">
+            <a href="${variables.frontendUrl}/app/admin-hub" style="background:#10b981; color:white; padding:12px 28px; text-decoration:none; border-radius:6px; font-weight:bold; display:inline-block;">View in Admin Hub</a>
+          </div>
+          <p style="color:#aaa; font-size:11px; text-align:center;">&copy; ${new Date().getFullYear()} SiyaBusa ERP Admin Notifications</p>
+        </div>
+      </body>
+      </html>
+    `,
     'team-invitation': `
       <!DOCTYPE html>
       <html>

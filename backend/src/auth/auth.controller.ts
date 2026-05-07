@@ -108,6 +108,27 @@ export class AuthController {
           .catch(err => console.error('Failed to send welcome email:', err));
       }, 2000);
 
+      // Notify platform admin of new signup (non-blocking)
+      const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL || 'sbuncele@gmail.com';
+      setTimeout(() => {
+        import('../services/email.service').then(({ sendEmail }) => {
+          sendEmail({
+            to: adminEmail,
+            subject: `🆕 New Signup: ${companyName} (${plan} plan)`,
+            template: 'admin-signup-notification',
+            variables: {
+              companyName,
+              adminName: `${firstName} ${lastName}`,
+              adminEmail: email,
+              plan,
+              industry: industry || 'Not specified',
+              signupTime: new Date().toLocaleString('en-ZA', { timeZone: 'Africa/Johannesburg' }),
+              frontendUrl: process.env.FRONTEND_URL || 'https://siyabusaerp.co.za',
+            }
+          }).catch(err => console.error('Failed to send admin signup notification:', err));
+        });
+      }, 3000);
+
       res.status(201).json({
         success: true,
         message: 'Company account created successfully',
