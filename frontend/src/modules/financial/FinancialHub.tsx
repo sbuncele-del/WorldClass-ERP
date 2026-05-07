@@ -67,6 +67,7 @@ import {
   InfoListCard,
 } from '../../components/hub';
 import { financialService } from '../../services/financial.service';
+import apiClient from '../../services/api';
 import type { FinancialStats, JournalEntry, TrialBalanceEntry, Account, CostCenter, Department, Project, Product, Location } from '../../services/financial.service';
 import dayjs from 'dayjs';
 
@@ -218,6 +219,16 @@ const FinancialHub: React.FC = () => {
         const expenses = parseFloat(stats.total_expenses) || 0;
         const assets = parseFloat(stats.total_assets) || 0;
         const liabilities = parseFloat(stats.total_liabilities) || 0;
+
+        // Fetch real cash balance from bank accounts (same source as Banking Hub)
+        let realCashBalance = parseFloat(stats.cash_balance) || 0;
+        try {
+          const bankRes = await apiClient.get('/api/v2/cash-management/bank-accounts');
+          const bankAccounts: any[] = bankRes.data?.data || bankRes.data || [];
+          if (bankAccounts.length > 0) {
+            realCashBalance = bankAccounts.reduce((sum: number, acc: any) => sum + (parseFloat(acc.current_balance) || 0), 0);
+          }
+        } catch { /* fall back to GL cash_balance */ }
         
         setFinancialStats({
           revenue,
@@ -227,7 +238,7 @@ const FinancialHub: React.FC = () => {
           totalAssets: assets,
           totalLiabilities: liabilities,
           equity: parseFloat(stats.equity) || (assets - liabilities),
-          cashBalance: parseFloat(stats.cash_balance) || 0,
+          cashBalance: realCashBalance,
           receivables: parseFloat(stats.receivables) || 0,
           payables: parseFloat(stats.payables) || 0,
           currentPeriod: new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' }),
@@ -465,16 +476,23 @@ const FinancialHub: React.FC = () => {
   // Refresh data function
   const handleRefresh = () => {
     setLoading(true);
-    financialService.getStats()
-      .then(stats => {
+    Promise.all([
+      financialService.getStats(),
+      apiClient.get('/api/v2/cash-management/bank-accounts').catch(() => ({ data: { data: [] } })),
+    ])
+      .then(([stats, bankRes]) => {
         const revenue = parseFloat(stats.total_revenue) || 0;
         const expenses = parseFloat(stats.total_expenses) || 0;
+        const bankAccounts: any[] = bankRes.data?.data || bankRes.data || [];
+        const realCash = bankAccounts.length > 0
+          ? bankAccounts.reduce((s: number, a: any) => s + (parseFloat(a.current_balance) || 0), 0)
+          : parseFloat(stats.cash_balance) || 0;
         setFinancialStats(prev => ({
           ...prev,
           revenue,
           expenses,
           netIncome: revenue - expenses,
-          cashBalance: parseFloat(stats.cash_balance) || 0,
+          cashBalance: realCash,
         }));
         message.success('Data refreshed');
       })
@@ -1008,33 +1026,27 @@ const FinancialHub: React.FC = () => {
           <Col span={16}>
             {/* P&L Summary */}
             <Card title="Profit & Loss Summary" style={{ marginBottom: 24 }}>
-              <Row gutter={24}>
+              <Row gutter={16}>
                 <Col span={8}>
-                  <Statistic
-                    title="Revenue"
-                    value={financialStats.revenue}
-                    precision={2}
-                    prefix="R"
-                    valueStyle={{ color: '#10b981' }}
-                  />
+                  <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '16px 20px' }}>
+                    <div style={{ fontSize: 12, color: '#6b7280', fontWeight: 500, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Revenue</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: '#059669', lineHeight: 1.2 }}>{formatCurrency(financialStats.revenue)}</div>
+                    <div style={{ fontSize: 11, color: '#10b981', marginTop: 4 }}>All-time posted</div>
+                  </div>
                 </Col>
                 <Col span={8}>
-                  <Statistic
-                    title="Expenses"
-                    value={financialStats.expenses}
-                    precision={2}
-                    prefix="R"
-                    valueStyle={{ color: '#ef4444' }}
-                  />
+                  <div style={{ background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 10, padding: '16px 20px' }}>
+                    <div style={{ fontSize: 12, color: '#6b7280', fontWeight: 500, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Expenses</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: '#dc2626', lineHeight: 1.2 }}>{formatCurrency(financialStats.expenses)}</div>
+                    <div style={{ fontSize: 11, color: '#ef4444', marginTop: 4 }}>All-time posted</div>
+                  </div>
                 </Col>
                 <Col span={8}>
-                  <Statistic
-                    title="Net Income"
-                    value={financialStats.netIncome}
-                    precision={2}
-                    prefix="R"
-                    valueStyle={{ color: '#667eea', fontWeight: 'bold', fontSize: 20, whiteSpace: 'nowrap' }}
-                  />
+                  <div style={{ background: financialStats.netIncome >= 0 ? 'linear-gradient(135deg, #667eea15, #764ba215)' : '#fff1f2', border: `1px solid ${financialStats.netIncome >= 0 ? '#c4b5fd' : '#fecdd3'}`, borderRadius: 10, padding: '16px 20px' }}>
+                    <div style={{ fontSize: 12, color: '#6b7280', fontWeight: 500, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Net Profit</div>
+                    <div style={{ fontSize: 22, fontWeight: 700, color: financialStats.netIncome >= 0 ? '#667eea' : '#dc2626', lineHeight: 1.2 }}>{formatCurrency(financialStats.netIncome)}</div>
+                    <div style={{ fontSize: 11, color: financialStats.netIncome >= 0 ? '#667eea' : '#ef4444', marginTop: 4 }}>{financialStats.netIncome >= 0 ? '▲ Profitable' : '▼ Loss'}</div>
+                  </div>
                 </Col>
               </Row>
               <Divider style={{ margin: '16px 0' }} />
