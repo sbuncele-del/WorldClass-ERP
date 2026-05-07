@@ -99,22 +99,21 @@ const PaymentCheckoutModal = ({ plan, billingCycle, onClose, onSuccess }: Paymen
 
   const cycleKey = billingCycle === 'yearly' ? 'annual' : 'monthly';
 
-  // Display amount: prefer server-side breakdown, fall back to plan.price
+  // Display amount: prefer server-side breakdown, fall back to estimate
   const displayAmount = pricingBreakdown
     ? (cycleKey === 'annual' ? pricingBreakdown.annual.amount : pricingBreakdown.monthly.amount)
-    : (billingCycle === 'yearly' ? plan.price * 10 : plan.price);
+    : null;
 
   useEffect(() => {
     // Load supported coins and live pricing in parallel
     billingService.getSupportedCryptos().then(setCoins).catch(() => {});
     billingService.getPricing()
       .then((data: any) => {
-        const planBreakdown = data?.pricing?.[plan.id];
-        setPricingBreakdown(planBreakdown || null);
+        setPricingBreakdown(data || null);
       })
       .catch(() => {})
       .finally(() => setPricingLoading(false));
-  }, [plan.id]);
+  }, []);
 
   const handleSelectGateway = async (gw: Gateway) => {
     setGateway(gw);
@@ -209,22 +208,17 @@ const PaymentCheckoutModal = ({ plan, billingCycle, onClose, onSuccess }: Paymen
           <div>
             <h2>Complete Payment</h2>
             <p className="pco-subtitle">
-              {plan.name} Plan · {billingCycle === 'yearly' ? 'Annual' : 'Monthly'} ·{' '}
-              <strong>{pricingLoading ? '…' : formatZAR(displayAmount)}</strong>
+              All Modules · {billingCycle === 'yearly' ? 'Annual' : 'Monthly'} ·{' '}
+              <strong>{pricingLoading ? '…' : displayAmount ? formatZAR(displayAmount) : '—'}</strong>
             </p>
             {pricingBreakdown && (
               <div className="pco-pricing-breakdown">
-                <span>Base: {formatZAR(pricingBreakdown.baseFee)}</span>
-                {pricingBreakdown.extraSeats > 0 && (
-                  <span>
-                    {' + '}{pricingBreakdown.extraSeats} extra seat{pricingBreakdown.extraSeats !== 1 ? 's' : ''}{' '}
-                    × {formatZAR(pricingBreakdown.extraSeatFee / pricingBreakdown.extraSeats)}
-                    {' = '}{formatZAR(pricingBreakdown.extraSeatFee)}
-                  </span>
-                )}
-                <span className="pco-user-count">({pricingBreakdown.userCount} active user{pricingBreakdown.userCount !== 1 ? 's' : ''})</span>
+                <span>
+                  {pricingBreakdown.userCount} user{pricingBreakdown.userCount !== 1 ? 's' : ''}
+                  {' × '}{formatZAR(pricingBreakdown.pricePerUser)}/user
+                </span>
                 {cycleKey === 'annual' && pricingBreakdown.annual?.saving > 0 && (
-                  <span className="pco-saving">Save {formatZAR(pricingBreakdown.annual.saving)} vs monthly</span>
+                  <span className="pco-saving">Save {formatZAR(pricingBreakdown.annual.saving)} (2 months free)</span>
                 )}
               </div>
             )}

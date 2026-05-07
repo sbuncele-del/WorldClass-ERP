@@ -16,7 +16,7 @@ import StripePaymentService from '../services/stripe-payment.service';
 import PayPalPaymentService from '../services/paypal-payment.service';
 import EFTPaymentService from '../services/eft-payment.service';
 import CryptoPaymentService, { SUPPORTED_COINS } from '../services/crypto-payment.service';
-import { getTenantUserCount, calculatePrice, getAllPlanPricing, PLANS } from '../services/pricing.service';
+import { getTenantUserCount, calculatePrice, getTenantPricing, PRICE_PER_USER_MONTHLY } from '../services/pricing.service';
 
 /**
  * Tenant context helper
@@ -69,7 +69,7 @@ export const createPaymentSession = async (req: TenantRequest, res: Response) =>
 
     // ── Calculate price based on actual user count for this tenant ──────────
     const userCount = await getTenantUserCount(tenantId);
-    const pricing = calculatePrice(plan, userCount);
+    const pricing = calculatePrice(userCount);
     const calculatedAmount = billingCycle === 'annual' ? pricing.annualTotal : pricing.monthlyTotal;
 
     const paymentData = {
@@ -89,12 +89,10 @@ export const createPaymentSession = async (req: TenantRequest, res: Response) =>
     let extraData: Record<string, unknown> = {
       pricing: {
         userCount,
-        includedSeats: pricing.includedSeats,
-        extraSeats: pricing.extraSeats,
-        baseFee: pricing.baseFee,
-        extraSeatFee: pricing.extraSeatFee,
+        pricePerUser: PRICE_PER_USER_MONTHLY,
         monthlyTotal: pricing.monthlyTotal,
         annualTotal: pricing.annualTotal,
+        annualSaving: pricing.annualSaving,
       },
     };
 
@@ -276,29 +274,16 @@ export const getPricing = async (req: TenantRequest, res: Response) => {
     const { tenantId } = getTenantContext(req);
 
     const userCount = await getTenantUserCount(tenantId);
-    const plans = Object.keys(PLANS);
-    const pricingData = getAllPlanPricing(userCount);
-
-    const pricing: Record<string, unknown> = {};
-    for (const plan of plans) {
-      const breakdown = pricingData[plan];
-      pricing[plan] = {
-        userCount: breakdown.userCount,
-        includedSeats: breakdown.includedSeats,
-        extraSeats: breakdown.extraSeats,
-        baseFee: breakdown.baseFee,
-        extraSeatFee: breakdown.extraSeatFee,
-        monthly: { amount: breakdown.monthlyTotal, currency: 'ZAR' },
-        annual: { amount: breakdown.annualTotal, currency: 'ZAR', saving: breakdown.annualSaving, discount: '2 months free' },
-      };
-    }
+    const pricing = calculatePrice(userCount);
 
     res.json({
       success: true,
       data: {
         userCount,
+        pricePerUser: PRICE_PER_USER_MONTHLY,
         currency: 'ZAR',
-        pricing
+        monthly: { amount: pricing.monthlyTotal, currency: 'ZAR' },
+        annual: { amount: pricing.annualTotal, currency: 'ZAR', saving: pricing.annualSaving, discount: '2 months free' },
       }
     });
   } catch (error: any) {
