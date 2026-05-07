@@ -11,8 +11,8 @@ export const securityHeaders = (
   res: Response,
   next: NextFunction
 ): void => {
-  // Prevent clickjacking
-  res.setHeader('X-Frame-Options', 'DENY');
+  // Prevent clickjacking — SAMEORIGIN allows self-hosted iframes (e.g. concept-document, video chat)
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
 
   // Prevent MIME type sniffing
   res.setHeader('X-Content-Type-Options', 'nosniff');
