@@ -32,15 +32,17 @@
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.25);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   min-height: 56px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .entity-selector-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.35);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .entity-info {
@@ -51,8 +53,9 @@
 
 .entity-name {
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
   color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
   white-space: normal;
   overflow: hidden;
   display: -webkit-box;
@@ -64,8 +67,9 @@
 
 .entity-type {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.75);
   text-transform: capitalize;
+  margin-top: 2px;
 }
 
 .entity-dropdown-icon {
