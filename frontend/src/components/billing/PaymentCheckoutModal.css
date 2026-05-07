@@ -1,0 +1,321 @@
+/* PaymentCheckoutModal.css */
+
+.pco-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.pco-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+@media (prefers-color-scheme: dark) {
+  .pco-modal { background: #1e1e2e; color: #e2e8f0; }
+}
+
+.pco-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.5rem 1.5rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.pco-header h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+}
+
+.pco-subtitle {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.pco-close {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #9ca3af;
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.pco-close:hover { background: #f3f4f6; color: #111; }
+
+.pco-error {
+  margin: 0.75rem 1.5rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  color: #991b1b;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  border: 1px solid #fecaca;
+}
+
+.pco-step {
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.pco-step-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Gateway selector */
+.pco-gateways {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pco-gateway-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.pco-gateway-btn:hover { border-color: #6366f1; background: #f5f3ff; }
+.pco-gateway-btn.selected { border-color: #6366f1; background: #ede9fe; }
+.pco-gateway-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pco-gw-icon { flex-shrink: 0; display: flex; }
+
+.pco-gw-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.pco-gw-info strong { font-size: 1rem; color: #111827; }
+.pco-gw-info span   { font-size: 0.8rem; color: #6b7280; }
+
+/* Crypto coin selector */
+.pco-coins {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.pco-coin-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.75rem 0.5rem;
+  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.pco-coin-btn:hover { border-color: #f59e0b; background: #fffbeb; }
+.pco-coin-btn.selected { border-color: #f59e0b; background: #fef3c7; }
+
+.pco-coin-icon {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pco-coin-symbol { color: #9ca3af; font-size: 0.7rem; }
+
+/* EFT bank details */
+.pco-eft-notice {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  font-size: 0.85rem;
+  color: #1e40af;
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.pco-bank-details {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+}
+
+.pco-bank-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  gap: 0.5rem;
+}
+
+.pco-bank-row:last-child { border-bottom: none; }
+
+.pco-bank-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+  white-space: nowrap;
+  flex-shrink: 0;
+  width: 130px;
+}
+
+.pco-bank-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  word-break: break-all;
+}
+
+.pco-copy-btn {
+  background: none;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  color: #6b7280;
+  flex-shrink: 0;
+  transition: background 0.1s;
+}
+
+.pco-copy-btn:hover { background: #e5e7eb; }
+
+/* Proof of payment form */
+.pco-proof-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.pco-proof-section label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.pco-optional { font-weight: 400; color: #9ca3af; margin-left: 0.25rem; }
+
+.pco-input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  resize: vertical;
+  background: #fff;
+}
+
+.pco-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+/* Actions */
+.pco-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  padding-top: 0.25rem;
+}
+
+.pco-btn-primary {
+  padding: 0.65rem 1.5rem;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pco-btn-primary:hover:not(:disabled) { background: #4f46e5; }
+.pco-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.pco-btn-secondary {
+  padding: 0.65rem 1.25rem;
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pco-btn-secondary:hover { background: #f3f4f6; }
+
+/* Processing */
+.pco-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 1rem;
+  padding: 2.5rem 1.5rem;
+}
+
+.pco-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: pco-spin 0.8s linear infinite;
+}
+
+@keyframes pco-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Success */
+.pco-success-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #16a34a;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}

@@ -245,6 +245,53 @@ class BillingService {
     });
     return response.data;
   }
+
+  // -------------------------------------------------------------------------
+  // New payment methods: PayPal / EFT / Crypto
+  // -------------------------------------------------------------------------
+
+  /**
+   * Create a payment session via any gateway (paypal | eft | crypto | ozow | stripe)
+   */
+  async createPaymentSession(params: {
+    plan: string;
+    billingCycle: 'monthly' | 'annual';
+    paymentMethod: 'paypal' | 'eft' | 'crypto' | 'ozow' | 'stripe' | 'auto';
+    payCurrency?: string;
+  }): Promise<{
+    gateway: string;
+    paymentUrl: string;
+    transactionReference: string;
+    amount: number;
+    currency: string;
+    bankDetails?: Record<string, string>;
+    orderId?: string;
+    paymentId?: string;
+    payCurrency?: string;
+  }> {
+    const response = await apiClient.post('/payment/create-session', params);
+    return response.data.data;
+  }
+
+  /**
+   * Submit EFT proof of payment
+   */
+  async submitEFTProof(params: {
+    transactionReference: string;
+    popReference?: string;
+    notes?: string;
+  }): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post('/payment/eft/proof', params);
+    return response.data;
+  }
+
+  /**
+   * Get supported cryptocurrencies
+   */
+  async getSupportedCryptos(): Promise<Array<{ id: string; name: string; symbol: string; icon: string }>> {
+    const response = await apiClient.get('/payment/crypto/coins');
+    return response.data.data;
+  }
 }
 
 export default new BillingService();

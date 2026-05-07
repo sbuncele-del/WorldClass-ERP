@@ -23,7 +23,7 @@ import emailPreferencesRoutes from './routes/email-preferences.routes';
 import emailQueueRoutes from './routes/email-queue.routes';
 import schedulerRoutes from './routes/scheduler.routes';
 import tenantSettingsRoutes from './routes/tenant-settings.routes';
-import paymentRoutes from './routes/payment.routes';
+import paymentRoutes, { webhookRouter as paymentWebhookRouter } from './routes/payment.routes';
 import webhookRoutes from './routes/webhook.routes';
 import subscriptionRoutes from './routes/subscription.routes';
 import inventoryRoutes from './routes/inventory.routes';
@@ -1575,17 +1575,15 @@ v1Router.use('/scheduler', apiLimiter, schedulerRoutes);
 // Tenant settings routes (protected with API rate limiting)
 v1Router.use('/tenant', apiLimiter, tenantSettingsRoutes);
 
-// Payment routes (public and protected with API rate limiting)
-// TEMPORARILY DISABLED - Missing Stripe API keys
-// v1Router.use('/payment', apiLimiter, paymentRoutes);
+// Payment routes (protected with API rate limiting)
+v1Router.use('/payment', apiLimiter, paymentRoutes);
 
 // Subscription routes (protected with API rate limiting)
 // TEMPORARILY DISABLED - Depends on payment routes
 // v1Router.use('/subscription', apiLimiter, subscriptionRoutes);
 
-// Webhook routes (public, no auth - for payment gateway callbacks with webhook rate limiting)
-// TEMPORARILY DISABLED - Depends on payment services
-// v1Router.use('/webhooks', webhookLimiter, webhookRoutes);
+// Webhook routes (PayPal / NOWPayments crypto / EFT callbacks)
+v1Router.use('/webhooks', webhookLimiter, paymentWebhookRouter);
 
 // Super Admin routes (protected by super admin auth with admin rate limiting)
 v1Router.use('/admin', adminLimiter, superAdminRoutes);

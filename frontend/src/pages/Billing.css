@@ -17,6 +17,30 @@
   gap: 2rem;
 }
 
+/* Payment method badges in header */
+.billing-payment-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.billing-payment-badges span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
 .billing-title {
   font-size: 2rem;
   font-weight: 700;

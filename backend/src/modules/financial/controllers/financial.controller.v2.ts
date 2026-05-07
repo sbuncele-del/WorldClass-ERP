@@ -1355,7 +1355,7 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
       [ctx.tenantId]
     );
     const postedCount = await query(
-      `SELECT COUNT(*) as total FROM journal_entries WHERE tenant_id = $1 AND status = 'posted'`,
+      `SELECT COUNT(*) as total FROM journal_entries WHERE tenant_id = $1 AND UPPER(status) = 'POSTED'`,
       [ctx.tenantId]
     );
 
@@ -1366,7 +1366,7 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
        FROM journal_entry_lines jel
        JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
        JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
-       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+       WHERE jel.tenant_id = $1 AND UPPER(je.status) = 'POSTED'
          AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '1%')
          AND (LOWER(COALESCE(coa.name, coa.account_name, '')) LIKE '%cash%' OR LOWER(COALESCE(coa.name, coa.account_name, '')) LIKE '%bank%')`,
       [ctx.tenantId]
@@ -1378,7 +1378,7 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
        FROM journal_entry_lines jel
        JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
        JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
-       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+       WHERE jel.tenant_id = $1 AND UPPER(je.status) = 'POSTED'
          AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '12%'
               OR LOWER(COALESCE(coa.name, coa.account_name, '')) LIKE '%receivable%')`,
       [ctx.tenantId]
@@ -1390,7 +1390,7 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
        FROM journal_entry_lines jel
        JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
        JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
-       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+       WHERE jel.tenant_id = $1 AND UPPER(je.status) = 'POSTED'
          AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '20%'
               OR LOWER(COALESCE(coa.name, coa.account_name, '')) LIKE '%payable%')`,
       [ctx.tenantId]
@@ -1406,9 +1406,9 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
        FROM journal_entry_lines jel
        JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
        JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
-       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+       WHERE jel.tenant_id = $1 AND UPPER(je.status) = 'POSTED'
          AND COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '4%'
-         AND je.entry_date >= $2 AND je.entry_date <= $3`,
+         AND je.journal_date >= $2 AND je.journal_date <= $3`,
       [ctx.tenantId, monthStart, monthEnd]
     ).catch(() => ({ rows: [{ balance: 0 }] }));
 
@@ -1418,22 +1418,22 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
        FROM journal_entry_lines jel
        JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
        JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
-       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+       WHERE jel.tenant_id = $1 AND UPPER(je.status) = 'POSTED'
          AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '5%'
               OR COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '6%')
-         AND je.entry_date >= $2 AND je.entry_date <= $3`,
+         AND je.journal_date >= $2 AND je.journal_date <= $3`,
       [ctx.tenantId, monthStart, monthEnd]
     ).catch(() => ({ rows: [{ balance: 0 }] }));
 
     // Recent posted journal entries
     const recentResult = await query(
-      `SELECT je.id, COALESCE(je.reference, je.journal_number, je.entry_number) as reference, je.entry_date as date,
+      `SELECT je.id, COALESCE(je.journal_number, je.id::text) as reference, je.journal_date as date,
               je.description, je.status,
               COALESCE(je.total_debit, 0) as total_debit,
               COALESCE(je.total_credit, 0) as total_credit
        FROM journal_entries je
-       WHERE je.tenant_id = $1 AND je.status = 'posted'
-       ORDER BY je.entry_date DESC, je.created_at DESC LIMIT 10`,
+       WHERE je.tenant_id = $1 AND UPPER(je.status) = 'POSTED'
+       ORDER BY je.journal_date DESC, je.created_at DESC LIMIT 10`,
       [ctx.tenantId]
     ).catch(() => ({ rows: [] }));
 
@@ -1443,7 +1443,7 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
        FROM journal_entry_lines jel
        JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
        JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
-       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+       WHERE jel.tenant_id = $1 AND UPPER(je.status) = 'POSTED'
          AND COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '4%'`,
       [ctx.tenantId]
     ).catch(() => ({ rows: [{ balance: 0 }] }));
@@ -1454,7 +1454,7 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
        FROM journal_entry_lines jel
        JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
        JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
-       WHERE jel.tenant_id = $1 AND je.status = 'posted'
+       WHERE jel.tenant_id = $1 AND UPPER(je.status) = 'POSTED'
          AND (COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '5%'
               OR COALESCE(NULLIF(coa.code, ''), coa.account_code) LIKE '6%')`,
       [ctx.tenantId]
@@ -1469,7 +1469,7 @@ export const getDashboard = async (req: TenantRequest, res: Response) => {
        FROM journal_entry_lines jel
        JOIN journal_entries je ON je.id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
        JOIN chart_of_accounts coa ON coa.id = jel.account_id AND coa.tenant_id = jel.tenant_id
-       WHERE jel.tenant_id = $1 AND je.status = 'posted'`,
+       WHERE jel.tenant_id = $1 AND UPPER(je.status) = 'POSTED'`,
       [ctx.tenantId]
     ).catch(() => ({ rows: [{ total_assets: 0, total_liabilities: 0, total_equity: 0 }] }));
 
