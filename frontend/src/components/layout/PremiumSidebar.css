@@ -50,12 +50,16 @@
 }
 
 .entity-name {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: #ffffff;
-  white-space: nowrap;
+  white-space: normal;
   overflow: hidden;
-  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.35;
+  word-break: break-word;
 }
 
 .entity-type {
