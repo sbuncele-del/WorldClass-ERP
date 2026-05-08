@@ -193,8 +193,9 @@ const BankReconciliation: React.FC = () => {
             id: acc.id,
             name: acc.account_name || 'Bank Account',
             balance: parseFloat(acc.current_balance) || 0,
-            number: acc.account_number ? acc.account_number.replace(/\d(?=\d{4})/g, 'X') : 'XXXXXXXX',
-            currency: acc.currency || 'ZAR'
+            number: acc.account_number ? `****${String(acc.account_number).replace(/\D/g, '').slice(-4) || String(acc.account_number).slice(-4)}` : '****',
+            currency: acc.currency || 'ZAR',
+            gl_account_code: acc.gl_account_code || ''
           }));
           setBankAccounts(mappedAccounts);
           setSelectedBankAccount(mappedAccounts[0]?.id || '');
@@ -212,8 +213,8 @@ const BankReconciliation: React.FC = () => {
           const savedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string }>();
 
           const mappedTxns = statements.map((stmt: any) => {
-            // Map DB status to frontend status - 'allocated' in DB means 'matched' in UI
-            let uiStatus = stmt.status || 'unmatched';
+            // Map DB status to frontend status - normalise to lowercase first
+            let uiStatus = (stmt.status || 'unmatched').toLowerCase();
             if (uiStatus === 'allocated') uiStatus = 'matched';
             if (uiStatus === 'reconciled') uiStatus = 'matched';
             
@@ -1056,7 +1057,7 @@ const BankReconciliation: React.FC = () => {
       const statements = stmtRes.data?.data || [];
       if (statements.length > 0) {
         const mappedTxns = statements.map((stmt: any) => {
-          let uiStatus = stmt.status || 'unmatched';
+          let uiStatus = (stmt.status || 'unmatched').toLowerCase();
           if (uiStatus === 'allocated') uiStatus = 'matched';
           if (uiStatus === 'reconciled') uiStatus = 'matched';
           const hasSavedSuggestion = stmt.suggested_gl_account_id && uiStatus === 'unmatched';
