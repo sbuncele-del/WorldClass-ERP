@@ -37,55 +37,55 @@ export class AuditTrailControllerV2 {
         offset = 0
       } = req.query;
 
-      let conditions: string[] = ['tenant_id = $1'];
+      let conditions: string[] = ['al.tenant_id = $1::uuid'];
       let params: any[] = [tenantId];
       let paramIndex = 2;
 
       if (entity_type) {
-        conditions.push(`entity_type = $${paramIndex}`);
+        conditions.push(`al.entity_type = $${paramIndex}`);
         params.push(entity_type);
         paramIndex++;
       }
 
       if (entity_id) {
-        conditions.push(`entity_id = $${paramIndex}`);
+        conditions.push(`al.entity_id = $${paramIndex}`);
         params.push(entity_id);
         paramIndex++;
       }
 
       if (action) {
-        conditions.push(`action = $${paramIndex}`);
+        conditions.push(`al.action = $${paramIndex}`);
         params.push(action);
         paramIndex++;
       }
 
       if (user_id) {
-        conditions.push(`user_id = $${paramIndex}`);
+        conditions.push(`al.user_id = $${paramIndex}::uuid`);
         params.push(user_id);
         paramIndex++;
       }
 
       if (date_from) {
-        conditions.push(`created_at >= $${paramIndex}`);
+        conditions.push(`al.created_at >= $${paramIndex}`);
         params.push(date_from);
         paramIndex++;
       }
 
       if (date_to) {
-        conditions.push(`created_at <= $${paramIndex}`);
+        conditions.push(`al.created_at <= $${paramIndex}`);
         params.push(date_to);
         paramIndex++;
       }
 
       const query = `
         SELECT 
-          at.*,
-          u.email as user_email,
+          al.*,
+          al.user_email,
           u.display_name as user_name
-        FROM audit_trail at
-        LEFT JOIN users u ON at.user_id = u.user_id
+        FROM audit_log al
+        LEFT JOIN users u ON al.user_email = u.email
         WHERE ${conditions.join(' AND ')}
-        ORDER BY at.created_at DESC
+        ORDER BY al.created_at DESC
         LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
       `;
 
@@ -94,7 +94,7 @@ export class AuditTrailControllerV2 {
 
       // Get total count
       const countQuery = `
-        SELECT COUNT(*) FROM audit_trail
+        SELECT COUNT(*) FROM audit_log
         WHERE ${conditions.join(' AND ')}
       `;
       const countResult = await pool.query(countQuery, params.slice(0, -2));
@@ -130,15 +130,15 @@ export class AuditTrailControllerV2 {
 
       const query = `
         SELECT 
-          at.*,
-          u.email as user_email,
+          al.*,
+          al.user_email,
           u.display_name as user_name
-        FROM audit_trail at
-        LEFT JOIN users u ON at.user_id = u.user_id
-        WHERE at.tenant_id = $1
-          AND at.entity_type = $2
-          AND at.entity_id = $3
-        ORDER BY at.created_at DESC
+        FROM audit_log al
+        LEFT JOIN users u ON al.user_email = u.email
+        WHERE al.tenant_id = $1::uuid
+          AND al.entity_type = $2
+          AND al.entity_id = $3
+        ORDER BY al.created_at DESC
       `;
 
       const result = await pool.query(query, [tenantId, type, id]);
@@ -174,13 +174,13 @@ export class AuditTrailControllerV2 {
 
       const query = `
         SELECT 
-          at.*,
-          u.email as user_email,
+          al.*,
+          al.user_email,
           u.display_name as user_name
-        FROM audit_trail at
-        LEFT JOIN users u ON at.user_id = u.user_id
-        WHERE at.tenant_id = $1 AND at.user_id = $2
-        ORDER BY at.created_at DESC
+        FROM audit_log al
+        LEFT JOIN users u ON al.user_email = u.email
+        WHERE al.tenant_id = $1::uuid AND al.user_id = $2::uuid
+        ORDER BY al.created_at DESC
         LIMIT $3 OFFSET $4
       `;
 
@@ -213,56 +213,57 @@ export class AuditTrailControllerV2 {
       const { tenantId } = getTenantContext(req);
       const { days = 30 } = req.query;
 
+      const daysNum = Math.max(1, Math.min(365, parseInt(days as string, 10) || 30));
+
       // Actions summary
       const actionsSummary = await pool.query(`
         SELECT action, COUNT(*) as count
-        FROM audit_trail
-        WHERE tenant_id = $1
-          AND created_at >= CURRENT_DATE - INTERVAL '${parseInt(days as string)} days'
+        FROM audit_log
+        WHERE tenant_id = $1::uuid
+          AND created_at >= CURRENT_DATE - ($2 * INTERVAL '1 day')
         GROUP BY action
         ORDER BY count DESC
-      `, [tenantId]);
+      `, [tenantId, daysNum]);
 
       // Entity types summary
       const entitySummary = await pool.query(`
         SELECT entity_type, COUNT(*) as count
-        FROM audit_trail
-        WHERE tenant_id = $1
-          AND created_at >= CURRENT_DATE - INTERVAL '${parseInt(days as string)} days'
+        FROM audit_log
+        WHERE tenant_id = $1::uuid
+          AND created_at >= CURRENT_DATE - ($2 * INTERVAL '1 day')
         GROUP BY entity_type
         ORDER BY count DESC
-      `, [tenantId]);
+      `, [tenantId, daysNum]);
 
       // Activity by day
       const dailyActivity = await pool.query(`
         SELECT DATE(created_at) as date, COUNT(*) as count
-        FROM audit_trail
-        WHERE tenant_id = $1
-          AND created_at >= CURRENT_DATE - INTERVAL '${parseInt(days as string)} days'
+        FROM audit_log
+        WHERE tenant_id = $1::uuid
+          AND created_at >= CURRENT_DATE - ($2 * INTERVAL '1 day')
         GROUP BY DATE(created_at)
         ORDER BY date
-      `, [tenantId]);
+      `, [tenantId, daysNum]);
 
       // Top users by activity
       const topUsers = await pool.query(`
         SELECT 
-          at.user_id,
-          u.email,
+          al.user_email,
           u.display_name,
           COUNT(*) as action_count
-        FROM audit_trail at
-        LEFT JOIN users u ON at.user_id = u.user_id
-        WHERE at.tenant_id = $1
-          AND at.created_at >= CURRENT_DATE - INTERVAL '${parseInt(days as string)} days'
-        GROUP BY at.user_id, u.email, u.display_name
+        FROM audit_log al
+        LEFT JOIN users u ON al.user_email = u.email
+        WHERE al.tenant_id = $1::uuid
+          AND al.created_at >= CURRENT_DATE - ($2 * INTERVAL '1 day')
+        GROUP BY al.user_email, u.display_name
         ORDER BY action_count DESC
         LIMIT 10
-      `, [tenantId]);
+      `, [tenantId, daysNum]);
 
       res.json({
         success: true,
         data: {
-          period_days: parseInt(days as string),
+          period_days: daysNum,
           actions_summary: actionsSummary.rows,
           entity_summary: entitySummary.rows,
           daily_activity: dailyActivity.rows,
@@ -291,22 +292,21 @@ export class AuditTrailControllerV2 {
 
       const query = `
         SELECT 
-          at.id,
-          at.entity_type,
-          at.entity_id,
-          at.action,
-          at.old_values,
-          at.new_values,
-          at.ip_address,
-          at.user_agent,
-          at.created_at,
-          u.email as user_email
-        FROM audit_trail at
-        LEFT JOIN users u ON at.user_id = u.user_id
-        WHERE at.tenant_id = $1
-          AND at.created_at >= $2
-          AND at.created_at <= $3
-        ORDER BY at.created_at DESC
+          al.id,
+          al.entity_type,
+          al.entity_id,
+          al.action,
+          al.old_values,
+          al.new_values,
+          al.ip_address,
+          al.user_agent,
+          al.created_at,
+          al.user_email
+        FROM audit_log al
+        WHERE al.tenant_id = $1::uuid
+          AND al.created_at >= $2
+          AND al.created_at <= $3
+        ORDER BY al.created_at DESC
       `;
 
       const result = await pool.query(query, [tenantId, date_from, date_to]);
@@ -350,26 +350,29 @@ export class AuditTrailControllerV2 {
       } = req.body;
 
       const query = `
-        INSERT INTO audit_trail (
-          tenant_id, user_id, entity_type, entity_id,
-          action, old_values, new_values, description,
-          ip_address, user_agent
+        INSERT INTO audit_log (
+          tenant_id, user_id, user_email, entity_type, entity_id,
+          action, old_values, new_values, metadata,
+          ip_address, user_agent, request_method, request_path
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
         RETURNING *
       `;
 
       const result = await pool.query(query, [
         tenantId,
         userId,
+        req.user?.email,
         entity_type,
         entity_id,
         action,
         old_values ? JSON.stringify(old_values) : null,
         new_values ? JSON.stringify(new_values) : null,
-        description,
+        description ? JSON.stringify({ description }) : null,
         req.ip,
-        req.get('user-agent')
+        req.get('user-agent'),
+        req.method,
+        req.path
       ]);
 
       res.status(201).json({
@@ -398,12 +401,12 @@ export class AuditTrailControllerV2 {
 
       const query = `
         SELECT 
-          at.*,
-          u.email as user_email,
+          al.*,
+          al.user_email,
           u.display_name as user_name
-        FROM audit_trail at
-        LEFT JOIN users u ON at.user_id = u.user_id
-        WHERE at.id = $1 AND at.tenant_id = $2
+        FROM audit_log al
+        LEFT JOIN users u ON al.user_email = u.email
+        WHERE al.id = $1::uuid AND al.tenant_id = $2::uuid
       `;
 
       const result = await pool.query(query, [id, tenantId]);

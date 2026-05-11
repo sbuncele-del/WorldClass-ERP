@@ -363,40 +363,159 @@ export class AdminControllerV2 {
    * POST /api/v2/admin/roles
    */
   static async createRole(req: TenantRequest, res: Response): Promise<void> {
+    const client = await pool.connect();
     try {
       const { tenantId, userId } = getTenantContext(req);
       const { role_name, role_code, description, permissions } = req.body;
 
-      const query = `
-        INSERT INTO roles (
-          tenant_id, role_name, role_code, description,
-          permissions, created_by
-        )
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING *
-      `;
+      if (!role_name || !role_code) {
+        res.status(400).json({ success: false, message: 'role_name and role_code are required' });
+        return;
+      }
 
-      const result = await pool.query(query, [
-        tenantId,
-        role_name,
-        role_code,
-        description,
-        JSON.stringify(permissions || []),
-        userId
-      ]);
+      await client.query('BEGIN');
+
+      const roleResult = await client.query(`
+        INSERT INTO roles (tenant_id, role_name, role_code, description, created_by)
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING *
+      `, [tenantId, role_name, role_code, description, userId]);
+
+      const newRole = roleResult.rows[0];
+
+      // Assign permissions if provided (array of permission_id integers)
+      if (Array.isArray(permissions) && permissions.length > 0) {
+        for (const permId of permissions) {
+          await client.query(`
+            INSERT INTO role_permissions (role_id, permission_id, granted_by)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (role_id, permission_id) DO NOTHING
+          `, [newRole.role_id, permId, userId]);
+        }
+      }
+
+      await client.query('COMMIT');
 
       res.status(201).json({
         success: true,
-        role: result.rows[0]
+        role: newRole
       });
 
     } catch (error: any) {
+      await client.query('ROLLBACK');
       if (error.message === 'Tenant context required') {
         res.status(401).json({ success: false, message: 'Unauthorized: Tenant context required' });
         return;
       }
       console.error('[Admin] Create role error:', error);
       res.status(500).json({ success: false, message: 'Failed to create role' });
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Update a role
+   * PUT /api/v2/admin/roles/:id
+   */
+  static async updateRole(req: TenantRequest, res: Response): Promise<void> {
+    const client = await pool.connect();
+    try {
+      const { tenantId, userId } = getTenantContext(req);
+      const { id } = req.params;
+      const { role_name, description, permissions } = req.body;
+
+      await client.query('BEGIN');
+
+      // Prevent modifying system roles for safety
+      const checkResult = await client.query(
+        'SELECT is_system_role FROM roles WHERE role_id = $1 AND (tenant_id = $2 OR is_system_role = false)',
+        [id, tenantId]
+      );
+
+      if (checkResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        res.status(404).json({ success: false, message: 'Role not found' });
+        return;
+      }
+
+      const roleResult = await client.query(`
+        UPDATE roles
+        SET role_name = COALESCE($1, role_name),
+            description = COALESCE($2, description),
+            updated_at = NOW()
+        WHERE role_id = $3 AND (tenant_id = $4 OR is_system_role = false)
+        RETURNING *
+      `, [role_name, description, id, tenantId]);
+
+      // Replace permissions if provided
+      if (Array.isArray(permissions)) {
+        await client.query('DELETE FROM role_permissions WHERE role_id = $1', [id]);
+        for (const permId of permissions) {
+          await client.query(`
+            INSERT INTO role_permissions (role_id, permission_id, granted_by)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (role_id, permission_id) DO NOTHING
+          `, [id, permId, userId]);
+        }
+      }
+
+      await client.query('COMMIT');
+
+      res.json({
+        success: true,
+        role: roleResult.rows[0]
+      });
+
+    } catch (error: any) {
+      await client.query('ROLLBACK');
+      if (error.message === 'Tenant context required') {
+        res.status(401).json({ success: false, message: 'Unauthorized: Tenant context required' });
+        return;
+      }
+      console.error('[Admin] Update role error:', error);
+      res.status(500).json({ success: false, message: 'Failed to update role' });
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Delete a role
+   * DELETE /api/v2/admin/roles/:id
+   */
+  static async deleteRole(req: TenantRequest, res: Response): Promise<void> {
+    try {
+      const { tenantId } = getTenantContext(req);
+      const { id } = req.params;
+
+      // Prevent deletion of system roles
+      const checkResult = await pool.query(
+        'SELECT is_system_role FROM roles WHERE role_id = $1 AND tenant_id = $2',
+        [id, tenantId]
+      );
+
+      if (checkResult.rows.length === 0) {
+        res.status(404).json({ success: false, message: 'Role not found' });
+        return;
+      }
+
+      if (checkResult.rows[0].is_system_role) {
+        res.status(400).json({ success: false, message: 'System roles cannot be deleted' });
+        return;
+      }
+
+      await pool.query('DELETE FROM roles WHERE role_id = $1 AND tenant_id = $2', [id, tenantId]);
+
+      res.json({ success: true, message: 'Role deleted' });
+
+    } catch (error: any) {
+      if (error.message === 'Tenant context required') {
+        res.status(401).json({ success: false, message: 'Unauthorized: Tenant context required' });
+        return;
+      }
+      console.error('[Admin] Delete role error:', error);
+      res.status(500).json({ success: false, message: 'Failed to delete role' });
     }
   }
 

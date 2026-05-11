@@ -130,6 +130,28 @@ router.post(
 );
 
 /**
+ * @route   PUT /api/admin/roles/:id
+ * @desc    Update role name, description, or permissions
+ * @access  Admin
+ */
+router.put(
+  '/roles/:id',
+  requirePermission('ADMIN_ROLES_MANAGE'),
+  AdminControllerV2.updateRole
+);
+
+/**
+ * @route   DELETE /api/admin/roles/:id
+ * @desc    Delete a custom role (system roles are protected)
+ * @access  Admin
+ */
+router.delete(
+  '/roles/:id',
+  requirePermission('ADMIN_ROLES_MANAGE'),
+  AdminControllerV2.deleteRole
+);
+
+/**
  * @route   POST /api/admin/roles/:id/permissions
  * @desc    Update role permissions
  * @access  Admin
