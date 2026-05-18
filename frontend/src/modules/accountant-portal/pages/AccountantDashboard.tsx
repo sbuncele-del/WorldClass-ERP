@@ -1,444 +1,463 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Card,
-  Row,
-  Col,
-  Statistic,
-  Tag,
-  Button,
-  Avatar,
-  Space,
-  Spin,
-  Empty,
-  Typography,
-  List,
-  Divider,
-  message,
-  Tooltip,
-  Badge,
+  Card, Row, Col, Statistic, Tag, Button, Avatar, Space, Spin,
+  Typography, List, message, Tooltip, Badge, Alert, Input, Select, Empty,
 } from 'antd';
 import {
-  TeamOutlined,
-  BankOutlined,
-  SwapOutlined,
-  PlusOutlined,
-  SendOutlined,
-  FileTextOutlined,
-  ClockCircleOutlined,
-  DollarOutlined,
-  RiseOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  WarningOutlined,
-  UserOutlined,
-  ArrowRightOutlined,
-  ReloadOutlined,
+  TeamOutlined, BankOutlined, PlusOutlined, SendOutlined,
+  FileTextOutlined, ClockCircleOutlined, DollarOutlined,
+  CheckCircleOutlined, UserOutlined, ArrowRightOutlined,
+  ReloadOutlined, SearchOutlined, PauseCircleOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
+const { Option } = Select;
 
-/* ------------------------------------------------------------------ */
-/*  Types                                                              */
-/* ------------------------------------------------------------------ */
+const authHeaders = () => ({
+  Authorization: `Bearer ${localStorage.getItem('token')}`,
+  'Content-Type': 'application/json',
+});
 
-interface FirmInfo {
-  id: string;
-  name: string;
-  type: string;
-  email: string;
-  phone: string;
-  practice_number: string;
-}
+const fmt = (n: number) =>
+  new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(n);
 
-interface DashboardStats {
-  totalClients: number;
-  activeEngagements: number;
-  pendingInvitations: number;
-  monthlyRevenue: number;
-}
-
-interface ClientCard {
-  id: string;
-  tenant_id: string;
-  company_name: string;
-  industry: string;
-  status: string;
-  engagement_type: string;
-  last_accessed: string;
-  financial_health: 'good' | 'warning' | 'critical' | 'unknown';
-}
-
-interface ActivityItem {
-  id: string;
-  action: string;
-  resource_type: string;
-  client_name: string;
-  user_name: string;
-  created_at: string;
-  details: string;
-}
-
-interface DashboardData {
-  firm: FirmInfo;
-  stats: DashboardStats;
-  clients: ClientCard[];
-  recentActivity: ActivityItem[];
-}
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
-const healthConfig: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
-  good: { color: '#52c41a', icon: <CheckCircleOutlined />, label: 'Healthy' },
-  warning: { color: '#faad14', icon: <ExclamationCircleOutlined />, label: 'Needs Attention' },
-  critical: { color: '#ff4d4f', icon: <WarningOutlined />, label: 'Critical' },
-  unknown: { color: '#d9d9d9', icon: <ClockCircleOutlined />, label: 'No Data' },
-};
-
-const statusColor: Record<string, string> = {
-  active: 'green',
-  onboarding: 'blue',
-  suspended: 'orange',
-  terminated: 'red',
-};
-
-const formatDate = (iso: string) => {
+const relativeTime = (iso: string) => {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('en-ZA', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
 };
 
-const formatCurrency = (val: number) =>
-  new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR', maximumFractionDigits: 0 }).format(val);
+const engagementLabel: Record<string, string> = {
+  full_service: 'Full Service',
+  bookkeeping: 'Bookkeeping',
+  tax_only: 'Tax Only',
+  payroll_only: 'Payroll',
+  audit: 'Audit',
+  consulting: 'Consulting',
+};
 
-/* ------------------------------------------------------------------ */
-/*  Component                                                          */
-/* ------------------------------------------------------------------ */
+const statusTag = (s: string) => {
+  const map: Record<string, { color: string; icon: React.ReactNode }> = {
+    active: { color: 'success', icon: <CheckCircleOutlined /> },
+    paused: { color: 'warning', icon: <PauseCircleOutlined /> },
+    terminated: { color: 'error', icon: <ClockCircleOutlined /> },
+  };
+  const cfg = map[s] || { color: 'default', icon: null };
+  return (
+    <Tag color={cfg.color} icon={cfg.icon} style={{ fontSize: 11 }}>
+      {s}
+    </Tag>
+  );
+};
 
 const AccountantDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<DashboardData | null>(null);
+
+  const [loadingDash, setLoadingDash] = useState(true);
+  const [loadingClients, setLoadingClients] = useState(true);
+  const [dashError, setDashError] = useState<string | null>(null);
+  const [switching, setSwitching] = useState<string | null>(null);
+
+  const [firm, setFirm] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null);
+  const [pendingInvitations, setPendingInvitations] = useState(0);
+  const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+
+  const [searchText, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const fetchDashboard = useCallback(async () => {
-    setLoading(true);
+    setLoadingDash(true);
+    setDashError(null);
     try {
-      const response = await fetch('/api/v2/accountant-portal/dashboard', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!response.ok) throw new Error('Failed to load dashboard');
-      const json = await response.json();
-      const raw = json.data;
-
-      // Normalize API response to component's expected shape
-      setData({
-        firm: {
-          id: raw.firm?.id,
-          name: raw.firm?.firm_name || raw.firm?.name || 'Your Firm',
-          type: raw.firm?.firm_type || raw.firm?.type || '',
-          email: raw.firm?.contact_email || raw.firm?.email || '',
-          phone: raw.firm?.contact_phone || raw.firm?.phone || '',
-          practice_number: raw.firm?.practice_number || '',
-        },
-        stats: {
-          totalClients: Number(raw.stats?.total_clients ?? raw.stats?.totalClients ?? 0),
-          activeEngagements: Number(raw.stats?.active_clients ?? raw.stats?.activeEngagements ?? 0),
-          pendingInvitations: Number(raw.pending_invitations ?? raw.stats?.pendingInvitations ?? 0),
-          monthlyRevenue: Number(raw.stats?.monthlyRevenue ?? 0),
-        },
-        clients: (raw.clients || raw.recent_clients || []).map((c: any) => ({
-          id: c.id,
-          tenant_id: c.client_tenant_id || c.tenant_id,
-          company_name: c.company_name || c.name || 'Unknown',
-          industry: c.industry || '',
-          status: c.status || 'active',
-          engagement_type: c.engagement_type || '',
-          last_accessed: c.last_accessed || c.updated_at || '',
-          financial_health: c.financial_health || 'unknown',
-        })),
-        recentActivity: (raw.recent_activity || raw.recentActivity || []).map((a: any) => ({
-          id: a.id,
-          action: a.action,
-          resource_type: a.resource_type,
-          client_name: a.client_name || '',
-          user_name: a.first_name ? `${a.first_name} ${a.last_name}` : (a.user_name || ''),
-          created_at: a.created_at,
-          details: typeof a.details === 'object' ? JSON.stringify(a.details) : (a.details || ''),
-        })),
-      });
-    } catch (err) {
-      console.error('Dashboard fetch error:', err);
-      message.error('Failed to load dashboard data');
+      const res = await fetch('/api/v2/accountant-portal/dashboard', { headers: authHeaders() });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || json.message || 'Dashboard load failed');
+      const d = json.data;
+      setFirm(d.firm);
+      setStats(d.stats);
+      setPendingInvitations(d.pending_invitations ?? 0);
+      setRecentActivity(d.recent_activity ?? []);
+    } catch (err: any) {
+      setDashError(err.message);
     } finally {
-      setLoading(false);
+      setLoadingDash(false);
+    }
+  }, []);
+
+  const fetchClients = useCallback(async () => {
+    setLoadingClients(true);
+    try {
+      const res = await fetch('/api/v2/accountant-portal/clients', { headers: authHeaders() });
+      const json = await res.json();
+      if (res.ok && json.success) setClients(json.data ?? []);
+    } catch {
+      // non-fatal
+    } finally {
+      setLoadingClients(false);
     }
   }, []);
 
   useEffect(() => {
     fetchDashboard();
-  }, [fetchDashboard]);
+    fetchClients();
+  }, [fetchDashboard, fetchClients]);
 
-  /* ---------- switch ---------- */
-  const handleSwitchToClient = async (clientTenantId: string, clientName: string) => {
+  const handleSwitch = async (clientTenantId: string, clientName: string) => {
+    setSwitching(clientTenantId);
     try {
-      const response = await fetch(`/api/v2/accountant-portal/switch/${clientTenantId}`, {
+      const res = await fetch(`/api/v2/accountant-portal/switch/${clientTenantId}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: authHeaders(),
       });
-      const result = await response.json();
-      if (result.success) {
-        localStorage.setItem('firmToken', localStorage.getItem('token') || '');
-        localStorage.setItem('token', result.data.accessToken);
-        localStorage.setItem(
-          'accountantClientContext',
-          JSON.stringify({
-            clientTenantId,
-            clientName: result.data.tenant?.name || clientName,
-            firmTenantId: result.data.firmTenantId,
-          }),
-        );
-        window.location.href = '/app';
-      } else {
-        message.error(result.message || 'Failed to switch to client');
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error || json.message || 'Switch failed');
+
+      const d = json.data;
+      if (!localStorage.getItem('firmToken')) {
+        localStorage.setItem('firmToken', localStorage.getItem('token') ?? '');
       }
-    } catch (err) {
-      console.error('Switch error:', err);
-      message.error('Failed to switch to client');
+      localStorage.setItem('token', d.access_token);
+      localStorage.setItem(
+        'accountantClientContext',
+        JSON.stringify({
+          clientTenantId,
+          clientName: d.client_tenant?.name ?? clientName,
+          firmTenantId: d.firm_tenant_id,
+        }),
+      );
+      window.location.href = '/app';
+    } catch (err: any) {
+      message.error(err.message ?? 'Failed to switch client');
+      setSwitching(null);
     }
   };
 
-  /* ---------- render ---------- */
-  if (loading) {
+  const filteredClients = clients.filter((c) => {
+    const name = (c.client_name ?? '').toLowerCase();
+    const matchSearch = !searchText || name.includes(searchText.toLowerCase());
+    const matchStatus = statusFilter === 'all' || c.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  if (loadingDash && loadingClients) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-        <Spin size="large" tip="Loading dashboard…" />
+        <Space direction="vertical" align="center">
+          <Spin size="large" />
+          <Text type="secondary">Loading your practice…</Text>
+        </Space>
       </div>
     );
   }
 
-  if (!data) {
-    return <Empty description="No dashboard data available" />;
+  if (dashError) {
+    return (
+      <Alert
+        type="error"
+        showIcon
+        message="Could not load dashboard"
+        description={dashError}
+        action={
+          <Button size="small" onClick={() => { fetchDashboard(); fetchClients(); }}>
+            Retry
+          </Button>
+        }
+      />
+    );
   }
 
-  const { firm, stats, clients, recentActivity } = data;
+  const totalClients  = Number(stats?.total_clients  ?? clients.length);
+  const activeClients = Number(stats?.active_clients ?? clients.filter((c) => c.status === 'active').length);
+  const totalBilling  = clients.reduce((sum, c) => sum + Number(c.billing_rate ?? 0), 0);
 
   return (
-    <div style={{ padding: '0 0 32px' }}>
-      {/* -------- Firm Info -------- */}
+    <div style={{ paddingBottom: 40 }}>
+
+      {/* Firm Banner */}
       <Card
-        style={{ marginBottom: 24, borderLeft: '4px solid #1890ff' }}
-        bodyStyle={{ padding: '16px 24px' }}
+        style={{ marginBottom: 20, background: 'linear-gradient(135deg, #003a8c 0%, #1890ff 100%)', border: 'none', borderRadius: 8 }}
+        bodyStyle={{ padding: '20px 28px' }}
       >
-        <Row align="middle" gutter={24}>
+        <Row align="middle" justify="space-between">
           <Col>
-            <Avatar size={56} icon={<BankOutlined />} style={{ backgroundColor: '#1890ff' }} />
-          </Col>
-          <Col flex="auto">
-            <Title level={4} style={{ margin: 0 }}>{firm?.name || 'Your Firm'}</Title>
-            <Space size="middle" style={{ marginTop: 4 }}>
-              {firm?.type && <Tag color="blue">{firm.type}</Tag>}
-              {firm?.practice_number && <Text type="secondary">Practice #{firm.practice_number}</Text>}
-              {firm?.email && <Text type="secondary">{firm.email}</Text>}
-              {firm?.phone && <Text type="secondary">{firm.phone}</Text>}
+            <Space size={16}>
+              <Avatar size={52} icon={<BankOutlined />} style={{ background: 'rgba(255,255,255,0.2)', fontSize: 24 }} />
+              <div>
+                <Title level={4} style={{ margin: 0, color: '#fff' }}>
+                  {firm?.firm_name ?? 'Your Practice'}
+                </Title>
+                <Space size={12} style={{ marginTop: 4 }}>
+                  {firm?.subscription_tier && (
+                    <Tag style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: 11 }}>
+                      {firm.subscription_tier}
+                    </Tag>
+                  )}
+                  <Text style={{ color: 'rgba(255,255,255,0.85)', fontSize: 13 }}>
+                    {totalClients} client{totalClients !== 1 ? 's' : ''} under management
+                  </Text>
+                </Space>
+              </div>
             </Space>
           </Col>
           <Col>
-            <Button icon={<ReloadOutlined />} onClick={fetchDashboard}>Refresh</Button>
+            <Space>
+              <Button
+                icon={<PlusOutlined />}
+                onClick={() => navigate('/app/accountant-portal/invitations')}
+                style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.4)', color: '#fff' }}
+              >
+                Add Client
+              </Button>
+              <Button
+                icon={<ReloadOutlined />}
+                onClick={() => { fetchDashboard(); fetchClients(); }}
+                style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff' }}
+              />
+            </Space>
           </Col>
         </Row>
       </Card>
 
-      {/* -------- Stats -------- */}
+      {/* KPI Row */}
       <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}>
-          <Card hoverable onClick={() => navigate('/app/accountant-portal/clients')}>
+        <Col xs={12} sm={6}>
+          <Card hoverable onClick={() => navigate('/app/accountant-portal/clients')} bodyStyle={{ padding: '16px 20px' }}>
             <Statistic
-              title="Total Clients"
-              value={stats?.totalClients ?? 0}
+              title={<Text style={{ fontSize: 12, color: '#8c8c8c' }}>Total Clients</Text>}
+              value={totalClients}
               prefix={<TeamOutlined style={{ color: '#1890ff' }} />}
+              valueStyle={{ fontSize: 26, fontWeight: 700 }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
+        <Col xs={12} sm={6}>
+          <Card bodyStyle={{ padding: '16px 20px' }}>
             <Statistic
-              title="Active Engagements"
-              value={stats?.activeEngagements ?? 0}
-              prefix={<FileTextOutlined style={{ color: '#52c41a' }} />}
+              title={<Text style={{ fontSize: 12, color: '#8c8c8c' }}>Active Engagements</Text>}
+              value={activeClients}
+              prefix={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
+              valueStyle={{ fontSize: 26, fontWeight: 700, color: '#52c41a' }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card hoverable onClick={() => navigate('/app/accountant-portal/invitations')}>
+        <Col xs={12} sm={6}>
+          <Card hoverable onClick={() => navigate('/app/accountant-portal/invitations')} bodyStyle={{ padding: '16px 20px' }}>
             <Statistic
-              title="Pending Invitations"
-              value={stats?.pendingInvitations ?? 0}
+              title={<Text style={{ fontSize: 12, color: '#8c8c8c' }}>Pending Invitations</Text>}
+              value={pendingInvitations}
               prefix={<SendOutlined style={{ color: '#faad14' }} />}
+              valueStyle={{ fontSize: 26, fontWeight: 700, color: pendingInvitations > 0 ? '#faad14' : undefined }}
             />
           </Card>
         </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card>
+        <Col xs={12} sm={6}>
+          <Card bodyStyle={{ padding: '16px 20px' }}>
             <Statistic
-              title="Monthly Revenue"
-              value={stats?.monthlyRevenue ?? 0}
+              title={<Text style={{ fontSize: 12, color: '#8c8c8c' }}>Monthly Billing</Text>}
+              value={totalBilling}
               prefix={<DollarOutlined style={{ color: '#722ed1' }} />}
-              formatter={(v) => formatCurrency(Number(v))}
+              valueStyle={{ fontSize: 26, fontWeight: 700 }}
+              formatter={(v) => fmt(Number(v))}
             />
           </Card>
         </Col>
       </Row>
 
-      {/* -------- Quick Actions -------- */}
-      <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => navigate('/app/accountant-portal/invitations')}
-          >
-            Invite Client
-          </Button>
-        </Col>
-        <Col>
-          <Button icon={<TeamOutlined />} onClick={() => navigate('/app/accountant-portal/clients')}>
-            View All Clients
-          </Button>
-        </Col>
-        <Col>
-          <Button icon={<RiseOutlined />}>View Reports</Button>
-        </Col>
-      </Row>
-
-      <Divider />
-
-      {/* -------- Client Cards + Activity -------- */}
+      {/* Client Portfolio + Activity */}
       <Row gutter={24}>
-        {/* Client Cards */}
+
+        {/* Client List */}
         <Col xs={24} lg={16}>
-          <Title level={5} style={{ marginBottom: 16 }}>Client Overview</Title>
-          {(!clients || clients.length === 0) ? (
-            <Empty description="No clients yet. Invite your first client to get started!" />
-          ) : (
-            <Row gutter={[16, 16]}>
-              {clients.slice(0, 6).map((client) => {
-                const health = healthConfig[client.financial_health] || healthConfig.unknown;
-                return (
-                  <Col xs={24} sm={12} xl={8} key={client.id}>
-                    <Card
-                      hoverable
-                      size="small"
-                      style={{ height: '100%' }}
-                      actions={[
-                        <Tooltip title="Switch to Client" key="switch">
-                          <SwapOutlined
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSwitchToClient(client.tenant_id, client.company_name);
-                            }}
-                          />
-                        </Tooltip>,
-                        <Tooltip title="View Details" key="details">
-                          <ArrowRightOutlined
-                            onClick={() => navigate(`/app/accountant-portal/clients/${client.tenant_id}`)}
-                          />
-                        </Tooltip>,
-                      ]}
-                    >
-                      <Card.Meta
-                        avatar={
-                          <Avatar style={{ backgroundColor: '#1890ff' }} icon={<BankOutlined />} />
-                        }
-                        title={
-                          <Space>
-                            <span>{client.company_name}</span>
-                            <Tag color={statusColor[client.status] || 'default'} style={{ fontSize: 11 }}>
-                              {client.status}
-                            </Tag>
-                          </Space>
-                        }
-                        description={
-                          <Space direction="vertical" size={2} style={{ width: '100%' }}>
-                            {client.industry && <Text type="secondary">{client.industry}</Text>}
-                            {client.engagement_type && (
-                              <Text type="secondary" style={{ fontSize: 12 }}>
-                                {client.engagement_type}
-                              </Text>
-                            )}
-                            <Space style={{ marginTop: 4 }}>
-                              <Badge color={health.color} text={<Text style={{ fontSize: 12 }}>{health.label}</Text>} />
-                            </Space>
-                            <Text type="secondary" style={{ fontSize: 11 }}>
-                              Last accessed: {formatDate(client.last_accessed)}
-                            </Text>
-                          </Space>
-                        }
-                      />
-                    </Card>
-                  </Col>
-                );
-              })}
-            </Row>
-          )}
-          {clients && clients.length > 6 && (
-            <div style={{ textAlign: 'center', marginTop: 16 }}>
-              <Button type="link" onClick={() => navigate('/app/accountant-portal/clients')}>
-                View all {clients.length} clients →
+          <Card
+            title={
+              <Space>
+                <TeamOutlined />
+                <span style={{ fontWeight: 600 }}>Client Portfolio</span>
+                <Badge count={clients.length} style={{ backgroundColor: '#1890ff' }} />
+              </Space>
+            }
+            extra={
+              <Button type="link" size="small" onClick={() => navigate('/app/accountant-portal/clients')}>
+                Manage all →
               </Button>
+            }
+            bodyStyle={{ padding: 0 }}
+          >
+            <div style={{ padding: '10px 16px', borderBottom: '1px solid #f0f0f0', display: 'flex', gap: 8 }}>
+              <Input
+                placeholder="Search clients…"
+                allowClear
+                style={{ flex: 1 }}
+                prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
+              <Select value={statusFilter} onChange={setStatusFilter} style={{ width: 130 }}>
+                <Option value="all">All Status</Option>
+                <Option value="active">Active</Option>
+                <Option value="paused">Paused</Option>
+                <Option value="terminated">Terminated</Option>
+              </Select>
             </div>
-          )}
+
+            {loadingClients ? (
+              <div style={{ padding: 40, textAlign: 'center' }}><Spin /></div>
+            ) : filteredClients.length === 0 ? (
+              <Empty
+                style={{ padding: 40 }}
+                description={
+                  clients.length === 0
+                    ? 'No clients yet. Click "Add Client" to invite your first client.'
+                    : 'No clients match your filter.'
+                }
+              >
+                {clients.length === 0 && (
+                  <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/app/accountant-portal/invitations')}>
+                    Invite First Client
+                  </Button>
+                )}
+              </Empty>
+            ) : (
+              <List
+                dataSource={filteredClients}
+                renderItem={(client) => (
+                  <List.Item
+                    style={{ padding: '14px 20px', borderBottom: '1px solid #f5f5f5' }}
+                    actions={[
+                      <Tooltip title={`Open ${client.client_name}'s ERP`} key="open">
+                        <Button
+                          type="primary"
+                          size="small"
+                          icon={<ArrowRightOutlined />}
+                          loading={switching === client.client_tenant_id}
+                          onClick={() => handleSwitch(client.client_tenant_id, client.client_name)}
+                        >
+                          Open
+                        </Button>
+                      </Tooltip>,
+                    ]}
+                  >
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar
+                          size={40}
+                          style={{ background: '#e6f7ff', color: '#1890ff', fontWeight: 700, fontSize: 16 }}
+                        >
+                          {(client.client_name ?? 'C')[0].toUpperCase()}
+                        </Avatar>
+                      }
+                      title={
+                        <Space size={8}>
+                          <Text strong style={{ fontSize: 14 }}>{client.client_name}</Text>
+                          {statusTag(client.status)}
+                          {client.engagement_type && (
+                            <Tag color="geekblue" style={{ fontSize: 11 }}>
+                              {engagementLabel[client.engagement_type] ?? client.engagement_type}
+                            </Tag>
+                          )}
+                        </Space>
+                      }
+                      description={
+                        <Space size={16}>
+                          {client.access_level && (
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              Access: {client.access_level.replace(/_/g, ' ')}
+                            </Text>
+                          )}
+                          {Number(client.billing_rate) > 0 && (
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              {fmt(Number(client.billing_rate))}/mo
+                            </Text>
+                          )}
+                          {client.updated_at && (
+                            <Text type="secondary" style={{ fontSize: 12 }}>
+                              Updated {relativeTime(client.updated_at)}
+                            </Text>
+                          )}
+                        </Space>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            )}
+          </Card>
         </Col>
 
-        {/* Recent Activity */}
+        {/* Right Column */}
         <Col xs={24} lg={8}>
-          <Title level={5} style={{ marginBottom: 16 }}>Recent Activity</Title>
-          {(!recentActivity || recentActivity.length === 0) ? (
-            <Empty description="No recent activity" />
-          ) : (
-            <List
-              size="small"
-              dataSource={recentActivity.slice(0, 10)}
-              renderItem={(item) => (
-                <List.Item style={{ padding: '8px 0' }}>
-                  <List.Item.Meta
-                    avatar={<Avatar size="small" icon={<UserOutlined />} />}
-                    title={
-                      <Text style={{ fontSize: 13 }}>
-                        <Text strong>{item.user_name}</Text>{' '}
-                        <Text type="secondary">{item.action}</Text>
-                      </Text>
-                    }
-                    description={
-                      <Space direction="vertical" size={0}>
-                        {item.client_name && (
-                          <Text style={{ fontSize: 12 }}>{item.client_name}</Text>
-                        )}
-                        <Text type="secondary" style={{ fontSize: 11 }}>
-                          {formatDate(item.created_at)}
+
+          {/* Recent Activity */}
+          <Card
+            title={
+              <Space>
+                <ClockCircleOutlined />
+                <span style={{ fontWeight: 600 }}>Recent Activity</span>
+              </Space>
+            }
+            extra={
+              <Button type="link" size="small" onClick={() => navigate('/app/accountant-portal/activity')}>
+                View all →
+              </Button>
+            }
+            bodyStyle={{ padding: 0 }}
+          >
+            {recentActivity.length === 0 ? (
+              <Empty style={{ padding: 32 }} description="No activity yet" />
+            ) : (
+              <List
+                dataSource={recentActivity.slice(0, 12)}
+                renderItem={(item) => (
+                  <List.Item style={{ padding: '10px 16px', borderBottom: '1px solid #fafafa' }}>
+                    <List.Item.Meta
+                      avatar={
+                        <Avatar size={30} icon={<UserOutlined />} style={{ background: '#f0f0f0', color: '#595959' }} />
+                      }
+                      title={
+                        <Text style={{ fontSize: 12 }}>
+                          <Text strong>
+                            {item.first_name ? `${item.first_name} ${item.last_name ?? ''}`.trim() : 'System'}
+                          </Text>{' '}
+                          <Text type="secondary">{(item.action ?? '').replace(/_/g, ' ')}</Text>
                         </Text>
-                      </Space>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
-          )}
-          <div style={{ textAlign: 'center', marginTop: 8 }}>
-            <Button type="link" size="small" onClick={() => navigate('/app/accountant-portal/activity')}>
-              View full activity log →
-            </Button>
-          </div>
+                      }
+                      description={
+                        <Text type="secondary" style={{ fontSize: 11 }}>
+                          {item.client_name ? `${item.client_name} · ` : ''}{relativeTime(item.created_at)}
+                        </Text>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            )}
+          </Card>
+
+          {/* Quick Actions */}
+          <Card title={<span style={{ fontWeight: 600 }}>Quick Actions</span>} style={{ marginTop: 16 }} bodyStyle={{ padding: 12 }}>
+            <Space direction="vertical" style={{ width: '100%' }} size={8}>
+              <Button block icon={<PlusOutlined />} onClick={() => navigate('/app/accountant-portal/invitations')}>
+                Invite Client
+              </Button>
+              <Button block icon={<FileTextOutlined />} onClick={() => navigate('/app/accountant-portal/jobs')}>
+                View Jobs
+              </Button>
+              <Button block icon={<ClockCircleOutlined />} onClick={() => navigate('/app/accountant-portal/time')}>
+                Log Time
+              </Button>
+              <Button block icon={<TeamOutlined />} onClick={() => navigate('/app/accountant-portal/clients')}>
+                Manage Clients
+              </Button>
+            </Space>
+          </Card>
+
         </Col>
       </Row>
     </div>

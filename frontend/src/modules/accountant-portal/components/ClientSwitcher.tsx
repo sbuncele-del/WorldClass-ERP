@@ -123,13 +123,13 @@ const ClientSwitcher: React.FC = () => {
       if (!localStorage.getItem('firmToken')) {
         localStorage.setItem('firmToken', localStorage.getItem('token') ?? '');
       }
-      localStorage.setItem('token', data.data.accessToken);
+      localStorage.setItem('token', data.data.access_token);
       localStorage.setItem(
         'accountantClientContext',
         JSON.stringify({
           clientTenantId,
-          clientName: data.data.tenant?.name ?? clientName,
-          firmTenantId: data.data.firmTenantId,
+          clientName: data.data.client_tenant?.name ?? clientName,
+          firmTenantId: data.data.firm_tenant_id,
         }),
       );
       window.location.href = '/app';

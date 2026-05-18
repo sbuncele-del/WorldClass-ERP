@@ -140,16 +140,16 @@ const AccountantPortalHub: React.FC = () => {
       />
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/"            element={<AccountantDashboard />} />
-          <Route path="/clients"     element={<ClientsPage />} />
-          <Route path="/clients/:id" element={<ClientDetailPage />} />
-          <Route path="/jobs"        element={<JobsPage />} />
-          <Route path="/time"        element={<TimeTrackingPage />} />
-          <Route path="/compliance"  element={<CompliancePage />} />
-          <Route path="/invitations" element={<InvitationsPage />} />
-          <Route path="/activity"    element={<ActivityLogPage />} />
-          <Route path="/settings"    element={<FirmSetup onComplete={() => {}} editMode />} />
-          <Route path="*"            element={<Navigate to={basePath} replace />} />
+          <Route index                  element={<AccountantDashboard />} />
+          <Route path="clients"        element={<ClientsPage />} />
+          <Route path="clients/:id"    element={<ClientDetailPage />} />
+          <Route path="jobs"           element={<JobsPage />} />
+          <Route path="time"           element={<TimeTrackingPage />} />
+          <Route path="compliance"     element={<CompliancePage />} />
+          <Route path="invitations"    element={<InvitationsPage />} />
+          <Route path="activity"       element={<ActivityLogPage />} />
+          <Route path="settings"       element={<FirmSetup onComplete={() => {}} editMode />} />
+          <Route path="*"              element={<Navigate to={basePath} replace />} />
         </Routes>
       </Suspense>
     </div>
