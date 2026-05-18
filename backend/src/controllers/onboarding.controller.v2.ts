@@ -216,6 +216,30 @@ export const getChecklist = async (req: TenantRequest, res: Response) => {
   try {
     const { tenantId } = getTenantContext(req);
 
+    // Try new onboarding_checklist table first (from migrations)
+    try {
+      const checklistResult = await pool.query(
+        `SELECT id, task_key, task_label, task_url, task_icon, completed, completed_at, sort_order
+         FROM onboarding_checklist
+         WHERE tenant_id = $1
+         ORDER BY sort_order ASC`,
+        [tenantId]
+      );
+
+      if (checklistResult.rows.length > 0) {
+        const tasks = checklistResult.rows;
+        const completed = tasks.filter((t: any) => t.completed).length;
+        return res.json({
+          success: true,
+          tasks,
+          progress: Math.round((completed / tasks.length) * 100)
+        });
+      }
+    } catch {
+      // Table doesn't exist yet — fall through to legacy
+    }
+
+    // Legacy fallback: read from onboarding_data JSON column
     const result = await pool.query(
       `SELECT onboarding_data FROM tenants WHERE id = $1`,
       [tenantId]
@@ -233,10 +257,8 @@ export const getChecklist = async (req: TenantRequest, res: Response) => {
 
     res.json({
       success: true,
-      data: {
-        checklist,
-        progress: Math.round((checklist.filter(c => c.completed).length / checklist.length) * 100)
-      }
+      tasks: checklist,
+      progress: Math.round((checklist.filter((c: any) => c.completed).length / checklist.length) * 100)
     });
   } catch (error: any) {
     if (error.message === 'Tenant context required') {

@@ -8,6 +8,7 @@ function getPool() {
 
 interface ProvisioningData {
   tenantId: string;
+  userId?: string;
   country?: string;
   industry?: string;
   financialYearEnd?: string;
@@ -22,6 +23,7 @@ export class ProvisioningService {
   static async provisionNewTenant(data: ProvisioningData): Promise<void> {
     const {
       tenantId,
+      userId,
       country = 'ZA',
       industry = 'general',
       financialYearEnd = '02-28',
@@ -50,7 +52,13 @@ export class ProvisioningService {
       // 5. Create default document numbering
       await this.createDocumentNumbering(client, tenantId);
 
-      // 6. Update tenant settings
+      // 6. Seed onboarding checklist (requires userId)
+      if (userId) {
+        await this.seedOnboardingChecklist(client, tenantId, userId);
+        await this.createDefaultNotificationPreferences(client, tenantId, userId);
+      }
+
+      // 7. Update tenant settings
       await client.query(
         `UPDATE tenants 
          SET settings = settings || $2::jsonb
@@ -74,6 +82,79 @@ export class ProvisioningService {
       throw error;
     } finally {
       client.release();
+    }
+  }
+
+  /**
+   * Seed onboarding checklist tasks for new tenant admin
+   */
+  private static async seedOnboardingChecklist(
+    client: any,
+    tenantId: string,
+    userId: string
+  ): Promise<void> {
+    const tasks = [
+      { key: 'verify_email',        label: 'Verify your email address',        url: null,                              icon: 'mail',        order: 1 },
+      { key: 'complete_profile',    label: 'Complete your company profile',     url: '/app/tenant-settings',            icon: 'building',    order: 2 },
+      { key: 'invite_team',         label: 'Invite your team members',          url: '/app/users',                      icon: 'users',       order: 3 },
+      { key: 'add_bank_account',    label: 'Add your bank account',             url: '/app/banking',                    icon: 'credit-card', order: 4 },
+      { key: 'create_first_invoice',label: 'Create your first invoice',         url: '/app/sales/invoices/new',         icon: 'file-text',   order: 5 },
+      { key: 'add_first_customer',  label: 'Add your first customer',           url: '/app/sales/customers/new',        icon: 'user-plus',   order: 6 },
+      { key: 'add_first_product',   label: 'Add a product or service',          url: '/app/inventory/products/new',     icon: 'package',     order: 7 },
+      { key: 'setup_chart_of_accts',label: 'Review your chart of accounts',     url: '/app/financial/chart-of-accounts',icon: 'bar-chart-2', order: 8 },
+      { key: 'explore_reports',     label: 'Explore your financial reports',    url: '/app/reports',                    icon: 'pie-chart',   order: 9 },
+      { key: 'setup_payroll',       label: 'Set up payroll (optional)',         url: '/app/hr',                         icon: 'dollar-sign', order: 10 },
+    ];
+
+    for (const task of tasks) {
+      await client.query(
+        `INSERT INTO onboarding_checklist (tenant_id, user_id, task_key, task_label, task_url, task_icon, sort_order)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (tenant_id, task_key) DO NOTHING`,
+        [tenantId, userId, task.key, task.label, task.url, task.icon, task.order]
+      );
+    }
+  }
+
+  /**
+   * Create default notification preferences for new user
+   */
+  private static async createDefaultNotificationPreferences(
+    client: any,
+    tenantId: string,
+    userId: string
+  ): Promise<void> {
+    const defaults = [
+      // Email notifications (on by default)
+      { channel: 'email', event_type: 'invoice_due',         enabled: true },
+      { channel: 'email', event_type: 'invoice_overdue',     enabled: true },
+      { channel: 'email', event_type: 'payment_received',    enabled: true },
+      { channel: 'email', event_type: 'low_stock_alert',     enabled: true },
+      { channel: 'email', event_type: 'new_team_member',     enabled: true },
+      { channel: 'email', event_type: 'trial_expiring',      enabled: true },
+      { channel: 'email', event_type: 'subscription_renewal',enabled: true },
+      { channel: 'email', event_type: 'payroll_processed',   enabled: true },
+      { channel: 'email', event_type: 'report_ready',        enabled: false },
+      // In-app notifications (on by default)
+      { channel: 'in_app', event_type: 'invoice_due',        enabled: true },
+      { channel: 'in_app', event_type: 'invoice_overdue',    enabled: true },
+      { channel: 'in_app', event_type: 'payment_received',   enabled: true },
+      { channel: 'in_app', event_type: 'low_stock_alert',    enabled: true },
+      { channel: 'in_app', event_type: 'new_team_member',    enabled: true },
+      { channel: 'in_app', event_type: 'purchase_approved',  enabled: true },
+      { channel: 'in_app', event_type: 'task_assigned',      enabled: true },
+      // SMS notifications (off by default — user must opt-in)
+      { channel: 'sms', event_type: 'invoice_overdue',       enabled: false },
+      { channel: 'sms', event_type: 'payroll_processed',     enabled: false },
+    ];
+
+    for (const pref of defaults) {
+      await client.query(
+        `INSERT INTO notification_preferences (tenant_id, user_id, channel, event_type, enabled)
+         VALUES ($1, $2, $3, $4, $5)
+         ON CONFLICT (user_id, channel, event_type) DO NOTHING`,
+        [tenantId, userId, pref.channel, pref.event_type, pref.enabled]
+      );
     }
   }
 

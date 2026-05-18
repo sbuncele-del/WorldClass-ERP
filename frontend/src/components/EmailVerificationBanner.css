@@ -1,0 +1,87 @@
+/* Email Verification Banner */
+
+.ev-banner {
+  background: linear-gradient(90deg, #fef3c7, #fde68a);
+  border-bottom: 1px solid #fbbf24;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+}
+
+.ev-banner__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.6rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ev-banner__icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.ev-banner__text {
+  flex: 1;
+  font-size: 0.85rem;
+  color: #92400e;
+  min-width: 200px;
+}
+
+.ev-banner__text strong {
+  font-weight: 600;
+  color: #78350f;
+}
+
+.ev-banner__error {
+  color: #dc2626;
+  font-size: 0.8rem;
+  margin-left: 4px;
+}
+
+.ev-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ev-banner__btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 5px 12px;
+  transition: all 0.15s;
+}
+
+.ev-banner__btn--resend {
+  background: #92400e;
+  color: #fff;
+  padding: 5px 14px;
+}
+
+.ev-banner__btn--resend:hover:not(:disabled) {
+  background: #78350f;
+}
+
+.ev-banner__btn--resend:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.ev-banner__btn--dismiss {
+  color: #92400e;
+  padding: 5px 6px;
+  opacity: 0.7;
+}
+
+.ev-banner__btn--dismiss:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.06);
+}

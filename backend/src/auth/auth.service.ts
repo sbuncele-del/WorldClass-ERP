@@ -15,6 +15,7 @@ import {
 import TenantService from '../services/tenant.service';
 import ProvisioningService from '../services/provisioning.service';
 import { pool as sharedPool } from '../config/database';
+import { sendEmail } from '../services/email.service';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '1h';
@@ -100,15 +101,50 @@ export class AuthService {
 
       const tenant = tenantResult.rows[0];
 
+      // Handle referral code
+      let referredByCode: string | null = null;
+      if (data.referralCode) {
+        const refCheck = await client.query(
+          `SELECT id, code FROM referral_codes
+           WHERE code = $1 AND is_active = TRUE
+             AND (expires_at IS NULL OR expires_at > NOW())
+             AND (max_uses IS NULL OR uses_count < max_uses)`,
+          [data.referralCode.toUpperCase()]
+        );
+        if (refCheck.rows.length > 0) {
+          referredByCode = refCheck.rows[0].code;
+          // Increment usage count
+          await client.query(
+            `UPDATE referral_codes SET uses_count = uses_count + 1 WHERE code = $1`,
+            [referredByCode]
+          );
+        }
+      }
+
+      // Update tenant with subdomain + referral
+      await client.query(
+        `UPDATE tenants SET subdomain = $2, referred_by_code = $3 WHERE id = $1`,
+        [tenant.id, slug, referredByCode]
+      );
+
       // Hash password
       const passwordHash = await bcrypt.hash(data.password, 10);
+
+      // Generate email verification token
+      const emailVerificationToken = crypto.randomBytes(32).toString('hex');
+      const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
       // Create admin user
       const userResult = await client.query(
         `INSERT INTO users (
           tenant_id, email, password_hash, first_name, last_name,
-          role, status, email_verified, password_changed_at
-        ) VALUES ($1::uuid, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text, $8::boolean, NOW())
+          role, status, email_verified, password_changed_at,
+          phone, email_verification_token, email_verification_expires,
+          terms_accepted_at, terms_accepted_ip, terms_version, referral_code_used
+        ) VALUES ($1::uuid, $2::text, $3::text, $4::text, $5::text,
+                  $6::text, $7::text, $8::boolean, NOW(),
+                  $9::text, $10::text, $11::timestamptz,
+                  $12::timestamptz, $13::text, $14::text, $15::text)
         RETURNING id, tenant_id, email, first_name, last_name, role, status`,
         [
           tenant.id,
@@ -118,7 +154,14 @@ export class AuthService {
           data.lastName,
           'admin',
           'active',
-          true // Auto-verify for now, add email verification later
+          false, // email_verified starts as false
+          data.phone || null,
+          emailVerificationToken,
+          emailVerificationExpires,
+          data.termsAccepted ? new Date() : null,
+          data.termsAcceptedIp || null,
+          '1.0',
+          referredByCode
         ]
       );
 
@@ -150,9 +193,27 @@ export class AuthService {
 
       await client.query('COMMIT');
 
+      // Send email verification (async, non-blocking)
+      const frontendUrl = process.env.FRONTEND_URL || 'https://siyabusaerp.co.za';
+      const verifyUrl = `${frontendUrl}/verify-email?token=${emailVerificationToken}&email=${encodeURIComponent(data.email)}`;
+      setTimeout(() => {
+        sendEmail({
+          to: data.email,
+          subject: 'Verify your SiyaBusa ERP email address',
+          template: 'verify-email',
+          variables: {
+            userName: data.firstName,
+            verifyUrl,
+            expiresIn: '24 hours',
+            frontendUrl,
+          }
+        }).catch(err => console.error('Failed to send verification email:', err));
+      }, 1000);
+
       // Provision tenant with chart of accounts (async, don't block signup)
       ProvisioningService.provisionNewTenant({
         tenantId: tenant.id,
+        userId: user.id,
         country: 'ZA',
         industry: data.industry || 'general',
         currency: 'ZAR'
@@ -318,7 +379,8 @@ export class AuthService {
         email: user.email,
         firstName: user.first_name,
         lastName: user.last_name,
-        role: user.role
+        role: user.role,
+        emailVerified: user.email_verified ?? true
       }
     };
   }

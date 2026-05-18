@@ -8,6 +8,37 @@
   max-width: 600px;
 }
 
+/* Optional label hint */
+.label-optional {
+  font-size: 0.75rem;
+  color: var(--text-muted, #9ca3af);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+/* Terms checkbox styling */
+.terms-checkbox {
+  align-items: flex-start;
+  gap: 10px;
+  line-height: 1.5;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #6b7280);
+}
+
+.terms-checkbox input[type="checkbox"] {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.terms-checkbox a.link-text {
+  text-decoration: underline;
+  color: var(--primary, #8B5CF6);
+}
+
+.checkbox-error {
+  color: var(--error, #ef4444);
+}
+
 /* Progress Steps */
 .signup-steps {
   display: flex;

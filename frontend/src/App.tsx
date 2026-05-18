@@ -15,6 +15,8 @@ import { EntityProvider } from './contexts/EntityContext';
 // Critical path components (loaded immediately)
 import Login from './pages/Login';
 import ProtectedRoute from './components/ProtectedRoute';
+import CeoWelcomeModal from './components/CeoWelcomeModal';
+import EmailVerificationBanner from './components/EmailVerificationBanner';
 
 // Premium Layout Components (loaded immediately for shell)
 import PremiumSidebar from './components/layout/PremiumSidebar';
@@ -207,6 +209,8 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
   }, []);
   return (
     <div className={`app premium-layout${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}>
+      <CeoWelcomeModal />
+      <EmailVerificationBanner />
       <PremiumTopBar />
       <PremiumSidebar isCollapsed={sidebarCollapsed} onToggleCollapse={toggleSidebar} />
       <main className="main-content-v2">

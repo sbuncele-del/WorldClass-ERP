@@ -33,6 +33,7 @@ import './RoleBasedWorkspace.css';
 
 // Import Premium Executive Dashboard for Director/Executive roles
 import ExecutiveDashboard from './ExecutiveDashboard';
+import OnboardingChecklist from './OnboardingChecklist';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -616,6 +617,7 @@ const RoleBasedWorkspace: React.FC = () => {
 
   return (
     <div className="role-workspace">
+      <OnboardingChecklist />
       {isNewTenant ? renderNewTenantWelcome() : renderDashboard()}
     </div>
   );

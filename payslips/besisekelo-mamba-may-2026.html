@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payslip – Besisekelo Simangaliso Mamba – May 2026</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9pt;
+      color: #222;
+      background: #d8d8d8;
+    }
+
+    /* ── Page wrapper ── */
+    .page {
+      width: 210mm;
+      min-height: 290mm;
+      margin: 10mm auto;
+      background: #fff;
+      padding: 8mm 12mm 10mm;
+      box-shadow: 0 3px 12px rgba(0,0,0,.25);
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page {
+        width: 100%;
+        margin: 0;
+        padding: 6mm 10mm 8mm;
+        box-shadow: none;
+        page-break-after: always;
+      }
+      .page:last-of-type { page-break-after: auto; }
+    }
+
+    /* ══════════════════════════════════════
+       TOP HEADER  (above fold)
+    ══════════════════════════════════════ */
+    .top-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 5px;
+    }
+
+    .co-name {
+      font-size: 14pt;
+      font-weight: bold;
+      color: #000;
+      margin-bottom: 3px;
+    }
+
+    .co-address {
+      font-size: 8pt;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    .tel-row { font-size: 9pt; margin: 4px 0 5px; }
+
+    /* Employee summary table */
+    .emp-grid {
+      display: grid;
+      grid-template-columns: 95px 155px 95px 155px 75px 1fr;
+      gap: 3px 0;
+      margin-bottom: 8px;
+      font-size: 8.5pt;
+    }
+    .el { color: #333; }
+    .ev { font-weight: bold; }
+
+    /* Fold line */
+    .fold-bar {
+      position: relative;
+      border-top: 1px dashed #aaa;
+      margin: 8px 0 7px;
+    }
+    .fold-bar span {
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      padding: 0 6px;
+      font-size: 7.5pt;
+      color: #888;
+      white-space: nowrap;
+    }
+
+    /* ══════════════════════════════════════
+       PAYSLIP DETAIL INFO
+    ══════════════════════════════════════ */
+    .info-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.5pt;
+      margin-bottom: 6px;
+    }
+    .info-tbl td { padding: 1.5px 4px; vertical-align: top; }
+    .lbl  { color: #333; white-space: nowrap; width: 120px; }
+    .val  { font-weight: bold; padding-right: 14px; }
+
+    /* ══════════════════════════════════════
+       INCOME / DEDUCTIONS TABLES
+    ══════════════════════════════════════ */
+    .pay-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.5pt;
+      margin-bottom: 4px;
+    }
+    .pay-tbl thead tr { background: #484848; color: #fff; }
+    .pay-tbl thead th {
+      padding: 3px 6px;
+      text-align: left;
+      font-weight: 600;
+      border: 1px solid #3a3a3a;
+    }
+    .pay-tbl tbody td {
+      padding: 2px 6px;
+      border-bottom: 1px solid #e6e6e6;
+      border-left: 1px solid #ddd;
+      border-right: 1px solid #ddd;
+    }
+    .pay-tbl .tr { text-align: right; }
+    .pay-tbl tbody tr.totrow td {
+      font-weight: bold;
+      background: #f2f2f2;
+      border-top: 1px solid #aaa;
+      border-bottom: 1px solid #aaa;
+    }
+    .pay-tbl tbody tr.netrow td {
+      font-weight: bold;
+      font-size: 9.5pt;
+      background: #ebebeb;
+      border-top: 1.5px solid #888;
+    }
+
+    /* ══════════════════════════════════════
+       BOTTOM 3-COLUMN GRID
+    ══════════════════════════════════════ */
+    .bot-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr 0.85fr;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .sm-tbl {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8.5pt;
+    }
+    .sm-tbl thead tr { background: #484848; color: #fff; }
+    .sm-tbl thead th { padding: 3px 5px; text-align: left; border: 1px solid #3a3a3a; font-weight: 600; }
+    .sm-tbl tbody td {
+      padding: 2px 5px;
+      border-bottom: 1px solid #e6e6e6;
+      border-left: 1px solid #ddd;
+      border-right: 1px solid #ddd;
+    }
+    .sm-tbl .tr { text-align: right; }
+    .sm-tbl tbody tr.totrow td {
+      font-weight: bold;
+      background: #f2f2f2;
+      border-top: 1px solid #aaa;
+    }
+
+    hr.section-sep { border: none; border-top: 1px solid #ccc; margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<!-- ╔══════════════════════════════════════════════════════╗ -->
+<!-- ║               MAY 2026                              ║ -->
+<!-- ╚══════════════════════════════════════════════════════╝ -->
+<!--
+  SALARY CALCULATION NOTES
+  ────────────────────────
+  Target Net Pay      :  R  9,500.00
+  Gross (Basic Pay)   :  R  9,955.00
+  PAYE (18% × gross − primary rebate R1,436.25/mo)
+                      :  R    355.50   [Tax Code 4102]
+  UIF Employee (1%)   :  R     99.50   [Tax Code 4141]
+  Total Deductions    :  R    455.00
+  Net Pay             :  R  9,500.00  ✓
+  UIF Employer (1%)   :  R     99.50   [Tax Code 4141]
+
+  YTD figures based on 3 months in the 2026/2027 tax year
+  (March 2026 – May 2026, engagement date 01 Mar 2026).
+-->
+<div class="page">
+  <!-- TOP HEADER -->
+  <div class="top-header">
+    <div>
+      <div class="co-name">Bakhe Dlamini Enterprices</div>
+      <div class="co-address">Unit 82 Park Royal Complex<br>Magnum Street<br>Wilgeheuwel , 1724</div>
+    </div>
+  </div>
+
+  <div class="tel-row">Tel.: .</div>
+
+  <div class="emp-grid">
+    <span class="el">First Names :</span><span class="ev">Besisekelo Simangaliso</span>
+    <span class="el">Last Name :</span><span class="ev">Mamba</span>
+    <span class="el">Identity No. :</span><span class="ev">*******257084</span>
+
+    <span class="el">Run :</span><span class="ev">May - 2026</span>
+    <span></span><span></span><span></span><span></span>
+
+    <span class="el">Pay Point :</span><span class="ev"></span>
+    <span class="el">Cost Centre :</span><span class="ev">Bakhe Dlamini Enterprices</span>
+    <span class="el">Empl. No. :</span><span class="ev">BK002</span>
+
+    <span></span><span></span><span></span><span></span>
+    <span class="el">Project :</span><span class="ev"></span>
+
+    <span class="el">Pref. Name :</span><span class="ev">Besisekelo</span>
+    <span></span><span></span><span></span><span></span>
+  </div>
+
+  <div class="fold-bar"><span>Confidential Payslip Fold Line</span></div>
+
+  <!-- DETAIL INFO -->
+  <table class="info-tbl">
+    <tr>
+      <td class="lbl">Company Name :</td><td class="val">Bakhe Dlamini Enterprices</td>
+      <td class="lbl">Run:</td><td class="val">May - 2026</td>
+    </tr>
+    <tr>
+      <td class="lbl">First Names :</td><td class="val">Besisekelo Simangaliso</td>
+      <td class="lbl">Last Name :</td><td class="val">Mamba</td>
+    </tr>
+    <tr>
+      <td class="lbl">Birth Date :</td><td class="val">25 Mar 1995</td>
+      <td class="lbl">Identity No. :</td><td class="val">9503256257084</td>
+    </tr>
+    <tr>
+      <td class="lbl">Period Start Date :</td><td class="val">01 May 2026</td>
+      <td class="lbl">Position :</td><td class="val">Office Worker</td>
+    </tr>
+    <tr>
+      <td class="lbl">Period End Date :</td><td class="val">31 May 2026</td>
+      <td class="lbl">Empl. Number :</td><td class="val">BK002</td>
+    </tr>
+    <tr>
+      <td class="lbl">Payment Date :</td><td class="val">31 May 2026</td>
+      <td class="lbl">Frequency Name :</td><td class="val">Monthly</td>
+    </tr>
+    <tr>
+      <td class="lbl">Engagement Date :</td><td class="val">01 Mar 2026</td>
+      <td class="lbl">Termination Date :</td><td class="val"></td>
+    </tr>
+    <tr>
+      <td class="lbl">Cost Centre :</td><td class="val">Bakhe Dlamini Enterprices</td>
+      <td class="lbl">Grade :</td><td class="val"></td>
+    </tr>
+    <tr>
+      <td class="lbl">Tax Status :</td><td class="val">Standard Employment (Normal)</td>
+      <td class="lbl">Pay Rate :</td><td class="val">9,955.00</td>
+    </tr>
+    <tr>
+      <td class="lbl">Ordinary Days :</td><td class="val">31.43</td>
+      <td class="lbl">Ordinary Hours :</td><td class="val">251.43</td>
+    </tr>
+    <tr>
+      <td class="lbl">Hourly Rate :</td><td class="val">39.59</td>
+      <td class="lbl">Account Number :</td><td class="val">63030117956 (Savings)</td>
+    </tr>
+    <tr>
+      <td class="lbl">Tax Ref. Number:</td><td class="val">.</td>
+      <td class="lbl">Currency :</td><td class="val">ZAR</td>
+    </tr>
+    <tr>
+      <td class="lbl">Bank Name:</td><td class="val">FIRST NATIONAL BANK – ROSEBANK MALL</td>
+      <td class="lbl">Branch Code :</td><td class="val">250655</td>
+    </tr>
+    <tr>
+      <td class="lbl">UIF Number:</td><td class="val">.</td>
+      <td class="lbl">Company Reg. No.:</td><td class="val">2020/818111/07</td>
+    </tr>
+    <tr>
+      <td class="lbl">Phys. Add.:</td>
+      <td colspan="3" class="val">13 Hill Street, Live Easy Apartments, Randburg, 2196</td>
+    </tr>
+  </table>
+
+  <hr class="section-sep">
+
+  <!-- INCOME -->
+  <table class="pay-tbl">
+    <thead>
+      <tr>
+        <th>Income</th>
+        <th class="tr">Qty</th>
+        <th class="tr">Current</th>
+        <th class="tr">Tax Code</th>
+        <th class="tr">YTD Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Basic Pay</td>
+        <td class="tr">251.43</td>
+        <td class="tr">9,955.00</td>
+        <td class="tr">3601</td>
+        <td class="tr">29,865.00</td>
+      </tr>
+      <tr class="totrow">
+        <td><strong>Total Earnings</strong></td>
+        <td class="tr">251.43</td>
+        <td class="tr">9,955.00</td>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- DEDUCTIONS -->
+  <table class="pay-tbl">
+    <thead>
+      <tr>
+        <th>Deductions</th>
+        <th class="tr">Balance</th>
+        <th class="tr">Current</th>
+        <th class="tr">Tax Code</th>
+        <th class="tr">YTD Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Tax Paid</td>
+        <td></td>
+        <td class="tr">355.50</td>
+        <td class="tr">4102</td>
+        <td class="tr">1,066.50</td>
+      </tr>
+      <tr>
+        <td>UIF Employee</td>
+        <td></td>
+        <td class="tr">99.50</td>
+        <td class="tr">4141</td>
+        <td class="tr">298.50</td>
+      </tr>
+      <tr class="totrow">
+        <td><strong>Total Deductions</strong></td>
+        <td></td>
+        <td class="tr">455.00</td>
+        <td></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- NET PAY -->
+  <table class="pay-tbl">
+    <tbody>
+      <tr class="netrow">
+        <td><strong>Net Pay</strong></td>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td class="tr"><strong>9,500.00</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- BOTTOM GRID -->
+  <div class="bot-grid">
+    <!-- Package Structure -->
+    <table class="sm-tbl">
+      <thead>
+        <tr><th>Package Structure Breakdown</th><th class="tr">Amount</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Basic Pay</td><td class="tr">9,955.00</td></tr>
+        <tr class="totrow"><td><strong>Total Package</strong></td><td class="tr">9,955.00</td></tr>
+      </tbody>
+    </table>
+
+    <!-- Company Contributions -->
+    <table class="sm-tbl">
+      <thead>
+        <tr>
+          <th>Company Contributions</th>
+          <th class="tr">Current</th>
+          <th class="tr">Tax Code</th>
+          <th class="tr">YTD Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>UIF Employer</td>
+          <td class="tr">99.50</td>
+          <td class="tr">4141</td>
+          <td class="tr">298.50</td>
+        </tr>
+        <tr class="totrow">
+          <td><strong>Total CC's</strong></td>
+          <td class="tr">99.50</td>
+          <td></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Leave -->
+    <table class="sm-tbl">
+      <thead>
+        <tr><th>Leave</th><th class="tr">Accrual</th><th class="tr">Balance</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Annual Leave</td><td class="tr">1.25</td><td class="tr">3.75</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div><!-- /May 2026 -->
+
+</body>
+</html>

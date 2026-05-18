@@ -14,6 +14,9 @@ export interface SignupData {
   country: string;
   plan?: string;
   industry?: string;
+  phone?: string;
+  referralCode?: string;
+  termsAccepted?: boolean;
 }
 
 export interface LoginData {

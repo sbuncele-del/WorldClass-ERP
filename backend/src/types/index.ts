@@ -192,13 +192,16 @@ export interface SignupData {
   lastName: string;
   email: string;
   password: string;
+  phone?: string;
   
   // Subscription
-  plan: 'starter' | 'professional' | 'enterprise' | 'founding-member' | 'accountant';
+  plan: 'starter' | 'professional' | 'enterprise' | 'founding-member' | 'accountant' | 'business';
   billingCycle: 'monthly' | 'annual';
   
-  // Optional
+  // Growth & legal
   referralCode?: string;
+  termsAccepted?: boolean;
+  termsAcceptedIp?: string;
   acceptTerms?: boolean;
 }
 

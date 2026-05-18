@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import AuthController from './auth.controller';
 import { tenantMiddleware } from '../middleware/tenant';
 import { authenticateToken } from '../middleware/auth';
@@ -7,15 +8,40 @@ import { getUserPermissions, RolePermissions } from '../middleware/rbac.middlewa
 
 const router = Router();
 
+// Rate limiters
+const signupLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,                    // max 10 signups per IP per hour
+  message: { error: 'Too many signup attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20,                    // max 20 login attempts per IP per 15 min
+  message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const verificationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 5,                     // max 5 resend requests per IP per hour
+  message: { error: 'Too many verification requests. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 /**
  * Public Authentication Routes
  */
 
 // Company signup (creates tenant + admin user)
-router.post('/signup', AuthController.signup);
+router.post('/signup', signupLimiter, AuthController.signup);
 
 // User login
-router.post('/login', AuthController.login);
+router.post('/login', loginLimiter, AuthController.login);
 
 // Refresh access token
 router.post('/refresh', AuthController.refresh);
@@ -33,7 +59,7 @@ router.post('/reset-password', AuthController.resetPassword);
 router.get('/verify-email/:token', AuthController.verifyEmail);
 
 // Resend email verification
-router.post('/resend-verification', AuthController.resendVerification);
+router.post('/resend-verification', verificationLimiter, AuthController.resendVerification);
 
 // Accept team invitation (public - no auth required)
 router.post('/accept-invite', async (req: Request, res: Response) => {

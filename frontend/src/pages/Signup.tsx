@@ -74,6 +74,9 @@ const Signup = () => {
     country: 'ZA',
     plan: planParam || (moduleParam ? 'module' : 'business'),
     industry: 'general',
+    phone: '',
+    referralCode: searchParams.get('ref') || '',
+    termsAccepted: false,
   });
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -190,6 +193,13 @@ const Signup = () => {
     }
 
     setIsLoading(true);
+
+    // Validate terms acceptance on final step
+    if (!formData.termsAccepted) {
+      setErrors((prev) => ({ ...prev, termsAccepted: 'You must accept the Terms of Service to continue' }));
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const response = await authService.signup(formData);
@@ -410,6 +420,23 @@ const Signup = () => {
                   <span className="error-message">{errors.confirmPassword}</span>
                 )}
               </div>
+
+              <div className="form-group">
+                <label htmlFor="phone" className="form-label">
+                  Phone Number <span className="label-optional">(optional — used for account recovery)</span>
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  className="form-input"
+                  placeholder="+27 82 123 4567"
+                  value={formData.phone || ''}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  autoComplete="tel"
+                />
+              </div>
             </>
           )}
 
@@ -567,6 +594,50 @@ const Signup = () => {
                 <span>
                   Your 7-day free trial starts now. No credit card required. Cancel anytime.
                 </span>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="referralCode" className="form-label">
+                  Referral / Promo Code <span className="label-optional">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  id="referralCode"
+                  name="referralCode"
+                  className="form-input"
+                  placeholder="e.g. LAUNCH2026"
+                  value={formData.referralCode || ''}
+                  onChange={handleChange}
+                  disabled={isLoading}
+                  autoComplete="off"
+                  style={{ textTransform: 'uppercase' }}
+                />
+                <span className="form-hint">Enter a referral or promo code for extra free months or discounts</span>
+              </div>
+
+              <div className="form-group">
+                <label className={`checkbox-label terms-checkbox ${errors.termsAccepted ? 'checkbox-error' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={!!formData.termsAccepted}
+                    onChange={(e) => {
+                      setFormData((prev) => ({ ...prev, termsAccepted: e.target.checked }));
+                      if (errors.termsAccepted) setErrors((prev) => ({ ...prev, termsAccepted: '' }));
+                    }}
+                    disabled={isLoading}
+                  />
+                  <span>
+                    I agree to the{' '}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="link-text">
+                      Terms of Service
+                    </a>{' '}
+                    and{' '}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="link-text">
+                      Privacy Policy
+                    </a>
+                  </span>
+                </label>
+                {errors.termsAccepted && <span className="error-message">{errors.termsAccepted}</span>}
               </div>
             </>
           )}

@@ -51,8 +51,11 @@ export class AuthController {
         password, 
         firstName, 
         lastName,
-        plan = 'starter',
-        billingCycle = 'monthly'
+        plan = 'business',
+        billingCycle = 'monthly',
+        phone,
+        referralCode,
+        termsAccepted,
       } = req.body;
 
       // Validation
@@ -61,6 +64,12 @@ export class AuthController {
           error: 'Missing required fields',
           required: ['companyName', 'email', 'password', 'firstName', 'lastName']
         });
+        return;
+      }
+
+      // Terms must be accepted
+      if (!termsAccepted) {
+        res.status(400).json({ error: 'You must accept the Terms of Service and Privacy Policy' });
         return;
       }
 
@@ -89,6 +98,11 @@ export class AuthController {
 
       const { industry } = req.body;
 
+      // Capture client IP for terms acceptance logging
+      const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+        || req.socket?.remoteAddress
+        || 'unknown';
+
       const result = await AuthService.signup({
         companyName,
         companySlug,
@@ -98,7 +112,11 @@ export class AuthController {
         lastName,
         plan,
         billingCycle,
-        industry
+        industry,
+        phone,
+        referralCode,
+        termsAccepted,
+        termsAcceptedIp: clientIp,
       });
 
       // Send welcome email (non-blocking) — single send via WelcomeEmailService
@@ -467,10 +485,51 @@ Error stack: ${error?.stack}
     try {
       const { token } = req.params;
 
-      // TODO: Implement email verification
-      // For now, return not implemented
-      res.status(501).json({ 
-        error: 'Email verification not yet implemented' 
+      if (!token) {
+        res.status(400).json({ error: 'Verification token is required' });
+        return;
+      }
+
+      const { pool } = await import('../config/database');
+
+      const result = await pool.query(
+        `SELECT id, email, first_name, email_verified, email_verification_expires
+         FROM users
+         WHERE email_verification_token = $1 AND deleted_at IS NULL`,
+        [token]
+      );
+
+      if (result.rows.length === 0) {
+        res.status(400).json({ error: 'Invalid or expired verification link' });
+        return;
+      }
+
+      const user = result.rows[0];
+
+      if (user.email_verified) {
+        res.status(200).json({ success: true, message: 'Email already verified', alreadyVerified: true });
+        return;
+      }
+
+      if (user.email_verification_expires && new Date(user.email_verification_expires) < new Date()) {
+        res.status(400).json({ error: 'Verification link has expired. Please request a new one.' });
+        return;
+      }
+
+      await pool.query(
+        `UPDATE users
+         SET email_verified = TRUE,
+             email_verification_token = NULL,
+             email_verification_expires = NULL
+         WHERE id = $1`,
+        [user.id]
+      );
+
+      res.status(200).json({
+        success: true,
+        message: 'Email verified successfully. You can now access all features.',
+        email: user.email,
+        firstName: user.first_name
       });
     } catch (error: any) {
       console.error('Email verification error:', error);
@@ -491,10 +550,47 @@ Error stack: ${error?.stack}
         return;
       }
 
-      // TODO: Implement email verification
-      res.status(501).json({ 
-        error: 'Email verification not yet implemented' 
+      const { pool } = await import('../config/database');
+      const crypto = await import('crypto');
+
+      const result = await pool.query(
+        `SELECT id, first_name, email_verified FROM users
+         WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL`,
+        [email]
+      );
+
+      // Always respond success to prevent email enumeration
+      if (result.rows.length === 0 || result.rows[0].email_verified) {
+        res.status(200).json({ success: true, message: 'If that email exists and is unverified, a new link has been sent.' });
+        return;
+      }
+
+      const user = result.rows[0];
+      const newToken = crypto.default.randomBytes(32).toString('hex');
+      const newExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      await pool.query(
+        `UPDATE users SET email_verification_token = $1, email_verification_expires = $2 WHERE id = $3`,
+        [newToken, newExpires, user.id]
+      );
+
+      const frontendUrl = process.env.FRONTEND_URL || 'https://siyabusaerp.co.za';
+      const verifyUrl = `${frontendUrl}/verify-email?token=${newToken}&email=${encodeURIComponent(email)}`;
+
+      const { sendEmail } = await import('../services/email.service');
+      await sendEmail({
+        to: email,
+        subject: 'Verify your SiyaBusa ERP email address',
+        template: 'verify-email',
+        variables: {
+          userName: user.first_name,
+          verifyUrl,
+          expiresIn: '24 hours',
+          frontendUrl,
+        }
       });
+
+      res.status(200).json({ success: true, message: 'If that email exists and is unverified, a new link has been sent.' });
     } catch (error: any) {
       console.error('Resend verification error:', error);
       res.status(500).json({ error: 'Request failed' });

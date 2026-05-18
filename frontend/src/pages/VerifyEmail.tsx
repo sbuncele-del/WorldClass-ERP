@@ -36,12 +36,9 @@ const VerifyEmail: React.FC = () => {
     }
 
     try {
-      const response = await fetch('/api/email/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
+      const response = await fetch(`/api/auth/verify-email/${token}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const data = await response.json();
@@ -50,14 +47,20 @@ const VerifyEmail: React.FC = () => {
       if (data.success) {
         setStatus('success');
         setMessage(data.message || 'Email verified successfully!');
-        
-        // Redirect to login after 3 seconds
+        // Update local user object so banner disappears
+        try {
+          const stored = JSON.parse(localStorage.getItem('user') || '{}');
+          stored.email_verified = true;
+          stored.emailVerified = true;
+          localStorage.setItem('user', JSON.stringify(stored));
+        } catch { /* ignore */ }
+        // Redirect to dashboard after 3 seconds
         setTimeout(() => {
-          navigate('/login?verified=true');
+          navigate('/app/dashboard?verified=true');
         }, 3000);
       } else {
         setStatus('error');
-        setMessage(data.message || 'Email verification failed');
+        setMessage(data.error || data.message || 'Email verification failed');
       }
     } catch (error) {
       console.error('Verification error:', error);
