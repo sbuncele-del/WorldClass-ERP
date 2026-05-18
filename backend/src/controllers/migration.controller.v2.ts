@@ -21,9 +21,9 @@ function getTenantContext(req: TenantRequest): { tenantId: string; userId?: stri
   return { tenantId, userId: req.user?.id, entityId: req.entity?.id || req.entityId };
 }
 
-type DataType = 'chart-of-accounts' | 'customers' | 'suppliers' | 'invoices' | 'bills' | 'products' | 'bank-transactions' | 'employees' | 'assets';
+type DataType = 'chart-of-accounts' | 'customers' | 'suppliers' | 'invoices' | 'bills' | 'products' | 'bank-transactions' | 'employees' | 'assets' | 'opening-balances';
 
-const VALID_DATA_TYPES: DataType[] = ['chart-of-accounts', 'customers', 'suppliers', 'invoices', 'bills', 'products', 'bank-transactions', 'employees', 'assets'];
+const VALID_DATA_TYPES: DataType[] = ['chart-of-accounts', 'customers', 'suppliers', 'invoices', 'bills', 'products', 'bank-transactions', 'employees', 'assets', 'opening-balances'];
 
 function parseCSVBuffer(buffer: Buffer): Record<string, string>[] {
   return parse(buffer, {
@@ -128,6 +128,9 @@ export class MigrationController {
           break;
         case 'assets':
           ({ imported, errors } = await importAssets(client, tenantId, entityId, mappedRecords, errorDetails));
+          break;
+        case 'opening-balances':
+          ({ imported, errors } = await importOpeningBalances(client, tenantId, entityId, mappedRecords, errorDetails));
           break;
       }
 
@@ -505,6 +508,50 @@ async function importAssets(
         r.useful_life_years ? parseInt(r.useful_life_years, 10) : 5,
         r.depreciation_method || 'straight-line',
         r.location || null
+      ]);
+      imported++;
+    } catch (e: any) {
+      errorDetails.push(`Row ${i + 1}: ${e.message}`);
+      errors++;
+    }
+  }
+  return { imported, errors };
+}
+
+async function importOpeningBalances(
+  client: any, tenantId: string, entityId: string | undefined,
+  records: Record<string, string>[], errorDetails: string[]
+): Promise<{ imported: number; errors: number }> {
+  let imported = 0, errors = 0;
+  for (let i = 0; i < records.length; i++) {
+    const r = records[i];
+    if (!r.account_code) {
+      errorDetails.push(`Row ${i + 1}: Missing account_code`);
+      errors++;
+      continue;
+    }
+    const debit = r.debit ? parseFloat(r.debit) : 0;
+    const credit = r.credit ? parseFloat(r.credit) : 0;
+    // Signed balance: debit positive, credit negative
+    const balance = r.balance !== undefined ? parseFloat(r.balance) : (debit - credit);
+    const balanceDate = r.date || new Date().toISOString().slice(0, 10);
+    try {
+      // Upsert into journal_entries as the opening balance entry
+      await client.query(`
+        INSERT INTO journal_entries
+          (tenant_id, entity_id, entry_date, description, reference, account_code, account_name, debit, credit, currency, source, status)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'migration', 'posted')
+        ON CONFLICT DO NOTHING
+      `, [
+        tenantId, entityId || null,
+        balanceDate,
+        r.description || 'Opening Balance',
+        `OB-${r.account_code}`,
+        r.account_code,
+        r.account_name || null,
+        balance >= 0 ? Math.abs(balance) : 0,
+        balance < 0 ? Math.abs(balance) : 0,
+        r.currency || 'ZAR',
       ]);
       imported++;
     } catch (e: any) {

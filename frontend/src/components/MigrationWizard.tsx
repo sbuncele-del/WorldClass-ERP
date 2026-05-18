@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import {
   Upload, FileSpreadsheet, CheckCircle, AlertTriangle, ArrowRight, ArrowLeft,
-  Download, X, Loader2, Users, Receipt, BookOpen, Package, Wallet, Building2
+  Download, X, Loader2, Users, Receipt, BookOpen, Package, Wallet, Building2, Database
 } from 'lucide-react';
 import './MigrationWizard.css';
 
@@ -33,12 +33,13 @@ interface ImportFile {
   status: 'pending' | 'mapped' | 'validated' | 'imported' | 'error';
 }
 
-type DataType = 'chart-of-accounts' | 'customers' | 'suppliers' | 'invoices' | 'bills' | 'products' | 'bank-transactions' | 'employees' | 'assets';
+type DataType = 'chart-of-accounts' | 'customers' | 'suppliers' | 'invoices' | 'bills' | 'products' | 'bank-transactions' | 'employees' | 'assets' | 'opening-balances';
 
-const dataTypes: Array<{ id: DataType; label: string; icon: React.ReactNode; desc: string; template: string }> = [
-  { id: 'chart-of-accounts', label: 'Chart of Accounts', icon: <BookOpen size={20} />, desc: 'GL accounts, types, categories', template: 'chart-of-accounts-template.csv' },
-  { id: 'customers', label: 'Customers', icon: <Users size={20} />, desc: 'Customer contacts & details', template: 'customers-template.csv' },
-  { id: 'suppliers', label: 'Suppliers', icon: <Users size={20} />, desc: 'Supplier contacts & details', template: 'suppliers-template.csv' },
+const dataTypes: Array<{ id: DataType; label: string; icon: React.ReactNode; desc: string; template: string; recommended?: boolean }> = [
+  { id: 'opening-balances', label: 'Opening Balances', icon: <Database size={20} />, desc: 'Trial balance & opening entries', template: 'opening-balances-template.csv', recommended: true },
+  { id: 'chart-of-accounts', label: 'Chart of Accounts', icon: <BookOpen size={20} />, desc: 'GL accounts, types, categories', template: 'chart-of-accounts-template.csv', recommended: true },
+  { id: 'customers', label: 'Customers', icon: <Users size={20} />, desc: 'Customer contacts & details', template: 'customers-template.csv', recommended: true },
+  { id: 'suppliers', label: 'Suppliers', icon: <Users size={20} />, desc: 'Supplier contacts & details', template: 'suppliers-template.csv', recommended: true },
   { id: 'invoices', label: 'Invoices', icon: <Receipt size={20} />, desc: 'Sales invoices & credit notes', template: 'invoices-template.csv' },
   { id: 'bills', label: 'Bills', icon: <Receipt size={20} />, desc: 'Purchase bills & expenses', template: 'bills-template.csv' },
   { id: 'products', label: 'Products & Inventory', icon: <Package size={20} />, desc: 'Items, prices, stock', template: 'products-template.csv' },
@@ -49,6 +50,16 @@ const dataTypes: Array<{ id: DataType; label: string; icon: React.ReactNode; des
 
 // Target field mappings per data type
 const targetFields: Record<DataType, Array<{ field: string; label: string; required: boolean }>> = {
+  'opening-balances': [
+    { field: 'account_code', label: 'Account Code', required: true },
+    { field: 'account_name', label: 'Account Name', required: false },
+    { field: 'debit', label: 'Debit Amount', required: false },
+    { field: 'credit', label: 'Credit Amount', required: false },
+    { field: 'balance', label: 'Balance (signed)', required: false },
+    { field: 'date', label: 'Balance Date', required: false },
+    { field: 'currency', label: 'Currency', required: false },
+    { field: 'description', label: 'Description / Notes', required: false },
+  ],
   'chart-of-accounts': [
     { field: 'account_code', label: 'Account Code', required: true },
     { field: 'account_name', label: 'Account Name', required: true },
@@ -143,10 +154,174 @@ const targetFields: Record<DataType, Array<{ field: string; label: string; requi
   ],
 };
 
-// Auto-mapping heuristics
-function autoMapColumns(sourceColumns: string[], dataType: DataType): ColumnMapping[] {
+// Platform-specific column aliases (QuickBooks, Xero, Sage, Pastel export formats)
+const platformAliases: Record<string, Record<string, string[]>> = {
+  quickbooks: {
+    account_code: ['account', 'accountno', 'num', 'number'],
+    account_name: ['accountname', 'fullyqualifiedname', 'name'],
+    account_type: ['type', 'accounttype', 'classification', 'detailtype'],
+    description: ['memo', 'note'],
+    amount: ['amount', 'total', 'nettotal', 'netamount'],
+    date: ['date', 'txndate', 'transactiondate'],
+    due_date: ['duedate', 'dueon'],
+    invoice_number: ['num', 'docnumber', 'txnnumber'],
+    customer_name: ['name', 'customername', 'customer'],
+    supplier_name: ['name', 'vendorname', 'vendor'],
+    name: ['name', 'fullname', 'displayname', 'companyname'],
+    email: ['primaryemailaddr', 'email', 'emailaddress'],
+    phone: ['primaryphone', 'phone'],
+    debit: ['debit', 'dr'],
+    credit: ['credit', 'cr'],
+    balance: ['runningbalance', 'balance', 'amount'],
+    sku: ['sku', 'itemcode', 'item'],
+    unit_price: ['unitprice', 'salesprice', 'rate'],
+    cost_price: ['purchasecost', 'cost'],
+    quantity_on_hand: ['qtyonhand', 'quantityonhand', 'qty'],
+  },
+  xero: {
+    account_code: ['code', 'accountcode'],
+    account_name: ['name', 'accountname'],
+    account_type: ['type', 'accounttype'],
+    description: ['description', 'lineamounttype'],
+    amount: ['lineamount', 'subtotal', 'nettotal', 'unitamount'],
+    tax_amount: ['taxamount', 'totaltax'],
+    date: ['date', 'invoicedate'],
+    due_date: ['duedate', 'duedatestring'],
+    invoice_number: ['invoicenumber', 'reference'],
+    bill_number: ['reference', 'invoicenumber'],
+    customer_name: ['contactname', 'name'],
+    supplier_name: ['contactname', 'name'],
+    name: ['name', 'contactname', 'firstname', 'lastname'],
+    email: ['emailaddress', 'email'],
+    phone: ['phone', 'phonedevice'],
+    tax_number: ['taxnumber', 'vatnumber'],
+    debit: ['debit', 'dr', 'netdebit'],
+    credit: ['credit', 'cr', 'netcredit'],
+    balance: ['ytdamount', 'balance'],
+    sku: ['code', 'itemcode'],
+    unit_price: ['salesprice', 'unitprice'],
+    cost_price: ['purchaseprice', 'unitcost'],
+    quantity_on_hand: ['quantityonhand', 'purchasedescription'],
+  },
+  sage: {
+    account_code: ['accountno', 'glaccountno', 'accountcode', 'code'],
+    account_name: ['description', 'accountdescription', 'name'],
+    account_type: ['mainaccountcategory', 'category', 'type'],
+    description: ['description', 'memo', 'reference', 'narration'],
+    amount: ['nettamount', 'grossamount', 'amount', 'total'],
+    tax_amount: ['taxamount', 'vatamount', 'vat'],
+    date: ['transactiondate', 'documentdate', 'date'],
+    due_date: ['duedate', 'paymentduedate'],
+    invoice_number: ['documentno', 'invoicenumber', 'docno'],
+    customer_name: ['customer', 'customername', 'debtorname', 'name'],
+    supplier_name: ['supplier', 'suppliername', 'creditorname', 'name'],
+    name: ['company', 'customername', 'suppliername', 'name'],
+    email: ['emailaddress', 'email'],
+    phone: ['telephonenumber', 'telephone', 'phone'],
+    tax_number: ['vatnumber', 'taxnumber', 'taxref'],
+    debit: ['debit', 'dr'],
+    credit: ['credit', 'cr'],
+    balance: ['balance', 'closingbalance'],
+    sku: ['stockcode', 'itemcode', 'code'],
+    unit_price: ['unitsellingprice', 'price', 'sellingprice'],
+    cost_price: ['unitcost', 'costprice', 'averagecost'],
+    quantity_on_hand: ['quantityonhand', 'qtyonhand', 'stockonhand'],
+  },
+  pastel: {
+    account_code: ['glaccountno', 'accountno', 'code', 'accno'],
+    account_name: ['description', 'accountdescription'],
+    account_type: ['category', 'mainaccountcategory', 'type'],
+    description: ['description', 'memo', 'reference'],
+    amount: ['amount', 'nettamount', 'total'],
+    tax_amount: ['taxamount', 'vatamount'],
+    date: ['date', 'transactiondate'],
+    due_date: ['duedate'],
+    invoice_number: ['invoicenumber', 'docnumber'],
+    customer_name: ['customername', 'customer', 'name'],
+    supplier_name: ['suppliername', 'supplier', 'name'],
+    name: ['company', 'name', 'customername'],
+    email: ['email', 'emailaddress'],
+    phone: ['telephone', 'phone'],
+    tax_number: ['vatnumber', 'vatno'],
+    debit: ['debit', 'dr'],
+    credit: ['credit', 'cr'],
+    balance: ['balance', 'closingbalance'],
+    sku: ['stockcode', 'itemcode', 'code'],
+    unit_price: ['price', 'unitprice', 'sellingprice'],
+    cost_price: ['costprice', 'cost'],
+    quantity_on_hand: ['qtyonhand', 'stockonhand'],
+  },
+};
+
+// Per-platform export instructions shown in the upload step
+const exportGuides: Record<string, { title: string; steps: string[] }> = {
+  quickbooks: {
+    title: 'Exporting from QuickBooks Online',
+    steps: [
+      'Go to Reports → click "Export" on any report, or use the Gear icon → Export Data.',
+      'For Chart of Accounts: Accounting → Chart of Accounts → Export to Excel.',
+      'For Customers/Suppliers: Sales → Customers (or Expenses → Vendors) → Export to Excel.',
+      'For Invoices: Sales → Invoices → Export, then save as CSV.',
+      'For bank transactions: Banking → select account → Export transactions as CSV.',
+      'Save each file and upload below. QuickBooks column names are auto-detected.',
+    ],
+  },
+  xero: {
+    title: 'Exporting from Xero',
+    steps: [
+      'Go to Accounting → Reports → Trial Balance → Export as CSV or Excel.',
+      'For Chart of Accounts: Accounting → Chart of Accounts → Export.',
+      'For Contacts: Contacts → All Contacts → Import/Export → Export Contacts.',
+      'For Invoices: Accounts → Sales → All → Export.',
+      'For bank transactions: Accounting → Bank Accounts → select account → Export.',
+      'Xero columns like *ContactName, *InvoiceNumber are mapped automatically.',
+    ],
+  },
+  sage: {
+    title: 'Exporting from Sage Business Cloud',
+    steps: [
+      'From any list view (Customers, Suppliers, Accounts), click Export → CSV.',
+      'For the Trial Balance: Reporting → Trial Balance → Export.',
+      'For Chart of Accounts: Accounting → Chart of Accounts → Export.',
+      'For Invoices: Sales → Tax Invoices → select all → Export.',
+      'Sage column headers like Account No, Description are auto-mapped.',
+    ],
+  },
+  pastel: {
+    title: 'Exporting from Sage Pastel Partner / Xpress',
+    steps: [
+      'Go to File → Export → select the data type (Customers, Suppliers, etc.).',
+      'For Ledger Accounts: General Ledger → Account Maintenance → File → Export.',
+      'For the Trial Balance: Reports → Trial Balance → Export to Excel, then save as CSV.',
+      'For Inventory: Inventory → Stock Items → File → Export.',
+      'Pastel uses column names like Account No, Description — mapped automatically.',
+    ],
+  },
+  freshbooks: {
+    title: 'Exporting from FreshBooks',
+    steps: [
+      'Go to Invoices → select all → Export (top right corner).',
+      'For Clients: Clients → select all → Export.',
+      'For Expenses: Expenses → select all → Export.',
+      'FreshBooks exports as CSV — upload directly after download.',
+    ],
+  },
+  csv: {
+    title: 'Uploading a custom CSV or Excel file',
+    steps: [
+      'Ensure your file has a header row as the first row.',
+      'Column names can be anything — you will map them to SiyaBusa fields in the next step.',
+      'Accepted formats: CSV (.csv), Excel (.xlsx, .xls).',
+      'Download a template below to see the expected field names.',
+    ],
+  },
+};
+
+// Auto-mapping heuristics — platform-aware
+function autoMapColumns(sourceColumns: string[], dataType: DataType, platform?: string): ColumnMapping[] {
   const targets = targetFields[dataType];
   const mappings: ColumnMapping[] = [];
+  const platAliases = platform ? (platformAliases[platform] || {}) : {};
 
   for (const col of sourceColumns) {
     const normalised = col.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -157,24 +332,33 @@ function autoMapColumns(sourceColumns: string[], dataType: DataType): ColumnMapp
       const targetNorm = target.field.replace(/_/g, '');
       const labelNorm = target.label.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-      // Exact match
+      // Exact match against field name or label
       if (normalised === targetNorm || normalised === labelNorm) {
         bestMatch = target.field;
         bestConfidence = 1;
         break;
       }
 
+      // Platform-specific aliases (highest secondary confidence)
+      const platFieldAliases = platAliases[target.field] || [];
+      if (platFieldAliases.some(a => normalised === a.replace(/[^a-z0-9]/g, ''))) {
+        if (0.95 > bestConfidence) { bestMatch = target.field; bestConfidence = 0.95; }
+        continue;
+      }
+      if (platFieldAliases.some(a => {
+        const an = a.replace(/[^a-z0-9]/g, '');
+        return normalised.includes(an) || an.includes(normalised);
+      })) {
+        if (0.85 > bestConfidence) { bestMatch = target.field; bestConfidence = 0.85; }
+      }
+
       // Contains match
       if (normalised.includes(targetNorm) || targetNorm.includes(normalised) ||
           normalised.includes(labelNorm) || labelNorm.includes(normalised)) {
-        const conf = 0.7;
-        if (conf > bestConfidence) {
-          bestMatch = target.field;
-          bestConfidence = conf;
-        }
+        if (0.7 > bestConfidence) { bestMatch = target.field; bestConfidence = 0.7; }
       }
 
-      // Common aliases
+      // Generic cross-platform aliases
       const aliases: Record<string, string[]> = {
         account_code: ['accountno', 'accno', 'glcode', 'glaccount', 'accountnumber', 'code'],
         account_name: ['accountname', 'name', 'description', 'accountdescription'],
@@ -191,15 +375,14 @@ function autoMapColumns(sourceColumns: string[], dataType: DataType): ColumnMapp
         invoice_number: ['invoiceno', 'invno', 'docnumber', 'documentnumber'],
         bill_number: ['billno', 'documentno', 'refno', 'billreference'],
         tax_number: ['vatnumber', 'vatno', 'taxref', 'taxreference'],
+        debit: ['dr', 'debitamount', 'debitside'],
+        credit: ['cr', 'creditamount', 'creditside'],
+        balance: ['closingbalance', 'runningbalance', 'ytdamount'],
       };
 
       const fieldAliases = aliases[target.field] || [];
       if (fieldAliases.some(a => normalised.includes(a) || a.includes(normalised))) {
-        const conf = 0.8;
-        if (conf > bestConfidence) {
-          bestMatch = target.field;
-          bestConfidence = conf;
-        }
+        if (0.8 > bestConfidence) { bestMatch = target.field; bestConfidence = 0.8; }
       }
     }
 
@@ -269,6 +452,7 @@ const sourcePlatforms = [
 const MigrationWizard: React.FC = () => {
   const [step, setStep] = useState(0);
   const [sourcePlatform, setSourcePlatform] = useState('');
+  const [showExportGuide, setShowExportGuide] = useState(true);
   const [selectedDataType, setSelectedDataType] = useState<DataType>('chart-of-accounts');
   const [files, setFiles] = useState<ImportFile[]>([]);
   const [currentFile, setCurrentFile] = useState<ImportFile | null>(null);
@@ -285,7 +469,7 @@ const MigrationWizard: React.FC = () => {
 
     if (headers.length === 0) return;
 
-    const mappings = autoMapColumns(headers, selectedDataType);
+    const mappings = autoMapColumns(headers, selectedDataType, sourcePlatform);
     // Add preview data to mappings
     mappings.forEach((m, i) => {
       m.preview = rows.slice(0, 3).map(r => r[i] || '');
@@ -460,6 +644,24 @@ const MigrationWizard: React.FC = () => {
               Select a data type and upload the corresponding CSV export from {sourcePlatforms.find(p => p.id === sourcePlatform)?.name || 'your platform'}.
             </p>
 
+            {/* Export guide */}
+            {exportGuides[sourcePlatform] && (
+              <div className="mw-export-guide">
+                <div className="mw-export-guide-header" onClick={() => setShowExportGuide(v => !v)}>
+                  <FileSpreadsheet size={16} />
+                  <strong>{exportGuides[sourcePlatform].title}</strong>
+                  <span className="mw-guide-toggle">{showExportGuide ? '▲ Hide' : '▼ Show'}</span>
+                </div>
+                {showExportGuide && (
+                  <ol className="mw-export-steps">
+                    {exportGuides[sourcePlatform].steps.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            )}
+
             <div className="mw-upload-layout">
               <div className="mw-data-types">
                 {dataTypes.map(dt => {
@@ -472,7 +674,7 @@ const MigrationWizard: React.FC = () => {
                     >
                       <div className="mw-dtype-icon">{dt.icon}</div>
                       <div className="mw-dtype-info">
-                        <strong>{dt.label}</strong>
+                        <strong>{dt.label}{dt.recommended && !uploaded ? <span className="mw-recommended"> ★</span> : null}</strong>
                         <span>{uploaded ? `${uploaded.name} (${uploaded.rows} rows)` : dt.desc}</span>
                       </div>
                       {uploaded && <CheckCircle size={16} className="mw-dtype-check" />}

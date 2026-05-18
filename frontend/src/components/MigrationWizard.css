@@ -524,3 +524,48 @@
 /* Spinner */
 @keyframes mw-spin { to { transform: rotate(360deg); } }
 .spin { animation: mw-spin 1s linear infinite; }
+
+/* ── Export guide panel ─────────────────────────────────────────── */
+.mw-export-guide {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.mw-export-guide-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: #15803d;
+  user-select: none;
+}
+
+.mw-export-guide-header:hover { background: #dcfce7; }
+
+.mw-guide-toggle {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: #16a34a;
+}
+
+.mw-export-steps {
+  padding: 0.5rem 1rem 0.75rem 2.2rem;
+  margin: 0;
+  font-size: 0.84rem;
+  color: #166534;
+  line-height: 1.7;
+}
+
+.mw-export-steps li { margin-bottom: 0.15rem; }
+
+/* Recommended star badge on data type buttons */
+.mw-recommended {
+  color: #f59e0b;
+  font-size: 0.75rem;
+  margin-left: 0.25rem;
+}
