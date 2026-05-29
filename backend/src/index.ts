@@ -160,22 +160,30 @@ app.use((req, res, next) => {
 // Security headers are handled by securityHeaders middleware instead
 // app.use(helmet({ contentSecurityPolicy: false }));
 
-// CORS configuration for Codespaces and local development
+// CORS configuration
+const allowedOrigins = [
+  'https://siyabusaerp.co.za',
+  'https://www.siyabusaerp.co.za',
+  'https://demo.siyabusaerp.co.za',
+  ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : []),
+];
+
 const corsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    // Allow requests with no origin (like mobile apps or curl)
+    // Allow requests with no origin (mobile apps, curl, server-to-server)
     if (!origin) return callback(null, true);
-    
-    // Allow all GitHub Codespaces URLs
-    if (origin.includes('.app.github.dev')) return callback(null, true);
-    
-    // Allow localhost for local development
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return callback(null, true);
-    
-    // Allow all origins in development
-    if (process.env.NODE_ENV !== 'production') return callback(null, true);
-    
-    callback(null, true); // Allow all for now
+
+    // Allow GitHub Codespaces and localhost in development
+    if (process.env.NODE_ENV !== 'production') {
+      if (origin.includes('.app.github.dev') || origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+    }
+
+    // Production: only allow explicit allowlist
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+
+    callback(new Error(`CORS: origin '${origin}' not allowed`));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
