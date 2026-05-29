@@ -17,7 +17,7 @@ export class JournalEntryService {
   /**
    * Create a new journal entry (DRAFT status)
    */
-  async createJournalEntry(request: CreateJournalEntryRequest, userId: string): Promise<string> {
+  async createJournalEntry(request: CreateJournalEntryRequest, userId: string, tenantId?: string): Promise<string> {
     // 1. Validate lines balance
     const totalDebit = request.lines.reduce((sum, line) => sum + (line.debit_amount || 0), 0);
     const totalCredit = request.lines.reduce((sum, line) => sum + (line.credit_amount || 0), 0);
@@ -91,8 +91,8 @@ export class JournalEntryService {
       });
     }
     
-    // 7. Insert to database (pseudo-code, real implementation uses DB pool)
-    const journalEntryId = await this.insertJournalEntry(header, lines);
+    // 7. Insert to database
+    const journalEntryId = await this.insertJournalEntry(header, lines, tenantId);
     
     return journalEntryId;
   }
@@ -281,11 +281,16 @@ export class JournalEntryService {
     return account;
   }
   
-  private async insertJournalEntry(_header: any, _lines: any[]): Promise<string> {
+  private async insertJournalEntry(_header: any, _lines: any[], tenantId?: string): Promise<string> {
+    const resolvedTenantId = tenantId || _header.tenant_id;
+    if (!resolvedTenantId) {
+      throw new Error('tenant_id is required to create a journal entry');
+    }
+
     let journalEntryId = '';
-    
+
     await transaction(async (client) => {
-      // Insert header - using actual schema columns
+      // Insert header
       const headerResult = await client.query(`
         INSERT INTO journal_entries (
           entry_number, entry_date, description, reference, status, created_by, tenant_id
@@ -298,12 +303,12 @@ export class JournalEntryService {
         _header.notes || '',
         _header.status,
         _header.created_by,
-        '00000000-0000-0000-0000-000000000001' // Default tenant
+        resolvedTenantId,
       ]);
-      
+
       journalEntryId = headerResult.rows[0].entry_id;
-      
-      // Insert lines - using actual schema columns
+
+      // Insert lines
       for (const line of _lines) {
         await client.query(`
           INSERT INTO journal_entry_lines (
@@ -315,11 +320,11 @@ export class JournalEntryService {
           line.debit_amount,
           line.credit_amount,
           line.line_description || '',
-          '00000000-0000-0000-0000-000000000001' // Default tenant
+          resolvedTenantId,
         ]);
       }
     });
-    
+
     return journalEntryId;
   }
   
@@ -334,7 +339,7 @@ export class JournalEntryService {
   
   private async getJournalEntryLines(_id: string): Promise<JournalEntryLine[]> {
     const result = await query(
-      'SELECT * FROM journal_entry_lines WHERE journal_entry_id = $1 ORDER BY line_number',
+      'SELECT * FROM journal_entry_lines WHERE entry_id = $1 ORDER BY line_number',
       [_id]
     );
     
@@ -390,7 +395,7 @@ export class JournalEntryService {
         posted_at = $3,
         posted_by = $4,
         updated_at = NOW()
-      WHERE id = $1
+      WHERE entry_id = $1
     `, [_id, _status, _postedAt, _postedBy]);
   }
   
@@ -405,14 +410,14 @@ export class JournalEntryService {
     await query(`
       UPDATE journal_entries
       SET reversed_by_journal_id = $2, updated_at = NOW()
-      WHERE id = $1
+      WHERE entry_id = $1
     `, [_originalId, _reversalId]);
     
     // Update reversal entry
     await query(`
       UPDATE journal_entries
       SET reverses_journal_id = $2, updated_at = NOW()
-      WHERE id = $1
+      WHERE entry_id = $1
     `, [_reversalId, _originalId]);
   }
 }

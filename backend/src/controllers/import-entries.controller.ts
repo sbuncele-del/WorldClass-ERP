@@ -361,7 +361,7 @@ async function validateLines(lines: ImportLine[]): Promise<ValidationResult> {
     } else {
       // Validate account exists
       const accountResult = await pool.query(
-        'SELECT code FROM chart_of_accounts WHERE code = $1',
+        'SELECT account_code FROM chart_of_accounts WHERE account_code = $1',
         [line.account_code]
       );
       if (accountResult.rows.length === 0) {
