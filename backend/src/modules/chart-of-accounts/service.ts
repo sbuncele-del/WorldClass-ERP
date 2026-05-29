@@ -1,7 +1,8 @@
-import { Pool } from 'pg';
+import { pool } from '../../config/database';
 
 export interface ChartAccount {
   account_id: number;
+  tenant_id: string;
   account_code: string;
   account_name: string;
   account_type: 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
@@ -14,39 +15,22 @@ export interface ChartAccount {
 }
 
 export class ChartOfAccountsService {
-  private pool: Pool;
 
-  constructor() {
-    // Determine SSL config - only use SSL for AWS RDS, not for local/Docker PostgreSQL
-    const sslConfig = process.env.DB_HOST?.includes('rds.amazonaws.com') 
-      ? { rejectUnauthorized: false }
-      : (process.env.DB_SSL === 'false' ? false : undefined);
-
-    this.pool = new Pool({
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT || '5432'),
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      ssl: sslConfig,
-    });
-  }
-
-  async getAllAccounts(filters?: {
+  async getAllAccounts(tenantId: string, filters?: {
     accountType?: string;
     isActive?: boolean;
     search?: string;
   }): Promise<ChartAccount[]> {
     let query = `
-      SELECT 
-        account_id, account_code, account_name, account_type,
+      SELECT
+        account_id, tenant_id, account_code, account_name, account_type,
         parent_account_id, description, is_active, is_system_account,
         created_at, updated_at
       FROM chart_of_accounts
-      WHERE 1=1
+      WHERE tenant_id = $1
     `;
-    const params: any[] = [];
-    let paramIndex = 1;
+    const params: any[] = [tenantId];
+    let paramIndex = 2;
 
     if (filters?.accountType) {
       query += ` AND account_type = $${paramIndex}`;
@@ -68,24 +52,24 @@ export class ChartOfAccountsService {
 
     query += ` ORDER BY account_code`;
 
-    const result = await this.pool.query(query, params);
+    const result = await pool.query(query, params);
     return result.rows;
   }
 
-  async getAccountById(accountId: number): Promise<ChartAccount | null> {
-    const result = await this.pool.query(
-      `SELECT 
-        account_id, account_code, account_name, account_type,
+  async getAccountById(tenantId: string, accountId: number): Promise<ChartAccount | null> {
+    const result = await pool.query(
+      `SELECT
+        account_id, tenant_id, account_code, account_name, account_type,
         parent_account_id, description, is_active, is_system_account,
         created_at, updated_at
       FROM chart_of_accounts
-      WHERE account_id = $1`,
-      [accountId]
+      WHERE account_id = $1 AND tenant_id = $2`,
+      [accountId, tenantId]
     );
     return result.rows[0] || null;
   }
 
-  async createAccount(data: {
+  async createAccount(tenantId: string, data: {
     account_code: string;
     account_name: string;
     account_type: string;
@@ -93,13 +77,14 @@ export class ChartOfAccountsService {
     description?: string;
     is_active?: boolean;
   }): Promise<ChartAccount> {
-    const result = await this.pool.query(
+    const result = await pool.query(
       `INSERT INTO chart_of_accounts (
-        account_code, account_name, account_type, parent_account_id,
+        tenant_id, account_code, account_name, account_type, parent_account_id,
         description, is_active, is_system_account, created_at, updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, false, NOW(), NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, false, NOW(), NOW())
       RETURNING *`,
       [
+        tenantId,
         data.account_code,
         data.account_name,
         data.account_type,
@@ -112,6 +97,7 @@ export class ChartOfAccountsService {
   }
 
   async updateAccount(
+    tenantId: string,
     accountId: number,
     data: {
       account_name?: string;
@@ -120,8 +106,8 @@ export class ChartOfAccountsService {
     }
   ): Promise<ChartAccount | null> {
     const updates: string[] = [];
-    const params: any[] = [];
-    let paramIndex = 1;
+    const params: any[] = [tenantId, accountId];
+    let paramIndex = 3;
 
     if (data.account_name !== undefined) {
       updates.push(`account_name = $${paramIndex}`);
@@ -142,16 +128,15 @@ export class ChartOfAccountsService {
     }
 
     if (updates.length === 0) {
-      return this.getAccountById(accountId);
+      return this.getAccountById(tenantId, accountId);
     }
 
     updates.push(`updated_at = NOW()`);
-    params.push(accountId);
 
-    const result = await this.pool.query(
+    const result = await pool.query(
       `UPDATE chart_of_accounts
       SET ${updates.join(', ')}
-      WHERE account_id = $${paramIndex}
+      WHERE account_id = $2 AND tenant_id = $1
       RETURNING *`,
       params
     );
@@ -159,9 +144,16 @@ export class ChartOfAccountsService {
     return result.rows[0] || null;
   }
 
-  async deleteAccount(accountId: number): Promise<boolean> {
+  async deleteAccount(tenantId: string, accountId: number): Promise<boolean> {
+    // Ensure account belongs to this tenant before checking usage
+    const ownership = await pool.query(
+      `SELECT account_id FROM chart_of_accounts WHERE account_id = $1 AND tenant_id = $2`,
+      [accountId, tenantId]
+    );
+    if (ownership.rows.length === 0) return false;
+
     // Check if account is used in journal entries
-    const usageCheck = await this.pool.query(
+    const usageCheck = await pool.query(
       `SELECT COUNT(*) as count FROM journal_entry_lines WHERE account_id = $1`,
       [accountId]
     );
@@ -170,38 +162,36 @@ export class ChartOfAccountsService {
       throw new Error('Cannot delete account that has transactions');
     }
 
-    const result = await this.pool.query(
-      `DELETE FROM chart_of_accounts WHERE account_id = $1 AND is_system_account = false`,
-      [accountId]
+    const result = await pool.query(
+      `DELETE FROM chart_of_accounts WHERE account_id = $1 AND tenant_id = $2 AND is_system_account = false`,
+      [accountId, tenantId]
     );
 
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
-  async getChildAccounts(parentId: number): Promise<ChartAccount[]> {
-    const result = await this.pool.query(
-      `SELECT * FROM chart_of_accounts WHERE parent_account_id = $1 ORDER BY account_code`,
-      [parentId]
+  async getChildAccounts(tenantId: string, parentId: number): Promise<ChartAccount[]> {
+    const result = await pool.query(
+      `SELECT * FROM chart_of_accounts WHERE parent_account_id = $1 AND tenant_id = $2 ORDER BY account_code`,
+      [parentId, tenantId]
     );
     return result.rows;
   }
 
-  async getAccountTree(): Promise<any[]> {
-    // Get all accounts
-    const result = await this.pool.query(
-      `SELECT * FROM chart_of_accounts WHERE is_active = true ORDER BY account_code`
+  async getAccountTree(tenantId: string): Promise<any[]> {
+    const result = await pool.query(
+      `SELECT * FROM chart_of_accounts WHERE is_active = true AND tenant_id = $1 ORDER BY account_code`,
+      [tenantId]
     );
 
     const accounts = result.rows;
     const accountMap = new Map<number, any>();
     const rootAccounts: any[] = [];
 
-    // Build map
     accounts.forEach((acc) => {
       accountMap.set(acc.account_id, { ...acc, children: [] });
     });
 
-    // Build tree
     accounts.forEach((acc) => {
       const node = accountMap.get(acc.account_id);
       if (acc.parent_account_id) {
@@ -219,75 +209,75 @@ export class ChartOfAccountsService {
     return rootAccounts;
   }
 
-  async seedDefaultAccounts(): Promise<{ created: number; accounts: ChartAccount[] }> {
+  async seedDefaultAccounts(tenantId: string): Promise<{ created: number; accounts: ChartAccount[] }> {
     const defaultAccounts = [
       // Assets (1xxx)
-      { code: '1000', name: 'Assets', type: 'ASSET', parent: null },
-      { code: '1100', name: 'Bank Accounts', type: 'ASSET', parent: null },
-      { code: '1200', name: 'Accounts Receivable', type: 'ASSET', parent: null },
-      { code: '1300', name: 'Inventory', type: 'ASSET', parent: null },
-      { code: '1400', name: 'Prepaid Expenses', type: 'ASSET', parent: null },
-      { code: '1500', name: 'Fixed Assets', type: 'ASSET', parent: null },
-      { code: '1510', name: 'Property & Equipment', type: 'ASSET', parent: null },
-      { code: '1520', name: 'Accumulated Depreciation', type: 'ASSET', parent: null },
+      { code: '1000', name: 'Assets', type: 'ASSET' },
+      { code: '1100', name: 'Bank Accounts', type: 'ASSET' },
+      { code: '1200', name: 'Accounts Receivable', type: 'ASSET' },
+      { code: '1300', name: 'Inventory', type: 'ASSET' },
+      { code: '1400', name: 'Prepaid Expenses', type: 'ASSET' },
+      { code: '1500', name: 'Fixed Assets', type: 'ASSET' },
+      { code: '1510', name: 'Property & Equipment', type: 'ASSET' },
+      { code: '1520', name: 'Accumulated Depreciation', type: 'ASSET' },
 
       // Liabilities (2xxx)
-      { code: '2000', name: 'Liabilities', type: 'LIABILITY', parent: null },
-      { code: '2100', name: 'Accounts Payable', type: 'LIABILITY', parent: null },
-      { code: '2200', name: 'Accrued Expenses', type: 'LIABILITY', parent: null },
-      { code: '2300', name: 'Short-term Loans', type: 'LIABILITY', parent: null },
-      { code: '2400', name: 'Long-term Loans', type: 'LIABILITY', parent: null },
-      { code: '2500', name: 'Tax Payable', type: 'LIABILITY', parent: null },
+      { code: '2000', name: 'Liabilities', type: 'LIABILITY' },
+      { code: '2100', name: 'Accounts Payable', type: 'LIABILITY' },
+      { code: '2200', name: 'Accrued Expenses', type: 'LIABILITY' },
+      { code: '2300', name: 'Short-term Loans', type: 'LIABILITY' },
+      { code: '2400', name: 'Long-term Loans', type: 'LIABILITY' },
+      { code: '2500', name: 'Tax Payable', type: 'LIABILITY' },
 
       // Equity (3xxx)
-      { code: '3000', name: 'Equity', type: 'EQUITY', parent: null },
-      { code: '3100', name: 'Share Capital', type: 'EQUITY', parent: null },
-      { code: '3200', name: 'Retained Earnings', type: 'EQUITY', parent: null },
-      { code: '3300', name: 'Current Year Earnings', type: 'EQUITY', parent: null },
+      { code: '3000', name: 'Equity', type: 'EQUITY' },
+      { code: '3100', name: 'Share Capital', type: 'EQUITY' },
+      { code: '3200', name: 'Retained Earnings', type: 'EQUITY' },
+      { code: '3300', name: 'Current Year Earnings', type: 'EQUITY' },
 
       // Revenue (4xxx)
-      { code: '4000', name: 'Revenue', type: 'REVENUE', parent: null },
-      { code: '4100', name: 'Sales Revenue', type: 'REVENUE', parent: null },
-      { code: '4200', name: 'Service Revenue', type: 'REVENUE', parent: null },
-      { code: '4300', name: 'Other Income', type: 'REVENUE', parent: null },
-      { code: '4400', name: 'Interest Income', type: 'REVENUE', parent: null },
+      { code: '4000', name: 'Revenue', type: 'REVENUE' },
+      { code: '4100', name: 'Sales Revenue', type: 'REVENUE' },
+      { code: '4200', name: 'Service Revenue', type: 'REVENUE' },
+      { code: '4300', name: 'Other Income', type: 'REVENUE' },
+      { code: '4400', name: 'Interest Income', type: 'REVENUE' },
 
       // Cost of Sales (5xxx)
-      { code: '5000', name: 'Cost of Sales', type: 'EXPENSE', parent: null },
-      { code: '5100', name: 'Bank Charges & Fees', type: 'EXPENSE', parent: null },
-      { code: '5200', name: 'Purchase Costs', type: 'EXPENSE', parent: null },
-      { code: '5300', name: 'Direct Labor', type: 'EXPENSE', parent: null },
+      { code: '5000', name: 'Cost of Sales', type: 'EXPENSE' },
+      { code: '5100', name: 'Bank Charges & Fees', type: 'EXPENSE' },
+      { code: '5200', name: 'Purchase Costs', type: 'EXPENSE' },
+      { code: '5300', name: 'Direct Labor', type: 'EXPENSE' },
 
       // Operating Expenses (6xxx)
-      { code: '6000', name: 'Operating Expenses', type: 'EXPENSE', parent: null },
-      { code: '6100', name: 'Salaries & Wages', type: 'EXPENSE', parent: null },
-      { code: '6200', name: 'Rent Expense', type: 'EXPENSE', parent: null },
-      { code: '6300', name: 'Utilities', type: 'EXPENSE', parent: null },
-      { code: '6400', name: 'Office Supplies', type: 'EXPENSE', parent: null },
-      { code: '6500', name: 'Insurance', type: 'EXPENSE', parent: null },
-      { code: '6600', name: 'Marketing & Advertising', type: 'EXPENSE', parent: null },
-      { code: '6700', name: 'Travel & Entertainment', type: 'EXPENSE', parent: null },
-      { code: '6800', name: 'Professional Fees', type: 'EXPENSE', parent: null },
-      { code: '6900', name: 'Depreciation Expense', type: 'EXPENSE', parent: null },
-      { code: '6950', name: 'Miscellaneous Expenses', type: 'EXPENSE', parent: null },
+      { code: '6000', name: 'Operating Expenses', type: 'EXPENSE' },
+      { code: '6100', name: 'Salaries & Wages', type: 'EXPENSE' },
+      { code: '6200', name: 'Rent Expense', type: 'EXPENSE' },
+      { code: '6300', name: 'Utilities', type: 'EXPENSE' },
+      { code: '6400', name: 'Office Supplies', type: 'EXPENSE' },
+      { code: '6500', name: 'Insurance', type: 'EXPENSE' },
+      { code: '6600', name: 'Marketing & Advertising', type: 'EXPENSE' },
+      { code: '6700', name: 'Travel & Entertainment', type: 'EXPENSE' },
+      { code: '6800', name: 'Professional Fees', type: 'EXPENSE' },
+      { code: '6900', name: 'Depreciation Expense', type: 'EXPENSE' },
+      { code: '6950', name: 'Miscellaneous Expenses', type: 'EXPENSE' },
     ];
 
     const createdAccounts: ChartAccount[] = [];
 
     for (const acc of defaultAccounts) {
-      // Check if account already exists
-      const existing = await this.pool.query(
-        `SELECT account_id FROM chart_of_accounts WHERE account_code = $1`,
-        [acc.code]
+      // Check if account already exists FOR THIS TENANT
+      const existing = await pool.query(
+        `SELECT account_id FROM chart_of_accounts WHERE account_code = $1 AND tenant_id = $2`,
+        [acc.code, tenantId]
       );
 
       if (existing.rows.length === 0) {
-        const result = await this.pool.query(
+        const result = await pool.query(
           `INSERT INTO chart_of_accounts (
-            account_code, account_name, account_type, is_active, is_system_account, created_at, updated_at
-          ) VALUES ($1, $2, $3, true, true, NOW(), NOW())
+            tenant_id, account_code, account_name, account_type, is_active, is_system_account, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, true, true, NOW(), NOW())
           RETURNING *`,
-          [acc.code, acc.name, acc.type]
+          [tenantId, acc.code, acc.name, acc.type]
         );
         createdAccounts.push(result.rows[0]);
       }

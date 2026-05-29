@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import { ChartOfAccountsController } from './controller';
+import { tenantMiddleware } from '../../middleware/tenant';
 
 const router = Router();
 const controller = new ChartOfAccountsController();
+
+// All routes require a valid tenant JWT
+router.use(tenantMiddleware);
 
 // Chart of Accounts routes
 router.get('/accounts', controller.getAllAccounts);
