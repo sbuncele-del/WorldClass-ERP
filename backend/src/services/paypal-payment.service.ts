@@ -58,11 +58,11 @@ export class PayPalPaymentService {
    * Create a PayPal Order and return approval URL
    */
   static async createOrder(data: PayPalOrderRequest): Promise<PayPalOrderResponse> {
-    const { tenantId, userId, plan, billingCycle, amount, customerEmail, customerName } = data;
+    const { tenantId, userId, plan, billingCycle, amount: requestedAmount, customerEmail, customerName } = data;
 
-    if (!amount) throw new Error('Amount required for PayPal order');
+    if (!requestedAmount && !plan) throw new Error('Amount or plan required for PayPal order');
 
-    const amount = this.getPlanPricing(plan, billingCycle);
+    const amount = requestedAmount || (plan && billingCycle ? (billingCycle === 'annual' ? requestedAmount : requestedAmount) : 0);
     if (!amount) throw new Error(`Invalid plan/billing cycle: ${plan}/${billingCycle}`);
 
     const transactionReference = `PP-${tenantId.substring(0, 8).toUpperCase()}-${Date.now()}`;
