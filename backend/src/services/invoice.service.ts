@@ -73,7 +73,7 @@ export class InvoiceService {
         const chunks: Buffer[] = [];
 
         doc.on('data', (chunk) => chunks.push(chunk));
-        doc.on('end', () => resolve(Buffer.concat(chunks)));
+        doc.on('end', () => resolve(Buffer.concat(chunks as unknown as Uint8Array[])));
         doc.on('error', reject);
 
         // Header

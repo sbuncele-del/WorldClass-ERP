@@ -90,6 +90,7 @@ class ProductionEmailService {
 
   private async initializeSESAsync(): Promise<void> {
     try {
+      // @ts-ignore optional dependency, only present when SES is used
       const { SESClient } = await import('@aws-sdk/client-ses');
       this.sesClient = new SESClient({
         region: process.env.AWS_SES_REGION || process.env.AWS_REGION || 'eu-north-1',
@@ -251,6 +252,7 @@ class ProductionEmailService {
     if (!this.sesClient) throw new Error('SES client not initialized');
 
     // Dynamic import for SendEmailCommand
+    // @ts-ignore optional dependency, only present when SES is used
     const { SendEmailCommand } = await import('@aws-sdk/client-ses');
     
     const command = new SendEmailCommand({

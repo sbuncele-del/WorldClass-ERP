@@ -381,7 +381,7 @@ export class AuthService {
         lastName: user.last_name,
         role: user.role,
         emailVerified: user.email_verified ?? true
-      }
+      } as any
     };
   }
 

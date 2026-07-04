@@ -65,7 +65,7 @@ router.post('/extract', upload.single('file'), async (req, res) => {
     console.log('🔍 Calling AWS Textract...');
     const command = new DetectDocumentTextCommand({
       Document: {
-        Bytes: file.buffer
+        Bytes: new Uint8Array(file.buffer)
       }
     });
 
