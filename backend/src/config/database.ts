@@ -13,7 +13,15 @@ import path from 'path';
 
 // ... existing imports ...
 
-const poolConfig: PoolConfig = {
+// Prefer a single DATABASE_URL (Neon/managed Postgres). Fall back to discrete vars.
+const connectionString = process.env.DATABASE_URL;
+const poolConfig: PoolConfig = connectionString ? {
+  connectionString,
+  max: 20,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 10000, // managed DBs may need a moment to wake
+  ssl: connectionString.includes('sslmode=disable') ? undefined : { rejectUnauthorized: false }
+} : {
   user: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   host: process.env.DB_HOST || 'localhost',
@@ -21,11 +29,11 @@ const poolConfig: PoolConfig = {
   database: process.env.DB_NAME || 'worldclass_erp',
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 2000, // Return error after 2 seconds if no connection available
+  connectionTimeoutMillis: 10000,
   ssl: process.env.DB_HOST?.includes('rds.amazonaws.com') ? {
     rejectUnauthorized: true,
     ca: fs.readFileSync(path.join(__dirname, '../../global-bundle.pem')).toString()
-  } : process.env.DB_HOST?.includes('ondigitalocean.com') ? {
+  } : (process.env.DB_HOST?.includes('ondigitalocean.com') || process.env.DB_HOST?.includes('neon.tech')) ? {
     rejectUnauthorized: false
   } : undefined
 };
@@ -39,8 +47,8 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Unexpected database error:', err);
-  process.exit(-1);
+  // Managed poolers (Neon) recycle idle connections; log and let pg reconnect
+  console.error('❌ Unexpected database error (pool will recover):', err.message);
 });
 
 const RETRY_DELAYS_MS = [1000, 2000, 4000];
