@@ -52,3 +52,17 @@ SELECT gen_random_uuid(), t.id, 'MAIN', t.name, 'company', 'ZAR', 'ZA', 0, 'acti
 FROM tenants t
 WHERE t.deleted_at IS NULL
   AND NOT EXISTS (SELECT 1 FROM legal_entities le WHERE le.tenant_id = t.id);
+
+-- F. compliance_policies: v2 controller selects cp.id
+ALTER TABLE compliance_policies ADD COLUMN IF NOT EXISTS id UUID GENERATED ALWAYS AS (policy_id) STORED;
+
+-- G. journal_entry_lines compat columns (repos join on account_id; writers use entry_id/tenant_id)
+ALTER TABLE journal_entry_lines
+  ADD COLUMN IF NOT EXISTS account_id INTEGER,
+  ADD COLUMN IF NOT EXISTS tenant_id UUID,
+  ADD COLUMN IF NOT EXISTS entry_id UUID;
+CREATE INDEX IF NOT EXISTS idx_jel_tenant ON journal_entry_lines(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_jel_account ON journal_entry_lines(account_id);
+
+-- H. chart_of_accounts: some financial queries reference coa.id (PK is account_id)
+ALTER TABLE chart_of_accounts ADD COLUMN IF NOT EXISTS id INTEGER GENERATED ALWAYS AS (account_id) STORED;
