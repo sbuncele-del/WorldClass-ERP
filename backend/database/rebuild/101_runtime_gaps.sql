@@ -66,3 +66,16 @@ CREATE INDEX IF NOT EXISTS idx_jel_account ON journal_entry_lines(account_id);
 
 -- H. chart_of_accounts: some financial queries reference coa.id (PK is account_id)
 ALTER TABLE chart_of_accounts ADD COLUMN IF NOT EXISTS id INTEGER GENERATED ALWAYS AS (account_id) STORED;
+
+-- I. referral_codes: signup queries it when a referral code is supplied; no DDL existed
+CREATE TABLE IF NOT EXISTS referral_codes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code VARCHAR(50) UNIQUE NOT NULL,
+  owner_tenant_id UUID,
+  description TEXT,
+  is_active BOOLEAN DEFAULT true,
+  uses_count INTEGER DEFAULT 0,
+  max_uses INTEGER,
+  expires_at TIMESTAMP,
+  created_at TIMESTAMP DEFAULT NOW()
+);
