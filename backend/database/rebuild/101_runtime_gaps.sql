@@ -160,3 +160,13 @@ SELECT t.id, x.k, x.l, x.u, x.i, x.o FROM tenants t CROSS JOIN (VALUES
 ) AS x(k,l,u,i,o)
 WHERE t.deleted_at IS NULL
 ON CONFLICT (tenant_id, task_key) DO NOTHING;
+
+-- J. journal_entries legacy read-compat (older code reads entry_date/entry_number)
+ALTER TABLE journal_entries ADD COLUMN IF NOT EXISTS entry_date DATE, ADD COLUMN IF NOT EXISTS entry_number VARCHAR(60);
+-- K. regulatory_filings columns per workspace controller bootstrap
+ALTER TABLE regulatory_filings
+  ADD COLUMN IF NOT EXISTS name VARCHAR(255),
+  ADD COLUMN IF NOT EXISTS period VARCHAR(30),
+  ADD COLUMN IF NOT EXISTS submitted_date TIMESTAMP,
+  ADD COLUMN IF NOT EXISTS amount NUMERIC(14,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS source VARCHAR(30) DEFAULT 'manual';
