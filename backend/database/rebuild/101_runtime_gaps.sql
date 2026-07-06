@@ -180,3 +180,12 @@ ALTER TABLE compliance_assessments ADD COLUMN IF NOT EXISTS compliance_percentag
 
 -- M. modules catalog + tenant_modules (tenant settings module toggles)
 -- (see repo history for full definition — created 2026-07-06)
+
+-- N. sales invoice v2-writer columns (tax_amount naming era + order-line fields)
+ALTER TABLE sales_invoices ADD COLUMN IF NOT EXISTS tax_amount NUMERIC(15,2) DEFAULT 0;
+ALTER TABLE sales_invoice_lines
+  ADD COLUMN IF NOT EXISTS item_id INTEGER,
+  ADD COLUMN IF NOT EXISTS discount_percent NUMERIC(6,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS discount_amount NUMERIC(15,2) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS tax_rate NUMERIC(6,2),
+  ADD COLUMN IF NOT EXISTS tax_amount NUMERIC(15,2) DEFAULT 0;
