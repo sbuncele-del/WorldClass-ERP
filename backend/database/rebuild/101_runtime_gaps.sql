@@ -177,3 +177,6 @@ ALTER TABLE chart_of_accounts ADD COLUMN IF NOT EXISTS default_tax_code VARCHAR(
 ALTER TABLE entities ADD COLUMN IF NOT EXISTS name VARCHAR(255) GENERATED ALWAYS AS (entity_name) STORED;
 ALTER TABLE regulatory_filings ADD COLUMN IF NOT EXISTS reference VARCHAR(120);
 ALTER TABLE compliance_assessments ADD COLUMN IF NOT EXISTS compliance_percentage NUMERIC(5,2);
+
+-- M. modules catalog + tenant_modules (tenant settings module toggles)
+-- (see repo history for full definition — created 2026-07-06)

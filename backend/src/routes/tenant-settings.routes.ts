@@ -28,6 +28,11 @@ router.get('/modules/:moduleCode/settings', TenantSettingsControllerV2.getModule
 
 // Notification preferences
 router.get('/notifications', TenantSettingsControllerV2.getNotificationPreferences);
+
+// Team management (used by TenantSettings page)
+router.get('/team', TenantSettingsControllerV2.getTeamMembers);
+router.post('/team/invite', TenantSettingsControllerV2.inviteTeamMember);
+router.delete('/team/:userId', TenantSettingsControllerV2.removeTeamMember);
 router.patch('/notifications', TenantSettingsControllerV2.updateNotificationPreferences);
 
 export default router;

@@ -254,7 +254,7 @@ const TenantSettings: React.FC = () => {
                       <img src={settings.logoUrl} alt="Company Logo" />
                     ) : (
                       <div className="tenant-logo-placeholder">
-                        {settings.companyName.charAt(0) || '?'}
+                        {(settings.companyName || '?').charAt(0)}
                       </div>
                     )}
                   </div>

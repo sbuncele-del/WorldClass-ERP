@@ -455,3 +455,86 @@ export default {
   getNotificationPreferences,
   updateNotificationPreferences
 };
+
+
+// ── Team management ─────────────────────────────────────────────
+export const getTeamMembers = async (req: any, res: any) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const result = await pool.query(
+      `SELECT id,
+              TRIM(COALESCE(first_name,'') || ' ' || COALESCE(last_name,'')) AS name,
+              email, role, status,
+              last_login_at AS "lastActive"
+       FROM users
+       WHERE tenant_id = $1 AND deleted_at IS NULL
+       ORDER BY created_at ASC`,
+      [tenantId]
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (error: any) {
+    console.error('getTeamMembers error:', error);
+    res.status(500).json({ success: false, error: 'Failed to load team members' });
+  }
+};
+
+export const inviteTeamMember = async (req: any, res: any) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { email, role = 'user' } = req.body || {};
+    if (!email) return res.status(400).json({ success: false, error: 'Email is required' });
+
+    const existing = await pool.query(
+      'SELECT id FROM users WHERE LOWER(email) = LOWER($1) AND deleted_at IS NULL', [email]
+    );
+    if (existing.rows.length) {
+      return res.status(409).json({ success: false, error: 'A user with this email already exists' });
+    }
+
+    const crypto = require('crypto');
+    const tempHash = '$invited$' + crypto.randomBytes(24).toString('hex'); // unusable until reset
+    const result = await pool.query(
+      `INSERT INTO users (tenant_id, email, password_hash, first_name, last_name, role, status, email_verified, created_at, updated_at)
+       VALUES ($1, $2, $3, '', '', $4, 'invited', false, NOW(), NOW())
+       RETURNING id, email, role, status`,
+      [tenantId, email, tempHash, role]
+    );
+
+    // Best-effort invite email (works when RESEND_API_KEY is configured)
+    try {
+      const { emailService } = require('../services/email-production.service');
+      const appUrl = process.env.FRONTEND_URL || 'https://siyabusa-erp.vercel.app';
+      await emailService.send({
+        to: email,
+        subject: 'You have been invited to SiyaBusa ERP',
+        html: `<p>You have been invited to join your team on <b>SiyaBusa ERP</b>.</p>
+               <p><a href="${appUrl}/forgot-password">Click here to set your password</a> using this email address, then log in at <a href="${appUrl}">${appUrl}</a>.</p>`,
+      });
+    } catch (e) { console.warn('Invite email skipped:', (e as any)?.message); }
+
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (error: any) {
+    console.error('inviteTeamMember error:', error);
+    res.status(500).json({ success: false, error: 'Failed to invite team member' });
+  }
+};
+
+export const removeTeamMember = async (req: any, res: any) => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const { userId } = req.params;
+    if (userId === (req as any).userId) {
+      return res.status(400).json({ success: false, error: 'You cannot remove yourself' });
+    }
+    const result = await pool.query(
+      `UPDATE users SET status = 'inactive', deleted_at = NOW()
+       WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL RETURNING id`,
+      [userId, tenantId]
+    );
+    if (!result.rows.length) return res.status(404).json({ success: false, error: 'User not found' });
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('removeTeamMember error:', error);
+    res.status(500).json({ success: false, error: 'Failed to remove team member' });
+  }
+};
