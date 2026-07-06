@@ -88,6 +88,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [error, setError] = useState<string | null>(null);
   const [authVersion, setAuthVersion] = useState(0);
 
+  useEffect(() => {
+    const onAuthChanged = () => setAuthVersion(v => v + 1);
+    window.addEventListener('auth-changed', onAuthChanged);
+    return () => window.removeEventListener('auth-changed', onAuthChanged);
+  }, []);
+
   // Helper to map raw user data (from API or localStorage) to User type
   const mapUserData = (userData: any): User => ({
     id: userData.id,

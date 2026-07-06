@@ -73,6 +73,8 @@ class AuthService {
       localStorage.setItem('authToken', response.data.data.tokens.accessToken);
       localStorage.setItem('refreshToken', response.data.data.tokens.refreshToken);
       localStorage.setItem('user', JSON.stringify(response.data.data.user));
+      // Notify UserContext (mounted pre-login) to rehydrate
+      window.dispatchEvent(new Event('auth-changed'));
       localStorage.setItem('tenant', JSON.stringify(response.data.data.tenant));
       
       // Store IDs for API service
