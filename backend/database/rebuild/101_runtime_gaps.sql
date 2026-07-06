@@ -170,3 +170,8 @@ ALTER TABLE regulatory_filings
   ADD COLUMN IF NOT EXISTS submitted_date TIMESTAMP,
   ADD COLUMN IF NOT EXISTS amount NUMERIC(14,2) DEFAULT 0,
   ADD COLUMN IF NOT EXISTS source VARCHAR(30) DEFAULT 'manual';
+
+-- L. more read-compat: workspace compliance helpers
+ALTER TABLE journal_entry_lines ADD COLUMN IF NOT EXISTS tax_code VARCHAR(30);
+ALTER TABLE chart_of_accounts ADD COLUMN IF NOT EXISTS default_tax_code VARCHAR(30);
+ALTER TABLE entities ADD COLUMN IF NOT EXISTS name VARCHAR(255) GENERATED ALWAYS AS (entity_name) STORED;
