@@ -176,3 +176,4 @@ ALTER TABLE journal_entry_lines ADD COLUMN IF NOT EXISTS tax_code VARCHAR(30);
 ALTER TABLE chart_of_accounts ADD COLUMN IF NOT EXISTS default_tax_code VARCHAR(30);
 ALTER TABLE entities ADD COLUMN IF NOT EXISTS name VARCHAR(255) GENERATED ALWAYS AS (entity_name) STORED;
 ALTER TABLE regulatory_filings ADD COLUMN IF NOT EXISTS reference VARCHAR(120);
+ALTER TABLE compliance_assessments ADD COLUMN IF NOT EXISTS compliance_percentage NUMERIC(5,2);
