@@ -165,6 +165,8 @@ const allowedOrigins = [
   'https://siyabusaerp.co.za',
   'https://www.siyabusaerp.co.za',
   'https://demo.siyabusaerp.co.za',
+  'https://siyabusa-erp.vercel.app',
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL.replace(/\/$/, '')] : []),
   ...(process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map(o => o.trim()) : []),
 ];
 
@@ -180,10 +182,13 @@ const corsOptions = {
       }
     }
 
-    // Production: only allow explicit allowlist
+    // Production: only allow explicit allowlist (+ our Vercel deployments)
     if (allowedOrigins.includes(origin)) return callback(null, true);
+    if (origin.startsWith('https://siyabusa-') && origin.endsWith('.vercel.app')) return callback(null, true);
 
-    callback(new Error(`CORS: origin '${origin}' not allowed`));
+    // Deny without throwing: a thrown error becomes a 500; this is a clean CORS denial
+    console.warn(`CORS denied origin: ${origin}`);
+    callback(null, false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
