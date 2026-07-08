@@ -275,6 +275,28 @@ For support, please open an issue in the repository or contact the development t
 - [ ] Audit logging
 - [ ] SARS Sentinel AI (South African tax compliance automation)
 
+## 🤖 Using GitHub Copilot with This Project
+
+GitHub Copilot can help you develop and understand this ERP system faster.
+
+### Quick Start with Web Editor
+1. Press `.` on this repository page to open in github.dev
+2. Press `Ctrl+Alt+I` (or `Cmd+Option+I` on Mac) to open Copilot Chat
+3. Ask questions like `@workspace How is this ERP structured?`
+
+### Can't See Copilot Chat?
+- See our detailed guide: [GitHub Copilot Guide](docs/GITHUB-COPILOT-GUIDE.md)
+- Ensure you have an active [Copilot subscription](https://github.com/settings/copilot)
+- Install the "GitHub Copilot Chat" extension in the web editor
+
+### Helpful Copilot Commands for This Project
+```
+@workspace How do I set up the development environment?
+@workspace Where are the API endpoints defined?
+@workspace Help me create a new module
+/explain What does this function do?
+```
+
 ## 👥 Team
 
 Built with ❤️ by the Worldclass ERP development team.
