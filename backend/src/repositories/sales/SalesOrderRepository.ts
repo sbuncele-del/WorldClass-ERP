@@ -64,6 +64,7 @@ export interface SalesOrder {
 
 export class SalesOrderRepository extends BaseRepository<SalesOrder> {
   protected tableName = 'orders';
+  protected primaryKey = 'order_id';
   protected schema = 'sales';
   protected softDelete = false;  // Table doesn't have deleted_at column
   protected entityScoped = false;
@@ -162,7 +163,7 @@ export class SalesOrderRepository extends BaseRepository<SalesOrder> {
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         `, [
           ctx.tenantId,
-          order.id,
+          order.order_id,
           i + 1,
           line.item_id,
           line.quantity,

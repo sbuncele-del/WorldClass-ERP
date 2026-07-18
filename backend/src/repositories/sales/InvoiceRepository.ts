@@ -56,6 +56,7 @@ export interface Invoice {
 
 export class InvoiceRepository extends BaseRepository<Invoice> {
   protected tableName = 'sales_invoices';
+  protected primaryKey = 'invoice_id';
   protected schema = 'public';
   protected softDelete = false;  // Table doesn't have deleted_at column
   protected entityScoped = false;
@@ -208,7 +209,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         `, [
           ctx.tenantId,
-          invoice.id,  // Table uses 'id' as primary key
+          invoice.invoice_id,
           i + 1,
           line.description || 'Service',
           line.quantity || 1,
@@ -407,15 +408,14 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
       // Create invoice
       const invoiceResult = await client.query(`
         INSERT INTO ${this.fullTableName}
-        (tenant_id, invoice_number, customer_id, order_id, invoice_date, due_date, status,
-         subtotal, discount_amount, tax_amount, total_amount, amount_paid, balance_due,
-         currency_code, payment_terms, notes, created_by)
-        VALUES ($1, $2, $3, $4, CURRENT_DATE, $5, 'draft', $6, $7, $8, $9, 0, $9, $10, $11, $12, $13)
+        (tenant_id, invoice_number, customer_id, invoice_date, due_date, status,
+         subtotal, tax_amount, total_amount, amount_paid, amount_due, notes, created_by)
+        VALUES ($1, $2, $3, CURRENT_DATE, $4, 'DRAFT', $5, $6, $7, 0, $7, $8, $9)
         RETURNING *
       `, [
-        ctx.tenantId, invoiceNumber, order.customer_id, orderId, dueDate,
-        order.subtotal, order.discount_amount, order.tax_amount, order.total_amount,
-        order.currency_code, order.payment_terms, order.notes, ctx.userId
+        ctx.tenantId, invoiceNumber, order.customer_id, dueDate,
+        order.subtotal, order.tax_amount, order.total_amount,
+        order.notes, ctx.userId
       ]);
 
       const invoice = invoiceResult.rows[0];
@@ -429,7 +429,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
                discount_percent, discount_amount, tax_rate, tax_amount, line_total
         FROM sales_order_lines
         WHERE order_id = $2 AND tenant_id = $3
-      `, [invoice.id, orderId, ctx.tenantId]);
+      `, [invoice.invoice_id, orderId, ctx.tenantId]);
 
       await this.commitTransaction(client);
       return invoice;

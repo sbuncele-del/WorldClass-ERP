@@ -60,6 +60,7 @@ export interface BudgetVsActual {
 
 export class BudgetRepository extends BaseRepository<Budget> {
   protected tableName = 'budgets';
+  protected primaryKey = 'budget_id';
   protected schema = 'financial';
   protected softDelete = false;
 
