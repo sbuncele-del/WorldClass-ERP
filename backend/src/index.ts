@@ -1592,8 +1592,7 @@ v1Router.use('/tenant', apiLimiter, tenantSettingsRoutes);
 v1Router.use('/payment', apiLimiter, paymentRoutes);
 
 // Subscription routes (protected with API rate limiting)
-// TEMPORARILY DISABLED - Depends on payment routes
-// v1Router.use('/subscription', apiLimiter, subscriptionRoutes);
+v1Router.use('/subscription', apiLimiter, subscriptionRoutes);
 
 // Webhook routes (PayPal / NOWPayments crypto / EFT callbacks)
 v1Router.use('/webhooks', webhookLimiter, paymentWebhookRouter);
