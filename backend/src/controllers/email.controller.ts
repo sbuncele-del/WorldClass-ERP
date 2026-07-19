@@ -666,9 +666,12 @@ export const sendEmail = async (req: Request, res: Response) => {
         secure: account.smtp_secure,
         auth: {
           user: account.username,
-          pass: account.password_encrypted
+          pass: decryptPassword(account.password_encrypted)
         },
-        tls: { rejectUnauthorized: false }
+        tls: { rejectUnauthorized: false },
+        connectionTimeout: 8000,
+        greetingTimeout: 8000,
+        socketTimeout: 8000
       });
 
       await transporter.sendMail({
