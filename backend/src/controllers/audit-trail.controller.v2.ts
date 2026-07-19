@@ -94,7 +94,7 @@ export class AuditTrailControllerV2 {
 
       // Get total count
       const countQuery = `
-        SELECT COUNT(*) FROM audit_log
+        SELECT COUNT(*) FROM audit_log al
         WHERE ${conditions.join(' AND ')}
       `;
       const countResult = await pool.query(countQuery, params.slice(0, -2));
@@ -288,7 +288,7 @@ export class AuditTrailControllerV2 {
   static async exportAuditTrail(req: TenantRequest, res: Response): Promise<void> {
     try {
       const { tenantId } = getTenantContext(req);
-      const { date_from, date_to, format = 'csv' } = req.body;
+      const { date_from, date_to, format = 'csv' } = req.query as { date_from?: string; date_to?: string; format?: string };
 
       const query = `
         SELECT 
