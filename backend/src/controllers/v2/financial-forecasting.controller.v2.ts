@@ -426,13 +426,14 @@ export async function createBudget(req: TenantRequest, res: Response): Promise<v
     for (const line of lines) {
       const lineResult = await client.query(
         `INSERT INTO budget_lines (
-          budget_id, account_code, account_name, line_description,
+          tenant_id, budget_id, account_code, account_name, line_description,
           period_type, month_1, month_2, month_3, month_4, month_5, month_6,
           month_7, month_8, month_9, month_10, month_11, month_12,
           allocation_method, is_recurring, notes
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
         RETURNING *`,
         [
+          tenantId,
           budgetId,
           line.account_code,
           line.account_name,
