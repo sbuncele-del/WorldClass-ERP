@@ -244,7 +244,7 @@ async function seedDefaultChartOfAccounts(tenantId: string): Promise<void> {
         allow_manual_entry, is_system_account, currency_code,
         current_balance
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, 1, true, true, false, 'ZAR', 0)
-      ON CONFLICT (tenant_id, code) DO NOTHING`,
+      ON CONFLICT (account_code) DO NOTHING`,
       [tenantId, acc.code, acc.name, acc.type, acc.cat, acc.balance, acc.header]
     );
   }
