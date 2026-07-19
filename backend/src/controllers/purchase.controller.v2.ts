@@ -299,7 +299,7 @@ export const createVendorInvoice = async (req: TenantRequest, res: Response) => 
     const invoice = await purchaseInvoiceRepository.create(ctx, {
       ...invoiceData,
       amount_paid: invoiceData.amount_paid || 0,
-      balance_due: invoiceData.balance_due ?? invoiceData.total_amount
+      amount_outstanding: invoiceData.amount_outstanding ?? invoiceData.total_amount
     });
 
     res.status(201).json({ success: true, data: invoice, message: 'Vendor invoice created successfully' });

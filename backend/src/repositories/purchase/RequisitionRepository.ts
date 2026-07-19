@@ -91,7 +91,7 @@ export class RequisitionRepository extends BaseRepository<Requisition> {
 
       const reqResult = await client.query<Requisition>(`
         INSERT INTO ${this.fullTableName}
-        (tenant_id, requisition_number, requisition_date, requested_by, department_id, required_by_date, priority, status, total_amount, notes, created_by)
+        (tenant_id, requisition_number, requisition_date, requested_by, department, required_by_date, priority, status, total_amount, notes, created_by)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
         RETURNING *
       `, [
