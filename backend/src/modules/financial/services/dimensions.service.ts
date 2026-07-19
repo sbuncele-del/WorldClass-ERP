@@ -125,7 +125,7 @@ export class DimensionsService {
     const result = await query(
       `INSERT INTO departments (
         tenant_id, code, name, description, parent_department_id, level,
-        department_head_id, department_head_name, cost_center_id,
+        manager_id, manager_name, cost_center_code,
         employee_count, created_by
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
       RETURNING department_id as id`,
@@ -204,9 +204,9 @@ export class DimensionsService {
     const result = await query(
       `INSERT INTO projects (
         tenant_id, project_code, project_name, description, project_type, status,
-        client_id, client_name, manager_id, manager_name,
+        client_id, client_name, manager_id,
         start_date, end_date, budget, priority, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id`,
       [
         tenantId,
@@ -218,7 +218,6 @@ export class DimensionsService {
         data.customer_id,
         data.customer_name,
         data.project_manager_id,
-        data.project_manager_name,
         data.start_date,
         data.end_date,
         data.planned_budget || 0,
