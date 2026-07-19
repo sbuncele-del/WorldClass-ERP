@@ -871,17 +871,18 @@ export const getStockLevels = async (req: TenantRequest, res: Response) => {
     const ctx = getTenantContext(req);
     const { limit = 100, offset = 0 } = req.query;
 
-    // Simplified query - get items with stock info
     const result = await pool.query(`
-      SELECT 
-        i.id as stock_level_id,
-        i.id as item_id,
+      SELECT
+        sl.id as stock_level_id,
+        i.item_id,
         i.item_code,
         i.item_name,
-        0 as quantity_on_hand,
-        10 as reorder_level,
-        i.created_at as updated_at
-      FROM items i
+        sl.warehouse_id,
+        COALESCE(sl.quantity_on_hand, 0) as quantity_on_hand,
+        i.reorder_level,
+        COALESCE(sl.updated_at, i.created_at) as updated_at
+      FROM inventory.items i
+      LEFT JOIN inventory.stock_levels sl ON sl.item_id = i.item_id AND sl.tenant_id = i.tenant_id
       WHERE i.tenant_id = $1
       ORDER BY i.item_name ASC
       LIMIT $2 OFFSET $3
@@ -911,7 +912,7 @@ export const createStockMovement = async (req: TenantRequest, res: Response) => 
     const movementNumber = `MOV-${String(parseInt(countResult.rows[0].count) + 1).padStart(6, '0')}`;
 
     const result = await pool.query(
-      `INSERT INTO inventory.stock_movements (tenant_id, movement_number, item_id, warehouse_id, movement_type, quantity, reference_number, notes, status, created_by)
+      `INSERT INTO inventory.stock_movements (tenant_id, movement_number, item_id, from_warehouse_id, movement_type, quantity, reference_number, notes, status, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'draft', $9)
        RETURNING *`,
       [ctx.tenantId, movementNumber, item_id, warehouse_id, movement_type, quantity, reference_number, notes, ctx.userId]
@@ -955,13 +956,13 @@ export const postStockMovement = async (req: TenantRequest, res: Response) => {
          quantity_on_hand = inventory.stock_levels.quantity_on_hand + $4,
          quantity_available = inventory.stock_levels.quantity_available + $4,
          updated_at = NOW()`,
-      [ctx.tenantId, movement.item_id, movement.warehouse_id, movement.quantity * multiplier]
+      [ctx.tenantId, movement.item_id, movement.from_warehouse_id, movement.quantity * multiplier]
     );
 
     // Update movement status
     const result = await pool.query(
-      'UPDATE inventory.stock_movements SET status = $1, posted_at = NOW(), posted_by = $2 WHERE movement_id = $3 AND tenant_id = $4 RETURNING *',
-      ['posted', ctx.userId, id, ctx.tenantId]
+      'UPDATE inventory.stock_movements SET status = $1, posted = true, posted_date = NOW() WHERE movement_id = $2 AND tenant_id = $3 RETURNING *',
+      ['posted', id, ctx.tenantId]
     );
 
     res.json({ success: true, data: result.rows[0], message: 'Stock movement posted' });
@@ -1113,7 +1114,7 @@ export const postStockAdjustment = async (req: TenantRequest, res: Response) => 
 
     // Update adjustment status
     const result = await pool.query(
-      'UPDATE inventory.stock_adjustments SET status = $1, posted_at = NOW(), posted_by = $2 WHERE adjustment_id = $3 AND tenant_id = $4 RETURNING *',
+      'UPDATE inventory.stock_adjustments SET status = $1, posted = true, posted_date = NOW(), approved_by = $2, approved_date = NOW() WHERE adjustment_id = $3 AND tenant_id = $4 RETURNING *',
       ['posted', ctx.userId, id, ctx.tenantId]
     );
 
@@ -1242,8 +1243,8 @@ export const postStockTake = async (req: TenantRequest, res: Response) => {
 
     // Update stock take status
     const result = await pool.query(
-      'UPDATE inventory.stock_takes SET status = $1, posted_at = NOW(), posted_by = $2 WHERE stock_take_id = $3 AND tenant_id = $4 RETURNING *',
-      ['posted', ctx.userId, id, ctx.tenantId]
+      'UPDATE inventory.stock_takes SET status = $1, posted = true, posted_date = NOW() WHERE stock_take_id = $2 AND tenant_id = $3 RETURNING *',
+      ['posted', id, ctx.tenantId]
     );
 
     res.json({ success: true, data: result.rows[0], message: 'Stock take posted' });
@@ -1357,15 +1358,15 @@ export const getReorderSuggestions = async (req: TenantRequest, res: Response) =
         w.warehouse_name,
         sl.quantity_on_hand,
         sl.quantity_available,
-        sl.reorder_level,
-        sl.reorder_quantity,
-        (sl.reorder_level - sl.quantity_available) as suggested_order_quantity
+        i.reorder_level,
+        i.reorder_quantity,
+        (i.reorder_level - sl.quantity_available) as suggested_order_quantity
       FROM inventory.stock_levels sl
       JOIN inventory.items i ON sl.item_id = i.item_id AND i.tenant_id = sl.tenant_id
       JOIN inventory.warehouses w ON sl.warehouse_id = w.warehouse_id AND w.tenant_id = sl.tenant_id
       WHERE sl.tenant_id = $1
-        AND sl.quantity_available <= sl.reorder_level
-        AND sl.reorder_level > 0
+        AND sl.quantity_available <= i.reorder_level
+        AND i.reorder_level > 0
     `;
     const params: any[] = [ctx.tenantId];
     let paramCount = 2;
@@ -1376,7 +1377,7 @@ export const getReorderSuggestions = async (req: TenantRequest, res: Response) =
       paramCount++;
     }
 
-    query += ` ORDER BY (sl.quantity_available / NULLIF(sl.reorder_level, 0)) ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
+    query += ` ORDER BY (sl.quantity_available / NULLIF(i.reorder_level, 0)) ASC LIMIT $${paramCount} OFFSET $${paramCount + 1}`;
     params.push(limit, offset);
 
     const result = await pool.query(query, params);
@@ -1402,14 +1403,14 @@ export const generateReorderSuggestions = async (req: TenantRequest, res: Respon
         w.warehouse_name,
         sl.quantity_on_hand,
         sl.quantity_available,
-        sl.reorder_level,
-        GREATEST(sl.reorder_quantity, sl.reorder_level - sl.quantity_available) as suggested_order_quantity
+        i.reorder_level,
+        GREATEST(i.reorder_quantity, i.reorder_level - sl.quantity_available) as suggested_order_quantity
       FROM inventory.stock_levels sl
       JOIN inventory.items i ON sl.item_id = i.item_id AND i.tenant_id = sl.tenant_id
       JOIN inventory.warehouses w ON sl.warehouse_id = w.warehouse_id AND w.tenant_id = sl.tenant_id
       WHERE sl.tenant_id = $1
-        AND sl.quantity_available <= sl.reorder_level
-        AND sl.reorder_level > 0
+        AND sl.quantity_available <= i.reorder_level
+        AND i.reorder_level > 0
     `;
     const params: any[] = [ctx.tenantId];
 
@@ -1418,7 +1419,7 @@ export const generateReorderSuggestions = async (req: TenantRequest, res: Respon
       params.push(warehouse_id);
     }
 
-    query += ` ORDER BY (sl.quantity_available / NULLIF(sl.reorder_level, 0)) ASC`;
+    query += ` ORDER BY (sl.quantity_available / NULLIF(i.reorder_level, 0)) ASC`;
 
     const result = await pool.query(query, params);
     res.json({ 
