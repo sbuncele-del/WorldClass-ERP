@@ -13,21 +13,28 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-i
 // Attempt to resolve entity context from request headers and attach to req
 async function resolveEntityContext(req: TenantRequest, tenantId: string): Promise<void> {
   const headerValue = (req.headers['x-entity-id'] || req.headers['x-entity']) as string | string[] | undefined;
-  if (!headerValue) {
-    return;
-  }
-
   const entityId = Array.isArray(headerValue) ? headerValue[0] : headerValue;
-  if (!entityId) {
-    return;
-  }
 
-  const entityResult = await getPool().query(
-    `SELECT id, tenant_id, name, code, type, parent_id, status, currency, country, level
-     FROM legal_entities
-     WHERE id = $1 AND tenant_id = $2`,
-    [entityId, tenantId]
-  );
+  let entityResult;
+  if (entityId) {
+    entityResult = await getPool().query(
+      `SELECT id, tenant_id, name, code, type, parent_id, status, currency, country, level
+       FROM legal_entities
+       WHERE id = $1 AND tenant_id = $2`,
+      [entityId, tenantId]
+    );
+  } else {
+    // No entity header supplied (older clients, race on first load, etc.) —
+    // fall back to the tenant's default/primary entity rather than blocking the request.
+    entityResult = await getPool().query(
+      `SELECT id, tenant_id, name, code, type, parent_id, status, currency, country, level
+       FROM legal_entities
+       WHERE tenant_id = $1
+       ORDER BY is_default DESC, level ASC, created_at ASC
+       LIMIT 1`,
+      [tenantId]
+    );
+  }
 
   if (entityResult.rows.length === 0) {
     // Entity not found — silently skip instead of blocking the request.
