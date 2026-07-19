@@ -407,24 +407,26 @@ export async function getPolicies(req: TenantRequest, res: Response): Promise<vo
     const { categoryId, status, active } = req.query;
 
     const queryParams: any[] = [tenantId];
-    // Simplified query - using compliance_policies table directly
 
     const query = `
-      SELECT 
-        cp.id as policy_id,
-        cp.tenant_id,
-        cp.name as policy_name,
-        cp.description,
-        cp.policy_type,
-        cp.status,
-        cp.effective_date,
-        cp.created_at,
-        'General' as category_name,
-        true as is_active,
-        0 as acknowledgment_count
-      FROM compliance_policies cp
-      WHERE cp.tenant_id = $1
-      ORDER BY cp.created_at DESC
+      SELECT
+        p.policy_id,
+        p.tenant_id,
+        p.policy_code,
+        p.policy_title,
+        p.policy_description,
+        p.category_id,
+        p.status,
+        p.version,
+        p.effective_date,
+        p.created_at,
+        pc.category_name,
+        p.is_active,
+        (SELECT COUNT(*) FROM policy_acknowledgments pa WHERE pa.policy_id = p.policy_id) as acknowledgment_count
+      FROM policies p
+      LEFT JOIN policy_categories pc ON p.category_id = pc.category_id
+      WHERE p.tenant_id = $1
+      ORDER BY p.created_at DESC
     `;
 
     const result = await pool.query(query, queryParams);
