@@ -304,7 +304,7 @@ export async function getBudgets(req: TenantRequest, res: Response): Promise<voi
       paramCount++;
     }
 
-    queryText += ` ORDER BY b.fiscal_year DESC, b.name ASC`;
+    queryText += ` ORDER BY b.fiscal_year DESC, b.budget_name ASC`;
 
     const result = await query(queryText, params);
 
