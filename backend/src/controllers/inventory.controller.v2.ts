@@ -873,7 +873,7 @@ export const getStockLevels = async (req: TenantRequest, res: Response) => {
 
     const result = await pool.query(`
       SELECT
-        sl.id as stock_level_id,
+        sl.stock_level_id as stock_level_id,
         i.item_id,
         i.item_code,
         i.item_name,
