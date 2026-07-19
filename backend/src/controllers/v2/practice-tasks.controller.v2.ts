@@ -29,7 +29,7 @@ export const getAllTasks = async (req: TenantRequest, res: Response) => {
       FROM practice_tasks pt
       JOIN client_projects cp ON pt.project_id = cp.project_id AND cp.tenant_id = pt.tenant_id
       JOIN customers c ON cp.customer_id = c.customer_id AND c.tenant_id = cp.tenant_id
-      LEFT JOIN employees e ON pt.assigned_to = e.employee_id AND e.tenant_id = pt.tenant_id
+      LEFT JOIN hr.employees e ON pt.assigned_to = e.employee_id AND e.tenant_id = pt.tenant_id
       WHERE pt.tenant_id = $1
     `;
 
@@ -155,7 +155,7 @@ export const getTaskById = async (req: TenantRequest, res: Response) => {
       FROM practice_tasks pt
       JOIN client_projects cp ON pt.project_id = cp.project_id AND cp.tenant_id = pt.tenant_id
       JOIN customers c ON cp.customer_id = c.customer_id AND c.tenant_id = cp.tenant_id
-      LEFT JOIN employees e ON pt.assigned_to = e.employee_id AND e.tenant_id = pt.tenant_id
+      LEFT JOIN hr.employees e ON pt.assigned_to = e.employee_id AND e.tenant_id = pt.tenant_id
       WHERE pt.tenant_id = $1 AND pt.task_id = $2`,
       [tenantId, id]
     );

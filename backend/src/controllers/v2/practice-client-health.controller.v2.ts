@@ -31,7 +31,7 @@ export const getClient360 = async (req: TenantRequest, res: Response) => {
         e.first_name || ' ' || e.last_name as employee_name,
         cp.project_name
       FROM client_interactions ci
-      LEFT JOIN employees e ON ci.employee_id = e.employee_id AND e.tenant_id = ci.tenant_id
+      LEFT JOIN hr.employees e ON ci.employee_id = e.employee_id AND e.tenant_id = ci.tenant_id
       LEFT JOIN client_projects cp ON ci.project_id = cp.project_id AND cp.tenant_id = ci.tenant_id
       WHERE ci.tenant_id = $1 AND ci.customer_id = $2
       ORDER BY ci.interaction_date DESC
@@ -126,7 +126,7 @@ export const getAllClientHealth = async (req: TenantRequest, res: Response) => {
           LIMIT 1
         ) as last_check_date
       FROM customers c
-      LEFT JOIN employees e ON c.relationship_manager_id = e.employee_id AND e.tenant_id = c.tenant_id
+      LEFT JOIN hr.employees e ON c.relationship_manager_id = e.employee_id AND e.tenant_id = c.tenant_id
       WHERE c.tenant_id = $1 AND c.practice_client_id IS NOT NULL
     `;
 
@@ -257,7 +257,7 @@ export const calculateHealthScore = async (req: TenantRequest, res: Response) =>
     else if (lifetimeValue > 100000) financialScore += 5;
     else if (lifetimeValue > 50000) financialScore += 3;
 
-    const totalRevenue = parseFloat(client360.total_revenue || 1);
+    const totalRevenue = parseFloat(client360.total_revenue_ytd || 1);
     const outstandingRatio = parseFloat(client360.outstanding_amount || 0) / totalRevenue;
     if (outstandingRatio <= 0.1) financialScore += 10;
     else if (outstandingRatio <= 0.2) financialScore += 7;
@@ -350,7 +350,7 @@ export const calculateHealthScore = async (req: TenantRequest, res: Response) =>
     await client.query(
       `UPDATE customers
        SET health_score = $1, churn_risk = $2, last_health_check_date = NOW()
-       WHERE tenant_id = $3 AND id = $4`,
+       WHERE tenant_id = $3 AND customer_id = $4`,
       [Math.round(totalHealthScore), churnRisk, tenantId, id]
     );
 
@@ -458,7 +458,7 @@ export const getInteractions = async (req: TenantRequest, res: Response) => {
         e.first_name || ' ' || e.last_name as employee_name,
         cp.project_name
       FROM client_interactions ci
-      LEFT JOIN employees e ON ci.employee_id = e.employee_id AND e.tenant_id = ci.tenant_id
+      LEFT JOIN hr.employees e ON ci.employee_id = e.employee_id AND e.tenant_id = ci.tenant_id
       LEFT JOIN client_projects cp ON ci.project_id = cp.project_id AND cp.tenant_id = ci.tenant_id
       WHERE ci.tenant_id = $1
     `;
