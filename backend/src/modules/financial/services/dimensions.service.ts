@@ -251,8 +251,6 @@ export class DimensionsService {
     }
 
     updates.push(`updated_at = CURRENT_TIMESTAMP`);
-    updates.push(`updated_by = $${paramCount++}`);
-    values.push(userId);
     values.push(tenantId);
     values.push(code);
 
