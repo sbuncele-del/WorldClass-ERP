@@ -43,11 +43,11 @@ export const getAllProjects = async (req: TenantRequest, res: Response) => {
         COALESCE(SUM(te.hours), 0) as total_hours_logged,
         COALESCE(SUM(CASE WHEN te.billable THEN te.hours ELSE 0 END), 0) as billable_hours_logged
       FROM client_projects cp
-      LEFT JOIN customers c ON cp.customer_id = c.id AND c.tenant_id = cp.tenant_id
+      LEFT JOIN customers c ON cp.customer_id = c.customer_id AND c.tenant_id = cp.tenant_id
       LEFT JOIN employees em1 ON cp.project_manager_id = em1.employee_id AND em1.tenant_id = cp.tenant_id
       LEFT JOIN employees em2 ON cp.project_partner_id = em2.employee_id AND em2.tenant_id = cp.tenant_id
       LEFT JOIN project_team_members ptm ON cp.project_id = ptm.project_id AND ptm.is_active = true AND ptm.tenant_id = cp.tenant_id
-      LEFT JOIN project_tasks pt ON cp.project_id = pt.project_id AND pt.tenant_id = cp.tenant_id
+      LEFT JOIN practice_tasks pt ON cp.project_id = pt.project_id AND pt.tenant_id = cp.tenant_id
       LEFT JOIN time_entries te ON cp.project_id = te.project_id AND te.status = 'Approved' AND te.tenant_id = cp.tenant_id
       WHERE cp.tenant_id = $1
     `;
@@ -104,7 +104,7 @@ export const getAllProjects = async (req: TenantRequest, res: Response) => {
     let countQuery = `
       SELECT COUNT(DISTINCT cp.project_id) as total
       FROM client_projects cp
-      LEFT JOIN customers c ON cp.customer_id = c.id AND c.tenant_id = cp.tenant_id
+      LEFT JOIN customers c ON cp.customer_id = c.customer_id AND c.tenant_id = cp.tenant_id
       WHERE cp.tenant_id = $1
     `;
     const countParams: any[] = [tenantId];
@@ -185,12 +185,12 @@ export const getProjectById = async (req: TenantRequest, res: Response) => {
         ) as team_size,
         (
           SELECT COUNT(*)
-          FROM project_tasks
+          FROM practice_tasks
           WHERE tenant_id = $1 AND project_id = cp.project_id
         ) as total_tasks,
         (
           SELECT COUNT(*)
-          FROM project_tasks
+          FROM practice_tasks
           WHERE tenant_id = $1 AND project_id = cp.project_id AND status = 'Completed'
         ) as completed_tasks,
         (
@@ -210,7 +210,7 @@ export const getProjectById = async (req: TenantRequest, res: Response) => {
           WHERE te.tenant_id = $1 AND te.project_id = cp.project_id AND te.status = 'Approved' AND te.billable = true
         ) as revenue_generated
       FROM client_projects cp
-      LEFT JOIN customers c ON cp.customer_id = c.id AND c.tenant_id = cp.tenant_id
+      LEFT JOIN customers c ON cp.customer_id = c.customer_id AND c.tenant_id = cp.tenant_id
       LEFT JOIN employees em1 ON cp.project_manager_id = em1.employee_id AND em1.tenant_id = cp.tenant_id
       LEFT JOIN employees em2 ON cp.project_partner_id = em2.employee_id AND em2.tenant_id = cp.tenant_id
       WHERE cp.tenant_id = $1 AND cp.project_id = $2`,
@@ -248,7 +248,7 @@ export const getProjectById = async (req: TenantRequest, res: Response) => {
       `SELECT 
         pt.*,
         e.first_name || ' ' || e.last_name as assigned_to_name
-      FROM project_tasks pt
+      FROM practice_tasks pt
       LEFT JOIN employees e ON pt.assigned_to = e.employee_id AND e.tenant_id = pt.tenant_id
       WHERE pt.tenant_id = $1 AND pt.project_id = $2
       ORDER BY 
@@ -271,7 +271,7 @@ export const getProjectById = async (req: TenantRequest, res: Response) => {
         pt.task_title
       FROM time_entries te
       JOIN employees e ON te.employee_id = e.employee_id AND e.tenant_id = te.tenant_id
-      LEFT JOIN project_tasks pt ON te.task_id = pt.task_id AND pt.tenant_id = te.tenant_id
+      LEFT JOIN practice_tasks pt ON te.task_id = pt.task_id AND pt.tenant_id = te.tenant_id
       WHERE te.tenant_id = $1 AND te.project_id = $2
       ORDER BY te.entry_date DESC, te.created_at DESC
       LIMIT 20`,

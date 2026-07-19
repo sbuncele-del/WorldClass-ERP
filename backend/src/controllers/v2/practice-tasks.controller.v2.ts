@@ -26,9 +26,9 @@ export const getAllTasks = async (req: TenantRequest, res: Response) => {
         cp.project_number,
         c.customer_name,
         e.first_name || ' ' || e.last_name as assigned_to_name
-      FROM project_tasks pt
+      FROM practice_tasks pt
       JOIN client_projects cp ON pt.project_id = cp.project_id AND cp.tenant_id = pt.tenant_id
-      JOIN customers c ON cp.customer_id = c.id AND c.tenant_id = cp.tenant_id
+      JOIN customers c ON cp.customer_id = c.customer_id AND c.tenant_id = cp.tenant_id
       LEFT JOIN employees e ON pt.assigned_to = e.employee_id AND e.tenant_id = pt.tenant_id
       WHERE pt.tenant_id = $1
     `;
@@ -89,7 +89,7 @@ export const getAllTasks = async (req: TenantRequest, res: Response) => {
 
     let countQuery = `
       SELECT COUNT(*) as total
-      FROM project_tasks pt
+      FROM practice_tasks pt
       WHERE pt.tenant_id = $1
     `;
     const countParams: any[] = [tenantId];
@@ -152,9 +152,9 @@ export const getTaskById = async (req: TenantRequest, res: Response) => {
         c.customer_name,
         e.first_name || ' ' || e.last_name as assigned_to_name,
         e.job_title as assigned_to_job_title
-      FROM project_tasks pt
+      FROM practice_tasks pt
       JOIN client_projects cp ON pt.project_id = cp.project_id AND cp.tenant_id = pt.tenant_id
-      JOIN customers c ON cp.customer_id = c.id AND c.tenant_id = cp.tenant_id
+      JOIN customers c ON cp.customer_id = c.customer_id AND c.tenant_id = cp.tenant_id
       LEFT JOIN employees e ON pt.assigned_to = e.employee_id AND e.tenant_id = pt.tenant_id
       WHERE pt.tenant_id = $1 AND pt.task_id = $2`,
       [tenantId, id]
@@ -191,7 +191,7 @@ export const createTask = async (req: TenantRequest, res: Response) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO project_tasks (
+      `INSERT INTO practice_tasks (
         tenant_id,
         project_id,
         task_name,
@@ -261,7 +261,7 @@ export const updateTask = async (req: TenantRequest, res: Response) => {
     values.push(id);
 
     const query = `
-      UPDATE project_tasks
+      UPDATE practice_tasks
       SET ${setClauses.join(', ')}
       WHERE tenant_id = $1 AND task_id = $${paramCount}
       RETURNING *
@@ -286,7 +286,7 @@ export const deleteTask = async (req: TenantRequest, res: Response) => {
     const { id } = req.params;
 
     const result = await pool.query(
-      `DELETE FROM project_tasks WHERE tenant_id = $1 AND task_id = $2 RETURNING *`,
+      `DELETE FROM practice_tasks WHERE tenant_id = $1 AND task_id = $2 RETURNING *`,
       [tenantId, id]
     );
 
@@ -321,9 +321,9 @@ export const getMyTasks = async (req: TenantRequest, res: Response) => {
           FROM time_entries
           WHERE tenant_id = $1 AND task_id = pt.task_id AND employee_id = $2
         ) as my_hours_logged
-      FROM project_tasks pt
+      FROM practice_tasks pt
       JOIN client_projects cp ON pt.project_id = cp.project_id AND cp.tenant_id = pt.tenant_id
-      JOIN customers c ON cp.customer_id = c.id AND c.tenant_id = cp.tenant_id
+      JOIN customers c ON cp.customer_id = c.customer_id AND c.tenant_id = cp.tenant_id
       WHERE pt.tenant_id = $1 AND pt.assigned_to = $2
     `;
 
@@ -367,7 +367,7 @@ export const getMyTasks = async (req: TenantRequest, res: Response) => {
         COUNT(CASE WHEN status = 'Blocked' THEN 1 END) as blocked,
         COUNT(CASE WHEN status = 'Completed' THEN 1 END) as completed,
         COUNT(CASE WHEN planned_end_date < CURRENT_DATE AND status != 'Completed' THEN 1 END) as overdue
-      FROM project_tasks
+      FROM practice_tasks
       WHERE tenant_id = $1 AND assigned_to = $2`,
       [tenantId, employee_id]
     );

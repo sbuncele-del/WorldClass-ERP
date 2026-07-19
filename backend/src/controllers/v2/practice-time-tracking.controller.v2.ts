@@ -44,7 +44,7 @@ export const getAllTimeEntries = async (req: TenantRequest, res: Response) => {
       FROM time_entries te
       JOIN employees e ON te.employee_id = e.employee_id AND e.tenant_id = te.tenant_id
       JOIN client_projects cp ON te.project_id = cp.project_id AND cp.tenant_id = te.tenant_id
-      JOIN customers c ON cp.customer_id = c.id AND c.tenant_id = cp.tenant_id
+      JOIN customers c ON cp.customer_id = c.customer_id AND c.tenant_id = cp.tenant_id
       LEFT JOIN project_team_members ptm ON te.project_id = ptm.project_id 
         AND te.employee_id = ptm.employee_id 
         AND ptm.is_active = true
@@ -227,7 +227,7 @@ export const getTimeEntryById = async (req: TenantRequest, res: Response) => {
       FROM time_entries te
       JOIN employees e ON te.employee_id = e.employee_id AND e.tenant_id = te.tenant_id
       JOIN client_projects cp ON te.project_id = cp.project_id AND cp.tenant_id = te.tenant_id
-      JOIN customers c ON cp.customer_id = c.id AND c.tenant_id = cp.tenant_id
+      JOIN customers c ON cp.customer_id = c.customer_id AND c.tenant_id = cp.tenant_id
       LEFT JOIN project_team_members ptm ON te.project_id = ptm.project_id 
         AND te.employee_id = ptm.employee_id 
         AND ptm.is_active = true
@@ -482,7 +482,7 @@ export const getTimesheet = async (req: TenantRequest, res: Response) => {
         ptm.hourly_billing_rate
       FROM time_entries te
       JOIN client_projects cp ON te.project_id = cp.project_id AND cp.tenant_id = te.tenant_id
-      JOIN customers c ON cp.customer_id = c.id AND c.tenant_id = cp.tenant_id
+      JOIN customers c ON cp.customer_id = c.customer_id AND c.tenant_id = cp.tenant_id
       LEFT JOIN project_team_members ptm ON te.project_id = ptm.project_id 
         AND te.employee_id = ptm.employee_id 
         AND ptm.is_active = true
@@ -534,7 +534,7 @@ export const getPendingApprovals = async (req: TenantRequest, res: Response) => 
       FROM time_entries te
       JOIN employees e ON te.employee_id = e.employee_id AND e.tenant_id = te.tenant_id
       JOIN client_projects cp ON te.project_id = cp.project_id AND cp.tenant_id = te.tenant_id
-      JOIN customers c ON cp.customer_id = c.id AND c.tenant_id = cp.tenant_id
+      JOIN customers c ON cp.customer_id = c.customer_id AND c.tenant_id = cp.tenant_id
       LEFT JOIN project_team_members ptm ON te.project_id = ptm.project_id 
         AND te.employee_id = ptm.employee_id 
         AND ptm.is_active = true

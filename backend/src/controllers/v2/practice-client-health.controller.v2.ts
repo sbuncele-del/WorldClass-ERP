@@ -99,7 +99,7 @@ export const getAllClientHealth = async (req: TenantRequest, res: Response) => {
 
     let query = `
       SELECT 
-        c.id as customer_id,
+        c.customer_id as customer_id,
         c.customer_code,
         c.customer_name,
         c.health_score,
@@ -111,17 +111,17 @@ export const getAllClientHealth = async (req: TenantRequest, res: Response) => {
         (
           SELECT COUNT(*)
           FROM client_projects
-          WHERE tenant_id = $1 AND customer_id = c.id AND status IN ('Planning', 'Active', 'On Hold')
+          WHERE tenant_id = $1 AND customer_id = c.customer_id AND status IN ('Planning', 'Active', 'On Hold')
         ) as active_projects,
         (
           SELECT COALESCE(SUM(total_amount), 0)
           FROM sales_invoices
-          WHERE tenant_id = $1 AND customer_id = c.id
+          WHERE tenant_id = $1 AND customer_id = c.customer_id
         ) as lifetime_revenue,
         (
           SELECT check_date
           FROM client_health_log
-          WHERE tenant_id = $1 AND customer_id = c.id
+          WHERE tenant_id = $1 AND customer_id = c.customer_id
           ORDER BY check_date DESC
           LIMIT 1
         ) as last_check_date
