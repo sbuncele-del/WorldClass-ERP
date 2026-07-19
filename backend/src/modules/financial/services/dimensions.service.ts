@@ -21,31 +21,33 @@ import {
 export class DimensionsService {
   // ===== COST CENTERS =====
 
-  async getAllCostCenters(includeInactive = false): Promise<CostCenter[]> {
-    const whereClause = includeInactive ? '' : 'WHERE is_active = true';
+  async getAllCostCenters(tenantId: string, includeInactive = false): Promise<CostCenter[]> {
+    const activeClause = includeInactive ? '' : 'AND is_active = true';
     const result = await query(
-      `SELECT * FROM cost_centers ${whereClause} ORDER BY code`
+      `SELECT * FROM cost_centers WHERE tenant_id = $1 ${activeClause} ORDER BY code`,
+      [tenantId]
     );
     return result.rows;
   }
 
-  async getCostCenterByCode(code: string): Promise<CostCenter | null> {
+  async getCostCenterByCode(tenantId: string, code: string): Promise<CostCenter | null> {
     const result = await query(
-      'SELECT * FROM cost_centers WHERE code = $1',
-      [code]
+      'SELECT * FROM cost_centers WHERE tenant_id = $1 AND code = $2',
+      [tenantId, code]
     );
     return result.rows[0] || null;
   }
 
-  async createCostCenter(data: CreateCostCenterDTO, userId: string): Promise<string> {
+  async createCostCenter(tenantId: string, data: CreateCostCenterDTO, userId: string): Promise<string> {
     const result = await query(
       `INSERT INTO cost_centers (
-        code, name, description, parent_cost_center_id, level,
+        tenant_id, code, name, description, parent_cost_center_id, level,
         budget_amount, manager_id, manager_name, start_date, end_date,
         created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      RETURNING id`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING cost_center_id as id`,
       [
+        tenantId,
         data.code,
         data.name,
         data.description,
@@ -62,7 +64,7 @@ export class DimensionsService {
     return result.rows[0].id;
   }
 
-  async updateCostCenter(code: string, data: Partial<CreateCostCenterDTO>, userId: string): Promise<void> {
+  async updateCostCenter(tenantId: string, code: string, data: Partial<CreateCostCenterDTO>, userId: string): Promise<void> {
     const updates: string[] = [];
     const values: any[] = [];
     let paramCount = 1;
@@ -87,45 +89,48 @@ export class DimensionsService {
     updates.push(`updated_at = CURRENT_TIMESTAMP`);
     updates.push(`updated_by = $${paramCount++}`);
     values.push(userId);
+    values.push(tenantId);
     values.push(code);
 
     await query(
-      `UPDATE cost_centers SET ${updates.join(', ')} WHERE code = $${paramCount}`,
+      `UPDATE cost_centers SET ${updates.join(', ')} WHERE tenant_id = $${paramCount} AND code = $${paramCount + 1}`,
       values
     );
   }
 
-  async deleteCostCenter(code: string): Promise<void> {
-    await query('UPDATE cost_centers SET is_active = false WHERE code = $1', [code]);
+  async deleteCostCenter(tenantId: string, code: string): Promise<void> {
+    await query('UPDATE cost_centers SET is_active = false WHERE tenant_id = $1 AND code = $2', [tenantId, code]);
   }
 
   // ===== DEPARTMENTS =====
 
-  async getAllDepartments(includeInactive = false): Promise<Department[]> {
-    const whereClause = includeInactive ? '' : 'WHERE is_active = true';
+  async getAllDepartments(tenantId: string, includeInactive = false): Promise<Department[]> {
+    const activeClause = includeInactive ? '' : 'AND is_active = true';
     const result = await query(
-      `SELECT * FROM departments ${whereClause} ORDER BY code`
+      `SELECT * FROM departments WHERE tenant_id = $1 ${activeClause} ORDER BY code`,
+      [tenantId]
     );
     return result.rows;
   }
 
-  async getDepartmentByCode(code: string): Promise<Department | null> {
+  async getDepartmentByCode(tenantId: string, code: string): Promise<Department | null> {
     const result = await query(
-      'SELECT * FROM departments WHERE code = $1',
-      [code]
+      'SELECT * FROM departments WHERE tenant_id = $1 AND code = $2',
+      [tenantId, code]
     );
     return result.rows[0] || null;
   }
 
-  async createDepartment(data: CreateDepartmentDTO, userId: string): Promise<string> {
+  async createDepartment(tenantId: string, data: CreateDepartmentDTO, userId: string): Promise<string> {
     const result = await query(
       `INSERT INTO departments (
-        code, name, description, parent_department_id, level,
+        tenant_id, code, name, description, parent_department_id, level,
         department_head_id, department_head_name, cost_center_id,
         employee_count, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-      RETURNING id`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING department_id as id`,
       [
+        tenantId,
         data.code,
         data.name,
         data.description,
@@ -141,7 +146,7 @@ export class DimensionsService {
     return result.rows[0].id;
   }
 
-  async updateDepartment(code: string, data: Partial<CreateDepartmentDTO>, userId: string): Promise<void> {
+  async updateDepartment(tenantId: string, code: string, data: Partial<CreateDepartmentDTO>, userId: string): Promise<void> {
     const updates: string[] = [];
     const values: any[] = [];
     let paramCount = 1;
@@ -162,46 +167,49 @@ export class DimensionsService {
     updates.push(`updated_at = CURRENT_TIMESTAMP`);
     updates.push(`updated_by = $${paramCount++}`);
     values.push(userId);
+    values.push(tenantId);
     values.push(code);
 
     await query(
-      `UPDATE departments SET ${updates.join(', ')} WHERE code = $${paramCount}`,
+      `UPDATE departments SET ${updates.join(', ')} WHERE tenant_id = $${paramCount} AND code = $${paramCount + 1}`,
       values
     );
   }
 
-  async deleteDepartment(code: string): Promise<void> {
-    await query('UPDATE departments SET is_active = false WHERE code = $1', [code]);
+  async deleteDepartment(tenantId: string, code: string): Promise<void> {
+    await query('UPDATE departments SET is_active = false WHERE tenant_id = $1 AND code = $2', [tenantId, code]);
   }
 
   // ===== PROJECTS =====
 
-  async getAllProjects(includeInactive = false): Promise<Project[]> {
-    const whereClause = includeInactive ? '' : 'WHERE is_active = true';
+  async getAllProjects(tenantId: string, includeInactive = false): Promise<Project[]> {
+    const activeClause = includeInactive ? '' : 'AND is_active = true';
     const result = await query(
-      `SELECT id, project_code as code, project_name as name, description, status, is_active, created_at, updated_at 
-       FROM projects ${whereClause} ORDER BY project_code`
+      `SELECT id, project_code as code, project_name as name, description, status, is_active, created_at, updated_at
+       FROM projects WHERE tenant_id = $1 ${activeClause} ORDER BY project_code`,
+      [tenantId]
     );
     return result.rows;
   }
 
-  async getProjectByCode(code: string): Promise<Project | null> {
+  async getProjectByCode(tenantId: string, code: string): Promise<Project | null> {
     const result = await query(
-      'SELECT id, project_code as code, project_name as name, description, status, is_active FROM projects WHERE project_code = $1',
-      [code]
+      'SELECT id, project_code as code, project_name as name, description, status, is_active FROM projects WHERE tenant_id = $1 AND project_code = $2',
+      [tenantId, code]
     );
     return result.rows[0] || null;
   }
 
-  async createProject(data: CreateProjectDTO, userId: string): Promise<string> {
+  async createProject(tenantId: string, data: CreateProjectDTO, userId: string): Promise<string> {
     const result = await query(
       `INSERT INTO projects (
-        code, name, description, project_type, status,
-        customer_id, customer_name, project_manager_id, project_manager_name,
-        start_date, end_date, planned_budget, priority, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        tenant_id, project_code, project_name, description, project_type, status,
+        client_id, client_name, manager_id, manager_name,
+        start_date, end_date, budget, priority, created_by
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
       RETURNING id`,
       [
+        tenantId,
         data.code,
         data.name,
         data.description,
@@ -221,13 +229,13 @@ export class DimensionsService {
     return result.rows[0].id;
   }
 
-  async updateProject(code: string, data: Partial<CreateProjectDTO>, userId: string): Promise<void> {
+  async updateProject(tenantId: string, code: string, data: Partial<CreateProjectDTO>, userId: string): Promise<void> {
     const updates: string[] = [];
     const values: any[] = [];
     let paramCount = 1;
 
     if (data.name !== undefined) {
-      updates.push(`name = $${paramCount++}`);
+      updates.push(`project_name = $${paramCount++}`);
       values.push(data.name);
     }
     if (data.description !== undefined) {
@@ -239,52 +247,55 @@ export class DimensionsService {
       values.push(data.status);
     }
     if (data.planned_budget !== undefined) {
-      updates.push(`planned_budget = $${paramCount++}`);
+      updates.push(`budget = $${paramCount++}`);
       values.push(data.planned_budget);
     }
 
     updates.push(`updated_at = CURRENT_TIMESTAMP`);
     updates.push(`updated_by = $${paramCount++}`);
     values.push(userId);
+    values.push(tenantId);
     values.push(code);
 
     await query(
-      `UPDATE projects SET ${updates.join(', ')} WHERE code = $${paramCount}`,
+      `UPDATE projects SET ${updates.join(', ')} WHERE tenant_id = $${paramCount} AND project_code = $${paramCount + 1}`,
       values
     );
   }
 
-  async deleteProject(code: string): Promise<void> {
-    await query('UPDATE projects SET is_active = false WHERE code = $1', [code]);
+  async deleteProject(tenantId: string, code: string): Promise<void> {
+    await query('UPDATE projects SET is_active = false WHERE tenant_id = $1 AND project_code = $2', [tenantId, code]);
   }
 
   // ===== PRODUCTS =====
 
-  async getAllProducts(includeInactive = false): Promise<Product[]> {
-    const whereClause = includeInactive ? '' : 'WHERE is_active = true';
+  async getAllProducts(tenantId: string, includeInactive = false): Promise<Product[]> {
+    const activeClause = includeInactive ? '' : 'AND is_active = true';
     const result = await query(
-      `SELECT * FROM products ${whereClause} ORDER BY code`
+      `SELECT * FROM products WHERE tenant_id = $1 ${activeClause} ORDER BY code`,
+      [tenantId]
     );
     return result.rows;
   }
 
-  async getProductByCode(code: string): Promise<Product | null> {
+  async getProductByCode(tenantId: string, code: string): Promise<Product | null> {
     const result = await query(
-      'SELECT * FROM products WHERE code = $1',
-      [code]
+      'SELECT * FROM products WHERE tenant_id = $1 AND code = $2',
+      [tenantId, code]
     );
     return result.rows[0] || null;
   }
 
-  async createProduct(data: CreateProductDTO, userId: string): Promise<string> {
+  async createProduct(tenantId: string, data: CreateProductDTO, userId: string): Promise<string> {
     const result = await query(
       `INSERT INTO products (
-        code, name, description, product_category, product_line,
+        tenant_id, code, name, description, product_category, product_line,
         is_service, unit_of_measure, standard_cost, standard_price,
         supplier_id, supplier_name, created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING id`,
       [
+        tenantId,
         data.code,
         data.name,
         data.description,
@@ -302,7 +313,7 @@ export class DimensionsService {
     return result.rows[0].id;
   }
 
-  async updateProduct(code: string, data: Partial<CreateProductDTO>, userId: string): Promise<void> {
+  async updateProduct(tenantId: string, code: string, data: Partial<CreateProductDTO>, userId: string): Promise<void> {
     const updates: string[] = [];
     const values: any[] = [];
     let paramCount = 1;
@@ -323,46 +334,49 @@ export class DimensionsService {
     updates.push(`updated_at = CURRENT_TIMESTAMP`);
     updates.push(`updated_by = $${paramCount++}`);
     values.push(userId);
+    values.push(tenantId);
     values.push(code);
 
     await query(
-      `UPDATE products SET ${updates.join(', ')} WHERE code = $${paramCount}`,
+      `UPDATE products SET ${updates.join(', ')} WHERE tenant_id = $${paramCount} AND code = $${paramCount + 1}`,
       values
     );
   }
 
-  async deleteProduct(code: string): Promise<void> {
-    await query('UPDATE products SET is_active = false WHERE code = $1', [code]);
+  async deleteProduct(tenantId: string, code: string): Promise<void> {
+    await query('UPDATE products SET is_active = false WHERE tenant_id = $1 AND code = $2', [tenantId, code]);
   }
 
   // ===== LOCATIONS =====
 
-  async getAllLocations(includeInactive = false): Promise<Location[]> {
-    const whereClause = includeInactive ? '' : 'WHERE is_active = true';
+  async getAllLocations(tenantId: string, includeInactive = false): Promise<Location[]> {
+    const activeClause = includeInactive ? '' : 'AND is_active = true';
     const result = await query(
-      `SELECT * FROM locations ${whereClause} ORDER BY code`
+      `SELECT * FROM locations WHERE tenant_id = $1 ${activeClause} ORDER BY code`,
+      [tenantId]
     );
     return result.rows;
   }
 
-  async getLocationByCode(code: string): Promise<Location | null> {
+  async getLocationByCode(tenantId: string, code: string): Promise<Location | null> {
     const result = await query(
-      'SELECT * FROM locations WHERE code = $1',
-      [code]
+      'SELECT * FROM locations WHERE tenant_id = $1 AND code = $2',
+      [tenantId, code]
     );
     return result.rows[0] || null;
   }
 
-  async createLocation(data: CreateLocationDTO, userId: string): Promise<string> {
+  async createLocation(tenantId: string, data: CreateLocationDTO, userId: string): Promise<string> {
     const result = await query(
       `INSERT INTO locations (
-        code, name, description, location_type, parent_location_id,
+        tenant_id, code, name, description, location_type, parent_location_id,
         address_line1, address_line2, city, state_province, postal_code,
         country, phone, email, manager_id, manager_name, opening_date,
         created_by
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
       RETURNING id`,
       [
+        tenantId,
         data.code,
         data.name,
         data.description,
@@ -385,7 +399,7 @@ export class DimensionsService {
     return result.rows[0].id;
   }
 
-  async updateLocation(code: string, data: Partial<CreateLocationDTO>, userId: string): Promise<void> {
+  async updateLocation(tenantId: string, code: string, data: Partial<CreateLocationDTO>, userId: string): Promise<void> {
     const updates: string[] = [];
     const values: any[] = [];
     let paramCount = 1;
@@ -402,26 +416,27 @@ export class DimensionsService {
     updates.push(`updated_at = CURRENT_TIMESTAMP`);
     updates.push(`updated_by = $${paramCount++}`);
     values.push(userId);
+    values.push(tenantId);
     values.push(code);
 
     await query(
-      `UPDATE locations SET ${updates.join(', ')} WHERE code = $${paramCount}`,
+      `UPDATE locations SET ${updates.join(', ')} WHERE tenant_id = $${paramCount} AND code = $${paramCount + 1}`,
       values
     );
   }
 
-  async deleteLocation(code: string): Promise<void> {
-    await query('UPDATE locations SET is_active = false WHERE code = $1', [code]);
+  async deleteLocation(tenantId: string, code: string): Promise<void> {
+    await query('UPDATE locations SET is_active = false WHERE tenant_id = $1 AND code = $2', [tenantId, code]);
   }
 
   // ===== SUMMARY =====
 
-  async getDimensionSummary(): Promise<DimensionSummary> {
-    const costCentersResult = await query('SELECT COUNT(*) as count FROM cost_centers WHERE is_active = true');
-    const departmentsResult = await query('SELECT COUNT(*) as count FROM departments WHERE is_active = true');
-    const projectsResult = await query('SELECT COUNT(*) as count FROM projects WHERE is_active = true');
-    const productsResult = await query('SELECT COUNT(*) as count FROM products WHERE is_active = true');
-    const locationsResult = await query('SELECT COUNT(*) as count FROM locations WHERE is_active = true');
+  async getDimensionSummary(tenantId: string): Promise<DimensionSummary> {
+    const costCentersResult = await query('SELECT COUNT(*) as count FROM cost_centers WHERE tenant_id = $1 AND is_active = true', [tenantId]);
+    const departmentsResult = await query('SELECT COUNT(*) as count FROM departments WHERE tenant_id = $1 AND is_active = true', [tenantId]);
+    const projectsResult = await query('SELECT COUNT(*) as count FROM projects WHERE tenant_id = $1 AND is_active = true', [tenantId]);
+    const productsResult = await query('SELECT COUNT(*) as count FROM products WHERE tenant_id = $1 AND is_active = true', [tenantId]);
+    const locationsResult = await query('SELECT COUNT(*) as count FROM locations WHERE tenant_id = $1 AND is_active = true', [tenantId]);
 
     return {
       cost_centers: parseInt(costCentersResult.rows[0].count),

@@ -3,18 +3,20 @@
  * REST API endpoints for financial dimensions management
  */
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { TenantRequest } from '../../../types';
 import { DimensionsService } from '../services/dimensions.service';
 
 const dimensionsService = new DimensionsService();
 
 // ===== COST CENTERS =====
 
-export const getAllCostCenters = async (req: Request, res: Response): Promise<void> => {
+export const getAllCostCenters = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { include_inactive = 'false' } = req.query;
-    const costCenters = await dimensionsService.getAllCostCenters(include_inactive === 'true');
-    
+    const costCenters = await dimensionsService.getAllCostCenters(tenantId, include_inactive === 'true');
+
     res.json({
       success: true,
       data: costCenters,
@@ -27,11 +29,12 @@ export const getAllCostCenters = async (req: Request, res: Response): Promise<vo
   }
 };
 
-export const getCostCenter = async (req: Request, res: Response): Promise<void> => {
+export const getCostCenter = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    const costCenter = await dimensionsService.getCostCenterByCode(code);
-    
+    const costCenter = await dimensionsService.getCostCenterByCode(tenantId, code);
+
     if (!costCenter) {
       res.status(404).json({
         success: false,
@@ -39,7 +42,7 @@ export const getCostCenter = async (req: Request, res: Response): Promise<void> 
       });
       return;
     }
-    
+
     res.json({
       success: true,
       data: costCenter,
@@ -52,11 +55,12 @@ export const getCostCenter = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-export const createCostCenter = async (req: Request, res: Response): Promise<void> => {
+export const createCostCenter = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.body.user_id || 'system';
-    const id = await dimensionsService.createCostCenter(req.body, userId);
-    
+    const tenantId = req.tenant!.id;
+    const userId = req.userId || req.body.user_id || 'system';
+    const id = await dimensionsService.createCostCenter(tenantId, req.body, userId);
+
     res.status(201).json({
       success: true,
       data: { id },
@@ -70,12 +74,13 @@ export const createCostCenter = async (req: Request, res: Response): Promise<voi
   }
 };
 
-export const updateCostCenter = async (req: Request, res: Response): Promise<void> => {
+export const updateCostCenter = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    const userId = req.body.user_id || 'system';
-    await dimensionsService.updateCostCenter(code, req.body, userId);
-    
+    const userId = req.userId || req.body.user_id || 'system';
+    await dimensionsService.updateCostCenter(tenantId, code, req.body, userId);
+
     res.json({
       success: true,
       message: 'Cost center updated successfully',
@@ -88,11 +93,12 @@ export const updateCostCenter = async (req: Request, res: Response): Promise<voi
   }
 };
 
-export const deleteCostCenter = async (req: Request, res: Response): Promise<void> => {
+export const deleteCostCenter = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    await dimensionsService.deleteCostCenter(code);
-    
+    await dimensionsService.deleteCostCenter(tenantId, code);
+
     res.json({
       success: true,
       message: 'Cost center deactivated successfully',
@@ -107,11 +113,12 @@ export const deleteCostCenter = async (req: Request, res: Response): Promise<voi
 
 // ===== DEPARTMENTS =====
 
-export const getAllDepartments = async (req: Request, res: Response): Promise<void> => {
+export const getAllDepartments = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { include_inactive = 'false' } = req.query;
-    const departments = await dimensionsService.getAllDepartments(include_inactive === 'true');
-    
+    const departments = await dimensionsService.getAllDepartments(tenantId, include_inactive === 'true');
+
     res.json({
       success: true,
       data: departments,
@@ -124,11 +131,12 @@ export const getAllDepartments = async (req: Request, res: Response): Promise<vo
   }
 };
 
-export const getDepartment = async (req: Request, res: Response): Promise<void> => {
+export const getDepartment = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    const department = await dimensionsService.getDepartmentByCode(code);
-    
+    const department = await dimensionsService.getDepartmentByCode(tenantId, code);
+
     if (!department) {
       res.status(404).json({
         success: false,
@@ -136,7 +144,7 @@ export const getDepartment = async (req: Request, res: Response): Promise<void> 
       });
       return;
     }
-    
+
     res.json({
       success: true,
       data: department,
@@ -149,11 +157,12 @@ export const getDepartment = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-export const createDepartment = async (req: Request, res: Response): Promise<void> => {
+export const createDepartment = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.body.user_id || 'system';
-    const id = await dimensionsService.createDepartment(req.body, userId);
-    
+    const tenantId = req.tenant!.id;
+    const userId = req.userId || req.body.user_id || 'system';
+    const id = await dimensionsService.createDepartment(tenantId, req.body, userId);
+
     res.status(201).json({
       success: true,
       data: { id },
@@ -167,12 +176,13 @@ export const createDepartment = async (req: Request, res: Response): Promise<voi
   }
 };
 
-export const updateDepartment = async (req: Request, res: Response): Promise<void> => {
+export const updateDepartment = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    const userId = req.body.user_id || 'system';
-    await dimensionsService.updateDepartment(code, req.body, userId);
-    
+    const userId = req.userId || req.body.user_id || 'system';
+    await dimensionsService.updateDepartment(tenantId, code, req.body, userId);
+
     res.json({
       success: true,
       message: 'Department updated successfully',
@@ -185,11 +195,12 @@ export const updateDepartment = async (req: Request, res: Response): Promise<voi
   }
 };
 
-export const deleteDepartment = async (req: Request, res: Response): Promise<void> => {
+export const deleteDepartment = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    await dimensionsService.deleteDepartment(code);
-    
+    await dimensionsService.deleteDepartment(tenantId, code);
+
     res.json({
       success: true,
       message: 'Department deactivated successfully',
@@ -204,11 +215,12 @@ export const deleteDepartment = async (req: Request, res: Response): Promise<voi
 
 // ===== PROJECTS =====
 
-export const getAllProjects = async (req: Request, res: Response): Promise<void> => {
+export const getAllProjects = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { include_inactive = 'false' } = req.query;
-    const projects = await dimensionsService.getAllProjects(include_inactive === 'true');
-    
+    const projects = await dimensionsService.getAllProjects(tenantId, include_inactive === 'true');
+
     res.json({
       success: true,
       data: projects,
@@ -221,11 +233,12 @@ export const getAllProjects = async (req: Request, res: Response): Promise<void>
   }
 };
 
-export const getProject = async (req: Request, res: Response): Promise<void> => {
+export const getProject = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    const project = await dimensionsService.getProjectByCode(code);
-    
+    const project = await dimensionsService.getProjectByCode(tenantId, code);
+
     if (!project) {
       res.status(404).json({
         success: false,
@@ -233,7 +246,7 @@ export const getProject = async (req: Request, res: Response): Promise<void> => 
       });
       return;
     }
-    
+
     res.json({
       success: true,
       data: project,
@@ -246,11 +259,12 @@ export const getProject = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-export const createProject = async (req: Request, res: Response): Promise<void> => {
+export const createProject = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.body.user_id || 'system';
-    const id = await dimensionsService.createProject(req.body, userId);
-    
+    const tenantId = req.tenant!.id;
+    const userId = req.userId || req.body.user_id || 'system';
+    const id = await dimensionsService.createProject(tenantId, req.body, userId);
+
     res.status(201).json({
       success: true,
       data: { id },
@@ -264,12 +278,13 @@ export const createProject = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-export const updateProject = async (req: Request, res: Response): Promise<void> => {
+export const updateProject = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    const userId = req.body.user_id || 'system';
-    await dimensionsService.updateProject(code, req.body, userId);
-    
+    const userId = req.userId || req.body.user_id || 'system';
+    await dimensionsService.updateProject(tenantId, code, req.body, userId);
+
     res.json({
       success: true,
       message: 'Project updated successfully',
@@ -282,11 +297,12 @@ export const updateProject = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-export const deleteProject = async (req: Request, res: Response): Promise<void> => {
+export const deleteProject = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    await dimensionsService.deleteProject(code);
-    
+    await dimensionsService.deleteProject(tenantId, code);
+
     res.json({
       success: true,
       message: 'Project deactivated successfully',
@@ -301,11 +317,12 @@ export const deleteProject = async (req: Request, res: Response): Promise<void> 
 
 // ===== PRODUCTS =====
 
-export const getAllProducts = async (req: Request, res: Response): Promise<void> => {
+export const getAllProducts = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { include_inactive = 'false' } = req.query;
-    const products = await dimensionsService.getAllProducts(include_inactive === 'true');
-    
+    const products = await dimensionsService.getAllProducts(tenantId, include_inactive === 'true');
+
     res.json({
       success: true,
       data: products,
@@ -318,11 +335,12 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
   }
 };
 
-export const getProduct = async (req: Request, res: Response): Promise<void> => {
+export const getProduct = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    const product = await dimensionsService.getProductByCode(code);
-    
+    const product = await dimensionsService.getProductByCode(tenantId, code);
+
     if (!product) {
       res.status(404).json({
         success: false,
@@ -330,7 +348,7 @@ export const getProduct = async (req: Request, res: Response): Promise<void> => 
       });
       return;
     }
-    
+
     res.json({
       success: true,
       data: product,
@@ -343,11 +361,12 @@ export const getProduct = async (req: Request, res: Response): Promise<void> => 
   }
 };
 
-export const createProduct = async (req: Request, res: Response): Promise<void> => {
+export const createProduct = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.body.user_id || 'system';
-    const id = await dimensionsService.createProduct(req.body, userId);
-    
+    const tenantId = req.tenant!.id;
+    const userId = req.userId || req.body.user_id || 'system';
+    const id = await dimensionsService.createProduct(tenantId, req.body, userId);
+
     res.status(201).json({
       success: true,
       data: { id },
@@ -361,12 +380,13 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-export const updateProduct = async (req: Request, res: Response): Promise<void> => {
+export const updateProduct = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    const userId = req.body.user_id || 'system';
-    await dimensionsService.updateProduct(code, req.body, userId);
-    
+    const userId = req.userId || req.body.user_id || 'system';
+    await dimensionsService.updateProduct(tenantId, code, req.body, userId);
+
     res.json({
       success: true,
       message: 'Product updated successfully',
@@ -379,11 +399,12 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
   }
 };
 
-export const deleteProduct = async (req: Request, res: Response): Promise<void> => {
+export const deleteProduct = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    await dimensionsService.deleteProduct(code);
-    
+    await dimensionsService.deleteProduct(tenantId, code);
+
     res.json({
       success: true,
       message: 'Product deactivated successfully',
@@ -398,11 +419,12 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
 
 // ===== LOCATIONS =====
 
-export const getAllLocations = async (req: Request, res: Response): Promise<void> => {
+export const getAllLocations = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { include_inactive = 'false' } = req.query;
-    const locations = await dimensionsService.getAllLocations(include_inactive === 'true');
-    
+    const locations = await dimensionsService.getAllLocations(tenantId, include_inactive === 'true');
+
     res.json({
       success: true,
       data: locations,
@@ -415,11 +437,12 @@ export const getAllLocations = async (req: Request, res: Response): Promise<void
   }
 };
 
-export const getLocation = async (req: Request, res: Response): Promise<void> => {
+export const getLocation = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    const location = await dimensionsService.getLocationByCode(code);
-    
+    const location = await dimensionsService.getLocationByCode(tenantId, code);
+
     if (!location) {
       res.status(404).json({
         success: false,
@@ -427,7 +450,7 @@ export const getLocation = async (req: Request, res: Response): Promise<void> =>
       });
       return;
     }
-    
+
     res.json({
       success: true,
       data: location,
@@ -440,11 +463,12 @@ export const getLocation = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-export const createLocation = async (req: Request, res: Response): Promise<void> => {
+export const createLocation = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.body.user_id || 'system';
-    const id = await dimensionsService.createLocation(req.body, userId);
-    
+    const tenantId = req.tenant!.id;
+    const userId = req.userId || req.body.user_id || 'system';
+    const id = await dimensionsService.createLocation(tenantId, req.body, userId);
+
     res.status(201).json({
       success: true,
       data: { id },
@@ -458,12 +482,13 @@ export const createLocation = async (req: Request, res: Response): Promise<void>
   }
 };
 
-export const updateLocation = async (req: Request, res: Response): Promise<void> => {
+export const updateLocation = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    const userId = req.body.user_id || 'system';
-    await dimensionsService.updateLocation(code, req.body, userId);
-    
+    const userId = req.userId || req.body.user_id || 'system';
+    await dimensionsService.updateLocation(tenantId, code, req.body, userId);
+
     res.json({
       success: true,
       message: 'Location updated successfully',
@@ -476,11 +501,12 @@ export const updateLocation = async (req: Request, res: Response): Promise<void>
   }
 };
 
-export const deleteLocation = async (req: Request, res: Response): Promise<void> => {
+export const deleteLocation = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const tenantId = req.tenant!.id;
     const { code } = req.params;
-    await dimensionsService.deleteLocation(code);
-    
+    await dimensionsService.deleteLocation(tenantId, code);
+
     res.json({
       success: true,
       message: 'Location deactivated successfully',
@@ -495,10 +521,11 @@ export const deleteLocation = async (req: Request, res: Response): Promise<void>
 
 // ===== SUMMARY =====
 
-export const getDimensionSummary = async (_req: Request, res: Response): Promise<void> => {
+export const getDimensionSummary = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
-    const summary = await dimensionsService.getDimensionSummary();
-    
+    const tenantId = req.tenant!.id;
+    const summary = await dimensionsService.getDimensionSummary(tenantId);
+
     res.json({
       success: true,
       data: summary,
