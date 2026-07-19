@@ -570,6 +570,7 @@ export async function createAssetDisposal(req: TenantRequest, res: Response) {
   try {
     const { tenantId, userId } = getTenantContext(req);
     const disposalData = req.body;
+    disposalData.asset_id = req.params.asset_id || disposalData.asset_id;
 
     await client.query('BEGIN');
 
@@ -693,6 +694,7 @@ export async function createAssetTransfer(req: TenantRequest, res: Response) {
   try {
     const { tenantId, userId } = getTenantContext(req);
     const transferData = req.body;
+    transferData.asset_id = req.params.asset_id || transferData.asset_id;
 
     await client.query('BEGIN');
 
@@ -846,6 +848,7 @@ export async function createAssetMaintenance(req: TenantRequest, res: Response) 
   try {
     const { tenantId, userId } = getTenantContext(req);
     const maintenanceData = req.body;
+    maintenanceData.asset_id = req.params.asset_id || maintenanceData.asset_id;
 
     // Verify asset exists and belongs to tenant
     const assetCheck = await pool.query(
