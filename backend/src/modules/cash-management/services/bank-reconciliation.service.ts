@@ -121,28 +121,37 @@ export class BankReconciliationService {
     
     try {
       await client.query('BEGIN');
-      
+
       // If this is primary, unset other primary accounts
       if (dto.is_primary) {
         await client.query('UPDATE cash_bank_accounts SET is_primary = false WHERE tenant_id = $1 AND is_primary = true', [tenantId]);
       }
-      
+
+      // Resolve bank_id from bank_code when the caller only has the code (e.g. UI bank picker)
+      let bankId = dto.bank_id;
+      if (!bankId && dto.bank_code) {
+        const bankLookup = await client.query('SELECT bank_id FROM cash_banks WHERE bank_code = $1', [dto.bank_code]);
+        bankId = bankLookup.rows[0]?.bank_id;
+      }
+
       const query = `
         INSERT INTO cash_bank_accounts (
-          bank_id, account_number, account_name, account_type, currency,
+          bank_id, bank_code, account_number, account_name, account_type, branch_code, currency,
           gl_account_code, opening_balance, current_balance,
           is_active, is_primary, created_by, tenant_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING *
       `;
-      
+
       const values = [
-        dto.bank_id,
+        bankId || null,
+        dto.bank_code || null,
         dto.account_number,
         dto.account_name,
         dto.account_type,
+        dto.branch_code || null,
         dto.currency_code || 'ZAR',
-        dto.gl_account_code,
+        dto.gl_account_code || null,
         dto.opening_balance || 0,
         dto.opening_balance || 0, // Current balance starts as opening balance
         dto.is_active !== false,

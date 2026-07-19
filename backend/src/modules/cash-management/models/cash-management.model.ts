@@ -353,12 +353,14 @@ export interface BankReconciliationMatch {
 // ============================================================
 
 export interface CreateBankAccountDto {
-  bank_id: number;
+  bank_id?: number;
+  bank_code?: string;
+  branch_code?: string;
   account_number: string;
   account_name: string;
   account_type: BankAccountType;
   currency_code?: string;
-  gl_account_code: string;
+  gl_account_code?: string;
   opening_balance?: number;
   opening_balance_date?: Date;
   statement_day?: number;

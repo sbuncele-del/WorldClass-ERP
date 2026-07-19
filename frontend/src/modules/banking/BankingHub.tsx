@@ -475,12 +475,12 @@ const BankingHub: React.FC = () => {
     try {
       await apiClient.post('/api/v2/cash-management/bank-accounts', {
         account_name: values.accountName,
-        bank_name: values.bankName,
+        bank_code: values.bankName,
         account_number: values.accountNumber,
         branch_code: values.branchCode,
         account_type: values.accountType,
-        currency: values.currency || 'ZAR',
-        current_balance: parseFloat(values.openingBalance) || 0,
+        currency_code: values.currency || 'ZAR',
+        opening_balance: parseFloat(values.openingBalance) || 0,
       });
       message.success('Bank account added successfully!');
       bankForm.resetFields();
@@ -1536,16 +1536,13 @@ const BankingHub: React.FC = () => {
                 rules={[{ required: true, message: 'Please select a bank' }]}
               >
                 <Select placeholder="Select bank">
-                  <Select.Option value="Standard Bank">Standard Bank</Select.Option>
-                  <Select.Option value="First National Bank">First National Bank (FNB)</Select.Option>
+                  <Select.Option value="STANDARD">Standard Bank</Select.Option>
+                  <Select.Option value="FNB">First National Bank (FNB)</Select.Option>
                   <Select.Option value="ABSA">ABSA</Select.Option>
-                  <Select.Option value="Nedbank">Nedbank</Select.Option>
-                  <Select.Option value="Capitec">Capitec</Select.Option>
-                  <Select.Option value="Investec">Investec</Select.Option>
-                  <Select.Option value="African Bank">African Bank</Select.Option>
-                  <Select.Option value="Discovery Bank">Discovery Bank</Select.Option>
-                  <Select.Option value="TymeBank">TymeBank</Select.Option>
-                  <Select.Option value="Other">Other</Select.Option>
+                  <Select.Option value="NEDBANK">Nedbank</Select.Option>
+                  <Select.Option value="CAPITEC">Capitec</Select.Option>
+                  <Select.Option value="INVESTEC">Investec</Select.Option>
+                  <Select.Option value="DISCOVERY">Discovery Bank</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -1586,10 +1583,11 @@ const BankingHub: React.FC = () => {
                 rules={[{ required: true, message: 'Please select account type' }]}
               >
                 <Select placeholder="Select type">
-                  <Select.Option value="checking">Current / Cheque Account</Select.Option>
-                  <Select.Option value="savings">Savings Account</Select.Option>
-                  <Select.Option value="credit">Credit Card</Select.Option>
-                  <Select.Option value="money_market">Money Market</Select.Option>
+                  <Select.Option value="CURRENT">Current / Cheque Account</Select.Option>
+                  <Select.Option value="SAVINGS">Savings Account</Select.Option>
+                  <Select.Option value="CREDIT_CARD">Credit Card</Select.Option>
+                  <Select.Option value="MONEY_MARKET">Money Market</Select.Option>
+                  <Select.Option value="PETTY_CASH">Petty Cash</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
