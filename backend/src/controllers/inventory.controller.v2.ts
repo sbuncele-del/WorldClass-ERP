@@ -140,13 +140,13 @@ export const createItemCategory = async (req: TenantRequest, res: Response) => {
     }
     
     const category = await itemCategoryRepository.create(ctx, {
-      code,
-      name,
+      category_code: code,
+      category_name: name,
       description,
-      parent_id,
+      parent_category_id: parent_id,
       is_active
-    });
-    
+    } as any);
+
     res.status(201).json({
       success: true,
       data: category,
@@ -180,12 +180,12 @@ export const updateItemCategory = async (req: TenantRequest, res: Response) => {
     }
     
     const category = await itemCategoryRepository.update(ctx, id, {
-      code,
-      name,
+      category_code: code,
+      category_name: name,
       description,
-      parent_id,
+      parent_category_id: parent_id,
       is_active
-    });
+    } as any);
     
     if (!category) {
       return res.status(404).json({
@@ -355,10 +355,10 @@ export const createItem = async (req: TenantRequest, res: Response) => {
       item_name: itemData.item_name || itemData.name,
       description: itemData.description,
       category: itemData.category,
+      category_id: itemData.category_id,
       unit_of_measure: itemData.unit_of_measure || 'each',
-      cost_price: itemData.cost_price || 0,
+      standard_cost: itemData.standard_cost || itemData.cost_price || 0,
       selling_price: itemData.selling_price || itemData.unit_price || 0,
-      quantity_on_hand: itemData.quantity_on_hand || itemData.quantity || 0,
       reorder_level: itemData.reorder_level || itemData.min_stock_level || 0,
       reorder_quantity: itemData.reorder_quantity || 0,
       sku: itemData.sku,
@@ -404,7 +404,7 @@ export const updateItem = async (req: TenantRequest, res: Response) => {
     const ctx = getTenantContext(req);
     const { id } = req.params;
     const itemData = req.body;
-    
+
     // Check if code is unique (excluding this item)
     const codeToCheck = itemData.item_code || itemData.code;
     if (codeToCheck) {
@@ -416,8 +416,28 @@ export const updateItem = async (req: TenantRequest, res: Response) => {
         });
       }
     }
-    
-    const item = await inventoryItemRepository.update(ctx, id, itemData);
+
+    // Map incoming field names to DB column names (same mapping as createItem)
+    const dbData: Record<string, any> = {
+      item_code: itemData.item_code || itemData.code,
+      item_name: itemData.item_name || itemData.name,
+      description: itemData.description,
+      category: itemData.category,
+      category_id: itemData.category_id,
+      unit_of_measure: itemData.unit_of_measure,
+      standard_cost: itemData.standard_cost || itemData.cost_price,
+      selling_price: itemData.selling_price || itemData.unit_price,
+      reorder_level: itemData.reorder_level || itemData.min_stock_level,
+      reorder_quantity: itemData.reorder_quantity,
+      sku: itemData.sku,
+      barcode: itemData.barcode,
+      is_active: itemData.is_active,
+      is_serialized: itemData.is_serialized,
+      is_batch_tracked: itemData.is_batch_tracked,
+    };
+    Object.keys(dbData).forEach(k => dbData[k] === undefined && delete dbData[k]);
+
+    const item = await inventoryItemRepository.update(ctx, id, dbData as any);
     
     if (!item) {
       return res.status(404).json({
@@ -561,7 +581,7 @@ export const createWarehouse = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
     const warehouseData = req.body;
-    
+
     // Check if code is unique
     const isUnique = await warehouseRepository.isCodeUnique(ctx, warehouseData.code);
     if (!isUnique) {
@@ -570,8 +590,26 @@ export const createWarehouse = async (req: TenantRequest, res: Response) => {
         message: 'Warehouse code already exists'
       });
     }
-    
-    const warehouse = await warehouseRepository.create(ctx, warehouseData);
+
+    // Map incoming field names to DB column names
+    const dbData: Record<string, any> = {
+      warehouse_code: warehouseData.code,
+      warehouse_name: warehouseData.name,
+      description: warehouseData.description,
+      address: warehouseData.address,
+      city: warehouseData.city,
+      state: warehouseData.state,
+      country: warehouseData.country,
+      postal_code: warehouseData.postal_code,
+      phone: warehouseData.phone,
+      email: warehouseData.email,
+      manager_id: warehouseData.manager_id,
+      is_active: warehouseData.is_active !== false,
+      is_default: warehouseData.is_default || false,
+    };
+    Object.keys(dbData).forEach(k => dbData[k] === undefined && delete dbData[k]);
+
+    const warehouse = await warehouseRepository.create(ctx, dbData as any);
     
     res.status(201).json({
       success: true,

@@ -25,7 +25,8 @@ export interface ItemCategory {
 
 export class ItemCategoryRepository extends BaseRepository<ItemCategory> {
   protected tableName = 'item_categories';
-  protected schema = 'public';
+  protected schema = 'inventory';
+  protected primaryKey = 'category_id';
   protected softDelete = false;
   protected entityScoped = false;
 

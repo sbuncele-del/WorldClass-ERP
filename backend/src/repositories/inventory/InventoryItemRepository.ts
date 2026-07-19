@@ -53,7 +53,8 @@ export interface StockLevel {
 
 export class InventoryItemRepository extends BaseRepository<InventoryItem> {
   protected tableName = 'items';
-  protected schema = 'public';
+  protected schema = 'inventory';
+  protected primaryKey = 'item_id';
   protected softDelete = false;
   protected entityScoped = false;
 
@@ -69,12 +70,12 @@ export class InventoryItemRepository extends BaseRepository<InventoryItem> {
     const offset = (page - 1) * limit;
 
     let sql = `
-      SELECT i.*, COALESCE(SUM(sl.on_hand_quantity), 0) as stock
+      SELECT i.*, COALESCE(SUM(sl.quantity_on_hand), 0) as stock
       FROM ${this.fullTableName} i
-      LEFT JOIN stock_levels sl ON sl.item_id = i.item_id
-      WHERE 1=1
+      LEFT JOIN inventory.stock_levels sl ON sl.item_id = i.item_id
+      WHERE i.tenant_id = $1
     `;
-    const params: any[] = [];
+    const params: any[] = [ctx.tenantId];
 
     if (warehouseId) {
       sql += ` AND sl.warehouse_id = $${params.length + 1}`;
@@ -89,12 +90,12 @@ export class InventoryItemRepository extends BaseRepository<InventoryItem> {
     params.push(limit, offset);
 
     const countSql = `
-      SELECT COUNT(DISTINCT i.item_id) FROM ${this.fullTableName} i
+      SELECT COUNT(DISTINCT i.item_id) FROM ${this.fullTableName} i WHERE i.tenant_id = $1
     `;
 
     const [dataResult, countResult] = await Promise.all([
       this.query(sql, params),
-      this.query<{ count: string }>(countSql)
+      this.query<{ count: string }>(countSql, [ctx.tenantId])
     ]);
 
     const data = dataResult.rows;
@@ -111,15 +112,15 @@ export class InventoryItemRepository extends BaseRepository<InventoryItem> {
    */
   async getStockLevels(ctx: TenantContext, itemId: string): Promise<StockLevel[]> {
     const sql = `
-      SELECT 
+      SELECT
         sl.item_id,
         sl.warehouse_id,
-        w.name as warehouse_name,
-        sl.quantity as quantity_on_hand,
-        COALESCE(sl.reserved_quantity, 0) as quantity_reserved,
-        (sl.quantity - COALESCE(sl.reserved_quantity, 0)) as quantity_available
-      FROM inventory_stock_levels sl
-      JOIN inventory_warehouses w ON w.id = sl.warehouse_id
+        w.warehouse_name,
+        sl.quantity_on_hand as quantity_on_hand,
+        COALESCE(sl.quantity_reserved, 0) as quantity_reserved,
+        (sl.quantity_on_hand - COALESCE(sl.quantity_reserved, 0)) as quantity_available
+      FROM inventory.stock_levels sl
+      JOIN inventory.warehouses w ON w.warehouse_id = sl.warehouse_id
       WHERE sl.tenant_id = $1 AND sl.item_id = $2
     `;
 
@@ -131,15 +132,15 @@ export class InventoryItemRepository extends BaseRepository<InventoryItem> {
    */
   async getLowStockItems(ctx: TenantContext): Promise<(InventoryItem & { current_stock: number })[]> {
     const sql = `
-      SELECT i.*, COALESCE(SUM(sl.quantity), 0) as current_stock
+      SELECT i.*, COALESCE(SUM(sl.quantity_on_hand), 0) as current_stock
       FROM ${this.fullTableName} i
-      LEFT JOIN inventory_stock_levels sl ON sl.item_id = i.id
-      WHERE i.tenant_id = $1 
+      LEFT JOIN inventory.stock_levels sl ON sl.item_id = i.item_id
+      WHERE i.tenant_id = $1
         AND i.is_active = true
         AND i.reorder_level IS NOT NULL
-      GROUP BY i.id
-      HAVING COALESCE(SUM(sl.quantity), 0) <= i.reorder_level
-      ORDER BY (COALESCE(SUM(sl.quantity), 0) / NULLIF(i.reorder_level, 0))
+      GROUP BY i.item_id
+      HAVING COALESCE(SUM(sl.quantity_on_hand), 0) <= i.reorder_level
+      ORDER BY (COALESCE(SUM(sl.quantity_on_hand), 0) / NULLIF(i.reorder_level, 0))
     `;
 
     return this.rawQuery(ctx, sql);
@@ -216,7 +217,7 @@ export class InventoryItemRepository extends BaseRepository<InventoryItem> {
   async isCodeUnique(ctx: TenantContext, code: string, excludeId?: string): Promise<boolean> {
     const existing = await this.findOne(ctx, { item_code: code } as any);
     if (!existing) return true;
-    if (excludeId && existing.id === excludeId) return true;
+    if (excludeId && String((existing as any).item_id) === String(excludeId)) return true;
     return false;
   }
 
@@ -242,20 +243,20 @@ export class InventoryItemRepository extends BaseRepository<InventoryItem> {
     try {
       // Update or insert stock level
       await client.query(`
-        INSERT INTO inventory_stock_levels (tenant_id, item_id, warehouse_id, quantity)
+        INSERT INTO inventory.stock_levels (tenant_id, item_id, warehouse_id, quantity_on_hand)
         VALUES ($1, $2, $3, $4)
         ON CONFLICT (tenant_id, item_id, warehouse_id)
-        DO UPDATE SET 
-          quantity = inventory_stock_levels.quantity + $4,
+        DO UPDATE SET
+          quantity_on_hand = inventory.stock_levels.quantity_on_hand + $4,
           updated_at = NOW()
       `, [ctx.tenantId, itemId, warehouseId, quantityChange]);
 
       // Record the movement
       await client.query(`
-        INSERT INTO inventory_transactions 
+        INSERT INTO public.inventory_transactions
         (tenant_id, item_id, warehouse_id, quantity, movement_type, reason, created_by)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `, [ctx.tenantId, itemId, warehouseId, quantityChange, 
+      `, [ctx.tenantId, itemId, warehouseId, quantityChange,
           quantityChange > 0 ? 'IN' : 'OUT', reason, ctx.userId]);
 
       await this.commitTransaction(client);

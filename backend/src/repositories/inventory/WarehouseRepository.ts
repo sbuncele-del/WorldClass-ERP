@@ -31,8 +31,9 @@ export interface Warehouse {
 }
 
 export class WarehouseRepository extends BaseRepository<Warehouse> {
-  protected tableName = 'inventory_warehouses';
-  protected schema = 'public';
+  protected tableName = 'warehouses';
+  protected schema = 'inventory';
+  protected primaryKey = 'warehouse_id';
   protected softDelete = false;
   protected entityScoped = false;
 
@@ -87,7 +88,7 @@ export class WarehouseRepository extends BaseRepository<Warehouse> {
     total_stock_value: number;
   } | null> {
     const sql = `
-      SELECT 
+      SELECT
         w.*,
         COUNT(DISTINCT sl.item_id) as total_items,
         COALESCE(SUM(sl.quantity_on_hand * i.standard_cost), 0) as total_stock_value
@@ -106,9 +107,9 @@ export class WarehouseRepository extends BaseRepository<Warehouse> {
    * Check if warehouse code is unique
    */
   async isCodeUnique(ctx: TenantContext, code: string, excludeId?: string): Promise<boolean> {
-    const existing = await this.findOne(ctx, { code });
+    const existing = await this.findOne(ctx, { warehouse_code: code } as any);
     if (!existing) return true;
-    if (excludeId && existing.id === excludeId) return true;
+    if (excludeId && String((existing as any).warehouse_id) === String(excludeId)) return true;
     return false;
   }
 }
