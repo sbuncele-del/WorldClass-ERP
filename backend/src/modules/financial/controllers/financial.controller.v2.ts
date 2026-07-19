@@ -239,7 +239,7 @@ async function seedDefaultChartOfAccounts(tenantId: string): Promise<void> {
   for (const acc of defaultAccounts) {
     await query(
       `INSERT INTO chart_of_accounts (
-        tenant_id, code, name, account_type, account_category,
+        tenant_id, account_code, account_name, account_type, account_category,
         normal_balance, is_header, level, is_active,
         allow_manual_entry, is_system_account, currency_code,
         current_balance
@@ -314,11 +314,10 @@ export const createAccount = async (req: TenantRequest, res: Response) => {
 
     // Insert the account
     const result = await query(
-      `INSERT INTO chart_of_accounts 
-        (tenant_id, code, name, account_type, account_category, parent_code, level, is_header, 
-         normal_balance, description, current_debit_balance, current_credit_balance, is_active, created_by,
-         account_code, account_name)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 0, true, $12, $2, $3)
+      `INSERT INTO chart_of_accounts
+        (tenant_id, account_code, account_name, account_type, account_category, parent_code, level, is_header,
+         normal_balance, description, opening_balance, current_balance, is_active, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 0, true, $12)
        RETURNING *`,
       [
         ctx.tenantId,

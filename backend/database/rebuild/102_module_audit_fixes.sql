@@ -68,11 +68,33 @@ CREATE TABLE IF NOT EXISTS public.vat_config (
   UNIQUE(tenant_id)
 );
 
--- E. departments.cost_center_code — createDepartment (hr.controller.v2 -> departmentRepository) writes this.
+-- E/F. NOTE: public.departments/public.employees turned out to be unrelated legacy duplicate tables —
+--       the app actually queries hr.departments/hr.employees (see section I). Left here harmlessly
+--       (idempotent, additive) rather than removed, since some other unaudited code path may still use them.
 ALTER TABLE public.departments ADD COLUMN IF NOT EXISTS cost_center_code VARCHAR(50);
-
--- F. employees.job_title — createEmployee writes this.
 ALTER TABLE public.employees ADD COLUMN IF NOT EXISTS job_title VARCHAR(200);
 
 -- G. fixed_assets.acquisition_cost — createAsset/getAllAssets read/write this; table exists but column missing.
 ALTER TABLE public.fixed_assets ADD COLUMN IF NOT EXISTS acquisition_cost DECIMAL(15,2) DEFAULT 0;
+
+-- H. chart_of_accounts — remaining columns the model (chart-of-accounts.model.ts) expects but the
+--    live table never had. Found via live testing after the first pass above.
+ALTER TABLE public.chart_of_accounts ADD COLUMN IF NOT EXISTS level INTEGER DEFAULT 1;
+ALTER TABLE public.chart_of_accounts ADD COLUMN IF NOT EXISTS is_system_account BOOLEAN DEFAULT false;
+ALTER TABLE public.chart_of_accounts ADD COLUMN IF NOT EXISTS allow_manual_entry BOOLEAN DEFAULT true;
+ALTER TABLE public.chart_of_accounts ADD COLUMN IF NOT EXISTS require_cost_center BOOLEAN DEFAULT false;
+ALTER TABLE public.chart_of_accounts ADD COLUMN IF NOT EXISTS allow_foreign_currency BOOLEAN DEFAULT false;
+ALTER TABLE public.chart_of_accounts ADD COLUMN IF NOT EXISTS default_tax_code VARCHAR(20);
+ALTER TABLE public.chart_of_accounts ADD COLUMN IF NOT EXISTS is_tax_relevant BOOLEAN DEFAULT false;
+ALTER TABLE public.chart_of_accounts ADD COLUMN IF NOT EXISTS requires_reconciliation BOOLEAN DEFAULT false;
+ALTER TABLE public.chart_of_accounts ADD COLUMN IF NOT EXISTS currency_code VARCHAR(3) DEFAULT 'ZAR';
+ALTER TABLE public.chart_of_accounts ADD COLUMN IF NOT EXISTS opening_balance DECIMAL(18,2) DEFAULT 0;
+ALTER TABLE public.chart_of_accounts ADD COLUMN IF NOT EXISTS current_balance DECIMAL(18,2) DEFAULT 0;
+
+-- I. hr.departments / hr.employees — createDepartment/createEmployee (hr.controller.v2 -> repositories,
+--    schema='hr') write these columns; the repositories query hr.departments/hr.employees, NOT the bare
+--    public.departments/public.employees tables (which also exist and are unrelated legacy duplicates).
+ALTER TABLE hr.departments ADD COLUMN IF NOT EXISTS cost_center_code VARCHAR(50);
+ALTER TABLE hr.departments ADD COLUMN IF NOT EXISTS created_by UUID;
+ALTER TABLE hr.employees ADD COLUMN IF NOT EXISTS job_title VARCHAR(200);
+ALTER TABLE hr.employees ADD COLUMN IF NOT EXISTS created_by UUID;
