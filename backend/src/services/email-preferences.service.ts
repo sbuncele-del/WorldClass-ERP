@@ -7,8 +7,8 @@ import crypto from 'crypto';
  */
 
 export interface EmailPreferences {
-  userId: number;
-  tenantId: number;
+  userId: string;
+  tenantId: string;
   marketingEmails: boolean;
   productUpdates: boolean;
   securityAlerts: boolean;
@@ -33,8 +33,8 @@ export interface EmailCategory {
  * Get user's email preferences
  */
 export async function getUserEmailPreferences(
-  userId: number,
-  tenantId: number
+  userId: string,
+  tenantId: string
 ): Promise<EmailPreferences> {
   try {
     // Get existing preferences or create default
@@ -79,8 +79,8 @@ export async function getUserEmailPreferences(
  * Update user's email preferences
  */
 export async function updateEmailPreferences(
-  userId: number,
-  tenantId: number,
+  userId: string,
+  tenantId: string,
   preferences: Partial<EmailPreferences>
 ): Promise<EmailPreferences> {
   try {
@@ -144,7 +144,7 @@ export async function updateEmailPreferences(
 
     // Log the preference change
     await pool.query(
-      `INSERT INTO audit_log (tenant_id, user_id, action, resource_type, resource_id, details)
+      `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, metadata)
        VALUES ($1, $2, 'email_preferences_updated', 'user', $3, $4)`,
       [
         tenantId,
@@ -165,8 +165,8 @@ export async function updateEmailPreferences(
  * Generate unsubscribe token
  */
 export async function generateUnsubscribeToken(
-  userId: number,
-  tenantId: number,
+  userId: string,
+  tenantId: string,
   category?: string
 ): Promise<string> {
   try {
@@ -254,7 +254,7 @@ export async function processUnsubscribe(
 
     // Log unsubscribe action
     await pool.query(
-      `INSERT INTO audit_log (tenant_id, user_id, action, resource_type, resource_id, details)
+      `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, metadata)
        VALUES ($1, $2, 'email_unsubscribed', 'user', $3, $4)`,
       [
         tenant_id,
@@ -275,8 +275,8 @@ export async function processUnsubscribe(
  * Check if user can receive email of specific type
  */
 export async function canSendEmail(
-  userId: number,
-  tenantId: number,
+  userId: string,
+  tenantId: string,
   category: string
 ): Promise<boolean> {
   try {
@@ -318,8 +318,8 @@ export async function canSendEmail(
  * Log email send for compliance
  */
 export async function logEmailSend(data: {
-  userId?: number;
-  tenantId?: number;
+  userId?: string;
+  tenantId?: string;
   emailAddress: string;
   emailType: string;
   emailCategory: string;

@@ -34,8 +34,8 @@ export const getPreferences = async (req: TenantRequest, res: Response) => {
     const { tenantId, userId } = getTenantContext(req);
 
     const preferences = await EmailPreferencesService.getUserEmailPreferences(
-      parseInt(userId) || 0,
-      parseInt(tenantId) || 0
+      userId,
+      tenantId
     );
 
     const categories = EmailPreferencesService.getEmailCategories(preferences);
@@ -96,8 +96,8 @@ export const updatePreferences = async (req: TenantRequest, res: Response) => {
     }
 
     const preferences = await EmailPreferencesService.updateEmailPreferences(
-      parseInt(userId) || 0,
-      parseInt(tenantId) || 0,
+      userId,
+      tenantId,
       updates
     );
 
@@ -123,8 +123,8 @@ export const unsubscribeAll = async (req: TenantRequest, res: Response) => {
     const { tenantId, userId } = getTenantContext(req);
 
     await EmailPreferencesService.updateEmailPreferences(
-      parseInt(userId) || 0,
-      parseInt(tenantId) || 0,
+      userId,
+      tenantId,
       { unsubscribedAll: true }
     );
 
@@ -149,8 +149,8 @@ export const resubscribe = async (req: TenantRequest, res: Response) => {
     const { tenantId, userId } = getTenantContext(req);
 
     await EmailPreferencesService.updateEmailPreferences(
-      parseInt(userId) || 0,
-      parseInt(tenantId) || 0,
+      userId,
+      tenantId,
       { unsubscribedAll: false }
     );
 
@@ -212,8 +212,8 @@ export const getCategories = async (req: TenantRequest, res: Response) => {
     const { tenantId, userId } = getTenantContext(req);
 
     const preferences = await EmailPreferencesService.getUserEmailPreferences(
-      parseInt(userId) || 0,
-      parseInt(tenantId) || 0
+      userId,
+      tenantId
     );
 
     const categories = EmailPreferencesService.getEmailCategories(preferences);

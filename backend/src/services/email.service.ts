@@ -259,8 +259,8 @@ export async function sendEmail(options: {
   template: string;
   variables: Record<string, string>;
   from?: string;
-  userId?: number;
-  tenantId?: number;
+  userId?: string;
+  tenantId?: string;
   category?: string;
 }): Promise<void> {
   try {

@@ -20,8 +20,8 @@ export interface EmailJobData {
   template: string;
   variables: Record<string, string>;
   from?: string;
-  userId?: number;
-  tenantId?: number;
+  userId?: string;
+  tenantId?: string;
   category?: string;
   priority?: 'high' | 'normal' | 'low';
   scheduledFor?: Date | number; // Unix timestamp or Date object

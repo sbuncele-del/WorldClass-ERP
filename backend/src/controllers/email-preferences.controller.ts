@@ -15,8 +15,8 @@ export class EmailPreferencesController {
       }
 
       const preferences = await EmailPreferencesService.getUserEmailPreferences(
-        parseInt(req.user.id) || 0,
-        parseInt(req.tenant.id) || 0
+        req.user.id,
+        req.tenant.id
       );
 
       const categories = EmailPreferencesService.getEmailCategories(preferences);
@@ -81,8 +81,8 @@ export class EmailPreferencesController {
       }
 
       const preferences = await EmailPreferencesService.updateEmailPreferences(
-        parseInt(req.user.id) || 0,
-        parseInt(req.tenant.id) || 0,
+        req.user.id,
+        req.tenant.id,
         updates
       );
 
@@ -109,8 +109,8 @@ export class EmailPreferencesController {
       }
 
       await EmailPreferencesService.updateEmailPreferences(
-        parseInt(req.user.id) || 0,
-        parseInt(req.tenant.id) || 0,
+        req.user.id,
+        req.tenant.id,
         { unsubscribedAll: true }
       );
 
@@ -136,8 +136,8 @@ export class EmailPreferencesController {
       }
 
       await EmailPreferencesService.updateEmailPreferences(
-        parseInt(req.user.id) || 0,
-        parseInt(req.tenant.id) || 0,
+        req.user.id,
+        req.tenant.id,
         { unsubscribedAll: false }
       );
 
@@ -201,8 +201,8 @@ export class EmailPreferencesController {
       }
 
       const preferences = await EmailPreferencesService.getUserEmailPreferences(
-        parseInt(req.user.id) || 0,
-        parseInt(req.tenant.id) || 0
+        req.user.id,
+        req.tenant.id
       );
 
       const categories = EmailPreferencesService.getEmailCategories(preferences);

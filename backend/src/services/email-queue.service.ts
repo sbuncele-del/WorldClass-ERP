@@ -125,8 +125,8 @@ export class EmailQueueService {
    */
   static async queueEmailVerification(
     to: string,
-    userId: number,
-    tenantId: number,
+    userId: string,
+    tenantId: string,
     variables: Record<string, string>
   ): Promise<void> {
     await this.queueHighPriority({
@@ -145,8 +145,8 @@ export class EmailQueueService {
    */
   static async queuePasswordReset(
     to: string,
-    userId: number,
-    tenantId: number,
+    userId: string,
+    tenantId: string,
     variables: Record<string, string>
   ): Promise<void> {
     await this.queueHighPriority({
@@ -165,8 +165,8 @@ export class EmailQueueService {
    */
   static async queueWelcomeEmail(
     to: string,
-    userId: number,
-    tenantId: number,
+    userId: string,
+    tenantId: string,
     variables: Record<string, string>
   ): Promise<void> {
     await this.queueNormalPriority({
@@ -185,8 +185,8 @@ export class EmailQueueService {
    */
   static async queuePaymentSuccess(
     to: string,
-    userId: number,
-    tenantId: number,
+    userId: string,
+    tenantId: string,
     variables: Record<string, string>
   ): Promise<void> {
     await this.queueHighPriority({
@@ -205,8 +205,8 @@ export class EmailQueueService {
    */
   static async queuePaymentFailed(
     to: string,
-    userId: number,
-    tenantId: number,
+    userId: string,
+    tenantId: string,
     variables: Record<string, string>
   ): Promise<void> {
     await this.queueHighPriority({
@@ -241,8 +241,8 @@ export class EmailQueueService {
    */
   static async queueSecurityAlert(
     to: string,
-    userId: number,
-    tenantId: number,
+    userId: string,
+    tenantId: string,
     variables: Record<string, string>
   ): Promise<void> {
     await this.queueHighPriority({
@@ -261,8 +261,8 @@ export class EmailQueueService {
    */
   static async queueLowStockAlert(
     to: string,
-    userId: number,
-    tenantId: number,
+    userId: string,
+    tenantId: string,
     variables: Record<string, string>
   ): Promise<void> {
     await this.queueNormalPriority({
@@ -281,8 +281,8 @@ export class EmailQueueService {
    */
   static async queueSubscriptionExpiring(
     to: string,
-    userId: number,
-    tenantId: number,
+    userId: string,
+    tenantId: string,
     variables: Record<string, string>
   ): Promise<void> {
     await this.queueNormalPriority({
@@ -301,8 +301,8 @@ export class EmailQueueService {
    */
   static async queueMarketingEmail(
     to: string,
-    userId: number,
-    tenantId: number,
+    userId: string,
+    tenantId: string,
     subject: string,
     template: string,
     variables: Record<string, string>
