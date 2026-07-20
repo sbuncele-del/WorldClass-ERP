@@ -299,9 +299,11 @@ const BankReconciliation: React.FC = () => {
         const glRes = await apiClient.get('/api/v2/financial/accounts').catch(() => ({ data: { data: [] } }));
         const allAccounts = glRes.data?.data || glRes.data?.accounts || [];
         if (allAccounts.length > 0) {
-          // Filter to postable accounts only (not headers) and map to expected format
+          // Filter to postable accounts only (not headers, must be active - the allocate
+          // endpoint rejects inactive accounts, so an inactive account showing here as
+          // selectable would always fail on submit)
           const mappedGL = allAccounts
-            .filter((acc: any) => !acc.is_header) // Only non-header accounts can be posted to
+            .filter((acc: any) => !acc.is_header && acc.is_active !== false)
             .map((acc: any) => ({
               id: acc.id || acc.account_number, // Some accounts don't have UUID id
               code: acc.account_number || acc.account_code || acc.code || '',

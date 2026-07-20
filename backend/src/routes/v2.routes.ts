@@ -4876,13 +4876,14 @@ router.post('/cash-management/reconciliation/allocate', async (req: any, res) =>
       return res.status(400).json({ success: false, error: 'statement_line_id and gl_account_id are required' });
     }
 
-    // Resolve gl_account_id (may be UUID or account code)
-    const isValidUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(gl_account_id);
-    const glLookupField = isValidUUID ? 'id' : '(code = $2 OR account_code = $2)';
-    const glLookupParams = isValidUUID ? [tenantId, gl_account_id] : [tenantId, gl_account_id];
+    // Resolve gl_account_id - may be a UUID, a legacy non-UUID id, or an account code.
+    // Match id as text rather than gating on UUID format: some chart_of_accounts rows
+    // (e.g. older/seeded accounts) don't have a standard UUID id.
     const glLookup = await query(
-      `SELECT id FROM chart_of_accounts WHERE tenant_id = $1 AND ${isValidUUID ? 'id = $2' : '(code = $2 OR account_code = $2)'} AND is_active = true LIMIT 1`,
-      glLookupParams
+      `SELECT id FROM chart_of_accounts
+       WHERE tenant_id = $1 AND (id::text = $2 OR code = $2 OR account_code = $2) AND is_active = true
+       LIMIT 1`,
+      [tenantId, String(gl_account_id)]
     );
     if (glLookup.rows.length === 0) {
       return res.status(400).json({ success: false, error: 'GL account not found. Please select a valid account.' });
