@@ -97,6 +97,7 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
           account_code,
           account_name,
           account_type,
+          normal_balance,
           parent_account_id,
           is_active,
           created_by,
@@ -105,12 +106,13 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
         VALUES (
           $1,
           (SELECT '2-10-' || LPAD((
-            SELECT COUNT(*) + 1 
-            FROM chart_of_accounts 
+            SELECT COUNT(*) + 1
+            FROM chart_of_accounts
             WHERE tenant_id = $1 AND account_code LIKE '2-10-%'
           )::text, 3, '0')),
           $2,
           'LIABILITY',
+          'CREDIT',
           (SELECT account_id FROM chart_of_accounts WHERE tenant_id = $1 AND account_code = '2-10' LIMIT 1),
           true,
           $3,
@@ -143,6 +145,7 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
           account_code,
           account_name,
           account_type,
+          normal_balance,
           parent_account_id,
           is_active,
           created_by,
@@ -153,6 +156,7 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
           '5-20-001',
           'Fuel Expense',
           'EXPENSE',
+          'DEBIT',
           (SELECT account_id FROM chart_of_accounts WHERE tenant_id = $1 AND account_code = '5-20' LIMIT 1),
           true,
           $2,
