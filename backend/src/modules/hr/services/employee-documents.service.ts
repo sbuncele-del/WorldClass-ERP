@@ -328,7 +328,7 @@ export async function createContract(
         basic_salary = $1,
         position_id = (SELECT position_id FROM hr.positions WHERE position_title = $2 LIMIT 1),
         department_id = $3,
-        reports_to_employee_id = $4,
+        manager_id = $4,
         updated_at = CURRENT_TIMESTAMP
       WHERE tenant_id = $5 AND employee_id = $6
     `, [
