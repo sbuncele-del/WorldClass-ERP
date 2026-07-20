@@ -184,12 +184,13 @@ export class RecurringEntriesControllerV2 {
           const line = lines[i];
           await client.query(`
             INSERT INTO recurring_journal_entry_lines (
-              recurring_entry_id, account_code, description,
+              tenant_id, recurring_entry_id, account_code, description,
               debit_amount, credit_amount, cost_center,
               project_code, department, line_order
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
           `, [
+            tenantId,
             entryId,
             line.account_code,
             line.description,
@@ -296,12 +297,12 @@ export class RecurringEntriesControllerV2 {
           const line = lines[i];
           await client.query(`
             INSERT INTO recurring_journal_entry_lines (
-              recurring_entry_id, account_code, description,
+              tenant_id, recurring_entry_id, account_code, description,
               debit_amount, credit_amount, cost_center,
               project_code, department, line_order
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-          `, [id, line.account_code, line.description, line.debit_amount || 0,
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          `, [tenantId, id, line.account_code, line.description, line.debit_amount || 0,
               line.credit_amount || 0, line.cost_center, line.project_code,
               line.department, line.line_order || i + 1]);
         }
@@ -471,10 +472,10 @@ export class RecurringEntriesControllerV2 {
       // Log generation
       await client.query(`
         INSERT INTO recurring_entry_history (
-          recurring_entry_id, journal_entry_id, generated_date, generated_by
+          tenant_id, recurring_entry_id, journal_entry_id, generated_date, generated_by
         )
-        VALUES ($1, $2, NOW(), $3)
-      `, [id, journalEntryId, userId]);
+        VALUES ($1, $2, $3, NOW(), $4)
+      `, [tenantId, id, journalEntryId, userId]);
 
       // Update next occurrence
       const nextOccurrence = calculateNextOccurrence(
