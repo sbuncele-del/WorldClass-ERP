@@ -79,7 +79,7 @@ async function syncAccounts(tenantId: string, userId: string): Promise<SyncResul
       await pool.query(
         `INSERT INTO chart_of_accounts (tenant_id, account_code, account_name, account_type, normal_balance, description, is_active, xero_account_id)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-         ON CONFLICT (tenant_id, xero_account_id) DO UPDATE SET
+         ON CONFLICT (tenant_id, xero_account_id) WHERE xero_account_id IS NOT NULL DO UPDATE SET
            account_name = EXCLUDED.account_name,
            account_type = EXCLUDED.account_type,
            normal_balance = EXCLUDED.normal_balance,
@@ -123,7 +123,7 @@ async function syncContacts(tenantId: string, userId: string): Promise<SyncResul
         await pool.query(
           `INSERT INTO customers (tenant_id, customer_code, customer_name, email, phone, address_line1, address_line2, city, province, postal_code, vat_number, xero_contact_id)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-           ON CONFLICT (tenant_id, xero_contact_id) DO UPDATE SET
+           ON CONFLICT (tenant_id, xero_contact_id) WHERE xero_contact_id IS NOT NULL DO UPDATE SET
              customer_name = EXCLUDED.customer_name,
              email = EXCLUDED.email,
              phone = EXCLUDED.phone,
@@ -159,7 +159,7 @@ async function syncContacts(tenantId: string, userId: string): Promise<SyncResul
         await pool.query(
           `INSERT INTO purchase.suppliers (tenant_id, supplier_code, company_name, contact_person, email, phone, vat_number, xero_contact_id)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-           ON CONFLICT (tenant_id, xero_contact_id) DO UPDATE SET
+           ON CONFLICT (tenant_id, xero_contact_id) WHERE xero_contact_id IS NOT NULL DO UPDATE SET
              company_name = EXCLUDED.company_name,
              email = EXCLUDED.email,
              phone = EXCLUDED.phone,
@@ -208,7 +208,7 @@ async function syncInvoices(tenantId: string, userId: string): Promise<SyncResul
         await pool.query(
           `INSERT INTO sales_invoices (tenant_id, invoice_number, customer_id, invoice_date, due_date, reference, status, subtotal, vat_amount, total_amount, amount_paid, amount_due, xero_invoice_id)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-           ON CONFLICT (tenant_id, xero_invoice_id) DO UPDATE SET
+           ON CONFLICT (tenant_id, xero_invoice_id) WHERE xero_invoice_id IS NOT NULL DO UPDATE SET
              status = EXCLUDED.status,
              subtotal = EXCLUDED.subtotal,
              vat_amount = EXCLUDED.vat_amount,
@@ -244,7 +244,7 @@ async function syncInvoices(tenantId: string, userId: string): Promise<SyncResul
         await pool.query(
           `INSERT INTO purchase.vendor_invoices (tenant_id, invoice_number, supplier_id, invoice_date, due_date, status, subtotal, vat_amount, total_amount, amount_paid, amount_outstanding, xero_invoice_id)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-           ON CONFLICT (tenant_id, xero_invoice_id) DO UPDATE SET
+           ON CONFLICT (tenant_id, xero_invoice_id) WHERE xero_invoice_id IS NOT NULL DO UPDATE SET
              status = EXCLUDED.status,
              subtotal = EXCLUDED.subtotal,
              vat_amount = EXCLUDED.vat_amount,
@@ -342,7 +342,7 @@ async function syncBankTransactions(tenantId: string, userId: string): Promise<S
       await pool.query(
         `INSERT INTO cash_bank_statement_lines (statement_id, tenant_id, line_number, transaction_date, description, reference, debit_amount, credit_amount, xero_bank_transaction_id)
          VALUES ($1, $2, 1, $3, $4, $5, $6, $7, $8)
-         ON CONFLICT (tenant_id, xero_bank_transaction_id) DO UPDATE SET
+         ON CONFLICT (tenant_id, xero_bank_transaction_id) WHERE xero_bank_transaction_id IS NOT NULL DO UPDATE SET
            description = EXCLUDED.description,
            debit_amount = EXCLUDED.debit_amount,
            credit_amount = EXCLUDED.credit_amount`,
