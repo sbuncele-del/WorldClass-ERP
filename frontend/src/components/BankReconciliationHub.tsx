@@ -127,22 +127,11 @@ const BankReconciliation: React.FC = () => {
   // Reconciliation history from database
   const [reconciliationHistory, setReconciliationHistory] = useState<any[]>([]);
   
-  // AI Rules state - stored rules for auto-matching
+  // AI Rules state - fed to the AI Auto-Match request, though the backend
+  // endpoint doesn't currently read it (see the AI Rules tab for why editing
+  // isn't exposed - there's nowhere for edits to actually go yet)
   const [aiRules, setAiRules] = useState<any[]>([]);
 
-  // Rule CRUD modal state
-  const [showRuleModal, setShowRuleModal] = useState(false);
-  const [editingRule, setEditingRule] = useState<any>(null);
-  const [ruleSaving, setRuleSaving] = useState(false);
-  const [ruleFormValues, setRuleFormValues] = useState({
-    name: '',
-    field: 'Reference',
-    condition: '',
-    priority: 1,
-    confidence: 80,
-    enabled: true,
-  });
-  
   // GL Allocation state - direct GL posting for non-invoice transactions
   const [showAllocateModal, setShowAllocateModal] = useState(false);
   const [allocatingTxn, setAllocatingTxn] = useState<BankTransaction | null>(null);
@@ -984,103 +973,6 @@ const BankReconciliation: React.FC = () => {
     setShowAllocateModal(true);
   };
 
-  // ============================================================
-  // Reconciliation Rule CRUD
-  // ============================================================
-
-  const openAddRuleModal = () => {
-    setEditingRule(null);
-    setRuleFormValues({
-      name: '',
-      field: 'Reference',
-      condition: '',
-      priority: (aiRules.length + 1),
-      confidence: 80,
-      enabled: true,
-    });
-    setShowRuleModal(true);
-  };
-
-  const openEditRuleModal = (rule: any) => {
-    setEditingRule(rule);
-    setRuleFormValues({
-      name: rule.name || '',
-      field: rule.field || 'Reference',
-      condition: rule.condition || '',
-      priority: rule.priority || 1,
-      confidence: rule.confidence || 80,
-      enabled: rule.enabled !== false,
-    });
-    setShowRuleModal(true);
-  };
-
-  const handleSaveRule = async () => {
-    if (!ruleFormValues.name || !ruleFormValues.condition) {
-      message.warning('Please fill in rule name and condition');
-      return;
-    }
-
-    setRuleSaving(true);
-    try {
-      if (editingRule) {
-        // Update existing rule
-        try {
-          await apiClient.put(`/api/cash-management/rules/${editingRule.id}`, ruleFormValues);
-        } catch {
-          // If PUT endpoint doesn't exist, just update locally
-          console.warn('Rule update endpoint not available; saving locally');
-        }
-        setAiRules(prev => prev.map(r => r.id === editingRule.id ? { ...r, ...ruleFormValues } : r));
-        message.success('Rule updated successfully');
-      } else {
-        // Create new rule
-        try {
-          const response = await apiClient.post('/api/cash-management/rules', ruleFormValues);
-          const newRule = response.data?.data || { ...ruleFormValues, id: `rule-${Date.now()}` };
-          setAiRules(prev => [...prev, newRule]);
-        } catch {
-          // If endpoint fails, add locally with temp ID
-          const tempRule = { ...ruleFormValues, id: `local-${Date.now()}` };
-          setAiRules(prev => [...prev, tempRule]);
-          message.info('Rule saved locally (server sync pending)');
-        }
-        message.success('Rule created successfully');
-      }
-      setShowRuleModal(false);
-      setEditingRule(null);
-    } catch (err: any) {
-      console.error('Error saving rule:', err);
-      message.error('Failed to save rule');
-    } finally {
-      setRuleSaving(false);
-    }
-  };
-
-  const handleToggleRule = async (ruleId: string, enabled: boolean) => {
-    // Update locally immediately
-    setAiRules(prev => prev.map(r => r.id === ruleId ? { ...r, enabled } : r));
-
-    // Persist to backend
-    try {
-      await apiClient.put(`/api/cash-management/rules/${ruleId}`, { enabled });
-    } catch {
-      // Backend update failed, but local state is already updated
-      console.warn('Rule toggle not persisted to server');
-    }
-  };
-
-  const handleDeleteRule = async (ruleId: string) => {
-    try {
-      await apiClient.delete(`/api/cash-management/rules/${ruleId}`).catch(() => {});
-      setAiRules(prev => prev.filter(r => r.id !== ruleId));
-      message.success('Rule deleted');
-    } catch {
-      // Still remove locally
-      setAiRules(prev => prev.filter(r => r.id !== ruleId));
-      message.success('Rule removed');
-    }
-  };
-
   // Refresh all data
   const handleRefreshData = useCallback(async () => {
     setIsLoading(true);
@@ -1756,7 +1648,17 @@ const BankReconciliation: React.FC = () => {
         subtitle={currentSelectedAccount?.name || 'Select Account'}
         stats={[
           { title: 'Bank Balance', value: `R ${stats.bankBalance.toLocaleString()}`, prefix: <BankOutlined /> },
-          { title: hasGLLink ? `Book Balance (GL: ${(selectedAccount as any).gl_account_code})` : 'Book Balance', value: `R ${stats.bookBalance.toLocaleString()}`, prefix: <FileTextOutlined /> },
+          {
+            // gl_account_code is the raw code stored on the bank account - for
+            // Xero-synced accounts that's the Xero account UUID (no short code
+            // exists), so showing it directly reads as garbage data. Only show
+            // it when it's actually a short, human-readable code.
+            title: (hasGLLink && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test((selectedAccount as any).gl_account_code || ''))
+              ? `Book Balance (GL: ${(selectedAccount as any).gl_account_code})`
+              : 'Book Balance',
+            value: `R ${stats.bookBalance.toLocaleString()}`,
+            prefix: <FileTextOutlined />
+          },
           { title: 'Difference', value: `R ${stats.difference.toLocaleString()}`, prefix: <SwapOutlined /> },
           { title: 'Match Rate', value: `${stats.matchRate}%`, prefix: <CheckCircleOutlined /> },
         ]}
@@ -2742,77 +2644,6 @@ const BankReconciliation: React.FC = () => {
             />
           </>
         )}
-      </Modal>
-
-      {/* Rule Create/Edit Modal */}
-      <Modal
-        title={editingRule ? 'Edit Reconciliation Rule' : 'Add Reconciliation Rule'}
-        open={showRuleModal}
-        onCancel={() => { setShowRuleModal(false); setEditingRule(null); }}
-        onOk={handleSaveRule}
-        confirmLoading={ruleSaving}
-        okText={editingRule ? 'Update Rule' : 'Create Rule'}
-      >
-        <Form layout="vertical">
-          <Form.Item label="Rule Name" required>
-            <Input
-              value={ruleFormValues.name}
-              onChange={(e) => setRuleFormValues(prev => ({ ...prev, name: e.target.value }))}
-              placeholder="e.g., Salary Payments"
-            />
-          </Form.Item>
-          <Form.Item label="Match Field">
-            <Select
-              value={ruleFormValues.field}
-              onChange={(v) => setRuleFormValues(prev => ({ ...prev, field: v }))}
-            >
-              <Select.Option value="Reference">Reference</Select.Option>
-              <Select.Option value="Description">Description</Select.Option>
-              <Select.Option value="Amount">Amount</Select.Option>
-              <Select.Option value="Description+Amount">Description + Amount</Select.Option>
-              <Select.Option value="Reference+Date">Reference + Date</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item label="Condition" required>
-            <Input
-              value={ruleFormValues.condition}
-              onChange={(e) => setRuleFormValues(prev => ({ ...prev, condition: e.target.value }))}
-              placeholder="e.g., Contains 'SALARY' or exact match pattern"
-            />
-          </Form.Item>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="Priority">
-                <InputNumber
-                  min={1}
-                  max={100}
-                  value={ruleFormValues.priority}
-                  onChange={(v) => setRuleFormValues(prev => ({ ...prev, priority: v || 1 }))}
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="Min Confidence (%)">
-                <InputNumber
-                  min={0}
-                  max={100}
-                  value={ruleFormValues.confidence}
-                  onChange={(v) => setRuleFormValues(prev => ({ ...prev, confidence: v || 80 }))}
-                  style={{ width: '100%' }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Form.Item label="Enabled">
-            <Switch
-              checked={ruleFormValues.enabled}
-              onChange={(checked) => setRuleFormValues(prev => ({ ...prev, enabled: checked }))}
-              checkedChildren="Active"
-              unCheckedChildren="Inactive"
-            />
-          </Form.Item>
-        </Form>
       </Modal>
 
       <style>{`
