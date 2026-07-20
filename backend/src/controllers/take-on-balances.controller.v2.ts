@@ -399,7 +399,7 @@ export const finalizeBalances = async (req: TenantRequest, res: Response) => {
     try {
       await client.query('BEGIN');
       const jeResult = await client.query(
-        `INSERT INTO journal_entries (tenant_id, journal_number, entry_number, description, entry_date, status, source, total_debit, total_credit, created_by, created_at)
+        `INSERT INTO journal_entries (tenant_id, journal_number, entry_number, description, journal_date, status, source, total_debit, total_credit, created_by, created_at)
          VALUES ($1, $2, $2, $3, $4, 'POSTED', 'TAKE_ON', $5, $5, $6, NOW()) RETURNING id`,
         [ctx.tenantId, `OB-${Date.now()}`, 'Opening Balances — Take-on', balanceDate, totalDebits, ctx.userId]
       );
