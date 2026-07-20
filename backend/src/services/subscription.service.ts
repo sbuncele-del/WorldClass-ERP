@@ -223,8 +223,8 @@ export class SubscriptionService {
 
       // Log upgrade event
       await pool.query(
-        `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, changes, ip_address)
-         VALUES ($1, 'system', 'upgrade_subscription', 'tenant', $1, $2, '0.0.0.0')`,
+        `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, new_values, ip_address)
+         VALUES ($1, NULL, 'upgrade_subscription', 'tenant', $1, $2, '0.0.0.0')`,
         [
           tenantId,
           JSON.stringify({
@@ -281,8 +281,8 @@ export class SubscriptionService {
 
       // Log downgrade event
       await pool.query(
-        `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, changes, ip_address)
-         VALUES ($1, 'system', 'schedule_downgrade', 'tenant', $1, $2, '0.0.0.0')`,
+        `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, new_values, ip_address)
+         VALUES ($1, NULL, 'schedule_downgrade', 'tenant', $1, $2, '0.0.0.0')`,
         [
           tenantId,
           JSON.stringify({
@@ -346,8 +346,8 @@ export class SubscriptionService {
 
       // Log cancellation
       await pool.query(
-        `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, changes, ip_address)
-         VALUES ($1, 'system', 'cancel_subscription', 'tenant', $1, $2, '0.0.0.0')`,
+        `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, new_values, ip_address)
+         VALUES ($1, NULL, 'cancel_subscription', 'tenant', $1, $2, '0.0.0.0')`,
         [
           tenantId,
           JSON.stringify({
@@ -397,8 +397,8 @@ export class SubscriptionService {
 
       // Log reactivation
       await pool.query(
-        `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, changes, ip_address)
-         VALUES ($1, 'system', 'reactivate_subscription', 'tenant', $1, $2, '0.0.0.0')`,
+        `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, new_values, ip_address)
+         VALUES ($1, NULL, 'reactivate_subscription', 'tenant', $1, $2, '0.0.0.0')`,
         [tenantId, JSON.stringify({ status: 'reactivated' })]
       );
 
