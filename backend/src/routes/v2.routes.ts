@@ -3381,9 +3381,17 @@ router.get('/cash-management/workspace', async (req: any, res) => {
       [tenantId]
     );
     
-    // Get recent transactions
+    // Get recent transactions (bank feed - cash_transactions has no rows until matched)
     const transactionsResult = await dbQuery(
-      `SELECT * FROM bank_transactions WHERE tenant_id = $1 ORDER BY transaction_date DESC LIMIT 10`,
+      `SELECT l.line_id as id, l.transaction_date, l.description,
+              (COALESCE(l.credit_amount, 0) + COALESCE(l.debit_amount, 0))::numeric as amount,
+              CASE WHEN COALESCE(l.credit_amount, 0) > 0 THEN 'DEPOSIT' ELSE 'WITHDRAWAL' END as transaction_type,
+              CASE WHEN l.is_matched THEN 'RECONCILED' ELSE 'PENDING' END as status,
+              l.reference, s.account_id as bank_account_id
+       FROM cash_bank_statement_lines l
+       JOIN cash_bank_statements s ON s.statement_id = l.statement_id
+       WHERE s.tenant_id = $1
+       ORDER BY l.transaction_date DESC LIMIT 10`,
       [tenantId]
     ).catch(() => ({ rows: [] }));
     
@@ -3552,23 +3560,45 @@ router.get('/cash-management/overview-dashboard', async (req: any, res) => {
       [tenantId]
     );
 
-    // Recent transactions (last 20) from cash_transactions
+    // Unified transaction feed: manually-posted book entries (cash_transactions)
+    // UNION the raw bank feed (cash_bank_statement_lines) - the latter is what
+    // bank-feed imports (CSV/Xero sync) write to, and has no cash_transactions
+    // row until/unless it's matched to one, so it must be included directly
+    // or imported activity never appears in any "recent activity" widget.
+    const allTxnsCte = `
+      WITH all_txns AS (
+        SELECT ct.transaction_id::text as id, ct.transaction_date, ct.description, ct.amount,
+               ct.transaction_type, ct.status, ct.reference, ct.payee_payer,
+               ct.account_id as bank_account_id
+        FROM cash_transactions ct
+        WHERE ct.tenant_id = $1
+        UNION ALL
+        SELECT 'bl-' || l.line_id::text as id, l.transaction_date, l.description,
+               (COALESCE(l.credit_amount, 0) + COALESCE(l.debit_amount, 0))::numeric as amount,
+               CASE WHEN COALESCE(l.credit_amount, 0) > 0 THEN 'DEPOSIT' ELSE 'WITHDRAWAL' END as transaction_type,
+               CASE WHEN l.is_matched THEN 'RECONCILED' ELSE 'PENDING' END as status,
+               l.reference, l.description as payee_payer,
+               s.account_id as bank_account_id
+        FROM cash_bank_statement_lines l
+        JOIN cash_bank_statements s ON s.statement_id = l.statement_id
+        WHERE s.tenant_id = $1
+      )`;
+
+    // Recent transactions (last 20), unified across book entries and bank feed
     const recentResult = await query(
-      `SELECT ct.transaction_id as id, ct.transaction_date, ct.description, ct.amount, 
-              ct.transaction_type, ct.status, ct.reference, ct.payee_payer,
-              ct.account_id as bank_account_id
-       FROM cash_transactions ct
-       WHERE ct.tenant_id = $1
-       ORDER BY ct.transaction_date DESC, ct.created_at DESC
+      `${allTxnsCte}
+       SELECT * FROM all_txns
+       ORDER BY transaction_date DESC
        LIMIT 20`,
       [tenantId]
     );
 
     // Top spending (withdrawals grouped by payee, last 90 days)
     const topSpendingResult = await query(
-      `SELECT payee_payer as description, SUM(amount)::numeric as total, COUNT(*)::int as cnt
-       FROM cash_transactions
-       WHERE tenant_id = $1 AND transaction_type IN ('WITHDRAWAL','FEE')
+      `${allTxnsCte}
+       SELECT payee_payer as description, SUM(amount)::numeric as total, COUNT(*)::int as cnt
+       FROM all_txns
+       WHERE transaction_type IN ('WITHDRAWAL','FEE')
          AND transaction_date >= CURRENT_DATE - INTERVAL '90 days'
        GROUP BY payee_payer
        ORDER BY total DESC
@@ -3578,9 +3608,10 @@ router.get('/cash-management/overview-dashboard', async (req: any, res) => {
 
     // Top income (deposits grouped by payee, last 90 days)
     const topIncomeResult = await query(
-      `SELECT payee_payer as description, SUM(amount)::numeric as total, COUNT(*)::int as cnt
-       FROM cash_transactions
-       WHERE tenant_id = $1 AND transaction_type = 'DEPOSIT'
+      `${allTxnsCte}
+       SELECT payee_payer as description, SUM(amount)::numeric as total, COUNT(*)::int as cnt
+       FROM all_txns
+       WHERE transaction_type = 'DEPOSIT'
          AND transaction_date >= CURRENT_DATE - INTERVAL '90 days'
        GROUP BY payee_payer
        ORDER BY total DESC

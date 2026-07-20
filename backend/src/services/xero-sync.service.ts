@@ -320,6 +320,8 @@ async function syncBankTransactions(tenantId: string, userId: string): Promise<S
   const errorDetails: string[] = [];
   let imported = 0;
   const statementIdCache = new Map<string, number>();
+  const accountIdCache = new Map<string, number>();
+  const touchedAccountIds = new Set<number>();
 
   for (const txn of transactions) {
     try {
@@ -334,7 +336,9 @@ async function syncBankTransactions(tenantId: string, userId: string): Promise<S
         const accountId = await getOrCreateBankAccount(tenantId, userId, txn.BankAccount);
         statementId = await getOrCreateSyncStatement(tenantId, userId, accountId);
         statementIdCache.set(bankAccountId, statementId);
+        accountIdCache.set(bankAccountId, accountId);
       }
+      touchedAccountIds.add(accountIdCache.get(bankAccountId)!);
 
       const isReceive = txn.Type === 'RECEIVE';
       const amount = txn.Total || 0;
@@ -361,6 +365,30 @@ async function syncBankTransactions(tenantId: string, userId: string): Promise<S
     } catch (e: any) {
       errorDetails.push(`Bank transaction ${txn.BankTransactionID}: ${e.message}`);
     }
+  }
+
+  // cash_bank_accounts.current_balance is a stored column, not computed live -
+  // roll it up from the statement lines just synced or every account stays at
+  // whatever it was created with (0) no matter how much activity is imported.
+  for (const accountId of touchedAccountIds) {
+    await pool.query(
+      `UPDATE cash_bank_accounts a SET
+         current_balance = a.opening_balance + COALESCE((
+           SELECT SUM(COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0))
+           FROM cash_bank_statement_lines l
+           JOIN cash_bank_statements s ON s.statement_id = l.statement_id
+           WHERE s.account_id = a.account_id
+         ), 0),
+         available_balance = a.opening_balance + COALESCE((
+           SELECT SUM(COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0))
+           FROM cash_bank_statement_lines l
+           JOIN cash_bank_statements s ON s.statement_id = l.statement_id
+           WHERE s.account_id = a.account_id
+         ), 0),
+         updated_at = NOW()
+       WHERE a.account_id = $1`,
+      [accountId]
+    );
   }
 
   await logSyncRun(tenantId, 'bank_transactions', imported, errorDetails.length, errorDetails, userId);
