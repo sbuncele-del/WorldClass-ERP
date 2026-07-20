@@ -2020,7 +2020,7 @@ const BankReconciliation: React.FC = () => {
                               <Text strong>{txn.description}</Text>
                               <br />
                               <Space size={12}>
-                                <Text type="secondary" style={{ fontSize: 12 }}>{dayjs(txn.date).format('YYYY-MM-DD')}</Text>
+                                <Text type="secondary" style={{ fontSize: 12 }}>{(() => { try { return new Date(txn.date).toLocaleDateString('en-ZA', { day: '2-digit', month: 'short', year: 'numeric' }); } catch { return txn.date; } })()}</Text>
                                 {txn.reference && <Text type="secondary" style={{ fontSize: 12 }}>Ref: {txn.reference}</Text>}
                                 <Text strong style={{ color: txn.type === 'credit' ? '#10b981' : '#ef4444' }}>
                                   {txn.type === 'credit' ? '+' : '-'} R {txn.amount.toLocaleString()}
