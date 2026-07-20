@@ -4961,22 +4961,24 @@ router.post('/cash-management/reconciliation/allocate', async (req: any, res) =>
     const jeId = jeResult.rows[0].entry_id;
 
     // Line 1: Bank account (Dr for receipts, Cr for payments)
+    // journal_entry_lines has no account_name/line_description columns - the real
+    // columns are account_code and description (confirmed against live schema).
     await query(
       `INSERT INTO journal_entry_lines
-         (tenant_id, journal_entry_id, line_number, account_id, account_code, account_name,
-          line_description, debit_amount, credit_amount)
-       VALUES ($1, $2, 1, $3, $4, $5, $6, $7, $8)`,
-      [tenantId, jeId, bankGLAccountId, bankCoaCode, bankCoaName,
+         (tenant_id, journal_entry_id, line_number, account_id, account_code,
+          description, debit_amount, credit_amount)
+       VALUES ($1, $2, 1, $3, $4, $5, $6, $7)`,
+      [tenantId, jeId, bankGLAccountId, bankCoaCode,
        description || line.description, isDebit ? 0 : amount, isDebit ? amount : 0]
     );
-    
+
     // Line 2: Selected GL account (opposite of bank)
     await query(
       `INSERT INTO journal_entry_lines
-         (tenant_id, journal_entry_id, line_number, account_id, account_code, account_name,
-          line_description, debit_amount, credit_amount)
-       VALUES ($1, $2, 2, $3, $4, $5, $6, $7, $8)`,
-      [tenantId, jeId, resolvedGLAccountId, glAcct.code, glAcct.name,
+         (tenant_id, journal_entry_id, line_number, account_id, account_code,
+          description, debit_amount, credit_amount)
+       VALUES ($1, $2, 2, $3, $4, $5, $6, $7)`,
+      [tenantId, jeId, resolvedGLAccountId, glAcct.code,
        description || line.description, isDebit ? amount : 0, isDebit ? 0 : amount]
     );
     
