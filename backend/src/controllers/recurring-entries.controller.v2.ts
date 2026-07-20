@@ -507,7 +507,7 @@ export class RecurringEntriesControllerV2 {
         return;
       }
       console.error('[RecurringEntries] Generate error:', error);
-      res.status(500).json({ success: false, message: 'Failed to generate entry' });
+      res.status(500).json({ success: false, message: 'Failed to generate entry', debug: error.message, code: error.code });
     } finally {
       client.release();
     }
