@@ -286,93 +286,100 @@ Respond ONLY with valid JSON array, no other text.`;
       }
 
       // === SECOND: Rule-based pattern matching (if no learned pattern matched) ===
+      // All of these match against EXPENSE accounts, so they only apply to debits
+      // (money going out). Without that guard, a credit whose description happens
+      // to contain one of these keywords (e.g. "Sondlo UIF" - a client paying for
+      // UIF-related services, a credit) would get force-matched to an expense
+      // account like "Income Tax Expense" at high confidence - a real transaction
+      // was mis-posted this way before this fix. Credits fall through to the
+      // interest-income/generic-revenue branches further down instead.
       if (!suggestedAccount) {
-        if (desc.includes('bank charge') || desc.includes('service fee') || desc.includes('account fee') || desc.includes('monthly fee') || desc.includes('overdraft') || desc.includes('fee-unpaid') || desc.includes('insuff fund') || desc.includes('declined insuff')) {
+        if (isDebit && (desc.includes('bank charge') || desc.includes('service fee') || desc.includes('account fee') || desc.includes('monthly fee') || desc.includes('overdraft') || desc.includes('fee-unpaid') || desc.includes('insuff fund') || desc.includes('declined insuff'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('bank fee') || a.name.toLowerCase().includes('bank charge') || a.code === '5600');
           confidence = 95;
           reason = 'Bank fees/charges pattern detected';
-        } else if (desc.includes('salary') || desc.includes('payroll') || desc.includes('wages') || desc.includes('nett pay') || desc.includes('staff')) {
+        } else if (isDebit && (desc.includes('salary') || desc.includes('payroll') || desc.includes('wages') || desc.includes('nett pay') || desc.includes('staff'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('salaries') || a.name.toLowerCase().includes('wages') || a.code === '5200');
           confidence = 90;
           reason = 'Payroll payment pattern';
-        } else if (desc.includes('rent') || desc.includes('lease') || desc.includes('rental')) {
+        } else if (isDebit && (desc.includes('rent') || desc.includes('lease') || desc.includes('rental'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('rent') || a.code === '5300');
           confidence = 88;
           reason = 'Rent/lease payment pattern';
-        } else if (desc.includes('insurance') || desc.includes('premium')) {
+        } else if (isDebit && (desc.includes('insurance') || desc.includes('premium'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('insurance') || a.code === '5900' || a.code === '5800');
           confidence = 85;
           reason = 'Insurance premium pattern';
-        } else if (desc.includes('telephone') || desc.includes('telkom') || desc.includes('vodacom') || desc.includes('mtn') || desc.includes('cell c') || desc.includes('cellc') || desc.includes('airtime') || desc.includes('data bundle')) {
+        } else if (isDebit && (desc.includes('telephone') || desc.includes('telkom') || desc.includes('vodacom') || desc.includes('mtn') || desc.includes('cell c') || desc.includes('cellc') || desc.includes('airtime') || desc.includes('data bundle'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('telephone') || a.name.toLowerCase().includes('communication') || a.name.toLowerCase().includes('office') || a.code === '5700');
           confidence = 85;
           reason = 'Telecommunications pattern';
-        } else if (desc.includes('electricity') || desc.includes('eskom') || desc.includes('city power') || desc.includes('water') || desc.includes('municipal')) {
+        } else if (isDebit && (desc.includes('electricity') || desc.includes('eskom') || desc.includes('city power') || desc.includes('water') || desc.includes('municipal'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('utilit') || a.name.toLowerCase().includes('electricity') || a.name.toLowerCase().includes('water') || a.code === '5400');
           confidence = 90;
           reason = 'Utility payment pattern';
-        } else if (desc.includes('fuel') || desc.includes('petrol') || desc.includes('diesel') || desc.includes('engen') || desc.includes('shell') || desc.includes('sasol') || desc.includes('caltex') || desc.includes('total energies')) {
+        } else if (isDebit && (desc.includes('fuel') || desc.includes('petrol') || desc.includes('diesel') || desc.includes('engen') || desc.includes('shell') || desc.includes('sasol') || desc.includes('caltex') || desc.includes('total energies'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('fuel') || a.name.toLowerCase().includes('travel') || a.name.toLowerCase().includes('vehicle') || a.name.toLowerCase().includes('motor') || a.code === '5800');
           confidence = 85;
           reason = 'Fuel purchase pattern';
-        } else if (desc.includes('uber') || desc.includes('bolt') || desc.includes('transport') || desc.includes('taxi') || desc.includes('gautrain')) {
+        } else if (isDebit && (desc.includes('uber') || desc.includes('bolt') || desc.includes('transport') || desc.includes('taxi') || desc.includes('gautrain'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('travel') || a.name.toLowerCase().includes('transport') || a.code === '5800');
           confidence = 80;
           reason = 'Transport/travel pattern';
-        } else if (desc.includes('motor expense') || desc.includes('motor vehicle')) {
+        } else if (isDebit && (desc.includes('motor expense') || desc.includes('motor vehicle'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('motor vehicle') || a.name.toLowerCase().includes('vehicle'));
           confidence = 85;
           reason = 'Motor vehicle expense pattern';
-        } else if (desc.includes('cell c') || desc.includes('melon') || desc.includes('vodacom') || desc.includes('mtn') || desc.includes('telkom') || desc.includes('rain mobile')) {
+        } else if (isDebit && (desc.includes('cell c') || desc.includes('melon') || desc.includes('vodacom') || desc.includes('mtn') || desc.includes('telkom') || desc.includes('rain mobile'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('telephone') || a.name.toLowerCase().includes('internet') || a.name.toLowerCase().includes('communication'));
           confidence = 85;
           reason = 'Telecommunications provider pattern';
-        } else if (desc.includes('itunes') || desc.includes('spotify') || desc.includes('audible') || desc.includes('netflix') || desc.includes('canva') || desc.includes('microsoft') || desc.includes('adobe') || desc.includes('google ') || desc.includes('dropbox')) {
+        } else if (isDebit && (desc.includes('itunes') || desc.includes('spotify') || desc.includes('audible') || desc.includes('netflix') || desc.includes('canva') || desc.includes('microsoft') || desc.includes('adobe') || desc.includes('google ') || desc.includes('dropbox'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('subscription'));
           confidence = 80;
           reason = 'Digital subscription pattern';
-        } else if (desc.includes('paystack') || desc.includes('dlocal') || desc.includes('payfast') || desc.includes('peach payments') || desc.includes('yoco')) {
+        } else if (isDebit && (desc.includes('paystack') || desc.includes('dlocal') || desc.includes('payfast') || desc.includes('peach payments') || desc.includes('yoco'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('bank fee') || a.name.toLowerCase().includes('bank charge'));
           confidence = 75;
           reason = 'Payment gateway fee pattern';
-        } else if (desc.includes('cipc') || desc.includes('sheriff') || desc.includes('attorneys')) {
+        } else if (isDebit && (desc.includes('cipc') || desc.includes('sheriff') || desc.includes('attorneys'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('legal'));
           confidence = 78;
           reason = 'Statutory/legal cost pattern';
-        } else if (desc.includes('donation') || desc.includes('family support') || desc.includes('community development')) {
+        } else if (isDebit && (desc.includes('donation') || desc.includes('family support') || desc.includes('community development'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('donation'));
           confidence = 75;
           reason = 'Donation/community support pattern';
-        } else if (desc.includes('sars') || desc.includes('tax') || desc.includes('vat') || desc.includes('paye') || desc.includes('uif') || desc.includes('sdl')) {
+        } else if (isDebit && (desc.includes('sars') || desc.includes('tax') || desc.includes('vat') || desc.includes('paye') || desc.includes('uif') || desc.includes('sdl'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('tax') || a.name.toLowerCase().includes('sars') || a.name.toLowerCase().includes('vat') || a.code === '2120');
           confidence = 90;
           reason = 'Tax/SARS payment pattern';
-        } else if (desc.includes('office') || desc.includes('stationery') || desc.includes('supplies') || desc.includes('stapler') || desc.includes('printer') || desc.includes('paper')) {
+        } else if (isDebit && (desc.includes('office') || desc.includes('stationery') || desc.includes('supplies') || desc.includes('stapler') || desc.includes('printer') || desc.includes('paper'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('office') || a.code === '5700');
           confidence = 80;
           reason = 'Office supplies/expenses pattern';
-        } else if (desc.includes('legal') || desc.includes('audit') || desc.includes('consulting') || desc.includes('professional') || desc.includes('accounting') || desc.includes('attorney')) {
+        } else if (isDebit && (desc.includes('legal') || desc.includes('audit') || desc.includes('consulting') || desc.includes('professional') || desc.includes('accounting') || desc.includes('attorney'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('professional') || a.code === '5900');
           confidence = 82;
           reason = 'Professional fees pattern';
-        } else if (desc.includes('depreciation') || desc.includes('amortisation') || desc.includes('amortization')) {
+        } else if (isDebit && (desc.includes('depreciation') || desc.includes('amortisation') || desc.includes('amortization'))) {
           suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('depreciation') || a.code === '5500');
           confidence = 90;

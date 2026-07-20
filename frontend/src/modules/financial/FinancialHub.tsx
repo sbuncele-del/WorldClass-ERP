@@ -1218,18 +1218,26 @@ const FinancialHub: React.FC = () => {
                 { title: 'Document #', dataIndex: 'document_number', key: 'doc', width: 180,
                   render: (v: string) => <Text copyable={{ text: v || '' }}>{v || '-'}</Text> },
                 { title: 'Account', key: 'account', width: 200,
-                  render: (_: any, r: any) => (
-                    <span style={{ cursor: 'pointer' }} onClick={() => {
-                      setLedgerAccountFilter(r.account_code);
-                      setLoading(true);
-                      financialService.getGeneralLedger({ limit: 200, account_code: r.account_code }).then(resp => {
-                        if (resp?.data && Array.isArray(resp.data)) setLedgerEntries(resp.data);
-                      }).finally(() => setLoading(false));
-                    }}>
-                      <Tag color="blue" style={{ cursor: 'pointer' }}>{r.account_code || '-'}</Tag>
-                      <Text>{r.account_name || '-'}</Text>
-                    </span>
-                  )},
+                  render: (_: any, r: any) => {
+                    // Xero-synced bank accounts often have no short code - the
+                    // Xero account UUID is stored as the code instead. Showing
+                    // that raw UUID as if it were a normal account code (e.g.
+                    // "404") reads as broken/garbage data, so fall back to just
+                    // the name when the code isn't a short human-readable one.
+                    const isUuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.account_code || '');
+                    return (
+                      <span style={{ cursor: 'pointer' }} onClick={() => {
+                        setLedgerAccountFilter(r.account_code);
+                        setLoading(true);
+                        financialService.getGeneralLedger({ limit: 200, account_code: r.account_code }).then(resp => {
+                          if (resp?.data && Array.isArray(resp.data)) setLedgerEntries(resp.data);
+                        }).finally(() => setLoading(false));
+                      }}>
+                        {!isUuidLike && <Tag color="blue" style={{ cursor: 'pointer' }}>{r.account_code || '-'}</Tag>}
+                        <Text>{r.account_name || '-'}</Text>
+                      </span>
+                    );
+                  }},
                 { title: 'Description', dataIndex: 'line_description', key: 'desc', ellipsis: true,
                   render: (v: string, r: any) => v || r.entry_description || '-' },
                 { title: 'Debit', dataIndex: 'debit_amount', key: 'debit', align: 'right' as const, width: 120,

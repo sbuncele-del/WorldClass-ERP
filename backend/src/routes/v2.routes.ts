@@ -3933,16 +3933,23 @@ router.patch('/cash-management/statement-lines/:id', async (req: any, res) => {
   const { id } = req.params;
   const { status, matched_transaction_id, category } = req.body;
   try {
+    // Real table is cash_bank_statement_lines (bank_statement_lines doesn't exist
+    // at all in this schema - every call here was throwing and getting swallowed
+    // by the frontend as a silent-looking failure). Real columns: is_matched
+    // (boolean, not a status string), confirmed_category (not category).
     const updates: string[] = [];
     const params: any[] = [tenantId, id];
-    
+
     if (status) {
-      params.push(status);
-      updates.push(`status = $${params.length}`);
-      // If setting back to unmatched, clear allocation fields
-      if (status === 'unmatched') {
-        updates.push(`allocated_gl_account_id = NULL`);
-        updates.push(`reconciled_date = NULL`);
+      const isMatched = status !== 'unmatched';
+      params.push(isMatched);
+      updates.push(`is_matched = $${params.length}`);
+      if (!isMatched) {
+        updates.push(`match_date = NULL`);
+        updates.push(`matched_by = NULL`);
+        updates.push(`confirmed_category = NULL`);
+        updates.push(`matched_transaction_id = NULL`);
+        updates.push(`raw_data = COALESCE(raw_data, '{}'::jsonb) - 'journal_entry_id'`);
       }
     }
     if (matched_transaction_id !== undefined) {
@@ -3951,23 +3958,30 @@ router.patch('/cash-management/statement-lines/:id', async (req: any, res) => {
     }
     if (category !== undefined) {
       if (category === null || category === '') {
-        updates.push(`category = NULL`);
+        updates.push(`confirmed_category = NULL`);
       } else {
         params.push(category);
-        updates.push(`category = $${params.length}`);
+        updates.push(`confirmed_category = $${params.length}`);
       }
     }
-    
+
     if (updates.length === 0) {
       return res.status(400).json({ success: false, error: 'No updates provided' });
     }
-    
+
     const result = await query(
-      `UPDATE bank_statement_lines SET ${updates.join(', ')}, updated_at = NOW() WHERE tenant_id = $1 AND id = $2 RETURNING *`,
+      `UPDATE cash_bank_statement_lines l SET ${updates.join(', ')}
+       WHERE l.line_id = $2
+         AND l.statement_id IN (SELECT statement_id FROM cash_bank_statements WHERE tenant_id = $1)
+       RETURNING *`,
       params
     );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Statement line not found' });
+    }
     res.json({ success: true, data: result.rows[0] });
   } catch (err: any) {
+    console.error('Statement line update error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
