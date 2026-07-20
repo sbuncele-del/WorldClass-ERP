@@ -56,6 +56,8 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
     await client.query('BEGIN');
 
     // 1. Create fuel transaction record
+    // Note: fuel_transactions has no invoice_number/notes columns - invoiceNumber
+    // is carried through onto the journal entry's reference field instead.
     const fuelResult = await client.query(`
       INSERT INTO logistics.fuel_transactions (
         tenant_id,
@@ -66,14 +68,12 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
         price_per_litre,
         total_amount,
         odometer_reading,
-        supplier,
-        invoice_number,
-        notes,
+        fuel_station,
         created_by,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
       RETURNING transaction_id
-    `, [tenantId, date, vehicle, driver, litres, pricePerLitre, cost, odometer, supplier, invoiceNumber, notes, userId]);
+    `, [tenantId, date, vehicle, driver, litres, pricePerLitre, cost, odometer, supplier, userId]);
 
     const transactionId = fuelResult.rows[0].transaction_id;
 
@@ -275,16 +275,14 @@ export async function listFuelTransactions(req: TenantRequest, res: Response): P
         t.transaction_id,
         t.transaction_date,
         t.vehicle_id,
-        v.registration as vehicle_reg,
+        v.vehicle_registration as vehicle_reg,
         t.driver_id,
         d.first_name || ' ' || d.last_name as driver_name,
         t.litres,
         t.price_per_litre,
         t.total_amount,
         t.odometer_reading,
-        t.supplier,
-        t.invoice_number,
-        t.notes,
+        t.fuel_station,
         t.journal_entry_id,
         t.created_at
       FROM logistics.fuel_transactions t
@@ -297,7 +295,7 @@ export async function listFuelTransactions(req: TenantRequest, res: Response): P
     let paramCount = 2;
 
     if (vehicle) {
-      query += ` AND (t.vehicle_id = $${paramCount} OR v.registration ILIKE $${paramCount + 1})`;
+      query += ` AND (t.vehicle_id = $${paramCount} OR v.vehicle_registration ILIKE $${paramCount + 1})`;
       params.push(vehicle, `%${vehicle}%`);
       paramCount += 2;
     }
@@ -309,7 +307,7 @@ export async function listFuelTransactions(req: TenantRequest, res: Response): P
     }
 
     if (supplier) {
-      query += ` AND t.supplier ILIKE $${paramCount}`;
+      query += ` AND t.fuel_station ILIKE $${paramCount}`;
       params.push(`%${supplier}%`);
       paramCount++;
     }
@@ -368,7 +366,7 @@ export async function getFuelTransaction(req: TenantRequest, res: Response): Pro
     const result = await pool.query(`
       SELECT 
         t.*,
-        v.registration as vehicle_reg,
+        v.vehicle_registration as vehicle_reg,
         d.first_name || ' ' || d.last_name as driver_name,
         je.entry_date,
         je.description as journal_description
@@ -466,7 +464,7 @@ export async function getFuelStats(req: TenantRequest, res: Response): Promise<v
         SUM(total_amount) as total_amount,
         AVG(price_per_litre) as avg_price_per_litre,
         COUNT(DISTINCT vehicle_id) as vehicles_fueled,
-        COUNT(DISTINCT supplier) as suppliers_used
+        COUNT(DISTINCT fuel_station) as suppliers_used
       FROM logistics.fuel_transactions
       WHERE tenant_id = $1 
         AND transaction_date >= CURRENT_DATE - INTERVAL '1 day' * $2
@@ -476,7 +474,7 @@ export async function getFuelStats(req: TenantRequest, res: Response): Promise<v
     const topVehicles = await pool.query(`
       SELECT 
         t.vehicle_id,
-        v.registration,
+        v.vehicle_registration,
         SUM(t.litres) as total_litres,
         SUM(t.total_amount) as total_amount,
         COUNT(*) as fill_count
@@ -484,7 +482,7 @@ export async function getFuelStats(req: TenantRequest, res: Response): Promise<v
       LEFT JOIN logistics.vehicles v ON t.vehicle_id = v.vehicle_id
       WHERE t.tenant_id = $1 
         AND t.transaction_date >= CURRENT_DATE - INTERVAL '1 day' * $2
-      GROUP BY t.vehicle_id, v.registration
+      GROUP BY t.vehicle_id, v.vehicle_registration
       ORDER BY SUM(t.litres) DESC
       LIMIT 5
     `, [tenantId, parseInt(period as string)]);
