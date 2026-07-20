@@ -83,6 +83,51 @@ router.get('/conversations', authenticateToken, async (req: Request, res: Respon
 // GET /api/messages/:conversationId
 // Get messages in a conversation
 // ============================================
+// ============================================
+// GET /api/messages/emergencies
+// Get active emergencies (for dispatch dashboard)
+// Must be registered before GET /:conversationId, which would otherwise
+// swallow this path (single path-segment routes match in registration order).
+// ============================================
+router.get('/emergencies', authenticateToken, async (req: Request, res: Response) => {
+  try {
+    const pool = getPool(req);
+    const tenantId = (req as any).tenant?.id;
+    const userRole = (req as any).user?.role;
+
+    const isDispatch = ['admin', 'dispatcher', 'manager'].includes(userRole?.toLowerCase() || '');
+    if (!isDispatch) {
+      return res.status(403).json({
+        success: false,
+        error: 'Unauthorized - dispatch access required'
+      });
+    }
+
+    const result = await pool.query(
+      `SELECT * FROM messages
+       WHERE tenant_id = $1 AND is_emergency = true
+       ORDER BY created_at DESC
+       LIMIT 50`,
+      [tenantId]
+    );
+
+    res.json({
+      success: true,
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Error fetching emergencies:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch emergencies'
+    });
+  }
+});
+
+// ============================================
+// GET /api/messages/:conversationId
+// Get messages in a conversation
+// ============================================
 router.get('/:conversationId', authenticateToken, async (req: Request, res: Response) => {
   try {
     const pool = getPool(req);
@@ -148,7 +193,9 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
     const pool = getPool(req);
     const tenantId = (req as any).tenant?.id;
     const userId = (req as any).user?.id;
-    const userName = (req as any).user?.firstName + ' ' + ((req as any).user?.lastName || '');
+    const userName = (req as any).user?.firstName
+      ? `${(req as any).user.firstName} ${(req as any).user.lastName || ''}`.trim()
+      : ((req as any).user?.name || (req as any).user?.email || 'Unknown');
     const userRole = (req as any).user?.role || 'driver';
 
     const {
@@ -460,46 +507,6 @@ router.put('/:id/read', authenticateToken, async (req: Request, res: Response) =
     res.status(500).json({
       success: false,
       error: 'Failed to mark message as read'
-    });
-  }
-});
-
-// ============================================
-// GET /api/messages/emergencies
-// Get active emergencies (for dispatch dashboard)
-// ============================================
-router.get('/emergencies', authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const pool = getPool(req);
-    const tenantId = (req as any).tenant?.id;
-    const userRole = (req as any).user?.role;
-
-    // Only dispatch/admin can view emergency dashboard
-    const isDispatch = ['admin', 'dispatcher', 'manager'].includes(userRole?.toLowerCase() || '');
-    if (!isDispatch) {
-      return res.status(403).json({
-        success: false,
-        error: 'Unauthorized - dispatch access required'
-      });
-    }
-
-    const result = await pool.query(
-      `SELECT * FROM messages
-       WHERE tenant_id = $1 AND is_emergency = true
-       ORDER BY created_at DESC
-       LIMIT 50`,
-      [tenantId]
-    );
-
-    res.json({
-      success: true,
-      data: result.rows
-    });
-  } catch (error) {
-    console.error('Error fetching emergencies:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch emergencies'
     });
   }
 });
