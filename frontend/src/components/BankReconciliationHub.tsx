@@ -549,7 +549,12 @@ const BankReconciliation: React.FC = () => {
     setIsAutoMatching(false);
   }, [selectedBankAccount, bankTransactions, bookEntries, aiRules]);
 
-  // AI Categorize Function - Uses Groq AI to suggest GL accounts for unmatched transactions
+  // AI Categorize Function - Uses Groq AI to suggest GL accounts for unmatched transactions.
+  // Sent in batches: a single request with thousands of transactions blows past the LLM's
+  // context/rate limits and can time out on the backend, which silently looks like "AI
+  // categorization is broken" when it's really just an unbatched request.
+  const AI_CATEGORIZE_BATCH_SIZE = 40;
+
   const runAICategorize = useCallback(async () => {
     if (!selectedBankAccount) {
       message.warning('Please select a bank account first');
@@ -563,47 +568,61 @@ const BankReconciliation: React.FC = () => {
     }
 
     setIsAICategorizing(true);
-    message.loading({ content: '🤖 AI is analyzing transactions for GL categorization...', key: 'aicategorize' });
 
-    try {
-      // Send full transaction data - handles both DB-persisted and locally-uploaded transactions
-      const response = await apiClient.post('/api/v2/cash-management/reconciliation/ai-categorize', {
-        bank_account_id: selectedBankAccount,
-        transactions: unmatchedTxns.map(t => ({
-          id: t.id,
-          description: t.description,
-          amount: t.amount,
-          type: t.type,
-          date: t.date,
-          reference: t.reference || ''
-        }))
+    const batches: typeof unmatchedTxns[] = [];
+    for (let i = 0; i < unmatchedTxns.length; i += AI_CATEGORIZE_BATCH_SIZE) {
+      batches.push(unmatchedTxns.slice(i, i + AI_CATEGORIZE_BATCH_SIZE));
+    }
+
+    const accumulatedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string }>();
+    let totalCategorized = 0;
+    let lastProvider = 'rules';
+    let failedBatches = 0;
+
+    for (let b = 0; b < batches.length; b++) {
+      const batch = batches[b];
+      message.loading({
+        content: `🤖 Categorizing ${Math.min((b + 1) * AI_CATEGORIZE_BATCH_SIZE, unmatchedTxns.length)}/${unmatchedTxns.length} transactions (batch ${b + 1}/${batches.length})...`,
+        key: 'aicategorize',
+        duration: 0
       });
 
-      const data = response.data?.data || {};
-      const suggestions = data.suggestions || [];
-      setAiProvider(data.ai_provider || 'rules');
+      try {
+        const response = await apiClient.post('/api/v2/cash-management/reconciliation/ai-categorize', {
+          bank_account_id: selectedBankAccount,
+          transactions: batch.map(t => ({
+            id: t.id,
+            description: t.description,
+            amount: t.amount,
+            type: t.type,
+            date: t.date,
+            reference: t.reference || ''
+          }))
+        });
 
-      if (suggestions.length > 0) {
-        // Store suggestions in state
-        const newSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string }>();
-        
+        const data = response.data?.data || {};
+        const suggestions = data.suggestions || [];
+        lastProvider = data.ai_provider || lastProvider;
+
         suggestions.forEach((s: any) => {
           if (s.suggested_account_id) {
-            newSuggestions.set(s.line_id, {
+            accumulatedSuggestions.set(s.line_id, {
               accountId: s.suggested_account_id,
               accountCode: s.suggested_account_code,
               accountName: s.suggested_account_name,
               confidence: s.confidence,
               reason: s.reason
             });
+            totalCategorized++;
           }
         });
-        
-        setAiSuggestions(newSuggestions);
 
-        // Update bank transactions with AI suggestions
+        // Update state incrementally so progress is visible batch-by-batch rather
+        // than the UI sitting frozen until every batch finishes.
+        const newSuggestionsSnapshot = new Map(accumulatedSuggestions);
+        setAiSuggestions(newSuggestionsSnapshot);
         setBankTransactions(prev => prev.map(txn => {
-          const suggestion = newSuggestions.get(txn.id);
+          const suggestion = newSuggestionsSnapshot.get(txn.id);
           if (suggestion && (txn.status === 'unmatched' || txn.status === 'ai-suggested')) {
             return {
               ...txn,
@@ -615,23 +634,30 @@ const BankReconciliation: React.FC = () => {
           }
           return txn;
         }));
-
-        const providerEmoji = data.ai_provider === 'groq' ? '🚀 Groq AI' : (data.ai_provider === 'grok' ? '🤖 Grok' : '📋 Rules');
-        message.success({ 
-          content: `✨ ${providerEmoji} categorized ${data.total_categorized}/${data.total} transactions! Review and allocate.`, 
-          key: 'aicategorize', 
-          duration: 5 
-        });
-      } else {
-        message.info({ 
-          content: 'AI could not suggest categories. Please allocate manually.', 
-          key: 'aicategorize', 
-          duration: 4 
-        });
+      } catch (batchError) {
+        console.error(`AI categorize batch ${b + 1}/${batches.length} failed:`, batchError);
+        failedBatches++;
+        // Keep going - one bad batch shouldn't abort categorizing everything else
       }
-    } catch (error) {
-      console.error('AI categorize error:', error);
-      message.error({ content: 'AI categorization failed. Please try again.', key: 'aicategorize' });
+    }
+
+    setAiProvider(lastProvider);
+    const providerEmoji = lastProvider === 'groq' ? '🚀 Groq AI' : (lastProvider === 'grok' ? '🤖 Grok' : '📋 Rules');
+
+    if (totalCategorized > 0) {
+      message.success({
+        content: `✨ ${providerEmoji} categorized ${totalCategorized}/${unmatchedTxns.length} transactions${failedBatches > 0 ? ` (${failedBatches} batch(es) failed - retry to fill gaps)` : ''}! Review and allocate.`,
+        key: 'aicategorize',
+        duration: 6
+      });
+    } else {
+      message.info({
+        content: failedBatches > 0
+          ? `AI categorization failed on all ${failedBatches} batch(es). Please try again.`
+          : 'AI could not suggest categories. Please allocate manually.',
+        key: 'aicategorize',
+        duration: 5
+      });
     }
 
     setIsAICategorizing(false);

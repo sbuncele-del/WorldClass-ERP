@@ -5471,11 +5471,41 @@ Respond ONLY with valid JSON array, no other text.`;
             a.name.toLowerCase().includes('fuel') || a.name.toLowerCase().includes('travel') || a.name.toLowerCase().includes('vehicle') || a.name.toLowerCase().includes('motor') || a.code === '5800');
           confidence = 85;
           reason = 'Fuel purchase pattern';
-        } else if (desc.includes('uber') || desc.includes('bolt') || desc.includes('transport') || desc.includes('taxi')) {
-          suggestedAccount = accountsResult.rows.find((a: any) => 
+        } else if (desc.includes('uber') || desc.includes('bolt') || desc.includes('transport') || desc.includes('taxi') || desc.includes('gautrain')) {
+          suggestedAccount = accountsResult.rows.find((a: any) =>
             a.name.toLowerCase().includes('travel') || a.name.toLowerCase().includes('transport') || a.code === '5800');
           confidence = 80;
           reason = 'Transport/travel pattern';
+        } else if (desc.includes('motor expense') || desc.includes('motor vehicle')) {
+          suggestedAccount = accountsResult.rows.find((a: any) =>
+            a.name.toLowerCase().includes('motor vehicle') || a.name.toLowerCase().includes('vehicle'));
+          confidence = 85;
+          reason = 'Motor vehicle expense pattern';
+        } else if (desc.includes('cell c') || desc.includes('melon') || desc.includes('vodacom') || desc.includes('mtn') || desc.includes('telkom') || desc.includes('rain mobile')) {
+          suggestedAccount = accountsResult.rows.find((a: any) =>
+            a.name.toLowerCase().includes('telephone') || a.name.toLowerCase().includes('internet') || a.name.toLowerCase().includes('communication'));
+          confidence = 85;
+          reason = 'Telecommunications provider pattern';
+        } else if (desc.includes('itunes') || desc.includes('spotify') || desc.includes('audible') || desc.includes('netflix') || desc.includes('canva') || desc.includes('microsoft') || desc.includes('adobe') || desc.includes('google ') || desc.includes('dropbox')) {
+          suggestedAccount = accountsResult.rows.find((a: any) =>
+            a.name.toLowerCase().includes('subscription'));
+          confidence = 80;
+          reason = 'Digital subscription pattern';
+        } else if (desc.includes('paystack') || desc.includes('dlocal') || desc.includes('payfast') || desc.includes('peach payments') || desc.includes('yoco')) {
+          suggestedAccount = accountsResult.rows.find((a: any) =>
+            a.name.toLowerCase().includes('bank fee') || a.name.toLowerCase().includes('bank charge'));
+          confidence = 75;
+          reason = 'Payment gateway fee pattern';
+        } else if (desc.includes('cipc') || desc.includes('sheriff') || desc.includes('attorneys')) {
+          suggestedAccount = accountsResult.rows.find((a: any) =>
+            a.name.toLowerCase().includes('legal'));
+          confidence = 78;
+          reason = 'Statutory/legal cost pattern';
+        } else if (desc.includes('donation') || desc.includes('family support') || desc.includes('community development')) {
+          suggestedAccount = accountsResult.rows.find((a: any) =>
+            a.name.toLowerCase().includes('donation'));
+          confidence = 75;
+          reason = 'Donation/community support pattern';
         } else if (desc.includes('sars') || desc.includes('tax') || desc.includes('vat') || desc.includes('paye') || desc.includes('uif') || desc.includes('sdl')) {
           suggestedAccount = accountsResult.rows.find((a: any) => 
             a.name.toLowerCase().includes('tax') || a.name.toLowerCase().includes('sars') || a.name.toLowerCase().includes('vat') || a.code === '2120');
