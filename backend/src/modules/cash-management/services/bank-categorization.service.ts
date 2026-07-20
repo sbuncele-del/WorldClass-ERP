@@ -30,6 +30,9 @@ export interface CategorizationSuggestion {
   confidence: number;
   reason: string;
   pattern_id?: string | null;
+  // True only when this suggestion came from a learned pattern a human has
+  // manually accepted at least once before - the gate for auto-allocation.
+  human_confirmed?: boolean;
 }
 
 export interface CategorizationResult {
@@ -65,7 +68,7 @@ export async function categorizeTransactions(
   let learnedPatterns: any[] = [];
   try {
     const patternsResult = await query(
-      `SELECT id, gl_account_code, gl_account_name, keywords, frequency, transaction_type, confidence_score, description_pattern, amount_min, amount_max, gl_account_id
+      `SELECT id, gl_account_code, gl_account_name, keywords, frequency, transaction_type, confidence_score, description_pattern, amount_min, amount_max, gl_account_id, accepted_count
        FROM allocation_patterns
        WHERE tenant_id = $1 AND confidence_score >= 40
        ORDER BY frequency DESC
@@ -251,6 +254,7 @@ Respond ONLY with valid JSON array, no other text.`;
       let confidence = 0;
       let reason = '';
       let patternId: string | undefined;
+      let humanConfirmed = false;
 
       // === FIRST: Check learned patterns ===
       if (learnedPatterns.length > 0) {
@@ -284,6 +288,7 @@ Respond ONLY with valid JSON array, no other text.`;
             confidence = Math.min(95, Math.round(bestScore));
             reason = `Learned pattern: "${bestPattern.gl_account_name}" (used ${bestPattern.frequency}x)`;
             patternId = bestPattern.id;
+            humanConfirmed = (parseInt(bestPattern.accepted_count) || 0) >= 1;
           }
         }
       }
@@ -428,7 +433,8 @@ Respond ONLY with valid JSON array, no other text.`;
         suggested_account_name: suggestedAccount?.name || null,
         confidence: suggestedAccount ? confidence : 0,
         reason: suggestedAccount ? reason : 'No pattern matched - manual categorization required',
-        pattern_id: patternId || null
+        pattern_id: patternId || null,
+        human_confirmed: humanConfirmed
       };
     });
   }

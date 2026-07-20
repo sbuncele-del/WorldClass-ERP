@@ -151,7 +151,7 @@ const BankReconciliation: React.FC = () => {
 
   // AI Categorization state - Groq-powered intelligent GL suggestions
   const [isAICategorizing, setIsAICategorizing] = useState(false);
-  const [aiSuggestions, setAiSuggestions] = useState<Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string; patternId?: string }>>(new Map());
+  const [aiSuggestions, setAiSuggestions] = useState<Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string; patternId?: string; humanConfirmed?: boolean }>>(new Map());
   const [aiProvider, setAiProvider] = useState<string>('');
   
   // AI Learning stats
@@ -200,7 +200,7 @@ const BankReconciliation: React.FC = () => {
         
         if (statements.length > 0) {
           // Build AI suggestions map from DB-persisted suggestions
-          const savedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string; patternId?: string }>();
+          const savedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string; patternId?: string; humanConfirmed?: boolean }>();
 
           const mappedTxns = statements.map((stmt: any) => {
             // Map DB status to frontend status - normalise to lowercase first
@@ -564,7 +564,7 @@ const BankReconciliation: React.FC = () => {
       batches.push(unmatchedTxns.slice(i, i + AI_CATEGORIZE_BATCH_SIZE));
     }
 
-    const accumulatedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string; patternId?: string }>();
+    const accumulatedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string; patternId?: string; humanConfirmed?: boolean }>();
     let totalCategorized = 0;
     let lastProvider = 'rules';
     let failedBatches = 0;
@@ -602,7 +602,8 @@ const BankReconciliation: React.FC = () => {
               accountName: s.suggested_account_name,
               confidence: s.confidence,
               reason: s.reason,
-              patternId: s.pattern_id || undefined
+              patternId: s.pattern_id || undefined,
+              humanConfirmed: !!s.human_confirmed
             });
             totalCategorized++;
           }
@@ -730,15 +731,19 @@ const BankReconciliation: React.FC = () => {
     setIsAllocating(false);
   };
 
-  // Accept ALL high-confidence AI category suggestions (90%+)
+  // Accept ALL high-confidence AI category suggestions. Requires both a very
+  // high confidence score (97%+) AND that the underlying pattern has been
+  // manually confirmed at least once before (humanConfirmed) - raw AI-provider
+  // or first-time rule guesses never qualify, however confident, since a
+  // confidence score alone already proved capable of being wrong.
   const acceptAllHighConfidenceSuggestions = async () => {
     const highConfidenceTxns = bankTransactions.filter(t => {
       const suggestion = aiSuggestions.get(t.id);
-      return suggestion && suggestion.confidence >= 90 && t.status === 'ai-suggested';
+      return suggestion && suggestion.confidence >= 97 && suggestion.humanConfirmed && t.status === 'ai-suggested';
     });
 
     if (highConfidenceTxns.length === 0) {
-      message.info('No high-confidence (90%+) AI suggestions to accept');
+      message.info('No suggestions meet the bar for bulk accept yet (97%+ confidence, previously-confirmed pattern)');
       return;
     }
 
@@ -1736,7 +1741,7 @@ const BankReconciliation: React.FC = () => {
               <Text strong>AI found {stats.aiSuggestedCount} potential matches</Text>
             </Space>
           }
-          description={`${stats.aiSuggestedCount} transactions have been analyzed and suggestions are ready for review. Click 'Accept All (90%+)' to allocate high-confidence matches or review individually.`}
+          description={`${stats.aiSuggestedCount} transactions have been analyzed and suggestions are ready for review. Click 'Accept All' to allocate previously-confirmed, near-certain matches (97%+) or review individually.`}
           type="info"
           showIcon={false}
           style={{ marginBottom: 16, background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)', border: '1px solid rgba(102, 126, 234, 0.3)' }}
@@ -1749,7 +1754,7 @@ const BankReconciliation: React.FC = () => {
                 icon={<ThunderboltOutlined />}
                 loading={isAllocating}
               >
-                Accept All (90%+)
+                Accept All (confirmed, 97%+)
               </Button>
             </Space>
           }
@@ -1902,7 +1907,7 @@ const BankReconciliation: React.FC = () => {
                           onClick={acceptAllHighConfidenceSuggestions}
                           loading={isAllocating}
                         >
-                          Accept All 90%+ Confidence
+                          Accept All (confirmed, 97%+)
                         </Button>
                       </Space>
                     }
@@ -1929,10 +1934,13 @@ const BankReconciliation: React.FC = () => {
                                 </Text>
                               </Space>
                             </Col>
-                            <Col flex="0 0 90px">
+                            <Col flex="0 0 130px">
                               <Tag color={confidenceColor(suggestion.confidence)} style={{ margin: 0 }}>
                                 {suggestion.confidence}% confident
                               </Tag>
+                              {suggestion.confidence >= 97 && suggestion.humanConfirmed && (
+                                <Tag color="purple" style={{ margin: '4px 0 0' }}>Auto-eligible</Tag>
+                              )}
                             </Col>
                             <Col flex="1 1 260px">
                               <Select

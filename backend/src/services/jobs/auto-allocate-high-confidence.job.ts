@@ -3,11 +3,14 @@
  *
  * Runs hourly: for every tenant, categorizes unmatched bank statement lines
  * (Groq -> Claude cascade, falling back to keyword rules) and automatically
- * posts a journal entry for anything the categorizer is >=90% confident
- * about. Everything below that threshold is left as an AI suggestion for
- * manual review in Banking Hub - this only auto-posts the near-certain
- * matches, not everything, since a wrong auto-posted journal entry is a
- * real bookkeeping problem, not just noise.
+ * posts a journal entry only for suggestions that are BOTH >=97% confident
+ * AND come from a learned pattern a human has manually accepted at least
+ * once before (human_confirmed). Raw AI-provider suggestions and first-time
+ * rule matches never qualify, however high their confidence score, since
+ * nothing has verified them yet - a wrong auto-posted journal entry is a
+ * real bookkeeping problem, not just noise, and confidence scores alone
+ * already proved capable of being wrong (see the "Sondlo UIF" incident).
+ * Everything else is left as an AI suggestion for manual review.
  */
 
 import { Job } from 'bull';
@@ -17,14 +20,14 @@ import { categorizeTransactions } from '../../modules/cash-management/services/b
 import { allocateStatementLineToGL } from '../../modules/cash-management/services/bank-allocation.service';
 import { EmailQueueService } from '../email-queue.service';
 
-const AUTO_ALLOCATE_CONFIDENCE_THRESHOLD = 90;
+const AUTO_ALLOCATE_CONFIDENCE_THRESHOLD = 97;
 const CATEGORIZE_BATCH_SIZE = 40;
 const MAX_LINES_PER_TENANT_PER_RUN = 400; // bound cost/runtime per hourly run
 
 registerJob({
   name: 'AUTO_ALLOCATE_HIGH_CONFIDENCE',
   cron: '0 * * * *', // every hour, on the hour
-  description: 'Auto-post bank transactions to GL when AI confidence is 90%+',
+  description: 'Auto-post bank transactions to GL when confidence is 97%+ AND the pattern has been manually confirmed before',
   enabled: true,
   handler: runAutoAllocateHighConfidence,
 });
@@ -60,6 +63,7 @@ async function runAutoAllocateHighConfidence(_job: Job<SchedulerJobData>) {
 
         for (const s of suggestions) {
           if (!s.suggested_account_id || s.confidence < AUTO_ALLOCATE_CONFIDENCE_THRESHOLD) continue;
+          if (!s.human_confirmed) continue; // must be a pattern a human has accepted before
 
           const result = await allocateStatementLineToGL(
             tenantId,
@@ -101,7 +105,7 @@ async function runAutoAllocateHighConfidence(_job: Job<SchedulerJobData>) {
             <p>Hi ${admin.first_name || 'Team'},</p>
             <p>The hourly auto-allocation job just ran on your bank feed:</p>
             <ul>
-              <li><strong>${tenantAllocated}</strong> transactions auto-posted to the general ledger (AI confidence ${AUTO_ALLOCATE_CONFIDENCE_THRESHOLD}%+)</li>
+              <li><strong>${tenantAllocated}</strong> transactions auto-posted to the general ledger (${AUTO_ALLOCATE_CONFIDENCE_THRESHOLD}%+ confidence, previously-confirmed pattern)</li>
               <li><strong>${Math.max(0, tenantReviewed - tenantAllocated)}</strong> left for your review (below the confidence threshold)</li>
             </ul>
             <p><a class="cta" href="${process.env.FRONTEND_URL || 'https://siyabusaerp.co.za'}/app/banking-hub">
