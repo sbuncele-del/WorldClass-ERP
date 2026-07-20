@@ -29,6 +29,7 @@ export interface CategorizationSuggestion {
   suggested_account_name: string | null;
   confidence: number;
   reason: string;
+  pattern_id?: string | null;
 }
 
 export interface CategorizationResult {
@@ -64,7 +65,7 @@ export async function categorizeTransactions(
   let learnedPatterns: any[] = [];
   try {
     const patternsResult = await query(
-      `SELECT gl_account_code, gl_account_name, keywords, frequency, transaction_type, confidence_score, description_pattern, amount_min, amount_max, gl_account_id
+      `SELECT id, gl_account_code, gl_account_name, keywords, frequency, transaction_type, confidence_score, description_pattern, amount_min, amount_max, gl_account_id
        FROM allocation_patterns
        WHERE tenant_id = $1 AND confidence_score >= 40
        ORDER BY frequency DESC
@@ -249,6 +250,7 @@ Respond ONLY with valid JSON array, no other text.`;
       let suggestedAccount = null;
       let confidence = 0;
       let reason = '';
+      let patternId: string | undefined;
 
       // === FIRST: Check learned patterns ===
       if (learnedPatterns.length > 0) {
@@ -281,6 +283,7 @@ Respond ONLY with valid JSON array, no other text.`;
             suggestedAccount = matchedAccount;
             confidence = Math.min(95, Math.round(bestScore));
             reason = `Learned pattern: "${bestPattern.gl_account_name}" (used ${bestPattern.frequency}x)`;
+            patternId = bestPattern.id;
           }
         }
       }
@@ -424,7 +427,8 @@ Respond ONLY with valid JSON array, no other text.`;
         suggested_account_code: suggestedAccount?.code || null,
         suggested_account_name: suggestedAccount?.name || null,
         confidence: suggestedAccount ? confidence : 0,
-        reason: suggestedAccount ? reason : 'No pattern matched - manual categorization required'
+        reason: suggestedAccount ? reason : 'No pattern matched - manual categorization required',
+        pattern_id: patternId || null
       };
     });
   }

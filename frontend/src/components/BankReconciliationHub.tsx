@@ -162,7 +162,7 @@ const BankReconciliation: React.FC = () => {
 
   // AI Categorization state - Groq-powered intelligent GL suggestions
   const [isAICategorizing, setIsAICategorizing] = useState(false);
-  const [aiSuggestions, setAiSuggestions] = useState<Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string }>>(new Map());
+  const [aiSuggestions, setAiSuggestions] = useState<Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string; patternId?: string }>>(new Map());
   const [aiProvider, setAiProvider] = useState<string>('');
   
   // AI Learning stats
@@ -211,7 +211,7 @@ const BankReconciliation: React.FC = () => {
         
         if (statements.length > 0) {
           // Build AI suggestions map from DB-persisted suggestions
-          const savedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string }>();
+          const savedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string; patternId?: string }>();
 
           const mappedTxns = statements.map((stmt: any) => {
             // Map DB status to frontend status - normalise to lowercase first
@@ -575,7 +575,7 @@ const BankReconciliation: React.FC = () => {
       batches.push(unmatchedTxns.slice(i, i + AI_CATEGORIZE_BATCH_SIZE));
     }
 
-    const accumulatedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string }>();
+    const accumulatedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string; patternId?: string }>();
     let totalCategorized = 0;
     let lastProvider = 'rules';
     let failedBatches = 0;
@@ -612,7 +612,8 @@ const BankReconciliation: React.FC = () => {
               accountCode: s.suggested_account_code,
               accountName: s.suggested_account_name,
               confidence: s.confidence,
-              reason: s.reason
+              reason: s.reason,
+              patternId: s.pattern_id || undefined
             });
             totalCategorized++;
           }
@@ -700,6 +701,19 @@ const BankReconciliation: React.FC = () => {
               }
             : t
         ));
+
+        // Every accept is a training signal, not just an allocation: accepting
+        // the suggestion as-is reinforces the learned pattern that produced it;
+        // overriding to a different account means that pattern's guess was
+        // wrong here, so it should be pushed down even though the corrected
+        // account still gets learned separately via the allocation itself.
+        if (suggestion?.patternId) {
+          const wasOverridden = !!overrideAccount && overrideAccount.id !== suggestion.accountId;
+          apiClient.post('/api/v2/cash-management/reconciliation/ai-feedback', {
+            pattern_id: suggestion.patternId,
+            action: wasOverridden ? 'reject' : 'accept'
+          }).catch(() => {}); // Non-critical
+        }
 
         // Remove from suggestions
         setAiSuggestions(prev => {
@@ -822,9 +836,9 @@ const BankReconciliation: React.FC = () => {
   const rejectAISuggestion = (bankTxnId: string) => {
     // Send rejection feedback to server for AI learning (non-blocking)
     const suggestion = aiSuggestions.get(bankTxnId);
-    if (suggestion && (suggestion as any).pattern_id) {
+    if (suggestion?.patternId) {
       apiClient.post('/api/v2/cash-management/reconciliation/ai-feedback', {
-        pattern_id: (suggestion as any).pattern_id,
+        pattern_id: suggestion.patternId,
         action: 'reject'
       }).catch(() => {}); // Non-critical
     }

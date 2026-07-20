@@ -241,16 +241,18 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
       ? 'customer_id'
       : `DATE_TRUNC('${groupBy}', invoice_date)`;
 
+    // sales_invoices has no deleted_at column (soft-delete is a status value,
+    // 'DELETED') and no discount_amount/balance_due columns - the real names
+    // are amount_due, and there's no per-line discount tracked at all here.
     const sql = `
       SELECT ${groupExpression} as period,
              SUM(total_amount) as total_amount,
              SUM(tax_amount) as tax_amount,
-             SUM(discount_amount) as discount_amount,
-             SUM(balance_due) as balance_due,
+             SUM(amount_due) as balance_due,
              COUNT(*) as invoice_count
       FROM ${this.fullTableName}
       WHERE tenant_id = $1
-        AND deleted_at IS NULL
+        AND status != 'DELETED'
         AND invoice_date BETWEEN $2 AND $3
       GROUP BY period
       ORDER BY period ASC
@@ -265,10 +267,9 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
   async getOverdueInvoices(ctx: TenantContext): Promise<Invoice[]> {
     const sql = `
       SELECT * FROM ${this.fullTableName}
-      WHERE tenant_id = $1 
-        AND deleted_at IS NULL
+      WHERE tenant_id = $1
         AND due_date < CURRENT_DATE
-        AND status NOT IN ('paid', 'cancelled', 'void')
+        AND status NOT IN ('PAID', 'VOIDED', 'DELETED')
       ORDER BY due_date ASC
     `;
 
@@ -291,7 +292,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
       // Get current invoice
       const invoiceResult = await client.query(`
         SELECT * FROM ${this.fullTableName}
-        WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
+        WHERE invoice_id = $1 AND tenant_id = $2 AND status != 'DELETED'
       `, [invoiceId, ctx.tenantId]);
 
       const invoice = invoiceResult.rows[0];
@@ -310,12 +311,13 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
         newStatus = 'partial';
       }
 
-      // Update invoice (balance_due is generated, only update amount_paid)
+      // amount_due is a plain stored column here, not generated - has to be
+      // kept in sync manually or the aging report goes stale after payments.
       await client.query(`
         UPDATE ${this.fullTableName}
-        SET amount_paid = $1, status = $2, updated_at = NOW(), updated_by = $3
-        WHERE id = $4 AND tenant_id = $5
-      `, [newAmountPaid, newStatus, ctx.userId, invoiceId, ctx.tenantId]);
+        SET amount_paid = $1, amount_due = $2, status = $3, updated_at = NOW(), updated_by = $4
+        WHERE invoice_id = $5 AND tenant_id = $6
+      `, [newAmountPaid, Math.max(0, newBalanceDue), newStatus, ctx.userId, invoiceId, ctx.tenantId]);
 
       // Record payment
       await client.query(`
@@ -346,16 +348,15 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
   }> {
     const sql = `
       SELECT
-        COALESCE(SUM(CASE WHEN due_date >= CURRENT_DATE THEN balance_due ELSE 0 END), 0) as current,
-        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE AND due_date >= CURRENT_DATE - 30 THEN balance_due ELSE 0 END), 0) as days_1_30,
-        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE - 30 AND due_date >= CURRENT_DATE - 60 THEN balance_due ELSE 0 END), 0) as days_31_60,
-        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE - 60 AND due_date >= CURRENT_DATE - 90 THEN balance_due ELSE 0 END), 0) as days_61_90,
-        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE - 90 THEN balance_due ELSE 0 END), 0) as over_90,
-        COALESCE(SUM(balance_due), 0) as total
+        COALESCE(SUM(CASE WHEN due_date >= CURRENT_DATE THEN amount_due ELSE 0 END), 0) as current,
+        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE AND due_date >= CURRENT_DATE - 30 THEN amount_due ELSE 0 END), 0) as days_1_30,
+        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE - 30 AND due_date >= CURRENT_DATE - 60 THEN amount_due ELSE 0 END), 0) as days_31_60,
+        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE - 60 AND due_date >= CURRENT_DATE - 90 THEN amount_due ELSE 0 END), 0) as days_61_90,
+        COALESCE(SUM(CASE WHEN due_date < CURRENT_DATE - 90 THEN amount_due ELSE 0 END), 0) as over_90,
+        COALESCE(SUM(amount_due), 0) as total
       FROM ${this.fullTableName}
-      WHERE tenant_id = $1 
-        AND deleted_at IS NULL
-        AND status NOT IN ('paid', 'cancelled', 'void')
+      WHERE tenant_id = $1
+        AND status NOT IN ('PAID', 'VOIDED', 'DELETED')
     `;
 
     const result = await this.rawQuery(ctx, sql);
@@ -393,7 +394,7 @@ export class InvoiceRepository extends BaseRepository<Invoice> {
       // Get order with lines
       const orderResult = await client.query(`
         SELECT * FROM sales_orders
-        WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL
+        WHERE invoice_id = $1 AND tenant_id = $2 AND status != 'DELETED'
       `, [orderId, ctx.tenantId]);
 
       const order = orderResult.rows[0];
