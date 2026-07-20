@@ -115,6 +115,11 @@
 
 .kpi-data {
   flex: 1;
+  /* Flex items default to min-width: auto, which stops them shrinking below
+     their content's intrinsic width - this is why text-overflow: ellipsis
+     below did nothing on its own and long labels/values instead forced the
+     card to overflow or wrapped letter-by-letter into a vertical stack. */
+  min-width: 0;
 }
 
 .kpi-label {
@@ -122,6 +127,9 @@
   color: rgba(255, 255, 255, 0.8);
   display: block;
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-value {
@@ -129,6 +137,9 @@
   font-weight: 700;
   color: white;
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .kpi-change {
