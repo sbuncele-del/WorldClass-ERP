@@ -23,13 +23,17 @@ const XERO_AUTHORIZE_URL = 'https://login.xero.com/identity/connect/authorize';
 const XERO_TOKEN_URL = 'https://identity.xero.com/connect/token';
 const XERO_CONNECTIONS_URL = 'https://api.xero.com/connections';
 
+// Xero migrated from broad scopes (accounting.transactions) to granular ones.
+// This integration only reads from Xero (never writes back), so read-only
+// scopes are requested throughout.
 const SCOPES = [
   'openid',
   'profile',
   'email',
-  'accounting.transactions',
-  'accounting.contacts',
-  'accounting.settings',
+  'accounting.settings.read',
+  'accounting.contacts.read',
+  'accounting.invoices.read',
+  'accounting.banktransactions.read',
   'offline_access',
 ].join(' ');
 
