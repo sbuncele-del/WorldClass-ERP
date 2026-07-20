@@ -224,7 +224,7 @@ export class SubscriptionService {
       // Log upgrade event
       await pool.query(
         `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, new_values, ip_address)
-         VALUES ($1, NULL, 'upgrade_subscription', 'tenant', $1, $2, '0.0.0.0')`,
+         VALUES ($1::uuid, NULL, 'upgrade_subscription', 'tenant', $1::text, $2, '0.0.0.0')`,
         [
           tenantId,
           JSON.stringify({
@@ -282,7 +282,7 @@ export class SubscriptionService {
       // Log downgrade event
       await pool.query(
         `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, new_values, ip_address)
-         VALUES ($1, NULL, 'schedule_downgrade', 'tenant', $1, $2, '0.0.0.0')`,
+         VALUES ($1::uuid, NULL, 'schedule_downgrade', 'tenant', $1::text, $2, '0.0.0.0')`,
         [
           tenantId,
           JSON.stringify({
@@ -347,7 +347,7 @@ export class SubscriptionService {
       // Log cancellation
       await pool.query(
         `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, new_values, ip_address)
-         VALUES ($1, NULL, 'cancel_subscription', 'tenant', $1, $2, '0.0.0.0')`,
+         VALUES ($1::uuid, NULL, 'cancel_subscription', 'tenant', $1::text, $2, '0.0.0.0')`,
         [
           tenantId,
           JSON.stringify({
@@ -398,7 +398,7 @@ export class SubscriptionService {
       // Log reactivation
       await pool.query(
         `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, new_values, ip_address)
-         VALUES ($1, NULL, 'reactivate_subscription', 'tenant', $1, $2, '0.0.0.0')`,
+         VALUES ($1::uuid, NULL, 'reactivate_subscription', 'tenant', $1::text, $2, '0.0.0.0')`,
         [tenantId, JSON.stringify({ status: 'reactivated' })]
       );
 
