@@ -5261,17 +5261,23 @@ router.post('/cash-management/reconciliation/ai-categorize', async (req: any, re
       }
     } catch { /* allocation_patterns table may not exist yet */ }
 
-    // Determine which AI provider to use
+    // Determine which AI provider(s) to use. When both GROQ_API_KEY and
+    // ANTHROPIC_API_KEY are configured, Groq runs first on everything (fast,
+    // free) and only the transactions it couldn't confidently categorize get
+    // escalated to Claude for a second pass - so Claude only pays for the
+    // hard/ambiguous leftovers, not the full batch.
+    const ESCALATION_CONFIDENCE_THRESHOLD = 65;
     let aiProvider = 'rules';
     let suggestions: any[] = [];
 
-    // Shared prompt for whichever LLM provider is configured
     const accountList = accountsResult.rows.map((a: any) => `${a.code}: ${a.name} (${a.type})`).join('\n');
-    const transactionList = transactionsToProcess.map((t: any, i: number) =>
-      `${i + 1}. [ID:${t.line_id}] ${t.is_debit ? 'DEBIT' : 'CREDIT'} R${Math.abs(parseFloat(t.amount)).toFixed(2)} - "${t.description}" (${t.reference || 'No ref'})`
-    ).join('\n');
 
-    let categorizationPrompt = `You are a South African accounting expert helping categorize bank transactions.
+    const buildPrompt = (txns: any[]): string => {
+      const transactionList = txns.map((t: any, i: number) =>
+        `${i + 1}. [ID:${t.line_id}] ${t.is_debit ? 'DEBIT' : 'CREDIT'} R${Math.abs(parseFloat(t.amount)).toFixed(2)} - "${t.description}" (${t.reference || 'No ref'})`
+      ).join('\n');
+
+      let prompt = `You are a South African accounting expert helping categorize bank transactions.
 
 CRITICAL RULES:
 - DEBIT transactions are money going OUT (expenses, supplier payments, bank charges, salaries)
@@ -5282,14 +5288,14 @@ CRITICAL RULES:
 AVAILABLE GL ACCOUNTS:
 ${accountList}`;
 
-    if (learnedPatternsText) {
-      categorizationPrompt += `
+      if (learnedPatternsText) {
+        prompt += `
 
 PREVIOUSLY LEARNED PATTERNS (the user has manually categorized similar transactions before - YOU MUST follow these patterns when keywords match):
 ${learnedPatternsText}`;
-    }
+      }
 
-    categorizationPrompt += `
+      prompt += `
 
 TRANSACTIONS TO CATEGORIZE:
 ${transactionList}
@@ -5311,8 +5317,10 @@ Categorization tips:
 - Supplier payments → Accounts payable clearing
 
 Respond ONLY with valid JSON array, no other text.`;
+      return prompt;
+    };
 
-    const parseAndMapAISuggestions = (content: string): any[] => {
+    const parseAndMapAISuggestions = (content: string, txns: any[]): any[] => {
       let aiSuggestions: any[] = [];
       try {
         const jsonMatch = content.match(/\[[\s\S]*\]/);
@@ -5324,7 +5332,7 @@ Respond ONLY with valid JSON array, no other text.`;
         return [];
       }
       if (aiSuggestions.length === 0) return [];
-      return transactionsToProcess.map((line: any) => {
+      return txns.map((line: any) => {
         const aiSuggestion = aiSuggestions.find((s: any) => String(s.line_id) === String(line.line_id));
         const suggestedAccount = aiSuggestion ?
           accountsResult.rows.find((a: any) => a.code === aiSuggestion.suggested_account_code) : null;
@@ -5341,56 +5349,86 @@ Respond ONLY with valid JSON array, no other text.`;
       });
     };
 
-    // Try Groq first (FREE!)
-    if (process.env.GROQ_API_KEY) {
-      aiProvider = 'groq';
+    const callGroq = async (txns: any[]): Promise<any[]> => {
+      const OpenAI = require('openai');
+      const groq = new OpenAI({ apiKey: process.env.GROQ_API_KEY, baseURL: 'https://api.groq.com/openai/v1' });
+      const response = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: 'You are a financial transaction categorization assistant. Respond only with valid JSON.' },
+          { role: 'user', content: buildPrompt(txns) }
+        ],
+        temperature: 0.3,
+        max_tokens: 2000
+      });
+      return parseAndMapAISuggestions(response.choices[0].message.content || '[]', txns);
+    };
+
+    const callClaude = async (txns: any[]): Promise<any[]> => {
+      const Anthropic = require('@anthropic-ai/sdk');
+      const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+      const response = await anthropic.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2000,
+        temperature: 0.3,
+        system: 'You are a financial transaction categorization assistant. Respond only with valid JSON.',
+        messages: [{ role: 'user', content: buildPrompt(txns) }]
+      });
+      const content = response.content?.[0]?.type === 'text' ? response.content[0].text : '[]';
+      return parseAndMapAISuggestions(content, txns);
+    };
+
+    const hasGroq = !!process.env.GROQ_API_KEY;
+    const hasClaude = !!process.env.ANTHROPIC_API_KEY;
+
+    if (hasGroq) {
       try {
-        const OpenAI = require('openai');
-        const groq = new OpenAI({
-          apiKey: process.env.GROQ_API_KEY,
-          baseURL: 'https://api.groq.com/openai/v1'
-        });
-
         console.log('🤖 Calling Groq AI with', transactionsToProcess.length, 'transactions,', accountsResult.rows.length, 'GL accounts, and', learnedPatterns.length, 'learned patterns');
-
-        const response = await groq.chat.completions.create({
-          model: 'llama-3.3-70b-versatile',
-          messages: [
-            { role: 'system', content: 'You are a financial transaction categorization assistant. Respond only with valid JSON.' },
-            { role: 'user', content: categorizationPrompt }
-          ],
-          temperature: 0.3,
-          max_tokens: 2000
-        });
-
-        const content = response.choices[0].message.content || '[]';
-        suggestions = parseAndMapAISuggestions(content);
-        if (suggestions.length === 0) aiProvider = 'rules';
+        suggestions = await callGroq(transactionsToProcess);
+        aiProvider = suggestions.length > 0 ? 'groq' : 'rules';
       } catch (aiErr: any) {
         console.error('Groq AI error:', aiErr.message);
+        suggestions = [];
         aiProvider = 'rules';
       }
-    }
-    // Fall back to Claude if Groq isn't configured
-    else if (process.env.ANTHROPIC_API_KEY) {
-      aiProvider = 'claude';
-      try {
-        const Anthropic = require('@anthropic-ai/sdk');
-        const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-        console.log('🤖 Calling Claude with', transactionsToProcess.length, 'transactions,', accountsResult.rows.length, 'GL accounts, and', learnedPatterns.length, 'learned patterns');
-
-        const response = await anthropic.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 2000,
-          temperature: 0.3,
-          system: 'You are a financial transaction categorization assistant. Respond only with valid JSON.',
-          messages: [{ role: 'user', content: categorizationPrompt }]
+      if (hasClaude) {
+        // Escalate whatever Groq left unmatched or under-confident to Claude
+        const escalationCandidates = transactionsToProcess.filter((line: any) => {
+          const g = suggestions.find((s: any) => s.line_id === line.line_id);
+          return !g || !g.suggested_account_id || (g.confidence || 0) < ESCALATION_CONFIDENCE_THRESHOLD;
         });
 
-        const content = response.content?.[0]?.type === 'text' ? response.content[0].text : '[]';
-        suggestions = parseAndMapAISuggestions(content);
-        if (suggestions.length === 0) aiProvider = 'rules';
+        if (escalationCandidates.length > 0) {
+          try {
+            console.log('🧠 Escalating', escalationCandidates.length, 'low-confidence/unmatched transactions to Claude');
+            const claudeSuggestions = await callClaude(escalationCandidates);
+            let claudeImproved = 0;
+            for (const c of claudeSuggestions) {
+              if (!c.suggested_account_id) continue;
+              const idx = suggestions.findIndex((s: any) => s.line_id === c.line_id);
+              const existing = idx >= 0 ? suggestions[idx] : null;
+              if (!existing || !existing.suggested_account_id || c.confidence > (existing.confidence || 0)) {
+                if (idx >= 0) suggestions[idx] = c; else suggestions.push(c);
+                claudeImproved++;
+              }
+            }
+            if (claudeImproved > 0) {
+              aiProvider = aiProvider === 'groq' ? 'groq+claude' : 'claude';
+            }
+          } catch (aiErr: any) {
+            console.error('Claude escalation error:', aiErr.message);
+            // Non-fatal - Groq's results (if any) still stand
+          }
+        }
+      }
+    }
+    // Claude only, no Groq configured
+    else if (hasClaude) {
+      try {
+        console.log('🤖 Calling Claude with', transactionsToProcess.length, 'transactions,', accountsResult.rows.length, 'GL accounts, and', learnedPatterns.length, 'learned patterns');
+        suggestions = await callClaude(transactionsToProcess);
+        aiProvider = suggestions.length > 0 ? 'claude' : 'rules';
       } catch (aiErr: any) {
         console.error('Claude AI error:', aiErr.message);
         aiProvider = 'rules';

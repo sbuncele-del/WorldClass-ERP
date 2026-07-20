@@ -642,7 +642,7 @@ const BankReconciliation: React.FC = () => {
     }
 
     setAiProvider(lastProvider);
-    const providerEmoji = lastProvider === 'groq' ? '🚀 Groq AI' : lastProvider === 'claude' ? '🧠 Claude' : (lastProvider === 'grok' ? '🤖 Grok' : '📋 Rules');
+    const providerEmoji = lastProvider === 'groq+claude' ? '🚀🧠 Groq + Claude' : lastProvider === 'groq' ? '🚀 Groq AI' : lastProvider === 'claude' ? '🧠 Claude' : (lastProvider === 'grok' ? '🤖 Grok' : '📋 Rules');
 
     if (totalCategorized > 0) {
       message.success({
