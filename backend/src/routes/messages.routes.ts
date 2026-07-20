@@ -29,6 +29,7 @@ const getPool = (req: Request): Pool => {
 router.get('/conversations', authenticateToken, async (req: Request, res: Response) => {
   try {
     const pool = getPool(req);
+    const tenantId = (req as any).tenant?.id;
     const userId = (req as any).user?.id;
     const userRole = (req as any).user?.role;
 
@@ -38,35 +39,35 @@ router.get('/conversations', authenticateToken, async (req: Request, res: Respon
 
     const query = isDispatch
       ? `
-        SELECT DISTINCT ON (m.sender_id) 
-          m.id,
+        SELECT DISTINCT ON (m.sender_id)
+          m.message_id as id,
           m.sender_id,
           m.sender_name,
           m.sender_role,
-          m.content as last_message,
+          m.body as last_message,
           m.created_at as last_message_time,
           m.message_type,
           m.is_emergency,
-          (SELECT COUNT(*) FROM messages WHERE sender_id = m.sender_id AND recipient_id = $1 AND read_at IS NULL) as unread_count
+          (SELECT COUNT(*) FROM messages WHERE tenant_id = $1 AND sender_id = m.sender_id AND recipient_id = $2 AND read_at IS NULL) as unread_count
         FROM messages m
-        WHERE m.recipient_id = $1 OR m.recipient_id IS NULL
+        WHERE m.tenant_id = $1 AND (m.recipient_id = $2 OR m.recipient_id IS NULL)
         ORDER BY m.sender_id, m.created_at DESC
       `
       : `
-        SELECT DISTINCT ON (COALESCE(m.recipient_id, 'dispatch'))
-          m.id,
-          COALESCE(m.recipient_id, 'dispatch') as conversation_id,
+        SELECT DISTINCT ON (COALESCE(m.recipient_id::text, 'dispatch'))
+          m.message_id as id,
+          COALESCE(m.recipient_id::text, 'dispatch') as conversation_id,
           m.recipient_name,
-          m.content as last_message,
+          m.body as last_message,
           m.created_at as last_message_time,
           m.message_type,
-          (SELECT COUNT(*) FROM messages WHERE sender_id != $1 AND (recipient_id = $1 OR recipient_id IS NULL) AND read_at IS NULL) as unread_count
+          (SELECT COUNT(*) FROM messages WHERE tenant_id = $1 AND sender_id != $2 AND (recipient_id = $2 OR recipient_id IS NULL) AND read_at IS NULL) as unread_count
         FROM messages m
-        WHERE m.sender_id = $1 OR m.recipient_id = $1
-        ORDER BY COALESCE(m.recipient_id, 'dispatch'), m.created_at DESC
+        WHERE m.tenant_id = $1 AND (m.sender_id = $2 OR m.recipient_id = $2)
+        ORDER BY COALESCE(m.recipient_id::text, 'dispatch'), m.created_at DESC
       `;
 
-    const result = await pool.query(query, [userId]);
+    const result = await pool.query(query, [tenantId, userId]);
 
     res.json({
       success: true,
@@ -88,20 +89,21 @@ router.get('/conversations', authenticateToken, async (req: Request, res: Respon
 router.get('/:conversationId', authenticateToken, async (req: Request, res: Response) => {
   try {
     const pool = getPool(req);
+    const tenantId = (req as any).tenant?.id;
     const userId = (req as any).user?.id;
     const { conversationId } = req.params;
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
 
     const query = `
-      SELECT 
-        m.id,
+      SELECT
+        m.message_id as id,
         m.sender_id,
         m.sender_name,
         m.sender_role,
         m.recipient_id,
         m.recipient_name,
-        m.content,
+        m.body as content,
         m.message_type,
         m.is_emergency,
         m.trip_id,
@@ -109,20 +111,22 @@ router.get('/:conversationId', authenticateToken, async (req: Request, res: Resp
         m.created_at,
         m.read_at
       FROM messages m
-      WHERE (m.sender_id = $1 AND m.recipient_id = $2)
-         OR (m.sender_id = $2 AND m.recipient_id = $1)
-         OR (m.sender_id = $1 AND m.recipient_id IS NULL AND $2 = 'dispatch')
-         OR (m.recipient_id = $1 AND m.sender_id = $2)
+      WHERE m.tenant_id = $1
+        AND (
+          (m.sender_id = $2 AND m.recipient_id::text = $3)
+          OR (m.sender_id::text = $3 AND m.recipient_id = $2)
+          OR (m.sender_id = $2 AND m.recipient_id IS NULL AND $3 = 'dispatch')
+        )
       ORDER BY m.created_at DESC
-      LIMIT $3 OFFSET $4
+      LIMIT $4 OFFSET $5
     `;
 
-    const result = await pool.query(query, [userId, conversationId, limit, offset]);
+    const result = await pool.query(query, [tenantId, userId, conversationId, limit, offset]);
 
     // Mark messages as read
     await pool.query(
-      `UPDATE messages SET read_at = NOW() WHERE recipient_id = $1 AND sender_id = $2 AND read_at IS NULL`,
-      [userId, conversationId]
+      `UPDATE messages SET read_at = NOW() WHERE tenant_id = $1 AND recipient_id = $2 AND sender_id::text = $3 AND read_at IS NULL`,
+      [tenantId, userId, conversationId]
     );
 
     res.json({
@@ -145,6 +149,7 @@ router.get('/:conversationId', authenticateToken, async (req: Request, res: Resp
 router.post('/', authenticateToken, async (req: Request, res: Response) => {
   try {
     const pool = getPool(req);
+    const tenantId = (req as any).tenant?.id;
     const userId = (req as any).user?.id;
     const userName = (req as any).user?.firstName + ' ' + ((req as any).user?.lastName || '');
     const userRole = (req as any).user?.role || 'driver';
@@ -168,22 +173,24 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
 
     const query = `
       INSERT INTO messages (
+        tenant_id,
         sender_id,
         sender_name,
         sender_role,
         recipient_id,
         recipient_name,
-        content,
+        body,
         message_type,
         trip_id,
         is_emergency,
         metadata,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
       RETURNING *
     `;
 
     const result = await pool.query(query, [
+      tenantId,
       userId,
       userName.trim(),
       userRole,
@@ -201,10 +208,10 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
     // If emergency, create a notification for dispatch
     if (is_emergency) {
       await pool.query(
-        `INSERT INTO notifications (user_id, type, title, message, priority, metadata, created_at)
-         SELECT id, 'emergency', 'EMERGENCY ALERT', $1, 'critical', $2, NOW()
-         FROM users WHERE role IN ('admin', 'dispatcher', 'manager')`,
-        [`Emergency from ${userName}: ${content}`, JSON.stringify({ message_id: message.id, sender_id: userId })]
+        `INSERT INTO notifications (tenant_id, user_id, type, title, message, priority, metadata, created_at)
+         SELECT $1, id, 'emergency', 'EMERGENCY ALERT', $2, 'critical', $3, NOW()
+         FROM users WHERE tenant_id = $1 AND role IN ('admin', 'dispatcher', 'manager')`,
+        [tenantId, `Emergency from ${userName}: ${content}`, JSON.stringify({ message_id: message.message_id, sender_id: userId })]
       );
     }
 
@@ -232,46 +239,53 @@ router.post('/', authenticateToken, async (req: Request, res: Response) => {
 router.post('/emergency', authenticateToken, async (req: Request, res: Response) => {
   try {
     const pool = getPool(req);
-    const userId = (req as any).user?.id;
-    const userName = (req as any).user?.firstName + ' ' + ((req as any).user?.lastName || '');
+    const tenantId = (req as any).tenant?.id;
+    const userId = (req as any).user?.id || 'unknown';
+    const userName = (req as any).user?.firstName
+      ? `${(req as any).user.firstName} ${(req as any).user.lastName || ''}`.trim()
+      : ((req as any).user?.name || (req as any).user?.email || 'Driver');
     const userRole = (req as any).user?.role || 'driver';
 
     const {
-      emergency_type, // 'breakdown', 'security', 'medical', 'accident'
+      emergency_type, // 'breakdown', 'security', 'medical', 'accident', 'sos'
       location,
+      coordinates,
       trip_id,
       details
     } = req.body;
 
+    const content = `🚨 EMERGENCY ALERT: ${emergency_type?.toUpperCase() || 'SOS'}\nDriver: ${userName}\nLocation: ${location || 'Unknown'}\nDetails: ${details || 'No details provided'}`;
+
+    const metadata = {
+      emergency_type: emergency_type || 'sos',
+      location,
+      coordinates,
+      timestamp: new Date().toISOString()
+    };
+
     // Create emergency message
     const messageQuery = `
       INSERT INTO messages (
+        tenant_id,
         sender_id,
         sender_name,
         sender_role,
         recipient_id,
-        content,
+        body,
         message_type,
         trip_id,
         is_emergency,
         metadata,
+        priority,
         created_at
-      ) VALUES ($1, $2, $3, NULL, $4, 'emergency', $5, true, $6, NOW())
+      ) VALUES ($1, $2, $3, $4, NULL, $5, 'emergency', $6, true, $7, 'critical', NOW())
       RETURNING *
     `;
 
-    const content = `🚨 EMERGENCY ALERT: ${emergency_type?.toUpperCase() || 'UNKNOWN'}\nDriver: ${userName}\nLocation: ${location || 'Unknown'}\nDetails: ${details || 'No details provided'}`;
-    
-    const metadata = {
-      emergency_type,
-      location,
-      timestamp: new Date().toISOString(),
-      gps_coordinates: req.body.coordinates || null
-    };
-
     const result = await pool.query(messageQuery, [
+      tenantId,
       userId,
-      userName.trim(),
+      userName,
       userRole,
       content,
       trip_id || null,
@@ -280,17 +294,17 @@ router.post('/emergency', authenticateToken, async (req: Request, res: Response)
 
     // Create high-priority notification for ALL dispatch users
     await pool.query(
-      `INSERT INTO notifications (user_id, type, title, message, priority, metadata, created_at)
-       SELECT id, 'emergency', '🚨 DRIVER EMERGENCY', $1, 'critical', $2, NOW()
-       FROM users WHERE role IN ('admin', 'dispatcher', 'manager', 'supervisor')`,
-      [content, JSON.stringify(metadata)]
+      `INSERT INTO notifications (tenant_id, user_id, type, title, message, priority, metadata, created_at)
+       SELECT $1, id, 'emergency', '🚨 DRIVER EMERGENCY', $2, 'critical', $3, NOW()
+       FROM users WHERE tenant_id = $1 AND role IN ('admin', 'dispatcher', 'manager', 'supervisor')`,
+      [tenantId, content, JSON.stringify(metadata)]
     );
 
     // Log to audit trail
     await pool.query(
-      `INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details, created_at)
-       VALUES ($1, 'EMERGENCY_ALERT', 'driver', $1, $2, NOW())`,
-      [userId, JSON.stringify({ emergency_type, location, trip_id })]
+      `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id, new_values, created_at)
+       VALUES ($1, $2::uuid, 'EMERGENCY_ALERT', 'driver', $2::text, $3, NOW())`,
+      [tenantId, userId, JSON.stringify({ emergency_type, location, trip_id })]
     );
 
     res.status(201).json({
@@ -314,6 +328,7 @@ router.post('/emergency', authenticateToken, async (req: Request, res: Response)
 router.get('/dispatch/inbox', authenticateToken, async (req: Request, res: Response) => {
   try {
     const pool = getPool(req);
+    const tenantId = (req as any).tenant?.id;
     const userRole = (req as any).user?.role;
 
     // Only allow dispatch/admin roles
@@ -325,33 +340,32 @@ router.get('/dispatch/inbox', authenticateToken, async (req: Request, res: Respo
     }
 
     const query = `
-      SELECT 
-        m.id,
+      SELECT
+        m.message_id as id,
         m.sender_id,
         m.sender_name,
         m.sender_role,
-        m.content,
+        m.body as content,
         m.message_type,
         m.is_emergency,
         m.trip_id,
         m.metadata,
         m.created_at,
-        m.read_at,
-        t.trip_number,
-        t.status as trip_status
+        m.read_at
       FROM messages m
-      LEFT JOIN trips t ON m.trip_id = t.id
-      WHERE m.message_type IN ('driver_to_dispatch', 'emergency')
+      WHERE m.tenant_id = $1
+        AND m.message_type IN ('driver_to_dispatch', 'emergency')
         AND m.recipient_id IS NULL
       ORDER BY m.is_emergency DESC, m.created_at DESC
       LIMIT 100
     `;
 
-    const result = await pool.query(query);
+    const result = await pool.query(query, [tenantId]);
 
     // Get unread count
     const unreadResult = await pool.query(
-      `SELECT COUNT(*) as count FROM messages WHERE message_type IN ('driver_to_dispatch', 'emergency') AND recipient_id IS NULL AND read_at IS NULL`
+      `SELECT COUNT(*) as count FROM messages WHERE tenant_id = $1 AND message_type IN ('driver_to_dispatch', 'emergency') AND recipient_id IS NULL AND read_at IS NULL`,
+      [tenantId]
     );
 
     res.json({
@@ -377,6 +391,7 @@ router.get('/dispatch/inbox', authenticateToken, async (req: Request, res: Respo
 router.post('/dispatch/reply/:messageId', authenticateToken, async (req: Request, res: Response) => {
   try {
     const pool = getPool(req);
+    const tenantId = (req as any).tenant?.id;
     const userId = (req as any).user?.id;
     const userName = (req as any).user?.firstName || 'Dispatch';
     const { messageId } = req.params;
@@ -384,8 +399,8 @@ router.post('/dispatch/reply/:messageId', authenticateToken, async (req: Request
 
     // Get original message
     const originalMsg = await pool.query(
-      `SELECT sender_id, sender_name, trip_id FROM messages WHERE id = $1`,
-      [messageId]
+      `SELECT sender_id, sender_name, trip_id FROM messages WHERE tenant_id = $1 AND message_id = $2`,
+      [tenantId, messageId]
     );
 
     if (originalMsg.rows.length === 0) {
@@ -400,18 +415,18 @@ router.post('/dispatch/reply/:messageId', authenticateToken, async (req: Request
     // Insert reply
     const result = await pool.query(
       `INSERT INTO messages (
-        sender_id, sender_name, sender_role,
+        tenant_id, sender_id, sender_name, sender_role,
         recipient_id, recipient_name,
-        content, message_type, trip_id, created_at
-      ) VALUES ($1, $2, 'dispatch', $3, $4, $5, 'dispatch_to_driver', $6, NOW())
+        body, message_type, trip_id, created_at
+      ) VALUES ($1, $2, $3, 'dispatch', $4, $5, $6, 'dispatch_to_driver', $7, NOW())
       RETURNING *`,
-      [userId, userName, original.sender_id, original.sender_name, content, original.trip_id]
+      [tenantId, userId, userName, original.sender_id, original.sender_name, content, original.trip_id]
     );
 
     // Mark original as read
     await pool.query(
-      `UPDATE messages SET read_at = NOW() WHERE id = $1 AND read_at IS NULL`,
-      [messageId]
+      `UPDATE messages SET read_at = NOW() WHERE tenant_id = $1 AND message_id = $2 AND read_at IS NULL`,
+      [tenantId, messageId]
     );
 
     res.json({
@@ -434,11 +449,12 @@ router.post('/dispatch/reply/:messageId', authenticateToken, async (req: Request
 router.put('/:id/read', authenticateToken, async (req: Request, res: Response) => {
   try {
     const pool = getPool(req);
+    const tenantId = (req as any).tenant?.id;
     const { id } = req.params;
 
     await pool.query(
-      `UPDATE messages SET read_at = NOW() WHERE id = $1`,
-      [id]
+      `UPDATE messages SET read_at = NOW() WHERE tenant_id = $1 AND message_id = $2`,
+      [tenantId, id]
     );
 
     res.json({ success: true });
@@ -452,82 +468,13 @@ router.put('/:id/read', authenticateToken, async (req: Request, res: Response) =
 });
 
 // ============================================
-// POST /api/messages/emergency
-// Send emergency/SOS alert
-// ============================================
-router.post('/emergency', authenticateToken, async (req: Request, res: Response) => {
-  try {
-    const pool = getPool(req);
-    const userId = (req as any).user?.id || 'unknown';
-    const userName = (req as any).user?.name || (req as any).user?.email || 'Driver';
-    const { emergency_type, location, coordinates, trip_id, details } = req.body;
-
-    // Create emergency alert record
-    const result = await pool.query(
-      `INSERT INTO messages (
-        sender_id, sender_name, sender_role,
-        content, message_type, trip_id, is_emergency,
-        metadata, priority, created_at
-      ) VALUES ($1, $2, 'driver', $3, 'emergency', $4, true, $5, 'critical', NOW())
-      RETURNING *`,
-      [
-        userId,
-        userName,
-        `🚨 EMERGENCY ALERT: ${emergency_type?.toUpperCase() || 'SOS'}\n` +
-        `Driver: ${userName}\n` +
-        `Location: ${location || 'Unknown'}\n` +
-        `Details: ${details || 'Driver triggered emergency button'}`,
-        trip_id || null,
-        JSON.stringify({
-          emergency_type: emergency_type || 'sos',
-          coordinates,
-          location,
-          triggered_at: new Date().toISOString()
-        })
-      ]
-    );
-
-    // Log emergency for audit
-    console.log('🚨 EMERGENCY ALERT:', {
-      userId,
-      userName,
-      emergency_type,
-      location,
-      coordinates,
-      trip_id,
-      timestamp: new Date().toISOString()
-    });
-
-    // In production, this would trigger:
-    // - Push notifications to all dispatchers
-    // - SMS/Call to emergency contacts
-    // - Update driver status to "emergency"
-    // - Log GPS coordinates for tracking
-
-    res.status(201).json({
-      success: true,
-      message: 'Emergency alert sent',
-      data: result.rows[0]
-    });
-  } catch (error) {
-    console.error('Error sending emergency alert:', error);
-    // Even on error, try to respond - emergency is critical
-    res.status(500).json({
-      success: false,
-      error: 'Failed to send emergency alert',
-      // Return partial success - we logged it at minimum
-      logged: true
-    });
-  }
-});
-
-// ============================================
 // GET /api/messages/emergencies
 // Get active emergencies (for dispatch dashboard)
 // ============================================
 router.get('/emergencies', authenticateToken, async (req: Request, res: Response) => {
   try {
     const pool = getPool(req);
+    const tenantId = (req as any).tenant?.id;
     const userRole = (req as any).user?.role;
 
     // Only dispatch/admin can view emergency dashboard
@@ -540,10 +487,11 @@ router.get('/emergencies', authenticateToken, async (req: Request, res: Response
     }
 
     const result = await pool.query(
-      `SELECT * FROM messages 
-       WHERE is_emergency = true 
+      `SELECT * FROM messages
+       WHERE tenant_id = $1 AND is_emergency = true
        ORDER BY created_at DESC
-       LIMIT 50`
+       LIMIT 50`,
+      [tenantId]
     );
 
     res.json({
