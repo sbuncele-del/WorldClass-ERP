@@ -3792,24 +3792,94 @@ router.get('/cash-management/cash-flow-dashboard', async (req: any, res) => {
 // Cash Management - create bank account
 router.post('/cash-management/bank-accounts', async (req: any, res) => {
   const tenantId = req.tenant?.id || req.headers['x-tenant-id'] || '00000000-0000-0000-0000-000000000001';
+  const userId = req.user?.id || req.headers['x-user-id'] || '00000000-0000-0000-0000-000000000000';
   try {
-    const { account_name, bank_name, account_number, branch_code, account_type, currency, current_balance, entity_id } = req.body;
-    
-    // Generate account code
-    const countResult = await query('SELECT COUNT(*) FROM bank_accounts WHERE tenant_id = $1', [tenantId]);
-    const count = parseInt(countResult.rows[0].count) + 1;
-    const accountCode = `BANK-${count.toString().padStart(3, '0')}`;
-    
+    const { account_name, bank_code, bank_name, account_number, branch_code, account_type, currency, opening_balance, current_balance, gl_account_id, gl_account_code } = req.body;
+
+    if (!account_name || !account_number) {
+      return res.status(400).json({ success: false, error: 'account_name and account_number are required' });
+    }
+
+    // Resolve bank_id from bank_code (or bank_name as fallback)
+    const bankLookup = await query(
+      `SELECT bank_id FROM cash_banks WHERE bank_code = $1 OR bank_name = $2 LIMIT 1`,
+      [bank_code || null, bank_name || null]
+    );
+    const bankId = bankLookup.rows[0]?.bank_id || null;
+
+    // Resolve gl_account_code: accept either a chart_of_accounts UUID or a raw code string
+    let resolvedGLCode = gl_account_code || null;
+    if (gl_account_id) {
+      const glLookup = await query(
+        `SELECT COALESCE(NULLIF(code, ''), account_code) as code FROM chart_of_accounts WHERE tenant_id = $1 AND id = $2`,
+        [tenantId, gl_account_id]
+      );
+      resolvedGLCode = glLookup.rows[0]?.code || resolvedGLCode;
+    }
+
+    const openingBal = opening_balance ?? current_balance ?? 0;
+
     const result = await query(
-      `INSERT INTO bank_accounts (id, tenant_id, account_code, account_name, bank_name, account_number, branch_code, account_type, currency, current_balance, entity_id, is_active, created_at, updated_at)
-       VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true, NOW(), NOW())
+      `INSERT INTO cash_bank_accounts
+         (tenant_id, bank_id, bank_code, account_name, account_number, account_type, branch_code,
+          currency, opening_balance, current_balance, gl_account_code, created_by, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9, $10, $11, true)
        RETURNING *`,
-      [tenantId, accountCode, account_name, bank_name, account_number, branch_code || null, account_type, currency || 'ZAR', current_balance || 0, entity_id || null]
+      [tenantId, bankId, bank_code || null, account_name, account_number, account_type || 'CURRENT',
+       branch_code || null, currency || 'ZAR', openingBal, resolvedGLCode, userId]
     );
     res.json({ success: true, data: result.rows[0], message: 'Bank account created successfully' });
   } catch (err: any) {
     console.error('Error creating bank account:', err);
     res.status(500).json({ success: false, error: err.message || 'Failed to create bank account' });
+  }
+});
+
+// Update bank account (e.g. link/change GL account)
+router.patch('/cash-management/bank-accounts/:id', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+  const { id } = req.params;
+  try {
+    const { account_name, branch_code, account_type, gl_account_id, gl_account_code, is_active } = req.body;
+
+    let resolvedGLCode = gl_account_code;
+    if (gl_account_id) {
+      const glLookup = await query(
+        `SELECT COALESCE(NULLIF(code, ''), account_code) as code FROM chart_of_accounts WHERE tenant_id = $1 AND id = $2`,
+        [tenantId, gl_account_id]
+      );
+      resolvedGLCode = glLookup.rows[0]?.code || resolvedGLCode;
+    }
+
+    const updates: string[] = [];
+    const params: any[] = [tenantId, id];
+    const addUpdate = (col: string, val: any) => {
+      if (val === undefined) return;
+      params.push(val);
+      updates.push(`${col} = $${params.length}`);
+    };
+    addUpdate('account_name', account_name);
+    addUpdate('branch_code', branch_code);
+    addUpdate('account_type', account_type);
+    addUpdate('gl_account_code', resolvedGLCode);
+    addUpdate('is_active', is_active);
+
+    if (updates.length === 0) {
+      return res.status(400).json({ success: false, error: 'No fields to update' });
+    }
+    updates.push('updated_at = NOW()');
+
+    const result = await query(
+      `UPDATE cash_bank_accounts SET ${updates.join(', ')} WHERE tenant_id = $1 AND account_id = $2 RETURNING *`,
+      params
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Bank account not found' });
+    }
+    res.json({ success: true, data: result.rows[0], message: 'Bank account updated successfully' });
+  } catch (err: any) {
+    console.error('Error updating bank account:', err);
+    res.status(500).json({ success: false, error: err.message || 'Failed to update bank account' });
   }
 });
 

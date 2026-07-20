@@ -74,6 +74,8 @@ const BankingHub: React.FC = () => {
   const [addingBank, setAddingBank] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [bankForm] = Form.useForm();
+  const [glAccounts, setGlAccounts] = useState<any[]>([]);
+  const [editingBankAccount, setEditingBankAccount] = useState<any>(null);
   
   // Fetch live API data for banking/cash management
   const [apiData, setApiData] = useState<any>(null);
@@ -109,12 +111,18 @@ const BankingHub: React.FC = () => {
     const fetchBankingData = async () => {
       try {
         // Fetch from V2 cash-management endpoints
-        const [workspaceResult, bankAccountsRes, dashboardRes, forecastRes] = await Promise.all([
+        const [workspaceResult, bankAccountsRes, dashboardRes, forecastRes, glAccountsRes] = await Promise.all([
           workspaceApi.cashManagement.getWorkspace().catch(() => null),
           apiClient.get('/api/v2/cash-management/bank-accounts').catch(() => ({ data: { data: [] } })),
           apiClient.get('/api/v2/treasury/dashboard').catch(() => ({ data: { data: {} } })),
           apiClient.get('/api/v2/treasury/forecasts').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/financial/chart-of-accounts').catch(() => ({ data: { data: [] } })),
         ]);
+
+        const glAccountsList = glAccountsRes.data?.data || [];
+        setGlAccounts(glAccountsList.filter((a: any) =>
+          (a.account_type || a.type || '').toUpperCase() === 'ASSET' && a.is_active !== false
+        ));
         
         // Handle workspace data
         if (workspaceResult) {
@@ -146,6 +154,8 @@ const BankingHub: React.FC = () => {
             logo: '🏦',
             feedType: 'Manual',
             lastSync: acc.updated_at || new Date().toISOString(),
+            gl_account_code: acc.gl_account_code || null,
+            branch_code: acc.branch_code,
           }));
           setBankConnections(bankConnectionsFromAPI);
         }
@@ -473,24 +483,47 @@ const BankingHub: React.FC = () => {
   const handleAddBankAccount = async (values: any) => {
     setAddingBank(true);
     try {
-      await apiClient.post('/api/v2/cash-management/bank-accounts', {
-        account_name: values.accountName,
-        bank_code: values.bankName,
-        account_number: values.accountNumber,
-        branch_code: values.branchCode,
-        account_type: values.accountType,
-        currency_code: values.currency || 'ZAR',
-        opening_balance: parseFloat(values.openingBalance) || 0,
-      });
-      message.success('Bank account added successfully!');
+      if (editingBankAccount) {
+        await apiClient.patch(`/api/v2/cash-management/bank-accounts/${editingBankAccount.id}`, {
+          account_name: values.accountName,
+          branch_code: values.branchCode,
+          account_type: values.accountType,
+          gl_account_code: values.glAccountCode,
+        });
+        message.success('Bank account updated successfully!');
+      } else {
+        await apiClient.post('/api/v2/cash-management/bank-accounts', {
+          account_name: values.accountName,
+          bank_code: values.bankName,
+          account_number: values.accountNumber,
+          branch_code: values.branchCode,
+          account_type: values.accountType,
+          currency: values.currency || 'ZAR',
+          opening_balance: parseFloat(values.openingBalance) || 0,
+          gl_account_code: values.glAccountCode,
+        });
+        message.success('Bank account added successfully!');
+      }
       bankForm.resetFields();
       setShowAddBankModal(false);
+      setEditingBankAccount(null);
       refreshBankAccounts();
     } catch (err: any) {
-      message.error(err.response?.data?.error || 'Failed to add bank account');
+      message.error(err.response?.data?.error || 'Failed to save bank account');
     } finally {
       setAddingBank(false);
     }
+  };
+
+  const openEditBankAccount = (account: any) => {
+    setEditingBankAccount(account);
+    bankForm.setFieldsValue({
+      accountName: account.accountName || account.account_name,
+      accountType: (account.type || account.account_type || 'CURRENT').toUpperCase(),
+      branchCode: account.branch_code,
+      glAccountCode: account.gl_account_code,
+    });
+    setShowAddBankModal(true);
   };
 
   const handleSyncAll = async () => {
@@ -767,6 +800,11 @@ const BankingHub: React.FC = () => {
                     <div className="account-footer">
                       <Tag>{account.type}</Tag>
                       <Tag color="blue">{account.currency}</Tag>
+                      {account.gl_account_code ? (
+                        <Tag color="green">GL: {account.gl_account_code}</Tag>
+                      ) : (
+                        <Tag color="red">GL not linked</Tag>
+                      )}
                       {account.lastSync && (
                         <Text type="secondary" style={{ fontSize: '11px' }}>
                           Synced: {new Date(account.lastSync).toLocaleTimeString()}
@@ -776,7 +814,7 @@ const BankingHub: React.FC = () => {
                     <div className="account-actions">
                       <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => setActiveTab('reconciliation')}>View</Button>
                       <Button type="link" size="small" icon={<SyncOutlined />} onClick={handleSyncAll}>Sync</Button>
-                      <Button type="link" size="small" icon={<SettingOutlined />} onClick={() => setActiveTab('settings')}>Settings</Button>
+                      <Button type="link" size="small" icon={<SettingOutlined />} onClick={() => openEditBankAccount(account)}>Edit GL Link</Button>
                     </div>
                   </Card>
                 ))}
@@ -1517,9 +1555,9 @@ const BankingHub: React.FC = () => {
 
       {/* Add Bank Account Modal */}
       <Modal
-        title="Add Bank Account"
+        title={editingBankAccount ? 'Edit Bank Account' : 'Add Bank Account'}
         open={showAddBankModal}
-        onCancel={() => setShowAddBankModal(false)}
+        onCancel={() => { setShowAddBankModal(false); setEditingBankAccount(null); bankForm.resetFields(); }}
         footer={null}
         width={600}
       >
@@ -1533,9 +1571,9 @@ const BankingHub: React.FC = () => {
               <Form.Item
                 name="bankName"
                 label="Bank Name"
-                rules={[{ required: true, message: 'Please select a bank' }]}
+                rules={[{ required: !editingBankAccount, message: 'Please select a bank' }]}
               >
-                <Select placeholder="Select bank">
+                <Select placeholder="Select bank" disabled={!!editingBankAccount}>
                   <Select.Option value="STANDARD">Standard Bank</Select.Option>
                   <Select.Option value="FNB">First National Bank (FNB)</Select.Option>
                   <Select.Option value="ABSA">ABSA</Select.Option>
@@ -1561,9 +1599,9 @@ const BankingHub: React.FC = () => {
               <Form.Item
                 name="accountNumber"
                 label="Account Number"
-                rules={[{ required: true, message: 'Please enter account number' }]}
+                rules={[{ required: !editingBankAccount, message: 'Please enter account number' }]}
               >
-                <Input placeholder="e.g. 10012345678" />
+                <Input placeholder="e.g. 10012345678" disabled={!!editingBankAccount} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -1607,18 +1645,38 @@ const BankingHub: React.FC = () => {
             </Col>
           </Row>
           <Form.Item
-            name="openingBalance"
-            label="Opening Balance"
-            rules={[{ required: true, message: 'Please enter opening balance' }]}
+            name="glAccountCode"
+            label="GL Account (Chart of Accounts)"
+            rules={[{ required: true, message: 'Please link this bank account to a GL account so it can be reconciled' }]}
+            help="Required to allocate reconciled transactions to the general ledger"
           >
-            <Input prefix="R" placeholder="0.00" type="number" step="0.01" />
+            <Select
+              placeholder="Select the GL account this bank account maps to"
+              showSearch
+              optionFilterProp="children"
+            >
+              {glAccounts.map((a: any) => (
+                <Select.Option key={a.code || a.id} value={a.code}>
+                  {a.code} - {a.name}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
+          {!editingBankAccount && (
+            <Form.Item
+              name="openingBalance"
+              label="Opening Balance"
+              rules={[{ required: true, message: 'Please enter opening balance' }]}
+            >
+              <Input prefix="R" placeholder="0.00" type="number" step="0.01" />
+            </Form.Item>
+          )}
           <Form.Item>
             <Space>
               <Button type="primary" htmlType="submit" loading={addingBank}>
-                Add Bank Account
+                {editingBankAccount ? 'Save Changes' : 'Add Bank Account'}
               </Button>
-              <Button onClick={() => setShowAddBankModal(false)}>Cancel</Button>
+              <Button onClick={() => { setShowAddBankModal(false); setEditingBankAccount(null); bankForm.resetFields(); }}>Cancel</Button>
             </Space>
           </Form.Item>
         </Form>
