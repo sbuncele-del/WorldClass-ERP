@@ -262,7 +262,7 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
       res.status(401).json({ success: false, error: 'Unauthorized' });
       return;
     }
-    res.status(500).json({ success: false, error: 'Failed to create fuel transaction' });
+    res.status(500).json({ success: false, error: 'Failed to create fuel transaction', debug: error.message, code: error.code });
   } finally {
     client.release();
   }
