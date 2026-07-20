@@ -190,7 +190,7 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
         created_at
       ) VALUES ($1, $2, $3, $4, $5, 'LOGISTICS_FUEL', 'fuel_transaction', $6, $6, 'POSTED', $7, NOW())
       RETURNING entry_id
-    `, [tenantId, `FT-${transactionId}-${Date.now()}`, date, `Fuel purchase - ${vehicle} at ${supplier}`, `FT-${transactionId}`, cost, userId]);
+    `, [tenantId, `FT-${Date.now()}`, date, `Fuel purchase - ${vehicle} at ${supplier}`, `FT-${transactionId}`, cost, userId]);
 
     const journalEntryId = journalResult.rows[0].entry_id;
 
@@ -262,7 +262,7 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
       res.status(401).json({ success: false, error: 'Unauthorized' });
       return;
     }
-    res.status(500).json({ success: false, error: 'Failed to create fuel transaction', debug: error.message, code: error.code });
+    res.status(500).json({ success: false, error: 'Failed to create fuel transaction' });
   } finally {
     client.release();
   }
