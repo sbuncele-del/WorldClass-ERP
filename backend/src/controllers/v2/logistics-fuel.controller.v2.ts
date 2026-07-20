@@ -64,7 +64,7 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
         driver_id,
         litres,
         price_per_litre,
-        total_cost,
+        total_amount,
         odometer_reading,
         supplier,
         invoice_number,
@@ -280,7 +280,7 @@ export async function listFuelTransactions(req: TenantRequest, res: Response): P
         d.first_name || ' ' || d.last_name as driver_name,
         t.litres,
         t.price_per_litre,
-        t.total_cost,
+        t.total_amount,
         t.odometer_reading,
         t.supplier,
         t.invoice_number,
@@ -463,7 +463,7 @@ export async function getFuelStats(req: TenantRequest, res: Response): Promise<v
       SELECT 
         COUNT(*) as total_transactions,
         SUM(litres) as total_litres,
-        SUM(total_cost) as total_cost,
+        SUM(total_amount) as total_amount,
         AVG(price_per_litre) as avg_price_per_litre,
         COUNT(DISTINCT vehicle_id) as vehicles_fueled,
         COUNT(DISTINCT supplier) as suppliers_used
@@ -478,7 +478,7 @@ export async function getFuelStats(req: TenantRequest, res: Response): Promise<v
         t.vehicle_id,
         v.registration,
         SUM(t.litres) as total_litres,
-        SUM(t.total_cost) as total_cost,
+        SUM(t.total_amount) as total_amount,
         COUNT(*) as fill_count
       FROM logistics.fuel_transactions t
       LEFT JOIN logistics.vehicles v ON t.vehicle_id = v.vehicle_id
@@ -494,7 +494,7 @@ export async function getFuelStats(req: TenantRequest, res: Response): Promise<v
       SELECT 
         DATE(transaction_date) as date,
         SUM(litres) as litres,
-        SUM(total_cost) as cost
+        SUM(total_amount) as cost
       FROM logistics.fuel_transactions
       WHERE tenant_id = $1 
         AND transaction_date >= CURRENT_DATE - INTERVAL '1 day' * $2
