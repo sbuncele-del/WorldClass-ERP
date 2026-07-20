@@ -1211,73 +1211,65 @@ const FinancialHub: React.FC = () => {
             />
           )}
           {ledgerEntries.length > 0 ? (() => {
-            const ledgerColumns = [
-              { title: 'Date', dataIndex: 'transaction_date', key: 'date', width: 120,
+            const isUuidLike = (code: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(code || '');
+
+            // Debit-normal classes (assets, expenses) accumulate balance as
+            // debit - credit; credit-normal classes (liabilities, equity,
+            // revenue) accumulate as credit - debit. Matches how an actual
+            // audit trail / general ledger by account reads: opening balance,
+            // each posting, running balance, closing balance - not just a
+            // flat list of movements with no sense of where the account stood.
+            const accountColumns = (isCreditNormal: boolean) => [
+              { title: 'Date', dataIndex: 'transaction_date', key: 'date', width: 110,
                 render: (v: string) => v ? dayjs(v).format('YYYY-MM-DD') : '-' },
-              { title: 'Document #', dataIndex: 'document_number', key: 'doc', width: 180,
-                render: (v: string) => <Text copyable={{ text: v || '' }}>{v || '-'}</Text> },
-              { title: 'Account', key: 'account', width: 200,
-                render: (_: any, r: any) => {
-                  // Xero-synced bank accounts often have no short code - the
-                  // Xero account UUID is stored as the code instead. Showing
-                  // that raw UUID as if it were a normal account code (e.g.
-                  // "404") reads as broken/garbage data, so fall back to just
-                  // the name when the code isn't a short human-readable one.
-                  const isUuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(r.account_code || '');
-                  return (
-                    <span style={{ cursor: 'pointer' }} onClick={() => {
-                      setLedgerAccountFilter(r.account_code);
-                      setLoading(true);
-                      financialService.getGeneralLedger({ limit: 1000, account_code: r.account_code }).then(resp => {
-                        if (resp?.data && Array.isArray(resp.data)) setLedgerEntries(resp.data);
-                      }).finally(() => setLoading(false));
-                    }}>
-                      {!isUuidLike && <Tag color="blue" style={{ cursor: 'pointer' }}>{r.account_code || '-'}</Tag>}
-                      <Text>{r.account_name || '-'}</Text>
-                    </span>
-                  );
-                }},
+              { title: 'Document #', dataIndex: 'document_number', key: 'doc', width: 170,
+                render: (v: string) => <Text copyable={{ text: v || '' }} style={{ fontSize: 12 }}>{v || '-'}</Text> },
               { title: 'Description', dataIndex: 'line_description', key: 'desc', ellipsis: true,
                 render: (v: string, r: any) => v || r.entry_description || '-' },
-              { title: 'Debit', dataIndex: 'debit_amount', key: 'debit', align: 'right' as const, width: 120,
+              { title: 'Debit', dataIndex: 'debit_amount', key: 'debit', align: 'right' as const, width: 110,
                 render: (v: number) => v > 0 ? <Text style={{ color: '#10b981' }}>{formatCurrency(v)}</Text> : '-' },
-              { title: 'Credit', dataIndex: 'credit_amount', key: 'credit', align: 'right' as const, width: 120,
+              { title: 'Credit', dataIndex: 'credit_amount', key: 'credit', align: 'right' as const, width: 110,
                 render: (v: number) => v > 0 ? <Text style={{ color: '#ef4444' }}>{formatCurrency(v)}</Text> : '-' },
+              { title: 'Balance', dataIndex: 'runningBalance', key: 'balance', align: 'right' as const, width: 130,
+                render: (v: number) => <Text strong>{formatCurrency(Math.abs(v))} {v >= 0 ? (isCreditNormal ? 'Cr' : 'Dr') : (isCreditNormal ? 'Dr' : 'Cr')}</Text> },
             ];
 
-            const renderClassTable = (rows: any[]) => (
-              <Table
-                dataSource={rows}
-                columns={ledgerColumns}
-                rowKey={(r, i) => `${r.journal_entry_id || ''}-${i}`}
-                pagination={rows.length > 20 ? { pageSize: 20, showSizeChanger: true, showTotal: (total) => `${total} entries` } : false}
-                size="small"
-                summary={(data) => {
-                  const totalDebit = data.reduce((s, r) => s + (parseFloat(r.debit_amount) || 0), 0);
-                  const totalCredit = data.reduce((s, r) => s + (parseFloat(r.credit_amount) || 0), 0);
-                  return (
-                    <Table.Summary>
-                      <Table.Summary.Row style={{ background: '#f8fafc', fontWeight: 'bold' }}>
-                        <Table.Summary.Cell index={0} colSpan={4}><Text strong>Subtotal</Text></Table.Summary.Cell>
-                        <Table.Summary.Cell index={4} align="right"><Text strong style={{ color: '#10b981' }}>{formatCurrency(totalDebit)}</Text></Table.Summary.Cell>
-                        <Table.Summary.Cell index={5} align="right"><Text strong style={{ color: '#ef4444' }}>{formatCurrency(totalCredit)}</Text></Table.Summary.Cell>
-                      </Table.Summary.Row>
-                    </Table.Summary>
-                  );
-                }}
-              />
-            );
+            const renderAccountTable = (rows: any[], isCreditNormal: boolean) => {
+              // Oldest-first so the running balance reads top-to-bottom like a
+              // real ledger card, regardless of the class-level table's order.
+              const chronological = [...rows].sort((a, b) =>
+                new Date(a.transaction_date).getTime() - new Date(b.transaction_date).getTime());
+              let balance = 0;
+              const withBalance = chronological.map(r => {
+                const debit = parseFloat(r.debit_amount) || 0;
+                const credit = parseFloat(r.credit_amount) || 0;
+                balance += isCreditNormal ? (credit - debit) : (debit - credit);
+                return { ...r, runningBalance: balance };
+              });
+              return (
+                <Table
+                  dataSource={withBalance}
+                  columns={accountColumns(isCreditNormal)}
+                  rowKey={(r, i) => `${r.journal_entry_id || ''}-${i}`}
+                  pagination={withBalance.length > 15 ? { pageSize: 15, showSizeChanger: true, showTotal: (total) => `${total} entries` } : false}
+                  size="small"
+                />
+              );
+            };
 
-            // Group by IFRS-standard account class instead of one undifferentiated
-            // chronological flow of every posted line - assets, liabilities, equity,
-            // revenue, and expenses are fundamentally different kinds of movement and
-            // reading them interleaved makes it hard to see what's actually happening
-            // in any one of them.
+            // Group by IFRS-standard account class first (assets, liabilities,
+            // equity, revenue, expenses read as fundamentally different kinds
+            // of movement), then by individual account within each class -
+            // exactly what an auditor reaches for: pick an account like "Bank
+            // Fees", see every posting to it with a running balance, not one
+            // undifferentiated flow of every transaction in the business.
             const classOrder = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE'];
             const classLabels: Record<string, string> = {
               ASSET: 'Assets', LIABILITY: 'Liabilities', EQUITY: 'Equity',
               REVENUE: 'Revenue', EXPENSE: 'Expenses',
             };
+            const creditNormalClasses = new Set(['LIABILITY', 'EQUITY', 'REVENUE']);
+
             const grouped: Record<string, any[]> = {};
             for (const row of ledgerEntries) {
               const cls = (row.account_type || '').toUpperCase();
@@ -1291,17 +1283,63 @@ const FinancialHub: React.FC = () => {
                 defaultActiveKey={presentClasses}
                 items={presentClasses.map(cls => {
                   const rows = grouped[cls];
-                  const net = rows.reduce((s, r) => s + (parseFloat(r.debit_amount) || 0) - (parseFloat(r.credit_amount) || 0), 0);
+                  const isCreditNormal = creditNormalClasses.has(cls);
+                  const net = rows.reduce((s, r) =>
+                    s + (isCreditNormal
+                      ? (parseFloat(r.credit_amount) || 0) - (parseFloat(r.debit_amount) || 0)
+                      : (parseFloat(r.debit_amount) || 0) - (parseFloat(r.credit_amount) || 0)), 0);
+
+                  // Sub-group this class's rows by the individual GL account
+                  const byAccount = new Map<string, any[]>();
+                  for (const r of rows) {
+                    const key = `${r.account_code || ''}::${r.account_name || ''}`;
+                    if (!byAccount.has(key)) byAccount.set(key, []);
+                    byAccount.get(key)!.push(r);
+                  }
+                  const accountEntries = [...byAccount.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+
                   return {
                     key: cls,
                     label: (
                       <Space>
                         <Text strong>{cls === 'OTHER' ? 'Uncategorized' : classLabels[cls]}</Text>
+                        <Tag>{accountEntries.length} {accountEntries.length === 1 ? 'account' : 'accounts'}</Tag>
                         <Tag>{rows.length} {rows.length === 1 ? 'entry' : 'entries'}</Tag>
-                        <Text type="secondary">Net {formatCurrency(Math.abs(net))} {net >= 0 ? 'Dr' : 'Cr'}</Text>
+                        <Text type="secondary">Net {formatCurrency(Math.abs(net))} {net >= 0 ? (isCreditNormal ? 'Cr' : 'Dr') : (isCreditNormal ? 'Dr' : 'Cr')}</Text>
                       </Space>
                     ),
-                    children: renderClassTable(rows),
+                    children: (
+                      <Collapse
+                        size="small"
+                        items={accountEntries.map(([key, acctRows]) => {
+                          const [code, name] = key.split('::');
+                          const acctNet = acctRows.reduce((s, r) =>
+                            s + (isCreditNormal
+                              ? (parseFloat(r.credit_amount) || 0) - (parseFloat(r.debit_amount) || 0)
+                              : (parseFloat(r.debit_amount) || 0) - (parseFloat(r.credit_amount) || 0)), 0);
+                          return {
+                            key,
+                            label: (
+                              <span style={{ cursor: 'pointer' }} onClick={(e) => {
+                                e.stopPropagation();
+                                setLedgerAccountFilter(code);
+                                setLoading(true);
+                                financialService.getGeneralLedger({ limit: 1000, account_code: code }).then(resp => {
+                                  if (resp?.data && Array.isArray(resp.data)) setLedgerEntries(resp.data);
+                                }).finally(() => setLoading(false));
+                              }}>
+                                {!isUuidLike(code) && <Tag color="blue">{code || '-'}</Tag>}
+                                <Text strong>{name || '-'}</Text>
+                                <Text type="secondary" style={{ marginLeft: 12 }}>
+                                  {acctRows.length} {acctRows.length === 1 ? 'entry' : 'entries'} · {formatCurrency(Math.abs(acctNet))} {acctNet >= 0 ? (isCreditNormal ? 'Cr' : 'Dr') : (isCreditNormal ? 'Dr' : 'Cr')}
+                                </Text>
+                              </span>
+                            ),
+                            children: renderAccountTable(acctRows, isCreditNormal),
+                          };
+                        })}
+                      />
+                    ),
                   };
                 })}
               />

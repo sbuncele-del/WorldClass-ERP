@@ -114,6 +114,7 @@ const BankReconciliation: React.FC = () => {
   const [showImportDrawer, setShowImportDrawer] = useState(false);
   const [showAIInsights, setShowAIInsights] = useState(false);
   const [activeTab, setActiveTab] = useState('reconcile');
+  const [suggestionOverrides, setSuggestionOverrides] = useState<Map<string, string>>(new Map());
   const [aiMatches, setAiMatches] = useState<AIMatch[]>([]);
   const [isProcessingImport, setIsProcessingImport] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadFile[]>([]);
@@ -663,12 +664,15 @@ const BankReconciliation: React.FC = () => {
     setIsAICategorizing(false);
   }, [selectedBankAccount, bankTransactions]);
 
-  // Accept AI category suggestion and allocate to GL
-  const acceptAICategorySuggestion = async (txnId: string) => {
+  // Accept AI category suggestion and allocate to GL. Pass overrideAccount to
+  // recategorize before accepting (used by the AI Suggestions review screen)
+  // instead of always taking whatever the AI originally suggested.
+  const acceptAICategorySuggestion = async (txnId: string, overrideAccount?: { id: string; code: string; name: string }) => {
     const suggestion = aiSuggestions.get(txnId);
     const txn = bankTransactions.find(t => t.id === txnId);
-    
-    if (!suggestion || !txn) {
+    const target = overrideAccount || (suggestion ? { id: suggestion.accountId, code: suggestion.accountCode, name: suggestion.accountName } : null);
+
+    if (!target || !txn) {
       message.warning('No AI suggestion found for this transaction');
       return;
     }
@@ -679,7 +683,7 @@ const BankReconciliation: React.FC = () => {
     try {
       const response = await apiClient.post('/api/v2/cash-management/reconciliation/allocate', {
         statement_line_id: txn.id,
-        gl_account_id: suggestion.accountId,
+        gl_account_id: target.id,
         description: txn.description,
         bank_account_id: selectedBankAccount
       });
@@ -687,10 +691,10 @@ const BankReconciliation: React.FC = () => {
       if (response.data?.success) {
         setBankTransactions(prev => prev.map(t =>
           t.id === txnId
-            ? { 
-                ...t, 
-                status: 'matched' as const, 
-                category: `${suggestion.accountCode} - ${suggestion.accountName}`,
+            ? {
+                ...t,
+                status: 'matched' as const,
+                category: `${target.code} - ${target.name}`,
                 matchedWith: [response.data?.data?.journal_entry_id],
                 confidence: 100
               }
@@ -704,19 +708,19 @@ const BankReconciliation: React.FC = () => {
           return newMap;
         });
 
-        message.success({ 
-          content: `✅ Allocated to ${suggestion.accountCode} - ${suggestion.accountName}`, 
-          key: 'allocate-ai', 
-          duration: 3 
+        message.success({
+          content: `✅ Allocated to ${target.code} - ${target.name}`,
+          key: 'allocate-ai',
+          duration: 3
         });
       } else {
         message.error({ content: response.data?.error || 'Failed to create GL entry', key: 'allocate-ai' });
       }
     } catch (error: any) {
       console.error('Accept AI category error:', error);
-      message.error({ 
-        content: error.response?.data?.error || 'Failed to allocate to GL', 
-        key: 'allocate-ai' 
+      message.error({
+        content: error.response?.data?.error || 'Failed to allocate to GL',
+        key: 'allocate-ai'
       });
     }
 
@@ -1943,6 +1947,120 @@ const BankReconciliation: React.FC = () => {
               />
             </Card>
 
+          </Tabs.TabPane>
+
+          <Tabs.TabPane
+            tab={<span><RobotOutlined /> AI Suggestions <Badge count={bankTransactions.filter(t => t.status === 'ai-suggested').length} style={{ backgroundColor: '#8b5cf6', marginLeft: 4 }} /></span>}
+            key="ai-suggestions"
+          >
+            {(() => {
+              const pending = bankTransactions
+                .filter(t => t.status === 'ai-suggested' && aiSuggestions.has(t.id))
+                .sort((a, b) => (aiSuggestions.get(b.id)?.confidence || 0) - (aiSuggestions.get(a.id)?.confidence || 0));
+
+              if (pending.length === 0) {
+                return (
+                  <Result
+                    icon={<RobotOutlined style={{ color: '#8b5cf6' }} />}
+                    title="No AI suggestions waiting for review"
+                    subTitle='Run "AI Categorize" from the Reconcile tab to get suggestions for your unmatched transactions.'
+                  />
+                );
+              }
+
+              const confidenceColor = (c: number) => c >= 90 ? '#10b981' : c >= 70 ? '#3b82f6' : '#f59e0b';
+
+              return (
+                <>
+                  <Alert
+                    style={{ marginBottom: 16, borderRadius: 8 }}
+                    type="info"
+                    showIcon
+                    message={
+                      <Space wrap>
+                        <span><strong>{pending.length}</strong> suggestion{pending.length === 1 ? '' : 's'} waiting for review</span>
+                        <Button
+                          size="small"
+                          type="primary"
+                          icon={<ThunderboltOutlined />}
+                          onClick={acceptAllHighConfidenceSuggestions}
+                          loading={isAllocating}
+                        >
+                          Accept All 90%+ Confidence
+                        </Button>
+                      </Space>
+                    }
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {pending.map(txn => {
+                      const suggestion = aiSuggestions.get(txn.id)!;
+                      const overrideId = suggestionOverrides.get(txn.id);
+                      const selectedAccount = overrideId
+                        ? glAccounts.find(a => a.id === overrideId)
+                        : { id: suggestion.accountId, code: suggestion.accountCode, name: suggestion.accountName };
+
+                      return (
+                        <Card key={txn.id} size="small" style={{ borderRadius: 10, borderLeft: `4px solid ${confidenceColor(suggestion.confidence)}` }}>
+                          <Row gutter={16} align="middle">
+                            <Col flex="1 1 260px">
+                              <Text strong>{txn.description}</Text>
+                              <br />
+                              <Space size={12}>
+                                <Text type="secondary" style={{ fontSize: 12 }}>{dayjs(txn.date).format('YYYY-MM-DD')}</Text>
+                                {txn.reference && <Text type="secondary" style={{ fontSize: 12 }}>Ref: {txn.reference}</Text>}
+                                <Text strong style={{ color: txn.type === 'credit' ? '#10b981' : '#ef4444' }}>
+                                  {txn.type === 'credit' ? '+' : '-'} R {txn.amount.toLocaleString()}
+                                </Text>
+                              </Space>
+                            </Col>
+                            <Col flex="0 0 90px">
+                              <Tag color={confidenceColor(suggestion.confidence)} style={{ margin: 0 }}>
+                                {suggestion.confidence}% confident
+                              </Tag>
+                            </Col>
+                            <Col flex="1 1 260px">
+                              <Select
+                                value={selectedAccount?.id}
+                                style={{ width: '100%' }}
+                                showSearch
+                                optionFilterProp="label"
+                                filterOption={(input, option) => (option?.label as string)?.toLowerCase().includes(input.toLowerCase())}
+                                onChange={(val) => setSuggestionOverrides(prev => new Map(prev).set(txn.id, val))}
+                                options={glAccounts.map(a => ({ value: a.id, label: `${a.code} - ${a.name}` }))}
+                              />
+                              <Text type="secondary" style={{ fontSize: 11 }}>{suggestion.reason}</Text>
+                            </Col>
+                            <Col flex="0 0 auto">
+                              <Space>
+                                <Tooltip title="Accept and post to GL">
+                                  <Button
+                                    type="primary"
+                                    icon={<CheckOutlined />}
+                                    loading={isAllocating}
+                                    onClick={() => acceptAICategorySuggestion(txn.id, overrideId ? {
+                                      id: selectedAccount!.id, code: selectedAccount!.code!, name: selectedAccount!.name!
+                                    } : undefined)}
+                                  >
+                                    Accept
+                                  </Button>
+                                </Tooltip>
+                                <Tooltip title="Reject this suggestion">
+                                  <Button
+                                    danger
+                                    icon={<CloseCircleOutlined />}
+                                    onClick={() => rejectAISuggestion(txn.id)}
+                                  />
+                                </Tooltip>
+                              </Space>
+                            </Col>
+                          </Row>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
           </Tabs.TabPane>
 
           <Tabs.TabPane tab={<span><HistoryOutlined /> History <Badge count={bankTransactions.filter(t => t.status === 'matched' || t.status === 'reconciled').length} style={{ backgroundColor: '#52c41a', marginLeft: 4 }} /></span>} key="history">
