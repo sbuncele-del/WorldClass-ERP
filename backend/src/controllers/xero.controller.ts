@@ -184,6 +184,24 @@ export const syncXeroNow = async (req: TenantRequest, res: Response): Promise<vo
   }
 };
 
+// One-off backfill for cash_bank_accounts synced before balance rollup was
+// added to syncBankTransactions - recomputes from data already in the DB,
+// no Xero API call, so it can't hit the timeouts a full re-sync can.
+export const recalculateXeroBalances = async (req: TenantRequest, res: Response): Promise<void> => {
+  try {
+    const { tenantId } = getTenantContext(req);
+    const result = await XeroSyncService.recalculateBalances(tenantId);
+    res.json({ success: true, data: result });
+  } catch (error: any) {
+    if (error.message === 'Tenant context required') {
+      res.status(401).json({ success: false, message: 'Unauthorized: Tenant context required' });
+      return;
+    }
+    console.error('[Xero] Recalculate balances error:', error);
+    res.status(500).json({ success: false, message: 'Failed to recalculate balances' });
+  }
+};
+
 export const getXeroSyncHistory = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
     const { tenantId } = getTenantContext(req);
@@ -210,5 +228,6 @@ export default {
   getXeroStatus,
   disconnectXero,
   syncXeroNow,
+  recalculateXeroBalances,
   getXeroSyncHistory,
 };

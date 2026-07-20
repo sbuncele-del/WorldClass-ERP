@@ -11,6 +11,7 @@ import {
   getXeroStatus,
   disconnectXero,
   syncXeroNow,
+  recalculateXeroBalances,
   getXeroSyncHistory,
 } from '../controllers/xero.controller';
 
@@ -28,6 +29,7 @@ router.get('/connect', connectXero);
 router.get('/status', getXeroStatus);
 router.post('/disconnect', disconnectXero);
 router.post('/sync', syncXeroNow);
+router.post('/recalculate-balances', recalculateXeroBalances);
 router.get('/sync-history', getXeroSyncHistory);
 
 export default router;

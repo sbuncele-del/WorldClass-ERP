@@ -404,12 +404,39 @@ async function syncAll(tenantId: string, userId: string): Promise<SyncResult[]> 
   return results;
 }
 
+/**
+ * Recomputes cash_bank_accounts balances from cash_bank_statement_lines for
+ * every account in the tenant, in one query - a backfill for rows synced
+ * before the per-sync rollup existed in syncBankTransactions, without
+ * needing to re-hit the Xero API (which is what makes a full re-sync slow).
+ */
+async function recalculateBalances(tenantId: string): Promise<{ accountsUpdated: number }> {
+  const result = await pool.query(
+    `UPDATE cash_bank_accounts a SET
+       current_balance = a.opening_balance + COALESCE(t.net, 0),
+       available_balance = a.opening_balance + COALESCE(t.net, 0),
+       updated_at = NOW()
+     FROM cash_bank_accounts acc
+     LEFT JOIN LATERAL (
+       SELECT SUM(COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0)) as net
+       FROM cash_bank_statement_lines l
+       JOIN cash_bank_statements s ON s.statement_id = l.statement_id
+       WHERE s.account_id = acc.account_id
+     ) t ON true
+     WHERE a.account_id = acc.account_id AND acc.tenant_id = $1
+     RETURNING a.account_id`,
+    [tenantId]
+  );
+  return { accountsUpdated: result.rowCount || 0 };
+}
+
 export const XeroSyncService = {
   syncAccounts,
   syncContacts,
   syncInvoices,
   syncBankTransactions,
   syncAll,
+  recalculateBalances,
 };
 
 export default XeroSyncService;
