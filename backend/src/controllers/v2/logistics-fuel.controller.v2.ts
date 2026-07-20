@@ -170,6 +170,10 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
     }
 
     // 4. Create journal entry
+    // Note: source_document_id is INTEGER - fuel_transactions.transaction_id is
+    // UUID, so it can't be stored there. The transaction is still traceable via
+    // the reference field (FT-<transactionId>) and fuel_transactions.journal_entry_id
+    // (set below), so source_document_id is left NULL here.
     const journalResult = await client.query(`
       INSERT INTO journal_entries (
         tenant_id,
@@ -179,15 +183,14 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
         reference,
         source,
         source_document_type,
-        source_document_id,
         total_debit,
         total_credit,
         status,
         created_by,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, 'LOGISTICS_FUEL', 'fuel_transaction', $6, $7, $7, 'POSTED', $8, NOW())
+      ) VALUES ($1, $2, $3, $4, $5, 'LOGISTICS_FUEL', 'fuel_transaction', $6, $6, 'POSTED', $7, NOW())
       RETURNING entry_id
-    `, [tenantId, `FT-${transactionId}-${Date.now()}`, date, `Fuel purchase - ${vehicle} at ${supplier}`, `FT-${transactionId}`, transactionId, cost, userId]);
+    `, [tenantId, `FT-${transactionId}-${Date.now()}`, date, `Fuel purchase - ${vehicle} at ${supplier}`, `FT-${transactionId}`, cost, userId]);
 
     const journalEntryId = journalResult.rows[0].entry_id;
 
