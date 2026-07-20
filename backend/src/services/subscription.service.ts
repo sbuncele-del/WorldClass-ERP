@@ -188,9 +188,10 @@ export class SubscriptionService {
       }
 
       // Calculate proration (simplified: charge difference immediately)
-      const daysRemaining = Math.ceil(
-        (currentSub.endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-      );
+      // No end date means no fixed billing period (e.g. enterprise) - nothing to prorate.
+      const daysRemaining = currentSub.endDate
+        ? Math.ceil((currentSub.endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        : 0;
       const totalDays = billingCycle === 'monthly' ? 30 : 365;
       const prorationFactor = daysRemaining / totalDays;
       const currentAmount = currentSub.amount;
@@ -463,6 +464,16 @@ export class SubscriptionService {
         status: 'not_found',
         daysRemaining: 0,
         needsRenewal: true
+      };
+    }
+
+    // No end date means no expiration (e.g. enterprise/unlimited plans) - never auto-expire these
+    if (!currentSub.endDate) {
+      return {
+        isActive: currentSub.status === 'active',
+        status: currentSub.status,
+        daysRemaining: Infinity,
+        needsRenewal: false
       };
     }
 
