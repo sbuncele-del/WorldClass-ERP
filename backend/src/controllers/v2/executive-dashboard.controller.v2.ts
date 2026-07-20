@@ -157,58 +157,59 @@ export async function getExecutiveDashboard(req: TenantRequest, res: Response): 
 
 async function getFinancialMetrics(tenantId: string, entityId: string | null = null) {
   // ── GL-Based Revenue & Expenses (primary source of truth) ──────────
-  // Uses accounting schema tables, account_code ranges, and is_posted filter
-  // Revenue = accounts 4000-4999 (credit - debit)
-  // Expenses = accounts 5000-8999 (debit - credit)
+  // Real tables live in the public schema, not "accounting" (that schema
+  // exists but has zero rows - a leftover from an earlier design). Account
+  // codes here aren't reliably numeric (Xero-synced accounts use the Xero
+  // UUID as their code), so classify by account_type instead of a code
+  // range, and match the real "POSTED" status value.
   const glData = await safeQuery(`
     SELECT
-      COALESCE(SUM(CASE WHEN coa.account_code >= '4000' AND coa.account_code <= '4999' THEN jel.credit_amount - jel.debit_amount END), 0) as total_revenue,
-      COALESCE(SUM(CASE WHEN coa.account_code >= '4000' AND coa.account_code <= '4999' AND je.journal_date >= DATE_TRUNC('month', CURRENT_DATE) THEN jel.credit_amount - jel.debit_amount END), 0) as mtd_revenue,
-      COALESCE(SUM(CASE WHEN coa.account_code >= '4000' AND coa.account_code <= '4999' AND je.journal_date >= DATE_TRUNC('year', CURRENT_DATE) THEN jel.credit_amount - jel.debit_amount END), 0) as ytd_revenue,
-      COALESCE(SUM(CASE WHEN coa.account_code >= '5000' AND coa.account_code <= '8999' THEN jel.debit_amount - jel.credit_amount END), 0) as total_expenses,
-      COALESCE(SUM(CASE WHEN coa.account_code >= '5000' AND coa.account_code <= '8999' AND je.journal_date >= DATE_TRUNC('month', CURRENT_DATE) THEN jel.debit_amount - jel.credit_amount END), 0) as mtd_expenses,
-      COALESCE(SUM(CASE WHEN coa.account_code >= '5000' AND coa.account_code <= '8999' AND je.journal_date >= DATE_TRUNC('year', CURRENT_DATE) THEN jel.debit_amount - jel.credit_amount END), 0) as ytd_expenses
-    FROM accounting.journal_entries je
-    JOIN accounting.journal_entry_lines jel ON je.entry_id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
-    JOIN accounting.chart_of_accounts coa ON jel.account_code = coa.account_code AND jel.tenant_id = coa.tenant_id
-    WHERE je.tenant_id = $1 AND je.is_posted = true
+      COALESCE(SUM(CASE WHEN coa.account_type = 'REVENUE' THEN jel.credit_amount - jel.debit_amount END), 0) as total_revenue,
+      COALESCE(SUM(CASE WHEN coa.account_type = 'REVENUE' AND je.journal_date >= DATE_TRUNC('month', CURRENT_DATE) THEN jel.credit_amount - jel.debit_amount END), 0) as mtd_revenue,
+      COALESCE(SUM(CASE WHEN coa.account_type = 'REVENUE' AND je.journal_date >= DATE_TRUNC('year', CURRENT_DATE) THEN jel.credit_amount - jel.debit_amount END), 0) as ytd_revenue,
+      COALESCE(SUM(CASE WHEN coa.account_type = 'EXPENSE' THEN jel.debit_amount - jel.credit_amount END), 0) as total_expenses,
+      COALESCE(SUM(CASE WHEN coa.account_type = 'EXPENSE' AND je.journal_date >= DATE_TRUNC('month', CURRENT_DATE) THEN jel.debit_amount - jel.credit_amount END), 0) as mtd_expenses,
+      COALESCE(SUM(CASE WHEN coa.account_type = 'EXPENSE' AND je.journal_date >= DATE_TRUNC('year', CURRENT_DATE) THEN jel.debit_amount - jel.credit_amount END), 0) as ytd_expenses
+    FROM journal_entries je
+    JOIN journal_entry_lines jel ON jel.journal_entry_id = je.id AND jel.tenant_id = je.tenant_id
+    JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = je.tenant_id
+    WHERE je.tenant_id = $1 AND je.status = 'POSTED'
   `, [tenantId], { total_revenue: 0, mtd_revenue: 0, ytd_revenue: 0, total_expenses: 0, mtd_expenses: 0, ytd_expenses: 0 });
 
   // Invoice count (from sales_invoices — for display purposes)
   const invoiceData = await safeQuery(`
-    SELECT 
+    SELECT
       COUNT(CASE WHEN invoice_date >= DATE_TRUNC('month', CURRENT_DATE) THEN 1 END) as mtd_invoices,
       COUNT(*) as total_invoices
     FROM sales_invoices
-    WHERE tenant_id = $1 AND LOWER(status) NOT IN ('void', 'cancelled', 'draft')
+    WHERE tenant_id = $1 AND status NOT IN ('VOIDED', 'DELETED', 'DRAFT')
   `, [tenantId], { mtd_invoices: 0, total_invoices: 0 });
 
-  // Cash from bank_accounts — entity-scoped when entityId is provided
-  const cashParams = entityId ? [tenantId, entityId] : [tenantId];
-  const cashEntityFilter = entityId ? ' AND (entity_id IS NULL OR entity_id = $2)' : '';
+  // Cash from cash_bank_accounts — the real bank-account table (banking.accounts
+  // doesn't exist at all). No entity scoping here since cash_bank_accounts has
+  // no entity_id column.
   const cashData = await safeQuery(`
     SELECT COALESCE(SUM(current_balance), 0) as total_cash
-    FROM banking.accounts
-    WHERE tenant_id = $1 AND is_active = true${cashEntityFilter}
-  `, cashParams, { total_cash: 0 });
+    FROM cash_bank_accounts
+    WHERE tenant_id = $1 AND is_active = true
+  `, [tenantId], { total_cash: 0 });
 
-  // Receivables — outstanding invoice balances
+  // Receivables — outstanding invoice balances (real column is amount_due)
   const arData = await safeQuery(`
-    SELECT 
-      COALESCE(SUM(balance_due), 0) as total_receivables,
-      COUNT(CASE WHEN due_date < CURRENT_DATE AND balance_due > 0 THEN 1 END) as overdue_count
+    SELECT
+      COALESCE(SUM(amount_due), 0) as total_receivables,
+      COUNT(CASE WHEN due_date < CURRENT_DATE AND amount_due > 0 THEN 1 END) as overdue_count
     FROM sales_invoices
-    WHERE tenant_id = $1 AND LOWER(status) NOT IN ('void', 'cancelled', 'paid', 'draft') AND balance_due > 0
+    WHERE tenant_id = $1 AND status NOT IN ('VOIDED', 'DELETED', 'PAID', 'DRAFT') AND amount_due > 0
   `, [tenantId], { total_receivables: 0, overdue_count: 0 });
 
-  // Payables — from accounting GL: accounts 2000-2099 (payable accounts)
+  // Payables — liability-classified GL accounts
   const apData = await safeQuery(`
     SELECT COALESCE(SUM(jel.credit_amount - jel.debit_amount), 0) as total_payables
-    FROM accounting.journal_entries je
-    JOIN accounting.journal_entry_lines jel ON je.entry_id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
-    JOIN accounting.chart_of_accounts coa ON jel.account_code = coa.account_code AND jel.tenant_id = coa.tenant_id
-    WHERE je.tenant_id = $1 AND je.is_posted = true
-      AND coa.account_code >= '2000' AND coa.account_code <= '2099'
+    FROM journal_entries je
+    JOIN journal_entry_lines jel ON jel.journal_entry_id = je.id AND jel.tenant_id = je.tenant_id
+    JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = je.tenant_id
+    WHERE je.tenant_id = $1 AND je.status = 'POSTED' AND coa.account_type = 'LIABILITY'
   `, [tenantId], { total_payables: 0 });
 
   const totalRevenue = parseFloat(glData.total_revenue) || 0;
@@ -263,16 +264,16 @@ async function getFinancialMetrics(tenantId: string, entityId: string | null = n
 
 async function getRevenueTrend(tenantId: string) {
   const rows = await safeQueryRows(`
-    SELECT 
+    SELECT
       TO_CHAR(DATE_TRUNC('month', je.journal_date), 'Mon') as month,
       EXTRACT(YEAR FROM je.journal_date) as year,
       COALESCE(SUM(jel.credit_amount - jel.debit_amount), 0) as revenue
-    FROM accounting.journal_entries je
-    JOIN accounting.journal_entry_lines jel ON je.entry_id = jel.journal_entry_id AND je.tenant_id = jel.tenant_id
-    JOIN accounting.chart_of_accounts coa ON jel.account_code = coa.account_code AND jel.tenant_id = coa.tenant_id
-    WHERE je.tenant_id = $1 
-      AND je.is_posted = true
-      AND coa.account_code >= '4000' AND coa.account_code <= '4999'
+    FROM journal_entries je
+    JOIN journal_entry_lines jel ON jel.journal_entry_id = je.id AND jel.tenant_id = je.tenant_id
+    JOIN chart_of_accounts coa ON jel.account_id = coa.id AND coa.tenant_id = je.tenant_id
+    WHERE je.tenant_id = $1
+      AND je.status = 'POSTED'
+      AND coa.account_type = 'REVENUE'
       AND je.journal_date >= DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '11 months'
     GROUP BY DATE_TRUNC('month', je.journal_date), TO_CHAR(DATE_TRUNC('month', je.journal_date), 'Mon'), EXTRACT(YEAR FROM je.journal_date)
     ORDER BY DATE_TRUNC('month', je.journal_date)
@@ -324,7 +325,7 @@ async function getOperationalMetrics(tenantId: string) {
 
   const journalData = await safeQuery(`
     SELECT COUNT(*) as total_entries
-    FROM accounting.journal_entries
+    FROM journal_entries
     WHERE tenant_id = $1
   `, [tenantId], { total_entries: 0 });
 
@@ -360,9 +361,9 @@ async function getPendingActions(tenantId: string) {
 
   // Unpaid invoices
   const unpaidInvoices = await safeQuery(`
-    SELECT COUNT(*) as count, COALESCE(SUM(balance_due), 0) as total
+    SELECT COUNT(*) as count, COALESCE(SUM(amount_due), 0) as total
     FROM sales_invoices
-    WHERE tenant_id = $1 AND LOWER(status) NOT IN ('paid', 'void', 'cancelled', 'draft') AND balance_due > 0
+    WHERE tenant_id = $1 AND LOWER(status) NOT IN ('paid', 'void', 'cancelled', 'draft') AND amount_due > 0
   `, [tenantId], { count: 0, total: 0 });
   
   if (parseInt(unpaidInvoices.count) > 0) {
@@ -381,7 +382,7 @@ async function getPendingActions(tenantId: string) {
     SELECT COUNT(*) as count
     FROM sales_invoices
     WHERE tenant_id = $1 AND LOWER(status) NOT IN ('paid', 'void', 'cancelled', 'draft') 
-    AND due_date < CURRENT_DATE AND balance_due > 0
+    AND due_date < CURRENT_DATE AND amount_due > 0
   `, [tenantId], { count: 0 });
   
   if (parseInt(overdueInvoices.count) > 0) {
@@ -467,7 +468,7 @@ async function getRecentActivity(tenantId: string) {
   // Recent journal entries
   const recentJournals = await safeQueryRows(`
     SELECT journal_number as reference, description, total_debit, status, created_at
-    FROM accounting.journal_entries
+    FROM journal_entries
     WHERE tenant_id = $1
     ORDER BY created_at DESC
     LIMIT 3
@@ -476,7 +477,7 @@ async function getRecentActivity(tenantId: string) {
   for (const je of recentJournals) {
     activities.push({
       id: `je-${je.reference}`,
-      action: je.status === 'posted' ? 'completed' : 'submitted',
+      action: je.status === 'POSTED' ? 'completed' : 'submitted',
       entity: 'Journal Entry',
       description: `${je.reference || 'JE'} — ${je.description || 'Journal entry'} (R${parseFloat(je.total_debit || 0).toLocaleString('en-ZA')})`,
       user: 'System',
@@ -485,13 +486,15 @@ async function getRecentActivity(tenantId: string) {
     });
   }
 
-  // Recent bank transactions
+  // Recent bank transactions - real tables are cash_bank_statement_lines/
+  // cash_bank_accounts (bank_transactions/bank_accounts don't exist)
   const recentBank = await safeQueryRows(`
-    SELECT bt.description, bt.debit_amount, bt.credit_amount, bt.transaction_type, bt.transaction_date, ba.account_name
-    FROM bank_transactions bt
-    JOIN bank_accounts ba ON bt.bank_account_id = ba.id
-    WHERE bt.tenant_id = $1
-    ORDER BY bt.transaction_date DESC
+    SELECT l.description, l.debit_amount, l.credit_amount, l.transaction_date, ba.account_name
+    FROM cash_bank_statement_lines l
+    JOIN cash_bank_statements s ON l.statement_id = s.statement_id
+    JOIN cash_bank_accounts ba ON s.account_id = ba.account_id
+    WHERE s.tenant_id = $1
+    ORDER BY l.transaction_date DESC
     LIMIT 3
   `, [tenantId]);
 
@@ -501,7 +504,7 @@ async function getRecentActivity(tenantId: string) {
       id: `bt-${bt.transaction_date}-${amt}`,
       action: parseFloat(bt.credit_amount || 0) > 0 ? 'approved' : 'created',
       entity: 'Transaction',
-      description: `${bt.description || bt.transaction_type} — R${amt.toLocaleString('en-ZA')} (${bt.account_name})`,
+      description: `${bt.description || 'Bank transaction'} — R${amt.toLocaleString('en-ZA')} (${bt.account_name})`,
       user: 'System',
       timestamp: bt.transaction_date,
       timeAgo: getTimeAgo(new Date(bt.transaction_date))
@@ -625,7 +628,7 @@ export async function getQuickStats(req: TenantRequest, res: Response): Promise<
 
     const unpaid = await safeQuery(`
       SELECT COUNT(*) as count FROM sales_invoices 
-      WHERE tenant_id = $1 AND LOWER(status) NOT IN ('paid','void','cancelled','draft') AND balance_due > 0
+      WHERE tenant_id = $1 AND LOWER(status) NOT IN ('paid','void','cancelled','draft') AND amount_due > 0
     `, [tenantId], { count: 0 });
 
     const stats = {

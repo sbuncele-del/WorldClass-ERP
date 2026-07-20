@@ -17,7 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Card, Row, Col, Statistic, Progress, Table, Tag, Avatar, Space,
   Typography, Button, List, Timeline, Badge, Tooltip, Spin, message,
-  Select, Skeleton, Divider
+  Select, Skeleton, Divider, Result
 } from 'antd';
 import {
   DollarOutlined, RiseOutlined, FallOutlined,
@@ -479,33 +479,22 @@ const ExecutiveDashboard: React.FC = () => {
             }
             style={{ marginTop: 16 }}
           >
-            <div className="compliance-score">
-              <Progress 
-                type="circle" 
-                percent={data.compliance.overallScore} 
-                strokeColor="#10b981"
-                width={100}
-                format={(percent) => `${percent}%`}
-              />
-              <Text style={{ marginTop: 8, display: 'block', textAlign: 'center' }}>
-                Compliance Score
-              </Text>
-            </div>
-            <Divider />
-            <Space direction="vertical" style={{ width: '100%' }}>
-              <div className="compliance-item">
-                <Text>VAT</Text>
-                <Tag color="success">Compliant</Tag>
-              </div>
-              <div className="compliance-item">
-                <Text>PAYE</Text>
-                <Tag color="success">Compliant</Tag>
-              </div>
-              <div className="compliance-item">
-                <Text>Next Deadline</Text>
-                <Text strong>{data.compliance.nextDeadlineType}</Text>
-              </div>
-            </Space>
+            {/* This card previously showed a hardcoded "VAT: Compliant" / "PAYE:
+                Compliant" badge and a fake compliance score regardless of actual
+                SARS status - data.compliance was never populated from any real
+                check. Showing a false compliance status is worse than showing
+                nothing, so this links to SARS Sentinel (the actual compliance
+                module) instead of fabricating a number. */}
+            <Result
+              icon={<SafetyCertificateOutlined style={{ color: '#94a3b8' }} />}
+              title="Compliance status not yet configured"
+              subTitle="Set up SARS Sentinel to see real VAT/PAYE compliance and filing deadlines here."
+              extra={
+                <Button type="primary" onClick={() => navigate('/app/sars')}>
+                  Open SARS Sentinel
+                </Button>
+              }
+            />
           </Card>
         </Col>
 
