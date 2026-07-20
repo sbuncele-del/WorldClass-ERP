@@ -269,9 +269,14 @@ CREATE INDEX IF NOT EXISTS idx_hr_leave_accrual_log_lookup
 --   tenant_id, employee_id, document_type, document_name, file_name,
 --   file_path, file_size, mime_type, description, expiry_date,
 --   is_confidential, uploaded_by, is_deleted, deleted_at, created_at
--- uploaded_by is joined against `users u ON d.uploaded_by = u.id` (INTEGER,
--- matching req.user?.id typed as number) -- no FK constraint added since
--- the users table's schema/ownership is outside this migration's scope.
+-- uploaded_by is joined against `users u ON d.uploaded_by = u.id`. Original
+-- draft typed this INTEGER per the service's TS annotation (`uploaded_by:
+-- number`), but req.user.id is actually a UUID everywhere else in this app -
+-- confirmed live via the "operator does not exist: integer = uuid" error on
+-- first real request. Fixed to UUID (same for employee_contracts.created_by/
+-- terminated_by and attendance_records.created_by, which store the same
+-- req.user.id value). No FK constraint added since the users table's
+-- schema/ownership is outside this migration's scope.
 -- document_id is the PK (FK target from hr.employee_contracts.document_id).
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS hr.employee_documents (
@@ -290,7 +295,7 @@ CREATE TABLE IF NOT EXISTS hr.employee_documents (
   expiry_date        DATE,
   is_confidential    BOOLEAN NOT NULL DEFAULT false,
 
-  uploaded_by        INTEGER,
+  uploaded_by        UUID,
   is_deleted         BOOLEAN NOT NULL DEFAULT false,
   deleted_at         TIMESTAMP,
 
@@ -346,9 +351,9 @@ CREATE TABLE IF NOT EXISTS hr.employee_contracts (
   status                      VARCHAR(20) NOT NULL DEFAULT 'ACTIVE', -- ACTIVE | SUPERSEDED | TERMINATED
   document_id                 INTEGER REFERENCES hr.employee_documents(document_id),
 
-  created_by                  INTEGER,
+  created_by                  UUID,
   termination_reason          TEXT,
-  terminated_by               INTEGER,
+  terminated_by               UUID,
   terminated_at                TIMESTAMP,
 
   created_at                   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -387,7 +392,7 @@ CREATE TABLE IF NOT EXISTS hr.attendance_records (
   clock_out_time        TIME,
   hours_worked          NUMERIC(5,2),
 
-  created_by             INTEGER,
+  created_by             UUID,
   created_at             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at             TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
