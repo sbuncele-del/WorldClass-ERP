@@ -4942,23 +4942,23 @@ router.post('/cash-management/reconciliation/allocate', async (req: any, res) =>
     }
     const glAcct = glAcctResult.rows[0];
 
-    // Create journal entry (using correct production column names)
-    const txDate      = line.transaction_date;
-    const fiscalYear  = new Date(txDate).getFullYear();
-    const fiscalPeriod = new Date(txDate).getMonth() + 1;
-    const jeNum       = `JE-BANK-${Date.now()}`;
+    // Create journal entry. Column set matches the confirmed-working insert in
+    // logistics-fuel.controller.v2.ts - journal_entries has "source" (not
+    // "source_type") and no posting_date/fiscal_year/fiscal_period/currency_code
+    // columns. RETURNING entry_id, not id - that's the actual PK name.
+    const txDate = line.transaction_date;
+    const jeNum  = `JE-BANK-${Date.now()}`;
 
     const jeResult = await query(
       `INSERT INTO journal_entries
-         (tenant_id, journal_number, journal_date, posting_date, source_type,
-          description, reference, status, total_debit, total_credit,
-          fiscal_year, fiscal_period, currency_code, created_by)
-       VALUES ($1, $2, $3, $3, 'BANK_RECON', $4, $5, 'POSTED', $6, $6, $7, $8, 'ZAR', $9)
-       RETURNING id`,
+         (tenant_id, journal_number, journal_date, description, reference,
+          source, source_document_type, total_debit, total_credit, status, created_by)
+       VALUES ($1, $2, $3, $4, $5, 'BANK_RECON', 'bank_reconciliation', $6, $6, 'POSTED', $7)
+       RETURNING entry_id`,
       [tenantId, jeNum, txDate, description || line.description, line.reference,
-       amount, fiscalYear, fiscalPeriod, userId || '00000000-0000-0000-0000-000000000000']
+       amount, userId || '00000000-0000-0000-0000-000000000000']
     );
-    const jeId = jeResult.rows[0].id;
+    const jeId = jeResult.rows[0].entry_id;
 
     // Line 1: Bank account (Dr for receipts, Cr for payments)
     await query(
@@ -4993,7 +4993,7 @@ router.post('/cash-management/reconciliation/allocate', async (req: any, res) =>
            confirmed_category = $3,
            match_date = NOW(),
            matched_by = $4,
-           raw_data = COALESCE(raw_data, '{}'::jsonb) || jsonb_build_object('journal_entry_id', $5::int)
+           raw_data = COALESCE(raw_data, '{}'::jsonb) || jsonb_build_object('journal_entry_id', $5::text)
        WHERE line_id = $2
          AND statement_id IN (
            SELECT statement_id FROM cash_bank_statements WHERE tenant_id = $1
