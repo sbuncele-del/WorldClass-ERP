@@ -42,16 +42,16 @@ export class RecurringEntriesControllerV2 {
       const params: any[] = [tenantId];
 
       if (status === 'active') {
-        conditions.push("re.status = 'active'");
+        conditions.push('re.is_active = true');
       } else if (status === 'inactive') {
-        conditions.push("re.status != 'active'");
+        conditions.push('re.is_active = false');
       }
 
       const query = `
         SELECT re.*
-        FROM recurring_entries re
+        FROM recurring_journal_entries re
         WHERE ${conditions.join(' AND ')}
-        ORDER BY re.next_run_date ASC, re.created_at DESC
+        ORDER BY re.next_occurrence ASC, re.created_at DESC
       `;
 
       const result = await pool.query(query, params);
@@ -397,13 +397,19 @@ export class RecurringEntriesControllerV2 {
       `;
       const linesResult = await client.query(linesQuery, [id]);
 
+      // Compute totals from lines up front - journal_entries.total_debit/total_credit
+      // are NOT NULL with a CHECK(total_debit = total_credit) constraint.
+      const totalDebit = linesResult.rows.reduce((sum, l) => sum + Number(l.debit_amount || 0), 0);
+      const totalCredit = linesResult.rows.reduce((sum, l) => sum + Number(l.credit_amount || 0), 0);
+
       // Create journal entry
       const jeQuery = `
         INSERT INTO journal_entries (
-          tenant_id, entry_number, journal_date, description,
-          source_type, source_id, status, created_by, entity_id
+          tenant_id, journal_number, journal_date, description,
+          source, source_document_type, reference, total_debit, total_credit,
+          status, created_by, entity_id
         )
-        VALUES ($1, $2, $3, $4, 'RECURRING', $5, $6, $7, $8)
+        VALUES ($1, $2, $3, $4, 'RECURRING', 'recurring_journal_entries', $5, $6, $7, $8, $9, $10)
         RETURNING *
       `;
 
@@ -417,6 +423,8 @@ export class RecurringEntriesControllerV2 {
         journal_date || new Date().toISOString().split('T')[0],
         entry.description,
         id,
+        totalDebit,
+        totalCredit,
         status,
         userId,
         entityId
@@ -425,7 +433,9 @@ export class RecurringEntriesControllerV2 {
       const journalEntryId = jeResult.rows[0].id;
 
       // Create journal entry lines
+      let lineNumber = 0;
       for (const line of linesResult.rows) {
+        lineNumber++;
         // Get account ID
         const accountQuery = `
           SELECT id FROM chart_of_accounts
@@ -437,14 +447,15 @@ export class RecurringEntriesControllerV2 {
 
         await client.query(`
           INSERT INTO journal_entry_lines (
-            tenant_id, journal_entry_id, account_id, account_code,
+            tenant_id, journal_entry_id, line_number, account_id, account_code,
             description, debit_amount, credit_amount,
-            cost_center, project_code, department, entity_id
+            cost_center_code, project_code, department_code, entity_id
           )
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
         `, [
           tenantId,
           journalEntryId,
+          lineNumber,
           accountId,
           line.account_code,
           line.description,

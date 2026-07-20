@@ -252,6 +252,13 @@ export class ImportEntriesControllerV2 {
         createdEntries.push(entry);
       }
 
+      await client.query(`
+        INSERT INTO import_history (
+          tenant_id, entries_created, total_lines, status, imported_by
+        )
+        VALUES ($1, $2, $3, 'completed', $4)
+      `, [tenantId, createdEntries.length, lines.length, userId]);
+
       await client.query('COMMIT');
 
       res.json({
@@ -363,7 +370,7 @@ export class ImportEntriesControllerV2 {
           ih.*,
           u.email as imported_by_email
         FROM import_history ih
-        LEFT JOIN users u ON ih.imported_by = u.user_id
+        LEFT JOIN users u ON ih.imported_by = u.id
         WHERE ih.tenant_id = $1
         ORDER BY ih.created_at DESC
         LIMIT $2 OFFSET $3
@@ -445,35 +452,38 @@ async function createJournalEntry(
 
   const jeResult = await client.query(`
     INSERT INTO journal_entries (
-      tenant_id, entry_number, journal_date, description,
-      source_type, status, total_debit, total_credit, created_by, entity_id
+      tenant_id, journal_number, journal_date, description,
+      source, source_document_type, status, total_debit, total_credit, created_by, entity_id
     )
-    VALUES ($1, $2, $3, $4, 'IMPORT', $5, $6, $7, $8, $9)
+    VALUES ($1, $2, $3, $4, 'IMPORT', 'journal_entry_imports', $5, $6, $7, $8, $9)
     RETURNING *
   `, [tenantId, entryNumber, journalDate, description, status, totalDebit, totalCredit, userId, entityParam]);
 
   const journalEntryId = jeResult.rows[0].id;
 
   // Create lines
+  let lineNumber = 0;
   for (const line of lines) {
+    lineNumber++;
     // Get account ID (entity-scoped)
     const accountResult = await client.query(`
       SELECT id FROM chart_of_accounts
       WHERE tenant_id = $1 AND account_code = $2
         AND (entity_id IS NULL OR entity_id = $3)
     `, [tenantId, line.account_code, entityParam]);
-    
+
     const accountId = accountResult.rows[0]?.id;
 
     await client.query(`
       INSERT INTO journal_entry_lines (
-        tenant_id, journal_entry_id, account_id, account_code,
+        tenant_id, journal_entry_id, line_number, account_id, account_code,
         description, debit_amount, credit_amount, entity_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     `, [
       tenantId,
       journalEntryId,
+      lineNumber,
       accountId,
       line.account_code,
       line.description,
