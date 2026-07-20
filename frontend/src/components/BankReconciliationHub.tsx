@@ -2151,57 +2151,39 @@ const BankReconciliation: React.FC = () => {
           </Tabs.TabPane>
 
           <Tabs.TabPane tab={<span><RobotOutlined /> AI Rules</span>} key="rules">
+            {/* This tab's Add/Edit/Delete/Toggle actions had no backend behind
+                them at all (no route exists to persist a rule change), and the
+                3 rows shown were hardcoded fallback data, not anything real -
+                editing/deleting them did nothing beyond the current browser
+                session. Rather than leave broken buttons and fabricated rows,
+                this now explains what this tab is actually for (which is
+                different from GL allocation) and points to the two features
+                that do work. */}
             <Alert
-              message="AI Matching Rules"
-              description="Configure how AI analyzes and matches transactions. Higher priority rules are applied first. The AI will automatically match transactions based on these rules when you click 'AI Auto-Match'."
+              message="This is about matching, not allocating"
+              description={
+                <>
+                  <Paragraph style={{ marginBottom: 8 }}>
+                    "AI Rules" here would control matching a bank transaction to an <strong>existing</strong> invoice
+                    or expense already recorded elsewhere (e.g. by reference number or exact amount+date) — a
+                    different job from deciding which GL account an unmatched transaction belongs to.
+                  </Paragraph>
+                  <Paragraph style={{ marginBottom: 0 }}>
+                    <strong>To allocate a transaction to a GL account</strong>, use "AI Categorize" on the Reconcile
+                    tab, then review and accept suggestions on the <strong>AI Suggestions</strong> tab — that's
+                    where GL allocation actually happens.
+                  </Paragraph>
+                </>
+              }
               type="info"
               showIcon
               style={{ marginBottom: 16 }}
             />
-            <Table
-              dataSource={aiRules}
-              columns={[
-                { title: 'Rule Name', dataIndex: 'name', key: 'name', render: (text: string) => <Text strong>{text}</Text> },
-                { title: 'Match Field', dataIndex: 'field', key: 'field' },
-                { title: 'Condition', dataIndex: 'condition', key: 'condition' },
-                { title: 'Priority', dataIndex: 'priority', key: 'priority', render: (p: number) => <Tag color="blue">#{p}</Tag> },
-                { title: 'Min Confidence', dataIndex: 'confidence', key: 'confidence', render: (c: number) => `${c}%` },
-                {
-                  title: 'Enabled',
-                  dataIndex: 'enabled',
-                  key: 'enabled',
-                  render: (enabled: boolean, record: any) => (
-                    <Switch
-                      checked={enabled}
-                      size="small"
-                      onChange={(checked) => handleToggleRule(record.id, checked)}
-                    />
-                  ),
-                },
-                {
-                  title: 'Actions',
-                  key: 'actions',
-                  render: (_: any, record: any) => (
-                    <Space size={4}>
-                      <Button size="small" onClick={() => openEditRuleModal(record)}>Edit</Button>
-                      <Popconfirm
-                        title="Delete this rule?"
-                        onConfirm={() => handleDeleteRule(record.id)}
-                        okText="Delete"
-                        cancelText="Cancel"
-                      >
-                        <Button size="small" danger>Delete</Button>
-                      </Popconfirm>
-                    </Space>
-                  ),
-                },
-              ]}
-              rowKey="id"
-              pagination={false}
+            <Result
+              icon={<SettingOutlined style={{ color: '#94a3b8' }} />}
+              title="Custom matching rules aren't available yet"
+              subTitle='"AI Auto-Match" already runs a built-in exact-match check (reference number, amount + date) against your existing invoices - there just isn\'t a way to configure custom rules for it yet.'
             />
-            <Button type="dashed" icon={<PlusOutlined />} style={{ marginTop: 16 }} onClick={openAddRuleModal}>
-              Add Custom Rule
-            </Button>
           </Tabs.TabPane>
         </Tabs>
       </Card>
