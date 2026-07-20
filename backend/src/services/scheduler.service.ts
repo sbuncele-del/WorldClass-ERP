@@ -50,11 +50,16 @@ const jobRegistry: Map<string, ScheduledJobDef> = new Map();
 /** Get all active tenant IDs */
 export async function getAllTenantIds(): Promise<string[]> {
   try {
+    // tenants has no is_active column - status ('active'/'trial'/'cancelled'/...)
+    // and deleted_at are the real columns. COALESCE(is_active, true) referenced a
+    // column that doesn't exist, threw on every call, and was silently swallowed
+    // by this catch - every forEachTenant-based job has been a no-op until now.
     const result = await query(
-      `SELECT id FROM tenants WHERE COALESCE(is_active, true) = true ORDER BY name`
+      `SELECT id FROM tenants WHERE deleted_at IS NULL AND status != 'cancelled' ORDER BY name`
     );
     return result.rows.map((r: any) => r.id);
-  } catch {
+  } catch (err) {
+    console.error('getAllTenantIds failed:', (err as Error).message);
     return [];
   }
 }
@@ -96,6 +101,7 @@ export async function initializeScheduler(): Promise<void> {
   await import('./jobs/daily-digest.job');
   await import('./jobs/invoice-automation.job');
   await import('./jobs/bank-reconciliation.job');
+  await import('./jobs/auto-allocate-high-confidence.job');
   await import('./jobs/leave-accrual.job');
   await import('./jobs/compliance-alerts.job');
   await import('./jobs/approval-escalation.job');
@@ -188,13 +194,24 @@ function initFallbackScheduler(): void {
 }
 
 function cronToIntervalMs(cron: string): number {
-  // Simple mapping: daily jobs → 24h, monthly → 24h (checked internally)
   // NOTE: Node.js setInterval max safe value is 2^31-1 ms (~24.8 days).
   // Values above that overflow to 1ms and fire in a tight loop.
   const MAX_SAFE_INTERVAL = 24 * 60 * 60 * 1000; // 24h cap
   const parts = cron.split(' ');
   if (parts.length < 5) return MAX_SAFE_INTERVAL;
-  return MAX_SAFE_INTERVAL; // all jobs check daily; cron determines actual run
+
+  const [minute, hour] = parts;
+  // Hour field is "*" -> runs every hour (this ignores minute-level granularity
+  // like "*/15", which none of the jobs in this codebase currently use).
+  if (hour === '*') {
+    return 60 * 60 * 1000;
+  }
+  // Everything else (daily at a fixed hour, weekday-restricted, monthly-on-a-day)
+  // is checked at most once a day - not exact for monthly jobs, but previously
+  // this function returned 24h unconditionally for every cron string, so this
+  // is strictly more correct without needing a full cron parser.
+  void minute;
+  return MAX_SAFE_INTERVAL;
 }
 
 // ────────────────────────── Manual trigger ──────────────────────────
