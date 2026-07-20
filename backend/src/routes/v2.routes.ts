@@ -3294,8 +3294,8 @@ router.get('/cash-management/bank-accounts', async (req: any, res) => {
         b.bank_name,
         b.bank_code,
         b.swift_code,
-        (SELECT COUNT(*)::int FROM cash_transactions ct WHERE ct.account_id = ba.account_id AND ct.tenant_id = ba.tenant_id) as transaction_count,
-        (SELECT COUNT(*)::int FROM cash_transactions ct WHERE ct.account_id = ba.account_id AND ct.tenant_id = ba.tenant_id AND ct.status = 'PENDING') as pending_count
+        (SELECT COUNT(*)::int FROM cash_bank_statement_lines l JOIN cash_bank_statements s ON s.statement_id = l.statement_id WHERE s.account_id = ba.account_id) as transaction_count,
+        (SELECT COUNT(*)::int FROM cash_bank_statement_lines l JOIN cash_bank_statements s ON s.statement_id = l.statement_id WHERE s.account_id = ba.account_id AND l.is_matched = false) as pending_count
       FROM cash_bank_accounts ba
       LEFT JOIN cash_banks b ON ba.bank_id = b.bank_id
       WHERE ba.tenant_id = $1 AND ba.is_active = true

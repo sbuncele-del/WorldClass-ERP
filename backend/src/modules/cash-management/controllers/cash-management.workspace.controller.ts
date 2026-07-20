@@ -72,17 +72,16 @@ export const getCashManagementWorkspace = async (req: TenantRequest, res: Respon
 async function getBankAccounts(tenantId: string) {
   const result = await query(
     `
-    SELECT 
-      id,
+    SELECT
+      account_id as id,
       account_name,
       account_number,
       bank_code,
-      bank_name,
       currency,
       current_balance,
       last_reconciled_date,
       is_active
-    FROM bank_accounts
+    FROM cash_bank_accounts
     WHERE tenant_id = $1
     ORDER BY is_active DESC, account_name ASC
     `,
@@ -98,12 +97,12 @@ async function getBankAccounts(tenantId: string) {
 async function getCashPosition(tenantId: string) {
   const result = await query(
     `
-    SELECT 
+    SELECT
       COUNT(*) as total_accounts,
       SUM(current_balance) as total_balance,
       SUM(CASE WHEN is_active = true THEN current_balance ELSE 0 END) as active_balance,
       COUNT(CASE WHEN is_active = true THEN 1 END) as active_accounts
-    FROM bank_accounts
+    FROM cash_bank_accounts
     WHERE tenant_id = $1
     `,
     [tenantId]
@@ -122,14 +121,14 @@ async function getCashPosition(tenantId: string) {
  */
 async function getPendingPayments(tenantId: string) {
   try {
-    // Only count unreconciled bank statement lines - journal_entries may not exist
     const result = await query(
       `
-      SELECT 
+      SELECT
         COUNT(*) as pending_count,
-        COALESCE(SUM(amount), 0) as total_amount
-      FROM bank_statement_lines
-      WHERE tenant_id = $1 AND reconciled = false
+        COALESCE(SUM(COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0)), 0) as total_amount
+      FROM cash_bank_statement_lines l
+      JOIN cash_bank_statements s ON s.statement_id = l.statement_id
+      WHERE s.tenant_id = $1 AND l.is_matched = false
       `,
       [tenantId]
     );
@@ -146,17 +145,17 @@ async function getPendingPayments(tenantId: string) {
 async function getReconciliationStatus(tenantId: string) {
   const result = await query(
     `
-    SELECT 
-      ba.id as account_id,
+    SELECT
+      ba.account_id,
       ba.account_name,
       ba.last_reconciled_date,
-      COUNT(bsl.id) as unreconciled_count,
-      SUM(CASE WHEN bsl.reconciled = false THEN bsl.amount ELSE 0 END) as unreconciled_amount
-    FROM bank_accounts ba
-    LEFT JOIN bank_statements bs ON ba.id = bs.bank_account_id
-    LEFT JOIN bank_statement_lines bsl ON bs.id = bsl.statement_id
+      COUNT(l.line_id) as unreconciled_count,
+      SUM(CASE WHEN l.is_matched = false THEN COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0) ELSE 0 END) as unreconciled_amount
+    FROM cash_bank_accounts ba
+    LEFT JOIN cash_bank_statements s ON ba.account_id = s.account_id
+    LEFT JOIN cash_bank_statement_lines l ON s.statement_id = l.statement_id AND l.is_matched = false
     WHERE ba.tenant_id = $1 AND ba.is_active = true
-    GROUP BY ba.id, ba.account_name, ba.last_reconciled_date
+    GROUP BY ba.account_id, ba.account_name, ba.last_reconciled_date
     ORDER BY ba.last_reconciled_date ASC NULLS FIRST
     LIMIT 5
     `,
@@ -172,19 +171,18 @@ async function getReconciliationStatus(tenantId: string) {
 async function getRecentTransactions(tenantId: string) {
   const result = await query(
     `
-    SELECT 
-      bsl.id,
-      bsl.transaction_date,
-      bsl.description,
-      bsl.amount,
-      bsl.reconciled,
-      ba.account_name,
-      ba.bank_name
-    FROM bank_statement_lines bsl
-    JOIN bank_statements bs ON bsl.statement_id = bs.id
-    JOIN bank_accounts ba ON bs.bank_account_id = ba.id
-    WHERE bsl.tenant_id = $1
-    ORDER BY bsl.transaction_date DESC
+    SELECT
+      l.line_id as id,
+      l.transaction_date,
+      l.description,
+      (COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0)) as amount,
+      l.is_matched as reconciled,
+      ba.account_name
+    FROM cash_bank_statement_lines l
+    JOIN cash_bank_statements s ON l.statement_id = s.statement_id
+    JOIN cash_bank_accounts ba ON s.account_id = ba.account_id
+    WHERE s.tenant_id = $1
+    ORDER BY l.transaction_date DESC
     LIMIT 10
     `,
     [tenantId]
@@ -199,14 +197,15 @@ async function getRecentTransactions(tenantId: string) {
 async function getCashFlowTrend(tenantId: string) {
   const result = await query(
     `
-    SELECT 
-      DATE_TRUNC('month', transaction_date) as month,
-      SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as inflow,
-      SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as outflow
-    FROM bank_statement_lines
-    WHERE tenant_id = $1 
-      AND transaction_date >= NOW() - INTERVAL '6 months'
-    GROUP BY DATE_TRUNC('month', transaction_date)
+    SELECT
+      DATE_TRUNC('month', l.transaction_date) as month,
+      SUM(COALESCE(l.credit_amount, 0)) as inflow,
+      SUM(COALESCE(l.debit_amount, 0)) as outflow
+    FROM cash_bank_statement_lines l
+    JOIN cash_bank_statements s ON l.statement_id = s.statement_id
+    WHERE s.tenant_id = $1
+      AND l.transaction_date >= NOW() - INTERVAL '6 months'
+    GROUP BY DATE_TRUNC('month', l.transaction_date)
     ORDER BY month DESC
     `,
     [tenantId]
