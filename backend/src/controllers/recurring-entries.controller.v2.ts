@@ -417,12 +417,6 @@ export class RecurringEntriesControllerV2 {
       const entryNumber = `JE-REC-${Date.now()}`;
       const status = entry.auto_post ? 'POSTED' : 'DRAFT';
       const entityId = (req as any).entity?.id || (req as any).entityId || null;
-      // journal_entries.entity_id has a FK to public.entities, which is an empty/orphaned
-      // table - the real multi-entity data lives in legal_entities (populated via
-      // tenantMiddleware). Passing entityId here would always violate that FK, so this
-      // write is deliberately left NULL until entities/legal_entities are reconciled.
-      // entityId is still used below for chart_of_accounts lookups and
-      // journal_entry_lines.entity_id, whose FK correctly targets legal_entities.
 
       const jeResult = await client.query(jeQuery, [
         tenantId,
@@ -434,7 +428,7 @@ export class RecurringEntriesControllerV2 {
         totalCredit,
         status,
         userId,
-        null
+        entityId
       ]);
 
       const journalEntryId = jeResult.rows[0].id;

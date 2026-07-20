@@ -449,11 +449,6 @@ async function createJournalEntry(
   const entryNumber = `JE-IMP-${Date.now()}`;
   const status = autoPost ? 'POSTED' : 'DRAFT';
   const entityParam = entityId || null;
-  // journal_entries.entity_id has a FK to public.entities, which is an empty/orphaned
-  // table - the real multi-entity data lives in legal_entities. Passing entityParam
-  // here would always violate that FK, so this write is deliberately left NULL.
-  // entityParam is still used below for chart_of_accounts lookups and
-  // journal_entry_lines.entity_id, whose FK correctly targets legal_entities.
 
   const jeResult = await client.query(`
     INSERT INTO journal_entries (
@@ -462,7 +457,7 @@ async function createJournalEntry(
     )
     VALUES ($1, $2, $3, $4, 'IMPORT', 'journal_entry_imports', $5, $6, $7, $8, $9)
     RETURNING *
-  `, [tenantId, entryNumber, journalDate, description, status, totalDebit, totalCredit, userId, null]);
+  `, [tenantId, entryNumber, journalDate, description, status, totalDebit, totalCredit, userId, entityParam]);
 
   const journalEntryId = jeResult.rows[0].id;
 
