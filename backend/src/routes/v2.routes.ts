@@ -3315,6 +3315,12 @@ router.get('/cash-management/statement-lines', async (req: any, res) => {
   const bankAccountId = req.query.bank_account_id || req.query.bankAccountId;
   const statementId = req.query.statement_id || req.query.statementId;
   try {
+    // cash_bank_statement_lines has no status/allocated_gl_account_id/
+    // allocated_gl_account_code/journal_entry_id/reconciled_date columns -
+    // those belong to a differently-named, unused schema variant
+    // (bank_statement_lines, see cash-management-migration.ts). Selecting
+    // them here always threw and was silently swallowed by the catch below,
+    // which is why this endpoint always returned an empty list.
     let sql = `
       SELECT
         l.line_id as id,
@@ -3330,11 +3336,9 @@ router.get('/cash-management/statement-lines', async (req: any, res) => {
         l.matched_transaction_id,
         l.match_confidence as ai_confidence,
         l.auto_category as category,
-        l.status,
-        l.allocated_gl_account_id,
-        l.allocated_gl_account_code,
-        l.journal_entry_id,
-        l.reconciled_date,
+        CASE WHEN l.is_matched THEN 'Matched' ELSE 'Unmatched' END as status,
+        l.matched_transaction_id as journal_entry_id,
+        l.match_date as reconciled_date,
         COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0) as amount,
         s.account_id as bank_account_id
       FROM cash_bank_statement_lines l
@@ -3935,7 +3939,7 @@ router.post('/cash-management/reconciliation/auto-match', async (req: any, res) 
               COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0) as amount
        FROM cash_bank_statement_lines l
        JOIN cash_bank_statements s ON l.statement_id = s.statement_id
-       WHERE s.tenant_id = $1 AND s.account_id = $2 AND l.status = 'unmatched'
+       WHERE s.tenant_id = $1 AND s.account_id = $2 AND l.is_matched = false
        ORDER BY l.transaction_date`,
       [tenantId, bank_account_id]
     );
@@ -4134,10 +4138,10 @@ router.get('/cash-management/reconciliation/summary', async (req: any, res) => {
   const { bank_account_id } = req.query;
   try {
     const summary = await query(
-      `SELECT 
-        COUNT(*) FILTER (WHERE l.status = 'unmatched') as unmatched,
-        COUNT(*) FILTER (WHERE l.status = 'allocated') as matched,
-        COUNT(*) FILTER (WHERE l.status = 'posted') as posted,
+      `SELECT
+        COUNT(*) FILTER (WHERE l.is_matched = false) as unmatched,
+        COUNT(*) FILTER (WHERE l.is_matched = true) as matched,
+        0 as posted,
         COUNT(*) as total,
         SUM(CASE WHEN COALESCE(l.credit_amount,0) > 0 THEN l.credit_amount ELSE 0 END) as total_credits,
         SUM(CASE WHEN COALESCE(l.debit_amount,0) > 0 THEN l.debit_amount ELSE 0 END) as total_debits
@@ -4165,13 +4169,13 @@ router.get('/cash-management/reconciliation/history', async (req: any, res) => {
         ba.account_name as account,
         s.closing_balance as "bankBal",
         COALESCE(
-          (SELECT SUM(CASE WHEN bsl.status = 'allocated' THEN COALESCE(bsl.credit_amount,0) - COALESCE(bsl.debit_amount,0) ELSE 0 END)
+          (SELECT SUM(CASE WHEN bsl.is_matched = true THEN COALESCE(bsl.credit_amount,0) - COALESCE(bsl.debit_amount,0) ELSE 0 END)
            FROM cash_bank_statement_lines bsl WHERE bsl.statement_id = s.statement_id),
           0
         ) as "bookBal",
         s.status,
         s.created_at as created_at,
-        EXISTS(SELECT 1 FROM cash_bank_statement_lines bsl WHERE bsl.statement_id = s.statement_id AND bsl.status = 'allocated') as "aiAssisted"
+        EXISTS(SELECT 1 FROM cash_bank_statement_lines bsl WHERE bsl.statement_id = s.statement_id AND bsl.is_matched = true) as "aiAssisted"
        FROM cash_bank_statements s
        LEFT JOIN cash_bank_accounts ba ON s.account_id = ba.account_id
        WHERE s.tenant_id = $1
@@ -5123,12 +5127,10 @@ router.post('/cash-management/reconciliation/ai-categorize', async (req: any, re
         linesQuery += ` AND l.line_id = ANY($2)`;
       } else if (bank_account_id) {
         params.push(bank_account_id);
-        params.push('unmatched');
-        linesQuery += ` AND s.account_id = $2 AND l.status = $3`;
+        linesQuery += ` AND s.account_id = $2 AND l.is_matched = false`;
       } else {
         // Get all unmatched
-        params.push('unmatched');
-        linesQuery += ` AND l.status = $2`;
+        linesQuery += ` AND l.is_matched = false`;
       }
       linesQuery += ` LIMIT 50`; // Limit for AI processing
 
