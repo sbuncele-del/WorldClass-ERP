@@ -3227,10 +3227,10 @@ router.get('/hr/attendance', async (req: any, res) => {
   try {
     const result = await dbQuery(`
       SELECT a.*, e.first_name, e.last_name
-      FROM attendance a
-      LEFT JOIN employees e ON a.employee_id = e.id
+      FROM hr.attendance_records a
+      LEFT JOIN hr.employees e ON a.employee_id = e.employee_id AND e.tenant_id = a.tenant_id
       WHERE a.tenant_id = $1
-      ORDER BY a.date DESC
+      ORDER BY a.attendance_date DESC
       LIMIT 100
     `, [tenantId]);
     res.json({ success: true, data: result.rows || [] });

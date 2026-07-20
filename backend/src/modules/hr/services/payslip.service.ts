@@ -88,8 +88,8 @@ export async function getPayslipData(
       SELECT 
         prd.*,
         pp.period_name,
-        pp.period_start_date as start_date,
-        pp.period_end_date as end_date,
+        pp.start_date,
+        pp.end_date,
         pp.payment_date
       FROM hr.payroll_run_details prd
       JOIN hr.payroll_runs pr ON prd.run_id = pr.run_id
@@ -154,8 +154,8 @@ export async function getPayslipData(
       JOIN hr.payroll_runs pr ON prd.run_id = pr.run_id
       JOIN hr.payroll_periods pp ON pr.period_id = pp.period_id
       WHERE prd.tenant_id = $1 AND prd.employee_id = $2
-        AND EXTRACT(YEAR FROM pp.period_end_date) = EXTRACT(YEAR FROM $3::DATE)
-        AND pp.period_end_date <= $3
+        AND EXTRACT(YEAR FROM pp.end_date) = EXTRACT(YEAR FROM $3::DATE)
+        AND pp.end_date <= $3
     `, [tenantId, employeeId, runDetails.end_date]);
 
     // Get company details (from tenant settings)
