@@ -286,15 +286,17 @@ async function importChartOfAccounts(
     const accountType = validTypes.includes((r.account_type || '').toUpperCase())
       ? r.account_type.toUpperCase()
       : 'ASSET';
+    // normal_balance is NOT NULL and CHECK'd to DEBIT|CREDIT
+    const normalBalance = ['ASSET', 'EXPENSE'].includes(accountType) ? 'DEBIT' : 'CREDIT';
     try {
       await client.query(`
-        INSERT INTO chart_of_accounts (tenant_id, account_code, account_name, account_type, parent_code, default_tax_code, currency, description, is_active)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+        INSERT INTO chart_of_accounts (tenant_id, account_code, account_name, account_type, normal_balance, parent_code, default_tax_code, currency, description, is_active)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)
         ON CONFLICT (tenant_id, account_code) DO UPDATE SET
           account_name = EXCLUDED.account_name,
           account_type = COALESCE(EXCLUDED.account_type, chart_of_accounts.account_type),
           description = COALESCE(EXCLUDED.description, chart_of_accounts.description)
-      `, [tenantId, r.account_code, r.account_name, accountType, r.parent_code || null, r.tax_code || null, r.currency || 'ZAR', r.description || null]);
+      `, [tenantId, r.account_code, r.account_name, accountType, normalBalance, r.parent_code || null, r.tax_code || null, r.currency || 'ZAR', r.description || null]);
       imported++;
     } catch (e: any) {
       errorDetails.push(`Row ${i + 1}: ${e.message}`);
