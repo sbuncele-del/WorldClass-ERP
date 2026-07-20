@@ -1915,33 +1915,6 @@ const BankReconciliation: React.FC = () => {
               />
             </Card>
 
-            {/* Difference Analysis */}
-            {stats.difference !== 0 && (
-              <Alert
-                style={{ marginTop: 16 }}
-                message="Reconciliation Difference Analysis"
-                description={
-                  <Row gutter={16}>
-                    <Col span={12}>
-                      <Text strong>Outstanding Items (Bank → Book):</Text>
-                      <ul style={{ margin: '8px 0', paddingLeft: 20, fontSize: 13 }}>
-                        <li>Client LMN payment variance: R 500</li>
-                        <li>Bank charges pending journal: R 450</li>
-                      </ul>
-                    </Col>
-                    <Col span={12}>
-                      <Text strong>Outstanding Items (Book → Bank):</Text>
-                      <ul style={{ margin: '8px 0', paddingLeft: 20, fontSize: 13 }}>
-                        <li>Office supplies payment: R 2,350</li>
-                        <li>DEF Corporation receipt: R 250,000 (unmatched)</li>
-                      </ul>
-                    </Col>
-                  </Row>
-                }
-                type="warning"
-                showIcon
-              />
-            )}
           </Tabs.TabPane>
 
           <Tabs.TabPane tab={<span><HistoryOutlined /> History <Badge count={bankTransactions.filter(t => t.status === 'matched' || t.status === 'reconciled').length} style={{ backgroundColor: '#52c41a', marginLeft: 4 }} /></span>} key="history">
