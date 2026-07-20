@@ -151,7 +151,7 @@ class DemoResetService {
       'DELETE FROM suppliers WHERE tenant_id = $1',
       
       // Inventory module
-      'DELETE FROM inventory_transactions WHERE tenant_id = $1',
+      'DELETE FROM inventory.stock_movements WHERE tenant_id = $1',
       'DELETE FROM inventory_adjustments WHERE tenant_id = $1',
       'DELETE FROM products WHERE tenant_id = $1',
       

@@ -1441,9 +1441,9 @@ export const getInventoryDashboard = async (req: TenantRequest, res: Response) =
   try {
     const ctx = getTenantContext(req);
 
-    // Total items - using public schema
+    // Total items
     const itemsResult = await pool.query(
-      'SELECT COUNT(*) as total FROM items WHERE tenant_id = $1',
+      'SELECT COUNT(*) as total FROM inventory.items WHERE tenant_id = $1',
       [ctx.tenantId]
     );
 
