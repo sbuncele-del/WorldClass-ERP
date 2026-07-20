@@ -3336,8 +3336,9 @@ router.get('/cash-management/statement-lines', async (req: any, res) => {
         l.matched_transaction_id,
         l.match_confidence as ai_confidence,
         l.auto_category as category,
+        l.confirmed_category as allocated_gl_account_code,
         CASE WHEN l.is_matched THEN 'Matched' ELSE 'Unmatched' END as status,
-        l.matched_transaction_id as journal_entry_id,
+        (l.raw_data->>'journal_entry_id')::int as journal_entry_id,
         l.match_date as reconciled_date,
         COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0) as amount,
         s.account_id as bank_account_id
@@ -4908,20 +4909,25 @@ router.post('/cash-management/reconciliation/allocate', async (req: any, res) =>
        description || line.description, isDebit ? amount : 0, isDebit ? 0 : amount]
     );
     
-    // Update statement line as allocated (using new columns + set is_matched for backward compat)
+    // Update statement line as allocated - cash_bank_statement_lines has no
+    // status/allocated_gl_account_id/allocated_gl_account_code/journal_entry_id/
+    // reconciled_date columns (see the same fix on the statement-lines and
+    // reconciliation/summary queries above). matched_transaction_id is FK'd
+    // to cash_transactions, NOT journal_entries, so the journal entry id
+    // can't go there (would violate the FK) - it goes in raw_data instead,
+    // and confirmed_category records the GL code for display.
     await query(
       `UPDATE cash_bank_statement_lines
-       SET status = 'allocated',
-           is_matched = true,
-           allocated_gl_account_id = $3,
-           allocated_gl_account_code = $4,
-           journal_entry_id = $5,
-           reconciled_date = NOW()
+       SET is_matched = true,
+           confirmed_category = $3,
+           match_date = NOW(),
+           matched_by = $4,
+           raw_data = COALESCE(raw_data, '{}'::jsonb) || jsonb_build_object('journal_entry_id', $5::int)
        WHERE line_id = $2
          AND statement_id IN (
            SELECT statement_id FROM cash_bank_statements WHERE tenant_id = $1
          )`,
-      [tenantId, statement_line_id, resolvedGLAccountId, glAcct.code, jeId]
+      [tenantId, statement_line_id, glAcct.code, userId || null, jeId]
     );
 
     // Learn from this allocation for future AI suggestions

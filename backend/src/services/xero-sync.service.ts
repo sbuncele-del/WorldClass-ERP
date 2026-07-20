@@ -278,18 +278,32 @@ async function syncInvoices(tenantId: string, userId: string): Promise<SyncResul
 }
 
 async function getOrCreateBankAccount(tenantId: string, userId: string, xeroAccount: any): Promise<number> {
+  // syncAccounts (run earlier in syncAll) already imported this same Xero
+  // account into chart_of_accounts via the xero_account_id crosswalk - reuse
+  // its code as gl_account_code so "Allocate to GL" has a bank-side account
+  // to post against. Without this, gl_account_code stays NULL forever and
+  // every allocation attempt 400s with "Bank account not linked to GL account".
+  const glLookup = await pool.query(
+    `SELECT COALESCE(NULLIF(code, ''), account_code) as code FROM chart_of_accounts WHERE tenant_id = $1 AND xero_account_id = $2`,
+    [tenantId, xeroAccount.AccountID]
+  );
+  const glAccountCode = glLookup.rows[0]?.code || null;
+
   const existing = await pool.query(
-    `SELECT account_id FROM cash_bank_accounts WHERE tenant_id = $1 AND account_number = $2`,
+    `SELECT account_id, gl_account_code FROM cash_bank_accounts WHERE tenant_id = $1 AND account_number = $2`,
     [tenantId, xeroAccount.BankAccountNumber || xeroAccount.AccountID]
   );
   if (existing.rows.length > 0) {
+    if (!existing.rows[0].gl_account_code && glAccountCode) {
+      await pool.query(`UPDATE cash_bank_accounts SET gl_account_code = $2 WHERE account_id = $1`, [existing.rows[0].account_id, glAccountCode]);
+    }
     return existing.rows[0].account_id;
   }
   const created = await pool.query(
-    `INSERT INTO cash_bank_accounts (tenant_id, account_name, account_number, account_type, currency, is_active, created_by)
-     VALUES ($1, $2, $3, 'CURRENT', $4, true, $5)
+    `INSERT INTO cash_bank_accounts (tenant_id, account_name, account_number, account_type, currency, gl_account_code, is_active, created_by)
+     VALUES ($1, $2, $3, 'CURRENT', $4, $5, true, $6)
      RETURNING account_id`,
-    [tenantId, xeroAccount.Name, xeroAccount.BankAccountNumber || xeroAccount.AccountID, xeroAccount.CurrencyCode || 'ZAR', userId]
+    [tenantId, xeroAccount.Name, xeroAccount.BankAccountNumber || xeroAccount.AccountID, xeroAccount.CurrencyCode || 'ZAR', glAccountCode, userId]
   );
   return created.rows[0].account_id;
 }
@@ -411,6 +425,19 @@ async function syncAll(tenantId: string, userId: string): Promise<SyncResult[]> 
  * needing to re-hit the Xero API (which is what makes a full re-sync slow).
  */
 async function recalculateBalances(tenantId: string): Promise<{ accountsUpdated: number }> {
+  // Backfill gl_account_code for accounts synced before getOrCreateBankAccount
+  // linked it to the matching chart_of_accounts row (same Xero AccountID) -
+  // without it, "Allocate to GL" always 400s with "not linked to GL account".
+  await pool.query(
+    `UPDATE cash_bank_accounts a SET gl_account_code = COALESCE(NULLIF(coa.code, ''), coa.account_code)
+     FROM chart_of_accounts coa
+     WHERE coa.tenant_id = a.tenant_id
+       AND coa.xero_account_id = a.account_number
+       AND a.tenant_id = $1
+       AND a.gl_account_code IS NULL`,
+    [tenantId]
+  );
+
   const result = await pool.query(
     `UPDATE cash_bank_accounts a SET
        current_balance = a.opening_balance + COALESCE(t.net, 0),
