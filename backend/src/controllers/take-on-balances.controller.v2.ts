@@ -4,10 +4,10 @@
  * bank accounts during ERP migration.
  *
  * Real DB tables:
- *   - chart_of_accounts (public) — PK: id (UUID)
+ *   - chart_of_accounts (public) — PK: account_id (generated alias: id)
  *   - sales.customers — PK: customer_id
  *   - purchase.suppliers — PK: supplier_id
- *   - cash_bank_accounts (public) — PK: id
+ *   - cash_bank_accounts (public) — PK: account_id
  */
 import { Response } from 'express';
 import { TenantRequest } from '../types';
@@ -37,8 +37,8 @@ export const getSummary = async (req: TenantRequest, res: Response) => {
       `SELECT
          COUNT(*) FILTER (WHERE opening_balance IS NOT NULL AND opening_balance != 0) AS accounts_with_balance,
          COUNT(*) AS total_accounts,
-         COALESCE(SUM(CASE WHEN account_type IN ('Asset','Expense') THEN opening_balance ELSE 0 END), 0) AS total_debits,
-         COALESCE(SUM(CASE WHEN account_type IN ('Liability','Equity','Revenue') THEN opening_balance ELSE 0 END), 0) AS total_credits
+         COALESCE(SUM(CASE WHEN account_type IN ('ASSET','EXPENSE') THEN opening_balance ELSE 0 END), 0) AS total_debits,
+         COALESCE(SUM(CASE WHEN account_type IN ('LIABILITY','EQUITY','REVENUE') THEN opening_balance ELSE 0 END), 0) AS total_credits
        FROM chart_of_accounts
        WHERE tenant_id = $1`,
       [ctx.tenantId]
@@ -110,7 +110,7 @@ export const getGLBalances = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
     const result = await query(
-      `SELECT id, account_code, account_name, account_type, account_sub_type,
+      `SELECT id, account_code, account_name, account_type,
               COALESCE(opening_balance, 0) AS opening_balance, is_active
        FROM chart_of_accounts
        WHERE tenant_id = $1
@@ -275,12 +275,13 @@ export const getBankBalances = async (req: TenantRequest, res: Response) => {
   try {
     const ctx = getTenantContext(req);
     const result = await query(
-      `SELECT id, account_name, bank_name, account_number, account_type,
-              COALESCE(opening_balance, 0) AS opening_balance,
-              opening_balance_date, currency, is_active
-       FROM cash_bank_accounts
-       WHERE tenant_id = $1
-       ORDER BY account_name ASC`,
+      `SELECT cba.account_id AS id, cba.account_name, cb.bank_name, cba.account_number, cba.account_type,
+              COALESCE(cba.opening_balance, 0) AS opening_balance,
+              cba.currency, cba.is_active
+       FROM cash_bank_accounts cba
+       LEFT JOIN cash_banks cb ON cba.bank_id = cb.bank_id
+       WHERE cba.tenant_id = $1
+       ORDER BY cba.account_name ASC`,
       [ctx.tenantId]
     );
     res.json({ success: true, data: result.rows });
@@ -307,9 +308,9 @@ export const saveBankBalances = async (req: TenantRequest, res: Response) => {
         const amount = Number(item.opening_balance);
         if (isNaN(amount)) continue;
         await client.query(
-          `UPDATE cash_bank_accounts SET opening_balance = $1, opening_balance_date = COALESCE($2, NOW()), updated_at = NOW()
-           WHERE id = $3 AND tenant_id = $4`,
-          [amount, item.opening_balance_date || null, item.id, ctx.tenantId]
+          `UPDATE cash_bank_accounts SET opening_balance = $1, updated_at = NOW()
+           WHERE account_id = $2 AND tenant_id = $3`,
+          [amount, item.id, ctx.tenantId]
         );
         updated++;
       }
@@ -333,8 +334,8 @@ export const validateBalances = async (req: TenantRequest, res: Response) => {
     const ctx = getTenantContext(req);
     const glResult = await query(
       `SELECT
-         COALESCE(SUM(CASE WHEN account_type IN ('Asset','Expense') THEN opening_balance ELSE 0 END), 0) AS total_debits,
-         COALESCE(SUM(CASE WHEN account_type IN ('Liability','Equity','Revenue') THEN opening_balance ELSE 0 END), 0) AS total_credits
+         COALESCE(SUM(CASE WHEN account_type IN ('ASSET','EXPENSE') THEN opening_balance ELSE 0 END), 0) AS total_debits,
+         COALESCE(SUM(CASE WHEN account_type IN ('LIABILITY','EQUITY','REVENUE') THEN opening_balance ELSE 0 END), 0) AS total_credits
        FROM chart_of_accounts
        WHERE tenant_id = $1 AND opening_balance IS NOT NULL AND opening_balance != 0`,
       [ctx.tenantId]
@@ -387,8 +388,8 @@ export const finalizeBalances = async (req: TenantRequest, res: Response) => {
       return res.status(400).json({ success: false, message: 'No opening balances to finalize' });
     }
 
-    const totalDebits = glResult.rows.filter((a: any) => ['Asset', 'Expense'].includes(a.account_type)).reduce((s: number, a: any) => s + Math.abs(Number(a.opening_balance)), 0);
-    const totalCredits = glResult.rows.filter((a: any) => ['Liability', 'Equity', 'Revenue'].includes(a.account_type)).reduce((s: number, a: any) => s + Math.abs(Number(a.opening_balance)), 0);
+    const totalDebits = glResult.rows.filter((a: any) => ['ASSET', 'EXPENSE'].includes(a.account_type)).reduce((s: number, a: any) => s + Math.abs(Number(a.opening_balance)), 0);
+    const totalCredits = glResult.rows.filter((a: any) => ['LIABILITY', 'EQUITY', 'REVENUE'].includes(a.account_type)).reduce((s: number, a: any) => s + Math.abs(Number(a.opening_balance)), 0);
 
     if (Math.abs(totalDebits - totalCredits) >= 0.01) {
       return res.status(400).json({ success: false, message: `Trial balance is out by R ${Math.abs(totalDebits - totalCredits).toFixed(2)}.` });
@@ -398,19 +399,19 @@ export const finalizeBalances = async (req: TenantRequest, res: Response) => {
     try {
       await client.query('BEGIN');
       const jeResult = await client.query(
-        `INSERT INTO journal_entries (tenant_id, entry_number, description, entry_date, status, source, created_by, created_at)
-         VALUES ($1, $2, $3, $4, 'POSTED', 'TAKE_ON', $5, NOW()) RETURNING id`,
-        [ctx.tenantId, `OB-${Date.now()}`, 'Opening Balances — Take-on', balanceDate, ctx.userId]
+        `INSERT INTO journal_entries (tenant_id, journal_number, entry_number, description, entry_date, status, source, total_debit, total_credit, created_by, created_at)
+         VALUES ($1, $2, $2, $3, $4, 'POSTED', 'TAKE_ON', $5, $5, $6, NOW()) RETURNING id`,
+        [ctx.tenantId, `OB-${Date.now()}`, 'Opening Balances — Take-on', balanceDate, totalDebits, ctx.userId]
       );
       const journalId = jeResult.rows[0].id;
       let lineNum = 1;
       for (const account of glResult.rows) {
         const amount = Math.abs(Number(account.opening_balance));
-        const isDebit = ['Asset', 'Expense'].includes(account.account_type);
+        const isDebit = ['ASSET', 'EXPENSE'].includes(account.account_type);
         await client.query(
-          `INSERT INTO journal_entry_lines (journal_entry_id, tenant_id, line_number, account_id, description, debit_amount, credit_amount, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
-          [journalId, ctx.tenantId, lineNum++, account.id, `Opening balance — ${account.account_name}`, isDebit ? amount : 0, isDebit ? 0 : amount]
+          `INSERT INTO journal_entry_lines (journal_entry_id, tenant_id, line_number, account_id, account_code, description, debit_amount, credit_amount, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
+          [journalId, ctx.tenantId, lineNum++, account.id, account.account_code, `Opening balance — ${account.account_name}`, isDebit ? amount : 0, isDebit ? 0 : amount]
         );
       }
       await client.query('COMMIT');

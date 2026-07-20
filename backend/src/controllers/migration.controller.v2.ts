@@ -130,7 +130,7 @@ export class MigrationController {
           ({ imported, errors } = await importAssets(client, tenantId, entityId, mappedRecords, errorDetails));
           break;
         case 'opening-balances':
-          ({ imported, errors } = await importOpeningBalances(client, tenantId, entityId, mappedRecords, errorDetails));
+          ({ imported, errors } = await importOpeningBalances(client, tenantId, entityId, userId, mappedRecords, errorDetails));
           break;
       }
 
@@ -281,15 +281,20 @@ async function importChartOfAccounts(
       errors++;
       continue;
     }
+    // account_type CHECK constraint only allows these five, uppercase
+    const validTypes = ['ASSET', 'LIABILITY', 'EQUITY', 'REVENUE', 'EXPENSE'];
+    const accountType = validTypes.includes((r.account_type || '').toUpperCase())
+      ? r.account_type.toUpperCase()
+      : 'ASSET';
     try {
       await client.query(`
-        INSERT INTO chart_of_accounts (tenant_id, account_code, account_name, account_type, parent_account_code, tax_code, currency, description, is_active)
+        INSERT INTO chart_of_accounts (tenant_id, account_code, account_name, account_type, parent_code, default_tax_code, currency, description, is_active)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
         ON CONFLICT (tenant_id, account_code) DO UPDATE SET
           account_name = EXCLUDED.account_name,
           account_type = COALESCE(EXCLUDED.account_type, chart_of_accounts.account_type),
           description = COALESCE(EXCLUDED.description, chart_of_accounts.description)
-      `, [tenantId, r.account_code, r.account_name, r.account_type || 'Other', r.parent_code || null, r.tax_code || null, r.currency || 'ZAR', r.description || null]);
+      `, [tenantId, r.account_code, r.account_name, accountType, r.parent_code || null, r.tax_code || null, r.currency || 'ZAR', r.description || null]);
       imported++;
     } catch (e: any) {
       errorDetails.push(`Row ${i + 1}: ${e.message}`);
@@ -519,7 +524,7 @@ async function importAssets(
 }
 
 async function importOpeningBalances(
-  client: any, tenantId: string, entityId: string | undefined,
+  client: any, tenantId: string, entityId: string | undefined, userId: string | undefined,
   records: Record<string, string>[], errorDetails: string[]
 ): Promise<{ imported: number; errors: number }> {
   let imported = 0, errors = 0;
@@ -535,22 +540,38 @@ async function importOpeningBalances(
     // Signed balance: debit positive, credit negative
     const balance = r.balance !== undefined ? parseFloat(r.balance) : (debit - credit);
     const balanceDate = r.date || new Date().toISOString().slice(0, 10);
+    const lineDebit = balance >= 0 ? Math.abs(balance) : 0;
+    const lineCredit = balance < 0 ? Math.abs(balance) : 0;
     try {
-      // Upsert into journal_entries as the opening balance entry
-      await client.query(`
+      // One journal entry header per opening-balance line, matching the real
+      // journal_entries/journal_entry_lines split (journal_entries has no
+      // account_code/debit/credit columns - those live on journal_entry_lines).
+      const jeResult = await client.query(`
         INSERT INTO journal_entries
-          (tenant_id, entity_id, entry_date, description, reference, account_code, account_name, debit, credit, currency, source, status)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'migration', 'posted')
-        ON CONFLICT DO NOTHING
+          (tenant_id, entity_id, journal_number, journal_date, description, reference, source, source_document_type, total_debit, total_credit, status, created_by)
+        VALUES ($1, $2, $3, $4, $5, $6, 'MIGRATION', 'opening_balance_import', $7, $7, 'POSTED', $8)
+        RETURNING journal_entry_id
       `, [
         tenantId, entityId || null,
+        `OB-${r.account_code}-${Date.now()}-${i}`,
         balanceDate,
         r.description || 'Opening Balance',
         `OB-${r.account_code}`,
+        Math.abs(balance),
+        userId ?? null,
+      ]);
+
+      const journalEntryId = jeResult.rows[0].journal_entry_id;
+
+      await client.query(`
+        INSERT INTO journal_entry_lines
+          (journal_entry_id, tenant_id, line_number, account_code, description, debit_amount, credit_amount, currency)
+        VALUES ($1, $2, 1, $3, $4, $5, $6, $7)
+      `, [
+        journalEntryId, tenantId,
         r.account_code,
-        r.account_name || null,
-        balance >= 0 ? Math.abs(balance) : 0,
-        balance < 0 ? Math.abs(balance) : 0,
+        r.account_name || r.description || 'Opening Balance',
+        lineDebit, lineCredit,
         r.currency || 'ZAR',
       ]);
       imported++;

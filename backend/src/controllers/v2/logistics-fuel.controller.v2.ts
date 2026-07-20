@@ -83,7 +83,7 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
       FROM chart_of_accounts 
       WHERE tenant_id = $1 
         AND account_name = $2 
-        AND account_type = 'Liability'
+        AND account_type = 'LIABILITY'
     `, [tenantId, `Accounts Payable - ${supplier}`]);
 
     let supplierAccountId: string;
@@ -110,7 +110,7 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
             WHERE tenant_id = $1 AND account_code LIKE '2-10-%'
           )::text, 3, '0')),
           $2,
-          'Liability',
+          'LIABILITY',
           (SELECT account_id FROM chart_of_accounts WHERE tenant_id = $1 AND account_code = '2-10' LIMIT 1),
           true,
           $3,
@@ -152,7 +152,7 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
           $1,
           '5-20-001',
           'Fuel Expense',
-          'Expense',
+          'EXPENSE',
           (SELECT account_id FROM chart_of_accounts WHERE tenant_id = $1 AND account_code = '5-20' LIMIT 1),
           true,
           $2,
@@ -169,44 +169,55 @@ export async function createFuelTransaction(req: TenantRequest, res: Response): 
     const journalResult = await client.query(`
       INSERT INTO journal_entries (
         tenant_id,
-        entry_date,
+        journal_number,
+        journal_date,
         description,
         reference,
-        source_module,
-        source_id,
+        source,
+        source_document_type,
+        source_document_id,
+        total_debit,
+        total_credit,
+        status,
         created_by,
         created_at
-      ) VALUES ($1, $2, $3, $4, 'logistics_fuel', $5, $6, NOW())
+      ) VALUES ($1, $2, $3, $4, $5, 'LOGISTICS_FUEL', 'fuel_transaction', $6, $7, $7, 'POSTED', $8, NOW())
       RETURNING entry_id
-    `, [tenantId, date, `Fuel purchase - ${vehicle} at ${supplier}`, `FT-${transactionId}`, transactionId, userId]);
+    `, [tenantId, `FT-${transactionId}-${Date.now()}`, date, `Fuel purchase - ${vehicle} at ${supplier}`, `FT-${transactionId}`, transactionId, cost, userId]);
 
     const journalEntryId = journalResult.rows[0].entry_id;
 
     // 5. Create journal entry lines (Double-entry bookkeeping)
-    
+
     // Debit: Fuel Expense
     await client.query(`
       INSERT INTO journal_entry_lines (
-        entry_id,
+        journal_entry_id,
+        tenant_id,
+        line_number,
         account_id,
+        account_code,
         debit_amount,
         credit_amount,
         description,
         created_at
-      ) VALUES ($1, $2, $3, 0, $4, NOW())
-    `, [journalEntryId, fuelExpenseAccountId, cost, `Fuel: ${litres}L @ R${pricePerLitre}/L`]);
+      ) VALUES ($1, $2, 1, $3, $4, $5, 0, $6, NOW())
+    `, [journalEntryId, tenantId, fuelExpenseAccountId, '5-20-001', cost, `Fuel: ${litres}L @ R${pricePerLitre}/L`]);
 
     // Credit: Accounts Payable - Supplier
     await client.query(`
       INSERT INTO journal_entry_lines (
-        entry_id,
+        journal_entry_id,
+        tenant_id,
+        line_number,
         account_id,
+        account_code,
         debit_amount,
         credit_amount,
         description,
         created_at
-      ) VALUES ($1, $2, 0, $3, $4, NOW())
-    `, [journalEntryId, supplierAccountId, cost, `Invoice: ${invoiceNumber}`]);
+      ) VALUES ($1, $2, 2, $3, $4, 0, $5, $6, NOW())
+    `, [journalEntryId, tenantId, supplierAccountId, supplierAccountCode, cost, `Invoice: ${invoiceNumber}`]);
 
     // 6. Update fuel transaction with journal entry reference
     await client.query(`
@@ -413,7 +424,7 @@ export async function deleteFuelTransaction(req: TenantRequest, res: Response): 
 
     // Delete journal entry lines
     if (journalEntryId) {
-      await client.query(`DELETE FROM journal_entry_lines WHERE entry_id = $1`, [journalEntryId]);
+      await client.query(`DELETE FROM journal_entry_lines WHERE journal_entry_id = $1`, [journalEntryId]);
       await client.query(`DELETE FROM journal_entries WHERE entry_id = $1 AND tenant_id = $2`, [journalEntryId, tenantId]);
     }
 
