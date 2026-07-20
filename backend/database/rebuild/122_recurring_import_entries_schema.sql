@@ -207,7 +207,7 @@ CREATE TABLE IF NOT EXISTS public.recurring_entry_history (
   id                  BIGSERIAL PRIMARY KEY,
   tenant_id           UUID NOT NULL,
   recurring_entry_id  UUID NOT NULL REFERENCES public.recurring_journal_entries(id) ON DELETE CASCADE,
-  journal_entry_id    UUID,
+  journal_entry_id    INTEGER, -- journal_entries.journal_entry_id (its "id" alias) is an integer PK, not UUID
 
   generated_date      TIMESTAMP NOT NULL DEFAULT NOW(),
   generated_by        UUID,
@@ -217,7 +217,7 @@ CREATE TABLE IF NOT EXISTS public.recurring_entry_history (
 
 ALTER TABLE public.recurring_entry_history
   ADD COLUMN IF NOT EXISTS tenant_id        UUID,
-  ADD COLUMN IF NOT EXISTS journal_entry_id UUID,
+  ADD COLUMN IF NOT EXISTS journal_entry_id INTEGER,
   ADD COLUMN IF NOT EXISTS generated_date   TIMESTAMP NOT NULL DEFAULT NOW(),
   ADD COLUMN IF NOT EXISTS generated_by     UUID,
   ADD COLUMN IF NOT EXISTS created_at       TIMESTAMP NOT NULL DEFAULT NOW();
