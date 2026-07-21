@@ -22,14 +22,17 @@ async function runBankReconciliation(job: Job<SchedulerJobData>) {
   const stats = { totalMatched: 0, totalSuggestions: 0 };
 
   await forEachTenant(async (tenantId) => {
-    // Find open statements with unmatched lines
+    // Find open statements with unmatched lines. Real join column is
+    // account_id (cash_bank_statements has no bank_account_id column), and
+    // status is a CHECK-constrained uppercase value ('IMPORTED'/'IN_PROGRESS'/
+    // 'RECONCILED'/'VOID'), not lowercase.
     const openStatements = await query(
       `SELECT DISTINCT s.statement_id, s.statement_number, ba.account_name
        FROM cash_bank_statements s
-       JOIN cash_bank_accounts ba ON s.bank_account_id = ba.account_id AND s.tenant_id = ba.tenant_id
-       JOIN cash_bank_statement_lines sl ON s.statement_id = sl.statement_id AND s.tenant_id = sl.tenant_id
+       JOIN cash_bank_accounts ba ON s.account_id = ba.account_id AND s.tenant_id = ba.tenant_id
+       JOIN cash_bank_statement_lines sl ON s.statement_id = sl.statement_id
        WHERE s.tenant_id = $1
-         AND s.status IN ('imported', 'in_progress')
+         AND s.status IN ('IMPORTED', 'IN_PROGRESS')
          AND sl.is_matched = false`,
       [tenantId]
     );

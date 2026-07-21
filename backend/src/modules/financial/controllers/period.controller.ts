@@ -3,33 +3,43 @@
  * REST API endpoints for fiscal years and accounting periods
  */
 
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { PeriodService } from '../services/period.service';
+import { TenantRequest } from '../../../types';
+
+function getTenantContext(req: TenantRequest): { tenantId: string; userId: string } {
+  const tenantId = req.tenant?.id;
+  if (!tenantId) throw new Error('Tenant context required');
+  const userId = req.user?.id || req.body.user_id || 'system';
+  return { tenantId, userId };
+}
 
 const periodService = new PeriodService();
 
 // ===== FISCAL YEARS =====
 
-export const getAllFiscalYears = async (_req: Request, res: Response): Promise<void> => {
+export const getAllFiscalYears = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
-    const fiscalYears = await periodService.getAllFiscalYears();
+    const { tenantId } = getTenantContext(req);
+    const fiscalYears = await periodService.getAllFiscalYears(tenantId);
     res.json({
       success: true,
       data: fiscalYears,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 500).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const getFiscalYear = async (req: Request, res: Response): Promise<void> => {
+export const getFiscalYear = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const { tenantId } = getTenantContext(req);
     const { id } = req.params;
-    const fiscalYear = await periodService.getFiscalYearById(id);
-    
+    const fiscalYear = await periodService.getFiscalYearById(tenantId, id);
+
     if (!fiscalYear) {
       res.status(404).json({
         success: false,
@@ -37,23 +47,24 @@ export const getFiscalYear = async (req: Request, res: Response): Promise<void> 
       });
       return;
     }
-    
+
     res.json({
       success: true,
       data: fiscalYear,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 500).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const getCurrentFiscalYear = async (_req: Request, res: Response): Promise<void> => {
+export const getCurrentFiscalYear = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
-    const fiscalYear = await periodService.getCurrentFiscalYear();
-    
+    const { tenantId } = getTenantContext(req);
+    const fiscalYear = await periodService.getCurrentFiscalYear(tenantId);
+
     if (!fiscalYear) {
       res.status(404).json({
         success: false,
@@ -61,85 +72,86 @@ export const getCurrentFiscalYear = async (_req: Request, res: Response): Promis
       });
       return;
     }
-    
+
     res.json({
       success: true,
       data: fiscalYear,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 500).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const createFiscalYear = async (req: Request, res: Response): Promise<void> => {
+export const createFiscalYear = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.body.user_id || 'system';
+    const { tenantId, userId } = getTenantContext(req);
     const data = {
       ...req.body,
       user_id: userId,
     };
-    
-    const id = await periodService.createFiscalYear(data);
-    
+
+    const id = await periodService.createFiscalYear(tenantId, data);
+
     res.status(201).json({
       success: true,
       data: { id },
       message: 'Fiscal year created successfully',
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 400).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const setCurrentFiscalYear = async (req: Request, res: Response): Promise<void> => {
+export const setCurrentFiscalYear = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const { tenantId, userId } = getTenantContext(req);
     const { id } = req.params;
-    const userId = req.body.user_id || 'system';
-    
-    await periodService.setCurrentFiscalYear(id, userId);
-    
+
+    await periodService.setCurrentFiscalYear(tenantId, id, userId);
+
     res.json({
       success: true,
       message: 'Current fiscal year updated successfully',
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 400).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const closeFiscalYear = async (req: Request, res: Response): Promise<void> => {
+export const closeFiscalYear = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const { tenantId, userId } = getTenantContext(req);
     const { id } = req.params;
-    const userId = req.body.user_id || 'system';
-    
-    await periodService.closeFiscalYear(id, userId);
-    
+
+    await periodService.closeFiscalYear(tenantId, id, userId);
+
     res.json({
       success: true,
       message: 'Fiscal year closed successfully',
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 400).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const getFiscalYearWithPeriods = async (req: Request, res: Response): Promise<void> => {
+export const getFiscalYearWithPeriods = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const { tenantId } = getTenantContext(req);
     const { id } = req.params;
-    const fiscalYearWithPeriods = await periodService.getFiscalYearWithPeriods(id);
-    
+    const fiscalYearWithPeriods = await periodService.getFiscalYearWithPeriods(tenantId, id);
+
     if (!fiscalYearWithPeriods) {
       res.status(404).json({
         success: false,
@@ -147,13 +159,13 @@ export const getFiscalYearWithPeriods = async (req: Request, res: Response): Pro
       });
       return;
     }
-    
+
     res.json({
       success: true,
       data: fiscalYearWithPeriods,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 500).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
@@ -162,28 +174,30 @@ export const getFiscalYearWithPeriods = async (req: Request, res: Response): Pro
 
 // ===== ACCOUNTING PERIODS =====
 
-export const getAllPeriods = async (req: Request, res: Response): Promise<void> => {
+export const getAllPeriods = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const { tenantId } = getTenantContext(req);
     const { fiscal_year_id } = req.query;
-    const periods = await periodService.getAllPeriods(fiscal_year_id as string);
-    
+    const periods = await periodService.getAllPeriods(tenantId, fiscal_year_id as string);
+
     res.json({
       success: true,
       data: periods,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 500).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const getPeriod = async (req: Request, res: Response): Promise<void> => {
+export const getPeriod = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const { tenantId } = getTenantContext(req);
     const { id } = req.params;
-    const period = await periodService.getPeriodById(id);
-    
+    const period = await periodService.getPeriodById(tenantId, id);
+
     if (!period) {
       res.status(404).json({
         success: false,
@@ -191,23 +205,24 @@ export const getPeriod = async (req: Request, res: Response): Promise<void> => {
       });
       return;
     }
-    
+
     res.json({
       success: true,
       data: period,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 500).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const getCurrentPeriod = async (_req: Request, res: Response): Promise<void> => {
+export const getCurrentPeriod = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
-    const period = await periodService.getCurrentPeriod();
-    
+    const { tenantId } = getTenantContext(req);
+    const period = await periodService.getCurrentPeriod(tenantId);
+
     if (!period) {
       res.status(404).json({
         success: false,
@@ -215,147 +230,149 @@ export const getCurrentPeriod = async (_req: Request, res: Response): Promise<vo
       });
       return;
     }
-    
+
     res.json({
       success: true,
       data: period,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 500).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const getOpenPeriods = async (req: Request, res: Response): Promise<void> => {
+export const getOpenPeriods = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const { tenantId } = getTenantContext(req);
     const { fiscal_year_id } = req.query;
-    const periods = await periodService.getOpenPeriods(fiscal_year_id as string);
-    
+    const periods = await periodService.getOpenPeriods(tenantId, fiscal_year_id as string);
+
     res.json({
       success: true,
       data: periods,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 500).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const createPeriod = async (req: Request, res: Response): Promise<void> => {
+export const createPeriod = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
-    const userId = req.body.user_id || 'system';
+    const { tenantId, userId } = getTenantContext(req);
     const data = {
       ...req.body,
       user_id: userId,
     };
-    
-    const id = await periodService.createPeriod(data);
-    
+
+    const id = await periodService.createPeriod(tenantId, data);
+
     res.status(201).json({
       success: true,
       data: { id },
       message: 'Period created successfully',
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 400).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const openPeriod = async (req: Request, res: Response): Promise<void> => {
+export const openPeriod = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const { tenantId, userId } = getTenantContext(req);
     const { id } = req.params;
-    const userId = req.body.user_id || 'system';
-    
-    await periodService.openPeriod(id, userId);
-    
+
+    await periodService.openPeriod(tenantId, id, userId);
+
     res.json({
       success: true,
       message: 'Period opened successfully',
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 400).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const closePeriod = async (req: Request, res: Response): Promise<void> => {
+export const closePeriod = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const { tenantId, userId } = getTenantContext(req);
     const { id } = req.params;
-    const userId = req.body.user_id || 'system';
     const force = req.body.force || false;
-    
-    await periodService.closePeriod(id, userId, force);
-    
+
+    await periodService.closePeriod(tenantId, id, userId, force);
+
     res.json({
       success: true,
       message: 'Period closed successfully',
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 400).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const lockPeriod = async (req: Request, res: Response): Promise<void> => {
+export const lockPeriod = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const { tenantId, userId } = getTenantContext(req);
     const { id } = req.params;
-    const userId = req.body.user_id || 'system';
-    
-    await periodService.lockPeriod(id, userId);
-    
+
+    await periodService.lockPeriod(tenantId, id, userId);
+
     res.json({
       success: true,
       message: 'Period locked successfully',
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 400).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const setCurrentPeriod = async (req: Request, res: Response): Promise<void> => {
+export const setCurrentPeriod = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const { tenantId, userId } = getTenantContext(req);
     const { id } = req.params;
-    const userId = req.body.user_id || 'system';
-    
-    await periodService.setCurrentPeriod(id, userId);
-    
+
+    await periodService.setCurrentPeriod(tenantId, id, userId);
+
     res.json({
       success: true,
       message: 'Current period updated successfully',
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 400).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
   }
 };
 
-export const validatePeriodClose = async (req: Request, res: Response): Promise<void> => {
+export const validatePeriodClose = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
+    const { tenantId } = getTenantContext(req);
     const { id } = req.params;
-    const validation = await periodService.validatePeriodClose(id);
-    
+    const validation = await periodService.validatePeriodClose(tenantId, id);
+
     res.json({
       success: true,
       data: validation,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 500).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
@@ -364,16 +381,17 @@ export const validatePeriodClose = async (req: Request, res: Response): Promise<
 
 // ===== SUMMARY & UTILITIES =====
 
-export const getPeriodSummary = async (_req: Request, res: Response): Promise<void> => {
+export const getPeriodSummary = async (req: TenantRequest, res: Response): Promise<void> => {
   try {
-    const summary = await periodService.getPeriodSummary();
-    
+    const { tenantId } = getTenantContext(req);
+    const summary = await periodService.getPeriodSummary(tenantId);
+
     res.json({
       success: true,
       data: summary,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(error instanceof Error && error.message.includes('context') ? 401 : 500).json({
       success: false,
       error: error instanceof Error ? error.message : 'An error occurred',
     });
