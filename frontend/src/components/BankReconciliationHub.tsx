@@ -115,6 +115,17 @@ const BankReconciliation: React.FC = () => {
   const [showAIInsights, setShowAIInsights] = useState(false);
   const [activeTab, setActiveTab] = useState('reconcile');
   const [suggestionOverrides, setSuggestionOverrides] = useState<Map<string, string>>(new Map());
+
+  // Create-GL-account-inline state, for when nothing in the existing chart
+  // of accounts fits an "Unknown"/low-confidence transaction and the AI
+  // Suggestions review screen otherwise gave no way to add one without
+  // leaving the page. Mirrors the equivalent flow already built into the
+  // manual "Allocate to GL" modal (newAccountCode/newAccountName/etc below).
+  const [showCreateAccountForTxn, setShowCreateAccountForTxn] = useState<string | null>(null);
+  const [createAcctCode, setCreateAcctCode] = useState('');
+  const [createAcctName, setCreateAcctName] = useState('');
+  const [createAcctType, setCreateAcctType] = useState('EXPENSE');
+  const [creatingAcctForTxn, setCreatingAcctForTxn] = useState(false);
   const [aiMatches, setAiMatches] = useState<AIMatch[]>([]);
   const [isProcessingImport, setIsProcessingImport] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadFile[]>([]);
@@ -1980,6 +1991,24 @@ const BankReconciliation: React.FC = () => {
                                 filterOption={(input, option) => (option?.label as string)?.toLowerCase().includes(input.toLowerCase())}
                                 onChange={(val) => setSuggestionOverrides(prev => new Map(prev).set(txn.id, val))}
                                 options={glAccounts.map(a => ({ value: a.id, label: `${a.code} - ${a.name}` }))}
+                                dropdownRender={(menu) => (
+                                  <>
+                                    {menu}
+                                    <Divider style={{ margin: '4px 0' }} />
+                                    <Button
+                                      type="text"
+                                      block
+                                      icon={<PlusOutlined />}
+                                      onMouseDown={(e) => e.preventDefault()} // keep dropdown open through the click
+                                      onClick={() => {
+                                        setCreateAcctName(txn.description.slice(0, 100));
+                                        setShowCreateAccountForTxn(txn.id);
+                                      }}
+                                    >
+                                      Create new account
+                                    </Button>
+                                  </>
+                                )}
                               />
                               <Text type="secondary" style={{ fontSize: 11 }}>{suggestion.reason}</Text>
                             </Col>
@@ -2681,6 +2710,103 @@ const BankReconciliation: React.FC = () => {
             />
           </>
         )}
+      </Modal>
+
+      {/* Create GL Account - reached from the AI Suggestions review screen when
+          nothing in the existing chart of accounts fits an "Unknown" transaction */}
+      <Modal
+        title={<><PlusOutlined /> Create GL Account</>}
+        open={!!showCreateAccountForTxn}
+        onCancel={() => {
+          setShowCreateAccountForTxn(null);
+          setCreateAcctCode('');
+          setCreateAcctName('');
+          setCreateAcctType('EXPENSE');
+        }}
+        onOk={async () => {
+          if (!createAcctCode || !createAcctName) {
+            message.warning('Account code and name are required');
+            return;
+          }
+          if (glAccounts.some(a => a.code === createAcctCode)) {
+            message.error(`Account code ${createAcctCode} already exists`);
+            return;
+          }
+          setCreatingAcctForTxn(true);
+          try {
+            const response = await apiClient.post('/api/v2/financial/chart-of-accounts', {
+              account_code: createAcctCode,
+              account_name: createAcctName,
+              account_type: createAcctType,
+              is_header: false,
+            });
+            if (response.data?.success) {
+              const newAcc = response.data.data;
+              const mappedAcc: GLAccount = {
+                id: newAcc.id,
+                code: newAcc.code || newAcc.account_code || createAcctCode,
+                name: newAcc.name || newAcc.account_name || createAcctName,
+                type: newAcc.account_type || createAcctType,
+              };
+              setGLAccounts(prev => [...prev, mappedAcc].sort((a, b) => a.code.localeCompare(b.code)));
+              if (showCreateAccountForTxn) {
+                setSuggestionOverrides(prev => new Map(prev).set(showCreateAccountForTxn, mappedAcc.id));
+              }
+              message.success(`✅ Account ${mappedAcc.code} - ${mappedAcc.name} created and selected`);
+              setShowCreateAccountForTxn(null);
+              setCreateAcctCode('');
+              setCreateAcctName('');
+              setCreateAcctType('EXPENSE');
+            } else {
+              message.error(response.data?.message || 'Failed to create account');
+            }
+          } catch (error: any) {
+            console.error('Create account error:', error);
+            message.error(error.response?.data?.message || 'Failed to create account');
+          }
+          setCreatingAcctForTxn(false);
+        }}
+        okText="Create & Select"
+        okButtonProps={{ loading: creatingAcctForTxn, disabled: !createAcctCode || !createAcctName }}
+        width={480}
+      >
+        <Form layout="vertical">
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item label="Account Type" style={{ marginBottom: 12 }}>
+                <Select
+                  value={createAcctType}
+                  onChange={setCreateAcctType}
+                  options={[
+                    { value: 'ASSET', label: 'Asset' },
+                    { value: 'LIABILITY', label: 'Liability' },
+                    { value: 'EQUITY', label: 'Equity' },
+                    { value: 'REVENUE', label: 'Revenue' },
+                    { value: 'EXPENSE', label: 'Expense' },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item label="Account Code" required style={{ marginBottom: 12 }}>
+                <Input
+                  value={createAcctCode}
+                  onChange={(e) => setCreateAcctCode(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="e.g. 6510"
+                  maxLength={6}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8} />
+          </Row>
+          <Form.Item label="Account Name" required style={{ marginBottom: 0 }}>
+            <Input
+              value={createAcctName}
+              onChange={(e) => setCreateAcctName(e.target.value)}
+              placeholder="e.g. Office Supplies"
+            />
+          </Form.Item>
+        </Form>
       </Modal>
 
       <style>{`
