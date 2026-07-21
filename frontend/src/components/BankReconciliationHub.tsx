@@ -803,7 +803,14 @@ const BankReconciliation: React.FC = () => {
             const newMap = new Map(prev);
             for (const u of updates) {
               newMap.set(String(u.line_id), {
-                accountId: String(u.gl_account_id),
+                // accountId is compared/matched against glAccounts[].id and
+                // sent as-is to /allocate - both of those have always been
+                // raw numbers everywhere else in this file (initial load,
+                // AI Categorize, the GL account list itself). String()-ing
+                // it only here would make freshly-refreshed suggestions the
+                // one inconsistent case, breaking the GL Select's value
+                // match for exactly the rows this refresh just touched.
+                accountId: u.gl_account_id,
                 accountCode: u.gl_account_code,
                 accountName: u.gl_account_name,
                 confidence: u.confidence,
