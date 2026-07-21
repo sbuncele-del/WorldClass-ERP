@@ -2,6 +2,7 @@ import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { pool as sharedPool } from '../config/database';
 import { TenantRequest, JWTPayload, UnauthorizedError, ForbiddenError } from '../types';
+import { ProductModule, moduleFeatureFlag } from '../config/moduleRegistry';
 
 // Use shared pool from config/database.ts - single pool for entire application
 function getPool() {
@@ -356,6 +357,38 @@ export const requireFeature = (featureName: string) => {
 };
 
 /**
+ * Require Module Middleware - check if tenant is entitled to a product module
+ *
+ * Unlike requireFeature, a MISSING flag counts as entitled - only an explicit
+ * `false` denies access. This means every existing tenant (none of which have
+ * module_* keys set) passes through unchanged; only tenants deliberately
+ * restricted to a standalone product shell will ever be denied.
+ *
+ * Usage:
+ *   router.use(tenantMiddleware, requireModule('projects'));
+ */
+export const requireModule = (module: ProductModule) => {
+  return (req: TenantRequest, res: Response, next: NextFunction): void => {
+    try {
+      if (!req.tenant) {
+        throw new UnauthorizedError('Tenant context required');
+      }
+
+      const entitled = req.tenant.features[moduleFeatureFlag(module)];
+      if (entitled === false) {
+        throw new ForbiddenError(
+          `The "${module}" module is not enabled for this account. Please upgrade to access it.`
+        );
+      }
+
+      next();
+    } catch (error) {
+      next(error);
+    }
+  };
+};
+
+/**
  * Require Entity Context Middleware
  * Ensures that an entity has been selected and attached by tenantMiddleware.
  */
@@ -471,6 +504,7 @@ export default {
   requireRole,
   requirePermission,
   requireFeature,
+  requireModule,
   blockDemoWrites,
   superAdminOnly,
   requireEntity
