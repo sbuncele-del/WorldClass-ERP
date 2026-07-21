@@ -2041,7 +2041,19 @@ const BankReconciliation: React.FC = () => {
                                 optionFilterProp="label"
                                 filterOption={(input, option) => (option?.label as string)?.toLowerCase().includes(input.toLowerCase())}
                                 onChange={(val) => setSuggestionOverrides(prev => new Map(prev).set(txn.id, val))}
-                                options={glAccounts.map(a => ({ value: a.id, label: `${a.code} - ${a.name}` }))}
+                                options={(() => {
+                                  const base = glAccounts.map(a => ({ value: a.id, label: `${a.code} - ${a.name}` }));
+                                  // The suggested account is always a valid, real GL account (it came
+                                  // straight from the database) - but glAccounts is a separately-fetched
+                                  // list that can momentarily not include it, which made antd's Select
+                                  // fall back to showing the bare numeric id instead of "493 - Travel -
+                                  // National" for a correctly-suggested account. Guaranteeing a matching
+                                  // option always exists removes that fallback entirely.
+                                  if (selectedAccount?.id != null && !base.some(o => o.value === selectedAccount.id)) {
+                                    base.unshift({ value: selectedAccount.id, label: `${selectedAccount.code} - ${selectedAccount.name}` });
+                                  }
+                                  return base;
+                                })()}
                                 dropdownRender={(menu) => (
                                   <>
                                     {menu}
