@@ -17,6 +17,8 @@ export interface SignupData {
   phone?: string;
   referralCode?: string;
   termsAccepted?: boolean;
+  /** Set for standalone product-shell signups (e.g. 'projects') to restrict the new tenant to that module. */
+  product?: string;
 }
 
 export interface LoginData {

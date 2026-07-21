@@ -3,11 +3,12 @@
  * Multi-step user registration with validation
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import authService from '../services/auth.service';
 import type { SignupData } from '../services/auth.service';
+import { getCurrentProductShell } from '../config/productShells';
 import './Signup.css';
 
 const COUNTRIES = [
@@ -64,6 +65,8 @@ const Signup = () => {
   const [searchParams] = useSearchParams();
   const moduleParam = searchParams.get('module');
   const planParam = searchParams.get('plan');
+  const shell = useMemo(() => getCurrentProductShell(), []);
+  const isStandaloneShell = shell.key !== 'erp';
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<SignupData>({
     email: '',
@@ -72,11 +75,13 @@ const Signup = () => {
     lastName: '',
     companyName: '',
     country: 'ZA',
-    plan: planParam || (moduleParam ? 'module' : 'business'),
+    // Standalone product shells have no plan tiers yet - always the (free-trial) starter plan.
+    plan: isStandaloneShell ? 'starter' : planParam || (moduleParam ? 'module' : 'business'),
     industry: 'general',
     phone: '',
     referralCode: searchParams.get('ref') || '',
     termsAccepted: false,
+    product: isStandaloneShell ? shell.key : undefined,
   });
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -285,9 +290,13 @@ const Signup = () => {
               </defs>
             </svg>
           </div>
-          <h1 className="auth-title">Create Your Account</h1>
+          <h1 className="auth-title">
+            {isStandaloneShell ? `Create Your ${shell.brandName} Account` : 'Create Your Account'}
+          </h1>
           <p className="auth-subtitle">
-            {moduleParam
+            {isStandaloneShell
+              ? `Start your free trial of ${shell.brandName}. No credit card required.`
+              : moduleParam
               ? `Start your free trial — ${moduleParam.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} module`
               : 'Start your 14-day free trial. No credit card required.'}
           </p>
@@ -553,6 +562,7 @@ const Signup = () => {
           {/* Step 3: Plan Selection */}
           {step === 3 && (
             <>
+              {!isStandaloneShell && (
               <div className="plan-selection">
                 {PLANS.map((plan) => (
                   <label key={plan.id} className="plan-card">
@@ -586,6 +596,7 @@ const Signup = () => {
                   </label>
                 ))}
               </div>
+              )}
 
               <div className="trial-notice">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">

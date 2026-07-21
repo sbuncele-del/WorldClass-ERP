@@ -16,6 +16,7 @@ import TenantService from '../services/tenant.service';
 import ProvisioningService from '../services/provisioning.service';
 import { pool as sharedPool } from '../config/database';
 import { sendEmail } from '../services/email.service';
+import { PRODUCT_MODULES, isProductModule, moduleFeatureFlag } from '../config/moduleRegistry';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '1h';
@@ -66,6 +67,15 @@ export class AuthService {
       }
       const features = this.getPlanFeatures(effectivePlan);
       const limits = this.getPlanLimits(effectivePlan);
+
+      // Standalone product-shell signup (e.g. ProjectFlow): restrict the new
+      // tenant to only the module it signed up for. Absent/unrecognised
+      // product = full ERP tenant, unchanged from today's behaviour.
+      if (data.product && isProductModule(data.product)) {
+        for (const module of PRODUCT_MODULES) {
+          features[moduleFeatureFlag(module)] = module === data.product;
+        }
+      }
 
       // Generate tenant code from slug
       const tenantCode = slug.toUpperCase().replace(/-/g, '').substring(0, 10);

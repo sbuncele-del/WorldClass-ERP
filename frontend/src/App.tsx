@@ -1,5 +1,5 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
 import { ConfigProvider, Spin } from 'antd';
 import { antdTheme } from './theme/antd.theme';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -11,6 +11,9 @@ import { CurrencyProvider } from './contexts/CurrencyContext';
 import { UserProvider } from './contexts/UserContext';
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext';
 import { EntityProvider } from './contexts/EntityContext';
+import { EntitlementsProvider } from './contexts/EntitlementsContext';
+import RequireModule from './components/RequireModule';
+import { getCurrentProductShell } from './config/productShells';
 
 // Critical path components (loaded immediately)
 import Login from './pages/Login';
@@ -184,6 +187,12 @@ function getPortalType(): 'platform' | 'accountant' | 'reporting' | 'main' {
 
 // Sidebar layout with collapse state management
 const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
+  const shell = useMemo(() => getCurrentProductShell(), []);
+  useEffect(() => {
+    if (shell.key !== 'erp') {
+      document.title = shell.brandName;
+    }
+  }, [shell]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('sidebar-collapsed') === 'true';
   });
@@ -216,9 +225,20 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
       <main className="main-content-v2">
         <Suspense fallback={<PageLoader />}>
           <Routes key={entityKey}>
-            <Route path="/" element={<RoleBasedWorkspace />} />
-            <Route path="/dashboard" element={<RoleBasedWorkspace />} />
-            <Route path="/workspace" element={<RoleBasedWorkspace />} />
+            {shell.key === 'erp' ? (
+              <>
+                <Route path="/" element={<RoleBasedWorkspace />} />
+                <Route path="/dashboard" element={<RoleBasedWorkspace />} />
+                <Route path="/workspace" element={<RoleBasedWorkspace />} />
+              </>
+            ) : (
+              <>
+                {/* Standalone product shell: skip the full ERP dashboard, land straight in the shell's module. */}
+                <Route path="/" element={<Navigate to={shell.homeRoute} replace />} />
+                <Route path="/dashboard" element={<Navigate to={shell.homeRoute} replace />} />
+                <Route path="/workspace" element={<Navigate to={shell.homeRoute} replace />} />
+              </>
+            )}
             <Route path="/sales/*" element={<SalesModule />} />
             <Route path="/sales-hub/*" element={<SalesModule />} />
             <Route path="/purchase/*" element={<PurchaseHub />} />
@@ -253,8 +273,8 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
             <Route path="/practice-hub/*" element={<PracticeModule />} />
             <Route path="/logistics/*" element={<LogisticsHub />} />
             <Route path="/logistics-hub/*" element={<LogisticsHub />} />
-            <Route path="/projects/*" element={<ProjectsHub />} />
-            <Route path="/projects-hub/*" element={<ProjectsHub />} />
+            <Route path="/projects/*" element={<RequireModule module="projects"><ProjectsHub /></RequireModule>} />
+            <Route path="/projects-hub/*" element={<RequireModule module="projects"><ProjectsHub /></RequireModule>} />
             <Route path="/proposals/pitch/coffee" element={<CoffeePitchDeck />} />
             <Route path="/proposals/pitch/siyabusa" element={<SiyaBusaPitchDeck />} />
             <Route path="/proposals/new" element={<SmartProposalBuilder />} />
@@ -513,7 +533,9 @@ function App() {
                       <Route path="/app/*" element={
                         <ProtectedRoute>
                           <EntityProvider>
-                            <SidebarLayout />
+                            <EntitlementsProvider>
+                              <SidebarLayout />
+                            </EntitlementsProvider>
                           </EntityProvider>
                         </ProtectedRoute>
                       } />

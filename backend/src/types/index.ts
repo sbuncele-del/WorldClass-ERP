@@ -203,6 +203,10 @@ export interface SignupData {
   termsAccepted?: boolean;
   termsAcceptedIp?: string;
   acceptTerms?: boolean;
+
+  // Product shell: set for standalone product signups (e.g. 'projects') to
+  // restrict the new tenant to that module only. Omitted/absent = full ERP.
+  product?: string;
 }
 
 export interface AuthTokens {

@@ -56,6 +56,7 @@ export class AuthController {
         phone,
         referralCode,
         termsAccepted,
+        product,
       } = req.body;
 
       // Validation
@@ -117,6 +118,7 @@ export class AuthController {
         referralCode,
         termsAccepted,
         termsAcceptedIp: clientIp,
+        product,
       });
 
       // Send welcome email (non-blocking) — single send via WelcomeEmailService
