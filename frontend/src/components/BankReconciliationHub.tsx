@@ -212,7 +212,13 @@ const BankReconciliation: React.FC = () => {
         const hasSavedSuggestion = stmt.suggested_gl_account_id && uiStatus === 'unmatched';
         if (hasSavedSuggestion) {
           uiStatus = 'ai-suggested';
-          savedSuggestions.set(stmt.id, {
+          // line_id comes back from the API as a raw Postgres integer (a JS
+          // number), not a string, despite BankTransaction.id being typed
+          // string - String() it here so every downstream Map key/comparison
+          // (aiSuggestions.get(txn.id), the refresh-related-suggestions
+          // merge, etc.) is comparing like-for-like instead of silently
+          // failing on "5333" !== 5333.
+          savedSuggestions.set(String(stmt.id), {
             accountId: stmt.suggested_gl_account_id,
             accountCode: stmt.suggested_gl_account_code || '',
             accountName: stmt.suggested_gl_account_name || stmt.suggested_account_name_resolved || '',
@@ -224,7 +230,7 @@ const BankReconciliation: React.FC = () => {
         }
 
         return {
-          id: stmt.id,
+          id: String(stmt.id),
           date: stmt.transaction_date || stmt.date,
           description: stmt.description || '',
           reference: stmt.reference || '',

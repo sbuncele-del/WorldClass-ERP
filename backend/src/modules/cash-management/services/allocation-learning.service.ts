@@ -507,8 +507,16 @@ class AllocationLearningService {
       // Frequency bonus (0-15 points) - more generous for well-established patterns
       const frequencyBonus = Math.min(15, Math.log2(Math.max(pattern.frequency, 1) + 1) * 5);
 
-      // Calculate final confidence
-      const confidence = Math.min(99, Math.round(keywordScore + amountFit + descScore + frequencyBonus));
+      // Calculate final confidence. Floor it at the pattern's own
+      // confidence_score (the number that actually grows with every accept
+      // via recordAllocation) - without this, a well-established pattern
+      // (e.g. 20 accepts, confidence_score 93) could still show a LOWER
+      // per-transaction score here (this formula's own keyword/amount/
+      // description/frequency weighting caps out well below that for a
+      // single-word description like "Melon"), which reads as the system
+      // forgetting what it already learned rather than growing.
+      const patternConfidence = parseFloat(pattern.confidence_score) || 0;
+      const confidence = Math.min(99, Math.max(patternConfidence, Math.round(keywordScore + amountFit + descScore + frequencyBonus)));
 
       // Build reason
       const matchedKws = keywords.filter((kw: string) => pattern.keywords.includes(kw));
