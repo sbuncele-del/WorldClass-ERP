@@ -2150,7 +2150,7 @@ const BankReconciliation: React.FC = () => {
             <Result
               icon={<SettingOutlined style={{ color: '#94a3b8' }} />}
               title="Custom matching rules aren't available yet"
-              subTitle='"AI Auto-Match" already runs a built-in exact-match check (reference number, amount + date) against your existing invoices - there just isn\'t a way to configure custom rules for it yet.'
+              subTitle={`"AI Auto-Match" already runs a built-in exact-match check (reference number, amount + date) against your existing invoices - there just isn't a way to configure custom rules for it yet.`}
             />
           </Tabs.TabPane>
         </Tabs>
