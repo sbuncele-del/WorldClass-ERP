@@ -69,6 +69,7 @@ import agentRoutes from './routes/agent.routes';
 import multiEntityRoutes from './routes/multi-entity.routes';
 import superadminRoutes from './routes/superadmin.routes';
 import modulesRoutes from './routes/modules.routes';
+import entitlementsRoutes from './routes/entitlements.routes';
 import messagesRoutes from './routes/messages.routes';
 import deliveryRoutes from './routes/delivery.routes';
 import meetingsRoutes from './routes/meetings.routes';
@@ -204,6 +205,21 @@ app.use(morgan('dev'));
 // Security middleware
 app.use(securityHeaders);
 app.use(securityLogger);
+
+// Every /api response is dynamic, tenant-scoped data - never cacheable.
+// Without this, requests proxied through Vercel's rewrite (frontend ->
+// worldclass-construction-erp.onrender.com) can be served stale by
+// Vercel's edge cache, which defaults to caching GET responses that carry
+// no explicit Cache-Control header. Confirmed live: a value updated in the
+// database was still showing its old value in the UI minutes later - the
+// API itself was returning the fresh value on direct request, only the
+// proxied path was stale.
+app.use('/api', (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
 
 // IMPORTANT: Stripe webhooks need raw body for signature verification
 // Must come BEFORE express.json()
@@ -1576,6 +1592,7 @@ v1Router.use('/onboarding', apiLimiter, onboardingRoutes);
 
 // Module discovery routes (backend-driven UI)
 v1Router.use('/modules', apiLimiter, modulesRoutes);
+v1Router.use('/entitlements', apiLimiter, entitlementsRoutes);
 
 // Email preferences routes (mixed public/protected with API rate limiting)
 v1Router.use('/email-preferences', apiLimiter, emailPreferencesRoutes);

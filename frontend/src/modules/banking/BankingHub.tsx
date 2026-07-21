@@ -595,9 +595,12 @@ const BankingHub: React.FC = () => {
   };
 
   const getTotalBalance = (currency?: string) => {
-    return bankConnections
+    const total = bankConnections
       .filter(b => b.status === 'connected' && (!currency || b.currency === currency))
       .reduce((sum, b) => sum + b.balance, 0);
+    // Summing many floating-point balances accumulates binary rounding
+    // error (e.g. -220790.08000000002) - round to the cent for display.
+    return Math.round((total + Number.EPSILON) * 100) / 100;
   };
 
   const transactionColumns = [
