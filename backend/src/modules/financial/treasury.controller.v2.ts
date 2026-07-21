@@ -76,18 +76,16 @@ export const getCashForecasts = async (req: TenantRequest, res: Response) => {
     const { tenantId } = getTenantContext(req);
     const { currency, start_date, end_date } = req.query;
 
+    // treasury.cash_forecasts was never created - the real, live table is
+    // public.cash_forecasts (see backend/database/migrations for its
+    // CREATE TABLE). It also has no currency column, so that filter is
+    // dropped rather than pointed at a column that doesn't exist.
     let query = `
-      SELECT * FROM treasury.cash_forecasts
+      SELECT * FROM cash_forecasts
       WHERE tenant_id = $1
     `;
     const values: any[] = [tenantId];
     let paramCount = 2;
-
-    if (currency) {
-      query += ` AND currency = $${paramCount}`;
-      values.push(currency);
-      paramCount++;
-    }
 
     if (start_date) {
       query += ` AND forecast_date >= $${paramCount}`;

@@ -3295,9 +3295,27 @@ router.get('/cash-management/bank-accounts', async (req: any, res) => {
         b.bank_code,
         b.swift_code,
         (SELECT COUNT(*)::int FROM cash_bank_statement_lines l JOIN cash_bank_statements s ON s.statement_id = l.statement_id WHERE s.account_id = ba.account_id) as transaction_count,
-        (SELECT COUNT(*)::int FROM cash_bank_statement_lines l JOIN cash_bank_statements s ON s.statement_id = l.statement_id WHERE s.account_id = ba.account_id AND l.is_matched = false) as pending_count
+        (SELECT COUNT(*)::int FROM cash_bank_statement_lines l JOIN cash_bank_statements s ON s.statement_id = l.statement_id WHERE s.account_id = ba.account_id AND l.is_matched = false) as pending_count,
+        -- Real GL cash-account balance (posted journal entries only), not a
+        -- "sum of matched bank lines" stand-in - the reconciliation screen's
+        -- Book Balance figure was nonsensical without this (it fell back to
+        -- summing only the handful of already-matched statement lines,
+        -- producing a number with no accounting meaning next to Bank Balance).
+        coa.normal_balance as gl_normal_balance,
+        (SELECT COALESCE(
+           CASE WHEN coa.normal_balance = 'DEBIT'
+             THEN SUM(jel.debit_amount) - SUM(jel.credit_amount)
+             ELSE SUM(jel.credit_amount) - SUM(jel.debit_amount)
+           END, 0)
+         FROM journal_entry_lines jel
+         JOIN journal_entries je ON je.journal_entry_id = jel.journal_entry_id
+         WHERE jel.tenant_id = ba.tenant_id
+           AND jel.account_id = coa.account_id
+           AND je.status = 'POSTED'
+        ) as gl_book_balance
       FROM cash_bank_accounts ba
       LEFT JOIN cash_banks b ON ba.bank_id = b.bank_id
+      LEFT JOIN chart_of_accounts coa ON coa.tenant_id = ba.tenant_id AND coa.account_code = ba.gl_account_code
       WHERE ba.tenant_id = $1 AND ba.is_active = true
       ORDER BY ba.is_primary DESC, ba.account_name ASC`,
       [tenantId]
