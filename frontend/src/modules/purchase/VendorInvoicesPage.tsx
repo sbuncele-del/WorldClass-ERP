@@ -46,6 +46,12 @@ const VendorInvoicesPage: React.FC = () => {
   const [savingPay, setSavingPay] = useState(false);
   const [selectedInvoiceForPay, setSelectedInvoiceForPay] = useState<VendorInvoice | null>(null);
 
+  // Capture (OCR) modal state
+  const [showCaptureModal, setShowCaptureModal] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const [captureDragActive, setCaptureDragActive] = useState(false);
+  const [captureResult, setCaptureResult] = useState<{ invoice: VendorInvoice; extracted: any; needsReview: boolean } | null>(null);
+
   // Action saving states
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -235,6 +241,62 @@ const VendorInvoicesPage: React.FC = () => {
     }
   };
 
+  // ── Capture Invoice (OCR) ────────────────────────────────────────────────
+
+  const openCaptureModal = () => {
+    setCaptureResult(null);
+    setShowCaptureModal(true);
+  };
+
+  const closeCaptureModal = () => {
+    setShowCaptureModal(false);
+    setCaptureResult(null);
+    setCaptureDragActive(false);
+  };
+
+  const handleCaptureFile = async (file: File) => {
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowedTypes.includes(file.type)) {
+      message.error('Only PDF, JPG, and PNG files are supported');
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      message.error('File must be under 10MB');
+      return;
+    }
+
+    setCapturing(true);
+    setCaptureResult(null);
+    try {
+      const result = await purchaseService.captureInvoice(file);
+      setCaptureResult(result);
+      message.success(
+        result.needsReview
+          ? 'Invoice captured — please review before approving'
+          : 'Invoice captured and matched successfully'
+      );
+      fetchVendorInvoices();
+    } catch (err: any) {
+      const errMsg = err?.response?.data?.message || err?.message || 'Failed to capture invoice';
+      message.error(errMsg);
+    } finally {
+      setCapturing(false);
+    }
+  };
+
+  const handleCaptureDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setCaptureDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleCaptureFile(file);
+  };
+
+  const handleCaptureInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleCaptureFile(file);
+    e.target.value = '';
+  };
+
   // ── Filtering ────────────────────────────────────────────────────────────
 
   const filteredInvoices = invoices.filter(invoice => {
@@ -275,7 +337,10 @@ const VendorInvoicesPage: React.FC = () => {
       <div className="content-card">
         <div className="card-header">
           <h2>Vendor Invoices</h2>
-          <button className="btn-primary" onClick={openCreateModal}>+ New Invoice</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn-secondary" onClick={openCaptureModal}>📷 Capture Invoice</button>
+            <button className="btn-primary" onClick={openCreateModal}>+ New Invoice</button>
+          </div>
         </div>
 
         <div className="filters-section">
@@ -604,6 +669,83 @@ const VendorInvoicesPage: React.FC = () => {
             </Col>
           </Row>
         </Form>
+      </Modal>
+
+      {/* ── Capture Invoice Modal ────────────────────────────────────────── */}
+      <Modal
+        title="Capture Invoice"
+        open={showCaptureModal}
+        onCancel={closeCaptureModal}
+        footer={null}
+        width={560}
+        destroyOnClose
+      >
+        {!captureResult ? (
+          <div
+            onDragOver={(e) => { e.preventDefault(); setCaptureDragActive(true); }}
+            onDragLeave={() => setCaptureDragActive(false)}
+            onDrop={handleCaptureDrop}
+            style={{
+              border: `2px dashed ${captureDragActive ? '#1677ff' : '#d9d9d9'}`,
+              borderRadius: 8,
+              padding: 40,
+              textAlign: 'center',
+              background: captureDragActive ? '#f0f7ff' : '#fafafa',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {capturing ? (
+              <>
+                <div className="spinner" style={{ margin: '0 auto 16px' }} />
+                <p>Reading invoice with AI…</p>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: 32, margin: 0 }}>📄</p>
+                <p style={{ margin: '8px 0 16px', color: '#666' }}>
+                  Drag and drop an invoice (PDF, JPG, PNG) here
+                </p>
+                <label className="btn-secondary" style={{ cursor: 'pointer', display: 'inline-block' }}>
+                  Choose File
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleCaptureInputChange}
+                    style={{ display: 'none' }}
+                  />
+                </label>
+                <p style={{ marginTop: 16, fontSize: 12, color: '#999' }}>
+                  We'll extract the vendor, amounts, and line items automatically
+                </p>
+              </>
+            )}
+          </div>
+        ) : (
+          <div>
+            <div
+              style={{
+                padding: '12px 16px',
+                borderRadius: 6,
+                marginBottom: 16,
+                background: captureResult.needsReview ? '#fffbe6' : '#f6ffed',
+                border: `1px solid ${captureResult.needsReview ? '#ffe58f' : '#b7eb8f'}`,
+              }}
+            >
+              {captureResult.needsReview
+                ? '⚠️ Please review — low confidence or no matching supplier found'
+                : '✅ Invoice captured and matched to a supplier'}
+            </div>
+            <div style={{ marginBottom: 8 }}><strong>Vendor:</strong> {captureResult.extracted?.vendor_name || 'Not detected'}</div>
+            <div style={{ marginBottom: 8 }}><strong>Invoice Number:</strong> {captureResult.extracted?.invoice_number || 'Not detected'}</div>
+            <div style={{ marginBottom: 8 }}><strong>Invoice Date:</strong> {captureResult.extracted?.invoice_date || 'Not detected'}</div>
+            <div style={{ marginBottom: 8 }}><strong>Total Amount:</strong> {captureResult.extracted?.total_amount != null ? formatCurrency(captureResult.extracted.total_amount) : 'Not detected'}</div>
+            <div style={{ marginBottom: 16 }}><strong>Extraction Confidence:</strong> {captureResult.extracted?.confidence != null ? `${captureResult.extracted.confidence}%` : 'Unknown'}</div>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <Button onClick={() => setCaptureResult(null)}>Capture Another</Button>
+              <Button type="primary" onClick={closeCaptureModal}>Done</Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* ── Pay Invoice Modal ────────────────────────────────────────────── */}

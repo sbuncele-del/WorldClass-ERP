@@ -261,6 +261,15 @@ export const purchaseService = {
     await apiClient.delete(`/api/purchase/invoices/${id}`);
   },
 
+  async captureInvoice(file: File): Promise<{ invoice: VendorInvoice; extracted: any; supplierMatch: { supplierId: number | null; score: number }; needsReview: boolean }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await apiClient.post('/api/purchase/vendor-invoices/capture', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return extractData({ data });
+  },
+
   // ── Requisitions ──────────────────────────────────────────────────────
   async getRequisitions(params?: { status?: string; department?: string; page?: number; limit?: number }): Promise<any> {
     const { data } = await apiClient.get('/api/purchase/requisitions', { params });
