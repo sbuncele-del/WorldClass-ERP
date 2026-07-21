@@ -10,7 +10,7 @@
  * - Audit trail
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import apiClient from '../services/api';
 import {
   Card, Row, Col, Table, Tag, Button, Space, Statistic,
@@ -174,18 +174,99 @@ const BankReconciliation: React.FC = () => {
     }
   }, []);
 
+  // Loads statement lines for ONE bank account. Bank Balance and everything
+  // else on this screen is only meaningful scoped to a single account being
+  // reconciled - this used to fetch every account's lines mixed together
+  // (the API call never passed bank_account_id), which is why Bank Balance
+  // showed the sum of ALL bank accounts combined instead of just the
+  // selected one, producing numbers that couldn't be reconciled against
+  // anything.
+  const loadStatementLines = useCallback(async (accountId: string) => {
+    const statementsRes = await apiClient
+      .get('/api/v2/cash-management/statement-lines', { params: { bank_account_id: accountId } })
+      .catch(() => ({ data: { data: [] } }));
+    const statements = statementsRes.data?.data || [];
+
+    if (statements.length > 0) {
+      // Build AI suggestions map from DB-persisted suggestions
+      const savedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string; patternId?: string; humanConfirmed?: boolean }>();
+
+      const mappedTxns = statements.map((stmt: any) => {
+        // Map DB status to frontend status - normalise to lowercase first
+        let uiStatus = (stmt.status || 'unmatched').toLowerCase();
+        if (uiStatus === 'allocated') uiStatus = 'matched';
+        if (uiStatus === 'reconciled') uiStatus = 'matched';
+
+        // If DB has a saved AI suggestion and txn is unmatched, show as ai-suggested
+        const hasSavedSuggestion = stmt.suggested_gl_account_id && uiStatus === 'unmatched';
+        if (hasSavedSuggestion) {
+          uiStatus = 'ai-suggested';
+          savedSuggestions.set(stmt.id, {
+            accountId: stmt.suggested_gl_account_id,
+            accountCode: stmt.suggested_gl_account_code || '',
+            accountName: stmt.suggested_gl_account_name || stmt.suggested_account_name_resolved || '',
+            confidence: parseFloat(stmt.ai_confidence) || 0,
+            reason: stmt.ai_reason || 'AI suggested',
+            patternId: stmt.pattern_id || undefined,
+            humanConfirmed: !!stmt.human_confirmed
+          });
+        }
+
+        return {
+          id: stmt.id,
+          date: stmt.transaction_date || stmt.date,
+          description: stmt.description || '',
+          reference: stmt.reference || '',
+          amount: Math.abs(parseFloat(stmt.amount) || 0),
+          signedAmount: parseFloat(stmt.amount) || 0,
+          originalStatus: stmt.status || 'unmatched',
+          type: parseFloat(stmt.amount) >= 0 ? 'credit' : 'debit',
+          status: uiStatus as 'unmatched' | 'matched' | 'partial' | 'excluded' | 'ai-suggested' | 'reconciled',
+          category: stmt.category || stmt.allocated_account_name || '',
+          matchedWith: stmt.matched_transaction_id ? [stmt.matched_transaction_id] : [],
+          suggestedGlAccountName: stmt.allocated_account_name || stmt.suggested_gl_account_name || stmt.suggested_account_name_resolved || undefined,
+          confidence: hasSavedSuggestion ? parseFloat(stmt.ai_confidence) || 0 : undefined,
+          aiSuggestion: hasSavedSuggestion ? `${stmt.suggested_gl_account_code || ''} - ${stmt.suggested_gl_account_name || stmt.suggested_account_name_resolved || ''}: ${stmt.ai_reason || 'AI suggested'}` : undefined,
+        };
+      });
+      setBankTransactions(mappedTxns);
+
+      // Restore AI suggestions map so the UI shows suggestion badges
+      setAiSuggestions(savedSuggestions);
+      if (savedSuggestions.size > 0) {
+        setAiProvider(statements.find((s: any) => s.ai_provider)?.ai_provider || 'rules');
+      }
+    } else {
+      setBankTransactions([]);
+      setAiSuggestions(new Map());
+    }
+  }, []);
+
+  // Reload statement lines whenever the selected bank account changes (the
+  // initial mount's fetch below handles the first load itself, so this
+  // effect skips its first run to avoid double-fetching).
+  const skippedFirstAccountLoad = useRef(false);
+  useEffect(() => {
+    if (!skippedFirstAccountLoad.current) {
+      skippedFirstAccountLoad.current = true;
+      return;
+    }
+    if (selectedBankAccount) loadStatementLines(selectedBankAccount);
+  }, [selectedBankAccount, loadStatementLines]);
+
   // Fetch real bank accounts and transactions from API
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // These 7 requests are all independent - fetching them one at a time
+        // These 6 requests are all independent - fetching them one at a time
         // (as this used to do) serialized ~2-3s each into a 15-30s page load.
         // Firing them together cuts load time to whichever single request is
-        // slowest, instead of the sum of all of them.
-        const [accountsRes, statementsRes, apRes, arRes, glRes, historyRes, rulesRes] = await Promise.all([
+        // slowest, instead of the sum of all of them. Statement lines are
+        // fetched separately below since they depend on knowing the default
+        // account first (see loadStatementLines).
+        const [accountsRes, apRes, arRes, glRes, historyRes, rulesRes] = await Promise.all([
           apiClient.get('/api/v2/cash-management/bank-accounts').catch(() => ({ data: { data: [] } })),
-          apiClient.get('/api/v2/cash-management/statement-lines').catch(() => ({ data: { data: [] } })),
           apiClient.get('/api/v2/purchase/invoices?status=pending').catch(() => ({ data: { data: [] } })),
           apiClient.get('/api/v2/sales/invoices?status=pending').catch(() => ({ data: { data: [] } })),
           apiClient.get('/api/v2/financial/accounts').catch(() => ({ data: { data: [] } })),
@@ -195,7 +276,8 @@ const BankReconciliation: React.FC = () => {
 
         // Fetch bank accounts
         const accounts = accountsRes.data?.data || [];
-        
+        let defaultAccountId = '';
+
         if (accounts.length > 0) {
           const mappedAccounts = accounts.map((acc: any) => ({
             id: acc.id,
@@ -203,69 +285,21 @@ const BankReconciliation: React.FC = () => {
             balance: parseFloat(acc.current_balance) || 0,
             number: acc.account_number ? `****${String(acc.account_number).replace(/\D/g, '').slice(-4) || String(acc.account_number).slice(-4)}` : '****',
             currency: acc.currency || 'ZAR',
-            gl_account_code: acc.gl_account_code || ''
+            gl_account_code: acc.gl_account_code || '',
+            gl_book_balance: acc.gl_book_balance
           }));
           setBankAccounts(mappedAccounts);
-          setSelectedBankAccount(mappedAccounts[0]?.id || '');
+          defaultAccountId = mappedAccounts[0]?.id || '';
+          setSelectedBankAccount(defaultAccountId);
         } else {
           // No bank accounts - show empty state
           setBankAccounts([]);
         }
 
-        // Statement lines/transactions
-        const statements = statementsRes.data?.data || [];
-        
-        if (statements.length > 0) {
-          // Build AI suggestions map from DB-persisted suggestions
-          const savedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string; patternId?: string; humanConfirmed?: boolean }>();
-
-          const mappedTxns = statements.map((stmt: any) => {
-            // Map DB status to frontend status - normalise to lowercase first
-            let uiStatus = (stmt.status || 'unmatched').toLowerCase();
-            if (uiStatus === 'allocated') uiStatus = 'matched';
-            if (uiStatus === 'reconciled') uiStatus = 'matched';
-            
-            // If DB has a saved AI suggestion and txn is unmatched, show as ai-suggested
-            const hasSavedSuggestion = stmt.suggested_gl_account_id && uiStatus === 'unmatched';
-            if (hasSavedSuggestion) {
-              uiStatus = 'ai-suggested';
-              savedSuggestions.set(stmt.id, {
-                accountId: stmt.suggested_gl_account_id,
-                accountCode: stmt.suggested_gl_account_code || '',
-                accountName: stmt.suggested_gl_account_name || stmt.suggested_account_name_resolved || '',
-                confidence: parseFloat(stmt.ai_confidence) || 0,
-                reason: stmt.ai_reason || 'AI suggested',
-                patternId: stmt.pattern_id || undefined,
-                humanConfirmed: !!stmt.human_confirmed
-              });
-            }
-
-            return {
-              id: stmt.id,
-              date: stmt.transaction_date || stmt.date,
-              description: stmt.description || '',
-              reference: stmt.reference || '',
-              amount: Math.abs(parseFloat(stmt.amount) || 0),
-              signedAmount: parseFloat(stmt.amount) || 0,
-              originalStatus: stmt.status || 'unmatched',
-              type: parseFloat(stmt.amount) >= 0 ? 'credit' : 'debit',
-              status: uiStatus as 'unmatched' | 'matched' | 'partial' | 'excluded' | 'ai-suggested' | 'reconciled',
-              category: stmt.category || stmt.allocated_account_name || '',
-              matchedWith: stmt.matched_transaction_id ? [stmt.matched_transaction_id] : [],
-              suggestedGlAccountName: stmt.allocated_account_name || stmt.suggested_gl_account_name || stmt.suggested_account_name_resolved || undefined,
-              confidence: hasSavedSuggestion ? parseFloat(stmt.ai_confidence) || 0 : undefined,
-              aiSuggestion: hasSavedSuggestion ? `${stmt.suggested_gl_account_code || ''} - ${stmt.suggested_gl_account_name || stmt.suggested_account_name_resolved || ''}: ${stmt.ai_reason || 'AI suggested'}` : undefined,
-            };
-          });
-          setBankTransactions(mappedTxns);
-
-          // Restore AI suggestions map so the UI shows suggestion badges
-          if (savedSuggestions.size > 0) {
-            setAiSuggestions(savedSuggestions);
-            setAiProvider(statements.find((s: any) => s.ai_provider)?.ai_provider || 'rules');
-          }
+        // Statement lines/transactions, scoped to the default account
+        if (defaultAccountId) {
+          await loadStatementLines(defaultAccountId);
         } else {
-          // No transactions yet
           setBankTransactions([]);
         }
 
@@ -348,15 +382,22 @@ const BankReconciliation: React.FC = () => {
 
   // Calculate stats - use real data only
   const selectedAccount = bankAccounts.find(a => a.id === selectedBankAccount);
-  // Bank Balance = sum of ALL statement lines (what the bank says)
-  const bankBalance = bankTransactions.reduce((sum, t) => sum + ((t as any).signedAmount || (t.type === 'debit' ? -t.amount : t.amount)), 0);
+  // Money math in floating point accumulates binary rounding error over many
+  // additions (classic 0.1 + 0.2 territory) - round every running total to
+  // the cent so display never leaks noise like "-220790.08000000002".
+  const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+  // Bank Balance = sum of this account's statement lines (bankTransactions
+  // is now fetched scoped to selectedBankAccount, not every account mixed
+  // together - see loadStatementLines)
+  const bankBalance = round2(bankTransactions.reduce((sum, t) => sum + ((t as any).signedAmount || (t.type === 'debit' ? -t.amount : t.amount)), 0));
   // Book Balance = GL balance for the linked bank GL account (if available), otherwise sum of reconciled lines
   const glBookBalance = selectedAccount && parseFloat((selectedAccount as any).gl_book_balance || '0');
   const hasGLLink = selectedAccount && (selectedAccount as any).gl_account_code && glBookBalance !== undefined;
-  const reconciledBalance = bankTransactions
+  const reconciledBalance = round2(bankTransactions
     .filter(t => t.status === 'matched' || (t as any).originalStatus === 'allocated' || (t as any).originalStatus === 'reconciled')
-    .reduce((sum, t) => sum + ((t as any).signedAmount || (t.type === 'debit' ? -t.amount : t.amount)), 0);
-  const bookBalance = hasGLLink && glBookBalance !== 0 ? glBookBalance : reconciledBalance;
+    .reduce((sum, t) => sum + ((t as any).signedAmount || (t.type === 'debit' ? -t.amount : t.amount)), 0));
+  const bookBalance = hasGLLink && glBookBalance !== 0 ? round2(glBookBalance) : reconciledBalance;
   const stats = {
     bankBalance,
     bookBalance,
@@ -367,7 +408,7 @@ const BankReconciliation: React.FC = () => {
     partialCount: bankTransactions.filter(t => t.status === 'partial').length,
     matchRate: bankTransactions.length > 0 ? Math.round((bankTransactions.filter(t => t.status === 'matched').length / bankTransactions.length) * 100) : 0
   };
-  stats.difference = stats.bankBalance - stats.bookBalance;
+  stats.difference = round2(stats.bankBalance - stats.bookBalance);
 
   // AI Auto-Match Function - intelligent matching using rules
   const runAIAutoMatch = useCallback(async () => {
@@ -1005,51 +1046,13 @@ const BankReconciliation: React.FC = () => {
           balance: parseFloat(acc.current_balance) || 0,
           number: acc.account_number ? acc.account_number.replace(/\d(?=\d{4})/g, 'X') : 'XXXXXXXX',
           currency: acc.currency || 'ZAR',
+          gl_account_code: acc.gl_account_code || '',
+          gl_book_balance: acc.gl_book_balance
         })));
       }
 
-      // Re-fetch statement lines
-      const stmtRes = await apiClient.get('/api/v2/cash-management/statement-lines').catch(() => ({ data: { data: [] } }));
-      const statements = stmtRes.data?.data || [];
-      if (statements.length > 0) {
-        const savedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string; patternId?: string; humanConfirmed?: boolean }>();
-        const mappedTxns = statements.map((stmt: any) => {
-          let uiStatus = (stmt.status || 'unmatched').toLowerCase();
-          if (uiStatus === 'allocated') uiStatus = 'matched';
-          if (uiStatus === 'reconciled') uiStatus = 'matched';
-          const hasSavedSuggestion = stmt.suggested_gl_account_id && uiStatus === 'unmatched';
-          if (hasSavedSuggestion) {
-            uiStatus = 'ai-suggested';
-            savedSuggestions.set(stmt.id, {
-              accountId: stmt.suggested_gl_account_id,
-              accountCode: stmt.suggested_gl_account_code || '',
-              accountName: stmt.suggested_gl_account_name || '',
-              confidence: parseFloat(stmt.ai_confidence) || 0,
-              reason: stmt.ai_reason || 'AI suggested',
-              patternId: stmt.pattern_id || undefined,
-              humanConfirmed: !!stmt.human_confirmed
-            });
-          }
-          return {
-            id: stmt.id,
-            date: stmt.transaction_date || stmt.date,
-            description: stmt.description || '',
-            reference: stmt.reference || '',
-            amount: Math.abs(parseFloat(stmt.amount) || 0),
-            type: parseFloat(stmt.amount) >= 0 ? 'credit' : 'debit',
-            status: uiStatus as BankTransaction['status'],
-            category: stmt.category || stmt.allocated_account_name || '',
-            matchedWith: stmt.matched_transaction_id ? [stmt.matched_transaction_id] : [],
-            suggestedGlAccountName: stmt.allocated_account_name || stmt.suggested_gl_account_name || undefined,
-            confidence: hasSavedSuggestion ? parseFloat(stmt.ai_confidence) || 0 : undefined,
-            aiSuggestion: hasSavedSuggestion
-              ? `${stmt.suggested_gl_account_code || ''} - ${stmt.suggested_gl_account_name || ''}: ${stmt.ai_reason || 'AI suggested'}`
-              : undefined,
-          };
-        });
-        setBankTransactions(mappedTxns);
-        if (savedSuggestions.size > 0) setAiSuggestions(savedSuggestions);
-      }
+      // Re-fetch statement lines for whichever account is currently selected
+      if (selectedBankAccount) await loadStatementLines(selectedBankAccount);
 
       message.success('Data refreshed');
     } catch (err) {
@@ -1058,7 +1061,7 @@ const BankReconciliation: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [selectedBankAccount, loadStatementLines]);
 
   const handleAllocateToGL = async () => {
     if (!allocatingTxn || !selectedGLAccount) {
