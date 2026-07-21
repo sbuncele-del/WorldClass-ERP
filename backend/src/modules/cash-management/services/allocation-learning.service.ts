@@ -579,6 +579,13 @@ class AllocationLearningService {
     const keywords = this.extractKeywords(justAcceptedDescription);
     if (keywords.length === 0) return [];
 
+    // Capped to a screen's worth, not "every pending line matching this
+    // keyword" - a common vendor (Uber: 426 pending rows in one real tenant)
+    // made this rescan hundreds of rows on every single accept. Sequential
+    // per-row scoring at that volume was measured taking over a minute,
+    // and repeated accepts before it finished piled up multiple overlapping
+    // requests, so the visible rows a user was actually looking at often
+    // never got reached within any single call's LIMIT.
     const pendingLines = await pool.query(
       `SELECT l.line_id, l.description,
               COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0) as amount,
@@ -591,17 +598,20 @@ class AllocationLearningService {
            SELECT 1 FROM unnest($2::text[]) kw
            WHERE UPPER(l.description) LIKE '%' || kw || '%'
          )
-       LIMIT 200`,
+       ORDER BY l.transaction_date DESC
+       LIMIT 40`,
       [tenantId, keywords]
     );
 
     if (pendingLines.rows.length === 0) return [];
 
-    const updates: Array<{ line_id: string } & AllocationSuggestion> = [];
-    for (const line of pendingLines.rows) {
+    // Score + persist all matched lines concurrently instead of one DB
+    // round-trip at a time - the dominant cost here is network latency to
+    // Postgres, not CPU, so this is safe to parallelize at this batch size.
+    const results = await Promise.all(pendingLines.rows.map(async (line) => {
       const suggestions = await this.getSuggestions(tenantId, line.description, line.amount, line.is_debit);
       const top = suggestions[0];
-      if (!top) continue;
+      if (!top) return null;
 
       await pool.query(
         `UPDATE cash_bank_statement_lines
@@ -617,8 +627,10 @@ class AllocationLearningService {
          WHERE line_id = $8 AND tenant_id = $9`,
         [top.gl_account_id, top.gl_account_code, top.gl_account_name, top.confidence, top.match_reason, top.pattern_id, top.accepted_count >= 1, line.line_id, tenantId]
       );
-      updates.push({ line_id: String(line.line_id), ...top });
-    }
+      return { line_id: String(line.line_id), ...top };
+    }));
+
+    const updates = results.filter((r): r is { line_id: string } & AllocationSuggestion => r !== null);
 
     return updates;
   }
