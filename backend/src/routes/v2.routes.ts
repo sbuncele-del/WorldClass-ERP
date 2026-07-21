@@ -4986,6 +4986,33 @@ router.post('/cash-management/reconciliation/ai-feedback', async (req: any, res)
 });
 
 /**
+ * After accepting a transaction (which reinforces its learned pattern),
+ * rescore + persist suggestions for OTHER still-pending transactions that
+ * share that pattern - so confidence visibly climbs across the review queue
+ * as the user works through it, instead of staying frozen at whatever it
+ * was when first computed. Patterns-only (no AI provider calls), so it's
+ * cheap enough to call after every accept.
+ */
+router.post('/cash-management/reconciliation/refresh-related-suggestions', async (req: any, res) => {
+  const tenantId = req.tenant?.id || req.headers['x-tenant-id'];
+
+  try {
+    const { description } = req.body;
+    if (!description) {
+      return res.status(400).json({ success: false, error: 'description is required' });
+    }
+
+    const { allocationLearningService } = await import('../modules/cash-management/services/allocation-learning.service');
+    const updated = await allocationLearningService.refreshRelatedSuggestions(tenantId, description);
+
+    res.json({ success: true, data: { updated } });
+  } catch (err: any) {
+    console.error('Refresh related suggestions error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * Get AI learning stats for the tenant
  */
 router.get('/cash-management/reconciliation/ai-stats', async (req: any, res) => {

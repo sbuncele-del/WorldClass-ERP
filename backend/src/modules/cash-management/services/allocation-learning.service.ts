@@ -46,6 +46,7 @@ interface AllocationSuggestion {
   match_reason: string;
   pattern_id: string;
   learned_from_count: number;
+  accepted_count: number;
 }
 
 // ============================================================
@@ -522,7 +523,8 @@ class AllocationLearningService {
         confidence,
         match_reason: reason,
         pattern_id: pattern.id,
-        learned_from_count: pattern.frequency
+        learned_from_count: pattern.frequency,
+        accepted_count: parseInt(pattern.accepted_count) || 0
       };
     }).filter((s: AllocationSuggestion) => s.confidence >= 35); // Minimum 35% confidence
   }
@@ -546,6 +548,71 @@ class AllocationLearningService {
     }
     
     return results;
+  }
+
+  /**
+   * After a transaction is accepted and its pattern is reinforced (see
+   * recordAllocation), find OTHER still-pending statement lines that share
+   * that pattern's keywords and rescore + persist their suggestions too.
+   *
+   * Without this, accepting one "Melon" transaction updated the learned
+   * pattern's confidence in the database, but every OTHER already-loaded
+   * "Melon" suggestion on the review screen kept showing its original,
+   * stale confidence forever - nothing ever told them to recompute, and
+   * re-running full "AI Categorize" (which re-calls Groq/Claude for
+   * everything) is the only thing that previously would have refreshed
+   * them. This targets just the handful of transactions actually affected,
+   * using patterns-only scoring (no AI provider calls, fast and free).
+   */
+  async refreshRelatedSuggestions(
+    tenantId: string,
+    justAcceptedDescription: string
+  ): Promise<Array<{ line_id: string } & AllocationSuggestion>> {
+    const keywords = this.extractKeywords(justAcceptedDescription);
+    if (keywords.length === 0) return [];
+
+    const pendingLines = await pool.query(
+      `SELECT l.line_id, l.description,
+              COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0) as amount,
+              CASE WHEN COALESCE(l.debit_amount, 0) > 0 THEN true ELSE false END as is_debit
+       FROM cash_bank_statement_lines l
+       JOIN cash_bank_statements s ON l.statement_id = s.statement_id
+       WHERE s.tenant_id = $1
+         AND l.is_matched = false
+         AND EXISTS (
+           SELECT 1 FROM unnest($2::text[]) kw
+           WHERE UPPER(l.description) LIKE '%' || kw || '%'
+         )
+       LIMIT 200`,
+      [tenantId, keywords]
+    );
+
+    if (pendingLines.rows.length === 0) return [];
+
+    const updates: Array<{ line_id: string } & AllocationSuggestion> = [];
+    for (const line of pendingLines.rows) {
+      const suggestions = await this.getSuggestions(tenantId, line.description, line.amount, line.is_debit);
+      const top = suggestions[0];
+      if (!top) continue;
+
+      await pool.query(
+        `UPDATE cash_bank_statement_lines
+         SET suggested_gl_account_id = $1,
+             suggested_gl_account_code = $2,
+             suggested_gl_account_name = $3,
+             suggestion_confidence = $4,
+             suggestion_reason = $5,
+             suggestion_pattern_id = $6,
+             suggestion_human_confirmed = $7,
+             suggestion_ai_provider = 'learned',
+             suggested_at = NOW()
+         WHERE line_id = $8 AND tenant_id = $9`,
+        [top.gl_account_id, top.gl_account_code, top.gl_account_name, top.confidence, top.match_reason, top.pattern_id, top.accepted_count >= 1, line.line_id, tenantId]
+      );
+      updates.push({ line_id: String(line.line_id), ...top });
+    }
+
+    return updates;
   }
 
   /**

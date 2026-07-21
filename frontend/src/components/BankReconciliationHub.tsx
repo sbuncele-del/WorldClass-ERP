@@ -782,6 +782,44 @@ const BankReconciliation: React.FC = () => {
           key: 'allocate-ai',
           duration: 3
         });
+
+        // This accept just reinforced a learned pattern - other pending
+        // transactions matching the same pattern (e.g. every other "Melon"
+        // in the queue) should show the updated confidence too, not sit
+        // frozen at whatever they were when first computed.
+        apiClient.post('/api/v2/cash-management/reconciliation/refresh-related-suggestions', {
+          description: txn.description
+        }).then(refreshRes => {
+          const updates: any[] = refreshRes.data?.data?.updated || [];
+          if (updates.length === 0) return;
+
+          setAiSuggestions(prev => {
+            const newMap = new Map(prev);
+            for (const u of updates) {
+              newMap.set(String(u.line_id), {
+                accountId: String(u.gl_account_id),
+                accountCode: u.gl_account_code,
+                accountName: u.gl_account_name,
+                confidence: u.confidence,
+                reason: u.match_reason,
+                patternId: u.pattern_id,
+                humanConfirmed: (u.accepted_count || 0) >= 1
+              });
+            }
+            return newMap;
+          });
+          setBankTransactions(prev => prev.map(t => {
+            const u = updates.find(x => String(x.line_id) === t.id);
+            if (!u || t.status === 'matched') return t;
+            return {
+              ...t,
+              status: 'ai-suggested' as const,
+              confidence: u.confidence,
+              aiSuggestion: `${u.gl_account_code} - ${u.gl_account_name}: ${u.match_reason}`,
+              category: `${u.gl_account_code} - ${u.gl_account_name}`
+            };
+          }));
+        }).catch(() => {}); // Non-critical - the accept itself already succeeded
       } else {
         message.error({ content: response.data?.error || 'Failed to create GL entry', key: 'allocate-ai' });
       }
