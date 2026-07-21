@@ -139,6 +139,11 @@ const BankReconciliation: React.FC = () => {
   const [selectedGLAccount, setSelectedGLAccount] = useState<string>('');
   const [allocateDescription, setAllocateDescription] = useState('');
   const [isAllocating, setIsAllocating] = useState(false);
+  // Tracks which single row's Accept button is in flight, separately from
+  // isAllocating (bulk/batch actions) - without this, every row's Accept
+  // button shared the same boolean and all lit up as "running" whenever any
+  // one of them was clicked.
+  const [allocatingTxnId, setAllocatingTxnId] = useState<string | null>(null);
 
   // Inline account creation state
   const [showCreateAccount, setShowCreateAccount] = useState(false);
@@ -676,7 +681,7 @@ const BankReconciliation: React.FC = () => {
       return;
     }
 
-    setIsAllocating(true);
+    setAllocatingTxnId(txnId);
     message.loading({ content: 'Creating GL entry...', key: 'allocate-ai' });
 
     try {
@@ -736,7 +741,7 @@ const BankReconciliation: React.FC = () => {
       });
     }
 
-    setIsAllocating(false);
+    setAllocatingTxnId(null);
   };
 
   // Accept ALL high-confidence AI category suggestions. Requires both a very
@@ -1484,7 +1489,7 @@ const BankReconciliation: React.FC = () => {
           {record.status === 'ai-suggested' && aiSuggestions.has(record.id) && (
             <>
               <Tooltip title={`Accept: ${aiSuggestions.get(record.id)?.accountCode} - ${aiSuggestions.get(record.id)?.accountName}`}>
-                <Button size="small" type="primary" icon={<CheckOutlined />} onClick={() => acceptAICategorySuggestion(record.id)} loading={isAllocating} style={{ fontSize: 11 }} />
+                <Button size="small" type="primary" icon={<CheckOutlined />} onClick={() => acceptAICategorySuggestion(record.id)} loading={allocatingTxnId === record.id} style={{ fontSize: 11 }} />
               </Tooltip>
               <Tooltip title="Reject">
                 <Button size="small" icon={<CloseCircleOutlined />} onClick={() => rejectAISuggestion(record.id)} style={{ fontSize: 11 }} />
@@ -1981,7 +1986,7 @@ const BankReconciliation: React.FC = () => {
                                   <Button
                                     type="primary"
                                     icon={<CheckOutlined />}
-                                    loading={isAllocating}
+                                    loading={allocatingTxnId === txn.id}
                                     onClick={() => acceptAICategorySuggestion(txn.id, overrideId ? {
                                       id: selectedAccount!.id, code: selectedAccount!.code!, name: selectedAccount!.name!
                                     } : undefined)}

@@ -29,7 +29,7 @@ interface AllocationPattern {
   amount_min: number;
   amount_max: number;
   transaction_type: 'debit' | 'credit' | 'both';
-  gl_account_id: string;
+  gl_account_id: number;
   gl_account_code: string;
   gl_account_name: string;
   frequency: number;             // How many times this pattern was used
@@ -39,7 +39,7 @@ interface AllocationPattern {
 }
 
 interface AllocationSuggestion {
-  gl_account_id: string;
+  gl_account_id: number;
   gl_account_code: string;
   gl_account_name: string;
   confidence: number;
@@ -67,7 +67,7 @@ class AllocationLearningService {
         amount_min NUMERIC(18,2) DEFAULT 0,
         amount_max NUMERIC(18,2) DEFAULT 999999999,
         transaction_type VARCHAR(10) DEFAULT 'both',
-        gl_account_id UUID NOT NULL,
+        gl_account_id INTEGER NOT NULL REFERENCES chart_of_accounts(account_id),
         gl_account_code VARCHAR(50),
         gl_account_name VARCHAR(255),
         frequency INT DEFAULT 1,
@@ -321,7 +321,7 @@ class AllocationLearningService {
     description: string,
     amount: number,
     isDebit: boolean,
-    glAccountId: string,
+    glAccountId: number,
     userId: string
   ): Promise<void> {
     await this.ensureTable();
