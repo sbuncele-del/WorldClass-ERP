@@ -3,6 +3,7 @@ import express from 'express';
 import * as purchaseControllerV2 from '../controllers/purchase.controller.v2';
 import * as purchaseWorkspaceController from '../modules/purchase/controllers/purchase.workspace.controller';
 import * as statementsController from '../controllers/statements.controller.v2';
+import { uploadInvoiceDocument, captureInvoice } from '../modules/purchase/controllers/invoice-capture.controller';
 import { tenantMiddleware } from '../middleware/tenant';
 
 const router = express.Router();
@@ -67,6 +68,8 @@ router.delete('/goods-receipts/:id', purchaseControllerV2.deleteGoodsReceipt);
 router.post('/goods-receipts/:id/confirm', purchaseControllerV2.confirmGoodsReceipt);
 
 // ==================== VENDOR INVOICE ROUTES ====================
+router.post('/vendor-invoices/capture', uploadInvoiceDocument, captureInvoice);
+router.post('/invoices/capture', uploadInvoiceDocument, captureInvoice);
 router.get('/vendor-invoices', purchaseControllerV2.getVendorInvoices);
 router.get('/vendor-invoices/:id', purchaseControllerV2.getVendorInvoice);
 router.post('/vendor-invoices', purchaseControllerV2.createVendorInvoice);
