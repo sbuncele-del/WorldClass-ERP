@@ -86,6 +86,80 @@ export async function categorizeTransactions(
   let aiProvider = 'rules';
   let suggestions: any[] = [];
 
+  // Matches a single transaction against learned patterns only (no AI call).
+  // This MUST run before any AI provider call, not just as a last-resort
+  // fallback: AI-derived suggestions never carry pattern_id/human_confirmed
+  // (parseAndMapAISuggestions doesn't set them), and human_confirmed is the
+  // only thing the 97%-confidence auto-allocate job gates on. With
+  // GROQ_API_KEY/ANTHROPIC_API_KEY configured, the AI provider used to run
+  // for every transaction unconditionally, so this branch (and therefore
+  // human_confirmed=true) was effectively unreachable in production -
+  // auto-allocation could never fire for any transaction, ever, no matter
+  // how many times a pattern had been manually confirmed.
+  const LEARNED_MATCH_THRESHOLD = 55;
+  const matchLearnedPattern = (line: any): any | null => {
+    if (learnedPatterns.length === 0) return null;
+    const isDebit = line.is_debit;
+    const amount = Math.abs(parseFloat(line.amount as any));
+    const descUpper = (line.description || '').toUpperCase();
+    let bestPattern: any = null;
+    let bestScore = 0;
+
+    for (const pattern of learnedPatterns) {
+      const txnType = isDebit ? 'debit' : 'credit';
+      if (pattern.transaction_type !== txnType && pattern.transaction_type !== 'both') continue;
+
+      const patternKeywords: string[] = pattern.keywords || [];
+      const matchedKws = patternKeywords.filter((kw: string) => descUpper.includes(kw));
+      if (matchedKws.length === 0) continue;
+
+      const overlapRatio = matchedKws.length / patternKeywords.length;
+      const inRange = amount >= parseFloat(pattern.amount_min) && amount <= parseFloat(pattern.amount_max);
+      const amountBonus = inRange ? 15 : 0;
+      const score = (overlapRatio * 60) + amountBonus + Math.min(15, pattern.frequency * 2);
+
+      if (score > bestScore && score >= 30) {
+        bestScore = score;
+        bestPattern = pattern;
+      }
+    }
+
+    if (!bestPattern) return null;
+    const matchedAccount = accountsResult.rows.find((a: any) => a.code === bestPattern.gl_account_code);
+    if (!matchedAccount) return null;
+
+    // Floor at the pattern's own confidence_score (same reasoning as
+    // allocation-learning.service.ts's getSuggestions) and cap at 99, not
+    // 95 - a pattern with enough confirmed accepts must be able to cross
+    // the 97% auto-allocate threshold.
+    const patternConfidence = parseFloat(bestPattern.confidence_score) || 0;
+    return {
+      line_id: line.line_id,
+      description: line.description,
+      amount: line.amount,
+      suggested_account_id: matchedAccount.id,
+      suggested_account_code: matchedAccount.code,
+      suggested_account_name: matchedAccount.name,
+      confidence: Math.min(99, Math.max(patternConfidence, Math.round(bestScore))),
+      reason: `Learned pattern: "${bestPattern.gl_account_name}" (used ${bestPattern.frequency}x)`,
+      pattern_id: bestPattern.id,
+      human_confirmed: (parseInt(bestPattern.accepted_count) || 0) >= 1
+    };
+  };
+
+  // Pass 1: try every transaction against learned patterns first. Only
+  // transactions without a solid match go to the AI provider (or the
+  // keyword-rule fallback) below - saves AI calls for vendors that are
+  // already well-trained, on top of fixing the auto-allocate gate.
+  const learnedResults = new Map<string, any>();
+  for (const line of transactionsToProcess) {
+    const match = matchLearnedPattern(line);
+    if (match && match.confidence >= LEARNED_MATCH_THRESHOLD) {
+      learnedResults.set(String(line.line_id), match);
+    }
+  }
+  const remainingForAI = transactionsToProcess.filter((line) => !learnedResults.has(String(line.line_id)));
+
   const accountList = accountsResult.rows.map((a: any) => `${a.code}: ${a.name} (${a.type})`).join('\n');
 
   const buildPrompt = (txns: any[]): string => {
@@ -197,18 +271,25 @@ Respond ONLY with valid JSON array, no other text.`;
   const hasGroq = !!process.env.GROQ_API_KEY;
   const hasClaude = !!process.env.ANTHROPIC_API_KEY;
 
-  if (hasGroq) {
+  // aiProvider tracks what handled the AI/rules portion (remainingForAI);
+  // learnedResults (pass 1, above) is merged back in separately below so a
+  // batch that's part-learned/part-AI is labeled accurately either way.
+  let remainderProvider = 'rules';
+
+  if (remainingForAI.length === 0) {
+    suggestions = [];
+  } else if (hasGroq) {
     try {
-      suggestions = await callGroq(transactionsToProcess);
-      aiProvider = suggestions.length > 0 ? 'groq' : 'rules';
+      suggestions = await callGroq(remainingForAI);
+      remainderProvider = suggestions.length > 0 ? 'groq' : 'rules';
     } catch (aiErr: any) {
       console.error('Groq AI error:', aiErr.message);
       suggestions = [];
-      aiProvider = 'rules';
+      remainderProvider = 'rules';
     }
 
     if (hasClaude) {
-      const escalationCandidates = transactionsToProcess.filter((line: any) => {
+      const escalationCandidates = remainingForAI.filter((line: any) => {
         const g = suggestions.find((s: any) => s.line_id === line.line_id);
         return !g || !g.suggested_account_id || (g.confidence || 0) < ESCALATION_CONFIDENCE_THRESHOLD;
       });
@@ -227,7 +308,7 @@ Respond ONLY with valid JSON array, no other text.`;
             }
           }
           if (claudeImproved > 0) {
-            aiProvider = aiProvider === 'groq' ? 'groq+claude' : 'claude';
+            remainderProvider = remainderProvider === 'groq' ? 'groq+claude' : 'claude';
           }
         } catch (aiErr: any) {
           console.error('Claude escalation error:', aiErr.message);
@@ -236,17 +317,17 @@ Respond ONLY with valid JSON array, no other text.`;
     }
   } else if (hasClaude) {
     try {
-      suggestions = await callClaude(transactionsToProcess);
-      aiProvider = suggestions.length > 0 ? 'claude' : 'rules';
+      suggestions = await callClaude(remainingForAI);
+      remainderProvider = suggestions.length > 0 ? 'claude' : 'rules';
     } catch (aiErr: any) {
       console.error('Claude AI error:', aiErr.message);
-      aiProvider = 'rules';
+      remainderProvider = 'rules';
     }
   }
 
   // Fallback: First try learned patterns, then rule-based categorization
-  if (aiProvider === 'rules' || suggestions.length === 0) {
-    suggestions = transactionsToProcess.map((line: any) => {
+  if (remainingForAI.length > 0 && (remainderProvider === 'rules' || suggestions.length === 0)) {
+    suggestions = remainingForAI.map((line: any) => {
       const desc = (line.description || '').toLowerCase();
       const isDebit = line.is_debit;
       const amount = Math.abs(parseFloat(line.amount as any));
@@ -439,5 +520,14 @@ Respond ONLY with valid JSON array, no other text.`;
     });
   }
 
-  return { suggestions, ai_provider: aiProvider };
+  const allSuggestions = [...learnedResults.values(), ...suggestions];
+  if (learnedResults.size > 0 && remainingForAI.length > 0) {
+    aiProvider = `learned+${remainderProvider}`;
+  } else if (learnedResults.size > 0) {
+    aiProvider = 'learned';
+  } else {
+    aiProvider = remainderProvider;
+  }
+
+  return { suggestions: allSuggestions, ai_provider: aiProvider };
 }
