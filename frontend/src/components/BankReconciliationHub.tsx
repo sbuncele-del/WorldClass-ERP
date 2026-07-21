@@ -174,8 +174,21 @@ const BankReconciliation: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        // These 7 requests are all independent - fetching them one at a time
+        // (as this used to do) serialized ~2-3s each into a 15-30s page load.
+        // Firing them together cuts load time to whichever single request is
+        // slowest, instead of the sum of all of them.
+        const [accountsRes, statementsRes, apRes, arRes, glRes, historyRes, rulesRes] = await Promise.all([
+          apiClient.get('/api/v2/cash-management/bank-accounts').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/cash-management/statement-lines').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/purchase/invoices?status=pending').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/sales/invoices?status=pending').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/financial/accounts').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/cash-management/reconciliation/history').catch(() => ({ data: { data: [] } })),
+          apiClient.get('/api/v2/cash-management/reconciliation/rules').catch(() => ({ data: { data: [] } })),
+        ]);
+
         // Fetch bank accounts
-        const accountsRes = await apiClient.get('/api/v2/cash-management/bank-accounts').catch(() => ({ data: { data: [] } }));
         const accounts = accountsRes.data?.data || [];
         
         if (accounts.length > 0) {
@@ -194,8 +207,7 @@ const BankReconciliation: React.FC = () => {
           setBankAccounts([]);
         }
 
-        // Fetch statement lines/transactions if available
-        const statementsRes = await apiClient.get('/api/v2/cash-management/statement-lines').catch(() => ({ data: { data: [] } }));
+        // Statement lines/transactions
         const statements = statementsRes.data?.data || [];
         
         if (statements.length > 0) {
@@ -252,10 +264,7 @@ const BankReconciliation: React.FC = () => {
           setBankTransactions([]);
         }
 
-        // Book entries would come from AP/AR - fetch unpaid invoices
-        const apRes = await apiClient.get('/api/v2/purchase/invoices?status=pending').catch(() => ({ data: { data: [] } }));
-        const arRes = await apiClient.get('/api/v2/sales/invoices?status=pending').catch(() => ({ data: { data: [] } }));
-        
+        // Book entries would come from AP/AR - unpaid invoices
         const apInvoices = (apRes.data?.data || []).map((inv: any) => ({
           id: inv.id,
           date: inv.invoice_date || inv.date,
@@ -287,8 +296,7 @@ const BankReconciliation: React.FC = () => {
         setBookEntries([...apInvoices, ...arInvoices]);
         setAiMatches([]);
 
-        // Fetch GL accounts for allocation (expense accounts, income accounts, etc.)
-        const glRes = await apiClient.get('/api/v2/financial/accounts').catch(() => ({ data: { data: [] } }));
+        // GL accounts for allocation (expense accounts, income accounts, etc.)
         const allAccounts = glRes.data?.data || glRes.data?.accounts || [];
         if (allAccounts.length > 0) {
           // Filter to postable accounts only (not headers, must be active - the allocate
@@ -305,13 +313,11 @@ const BankReconciliation: React.FC = () => {
           setGLAccounts(mappedGL);
         }
 
-        // Fetch reconciliation history
-        const historyRes = await apiClient.get('/api/v2/cash-management/reconciliation/history').catch(() => ({ data: { data: [] } }));
+        // Reconciliation history
         const history = historyRes.data?.data || [];
         setReconciliationHistory(history);
 
-        // Fetch AI matching rules
-        const rulesRes = await apiClient.get('/api/v2/cash-management/reconciliation/rules').catch(() => ({ data: { data: [] } }));
+        // AI matching rules
         const rules = rulesRes.data?.data || [];
         // Set default rules if none exist
         if (rules.length === 0) {
