@@ -3334,14 +3334,22 @@ router.get('/cash-management/statement-lines', async (req: any, res) => {
         l.balance,
         l.is_matched,
         l.matched_transaction_id,
-        l.match_confidence as ai_confidence,
+        l.match_confidence,
         l.auto_category as category,
         l.confirmed_category as allocated_gl_account_code,
         CASE WHEN l.is_matched THEN 'Matched' ELSE 'Unmatched' END as status,
         (l.raw_data->>'journal_entry_id')::int as journal_entry_id,
         l.match_date as reconciled_date,
         COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0) as amount,
-        s.account_id as bank_account_id
+        s.account_id as bank_account_id,
+        l.suggested_gl_account_id,
+        l.suggested_gl_account_code,
+        l.suggested_gl_account_name,
+        l.suggestion_confidence as ai_confidence,
+        l.suggestion_reason as ai_reason,
+        l.suggestion_pattern_id as pattern_id,
+        l.suggestion_human_confirmed as human_confirmed,
+        l.suggestion_ai_provider as ai_provider
       FROM cash_bank_statement_lines l
       INNER JOIN cash_bank_statements s ON l.statement_id = s.statement_id
       WHERE s.tenant_id = $1`;
@@ -5082,12 +5090,47 @@ router.post('/cash-management/reconciliation/ai-categorize', async (req: any, re
     const { categorizeTransactions } = await import('../modules/cash-management/services/bank-categorization.service');
     const { suggestions, ai_provider } = await categorizeTransactions(tenantId, transactionsToProcess);
 
+    // Persist every suggestion so it survives navigation/reload instead of
+    // only ever existing in the browser's React state (see 133_persist_ai_
+    // categorization_suggestions.sql for the full story on why this was
+    // needed - suggestions were being computed and thrown away every time).
+    const withSuggestion = suggestions.filter(s => s.suggested_account_id);
+    if (withSuggestion.length > 0) {
+      await Promise.all(withSuggestion.map(s =>
+        query(
+          `UPDATE cash_bank_statement_lines
+           SET suggested_gl_account_id = $1,
+               suggested_gl_account_code = $2,
+               suggested_gl_account_name = $3,
+               suggestion_confidence = $4,
+               suggestion_reason = $5,
+               suggestion_pattern_id = $6,
+               suggestion_human_confirmed = $7,
+               suggestion_ai_provider = $8,
+               suggested_at = NOW()
+           WHERE line_id = $9 AND tenant_id = $10`,
+          [
+            s.suggested_account_id,
+            s.suggested_account_code,
+            s.suggested_account_name,
+            s.confidence,
+            s.reason,
+            s.pattern_id || null,
+            !!s.human_confirmed,
+            ai_provider,
+            s.line_id,
+            tenantId,
+          ]
+        ).catch((e: any) => console.error(`Failed to persist suggestion for line ${s.line_id}:`, e.message))
+      ));
+    }
+
     res.json({
       success: true,
       data: {
         suggestions,
         ai_provider,
-        total_categorized: suggestions.filter(s => s.suggested_account_id).length,
+        total_categorized: withSuggestion.length,
         total: suggestions.length
       }
     });

@@ -217,7 +217,9 @@ const BankReconciliation: React.FC = () => {
                 accountCode: stmt.suggested_gl_account_code || '',
                 accountName: stmt.suggested_gl_account_name || stmt.suggested_account_name_resolved || '',
                 confidence: parseFloat(stmt.ai_confidence) || 0,
-                reason: stmt.ai_reason || 'AI suggested'
+                reason: stmt.ai_reason || 'AI suggested',
+                patternId: stmt.pattern_id || undefined,
+                humanConfirmed: !!stmt.human_confirmed
               });
             }
 
@@ -999,12 +1001,24 @@ const BankReconciliation: React.FC = () => {
       const stmtRes = await apiClient.get('/api/v2/cash-management/statement-lines').catch(() => ({ data: { data: [] } }));
       const statements = stmtRes.data?.data || [];
       if (statements.length > 0) {
+        const savedSuggestions = new Map<string, { accountId: string; accountCode: string; accountName: string; confidence: number; reason: string; patternId?: string; humanConfirmed?: boolean }>();
         const mappedTxns = statements.map((stmt: any) => {
           let uiStatus = (stmt.status || 'unmatched').toLowerCase();
           if (uiStatus === 'allocated') uiStatus = 'matched';
           if (uiStatus === 'reconciled') uiStatus = 'matched';
           const hasSavedSuggestion = stmt.suggested_gl_account_id && uiStatus === 'unmatched';
-          if (hasSavedSuggestion) uiStatus = 'ai-suggested';
+          if (hasSavedSuggestion) {
+            uiStatus = 'ai-suggested';
+            savedSuggestions.set(stmt.id, {
+              accountId: stmt.suggested_gl_account_id,
+              accountCode: stmt.suggested_gl_account_code || '',
+              accountName: stmt.suggested_gl_account_name || '',
+              confidence: parseFloat(stmt.ai_confidence) || 0,
+              reason: stmt.ai_reason || 'AI suggested',
+              patternId: stmt.pattern_id || undefined,
+              humanConfirmed: !!stmt.human_confirmed
+            });
+          }
           return {
             id: stmt.id,
             date: stmt.transaction_date || stmt.date,
@@ -1023,6 +1037,7 @@ const BankReconciliation: React.FC = () => {
           };
         });
         setBankTransactions(mappedTxns);
+        if (savedSuggestions.size > 0) setAiSuggestions(savedSuggestions);
       }
 
       message.success('Data refreshed');
