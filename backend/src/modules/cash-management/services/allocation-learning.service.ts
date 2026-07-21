@@ -586,6 +586,17 @@ class AllocationLearningService {
     // and repeated accepts before it finished piled up multiple overlapping
     // requests, so the visible rows a user was actually looking at often
     // never got reached within any single call's LIMIT.
+    //
+    // Ordering by suggested_at ASC (never-refreshed rows first, via NULLS
+    // FIRST) rather than transaction_date DESC matters just as much as the
+    // limit itself: with a "most recent transaction" order, any vendor with
+    // more than 40 pending rows has a permanently-stale tail - accepting a
+    // newer Uber transaction keeps re-refreshing the same newest 40 rows
+    // forever, while older pending rows (confirmed live: some hadn't been
+    // touched since before this pattern reached its current confidence)
+    // never get their turn. Oldest-refreshed-first guarantees every pending
+    // row eventually gets covered as more accepts happen, converging on
+    // full coverage instead of repeatedly hitting the same subset.
     const pendingLines = await pool.query(
       `SELECT l.line_id, l.description,
               COALESCE(l.credit_amount, 0) - COALESCE(l.debit_amount, 0) as amount,
@@ -598,7 +609,7 @@ class AllocationLearningService {
            SELECT 1 FROM unnest($2::text[]) kw
            WHERE UPPER(l.description) LIKE '%' || kw || '%'
          )
-       ORDER BY l.transaction_date DESC
+       ORDER BY l.suggested_at ASC NULLS FIRST
        LIMIT 40`,
       [tenantId, keywords]
     );
