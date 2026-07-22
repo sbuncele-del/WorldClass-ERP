@@ -23,12 +23,22 @@ export default defineConfig({
         manualChunks: {
           // Vendor chunks - separate heavy libraries
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-antd': ['antd', '@ant-design/icons'],
           'vendor-charts': ['recharts', '@ant-design/charts'],
           'vendor-utils': ['axios', 'date-fns', 'socket.io-client'],
           // Feature chunks
           'feature-maps': ['leaflet', 'react-leaflet'],
           'feature-ocr': ['tesseract.js'],
+          // antd/icons deliberately NOT force-merged into one chunk here.
+          // App.tsx imports {ConfigProvider, Spin} from 'antd' directly (it's
+          // the always-mounted entry, not lazy), and since manualChunks groups
+          // by SOURCE MODULE regardless of which export is used where, that
+          // one trivial import dragged the full combined antd+icons usage
+          // from all 157 files that import from 'antd' into the entry
+          // chunk's eager dependency graph - a 1.4MB compressed chunk
+          // preloaded on every page, including ones with no Table/Form/
+          // DatePicker at all. Routes are already React.lazy()-loaded, so
+          // leaving this to Rollup's automatic chunking lets each route's
+          // antd usage split with that route's own chunk instead.
         },
       },
     },
