@@ -45,7 +45,7 @@ const FlowSpaceLanding = () => {
     <div className="pf-landing">
       <header className="pf-header">
         <div className="pf-header-inner">
-          <span className="pf-wordmark">FlowSpace</span>
+          <span className="pf-wordmark">Flowspace</span>
           <nav className="pf-nav">
             <Link to="/login" className="pf-nav-link">Sign in</Link>
             <Link to="/signup" className="pf-nav-cta">Get started</Link>
@@ -81,7 +81,7 @@ const FlowSpaceLanding = () => {
 
         <section className="pf-upgrade-note">
           <p>
-            Outgrowing a single tool? FlowSpace runs on the same platform as{' '}
+            Outgrowing a single tool? Flowspace runs on the same platform as{' '}
             <a href="https://siyabusaerp.co.za" target="_blank" rel="noopener noreferrer">
               SiyaBusa ERP
             </a>{' '}
@@ -91,7 +91,7 @@ const FlowSpaceLanding = () => {
       </main>
 
       <footer className="pf-footer">
-        <span>© {new Date().getFullYear()} FlowSpace</span>
+        <span>© {new Date().getFullYear()} Flowspace</span>
         <div className="pf-footer-links">
           <a href="/terms">Terms</a>
           <a href="/privacy">Privacy</a>

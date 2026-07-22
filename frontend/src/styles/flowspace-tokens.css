@@ -1,0 +1,32 @@
+/**
+ * FlowSpace design tokens — sourced from the FlowSpace Brand Guidelines
+ * (Claude Design project 75b9ddc8-47df-483c-b3dc-c3bf4d8db566). Single
+ * source of truth for every FlowSpace-shell component; don't hardcode
+ * these hex values elsewhere.
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500&display=swap');
+
+:root {
+  --fs-teal-deep: #123832;   /* dark surface: sidebar, hero, reversed lockups */
+  --fs-teal: #1B5E52;        /* primary: buttons, links, active states */
+  --fs-teal-400: #5B998A;
+  --fs-teal-100: #BCD9D2;
+  --fs-teal-wash: #EEF6F3;   /* light tinted backgrounds */
+  --fs-cream: #F2F1EC;       /* page background */
+  --fs-ink: #172033;         /* headline/body text on light surfaces */
+  --fs-slate: #5B6470;       /* muted/secondary text */
+  --fs-white: #FFFFFF;
+  --fs-line: rgba(23, 32, 51, 0.08);
+  --fs-line-strong: rgba(23, 32, 51, 0.14);
+  --fs-danger-wash: #FBECEB;
+  --fs-danger-ink: #7A4A45;
+
+  --fs-font-serif: 'Lora', Georgia, serif;
+  --fs-font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --fs-font-mono: 'Roboto Mono', ui-monospace, monospace;
+
+  --fs-radius: 10px;
+  --fs-radius-sm: 6px;
+  --fs-shadow-card: 0 1px 2px rgba(23, 32, 51, 0.06);
+}

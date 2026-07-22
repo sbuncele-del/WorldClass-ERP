@@ -1,13 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500&display=swap');
+
 .pf-landing {
-  --pf-ink: #15191C;
-  --pf-paper: #F3F5F6;
-  --pf-line: #D8DEDF;
-  --pf-teal: #0C5F53;
-  --pf-teal-bright: #12897A;
-  --pf-teal-wash: #E2EFEC;
-  --pf-font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --pf-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --pf-font-mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+  /* FlowSpace Brand Guidelines (Claude Design project 75b9ddc8-47df-483c-b3dc-c3bf4d8db566) */
+  --pf-ink: #172033;
+  --pf-paper: #F2F1EC;
+  --pf-line: rgba(23, 32, 51, 0.08);
+  --pf-teal: #1B5E52;
+  --pf-teal-bright: #123832;
+  --pf-teal-wash: #EEF6F3;
+  --pf-font-serif: "Lora", Georgia, serif;
+  --pf-font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --pf-font-mono: "Roboto Mono", ui-monospace, monospace;
 
   min-height: 100vh;
   background: var(--pf-paper);

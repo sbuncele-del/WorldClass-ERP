@@ -11,6 +11,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { projectService } from '../services/project.service';
+import '../components/FlowSpaceAppLayout.css';
 
 interface ProjectRow {
   id: string;
@@ -20,10 +21,22 @@ interface ProjectRow {
   client_name?: string | null;
 }
 
+const STATUS_STYLE: Record<string, { bg: string; fg: string }> = {
+  planning: { bg: '#EEF6F3', fg: '#1B5E52' },
+  active: { bg: '#EEF6F3', fg: '#1B5E52' },
+  in_progress: { bg: '#EEF6F3', fg: '#1B5E52' },
+  on_hold: { bg: '#FBF3E4', fg: '#8A6416' },
+  completed: { bg: '#EEF3EE', fg: '#3A6B4F' },
+  cancelled: { bg: '#FBECEB', fg: '#7A4A45' },
+};
+
+const initials = (name: string) => name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
+
 const FlowSpaceProjects = () => {
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [composing, setComposing] = useState(false);
   const [name, setName] = useState('');
   const [creating, setCreating] = useState(false);
 
@@ -46,6 +59,7 @@ const FlowSpaceProjects = () => {
     try {
       await projectService.createProject({ name: name.trim(), status: 'planning', priority: 'medium' });
       setName('');
+      setComposing(false);
       load();
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to create project');
@@ -56,51 +70,91 @@ const FlowSpaceProjects = () => {
 
   return (
     <div>
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px' }}>
-        <h1 style={{ marginBottom: 8 }}>Your projects</h1>
-        <p style={{ color: '#4b5457', marginBottom: 24 }}>Open a project to plan its scope, schedule, budget, risk, and closure.</p>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 16, flexWrap: 'wrap' }}>
+        <div>
+          <p className="fs-page-eyebrow">Workspace</p>
+          <h1 className="fs-page-title">Your projects</h1>
+          <p className="fs-page-subtitle" style={{ marginBottom: 0 }}>Open a project to plan its scope, schedule, budget, risk, and closure.</p>
+        </div>
+        {!composing && (
+          <button className="fs-btn fs-btn-primary" onClick={() => setComposing(true)}>+ New project</button>
+        )}
+      </div>
 
-        {error && <div style={{ background: '#f3ebda', border: '1px solid #d8dedf', borderRadius: 8, padding: 16, color: '#a5721a', marginBottom: 16 }}>{error}</div>}
+      {error && (
+        <div style={{ background: '#FBECEB', border: '1px solid var(--fs-line)', borderRadius: 'var(--fs-radius-sm)', padding: '12px 16px', color: '#7A4A45', margin: '24px 0', fontSize: 14 }}>
+          {error}
+        </div>
+      )}
 
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
+      {composing && (
+        <div className="fs-card" style={{ padding: 20, margin: '28px 0', display: 'flex', gap: 10 }}>
           <input
+            autoFocus
+            className="fs-input"
+            style={{ flex: 1 }}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && createProject()}
-            placeholder="New project name"
-            style={{ flex: 1, padding: '10px 12px', border: '1px solid #d8dedf', borderRadius: 6 }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') createProject();
+              if (e.key === 'Escape') { setComposing(false); setName(''); }
+            }}
+            placeholder="Project name"
           />
-          <button
-            onClick={createProject}
-            disabled={creating || !name.trim()}
-            style={{ padding: '10px 20px', background: '#0c5f53', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', opacity: creating || !name.trim() ? 0.6 : 1 }}
-          >
-            {creating ? 'Creating…' : 'New project'}
+          <button className="fs-btn fs-btn-primary" onClick={createProject} disabled={creating || !name.trim()}>
+            {creating ? 'Creating…' : 'Create'}
           </button>
+          <button className="fs-btn fs-btn-secondary" onClick={() => { setComposing(false); setName(''); }}>Cancel</button>
         </div>
+      )}
 
-        {loading && <p>Loading…</p>}
-        {!loading && projects.length === 0 && <p style={{ color: '#737c7e' }}>No projects yet — create your first one above.</p>}
+      <div style={{ marginTop: composing ? 8 : 32 }}>
+        {loading && <p style={{ color: 'var(--fs-slate)' }}>Loading…</p>}
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {projects.map((p) => (
-            <Link
-              key={p.id}
-              to={`/app/projects/engine-preview/${p.id}`}
-              style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '14px 16px', border: '1px solid #d8dedf', borderRadius: 8,
-                color: '#15191c', textDecoration: 'none',
-              }}
-            >
-              <span>
-                <strong>{p.name}</strong>
-                {p.code && <span style={{ color: '#737c7e', fontSize: 12, marginLeft: 8 }}>{p.code}</span>}
-              </span>
-              <span style={{ fontSize: 12, textTransform: 'uppercase', color: '#0c5f53' }}>{p.status || 'planning'}</span>
-            </Link>
-          ))}
-        </div>
+        {!loading && projects.length === 0 && (
+          <div className="fs-card" style={{ padding: '64px 24px', textAlign: 'center', color: 'var(--fs-slate)' }}>
+            <p style={{ fontFamily: 'var(--fs-font-serif)', fontSize: 19, color: 'var(--fs-ink)', margin: '0 0 8px' }}>No projects yet</p>
+            <p style={{ margin: 0, fontSize: 14 }}>Create your first project to start building its scope, schedule, and budget.</p>
+          </div>
+        )}
+
+        {!loading && projects.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
+            {projects.map((p) => {
+              const statusKey = (p.status || 'planning').toLowerCase();
+              const style = STATUS_STYLE[statusKey] || STATUS_STYLE.planning;
+              return (
+                <Link
+                  key={p.id}
+                  to={`/app/projects/engine-preview/${p.id}`}
+                  className="fs-card"
+                  style={{ display: 'block', padding: 20, textDecoration: 'none', color: 'var(--fs-ink)', transition: 'border-color 0.12s ease' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--fs-teal-400)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--fs-line)')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: 8, background: 'var(--fs-teal-wash)', color: 'var(--fs-teal)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, fontSize: 13, flexShrink: 0,
+                    }}>
+                      {initials(p.name)}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                      {p.code && <div style={{ fontFamily: 'var(--fs-font-mono)', fontSize: 11, color: 'var(--fs-slate)' }}>{p.code}</div>}
+                    </div>
+                  </div>
+                  <span style={{
+                    display: 'inline-block', fontSize: 11, fontWeight: 600, letterSpacing: '0.02em', textTransform: 'uppercase',
+                    padding: '4px 10px', borderRadius: 20, background: style.bg, color: style.fg,
+                  }}>
+                    {statusKey.replace('_', ' ')}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
