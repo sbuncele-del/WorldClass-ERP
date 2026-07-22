@@ -36,6 +36,9 @@ const ALLOWED_TRANSITIONS: Record<PfLifecyclePhase, PfLifecyclePhase[]> = {
   close: [],
 };
 
+/** The graph edges only, no gate check - lets a UI list candidate next phases before a user picks one. */
+export const getNextPhases = (from: PfLifecyclePhase): PfLifecyclePhase[] => ALLOWED_TRANSITIONS[from];
+
 export interface GateContext {
   /** Does the project have a current (is_current=true) baseline? Set by Phase 3+. */
   hasCurrentBaseline: boolean;

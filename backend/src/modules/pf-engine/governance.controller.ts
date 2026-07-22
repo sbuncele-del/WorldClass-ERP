@@ -3,6 +3,10 @@ import { TenantRequest } from '../../types';
 import { GovernanceService } from './governance.service';
 
 const notFound = (error: any) => /not found/i.test(error?.message || '');
+// The DB CHECK constraints already enforce this range, but validating here
+// turns a bad request into a clean 400 instead of a raw 500 from a
+// constraint violation.
+const isScore1to5 = (value: any) => Number.isInteger(Number(value)) && Number(value) >= 1 && Number(value) <= 5;
 
 export class GovernanceController {
   private service: GovernanceService;
@@ -29,6 +33,10 @@ export class GovernanceController {
         res.status(400).json({ success: false, error: 'title, probability and impact are required' });
         return;
       }
+      if (!isScore1to5(probability) || !isScore1to5(impact)) {
+        res.status(400).json({ success: false, error: 'probability and impact must be whole numbers from 1 to 5' });
+        return;
+      }
       const risk = await this.service.createRisk(req.tenant!.id, req.params.projectId, { title, description, category, probability, impact });
       res.status(201).json({ success: true, data: risk });
     } catch (error: any) {
@@ -39,6 +47,10 @@ export class GovernanceController {
   updateRisk = async (req: TenantRequest, res: Response) => {
     try {
       const { title, description, category, probability, impact, responseStrategy, responsePlan, owner, status } = req.body;
+      if ((probability != null && !isScore1to5(probability)) || (impact != null && !isScore1to5(impact))) {
+        res.status(400).json({ success: false, error: 'probability and impact must be whole numbers from 1 to 5' });
+        return;
+      }
       const risk = await this.service.updateRisk(req.tenant!.id, req.params.riskId, {
         title, description, category, probability, impact, responseStrategy, responsePlan, owner, status,
       });
@@ -209,6 +221,14 @@ export class GovernanceController {
       const { vendor, price, qualityScore, deliveryScore } = req.body;
       if (!vendor || price == null || qualityScore == null || deliveryScore == null) {
         res.status(400).json({ success: false, error: 'vendor, price, qualityScore and deliveryScore are required' });
+        return;
+      }
+      if (Number(price) < 0) {
+        res.status(400).json({ success: false, error: 'price cannot be negative' });
+        return;
+      }
+      if (!isScore1to5(qualityScore) || !isScore1to5(deliveryScore)) {
+        res.status(400).json({ success: false, error: 'qualityScore and deliveryScore must be whole numbers from 1 to 5' });
         return;
       }
       const item = await this.service.addVendorOption(req.tenant!.id, req.params.itemId, {

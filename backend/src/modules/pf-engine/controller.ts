@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { TenantRequest } from '../../types';
 import { PfEngineService } from './service';
+import { getNextPhases } from './lifecycle';
 
 export class PfEngineController {
   private service: PfEngineService;
@@ -19,7 +20,7 @@ export class PfEngineController {
         this.service.getTransitionHistory(tenantId, projectId),
       ]);
 
-      res.json({ success: true, data: { phase, history } });
+      res.json({ success: true, data: { phase, history, nextPhases: getNextPhases(phase) } });
     } catch (error: any) {
       res.status(error.message === 'Project not found' ? 404 : 500).json({
         success: false,
