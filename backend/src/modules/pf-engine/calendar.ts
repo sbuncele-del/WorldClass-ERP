@@ -1,5 +1,5 @@
 /**
- * ProjectFlow PM Engine — working calendar (Phase 3)
+ * FlowSpace PM Engine — working calendar (Phase 3)
  *
  * Phase 2 shipped continuous-day math deliberately (per the pre-flight
  * decision) so the CPM engine could be verified against a simple worked

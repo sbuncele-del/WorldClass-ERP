@@ -1,5 +1,5 @@
 /**
- * ProjectFlow PM Engine — Governance Registers (Phase 5)
+ * FlowSpace PM Engine — Governance Registers (Phase 5)
  *
  * Risk register (5x5 matrix), stakeholder engagement matrix, comms plan,
  * RACI matrix, procurement with best-value scoring. Independent of the

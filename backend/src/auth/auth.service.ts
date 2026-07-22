@@ -68,7 +68,7 @@ export class AuthService {
       const features = this.getPlanFeatures(effectivePlan);
       const limits = this.getPlanLimits(effectivePlan);
 
-      // Standalone product-shell signup (e.g. ProjectFlow): restrict the new
+      // Standalone product-shell signup (e.g. FlowSpace): restrict the new
       // tenant to only the module it signed up for. Absent/unrecognised
       // product = full ERP tenant, unchanged from today's behaviour.
       if (data.product && isProductModule(data.product)) {

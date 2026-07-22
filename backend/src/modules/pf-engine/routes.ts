@@ -1,5 +1,5 @@
 /**
- * ProjectFlow PM Engine — routes
+ * FlowSpace PM Engine — routes
  *
  * Mounted at /api/v1/projects/engine. Gated by the same requireModule('projects')
  * guard as the rest of the Projects surface — no new access model.

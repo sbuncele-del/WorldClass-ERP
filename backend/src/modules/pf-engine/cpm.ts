@@ -1,5 +1,5 @@
 /**
- * ProjectFlow PM Engine — CPM / PERT computation (Phase 2)
+ * FlowSpace PM Engine — CPM / PERT computation (Phase 2)
  *
  * Pure functions, no DB access - deliberately, so this is easy to reason
  * about and unit-test in isolation from persistence.

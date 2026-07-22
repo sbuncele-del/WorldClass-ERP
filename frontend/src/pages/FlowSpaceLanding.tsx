@@ -1,11 +1,11 @@
 /**
- * ProjectFlow Landing Page
- * Standalone marketing page for the ProjectFlow product shell.
+ * FlowSpace Landing Page
+ * Standalone marketing page for the FlowSpace product shell.
  * Deliberately does not reuse SiyaBusa ERP's branding/colours.
  */
 
 import { Link } from 'react-router-dom';
-import './ProjectFlowLanding.css';
+import './FlowSpaceLanding.css';
 
 const FEATURES = [
   {
@@ -40,12 +40,12 @@ const FEATURES = [
   },
 ];
 
-const ProjectFlowLanding = () => {
+const FlowSpaceLanding = () => {
   return (
     <div className="pf-landing">
       <header className="pf-header">
         <div className="pf-header-inner">
-          <span className="pf-wordmark">ProjectFlow</span>
+          <span className="pf-wordmark">FlowSpace</span>
           <nav className="pf-nav">
             <Link to="/login" className="pf-nav-link">Sign in</Link>
             <Link to="/signup" className="pf-nav-cta">Get started</Link>
@@ -81,7 +81,7 @@ const ProjectFlowLanding = () => {
 
         <section className="pf-upgrade-note">
           <p>
-            Outgrowing a single tool? ProjectFlow runs on the same platform as{' '}
+            Outgrowing a single tool? FlowSpace runs on the same platform as{' '}
             <a href="https://siyabusaerp.co.za" target="_blank" rel="noopener noreferrer">
               SiyaBusa ERP
             </a>{' '}
@@ -91,7 +91,7 @@ const ProjectFlowLanding = () => {
       </main>
 
       <footer className="pf-footer">
-        <span>© {new Date().getFullYear()} ProjectFlow</span>
+        <span>© {new Date().getFullYear()} FlowSpace</span>
         <div className="pf-footer-links">
           <a href="/terms">Terms</a>
           <a href="/privacy">Privacy</a>
@@ -101,4 +101,4 @@ const ProjectFlowLanding = () => {
   );
 };
 
-export default ProjectFlowLanding;
+export default FlowSpaceLanding;

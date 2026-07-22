@@ -1,5 +1,5 @@
 /**
- * ProjectFlow PM Engine — project profiles (Phase 7)
+ * FlowSpace PM Engine — project profiles (Phase 7)
  *
  * Config, not forks: one universal engine, four bundles of {terminology,
  * starter WBS, defaults}. Construction is the flagship (deepest domain

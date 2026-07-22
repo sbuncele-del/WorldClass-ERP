@@ -1,5 +1,5 @@
 /**
- * ProjectFlow PM Engine — Earned Value & Change Control (Phase 4)
+ * FlowSpace PM Engine — Earned Value & Change Control (Phase 4)
  *
  * Internal preview, not linked from the main nav yet.
  */

@@ -1690,7 +1690,7 @@ v1Router.use('/contact', apiLimiter, contactRoutes); // Website Contact Form
 v1Router.use('/waitlist', apiLimiter, waitlistRoutes); // Founding Member Waitlist
 
 // NEW API ROUTES - December 2025
-v1Router.use('/projects/engine', apiLimiter, pfEngineRoutes); // ProjectFlow PM Engine (Phase 0: lifecycle only) — mounted before /projects so its more specific path always wins
+v1Router.use('/projects/engine', apiLimiter, pfEngineRoutes); // FlowSpace PM Engine (Phase 0: lifecycle only) — mounted before /projects so its more specific path always wins
 v1Router.use('/projects', apiLimiter, projectsRoutes); // Project Management API
 v1Router.use('/proposals', apiLimiter, proposalsRoutes); // Proposals & Quotes API
 v1Router.use('/communications', apiLimiter, communicationsRoutes); // Communications Hub API

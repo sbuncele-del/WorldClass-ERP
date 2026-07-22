@@ -30,7 +30,7 @@ const RoleBasedWorkspace = lazy(() => import('./components/RoleBasedWorkspace'))
 
 // Landing Page (lazy loaded for performance)
 const LandingPage = lazy(() => import('./pages/LandingPage'));
-const ProjectFlowLanding = lazy(() => import('./pages/ProjectFlowLanding'));
+const FlowSpaceLanding = lazy(() => import('./pages/FlowSpaceLanding'));
 
 // Website Pages (multi-page site)
 const FeaturesPage = lazy(() => import('./pages/website/FeaturesPage'));
@@ -468,7 +468,7 @@ function App() {
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
                       {/* Landing Page - Public Homepage */}
-                      <Route path="/" element={shell.key === 'erp' ? <LandingPage /> : <ProjectFlowLanding />} />
+                      <Route path="/" element={shell.key === 'erp' ? <LandingPage /> : <FlowSpaceLanding />} />
                       
                       {/* Website Pages — Multi-page site */}
                       <Route path="/features" element={<FeaturesPage />} />

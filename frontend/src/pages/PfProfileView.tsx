@@ -1,5 +1,5 @@
 /**
- * ProjectFlow PM Engine — Project Profiles (Phase 7)
+ * FlowSpace PM Engine — Project Profiles (Phase 7)
  *
  * Config, not forks: applying a profile just relabels terminology, seeds
  * a starter WBS (only if the WBS is still empty), and records a couple of

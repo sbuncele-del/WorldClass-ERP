@@ -1,5 +1,5 @@
 /**
- * ProjectFlow PM Engine — Schedule view: Gantt + Network (Phase 2)
+ * FlowSpace PM Engine — Schedule view: Gantt + Network (Phase 2)
  *
  * Internal preview, not linked from the main nav yet. Same dataset,
  * two lenses — exactly the "toggle is a view preference, never a data fork"

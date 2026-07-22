@@ -1,8 +1,8 @@
 /**
- * ProjectFlow PM Engine — WBS Builder (Phase 1)
+ * FlowSpace PM Engine — WBS Builder (Phase 1)
  *
  * Internal preview, not linked from the main nav yet (see productShells /
- * coexistence strategy in the ProjectFlow build plan). Functional over
+ * coexistence strategy in the FlowSpace build plan). Functional over
  * polished - this proves the WBS/activity CRUD + auto-numbering work
  * end-to-end against real data before Phase 2 builds the CPM engine on top.
  */

@@ -1,5 +1,5 @@
 /**
- * ProjectFlow PM Engine — internal preview shell (Phase 0)
+ * FlowSpace PM Engine — internal preview shell (Phase 0)
  *
  * Not linked from any nav. Exists to prove the engine's routes/lifecycle
  * plumbing work end-to-end before Phase 1+ build real screens here.
@@ -47,7 +47,7 @@ const PfEnginePreview = () => {
 
   return (
     <div style={{ padding: 48, fontFamily: 'system-ui, sans-serif' }}>
-      <h1>ProjectFlow PM Engine — Preview</h1>
+      <h1>FlowSpace PM Engine — Preview</h1>
       <p>Internal scaffold. Not part of the live Projects experience yet.</p>
       {!projectId && <p>Pass a project id: <code>/app/projects/engine-preview/:projectId</code></p>}
       {projectId && !phase && !error && <p>Loading lifecycle phase…</p>}

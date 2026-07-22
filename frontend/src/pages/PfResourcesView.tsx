@@ -1,5 +1,5 @@
 /**
- * ProjectFlow PM Engine — Resources, cost, and baseline (Phase 3)
+ * FlowSpace PM Engine — Resources, cost, and baseline (Phase 3)
  *
  * Internal preview, not linked from the main nav yet.
  */

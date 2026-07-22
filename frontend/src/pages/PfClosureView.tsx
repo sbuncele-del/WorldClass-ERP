@@ -1,5 +1,5 @@
 /**
- * ProjectFlow PM Engine — Reviews & Closure (Phase 6)
+ * FlowSpace PM Engine — Reviews & Closure (Phase 6)
  *
  * Fills in the lifecycle's second soft gate: closing to "close" now
  * requires every checklist item complete plus a recorded closure outcome

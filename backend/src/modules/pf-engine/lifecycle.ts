@@ -1,5 +1,5 @@
 /**
- * ProjectFlow PM Engine — Lifecycle State Machine
+ * FlowSpace PM Engine — Lifecycle State Machine
  *
  * The 6-phase PMBOK lifecycle + the "soft gate" framework: phases mostly
  * transition freely, but the two logically-required gates are enforced here.
