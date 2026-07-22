@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 
 const PfEnginePreview = () => {
@@ -29,6 +29,7 @@ const PfEnginePreview = () => {
       {projectId && !phase && !error && <p>Loading lifecycle phase…</p>}
       {phase && <p>Lifecycle phase: <strong>{phase}</strong></p>}
       {error && <p style={{ color: 'crimson' }}>Error: {error}</p>}
+      {projectId && <p><Link to={`/app/projects/engine-preview/${projectId}/wbs`}>Open WBS builder →</Link></p>}
     </div>
   );
 };

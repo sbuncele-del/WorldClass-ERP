@@ -121,6 +121,7 @@ const ManufacturingHub = lazy(() => import('./modules/manufacturing/Manufacturin
 const LogisticsHub = lazy(() => import('./modules/logistics/LogisticsHub'));
 const ProjectsHub = lazy(() => import('./modules/projects/ProjectsHub'));
 const PfEnginePreview = lazy(() => import('./pages/PfEnginePreview'));
+const PfWbsBuilder = lazy(() => import('./pages/PfWbsBuilder'));
 const ProposalsHub = lazy(() => import('./modules/proposals/ProposalsHub'));
 const ProposalEditor = lazy(() => import('./modules/proposals/ProposalEditor'));
 const ProProposalBuilder = lazy(() => import('./modules/proposals/ProProposalBuilder'));
@@ -279,6 +280,7 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
             <Route path="/projects-hub/*" element={<RequireModule module="projects"><ProjectsHub /></RequireModule>} />
             {/* PM engine internal preview (Phase 0) - unlinked from nav, exists to prove the plumbing */}
             <Route path="/projects/engine-preview/:projectId" element={<RequireModule module="projects"><PfEnginePreview /></RequireModule>} />
+            <Route path="/projects/engine-preview/:projectId/wbs" element={<RequireModule module="projects"><PfWbsBuilder /></RequireModule>} />
             <Route path="/proposals/pitch/coffee" element={<CoffeePitchDeck />} />
             <Route path="/proposals/pitch/siyabusa" element={<SiyaBusaPitchDeck />} />
             <Route path="/proposals/new" element={<SmartProposalBuilder />} />
