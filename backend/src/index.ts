@@ -97,6 +97,7 @@ import assetManagementRoutes from './modules/assets/routes';
 
 // NEW API ROUTES - December 2025
 import projectsRoutes from './routes/projects.routes';
+import pfEngineRoutes from './modules/pf-engine/routes';
 import proposalsRoutes from './routes/proposals.routes';
 import communicationsRoutes from './routes/communications.routes';
 import calendarRoutes from './routes/calendar.routes';
@@ -1689,6 +1690,7 @@ v1Router.use('/contact', apiLimiter, contactRoutes); // Website Contact Form
 v1Router.use('/waitlist', apiLimiter, waitlistRoutes); // Founding Member Waitlist
 
 // NEW API ROUTES - December 2025
+v1Router.use('/projects/engine', apiLimiter, pfEngineRoutes); // ProjectFlow PM Engine (Phase 0: lifecycle only) — mounted before /projects so its more specific path always wins
 v1Router.use('/projects', apiLimiter, projectsRoutes); // Project Management API
 v1Router.use('/proposals', apiLimiter, proposalsRoutes); // Proposals & Quotes API
 v1Router.use('/communications', apiLimiter, communicationsRoutes); // Communications Hub API
