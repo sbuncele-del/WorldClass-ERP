@@ -137,9 +137,7 @@ const PfEvaView = () => {
     curve.map((p, i) => `${(i / Math.max(curve.length - 1, 1)) * 600},${160 - (p[key] / (maxCurve || 1)) * 150}`).join(' ');
 
   return (
-    <div style={{ padding: 48, fontFamily: 'system-ui, sans-serif', maxWidth: 1000 }}>
-      <p><Link to={`/app/projects/engine-preview/${projectId}`}>← back to engine preview</Link></p>
-      <h1>Earned Value &amp; Change Control</h1>
+    <div style={{ maxWidth: 1000 }}>
 
       {error && (
         <div style={{ background: '#f3ebda', border: '1px solid #d8dedf', borderRadius: 8, padding: 16, color: '#a5721a' }}>

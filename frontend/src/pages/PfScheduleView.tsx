@@ -102,9 +102,7 @@ const PfScheduleView = () => {
   if (error) return <div style={{ padding: 48, color: 'crimson' }}>Error: {error}</div>;
 
   return (
-    <div style={{ padding: 48, fontFamily: 'system-ui, sans-serif', maxWidth: 1000 }}>
-      <p><Link to={`/app/projects/engine-preview/${projectId}`}>← back to engine preview</Link></p>
-      <h1>Schedule</h1>
+    <div style={{ maxWidth: 1000 }}>
       <p style={{ color: '#4b5457' }}>
         Project duration: <strong>{projectDurationDays} days</strong>.
         Critical path in teal — click a bar/node to edit duration.

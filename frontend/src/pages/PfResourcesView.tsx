@@ -141,9 +141,7 @@ const PfResourcesView = () => {
   const maxCumulative = baseline?.bcws.length ? Math.max(...baseline.bcws.map((p) => p.cumulativeCost)) : 0;
 
   return (
-    <div style={{ padding: 48, fontFamily: 'system-ui, sans-serif', maxWidth: 1000 }}>
-      <p><Link to={`/app/projects/engine-preview/${projectId}`}>← back to engine preview</Link></p>
-      <h1>Resources, Cost &amp; Baseline</h1>
+    <div style={{ maxWidth: 1000 }}>
 
       <section style={{ margin: '24px 0' }}>
         <h3>Resources</h3>

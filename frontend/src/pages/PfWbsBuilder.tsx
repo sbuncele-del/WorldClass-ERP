@@ -163,9 +163,7 @@ const PfWbsBuilder = () => {
   if (error) return <div style={{ padding: 48, color: 'crimson' }}>Error: {error}</div>;
 
   return (
-    <div style={{ padding: 48, fontFamily: 'system-ui, sans-serif', maxWidth: 900 }}>
-      <p><Link to={`/app/projects/engine-preview/${projectId}`}>← back to engine preview</Link></p>
-      <h1>Work Breakdown Structure</h1>
+    <div style={{ maxWidth: 900 }}>
 
       <section style={{ margin: '24px 0' }}>
         <h3>Scope statement</h3>

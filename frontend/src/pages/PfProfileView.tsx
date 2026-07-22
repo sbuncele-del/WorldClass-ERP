@@ -54,9 +54,7 @@ const PfProfileView = () => {
   if (!projectId) return <div style={{ padding: 48 }}>Missing project id.</div>;
 
   return (
-    <div style={{ padding: 48, fontFamily: 'system-ui, sans-serif', maxWidth: 1000 }}>
-      <p><Link to={`/app/projects/engine-preview/${projectId}`}>← back to engine preview</Link></p>
-      <h1>Project Profile</h1>
+    <div style={{ maxWidth: 1000 }}>
       {error && <div style={{ background: '#f3ebda', border: '1px solid #d8dedf', borderRadius: 8, padding: 16, color: '#a5721a' }}>{error}</div>}
       {message && <div style={{ background: '#e4f0ec', border: '1px solid #d8dedf', borderRadius: 8, padding: 16, color: '#2c6e49', margin: '12px 0' }}>{message}</div>}
 

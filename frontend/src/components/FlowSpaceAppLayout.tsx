@@ -19,7 +19,8 @@ import FlowSpaceLogo from './FlowSpaceLogo';
 import './FlowSpaceAppLayout.css';
 
 const FlowSpaceProjects = lazy(() => import('../pages/FlowSpaceProjects'));
-const PfEnginePreview = lazy(() => import('../pages/PfEnginePreview'));
+const PfProjectWorkspace = lazy(() => import('../pages/PfProjectWorkspace'));
+const PfOverviewTab = lazy(() => import('../pages/PfOverviewTab'));
 const PfWbsBuilder = lazy(() => import('../pages/PfWbsBuilder'));
 const PfScheduleView = lazy(() => import('../pages/PfScheduleView'));
 const PfResourcesView = lazy(() => import('../pages/PfResourcesView'));
@@ -84,14 +85,16 @@ const FlowSpaceAppLayout: React.FC<{ shell: ProductShell }> = ({ shell }) => {
               <Route path="/workspace" element={<Navigate to={shell.homeRoute} replace />} />
 
               <Route path="/projects/list" element={<FlowSpaceProjects />} />
-              <Route path="/projects/engine-preview/:projectId" element={<PfEnginePreview />} />
-              <Route path="/projects/engine-preview/:projectId/wbs" element={<PfWbsBuilder />} />
-              <Route path="/projects/engine-preview/:projectId/schedule" element={<PfScheduleView />} />
-              <Route path="/projects/engine-preview/:projectId/resources" element={<PfResourcesView />} />
-              <Route path="/projects/engine-preview/:projectId/eva" element={<PfEvaView />} />
-              <Route path="/projects/engine-preview/:projectId/governance" element={<PfGovernanceView />} />
-              <Route path="/projects/engine-preview/:projectId/closure" element={<PfClosureView />} />
-              <Route path="/projects/engine-preview/:projectId/profile" element={<PfProfileView />} />
+              <Route path="/projects/engine-preview/:projectId" element={<PfProjectWorkspace />}>
+                <Route index element={<PfOverviewTab />} />
+                <Route path="wbs" element={<PfWbsBuilder />} />
+                <Route path="schedule" element={<PfScheduleView />} />
+                <Route path="resources" element={<PfResourcesView />} />
+                <Route path="eva" element={<PfEvaView />} />
+                <Route path="governance" element={<PfGovernanceView />} />
+                <Route path="closure" element={<PfClosureView />} />
+                <Route path="profile" element={<PfProfileView />} />
+              </Route>
 
               <Route path="*" element={<Navigate to={shell.homeRoute} replace />} />
             </Routes>
