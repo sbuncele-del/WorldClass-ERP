@@ -1,14 +1,13 @@
 /**
- * FlowSpace PM Engine — WBS Builder (Phase 1)
+ * FlowSpace — WBS Builder
  *
- * Internal preview, not linked from the main nav yet (see productShells /
- * coexistence strategy in the FlowSpace build plan). Functional over
- * polished - this proves the WBS/activity CRUD + auto-numbering work
- * end-to-end against real data before Phase 2 builds the CPM engine on top.
+ * A dense, spreadsheet-style tree grid (WBS code column, indentation by
+ * depth, icon-toolbar row actions) instead of a flat bulleted list -
+ * matches the left-grid density of a real PM tool's task list.
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 
 interface ActivityNode {
@@ -25,6 +24,11 @@ interface WbsNode {
   children: WbsNode[];
   activities: ActivityNode[];
 }
+
+const ICON_BTN: React.CSSProperties = {
+  width: 24, height: 24, display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  fontSize: 12, cursor: 'pointer', background: 'none', border: 'none', borderRadius: 4, color: 'var(--fs-slate)',
+};
 
 const PfWbsBuilder = () => {
   const { projectId } = useParams();
@@ -132,25 +136,34 @@ const PfWbsBuilder = () => {
   };
 
   const renderNode = (node: WbsNode, depth: number) => (
-    <div key={node.id} style={{ marginLeft: depth * 28 }}>
-      <div style={row}>
-        <span style={code}>{node.code}</span>
-        <span style={{ flex: 1 }}>{node.name}</span>
-        <button style={btn} onClick={() => move(node.id, 'up')} title="Move up">↑</button>
-        <button style={btn} onClick={() => move(node.id, 'down')} title="Move down">↓</button>
-        <button style={btn} onClick={() => move(node.id, 'outdent')} title="Outdent">⇤</button>
-        <button style={btn} onClick={() => move(node.id, 'indent')} title="Indent">⇥</button>
-        <button style={btn} onClick={() => rename(node.id, node.name)} title="Rename">✎</button>
-        <button style={btn} onClick={() => addChild(node.id)} title="Add child work package">+ WBS</button>
-        <button style={btn} onClick={() => addActivity(node.id)} title="Add activity">+ Activity</button>
-        <button style={{ ...btn, color: '#a23b27' }} onClick={() => remove(node.id)} title="Delete">×</button>
+    <div key={node.id}>
+      <div className="wbs-row" style={{ paddingLeft: 14 + depth * 22 }}>
+        <span style={{ fontFamily: 'var(--fs-font-mono)', fontSize: 12, color: 'var(--fs-teal)', minWidth: 44 }}>{node.code}</span>
+        <span style={{ flex: 1, fontSize: 14 }}>{node.name}</span>
+        <div className="wbs-actions" style={{ display: 'flex', gap: 2 }}>
+          <button style={ICON_BTN} onClick={() => move(node.id, 'up')} title="Move up">↑</button>
+          <button style={ICON_BTN} onClick={() => move(node.id, 'down')} title="Move down">↓</button>
+          <button style={ICON_BTN} onClick={() => move(node.id, 'outdent')} title="Outdent">⇤</button>
+          <button style={ICON_BTN} onClick={() => move(node.id, 'indent')} title="Indent">⇥</button>
+          <button style={ICON_BTN} onClick={() => rename(node.id, node.name)} title="Rename">✎</button>
+          <button style={{ ...ICON_BTN, width: 'auto', padding: '0 6px', color: 'var(--fs-teal)' }} onClick={() => addChild(node.id)} title="Add child work package">+WBS</button>
+          <button style={{ ...ICON_BTN, width: 'auto', padding: '0 6px', color: 'var(--fs-teal)' }} onClick={() => addActivity(node.id)} title="Add activity">+Task</button>
+          <button style={{ ...ICON_BTN, color: '#B04A43' }} onClick={() => remove(node.id)} title="Delete">✕</button>
+        </div>
       </div>
 
       {node.activities.map((activity) => (
-        <div key={activity.id} style={{ ...row, marginLeft: 28, color: '#4b5457' }}>
-          <span style={{ ...code, color: '#a5721a' }}>ACT</span>
-          <span style={{ flex: 1 }}>{activity.name} <em style={{ fontSize: 12 }}>({activity.duration_days}d, {activity.status})</em></span>
-          <button style={{ ...btn, color: '#a23b27' }} onClick={() => removeActivity(activity.id)}>×</button>
+        <div key={activity.id} className="wbs-row" style={{ paddingLeft: 14 + (depth + 1) * 22, background: 'var(--fs-cream)' }}>
+          <span style={{
+            fontSize: 10, fontWeight: 600, color: '#8A6416', background: '#FBF3E4', borderRadius: 4,
+            padding: '2px 6px', minWidth: 32, textAlign: 'center',
+          }}>TASK</span>
+          <span style={{ flex: 1, fontSize: 13, color: 'var(--fs-ink)' }}>
+            {activity.name} <span style={{ fontSize: 11, color: 'var(--fs-slate)' }}>· {activity.duration_days}d · {activity.status}</span>
+          </span>
+          <div className="wbs-actions">
+            <button style={{ ...ICON_BTN, color: '#B04A43' }} onClick={() => removeActivity(activity.id)} title="Delete">✕</button>
+          </div>
         </div>
       ))}
 
@@ -164,60 +177,50 @@ const PfWbsBuilder = () => {
 
   return (
     <div style={{ maxWidth: 900 }}>
+      <style>{`
+        .wbs-row { display: flex; align-items: center; gap: 6px; padding: 8px 12px 8px 0; border-bottom: 1px solid var(--fs-line); }
+        .wbs-row .wbs-actions { opacity: 0; transition: opacity 0.1s ease; }
+        .wbs-row:hover .wbs-actions { opacity: 1; }
+      `}</style>
 
-      <section style={{ margin: '24px 0' }}>
-        <h3>Scope statement</h3>
+      <section style={{ marginBottom: 28 }}>
+        <p className="fs-page-eyebrow" style={{ marginBottom: 10 }}>Scope statement</p>
         <textarea
+          className="fs-input"
           value={scopeStatement}
           onChange={(e) => { setScopeStatement(e.target.value); setScopeSaved(false); }}
           rows={3}
-          style={{ width: '100%', fontFamily: 'inherit', padding: 8 }}
+          style={{ width: '100%', fontFamily: 'var(--fs-font-sans)', resize: 'vertical', boxSizing: 'border-box' }}
           placeholder="What must be done?"
         />
-        <button style={btn} onClick={saveScope} disabled={scopeSaved}>
-          {scopeSaved ? 'Saved' : 'Save scope statement'}
-        </button>
+        <div style={{ marginTop: 8 }}>
+          <button className="fs-btn fs-btn-secondary" style={{ padding: '6px 14px', fontSize: 13 }} onClick={saveScope} disabled={scopeSaved}>
+            {scopeSaved ? 'Saved' : 'Save scope statement'}
+          </button>
+        </div>
       </section>
 
       <section>
-        <h3>Structure</h3>
-        {tree.length === 0 && <p style={{ color: '#4b5457' }}>No work packages yet.</p>}
-        {tree.map((node) => renderNode(node, 0))}
+        <p className="fs-page-eyebrow" style={{ marginBottom: 10 }}>Work breakdown structure</p>
+        <div className="fs-card" style={{ overflow: 'hidden' }}>
+          {tree.length === 0 && <p style={{ color: 'var(--fs-slate)', fontSize: 13, padding: '20px 14px', margin: 0 }}>No work packages yet.</p>}
+          {tree.map((node) => renderNode(node, 0))}
+        </div>
 
-        <div style={{ ...row, marginTop: 16 }}>
+        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
           <input
+            className="fs-input"
             value={newRootName}
             onChange={(e) => setNewRootName(e.target.value)}
             placeholder="New top-level work package"
-            style={{ flex: 1, padding: 6 }}
+            style={{ flex: 1 }}
             onKeyDown={(e) => e.key === 'Enter' && addRoot()}
           />
-          <button style={btn} onClick={addRoot}>+ Add</button>
+          <button className="fs-btn fs-btn-primary" onClick={addRoot}>+ Add</button>
         </div>
       </section>
     </div>
   );
-};
-
-const row: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 6,
-  padding: '6px 0',
-  borderBottom: '1px solid #e6eaeb',
-};
-
-const code: React.CSSProperties = {
-  fontFamily: 'monospace',
-  fontSize: 12,
-  color: '#0c5f53',
-  minWidth: 40,
-};
-
-const btn: React.CSSProperties = {
-  fontSize: 12,
-  padding: '2px 8px',
-  cursor: 'pointer',
 };
 
 export default PfWbsBuilder;
