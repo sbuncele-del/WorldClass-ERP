@@ -236,8 +236,8 @@ export class AuthService {
 
       // Log signup
       await client.query(
-        `INSERT INTO audit_log (tenant_id, user_id, action, resource_type, resource_id)
-         VALUES ($1::uuid, $2::uuid, $3::text, $4::text, $5::uuid)`,
+        `INSERT INTO audit_log (tenant_id, user_id, action, entity_type, entity_id)
+         VALUES ($1::uuid, $2::uuid, $3::text, $4::text, $5::text)`,
         [tenant.id, user.id, 'user_signup', 'user', user.id]
       );
 
