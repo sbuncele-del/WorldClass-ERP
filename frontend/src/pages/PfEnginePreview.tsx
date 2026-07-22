@@ -31,6 +31,7 @@ const PfEnginePreview = () => {
       {error && <p style={{ color: 'crimson' }}>Error: {error}</p>}
       {projectId && <p><Link to={`/app/projects/engine-preview/${projectId}/wbs`}>Open WBS builder →</Link></p>}
       {projectId && <p><Link to={`/app/projects/engine-preview/${projectId}/schedule`}>Open Schedule (Gantt/Network) →</Link></p>}
+      {projectId && <p><Link to={`/app/projects/engine-preview/${projectId}/resources`}>Open Resources, Cost & Baseline →</Link></p>}
     </div>
   );
 };

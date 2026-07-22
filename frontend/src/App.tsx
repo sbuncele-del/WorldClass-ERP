@@ -123,6 +123,7 @@ const ProjectsHub = lazy(() => import('./modules/projects/ProjectsHub'));
 const PfEnginePreview = lazy(() => import('./pages/PfEnginePreview'));
 const PfWbsBuilder = lazy(() => import('./pages/PfWbsBuilder'));
 const PfScheduleView = lazy(() => import('./pages/PfScheduleView'));
+const PfResourcesView = lazy(() => import('./pages/PfResourcesView'));
 const ProposalsHub = lazy(() => import('./modules/proposals/ProposalsHub'));
 const ProposalEditor = lazy(() => import('./modules/proposals/ProposalEditor'));
 const ProProposalBuilder = lazy(() => import('./modules/proposals/ProProposalBuilder'));
@@ -283,6 +284,7 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
             <Route path="/projects/engine-preview/:projectId" element={<RequireModule module="projects"><PfEnginePreview /></RequireModule>} />
             <Route path="/projects/engine-preview/:projectId/wbs" element={<RequireModule module="projects"><PfWbsBuilder /></RequireModule>} />
             <Route path="/projects/engine-preview/:projectId/schedule" element={<RequireModule module="projects"><PfScheduleView /></RequireModule>} />
+            <Route path="/projects/engine-preview/:projectId/resources" element={<RequireModule module="projects"><PfResourcesView /></RequireModule>} />
             <Route path="/proposals/pitch/coffee" element={<CoffeePitchDeck />} />
             <Route path="/proposals/pitch/siyabusa" element={<SiyaBusaPitchDeck />} />
             <Route path="/proposals/new" element={<SmartProposalBuilder />} />

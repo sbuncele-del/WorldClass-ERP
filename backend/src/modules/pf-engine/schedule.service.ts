@@ -1,5 +1,6 @@
 import { pool } from '../../config/database';
 import { computeCpm, pertWeightedDuration, CpmActivityInput } from './cpm';
+import { addWorkingDays } from './calendar';
 
 export interface DependencyRow {
   id: string;
@@ -26,13 +27,58 @@ export interface ScheduledActivity {
   status: string;
 }
 
-function addDays(base: Date, days: number): string {
-  const d = new Date(base);
-  d.setDate(d.getDate() + Math.round(days));
-  return d.toISOString().split('T')[0];
-}
-
 export class ScheduleService {
+  /**
+   * Time/cost/resource trade-off: run CPM with one activity's duration
+   * hypothetically overridden, WITHOUT persisting anything. Lets a PM ask
+   * "what if I crashed this activity to 2 days?" and see the schedule
+   * impact before committing to it.
+   */
+  async simulate(
+    tenantId: string,
+    projectId: string,
+    activityId: string,
+    hypotheticalDurationDays: number
+  ): Promise<{ currentProjectDurationDays: number; simulatedProjectDurationDays: number; deltaDays: number }> {
+    const activitiesResult = await pool.query(
+      `SELECT id, duration_days FROM pf_activity WHERE tenant_id = $1 AND project_id = $2`,
+      [tenantId, projectId]
+    );
+    const dependenciesResult = await pool.query<DependencyRow>(
+      `SELECT d.predecessor_id, d.successor_id
+       FROM pf_dependency d
+       JOIN pf_activity a ON a.id = d.successor_id
+       WHERE a.tenant_id = $1 AND a.project_id = $2`,
+      [tenantId, projectId]
+    );
+
+    if (!activitiesResult.rows.some((r) => r.id === activityId)) {
+      throw new Error('Activity not found');
+    }
+
+    const predecessorsByActivity = new Map<string, string[]>();
+    for (const dep of dependenciesResult.rows) {
+      if (!predecessorsByActivity.has(dep.successor_id)) predecessorsByActivity.set(dep.successor_id, []);
+      predecessorsByActivity.get(dep.successor_id)!.push(dep.predecessor_id);
+    }
+
+    const buildInput = (durationOverride?: { id: string; duration: number }): CpmActivityInput[] =>
+      activitiesResult.rows.map((row) => ({
+        id: row.id,
+        durationDays: durationOverride && durationOverride.id === row.id ? durationOverride.duration : parseFloat(row.duration_days) || 0,
+        predecessorIds: predecessorsByActivity.get(row.id) || [],
+      }));
+
+    const current = computeCpm(buildInput());
+    const simulated = computeCpm(buildInput({ id: activityId, duration: hypotheticalDurationDays }));
+
+    return {
+      currentProjectDurationDays: current.projectDurationDays,
+      simulatedProjectDurationDays: simulated.projectDurationDays,
+      deltaDays: simulated.projectDurationDays - current.projectDurationDays,
+    };
+  }
+
   /**
    * Recompute the whole project's CPM schedule from its current activities +
    * dependencies, and persist the result onto pf_activity. Called after any
@@ -86,10 +132,10 @@ export class ScheduleService {
              total_float = $5, is_critical = $6, updated_at = now()
            WHERE id = $7`,
           [
-            addDays(baseDate, r.earlyStart),
-            addDays(baseDate, r.earlyFinish),
-            addDays(baseDate, r.lateStart),
-            addDays(baseDate, r.lateFinish),
+            addWorkingDays(baseDate, r.earlyStart),
+            addWorkingDays(baseDate, r.earlyFinish),
+            addWorkingDays(baseDate, r.lateStart),
+            addWorkingDays(baseDate, r.lateFinish),
             r.totalFloat,
             r.isCritical,
             activityId,
