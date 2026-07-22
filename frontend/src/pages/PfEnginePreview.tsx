@@ -30,6 +30,7 @@ const PfEnginePreview = () => {
       {phase && <p>Lifecycle phase: <strong>{phase}</strong></p>}
       {error && <p style={{ color: 'crimson' }}>Error: {error}</p>}
       {projectId && <p><Link to={`/app/projects/engine-preview/${projectId}/wbs`}>Open WBS builder →</Link></p>}
+      {projectId && <p><Link to={`/app/projects/engine-preview/${projectId}/schedule`}>Open Schedule (Gantt/Network) →</Link></p>}
     </div>
   );
 };
