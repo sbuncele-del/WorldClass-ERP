@@ -7,6 +7,7 @@
  * Phase 2: CPM/PERT scheduling + dependencies.
  * Phase 3: resources, cost, baseline.
  * Phase 4: Earned Value + change control.
+ * Phase 5: governance registers (risk, stakeholders, comms, RACI, procurement).
  */
 
 import { Router } from 'express';
@@ -18,6 +19,7 @@ import { ResourceController } from './resource.controller';
 import { BaselineController } from './baseline.controller';
 import { EvaController } from './eva.controller';
 import { ChangeController } from './change.controller';
+import { GovernanceController } from './governance.controller';
 
 const router = Router();
 const controller = new PfEngineController();
@@ -27,6 +29,7 @@ const resource = new ResourceController();
 const baseline = new BaselineController();
 const eva = new EvaController();
 const change = new ChangeController();
+const governance = new GovernanceController();
 
 router.use(tenantMiddleware);
 router.use(requireModule('projects'));
@@ -74,5 +77,29 @@ router.get('/:projectId/changes', change.list);
 router.post('/:projectId/changes', change.log);
 router.post('/:projectId/changes/:changeId/decide', change.decide);
 router.post('/:projectId/changes/:changeId/implement', change.implement);
+
+router.get('/:projectId/risks', governance.listRisks);
+router.post('/:projectId/risks', governance.createRisk);
+router.put('/:projectId/risks/:riskId', governance.updateRisk);
+router.delete('/:projectId/risks/:riskId', governance.deleteRisk);
+
+router.get('/:projectId/stakeholders', governance.listStakeholders);
+router.post('/:projectId/stakeholders', governance.createStakeholder);
+router.put('/:projectId/stakeholders/:stakeholderId', governance.updateStakeholder);
+router.delete('/:projectId/stakeholders/:stakeholderId', governance.deleteStakeholder);
+
+router.get('/:projectId/comms', governance.listCommsItems);
+router.post('/:projectId/comms', governance.createCommsItem);
+router.delete('/:projectId/comms/:itemId', governance.deleteCommsItem);
+
+router.get('/:projectId/raci', governance.getRaciGrid);
+router.post('/:projectId/raci', governance.setRaciCell);
+router.delete('/:projectId/raci', governance.clearRaciCell);
+
+router.get('/:projectId/procurement', governance.listProcurementItems);
+router.post('/:projectId/procurement', governance.createProcurementItem);
+router.post('/:projectId/procurement/:itemId/vendors', governance.addVendorOption);
+router.post('/:projectId/procurement/:itemId/award', governance.awardProcurementItem);
+router.delete('/:projectId/procurement/:itemId', governance.deleteProcurementItem);
 
 export default router;
