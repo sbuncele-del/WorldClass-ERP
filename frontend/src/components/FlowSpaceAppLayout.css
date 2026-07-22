@@ -195,3 +195,34 @@
 .fs-input::placeholder {
   color: #9aa3ab;
 }
+
+.fs-listrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--fs-line);
+}
+
+.fs-listrow:last-child {
+  border-bottom: none;
+}
+
+.fs-icon-btn {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: var(--fs-slate);
+}
+
+.fs-icon-btn:hover {
+  background: var(--fs-danger-wash);
+  color: var(--fs-danger-ink);
+}

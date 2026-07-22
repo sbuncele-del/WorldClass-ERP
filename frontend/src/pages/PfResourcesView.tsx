@@ -1,11 +1,9 @@
 /**
- * FlowSpace PM Engine — Resources, cost, and baseline (Phase 3)
- *
- * Internal preview, not linked from the main nav yet.
+ * FlowSpace — Resources, Cost & Baseline
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 
 interface Resource {
@@ -141,110 +139,112 @@ const PfResourcesView = () => {
   const maxCumulative = baseline?.bcws.length ? Math.max(...baseline.bcws.map((p) => p.cumulativeCost)) : 0;
 
   return (
-    <div style={{ maxWidth: 1000 }}>
+    <div style={{ maxWidth: 1000, display: 'flex', flexDirection: 'column', gap: 28 }}>
 
-      <section style={{ margin: '24px 0' }}>
-        <h3>Resources</h3>
-        {resources.map((r) => (
-          <div key={r.id} style={row}>
-            <span style={{ flex: 1 }}>{r.name}</span>
-            <span style={{ color: '#4b5457', fontSize: 13 }}>R{r.cost_per_hour}/hr · productivity {r.productivity_factor}</span>
-            <button style={btn} onClick={() => deleteResource(r.id)}>×</button>
-          </div>
-        ))}
-        <div style={{ ...row, marginTop: 8 }}>
-          <input value={newResourceName} onChange={(e) => setNewResourceName(e.target.value)} placeholder="Name (e.g. Site crew)" style={{ flex: 1, padding: 6 }} />
-          <input value={newResourceRate} onChange={(e) => setNewResourceRate(e.target.value)} placeholder="R/hour" style={{ width: 100, padding: 6 }} />
-          <button style={btn} onClick={createResource}>+ Add resource</button>
+      <section>
+        <p className="fs-page-eyebrow" style={{ marginBottom: 10 }}>Resources</p>
+        <div className="fs-card" style={{ overflow: 'hidden' }}>
+          {resources.length === 0 && <p style={{ color: 'var(--fs-slate)', fontSize: 13, padding: '18px 14px', margin: 0 }}>No resources yet.</p>}
+          {resources.map((r) => (
+            <div key={r.id} className="fs-listrow">
+              <span style={{ flex: 1, fontSize: 14 }}>{r.name}</span>
+              <span style={{ color: 'var(--fs-slate)', fontSize: 12, fontFamily: 'var(--fs-font-mono)' }}>R{r.cost_per_hour}/hr · ×{r.productivity_factor}</span>
+              <button className="fs-icon-btn" onClick={() => deleteResource(r.id)}>✕</button>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+          <input className="fs-input" value={newResourceName} onChange={(e) => setNewResourceName(e.target.value)} placeholder="Name (e.g. Site crew)" style={{ flex: 1 }} />
+          <input className="fs-input" value={newResourceRate} onChange={(e) => setNewResourceRate(e.target.value)} placeholder="R / hour" style={{ width: 110 }} />
+          <button className="fs-btn fs-btn-primary" onClick={createResource}>+ Add</button>
         </div>
       </section>
 
-      <section style={{ margin: '24px 0' }}>
-        <h3>Assign resources to activities</h3>
-        <div style={{ ...row, marginTop: 8 }}>
-          <select value={assignActivityId} onChange={(e) => setAssignActivityId(e.target.value)} style={{ padding: 4 }}>
+      <section>
+        <p className="fs-page-eyebrow" style={{ marginBottom: 10 }}>Assign resources to activities</p>
+        <div className="fs-card" style={{ padding: 14, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <select className="fs-input" value={assignActivityId} onChange={(e) => setAssignActivityId(e.target.value)}>
             <option value="">Activity…</option>
             {activities.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
-          <select value={assignResourceId} onChange={(e) => setAssignResourceId(e.target.value)} style={{ padding: 4 }}>
+          <select className="fs-input" value={assignResourceId} onChange={(e) => setAssignResourceId(e.target.value)}>
             <option value="">Resource…</option>
             {resources.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
-          <input value={assignHours} onChange={(e) => setAssignHours(e.target.value)} placeholder="Planned hours" style={{ width: 120, padding: 6 }} />
-          <button style={btn} onClick={assign}>+ Assign</button>
+          <input className="fs-input" value={assignHours} onChange={(e) => setAssignHours(e.target.value)} placeholder="Planned hours" style={{ width: 130 }} />
+          <button className="fs-btn fs-btn-primary" onClick={assign}>+ Assign</button>
         </div>
       </section>
 
-      <section style={{ margin: '24px 0' }}>
-        <h3>Cost roll-up — total: R{totalCost.toFixed(2)}</h3>
-        {costByActivity.filter((c) => c.assignments.length > 0).map((c) => (
-          <div key={c.activityId} style={{ marginBottom: 8 }}>
-            <div style={row}>
-              <strong style={{ flex: 1 }}>{nameOf(c.activityId)}</strong>
-              <span>R{c.cost.toFixed(2)}</span>
+      <section>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+          <p className="fs-page-eyebrow" style={{ margin: 0 }}>Cost roll-up</p>
+          <span style={{ fontFamily: 'var(--fs-font-mono)', fontSize: 16, fontWeight: 600, color: 'var(--fs-teal)' }}>R{totalCost.toFixed(2)}</span>
+        </div>
+        <div className="fs-card" style={{ overflow: 'hidden' }}>
+          {costByActivity.filter((c) => c.assignments.length > 0).length === 0 && (
+            <p style={{ color: 'var(--fs-slate)', fontSize: 13, padding: '18px 14px', margin: 0 }}>No costed activities yet.</p>
+          )}
+          {costByActivity.filter((c) => c.assignments.length > 0).map((c) => (
+            <div key={c.activityId}>
+              <div className="fs-listrow" style={{ fontWeight: 600 }}>
+                <span style={{ flex: 1 }}>{nameOf(c.activityId)}</span>
+                <span style={{ fontFamily: 'var(--fs-font-mono)' }}>R{c.cost.toFixed(2)}</span>
+              </div>
+              {c.assignments.map((a) => (
+                <div key={a.id} className="fs-listrow" style={{ paddingLeft: 28, fontSize: 13, color: 'var(--fs-slate)', background: 'var(--fs-cream)' }}>
+                  <span style={{ flex: 1 }}>{a.resource_name} — {a.planned_hours}h</span>
+                  <button className="fs-icon-btn" onClick={() => unassign(a.id)}>✕</button>
+                </div>
+              ))}
             </div>
-            {c.assignments.map((a) => (
-              <div key={a.id} style={{ ...row, marginLeft: 20, fontSize: 13, color: '#4b5457' }}>
-                <span style={{ flex: 1 }}>{a.resource_name} — {a.planned_hours}h</span>
-                <button style={btn} onClick={() => unassign(a.id)}>×</button>
-              </div>
-            ))}
-          </div>
-        ))}
+          ))}
+        </div>
       </section>
 
-      <section style={{ margin: '24px 0' }}>
-        <h3>Baseline</h3>
-        {baseline ? (
-          <>
-            <p>Version {baseline.version} · frozen {new Date(baseline.frozen_at).toLocaleString()} · total cost R{parseFloat(baseline.total_cost).toFixed(2)}</p>
-            {baseline.bcws.length > 0 && (
-              <div style={{ border: '1px solid #d8dedf', borderRadius: 8, padding: 16 }}>
-                <svg width="100%" height={160} viewBox={`0 0 ${baseline.bcws.length * 8} 160`} preserveAspectRatio="none">
-                  <polyline
-                    fill="none"
-                    stroke="#0c5f53"
-                    strokeWidth={2}
-                    points={baseline.bcws.map((p, i) => `${i * 8},${160 - (p.cumulativeCost / (maxCumulative || 1)) * 150}`).join(' ')}
-                  />
-                </svg>
-                <p style={{ fontSize: 12, color: '#737c7e' }}>BCWS — cumulative planned cost (R{maxCumulative.toFixed(0)} at completion)</p>
-              </div>
-            )}
-          </>
-        ) : (
-          <p style={{ color: '#4b5457' }}>No baseline set yet.</p>
-        )}
-        <button style={btn} onClick={freezeBaseline}>Freeze new baseline</button>
+      <section>
+        <p className="fs-page-eyebrow" style={{ marginBottom: 10 }}>Baseline</p>
+        <div className="fs-card" style={{ padding: 20 }}>
+          {baseline ? (
+            <>
+              <p style={{ margin: '0 0 14px', fontSize: 13, color: 'var(--fs-slate)' }}>
+                Version {baseline.version} · frozen {new Date(baseline.frozen_at).toLocaleString()} · total cost <strong style={{ color: 'var(--fs-ink)' }}>R{parseFloat(baseline.total_cost).toFixed(2)}</strong>
+              </p>
+              {baseline.bcws.length > 0 && (
+                <>
+                  <svg width="100%" height={140} viewBox={`0 0 ${baseline.bcws.length * 8} 140`} preserveAspectRatio="none">
+                    <polyline
+                      fill="none"
+                      stroke="#1B5E52"
+                      strokeWidth={2}
+                      points={baseline.bcws.map((p, i) => `${i * 8},${140 - (p.cumulativeCost / (maxCumulative || 1)) * 130}`).join(' ')}
+                    />
+                  </svg>
+                  <p style={{ fontSize: 12, color: 'var(--fs-slate)', margin: '8px 0 0' }}>BCWS — cumulative planned cost (R{maxCumulative.toFixed(0)} at completion)</p>
+                </>
+              )}
+            </>
+          ) : (
+            <p style={{ color: 'var(--fs-slate)', fontSize: 13, margin: '0 0 14px' }}>No baseline set yet.</p>
+          )}
+          <button className="fs-btn fs-btn-secondary" onClick={freezeBaseline}>Freeze new baseline</button>
+        </div>
       </section>
 
-      <section style={{ margin: '24px 0' }}>
-        <h3>Time / cost trade-off (what-if)</h3>
-        <div style={row}>
-          <select value={simActivityId} onChange={(e) => setSimActivityId(e.target.value)} style={{ padding: 4 }}>
+      <section>
+        <p className="fs-page-eyebrow" style={{ marginBottom: 10 }}>Time / cost trade-off (what-if)</p>
+        <div className="fs-card" style={{ padding: 14, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <select className="fs-input" value={simActivityId} onChange={(e) => setSimActivityId(e.target.value)}>
             <option value="">Activity…</option>
             {activities.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
-          <input value={simDuration} onChange={(e) => setSimDuration(e.target.value)} placeholder="Hypothetical duration (days)" style={{ width: 200, padding: 6 }} />
-          <button style={btn} onClick={runSimulation}>Simulate</button>
+          <input className="fs-input" value={simDuration} onChange={(e) => setSimDuration(e.target.value)} placeholder="Hypothetical duration (days)" style={{ width: 210 }} />
+          <button className="fs-btn fs-btn-primary" onClick={runSimulation}>Simulate</button>
         </div>
-        {simResult && <p style={{ marginTop: 8 }}>{simResult}</p>}
+        {simResult && <p style={{ marginTop: 10, fontSize: 13, color: 'var(--fs-ink)' }}>{simResult}</p>}
       </section>
     </div>
   );
-};
-
-const row: React.CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 8,
-  padding: '4px 0',
-};
-
-const btn: React.CSSProperties = {
-  fontSize: 12,
-  padding: '4px 10px',
-  cursor: 'pointer',
 };
 
 export default PfResourcesView;

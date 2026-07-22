@@ -1,16 +1,14 @@
 /**
- * FlowSpace PM Engine — Project Profiles (Phase 7)
+ * FlowSpace — Project Profile
  *
  * Config, not forks: applying a profile just relabels terminology, seeds
  * a starter WBS (only if the WBS is still empty), and records a couple of
  * defaults. Everything underneath still runs through the same WBS/CPM/EVA/
- * governance/closure engine built in Phases 1-6.
- *
- * Internal preview, not linked from the main nav yet.
+ * governance/closure engine.
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 
 interface Profile {
@@ -55,44 +53,42 @@ const PfProfileView = () => {
 
   return (
     <div style={{ maxWidth: 1000 }}>
-      {error && <div style={{ background: '#f3ebda', border: '1px solid #d8dedf', borderRadius: 8, padding: 16, color: '#a5721a' }}>{error}</div>}
-      {message && <div style={{ background: '#e4f0ec', border: '1px solid #d8dedf', borderRadius: 8, padding: 16, color: '#2c6e49', margin: '12px 0' }}>{message}</div>}
+      {error && <div style={{ background: '#FBF3E4', border: '1px solid var(--fs-line)', borderRadius: 'var(--fs-radius-sm)', padding: 16, color: '#8A6416' }}>{error}</div>}
+      {message && <div style={{ background: '#EEF6F3', border: '1px solid var(--fs-line)', borderRadius: 'var(--fs-radius-sm)', padding: 16, color: '#1B5E52', margin: '12px 0' }}>{message}</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 8 }}>
         {profiles.map((p) => {
           const isCurrent = current?.id === p.id;
           return (
-            <div key={p.id} style={{
-              border: `1px solid ${isCurrent ? '#0c5f53' : '#d8dedf'}`, borderRadius: 8, padding: 16,
-              background: isCurrent ? '#f3f8f7' : 'transparent',
+            <div key={p.id} className="fs-card" style={{
+              padding: 18, borderColor: isCurrent ? 'var(--fs-teal)' : undefined,
+              background: isCurrent ? 'var(--fs-teal-wash)' : '#fff',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <strong>{p.name}</strong>
-                {isCurrent && <span style={{ fontSize: 11, color: '#0c5f53', textTransform: 'uppercase' }}>Current</span>}
+                <strong style={{ fontSize: 15, fontFamily: 'var(--fs-font-serif)' }}>{p.name}</strong>
+                {isCurrent && <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--fs-teal)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Current</span>}
               </div>
-              <p style={{ fontSize: 13, color: '#4b5457', minHeight: 54 }}>{p.description}</p>
+              <p style={{ fontSize: 13, color: 'var(--fs-slate)', minHeight: 54, lineHeight: 1.5 }}>{p.description}</p>
 
-              <div style={{ fontSize: 12, color: '#737c7e', marginBottom: 6 }}>Terminology sample</div>
-              <ul style={{ fontSize: 12, margin: 0, paddingLeft: 18, color: '#15191c' }}>
+              <div style={{ fontSize: 11, color: 'var(--fs-slate)', textTransform: 'uppercase', letterSpacing: '0.02em', marginBottom: 6 }}>Terminology sample</div>
+              <ul style={{ fontSize: 12, margin: 0, paddingLeft: 18, color: 'var(--fs-ink)', lineHeight: 1.7 }}>
                 <li>WBS element → <strong>{p.terminology.wbsElement}</strong></li>
                 <li>Change request → <strong>{p.terminology.changeRequest}</strong></li>
                 <li>Procurement item → <strong>{p.terminology.procurementItem}</strong></li>
               </ul>
 
-              <div style={{ fontSize: 12, color: '#737c7e', margin: '8px 0 4px' }}>Starter WBS</div>
-              <div style={{ fontSize: 12, color: '#15191c' }}>{p.starterWbs.join(' · ')}</div>
+              <div style={{ fontSize: 11, color: 'var(--fs-slate)', textTransform: 'uppercase', letterSpacing: '0.02em', margin: '10px 0 4px' }}>Starter WBS</div>
+              <div style={{ fontSize: 12, color: 'var(--fs-ink)' }}>{p.starterWbs.join(' · ')}</div>
 
               {p.defaults.showCidbField && (
-                <div style={{ fontSize: 11, color: '#0c5f53', marginTop: 6 }}>Surfaces CIDB grading field</div>
+                <div style={{ fontSize: 11, color: 'var(--fs-teal)', marginTop: 8 }}>Surfaces CIDB grading field</div>
               )}
 
               <button
                 disabled={isCurrent}
                 onClick={() => apply(p.id)}
-                style={{
-                  marginTop: 12, fontSize: 12, padding: '6px 12px', cursor: isCurrent ? 'default' : 'pointer',
-                  background: isCurrent ? '#e6eaeb' : '#0c5f53', color: isCurrent ? '#737c7e' : '#fff', border: 'none', borderRadius: 6,
-                }}
+                className={isCurrent ? 'fs-btn' : 'fs-btn fs-btn-primary'}
+                style={{ marginTop: 14, padding: '7px 14px', fontSize: 13, ...(isCurrent ? { background: 'var(--fs-line)', color: 'var(--fs-slate)', cursor: 'default' } : {}) }}
               >
                 {isCurrent ? 'Applied' : 'Apply profile'}
               </button>
