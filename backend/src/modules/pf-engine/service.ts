@@ -6,15 +6,14 @@ import {
   GateContext,
   TransitionResult,
 } from './lifecycle';
+import { ClosureService } from './closure.service';
 
 export class PfEngineService {
+  private closureService = new ClosureService();
+
   /**
-   * Current gate context for a project. Phase 0 wires the shape; the values
-   * are real (queried against tables that exist from this migration) but will
-   * only ever be non-trivial once Phase 3 (baselines) and Phase 6 (closure
-   * checklist) exist. Until then hasCurrentBaseline is always false and
-   * closureChecklistComplete is always false — so both gates correctly block,
-   * because nothing to satisfy them has been built yet.
+   * Current gate context for a project. Both gates are now real: baseline
+   * (Phase 3) and closure checklist + outcome (Phase 6).
    */
   private async getGateContext(tenantId: string, projectId: string): Promise<GateContext> {
     const baselineResult = await pool.query(
@@ -24,8 +23,7 @@ export class PfEngineService {
 
     return {
       hasCurrentBaseline: baselineResult.rows.length > 0,
-      // TODO(Phase 6): replace with a real closure-checklist completeness check.
-      closureChecklistComplete: false,
+      closureChecklistComplete: await this.closureService.isChecklistComplete(tenantId, projectId),
     };
   }
 
@@ -79,7 +77,9 @@ export class PfEngineService {
     try {
       await client.query('BEGIN');
       await client.query(
-        `UPDATE public.projects SET pf_lifecycle_phase = $1, updated_at = now() WHERE tenant_id = $2 AND id = $3`,
+        toPhase === 'close'
+          ? `UPDATE public.projects SET pf_lifecycle_phase = $1, pf_closed_at = now(), updated_at = now() WHERE tenant_id = $2 AND id = $3`
+          : `UPDATE public.projects SET pf_lifecycle_phase = $1, updated_at = now() WHERE tenant_id = $2 AND id = $3`,
         [toPhase, tenantId, projectId]
       );
       await client.query(

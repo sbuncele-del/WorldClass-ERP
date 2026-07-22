@@ -8,6 +8,7 @@
  * Phase 3: resources, cost, baseline.
  * Phase 4: Earned Value + change control.
  * Phase 5: governance registers (risk, stakeholders, comms, RACI, procurement).
+ * Phase 6: reviews & closure (checklist, document repository, lessons learned).
  */
 
 import { Router } from 'express';
@@ -20,6 +21,7 @@ import { BaselineController } from './baseline.controller';
 import { EvaController } from './eva.controller';
 import { ChangeController } from './change.controller';
 import { GovernanceController } from './governance.controller';
+import { ClosureController } from './closure.controller';
 
 const router = Router();
 const controller = new PfEngineController();
@@ -30,6 +32,7 @@ const baseline = new BaselineController();
 const eva = new EvaController();
 const change = new ChangeController();
 const governance = new GovernanceController();
+const closure = new ClosureController();
 
 router.use(tenantMiddleware);
 router.use(requireModule('projects'));
@@ -101,5 +104,19 @@ router.post('/:projectId/procurement', governance.createProcurementItem);
 router.post('/:projectId/procurement/:itemId/vendors', governance.addVendorOption);
 router.post('/:projectId/procurement/:itemId/award', governance.awardProcurementItem);
 router.delete('/:projectId/procurement/:itemId', governance.deleteProcurementItem);
+
+router.get('/:projectId/closure/checklist', closure.getChecklist);
+router.put('/:projectId/closure/checklist/:itemId', closure.setChecklistItem);
+
+router.get('/:projectId/closure/outcome', closure.getClosureOutcome);
+router.put('/:projectId/closure/outcome', closure.setClosureOutcome);
+
+router.get('/:projectId/closure/documents', closure.listDocuments);
+router.post('/:projectId/closure/documents', closure.addDocument);
+router.delete('/:projectId/closure/documents/:documentId', closure.deleteDocument);
+
+router.get('/:projectId/closure/lessons', closure.listLessons);
+router.post('/:projectId/closure/lessons', closure.addLesson);
+router.delete('/:projectId/closure/lessons/:lessonId', closure.deleteLesson);
 
 export default router;

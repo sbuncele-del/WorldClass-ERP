@@ -34,6 +34,7 @@ const PfEnginePreview = () => {
       {projectId && <p><Link to={`/app/projects/engine-preview/${projectId}/resources`}>Open Resources, Cost & Baseline →</Link></p>}
       {projectId && <p><Link to={`/app/projects/engine-preview/${projectId}/eva`}>Open Earned Value & Change Control →</Link></p>}
       {projectId && <p><Link to={`/app/projects/engine-preview/${projectId}/governance`}>Open Governance Registers →</Link></p>}
+      {projectId && <p><Link to={`/app/projects/engine-preview/${projectId}/closure`}>Open Reviews & Closure →</Link></p>}
     </div>
   );
 };
