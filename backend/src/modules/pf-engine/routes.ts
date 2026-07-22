@@ -9,6 +9,7 @@
  * Phase 4: Earned Value + change control.
  * Phase 5: governance registers (risk, stakeholders, comms, RACI, procurement).
  * Phase 6: reviews & closure (checklist, document repository, lessons learned).
+ * Phase 7: project profiles (construction flagship + lighter subsets).
  */
 
 import { Router } from 'express';
@@ -22,6 +23,7 @@ import { EvaController } from './eva.controller';
 import { ChangeController } from './change.controller';
 import { GovernanceController } from './governance.controller';
 import { ClosureController } from './closure.controller';
+import { ProfileController } from './profile.controller';
 
 const router = Router();
 const controller = new PfEngineController();
@@ -33,6 +35,7 @@ const eva = new EvaController();
 const change = new ChangeController();
 const governance = new GovernanceController();
 const closure = new ClosureController();
+const profile = new ProfileController();
 
 router.use(tenantMiddleware);
 router.use(requireModule('projects'));
@@ -118,5 +121,9 @@ router.delete('/:projectId/closure/documents/:documentId', closure.deleteDocumen
 router.get('/:projectId/closure/lessons', closure.listLessons);
 router.post('/:projectId/closure/lessons', closure.addLesson);
 router.delete('/:projectId/closure/lessons/:lessonId', closure.deleteLesson);
+
+router.get('/profiles', profile.listProfiles);
+router.get('/:projectId/profile', profile.getProjectProfile);
+router.put('/:projectId/profile', profile.applyProfile);
 
 export default router;
