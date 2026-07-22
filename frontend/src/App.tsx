@@ -30,6 +30,7 @@ const RoleBasedWorkspace = lazy(() => import('./components/RoleBasedWorkspace'))
 
 // Landing Page (lazy loaded for performance)
 const LandingPage = lazy(() => import('./pages/LandingPage'));
+const ProjectFlowLanding = lazy(() => import('./pages/ProjectFlowLanding'));
 
 // Website Pages (multi-page site)
 const FeaturesPage = lazy(() => import('./pages/website/FeaturesPage'));
@@ -347,6 +348,12 @@ const AccountantApp: React.FC = () => (
 
 function App() {
   const portalType = getPortalType();
+  const shell = useMemo(() => getCurrentProductShell(), []);
+  useEffect(() => {
+    if (shell.key !== 'erp') {
+      document.title = shell.brandName;
+    }
+  }, [shell]);
 
   // Load saved theme on app startup
   useEffect(() => {
@@ -444,7 +451,7 @@ function App() {
                   <Suspense fallback={<PageLoader />}>
                     <Routes>
                       {/* Landing Page - Public Homepage */}
-                      <Route path="/" element={<LandingPage />} />
+                      <Route path="/" element={shell.key === 'erp' ? <LandingPage /> : <ProjectFlowLanding />} />
                       
                       {/* Website Pages — Multi-page site */}
                       <Route path="/features" element={<FeaturesPage />} />
