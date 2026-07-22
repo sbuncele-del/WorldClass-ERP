@@ -17,9 +17,19 @@ import apiClient from './api';
 // ---------------------------------------------------------------------------
 
 export interface ProjectData {
+  // `projects` table field names (source of truth as of 2026-07-22)
+  code?: string;
+  name?: string;
+  client_name?: string | null;
+  manager_id?: string | number | null;
+
+  // Legacy client_projects field names - kept for any caller not yet migrated
   project_name?: string;
-  project_type?: string;
   customer_id?: string | number | null;
+  project_manager_id?: string | number;
+  project_partner_id?: string | number;
+
+  project_type?: string;
   start_date?: string;
   end_date?: string;
   budget?: number;
@@ -27,8 +37,6 @@ export interface ProjectData {
   priority?: string;
   description?: string;
   status?: string;
-  project_manager_id?: string | number;
-  project_partner_id?: string | number;
 }
 
 export interface TaskData {
@@ -90,47 +98,43 @@ export const projectService = {
     return extractData({ data });
   },
 
-  // ── Projects (practice endpoints — client_projects table) ───────────────
+  // ── Projects (projects-module endpoints — `projects` table, the source ──
+  // of truth as of 2026-07-22; previously pointed at the practice module's
+  // client_projects table, which caused newly-created projects to be
+  // invisible to the Task Board/Gantt/PM-engine, all of which read `projects`)
 
-  /** GET /api/v2/practice/projects */
+  /** GET /api/v2/projects */
   async getProjects(params?: {
     limit?: number;
     page?: number;
     status?: string;
     search?: string;
   }): Promise<any> {
-    const { data } = await apiClient.get('/api/v2/practice/projects', { params });
+    const { data } = await apiClient.get('/api/v2/projects', { params });
     return data;
   },
 
-  /** GET /api/v2/practice/projects/:id */
+  /** GET /api/v2/projects/:id */
   async getProjectById(id: string | number): Promise<any> {
-    const { data } = await apiClient.get(`/api/v2/practice/projects/${id}`);
+    const { data } = await apiClient.get(`/api/v2/projects/${id}`);
     return extractData({ data });
   },
 
-  /** POST /api/v2/practice/projects */
+  /** POST /api/v2/projects */
   async createProject(project: Partial<ProjectData>): Promise<any> {
-    const { data } = await apiClient.post('/api/v2/practice/projects', project);
+    const { data } = await apiClient.post('/api/v2/projects', project);
     return extractData({ data });
   },
 
-  /** PUT /api/v2/practice/projects/:id */
+  /** PUT /api/v2/projects/:id */
   async updateProject(id: string | number, project: Partial<ProjectData>): Promise<any> {
-    const { data } = await apiClient.put(`/api/v2/practice/projects/${id}`, project);
+    const { data } = await apiClient.put(`/api/v2/projects/${id}`, project);
     return extractData({ data });
   },
 
-  /**
-   * "Delete" a project.
-   * The practice endpoint has no DELETE route, so we set its status to
-   * 'Cancelled'.  The projects-module endpoint (DELETE /api/v2/projects/:id)
-   * does a soft-delete on the separate `projects` table instead.
-   */
+  /** DELETE /api/v2/projects/:id — soft-delete (sets is_active = false) */
   async deleteProject(id: string | number): Promise<any> {
-    const { data } = await apiClient.put(`/api/v2/practice/projects/${id}`, {
-      status: 'Cancelled',
-    });
+    const { data } = await apiClient.delete(`/api/v2/projects/${id}`);
     return extractData({ data });
   },
 

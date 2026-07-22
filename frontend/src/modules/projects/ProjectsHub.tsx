@@ -2042,17 +2042,20 @@ const ProjectsHub: React.FC = () => {
           <Button key="create" type="primary" onClick={async () => {
             try {
               const values = await form.validateFields();
+              const selectedCustomer = values.client !== 'internal'
+                ? salesCustomers.find((c: any) => (c.id || c.customer_id) === values.client)
+                : null;
               const projectData = {
-                project_name: values.name,
-                project_type: values.type || 'Internal',
-                customer_id: values.client !== 'internal' ? values.client : null,
-                project_manager_id: values.manager || null,
+                name: values.name,
+                project_type: values.client !== 'internal' ? 'client' : 'internal',
+                client_name: selectedCustomer ? (selectedCustomer.customer_name || selectedCustomer.name) : null,
+                manager_id: values.manager || null,
                 start_date: values.startDate?.format('YYYY-MM-DD'),
                 end_date: values.endDate?.format('YYYY-MM-DD'),
                 budget: values.budget,
-                priority: values.priority || 'Medium',
+                priority: values.priority || 'medium',
                 description: values.description,
-                status: 'Planning'
+                status: 'planning'
               };
               await projectService.createProject(projectData);
               message.success('Project created successfully!');

@@ -84,7 +84,7 @@ export async function getWorkspace(req: AuthenticatedRequest, res: Response): Pr
 
     // Get recent projects
     const recentProjects = await query(`
-      SELECT p.project_id as id, p.project_code as code, p.project_name as name, p.status, 0 as progress, p.end_date,
+      SELECT p.id, p.project_code as code, p.project_name as name, p.status, 0 as progress, p.end_date,
              p.manager_id
       FROM projects p
       WHERE p.tenant_id = $1
@@ -94,7 +94,7 @@ export async function getWorkspace(req: AuthenticatedRequest, res: Response): Pr
 
     // Get upcoming deadlines
     const upcomingDeadlines = await query(`
-      SELECT p.project_id as id, p.project_code as code, p.project_name as name, p.end_date,
+      SELECT p.id, p.project_code as code, p.project_name as name, p.end_date,
              (p.end_date - CURRENT_DATE) as days_remaining
       FROM projects p
       WHERE p.tenant_id = $1 
@@ -158,7 +158,7 @@ export async function listProjects(req: AuthenticatedRequest, res: Response): Pr
   try {
     const { status, priority, search, page = 1, limit = 20 } = req.query;
     
-    let whereClause = 'WHERE p.tenant_id = $1';
+    let whereClause = 'WHERE p.tenant_id = $1 AND p.is_active = true';
     const params: any[] = [tenantId];
     let paramIndex = 2;
 
@@ -180,7 +180,7 @@ export async function listProjects(req: AuthenticatedRequest, res: Response): Pr
     const total = parseInt(countResult.rows[0].count);
 
     const result = await query(`
-      SELECT p.project_id as id, p.project_code as code, p.project_name as name, p.description, p.status,
+      SELECT p.id, p.project_code as code, p.project_name as name, p.description, p.status,
         p.start_date, p.end_date, p.budget,
         p.manager_id, p.created_at, p.updated_at, p.tenant_id,
         0 as task_count,
@@ -226,7 +226,7 @@ export async function getProject(req: AuthenticatedRequest, res: Response): Prom
     const result = await query(`
       SELECT p.*
       FROM projects p
-      WHERE p.project_id = $1 AND p.tenant_id = $2
+      WHERE p.id = $1 AND p.tenant_id = $2
     `, [id, tenantId]);
 
     if (result.rows.length === 0) {
@@ -273,24 +273,31 @@ export async function createProject(req: AuthenticatedRequest, res: Response): P
     project_type, start_date, end_date, budget, manager_id
   } = req.body;
 
-  if (!code || !name) {
-    res.status(400).json({ success: false, error: 'Code and name are required' });
+  if (!name) {
+    res.status(400).json({ success: false, error: 'Name is required' });
     return;
   }
+
+  // Project code is shown as "Auto-generated" in the UI - the caller isn't
+  // expected to supply one. PRJ-<timestamp36><random3> is short, sortable,
+  // and collision-safe enough for a per-tenant unique constraint.
+  const generatedCode = code || `PRJ-${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
 
   try {
     const result = await query(`
       INSERT INTO projects (
         tenant_id, project_code, project_name, description, client_name, status,
-        start_date, end_date, budget, manager_id
+        priority, project_type, start_date, end_date, budget, manager_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *
     `, [
-      tenantId, code, name, description, client_name,
-      status || 'planning',
+      tenantId, generatedCode, name, description, client_name || null,
+      (status || 'planning').toLowerCase(),
+      (priority || 'medium').toLowerCase(),
+      project_type || 'internal',
       start_date, end_date,
-      budget || 0, manager_id
+      budget || 0, manager_id || null
     ]);
 
     res.status(201).json({
@@ -322,9 +329,11 @@ export async function updateProject(req: AuthenticatedRequest, res: Response): P
 
   const { id } = req.params;
   const {
-    name, description, client_name, status, priority,
+    name, description, client_name, status: rawStatus, priority: rawPriority,
     project_type, start_date, end_date, budget, spent, progress, manager_id
   } = req.body;
+  const status = rawStatus ? String(rawStatus).toLowerCase() : undefined;
+  const priority = rawPriority ? String(rawPriority).toLowerCase() : undefined;
 
   try {
     const result = await query(`
@@ -333,15 +342,17 @@ export async function updateProject(req: AuthenticatedRequest, res: Response): P
         description = COALESCE($4, description),
         client_name = COALESCE($5, client_name),
         status = COALESCE($6, status),
-        start_date = COALESCE($7, start_date),
-        end_date = COALESCE($8, end_date),
-        budget = COALESCE($9, budget),
-        manager_id = COALESCE($10, manager_id),
+        priority = COALESCE($7, priority),
+        project_type = COALESCE($8, project_type),
+        start_date = COALESCE($9, start_date),
+        end_date = COALESCE($10, end_date),
+        budget = COALESCE($11, budget),
+        manager_id = COALESCE($12, manager_id),
         updated_at = CURRENT_TIMESTAMP
-      WHERE project_id = $1 AND tenant_id = $2
+      WHERE id = $1 AND tenant_id = $2
       RETURNING *
     `, [id, tenantId, name, description, client_name, status,
-        start_date, end_date, budget, manager_id]);
+        priority, project_type, start_date, end_date, budget, manager_id]);
 
     if (result.rows.length === 0) {
       res.status(404).json({ success: false, error: 'Project not found' });
@@ -371,10 +382,13 @@ export async function deleteProject(req: AuthenticatedRequest, res: Response): P
   const { id } = req.params;
 
   try {
+    // Soft delete only - a hard DELETE here would cascade and destroy every
+    // task, WBS element, activity, baseline and progress record attached to
+    // the project (all FK ON DELETE CASCADE to projects.id).
     const result = await query(`
-      DELETE FROM projects
-      WHERE project_id = $1 AND tenant_id = $2
-      RETURNING project_id as id
+      UPDATE projects SET is_active = false, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1 AND tenant_id = $2
+      RETURNING id
     `, [id, tenantId]);
 
     if (result.rows.length === 0) {
@@ -412,7 +426,7 @@ export async function listTasks(req: AuthenticatedRequest, res: Response): Promi
   try {
     // Verify project belongs to tenant
     const projectCheck = await query(`
-      SELECT project_id FROM projects WHERE project_id = $1 AND tenant_id = $2
+      SELECT id FROM projects WHERE id = $1 AND tenant_id = $2
     `, [projectId, tenantId]);
 
     if (projectCheck.rows.length === 0) {
@@ -588,8 +602,8 @@ export async function getTask(req: AuthenticatedRequest, res: Response): Promise
     const result = await query(`
       SELECT t.*
       FROM project_tasks t
-      WHERE t.task_id = $1
-    `, [taskId]);
+      WHERE t.id = $1 AND t.tenant_id = $2
+    `, [taskId, tenantId]);
 
     if (result.rows.length === 0) {
       res.status(404).json({ success: false, error: 'Task not found' });
