@@ -35,7 +35,7 @@ export const PRODUCT_SHELLS: Record<ProductShellKey, ProductShell> = {
     key: 'projects',
     brandName: 'FlowSpace',
     modules: ['projects'],
-    homeRoute: '/app/projects',
+    homeRoute: '/app/projects/list',
   },
   booking: {
     key: 'booking',

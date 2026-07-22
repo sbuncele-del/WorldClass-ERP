@@ -31,6 +31,7 @@ const RoleBasedWorkspace = lazy(() => import('./components/RoleBasedWorkspace'))
 // Landing Page (lazy loaded for performance)
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const FlowSpaceLanding = lazy(() => import('./pages/FlowSpaceLanding'));
+const FlowSpaceProjects = lazy(() => import('./pages/FlowSpaceProjects'));
 
 // Website Pages (multi-page site)
 const FeaturesPage = lazy(() => import('./pages/website/FeaturesPage'));
@@ -284,6 +285,8 @@ const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
             <Route path="/logistics-hub/*" element={<LogisticsHub />} />
             <Route path="/projects/*" element={<RequireModule module="projects"><ProjectsHub /></RequireModule>} />
             <Route path="/projects-hub/*" element={<RequireModule module="projects"><ProjectsHub /></RequireModule>} />
+            {/* FlowSpace standalone shell's real front door - project list into the PM engine */}
+            <Route path="/projects/list" element={<RequireModule module="projects"><FlowSpaceProjects /></RequireModule>} />
             {/* PM engine internal preview (Phase 0) - unlinked from nav, exists to prove the plumbing */}
             <Route path="/projects/engine-preview/:projectId" element={<RequireModule module="projects"><PfEnginePreview /></RequireModule>} />
             <Route path="/projects/engine-preview/:projectId/wbs" element={<RequireModule module="projects"><PfWbsBuilder /></RequireModule>} />
