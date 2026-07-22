@@ -23,6 +23,7 @@ import EmailVerificationBanner from './components/EmailVerificationBanner';
 
 // Premium Layout Components (loaded immediately for shell)
 import PremiumSidebar from './components/layout/PremiumSidebar';
+import FlowSpaceAppLayout from './components/FlowSpaceAppLayout';
 import PremiumTopBar from './components/layout/PremiumTopBar';
 
 // Role-Based Workspace (Main Dashboard Hub)
@@ -196,13 +197,20 @@ function getPortalType(): 'platform' | 'accountant' | 'reporting' | 'main' {
 
 
 // Sidebar layout with collapse state management
+// Standalone product shells get their own isolated app chrome - no ERP
+// sidebar, topbar, colours, or module nav. Same backend/DB, zero visible
+// link from the user's side. This dispatcher must stay hook-free before
+// the branch, since the two sides mount entirely different component trees.
 const SidebarLayout: React.FC<{ children?: React.ReactNode }> = () => {
   const shell = useMemo(() => getCurrentProductShell(), []);
-  useEffect(() => {
-    if (shell.key !== 'erp') {
-      document.title = shell.brandName;
-    }
-  }, [shell]);
+  if (shell.key !== 'erp') {
+    return <FlowSpaceAppLayout shell={shell} />;
+  }
+  return <ErpSidebarLayout />;
+};
+
+const ErpSidebarLayout: React.FC = () => {
+  const shell = useMemo(() => getCurrentProductShell(), []);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('sidebar-collapsed') === 'true';
   });

@@ -166,7 +166,6 @@ const PfWbsBuilder = () => {
     <div style={{ padding: 48, fontFamily: 'system-ui, sans-serif', maxWidth: 900 }}>
       <p><Link to={`/app/projects/engine-preview/${projectId}`}>← back to engine preview</Link></p>
       <h1>Work Breakdown Structure</h1>
-      <p style={{ color: '#4b5457' }}>Internal scaffold. Not part of the live Projects experience yet.</p>
 
       <section style={{ margin: '24px 0' }}>
         <h3>Scope statement</h3>

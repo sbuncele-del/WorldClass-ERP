@@ -73,7 +73,6 @@ const PfGovernanceView = () => {
     <div style={{ padding: 48, fontFamily: 'system-ui, sans-serif', maxWidth: 1100 }}>
       <p><Link to={`/app/projects/engine-preview/${projectId}`}>← back to engine preview</Link></p>
       <h1>Governance Registers</h1>
-      <p style={{ color: '#4b5457' }}>Internal scaffold. Not part of the live Projects experience yet.</p>
       {error && <div style={{ background: '#f3ebda', border: '1px solid #d8dedf', borderRadius: 8, padding: 16, color: '#a5721a' }}>{error}</div>}
 
       <div style={{ display: 'flex', gap: 4, margin: '20px 0', borderBottom: '1px solid #d8dedf' }}>

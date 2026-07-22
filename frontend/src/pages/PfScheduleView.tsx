@@ -106,7 +106,7 @@ const PfScheduleView = () => {
       <p><Link to={`/app/projects/engine-preview/${projectId}`}>← back to engine preview</Link></p>
       <h1>Schedule</h1>
       <p style={{ color: '#4b5457' }}>
-        Internal scaffold. Project duration: <strong>{projectDurationDays} days</strong>.
+        Project duration: <strong>{projectDurationDays} days</strong>.
         Critical path in teal — click a bar/node to edit duration.
       </p>
 

@@ -1,0 +1,74 @@
+.fs-app {
+  --pf-ink: #15191C;
+  --pf-paper: #F3F5F6;
+  --pf-line: #D8DEDF;
+  --pf-teal: #0C5F53;
+  --pf-teal-bright: #12897A;
+  --pf-font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --pf-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  min-height: 100vh;
+  background: var(--pf-paper);
+  color: var(--pf-ink);
+  font-family: var(--pf-font-sans);
+}
+
+.fs-app-header {
+  border-bottom: 1px solid var(--pf-line);
+  background: #FFFFFF;
+}
+
+.fs-app-header-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fs-app-wordmark {
+  text-decoration: none;
+  color: var(--pf-ink);
+}
+
+.fs-app-nav {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.fs-app-nav-link {
+  color: var(--pf-ink);
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.fs-app-nav-link:hover {
+  color: var(--pf-teal);
+}
+
+.fs-app-user {
+  font-size: 13px;
+  color: #6B7275;
+}
+
+.fs-app-signout {
+  background: none;
+  border: 1px solid var(--pf-line);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 13px;
+  color: var(--pf-ink);
+  cursor: pointer;
+}
+
+.fs-app-signout:hover {
+  border-color: var(--pf-teal);
+  color: var(--pf-teal);
+}
+
+.fs-app-main {
+  max-width: 1100px;
+  margin: 0 auto;
+}

@@ -57,7 +57,6 @@ const PfProfileView = () => {
     <div style={{ padding: 48, fontFamily: 'system-ui, sans-serif', maxWidth: 1000 }}>
       <p><Link to={`/app/projects/engine-preview/${projectId}`}>← back to engine preview</Link></p>
       <h1>Project Profile</h1>
-      <p style={{ color: '#4b5457' }}>Internal scaffold. Not part of the live Projects experience yet.</p>
       {error && <div style={{ background: '#f3ebda', border: '1px solid #d8dedf', borderRadius: 8, padding: 16, color: '#a5721a' }}>{error}</div>}
       {message && <div style={{ background: '#e4f0ec', border: '1px solid #d8dedf', borderRadius: 8, padding: 16, color: '#2c6e49', margin: '12px 0' }}>{message}</div>}
 

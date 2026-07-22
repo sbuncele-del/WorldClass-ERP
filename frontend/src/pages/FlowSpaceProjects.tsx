@@ -11,7 +11,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { projectService } from '../services/project.service';
-import './FlowSpaceLanding.css';
 
 interface ProjectRow {
   id: string;
@@ -56,14 +55,8 @@ const FlowSpaceProjects = () => {
   };
 
   return (
-    <div className="pf-landing" style={{ minHeight: '100vh' }}>
-      <header className="pf-header">
-        <div className="pf-header-inner">
-          <span className="pf-wordmark">FlowSpace</span>
-        </div>
-      </header>
-
-      <main style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px' }}>
+    <div>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: '48px 24px' }}>
         <h1 style={{ marginBottom: 8 }}>Your projects</h1>
         <p style={{ color: '#4b5457', marginBottom: 24 }}>Open a project to plan its scope, schedule, budget, risk, and closure.</p>
 
@@ -108,7 +101,7 @@ const FlowSpaceProjects = () => {
             </Link>
           ))}
         </div>
-      </main>
+      </div>
     </div>
   );
 };
