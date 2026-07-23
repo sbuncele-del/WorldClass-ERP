@@ -5,12 +5,18 @@
  * the ERP - same backend, same database, same auth, but the user should
  * see zero evidence of it. This layout deliberately does NOT reuse
  * PremiumSidebar/PremiumTopBar (the ERP's chrome, colours, and full module
- * nav) - it's FlowSpace's own sidebar, its own brand tokens (from the
- * FlowSpace Brand Guidelines), and its own small route set. Mounted from
- * SidebarLayout in App.tsx when the current shell isn't 'erp'.
+ * nav) - it's FlowSpace's own sidebar + top bar, its own brand tokens
+ * (from the FlowSpace Brand Guidelines), and its own small route set.
+ * Mounted from SidebarLayout in App.tsx when the current shell isn't 'erp'.
+ *
+ * Sidebar (left nav) + top bar (search-shaped space, user menu) is the
+ * standard two-piece SaaS chrome (Linear/Asana/ClickUp/ProjectManager.com
+ * all do this) - a sidebar alone, with content starting cold under the
+ * browser bar, reads as an unfinished shell even when the sidebar itself
+ * is polished.
  */
 
-import { Suspense, lazy, useEffect } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { Navigate, Route, Routes, Link, useLocation, useNavigate } from 'react-router-dom';
 import { ProductShell } from '../config/productShells';
 import { useUser } from '../contexts/UserContext';
@@ -33,20 +39,35 @@ const NAV_ITEMS = [
   { to: '/app/projects/list', label: 'Projects', icon: '▤' },
 ];
 
+const initials = (label: string) => label.trim().split(/[\s@.]+/).slice(0, 2).map((w) => w[0]?.toUpperCase()).join('') || '?';
+
 const FlowSpaceAppLayout: React.FC<{ shell: ProductShell }> = ({ shell }) => {
   const { currentUser } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     document.title = shell.brandName;
   }, [shell]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    };
+    window.addEventListener('mousedown', onClickOutside);
+    return () => window.removeEventListener('mousedown', onClickOutside);
+  }, [menuOpen]);
 
   const signOut = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('authToken');
     navigate('/login');
   };
+
+  const userLabel = currentUser?.email || '';
 
   return (
     <div className="fs-app">
@@ -70,13 +91,27 @@ const FlowSpaceAppLayout: React.FC<{ shell: ProductShell }> = ({ shell }) => {
           ))}
         </nav>
         <div className="fs-sidebar-spacer" />
-        <div className="fs-sidebar-footer">
-          {currentUser && <div className="fs-sidebar-user">{currentUser.email}</div>}
-          <button className="fs-sidebar-signout" onClick={signOut}>Sign out</button>
-        </div>
       </aside>
 
       <div className="fs-main">
+        <header className="fs-topbar">
+          <div className="fs-topbar-search">
+            <span aria-hidden style={{ color: 'var(--fs-slate)', fontSize: 13 }}>⌕</span>
+            <input className="fs-topbar-search-input" placeholder="Search projects…" disabled />
+          </div>
+          <div className="fs-topbar-user" ref={menuRef}>
+            <button className="fs-avatar" onClick={() => setMenuOpen((v) => !v)} title={userLabel}>
+              {initials(userLabel)}
+            </button>
+            {menuOpen && (
+              <div className="fs-avatar-menu">
+                <div className="fs-avatar-menu-email">{userLabel}</div>
+                <button className="fs-avatar-menu-item" onClick={signOut}>Sign out</button>
+              </div>
+            )}
+          </div>
+        </header>
+
         <EmailVerificationBanner />
         <div className="fs-main-inner">
           <Suspense fallback={<div style={{ padding: 48, color: 'var(--fs-slate)' }}>Loading…</div>}>
