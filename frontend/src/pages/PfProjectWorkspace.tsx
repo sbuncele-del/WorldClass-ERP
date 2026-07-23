@@ -53,9 +53,24 @@ const PfProjectWorkspace = () => {
 
   useEffect(() => {
     if (!projectId) return;
+    // Robust name/status resolution: try the single-project endpoint, and
+    // if it doesn't yield a name, fall back to the projects list (which the
+    // nav panel already loads reliably) so the header never sticks on "Loading…".
     projectService.getProjectById(projectId)
-      .then((res: any) => setProject(res?.data || res))
-      .catch(() => {});
+      .then((res: any) => {
+        const p = res?.data || res;
+        if (p?.name) { setProject(p); return; }
+        throw new Error('no-name');
+      })
+      .catch(() => {
+        projectService.getProjects()
+          .then((res: any) => {
+            const rows = Array.isArray(res?.data) ? res.data : Array.isArray(res) ? res : [];
+            const found = rows.find((r: any) => r.id === projectId);
+            if (found) setProject(found);
+          })
+          .catch(() => {});
+      });
     apiFetch(`/api/projects/engine/${projectId}/lifecycle`)
       .then((res) => setPhase(res.data.phase))
       .catch((err) => setError(err.message));
