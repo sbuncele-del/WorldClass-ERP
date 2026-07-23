@@ -61,6 +61,7 @@ const FlowSpaceProjects = () => {
       setName('');
       setComposing(false);
       load();
+      window.dispatchEvent(new Event('fs-projects-changed'));
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Failed to create project');
     } finally {
