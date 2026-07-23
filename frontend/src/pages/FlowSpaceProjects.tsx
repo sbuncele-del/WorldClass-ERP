@@ -87,6 +87,15 @@ const FlowSpaceProjects = () => {
         </div>
       )}
 
+      {!loading && projects.length > 0 && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12, margin: '28px 0' }}>
+          <StatTile label="Total projects" value={projects.length} />
+          <StatTile label="In planning" value={projects.filter((p) => (p.status || 'planning').toLowerCase() === 'planning').length} />
+          <StatTile label="Active" value={projects.filter((p) => ['active', 'in_progress'].includes((p.status || '').toLowerCase())).length} />
+          <StatTile label="Completed" value={projects.filter((p) => (p.status || '').toLowerCase() === 'completed').length} />
+        </div>
+      )}
+
       {composing && (
         <div className="fs-card" style={{ padding: 20, margin: '28px 0', display: 'flex', gap: 10 }}>
           <input
@@ -159,5 +168,12 @@ const FlowSpaceProjects = () => {
     </div>
   );
 };
+
+const StatTile = ({ label, value }: { label: string; value: number }) => (
+  <div className="fs-card" style={{ padding: '16px 18px' }}>
+    <div style={{ fontSize: 11, color: 'var(--fs-slate)', textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: 6 }}>{label}</div>
+    <div style={{ fontFamily: 'var(--fs-font-serif)', fontSize: 28, fontWeight: 600, color: 'var(--fs-ink)' }}>{value}</div>
+  </div>
+);
 
 export default FlowSpaceProjects;

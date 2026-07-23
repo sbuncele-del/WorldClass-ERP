@@ -56,6 +56,7 @@ const FlowSpaceAppLayout: React.FC<{ shell: ProductShell }> = ({ shell }) => {
             <FlowSpaceLogo variant="reversed" size={26} />
           </Link>
         </div>
+        <div className="fs-nav-label">Workspace</div>
         <nav className="fs-nav">
           {NAV_ITEMS.map((item) => (
             <Link
